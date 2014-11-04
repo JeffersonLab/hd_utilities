@@ -1,0 +1,40 @@
+# CDC
+cdc_e
+cdc_t
+# BCAL
+bcal_shower_plane
+# SC
+st_sec_adc_dhit
+st_pi_dhit
+st_pt_dhit
+# FCAL
+digHitE
+digT
+digOcc2D
+# FDC
+fdcow
+fdcos
+# PS
+pse
+pst
+pso
+# PSC
+psce
+psct
+psco
+#TAGH
+DigiHit_tdcTime
+DigiHit_PulseIntegral
+#TAGM
+tagm_hit_seen
+tagm_hit_time
+tagm_adc_pint
+tagm_adc_mult
+# TOF
+tofe
+toft
+tofo1
+tofo2
+# RECONSTRUCTION
+NumGoodReconstructedParticles
+

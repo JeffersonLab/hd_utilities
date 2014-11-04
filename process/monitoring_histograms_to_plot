@@ -1,0 +1,44 @@
+NumSCHits
+NumBCALHits
+NumFCALHits
+NumCDCHits
+NumTOFHits
+NumFDCWireHits
+NumFDCCathodeHits
+NumTAGMHits
+NumTAGHHits
+# CDC
+cdc_o
+cdc_e
+cdc__t
+# FDC
+fdcow
+fdcos
+# FCAL
+digHitE
+digT
+digOcc2D
+# BCAL
+bcal_fadc_occ
+bcal_fadc_E
+bcal_fadc_t
+# TOF
+tofe
+toft
+tofo1
+tofo2
+# SC
+st_sec_adc_dhit
+st_pi_dhit
+st_pt_dhit
+# RECON                                                                                                                  NumReconstructedParticles
+NumGoodReconstructedParticles
+NumPosChargedTracks
+NumNegChargedTracks
+NumFCALShowers
+NumBCALShowers
+NumTOFPoints
+NumTrackBCALMatches
+NumTrackFCALMatches
+NumTrackTOFMatches
+NumTrackSCMatches
