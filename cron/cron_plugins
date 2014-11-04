@@ -1,0 +1,7 @@
+SHELL=/bin/tcsh
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+MAILTO=gluex
+HOME=/home/gluex
+
+# Run ls every 10 min
+*/10 * * * * /bin/tcsh -c  /home/gluex/halld/cron/scan_for_jobs.sh
