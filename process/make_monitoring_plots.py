@@ -2,6 +2,8 @@
 #
 # Run over ROOT files containing monitoring data
 # and make images to show on the web
+#
+# TODO: Use hnamepaths!!
 # TODO: throw exceptions?
 #
 # Author: Sean Dobbs (s-dobbs@northwestern.edu), 2014
@@ -50,6 +52,7 @@ HISTS_TO_PLOT += [ "NumReconstructedParticles", "NumGoodReconstructedParticles",
 """
 
 HISTS_TO_PLOT = []
+HISTS_TO_SUM = []
 MACROS_TO_RUN = []
 
 ##########################################################
@@ -70,6 +73,7 @@ def plot_2dhist(h):
 ## image creation has been moved to a different set of macros
 
 def print_canvas_png(fullpath):
+    global OUTPUT_DIRECTORY
     c1.Print( OUTPUT_DIRECTORY + "/" + fullpath.replace("/","_") + ".png" )
 
 
@@ -86,8 +90,7 @@ def SumHistContents(root_file, hist_path):
              
 
 def AccessHistogramsRecursively(the_dir, path, sum_hists, sum_dir):
-    #print "In Directory " + str(the_dir)
-    #the_dir.ls()
+    global HISTS_TO_SUM
 
     # loop over all keys in the current directory
     key_iter = TIter(the_dir.GetListOfKeys())
@@ -99,7 +102,7 @@ def AccessHistogramsRecursively(the_dir, path, sum_hists, sum_dir):
 
         if(isinstance(obj,TH1)):
             #print "histogram =  " + str(obj.GetName())
-            if obj.GetName() not in HISTS_TO_PLOT:
+            if obj.GetName() not in HISTS_TO_SUM:
                 key = key_iter()
                 continue
 
@@ -122,9 +125,12 @@ def AccessHistogramsRecursively(the_dir, path, sum_hists, sum_dir):
     
 
 def SavePlots(sum_hists, sum_dir):
+    global WEB_OUTPUT,MACROS_TO_RUN,HISTS_TO_PLOT
     # plot individual histograms
     if(len(sum_hists) > 0):
         for (hnamepath,h) in sum_hists.items():
+            if h.GetName() not in HISTS_TO_PLOT:
+                continue
             if(isinstance(h,TH2)):
                 plot_2dhist(h)
             else:
@@ -145,12 +151,37 @@ def SavePlots(sum_hists, sum_dir):
                 sum_dir.cd()
                 gROOT.ProcessLine(".x " + macro_file)
                 # save the canvas - the name depends just on the file name
-                print_canvas_png(macro_file.split('/')[-1])  
+                img_fname = macro_file.split('/')[-1]
+                #print "SPLIT =  " +  img_fname[0:-2] + " / " + img_fname[-2:]
+                if img_fname[-2:] == ".C":
+                    img_fname = img_fname[0:-2]
+                print_canvas_png(img_fname)
             else:
                 print "could not find macro = " + macro_file + " !"
 
+def extract_macro_hists(macro):
+    macro_hists = []
+    if not os.path.isfile(macro):
+        # say something?
+        return
+    # read through the file and extract the histograms tagged for RootSpy summing
+    f = open(macro)
+    for line in f:
+        tokens = line.strip().split()
+        #print str(tokens)
+        # histograms are tagged as  "// hnamepath: /path/to/a/hist"
+        if (len(tokens) < 3):
+            continue
+        if ( (tokens[0] == "//") and (tokens[1] == "hnamepath:") ):
+            hnamepath = tokens[2]
+            hname = hnamepath.split('/')[-1]
+            if hname not in macro_hists:
+                macro_hists.append(hname)
+    return macro_hists
+
+
 def main(argv):
-    global CANVAS_WIDTH,CANVAS_HEIGHT,OUTPUT_DIRECTORY
+    global CANVAS_WIDTH,CANVAS_HEIGHT,OUTPUT_DIRECTORY,HISTS_TO_PLOT,HISTS_TO_SUM,MACROS_TO_RUN
     
     # read in command line args
     parser = OptionParser(usage = "make_monitoring_plots.py [options] <list of files to process>")
@@ -251,12 +282,23 @@ def main(argv):
         print "No macros to save!"
 
 
+    ## we need to sum both the histograms that we plotting by themselves
+    ## and the histograms used by the macros we want
+    HISTS_TO_SUM = HISTS_TO_PLOT
+    if(len(MACROS_TO_RUN) > 0):
+        for macro in MACROS_TO_RUN:
+            new_macros = extract_macro_hists(macro)
+            # merge lists without duplicates
+            HISTS_TO_SUM = list( set(HISTS_TO_SUM) | set(new_macros) )
+
+    #print " HISTS_TO_SUM = " + str(sorted(HISTS_TO_SUM))
+
     ## initializing monitoring DB connection
     mondb = datamon_db()
 
     ## save mapping of  "hnamepath => ROOT histogram object"
     sum_hists = {}
-    sum_dir = TMemFile("monitor_tmp.root","RECREATE")
+    sum_dir = TMemFile(".monitor_tmp.root","RECREATE")
 
     ## run over data to make some plots
     for filename in file_list:
