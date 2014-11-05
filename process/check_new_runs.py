@@ -84,10 +84,10 @@ for (run,fname) in run_numbers_on_disk:
         monitoring_data_dir = join(MONITORING_OUTPUT_DIR, RUN_PERIOD, ("Run%06d" % run))
         mkdir_p(monitoring_data_dir)
         cmdargs += "--output_dir " + monitoring_data_dir
-        cmdargs += join(ONLINE_ROOT_DIR,monitoring_data_dir)
-        #make_monitoring_plots.main(cmdargs.split())
+        cmdargs += join(ONLINE_ROOT_DIR,fname)
+        make_monitoring_plots.main(cmdargs.split())
         cmdargs  = str(run) + " " + str(VERSION_NUMBER) + " 0 " + join(ONLINE_ROOT_DIR,fname)
-        #process_monitoring_data.main(cmdargs.split()) 
+        process_monitoring_data.main(cmdargs.split()) 
         
         ## we did process the run!
         run_list.append(run)

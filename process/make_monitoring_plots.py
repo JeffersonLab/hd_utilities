@@ -144,13 +144,13 @@ def SavePlots(sum_hists, sum_dir):
                 c1.Clear()
                 sum_dir.cd()
                 gROOT.ProcessLine(".x " + macro_file)
-                # save the canvas
-                print_canvas_png(macro_file)
-            #else:
-            #    print "could not find macro = " + macro_file + " !"
+                # save the canvas - the name depends just on the file name
+                print_canvas_png(macro_file.split('/')[-1])  
+            else:
+                print "could not find macro = " + macro_file + " !"
 
 def main(argv):
-    global CANVAS_WIDTH,CANVAS_HEIGHT
+    global CANVAS_WIDTH,CANVAS_HEIGHT,OUTPUT_DIRECTORY
     
     # read in command line args
     parser = OptionParser(usage = "make_monitoring_plots.py [options] <list of files to process>")
@@ -178,6 +178,7 @@ def main(argv):
 #        print "Please specify either -i or -f options, not both!"
 #        parser.print_help()
 #        exit(0)
+
 
     if(options.output_dir):
         if(os.path.isdir(options.output_dir)):
