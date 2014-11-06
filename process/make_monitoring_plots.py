@@ -163,7 +163,7 @@ def extract_macro_hists(macro):
     macro_hists = []
     if not os.path.isfile(macro):
         # say something?
-        return
+        return macro_hists
     # read through the file and extract the histograms tagged for RootSpy summing
     f = open(macro)
     for line in f:
@@ -289,6 +289,8 @@ def main(argv):
         for macro in MACROS_TO_RUN:
             new_macros = extract_macro_hists(macro)
             # merge lists without duplicates
+            if not new_macros or len(new_macros) == 0:
+                continue
             HISTS_TO_SUM = list( set(HISTS_TO_SUM) | set(new_macros) )
 
     #print " HISTS_TO_SUM = " + str(sorted(HISTS_TO_SUM))

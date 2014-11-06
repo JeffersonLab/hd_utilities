@@ -2,7 +2,7 @@
 # Set environmental variables for cron job
 
 # Load standard environment for ROOT
-source /u/home/gluex/halld/setup_jlab_commissioning.csh
+source /u/home/gluex/setup_jlab_commissioning.csh
 
 # load ROOT python bindings
 setenv PYTHONPATH $ROOTSYS/lib

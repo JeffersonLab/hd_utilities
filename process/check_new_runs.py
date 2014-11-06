@@ -21,8 +21,8 @@ BASE_ONLINEMON_DIR = "/work/halld/online_monitoring"
 PROCESSED_RUN_LIST_FILE = "processedrun.lst"
 ONLINE_ROOT_DIR = BASE_ONLINEMON_DIR + '/root'
 
-MIN_RUN_NUMBER = 750
-VERSION_NUMBER  =  -1   ## hardcode for now
+MIN_RUN_NUMBER = 946
+VERSION_NUMBER  =  0   ## hardcode for now
 MONITORING_OUTPUT_DIR = "/work/halld/data_monitoring"
 RUN_PERIOD = "RunPeriod-2014-10"
 
@@ -66,6 +66,15 @@ files_on_disk = [ f for f in listdir(ONLINE_ROOT_DIR) if (isfile(join(ONLINE_ROO
 run_numbers_on_disk = [ (int(fname[13:18]),fname) for fname in files_on_disk if (int(fname[13:18])>=MIN_RUN_NUMBER) ]
 run_numbers_on_disk.sort(key=lambda runinfo: runinfo[0])
 
+# save processed runs - overwrite save files
+try:
+    runlist_file = open(PROCESSED_RUN_LIST_FILE,'a')
+except IOError as e:
+    print "I/O error({0}): {1}".format(e.errno, e.strerror)
+except:
+    print "Unexpected error:", sys.exc_info()[0]
+    sys.exit(0)
+
 # do the heavy work
 for (run,fname) in run_numbers_on_disk:
     ## if we haven't already processed the run, make the plots and add its info to the DB
@@ -80,30 +89,26 @@ for (run,fname) in run_numbers_on_disk:
         ## TODO: create version info?
         
         ## process monitoring data
-        cmdargs  = "--histogram_list monitoring_histograms_to_plot --macro_list monitoring_macros_to_plot "
+        cmdargs  = " --histogram_list /u/home/gluex/halld/monitoring/process/histograms_to_monitor" 
+        cmdargs += " --macro_list /u/home/gluex/halld/monitoring/process/macros_to_monitor "
         monitoring_data_dir = join(MONITORING_OUTPUT_DIR, RUN_PERIOD, ("Run%06d" % run))
-        mkdir_p(monitoring_data_dir)
+        #mkdir_p(monitoring_data_dir)
+        os.system("mkdir -p " + monitoring_data_dir)  ## need error checks
         cmdargs += "--output_dir " + monitoring_data_dir
-        cmdargs += join(ONLINE_ROOT_DIR,fname)
+        cmdargs += "  " + join(ONLINE_ROOT_DIR,fname)
+        print "  creating plots..."
         make_monitoring_plots.main(cmdargs.split())
-        cmdargs  = str(run) + " " + str(VERSION_NUMBER) + " 0 " + join(ONLINE_ROOT_DIR,fname)
+
+        cmdargs  = str(run) + " " + str(VERSION_NUMBER) + " " + join(ONLINE_ROOT_DIR,fname)
+        print "  analyzing DB info..."
         process_monitoring_data.main(cmdargs.split()) 
         
         ## we did process the run!
         run_list.append(run)
-
-
-# save processed runs - overwrite save files
-try:
-    runlist_file = open(PROCESSED_RUN_LIST_FILE,'w')
-    for run in sorted(run_list): 
+        # save this face
         print>>runlist_file, str(run)
-    runlist_file.close()
-except IOError as e:
-    print "I/O error({0}): {1}".format(e.errno, e.strerror)
-except:
-    print "Unexpected error:", sys.exc_info()[0]
-    sys.exit(0)
+
+
 
 
     

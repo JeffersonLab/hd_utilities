@@ -77,7 +77,7 @@ def ProcessCDC(db, root_file):
         avg_hits_per_superlayer.append( nhits / nstraw )
 
     ## insert into DB
-    mondb.AddCDCHits(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, avg_hits_per_superlayer)
+    db.AddCDCHits(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, avg_hits_per_superlayer)
 
     ## calculate calibration info
 
@@ -105,7 +105,7 @@ def ProcessSC(db, root_file):
         avg_hits_per_sector.append( sc_occupancy.GetBinContent(paddle+1) )  ## histograms start counting at 1
 
     ## insert into DB
-    mondb.AddSCHits(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, avg_hits_per_sector)
+    db.AddSCHits(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, avg_hits_per_sector)
 
     ## calculate calibration info
 
@@ -145,7 +145,7 @@ def ProcessFDC(db, root_file):
         fdc_hits_per_channel.SetBinContent(3*wirelayer+2, fdc_wire_occupancy.GetBinContent(wirelayer+1) / NUM_FDC_WIRES)
         
     ## insert into DB
-    mondb.AddFDCHits(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, [fdc_hits_per_channel.GetBinContent(x+1) for x in range(72)])
+    db.AddFDCHits(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, [fdc_hits_per_channel.GetBinContent(x+1) for x in range(72)])
 
     ## calculate calibration info
 
@@ -203,7 +203,7 @@ def ProcessFCAL(db, root_file):
     hits_per_channel.append( 0 )
 
     ## insert into DB
-    mondb.AddFCALHits(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, hits_per_channel)
+    db.AddFCALHits(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, hits_per_channel)
 
     ## calculate calibration info
 
@@ -277,7 +277,7 @@ def ProcessBCAL(db, root_file):
         avg_hits_per_quadrant += [nhits_layer3_up, nhits_layer3_down, nhits_layer4_up, nhits_layer4_down]
 
     ## insert into DB
-    mondb.AddBCALHits(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, avg_hits_per_quadrant)
+    db.AddBCALHits(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, avg_hits_per_quadrant)
 
     ## monitor BCAL energies, if available
     bcal_energies = root_file.Get(ROOTDIR_PREFIX+"bcal/bcal_fadc_occ")
@@ -285,53 +285,53 @@ def ProcessBCAL(db, root_file):
     if(bcal_energies == None):
         print "couldn't find BCAL energies-per-channel histogram, skipping..."
     else:
-    for quadrant in range(4):
-        for ring in range(12):
-            # layer 1
-            energies_layer1_down = bcal_energies.GetBinContent(4*quadrant+ring+1, 1)
-            energies_layer1_down += bcal_energies.GetBinContent(4*quadrant+ring+1, 5)
-            energies_layer1_down += bcal_energies.GetBinContent(4*quadrant+ring+1, 9)
-            energies_layer1_down += bcal_energies.GetBinContent(4*quadrant+ring+1, 13)
-            energies_layer1_up = bcal_energies.GetBinContent(4*quadrant+ring+1, 18)
-            energies_layer1_up += bcal_energies.GetBinContent(4*quadrant+ring+1, 22)
-            energies_layer1_up += bcal_energies.GetBinContent(4*quadrant+ring+1, 26)
-            energies_layer1_up += bcal_energies.GetBinContent(4*quadrant+ring+1, 30)
+        for quadrant in range(4):
+            for ring in range(12):
+                # layer 1
+                energies_layer1_down = bcal_energies.GetBinContent(4*quadrant+ring+1, 1)
+                energies_layer1_down += bcal_energies.GetBinContent(4*quadrant+ring+1, 5)
+                energies_layer1_down += bcal_energies.GetBinContent(4*quadrant+ring+1, 9)
+                energies_layer1_down += bcal_energies.GetBinContent(4*quadrant+ring+1, 13)
+                energies_layer1_up = bcal_energies.GetBinContent(4*quadrant+ring+1, 18)
+                energies_layer1_up += bcal_energies.GetBinContent(4*quadrant+ring+1, 22)
+                energies_layer1_up += bcal_energies.GetBinContent(4*quadrant+ring+1, 26)
+                energies_layer1_up += bcal_energies.GetBinContent(4*quadrant+ring+1, 30)
                     
-            # layer 2
-            energies_layer2_down = bcal_energies.GetBinContent(4*quadrant+ring+1, 2)
-            energies_layer2_down += bcal_energies.GetBinContent(4*quadrant+ring+1, 6)
-            energies_layer2_down += bcal_energies.GetBinContent(4*quadrant+ring+1, 10)
-            energies_layer2_down += bcal_energies.GetBinContent(4*quadrant+ring+1, 14)
-            energies_layer2_up = bcal_energies.GetBinContent(4*quadrant+ring+1, 19)
-            energies_layer2_up += bcal_energies.GetBinContent(4*quadrant+ring+1, 23)
-            energies_layer2_up += bcal_energies.GetBinContent(4*quadrant+ring+1, 27)
-            energies_layer2_up += bcal_energies.GetBinContent(4*quadrant+ring+1, 31)
+                # layer 2
+                energies_layer2_down = bcal_energies.GetBinContent(4*quadrant+ring+1, 2)
+                energies_layer2_down += bcal_energies.GetBinContent(4*quadrant+ring+1, 6)
+                energies_layer2_down += bcal_energies.GetBinContent(4*quadrant+ring+1, 10)
+                energies_layer2_down += bcal_energies.GetBinContent(4*quadrant+ring+1, 14)
+                energies_layer2_up = bcal_energies.GetBinContent(4*quadrant+ring+1, 19)
+                energies_layer2_up += bcal_energies.GetBinContent(4*quadrant+ring+1, 23)
+                energies_layer2_up += bcal_energies.GetBinContent(4*quadrant+ring+1, 27)
+                energies_layer2_up += bcal_energies.GetBinContent(4*quadrant+ring+1, 31)
                     
-            # layer 3
-            energies_layer3_down = bcal_energies.GetBinContent(4*quadrant+ring+1, 3)
-            energies_layer3_down += bcal_energies.GetBinContent(4*quadrant+ring+1, 7)
-            energies_layer3_down += bcal_energies.GetBinContent(4*quadrant+ring+1, 11)
-            energies_layer3_down += bcal_energies.GetBinContent(4*quadrant+ring+1, 15)
-            energies_layer3_up = bcal_energies.GetBinContent(4*quadrant+ring+1, 20)
-            energies_layer3_up += bcal_energies.GetBinContent(4*quadrant+ring+1, 24)
-            energies_layer3_up += bcal_energies.GetBinContent(4*quadrant+ring+1, 28)
-            energies_layer3_up += bcal_energies.GetBinContent(4*quadrant+ring+1, 32)
+                # layer 3
+                energies_layer3_down = bcal_energies.GetBinContent(4*quadrant+ring+1, 3)
+                energies_layer3_down += bcal_energies.GetBinContent(4*quadrant+ring+1, 7)
+                energies_layer3_down += bcal_energies.GetBinContent(4*quadrant+ring+1, 11)
+                energies_layer3_down += bcal_energies.GetBinContent(4*quadrant+ring+1, 15)
+                energies_layer3_up = bcal_energies.GetBinContent(4*quadrant+ring+1, 20)
+                energies_layer3_up += bcal_energies.GetBinContent(4*quadrant+ring+1, 24)
+                energies_layer3_up += bcal_energies.GetBinContent(4*quadrant+ring+1, 28)
+                energies_layer3_up += bcal_energies.GetBinContent(4*quadrant+ring+1, 32)
                     
-            # layer 4
-            energies_layer4_down = bcal_energies.GetBinContent(4*quadrant+ring+1, 4)
-            energies_layer4_down += bcal_energies.GetBinContent(4*quadrant+ring+1, 8)
-            energies_layer4_down += bcal_energies.GetBinContent(4*quadrant+ring+1, 12)
-            energies_layer4_down += bcal_energies.GetBinContent(4*quadrant+ring+1, 16)
-            energies_layer4_up = bcal_energies.GetBinContent(4*quadrant+ring+1, 21)
-            energies_layer4_up += bcal_energies.GetBinContent(4*quadrant+ring+1, 25)
-            energies_layer4_up += bcal_energies.GetBinContent(4*quadrant+ring+1, 31)
-            energies_layer4_up += bcal_energies.GetBinContent(4*quadrant+ring+1, 33)
+                # layer 4
+                energies_layer4_down = bcal_energies.GetBinContent(4*quadrant+ring+1, 4)
+                energies_layer4_down += bcal_energies.GetBinContent(4*quadrant+ring+1, 8)
+                energies_layer4_down += bcal_energies.GetBinContent(4*quadrant+ring+1, 12)
+                energies_layer4_down += bcal_energies.GetBinContent(4*quadrant+ring+1, 16)
+                energies_layer4_up = bcal_energies.GetBinContent(4*quadrant+ring+1, 21)
+                energies_layer4_up += bcal_energies.GetBinContent(4*quadrant+ring+1, 25)
+                energies_layer4_up += bcal_energies.GetBinContent(4*quadrant+ring+1, 31)
+                energies_layer4_up += bcal_energies.GetBinContent(4*quadrant+ring+1, 33)
 
-        avg_hit_energy_per_quadrant += [energies_layer1_up, energies_layer1_down, energies_layer2_up, energies_layer2_down]
-        avg_hit_energy_per_quadrant += [energies_layer3_up, energies_layer3_down, energies_layer4_up, energies_layer4_down]
+            avg_hit_energy_per_quadrant += [energies_layer1_up, energies_layer1_down, energies_layer2_up, energies_layer2_down]
+            avg_hit_energy_per_quadrant += [energies_layer3_up, energies_layer3_down, energies_layer4_up, energies_layer4_down]
 
-    ## insert into DB
-    mondb.AddBCALEnergies(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, avg_hit_energy_per_quadrant)
+        ## insert into DB
+        db.AddBCALEnergies(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, avg_hit_energy_per_quadrant)
 
 
                     
@@ -384,7 +384,7 @@ def ProcessTOF(db, root_file):
         plane2_down.append(nhitsdown/11)
 
     ## insert into DB
-    mondb.AddTOFHits(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, plane1_up+plane1_down+plane2_up+plane2_down)
+    db.AddTOFHits(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, plane1_up+plane1_down+plane2_up+plane2_down)
 
     ## calculate calibration info
 
@@ -419,7 +419,7 @@ def ProcessTAGH(db, root_file):
     avg_hits_per_sector += [ (tagh_occupancy.GetBinContent(210)+tagh_occupancy.GetBinContent(211)+tagh_occupancy.GetBinContent(212))/3. ]
 
     ## insert into DB
-    mondb.AddTAGHHits(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, avg_hits_per_sector)
+    db.AddTAGHHits(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, avg_hits_per_sector)
 
     ## calculate calibration info
 
@@ -460,7 +460,7 @@ def ProcessTAGM(db, root_file):
     avg_hits_per_sector += [ tagm_occupancy.GetBinContent(98) ]
 
     ## insert into DB
-    mondb.AddTAGMHits(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, avg_hits_per_sector)
+    db.AddTAGMHits(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, avg_hits_per_sector)
 
     ## calculate calibration info
 
@@ -544,7 +544,7 @@ def ProcessAnalysisInfo(db, root_file):
     analysis_data.append( SumHistContents(root_file, "Independent/Hist_NumReconstructedObjects/NumTrackSCMatches") )
 
     ## insert into DB
-    mondb.AddAnalysisInfo(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, analysis_data)
+    db.AddAnalysisInfo(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, analysis_data)
 
 
 
@@ -614,6 +614,9 @@ def main(argv):
 
     # Process higher-level data
     ProcessAnalysisInfo(mondb, root_file)
+
+    # cleanup
+    root_file.Close()
 
 
 if __name__ == "__main__":

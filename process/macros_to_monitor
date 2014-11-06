@@ -13,12 +13,19 @@
 /group/halld/Software/builds/online/monitoring/src/plugins/TAGH_online/TAGH_hit.C
 # RECONSTRUCTION
 /group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_NumHighLevelObjects.C
-/group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_NumLowLevelObjects.C
+/group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_NumLowLevelObjects_p1.C
+/group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_NumLowLevelObjects_p2.C
 /group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_EventInfo.C
-/group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_TOFReconstruction.C
-/group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_SCReconstruction.C
-/group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_FCALReconstruction.C
-/group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_BCALReconstruction.C
+/group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_TOFReconstruction_p1.C
+/group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_TOFReconstruction_p2.C
+/group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_SCReconstruction_p1.C
+/group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_SCReconstruction_p2.C
+/group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_SCReconstruction_p3.C
+/group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_FCALReconstruction_p1.C
+/group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_FCALReconstruction_p2.C
+/group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_BCALReconstruction_p1.C
+/group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_BCALReconstruction_p2.C
 /group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Tracking.C
-/group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Kinematics.C
+/group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Kinematics_p1.C
+/group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Kinematics_p2.C
 
