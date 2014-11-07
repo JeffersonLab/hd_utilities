@@ -1,0 +1,9 @@
+Full b1pi analysis including all steps:
+a) Geant simmulation      -> hdgeant
+b) smearing               -> mcsmear
+c) analysis               -> hd_root --plugin=phys_tree
+d) generating histograms  -> anal1.C (needs b1pi_xxx.C)
+e) creating plots         -> makeallplots.C
+
+all steps are done withing one scriped called "mkevents.sh"
+
