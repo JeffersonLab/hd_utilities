@@ -119,10 +119,38 @@ def ProcessFDC(db, root_file):
     global RUN_NUMBER,VERSION_NUMBER,FILE_NUMBER
 
     avg_hits_per_plane = []
+    fdc_avg_hits_per_channel = []
     number_of_events = -1 
     NUM_FDC_STRIPS = 192
     NUM_FDC_WIRES = 96
 
+    plane = 0
+    for package in range(1,5):
+        for chamber in range(1,7):
+            # each chamber has 3 planes: cathode strip/wire/cathode strip
+            nhits = 0
+            hname = "FDC/Package_%d/fdc_pack%d_chamber%d_upstream_cathode_occ" % (package,package,chamber)
+            fdc_strip_occ = root_file.Get(ROOTDIR_PREFIX+hname)
+            if(fdc_strip_occ != None):
+                nhits = fdc_strip_occ.Integral()
+            fdc_avg_hits_per_channel.append( nhits/NUM_FDC_STRIPS )
+
+            nhits = 0
+            hname = "FDC/Package_%d/fdc_pack%d_chamber%d_wire_occ" % (package,package,chamber)
+            fdc_wire_occ = root_file.Get(ROOTDIR_PREFIX+hname)
+            if(fdc_wire_occ != None):
+                nhits = fdc_wire_occ.Integral()
+            fdc_avg_hits_per_channel.append( nhits/NUM_FDC_WIRES )
+
+            nhits = 0
+            hname = "FDC/Package_%d/fdc_pack%d_chamber%d_downstream_cathode_occ" % (package,package,chamber)
+            fdc_strip_occ = root_file.Get(ROOTDIR_PREFIX+hname)
+            if(fdc_strip_occ != None):
+                nhits = fdc_strip_occ.Integral()
+            fdc_avg_hits_per_channel.append( nhits/NUM_FDC_STRIPS )
+
+    ### Old calculation with 2D histograms
+    """
     fdc_num_events = root_file.Get(ROOTDIR_PREFIX+"FDC/fdc_num_events")
     if(fdc_num_events != None):
         number_of_events = fdc_num_events.GetBinContent(1)
@@ -144,9 +172,11 @@ def ProcessFDC(db, root_file):
     for wirelayer in range(24):
 #        print " FDC layer " + str(3*wirelayer+2) + " = " + str(fdc_wire_occupancy.GetBinContent(wirelayer+1) / NUM_FDC_WIRES)
         fdc_hits_per_channel.SetBinContent(3*wirelayer+2, fdc_wire_occupancy.GetBinContent(wirelayer+1) / NUM_FDC_WIRES)
-        
+    """
+     
     ## insert into DB
-    db.AddFDCHits(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, number_of_events, [fdc_hits_per_channel.GetBinContent(x+1) for x in range(72)])
+    db.AddFDCHits(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, number_of_events, fdc_avg_hits_per_channel)
+    #db.AddFDCHits(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, number_of_events, [fdc_hits_per_channel.GetBinContent(x+1) for x in range(72)])
 
     ## calculate calibration info
 
