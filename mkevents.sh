@@ -1,6 +1,6 @@
 #!/bin/tcsh -f
 
-set NEVENTS=20
+set NEVENTS=10000
 set VERTEX="0 0 50 80"  # x y zmin zmax
 set NTHREADS=1
 set b1pi_input=${HALLD_HOME}/src/programs/Simulation/genr8/InputFiles/b1_pi.input
