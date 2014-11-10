@@ -27,6 +27,7 @@ VERSION_NUMBER  =  2   ## hardcode for now
 
 MAKE_PLOTS = True
 MAKE_DB_SUMMARY = True
+FORCE_PROCESSING = False
 ############################################
 
 def mkdir_p(path):
@@ -46,6 +47,8 @@ parser.add_option("-p","--disable_plots", dest="disable_plotting", action="store
                   help="Don't make PNG files for web display")
 parser.add_option("-d","--disable_summary", dest="disable_db_summary", action="store_true",
                   help="Don't calculate summary information and store it in the DB")
+parser.add_option("-f","--force", dest="force", action="store_true",
+                  help="Ignore list of already processed runs")
 
 (options, args) = parser.parse_args(sys.argv)
 
@@ -60,6 +63,8 @@ if(options.disable_plotting):
     MAKE_PLOTS = False
 if(options.disable_db_summary):
     MAKE_DB_SUMMARY = False
+if(options.force):
+    FORCE = True
 
 # check to see if the input directory is real
 if not os.path.isdir(INPUT_DIRECTORY):
@@ -78,7 +83,7 @@ if not os.path.exists(OUTPUT_DIRECTORY):
 
 # allow for incremental processing ...
 run_list = []
-if os.path.exists( join(OUTPUT_DIRECTORY,PROCESSED_RUN_LIST_FILE) ):
+if not FORCE and os.path.exists( join(OUTPUT_DIRECTORY,PROCESSED_RUN_LIST_FILE) ):
     # read in list of runs we've already processed
     try:
         runlist_file = open(join(OUTPUT_DIRECTORY,PROCESSED_RUN_LIST_FILE))
