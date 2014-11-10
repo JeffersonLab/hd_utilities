@@ -16,6 +16,7 @@ rm -rf $RUN_DIR
 mkdir -pv $RUN_DIR
 cd $RUN_DIR
 cp -pr $SCRIPTS/b1pi_test/* .
+cp -pr $SCRIPTS/b1pi_test/macros/* .
 ./mkevents.sh
 export PLOTDIR=/group/halld/www/halldweb1/html/b1pi/$TODAYS_DATE/$BMS_OSNAME
 mkdir -pv $PLOTDIR
