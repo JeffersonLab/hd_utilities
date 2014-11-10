@@ -23,7 +23,8 @@ RUN_NUMBER = -1
 VERSION_NUMBER = -1
 FILE_NUMBER = 1
 
-ROOTDIR_PREFIX = "rootspy/"
+#ROOTDIR_PREFIX = "rootspy/"
+ROOTDIR_PREFIX = ""
 
 # the canvas
 #c1  = TCanvas("c1","",CANVAS_WIDTH,CANVAS_HEIGHT)
@@ -77,7 +78,7 @@ def ProcessCDC(db, root_file):
         avg_hits_per_superlayer.append( nhits / nstraw )
 
     ## insert into DB
-    db.AddCDCHits(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, avg_hits_per_superlayer)
+    db.AddCDCHits(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, number_of_events, avg_hits_per_superlayer)
 
     ## calculate calibration info
 
@@ -105,7 +106,7 @@ def ProcessSC(db, root_file):
         avg_hits_per_sector.append( sc_occupancy.GetBinContent(paddle+1) )  ## histograms start counting at 1
 
     ## insert into DB
-    db.AddSCHits(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, avg_hits_per_sector)
+    db.AddSCHits(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, number_of_events, avg_hits_per_sector)
 
     ## calculate calibration info
 
@@ -145,7 +146,7 @@ def ProcessFDC(db, root_file):
         fdc_hits_per_channel.SetBinContent(3*wirelayer+2, fdc_wire_occupancy.GetBinContent(wirelayer+1) / NUM_FDC_WIRES)
         
     ## insert into DB
-    db.AddFDCHits(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, [fdc_hits_per_channel.GetBinContent(x+1) for x in range(72)])
+    db.AddFDCHits(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, number_of_events, [fdc_hits_per_channel.GetBinContent(x+1) for x in range(72)])
 
     ## calculate calibration info
 
@@ -203,7 +204,7 @@ def ProcessFCAL(db, root_file):
     hits_per_channel.append( 0 )
 
     ## insert into DB
-    db.AddFCALHits(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, hits_per_channel)
+    db.AddFCALHits(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, number_of_events, hits_per_channel)
 
     ## calculate calibration info
 
@@ -277,7 +278,7 @@ def ProcessBCAL(db, root_file):
         avg_hits_per_quadrant += [nhits_layer3_up, nhits_layer3_down, nhits_layer4_up, nhits_layer4_down]
 
     ## insert into DB
-    db.AddBCALHits(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, avg_hits_per_quadrant)
+    db.AddBCALHits(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, number_of_events, avg_hits_per_quadrant)
 
     ## monitor BCAL energies, if available
     bcal_energies = root_file.Get(ROOTDIR_PREFIX+"bcal/bcal_fadc_occ")
@@ -331,7 +332,7 @@ def ProcessBCAL(db, root_file):
             avg_hit_energy_per_quadrant += [energies_layer3_up, energies_layer3_down, energies_layer4_up, energies_layer4_down]
 
         ## insert into DB
-        db.AddBCALEnergies(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, avg_hit_energy_per_quadrant)
+        db.AddBCALEnergies(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, number_of_events, avg_hit_energy_per_quadrant)
 
 
                     
@@ -384,7 +385,7 @@ def ProcessTOF(db, root_file):
         plane2_down.append(nhitsdown/11)
 
     ## insert into DB
-    db.AddTOFHits(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, plane1_up+plane1_down+plane2_up+plane2_down)
+    db.AddTOFHits(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, number_of_events, plane1_up+plane1_down+plane2_up+plane2_down)
 
     ## calculate calibration info
 
@@ -419,7 +420,7 @@ def ProcessTAGH(db, root_file):
     avg_hits_per_sector += [ (tagh_occupancy.GetBinContent(210)+tagh_occupancy.GetBinContent(211)+tagh_occupancy.GetBinContent(212))/3. ]
 
     ## insert into DB
-    db.AddTAGHHits(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, avg_hits_per_sector)
+    db.AddTAGHHits(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, number_of_events, avg_hits_per_sector)
 
     ## calculate calibration info
 
@@ -460,7 +461,7 @@ def ProcessTAGM(db, root_file):
     avg_hits_per_sector += [ tagm_occupancy.GetBinContent(98) ]
 
     ## insert into DB
-    db.AddTAGMHits(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, avg_hits_per_sector)
+    db.AddTAGMHits(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, number_of_events, avg_hits_per_sector)
 
     ## calculate calibration info
 
@@ -544,13 +545,13 @@ def ProcessAnalysisInfo(db, root_file):
     analysis_data.append( SumHistContents(root_file, "Independent/Hist_NumReconstructedObjects/NumTrackSCMatches") )
 
     ## insert into DB
-    db.AddAnalysisInfo(RUN_NUMBER, VERSION_NUMBER, FILE_NUMBER, number_of_events, analysis_data)
+    db.AddAnalysisInfo(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, number_of_events, analysis_data)
 
 
 
 
 def main(argv):
-    global RUN_NUMBER,VERSION_NUMBER,FILE_NUMBER
+    global RUN_NUMBER,VERSION_NUMBER,FILE_NUMBER,ROOTDIR_PREFIX
     
     # read in command line args
     parser = OptionParser(usage = "process_monitoring_data.py [options] run_number version_number file.root")
@@ -558,12 +559,16 @@ def main(argv):
                       help="Directory where output files will be stored")
     parser.add_option("-F","--file_number", dest="file_number",
                       help="Specify the file number in the run that we are monitoring")
+    parser.add_option("-R","--root_dir", dest="root_dir",
+                      help="The base ROOT directory in which the histograms are stored")
+
 
     (options, args) = parser.parse_args(argv)
 
     if(len(args) < 3):
         parser.print_help()
-        exit(0)
+        return 
+        #sys.exit(0)
 
 
     run_number = int(args[0])
@@ -577,7 +582,9 @@ def main(argv):
             OUTPUT_DIRECTORY = options.output_dir
         else:
             print "WARNING: Output directory '"+options.output_dir+"' does not exist, defaulting to current directory..."
-        
+    if(options.root_dir):
+        ROOTDIR_PREFIX = options.root_dir
+
     # sanity checks
     if(run_number > 0):
         RUN_NUMBER = run_number

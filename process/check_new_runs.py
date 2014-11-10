@@ -21,7 +21,7 @@ BASE_ONLINEMON_DIR = "/work/halld/online_monitoring"
 PROCESSED_RUN_LIST_FILE = "processedrun.lst"
 ONLINE_ROOT_DIR = BASE_ONLINEMON_DIR + '/root'
 
-MIN_RUN_NUMBER = 946
+MIN_RUN_NUMBER = 975
 VERSION_NUMBER  =  0   ## hardcode for now
 MONITORING_OUTPUT_DIR = "/work/halld/data_monitoring"
 RUN_PERIOD = "RunPeriod-2014-10"
@@ -91,6 +91,7 @@ for (run,fname) in run_numbers_on_disk:
         ## process monitoring data
         cmdargs  = " --histogram_list /u/home/gluex/halld/monitoring/process/histograms_to_monitor" 
         cmdargs += " --macro_list /u/home/gluex/halld/monitoring/process/macros_to_monitor "
+        cmdargs += " --root_dir rootspy/"
         monitoring_data_dir = join(MONITORING_OUTPUT_DIR, RUN_PERIOD, ("Run%06d" % run))
         #mkdir_p(monitoring_data_dir)
         os.system("mkdir -p " + monitoring_data_dir)  ## need error checks

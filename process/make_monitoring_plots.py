@@ -275,7 +275,8 @@ def main(argv):
     ## sanity checks
     if(len(file_list) == 0):
         print "No input files given!"
-        exit(0)
+        return
+        #sys.exit(0)
     if(len(HISTS_TO_PLOT) == 0):
         print "No histograms to save!"
     if(len(MACROS_TO_RUN) == 0):
