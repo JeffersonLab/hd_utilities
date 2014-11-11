@@ -20,12 +20,21 @@ from datamon_db import datamon_db
 ## Globals
 ##########################################################
 
+
 CANVAS_WIDTH = 800
 CANVAS_HEIGHT = 600
 
 OUTPUT_DIRECTORY = "."
 #PDF_FILE_NAME = "output"
 WEB_OUTPUT = True
+
+def init():
+    CANVAS_WIDTH = 800
+    CANVAS_HEIGHT = 600
+
+    OUTPUT_DIRECTORY = "."
+    WEB_OUTPUT = True
+    
 
 # the canvas
 c1  = TCanvas("c1","",CANVAS_WIDTH,CANVAS_HEIGHT)
@@ -51,9 +60,9 @@ HISTS_TO_PLOT += [ "NumReconstructedParticles", "NumGoodReconstructedParticles",
                    "NumTrackFCALMatches","NumTrackTOFMatches","NumTrackSCMatches" ]
 """
 
-HISTS_TO_PLOT = []
-HISTS_TO_SUM = []
-MACROS_TO_RUN = []
+#HISTS_TO_PLOT = []
+#HISTS_TO_SUM = []
+#MACROS_TO_RUN = []
 
 ##########################################################
 ## Histogram drawing definitions
@@ -89,9 +98,7 @@ def SumHistContents(root_file, hist_path):
     return sum
              
 
-def AccessHistogramsRecursively(the_dir, path, sum_hists, sum_dir):
-    global HISTS_TO_SUM
-
+def AccessHistogramsRecursively(the_dir, path, sum_hists, sum_dir, hists_to_sum):
     # loop over all keys in the current directory
     key_iter = TIter(the_dir.GetListOfKeys())
     key = key_iter()
@@ -102,7 +109,7 @@ def AccessHistogramsRecursively(the_dir, path, sum_hists, sum_dir):
 
         if(isinstance(obj,TH1)):
             #print "histogram =  " + str(obj.GetName())
-            if obj.GetName() not in HISTS_TO_SUM:
+            if obj.GetName() not in hists_to_sum:
                 key = key_iter()
                 continue
 
@@ -119,17 +126,17 @@ def AccessHistogramsRecursively(the_dir, path, sum_hists, sum_dir):
             new_sum_dir = sum_dir.GetDirectory(key.GetName())
             if(not new_sum_dir):
                 new_sum_dir = sum_dir.mkdir(key.GetName())
-            AccessHistogramsRecursively(obj, obj_pathname, sum_hists, new_sum_dir)
+            AccessHistogramsRecursively(obj, obj_pathname, sum_hists, new_sum_dir, hists_to_sum)
         # move to next item in the directory
         key = key_iter()
     
 
-def SavePlots(sum_hists, sum_dir):
-    global WEB_OUTPUT,MACROS_TO_RUN,HISTS_TO_PLOT
+def SavePlots(sum_hists, sum_dir, hists_to_plot, macros_to_run):
+    global WEB_OUTPUT
     # plot individual histograms
     if(len(sum_hists) > 0):
         for (hnamepath,h) in sum_hists.items():
-            if h.GetName() not in HISTS_TO_PLOT:
+            if h.GetName() not in hists_to_plot: 
                 continue
             if(isinstance(h,TH2)):
                 plot_2dhist(h)
@@ -142,8 +149,8 @@ def SavePlots(sum_hists, sum_dir):
                 print_canvas_png(hnamepath)
 
     # plot RootSpy macros
-    if(len(MACROS_TO_RUN) > 0):
-        for macro_file in MACROS_TO_RUN:
+    if(len(macros_to_run) > 0):
+        for macro_file in macros_to_run: 
             if os.path.isfile(macro_file):
                 #print "running macro = " + macro_file
                 # run the macro
@@ -181,7 +188,13 @@ def extract_macro_hists(macro):
 
 
 def main(argv):
-    global CANVAS_WIDTH,CANVAS_HEIGHT,OUTPUT_DIRECTORY,HISTS_TO_PLOT,HISTS_TO_SUM,MACROS_TO_RUN
+    global CANVAS_WIDTH,CANVAS_HEIGHT,OUTPUT_DIRECTORY
+    
+    init()
+    # initialize lists used to store data
+    hists_to_plot = []
+    hists_to_sum  = []
+    macros_to_run = []
     
     # read in command line args
     parser = OptionParser(usage = "make_monitoring_plots.py [options] <list of files to process>")
@@ -260,7 +273,7 @@ def main(argv):
             continue
         if hname[0] == '#':
             continue        
-        HISTS_TO_PLOT.append(hname)
+        hists_to_plot.append(hname)
     histf.close()
     macrof = open(options.macroname_list)
     for line in macrof:
@@ -269,7 +282,7 @@ def main(argv):
             continue
         if macroname[0] == '#':
             continue        
-        MACROS_TO_RUN.append(macroname)
+        macros_to_run.append(macroname)
     macrof.close()
 
     ## sanity checks
@@ -277,24 +290,22 @@ def main(argv):
         print "No input files given!"
         return
         #sys.exit(0)
-    if(len(HISTS_TO_PLOT) == 0):
+    if(len(hists_to_plot) == 0):
         print "No histograms to save!"
-    if(len(MACROS_TO_RUN) == 0):
+    if(len(macros_to_run) == 0):
         print "No macros to save!"
 
 
     ## we need to sum both the histograms that we plotting by themselves
     ## and the histograms used by the macros we want
-    HISTS_TO_SUM = HISTS_TO_PLOT
-    if(len(MACROS_TO_RUN) > 0):
-        for macro in MACROS_TO_RUN:
+    hists_to_sum = hists_to_plot
+    if(len(macros_to_run) > 0):
+        for macro in macros_to_run:
             new_macros = extract_macro_hists(macro)
             # merge lists without duplicates
             if not new_macros or len(new_macros) == 0:
                 continue
-            HISTS_TO_SUM = list( set(HISTS_TO_SUM) | set(new_macros) )
-
-    #print " HISTS_TO_SUM = " + str(sorted(HISTS_TO_SUM))
+            hists_to_sum = list( set(hists_to_sum) | set(new_macros) )
 
     ## initializing monitoring DB connection
     mondb = datamon_db()
@@ -306,19 +317,20 @@ def main(argv):
     ## run over data to make some plots
     for filename in file_list:
         root_file = TFile(filename)
-        # handle bad files better!
+        # should handle bad files better!
         if(root_file is None):
             print "Could not open file: " + filename
             continue
         else:
             print "processing file " + filename + " ..." 
-        AccessHistogramsRecursively(root_file, "/", sum_hists, sum_dir)
+        AccessHistogramsRecursively(root_file, "/", sum_hists, sum_dir, hists_to_sum)
         root_file.Close()
 
 
     ## finally, make the plots and save them as files
+    c1.Clear()
     c1.SetCanvasSize(CANVAS_WIDTH,CANVAS_HEIGHT)
-    SavePlots(sum_hists, sum_dir)
+    SavePlots(sum_hists, sum_dir, hists_to_plot, macros_to_run)
 
 
 if __name__ == "__main__":

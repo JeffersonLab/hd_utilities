@@ -26,6 +26,16 @@ FILE_NUMBER = 1
 #ROOTDIR_PREFIX = "rootspy/"
 ROOTDIR_PREFIX = ""
 
+def init():
+    OUTPUT_DIRECTORY = "."
+
+    RUN_NUMBER = -1
+    VERSION_NUMBER = -1
+    FILE_NUMBER = 1
+
+    ROOTDIR_PREFIX = ""
+
+
 # the canvas
 #c1  = TCanvas("c1","",CANVAS_WIDTH,CANVAS_HEIGHT)
 
@@ -583,6 +593,7 @@ def ProcessAnalysisInfo(db, root_file):
 def main(argv):
     global RUN_NUMBER,VERSION_NUMBER,FILE_NUMBER,ROOTDIR_PREFIX
     
+    init()
     # read in command line args
     parser = OptionParser(usage = "process_monitoring_data.py [options] run_number version_number file.root")
     parser.add_option("-D","--output_dir", dest="output_dir",

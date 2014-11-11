@@ -22,7 +22,7 @@ PROCESSED_RUN_LIST_FILE = "processedrun.lst"
 ONLINE_ROOT_DIR = BASE_ONLINEMON_DIR + '/root'
 
 MIN_RUN_NUMBER = 975
-VERSION_NUMBER  =  0   ## hardcode for now
+VERSION_NUMBER  =  1   ## hardcode for now
 MONITORING_OUTPUT_DIR = "/work/halld/data_monitoring"
 RUN_PERIOD = "RunPeriod-2014-10"
 
