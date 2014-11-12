@@ -29,5 +29,13 @@ echo
 echo "starting plugins............"
 date
 hd_root $INPUTFILE -PPLUGINS=$PLUGINS ${BFIELD_OPTION} -PNTHREADS=$NTHREADS -PTHREAD_TIMEOUT=300 # |& tee $LOG
-echo "ending............."
+echo "ending plugins ............."
 date
+
+
+# Set up python environment, then
+# update monitoring information.
+echo "updating database ............."
+source /u/home/gluex/halld/monitoring/process/monitoring_env.sh
+/u/home/gluex/halld/monitoring/process/process_run_conditions.py $RUN_NUMBER
+echo "ending job ............."
