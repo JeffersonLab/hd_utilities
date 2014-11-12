@@ -6,7 +6,7 @@
 # Author: Sean Dobbs (s-dobbs@northwestern.edu), 2014
 
 import MySQLdb
-
+import texttable
 class datamon_db:
     """Class for interaction with data monitoring DB"""
     def __init__(self, new_dbhost='hallddb.jlab.org'):
@@ -22,7 +22,7 @@ class datamon_db:
         self.db = self.db_conn.cursor()
 
         ## table information
-        self.table_names = [ "sc_hits", "cdc_hits", "cdc_hits", "fdc_hits", "bcal_hits", "bcal_energies", "fcal_hits", "tof_hits", "tagm_hits", "tagh_hits", "ps_hits", "cdc_calib", "fdc_calib", "fcal_calib", "bcal_calib", "tof_calib", "sc_calib", "tagh_calib", "tagm_calib", "analysis_data" ]
+        self.table_names = [ "run_info", "version_info", "sc_hits", "cdc_hits", "cdc_hits", "fdc_hits", "bcal_hits", "bcal_energies", "fcal_hits", "tof_hits", "tagm_hits", "tagh_hits", "ps_hits", "cdc_calib", "fdc_calib", "fcal_calib", "bcal_calib", "tof_calib", "sc_calib", "tagh_calib", "tagm_calib", "analysis_data" ]
 
         ## table definitions
         self.analysis_data = [ ("num_pos_tracks","INTEGER"), ("num_neg_tracks","INTEGER"), ("num_proton_tracks","INTEGER"), 
@@ -165,21 +165,70 @@ class datamon_db:
         self.db.execute(db_cmd, values)
         self.db_conn.commit()
 
+    def DumpTable(self, table_name, mode=""):
+        if table_name not in self.table_names:
+            print "Invalid table name = " + table_name
+            return
+
+        # get values
+        db_cmd = "SELECT * FROM " + table_name
+        self.db.execute(db_cmd)
+        rows = self.db.fetchall()
+
+        if mode=="":
+            # default is to pretty print to the screen
+            # get field names
+            fields = []
+            db_cmd = "DESCRIBE " + table_name
+            self.db.execute(db_cmd)
+            descrows = self.db.fetchall()
+            for row in descrows:
+                fields.append(row[0])
+
+            print "---------------------------------"
+            print table_name.upper()
+            print "---------------------------------"
+            table = texttable.Texttable(max_width=0)
+            table.header(fields)
+            table.add_rows(rows,header=False)
+            print table.draw() + "\n"
+        elif mode.lower()=="csv":
+            # simple print of comma separated values
+            for row in rows:
+                print ",".join([str(e) for e in row])
+
     ### Functions to deal with meta data
     def CreateRun(self, run_num):
         db_cmd = "INSERT INTO run_info (run_num) VALUES (%s)"
         self.db.execute(db_cmd, [run_num])
         self.db_conn.commit()
-
-    def AddRunInfo(self, run_num, num_events, beam_current, luminosity):
-        ## do some type checking
-        #self.InsertData('run_info', [runid, run_num, num_events, beam_current, luminosity])  
-        db_cmd = "UPDATE run_info SET num_events=%s,beam_current=%,luminosity=%s WHERE runid=%s"
-        self.db.execute(db_cmd, [num_events, beam_current, luminosity, runid])
+        
+    def UpdateRunInfo(self, run_num, run_properties):
+        if(len(run_properties)==0):
+            return
+        # build query from dictionary of run_properties
+        db_cmd = "UPDATE run_info SET "
+        values = []
+        for (col,value) in run_properties.items():
+            #db_cmd += col+"="+str(value)+"," 
+            db_cmd += col+"=%s," 
+            values.append(value)
+        # get rid of trailing comma
+        db_cmd = db_cmd[:-1]
+        # finish off command
+        db_cmd += " WHERE run_num="+str(run_num)
+        self.db.execute(db_cmd, values)
         self.db_conn.commit()
         
-        # get the id of the run we just added
-        return self.GetRunID(run_num)
+#    def AddRunInfo(self, run_num, num_events, beam_current, luminosity):
+#        ## do some type checking
+#        #self.InsertData('run_info', [runid, run_num, num_events, beam_current, luminosity])  
+#        db_cmd = "UPDATE run_info SET num_events=%s,beam_current=%,luminosity=%s WHERE runid=%s"
+#        self.db.execute(db_cmd, [num_events, beam_current, luminosity, runid])
+#        self.db_conn.commit()
+#        
+#        # get the id of the run we just added
+#        return self.GetRunID(run_num)
 
 #    def AddVersionInfo(self, version_id, data_type, software_release, production_timestamp, data_version_string)
 #        ## do some type checking

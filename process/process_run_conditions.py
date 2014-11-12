@@ -264,10 +264,8 @@ def main(argv):
     # parse EVIO files to extract useful information
     # eventually the DAQ will report this properly?
     rawdata_evio_dir = RAWDATA_DIR_FORMAT % (run_number)
-    print "rawdata_evio_dir = " + str(rawdata_evio_dir)
     if os.path.isdir(rawdata_evio_dir) :
         filelist = [ join(rawdata_evio_dir,f) for f in listdir(rawdata_evio_dir) if ((f[:10]=="hd_rawdata" or f[:6]=="hd_raw")and(f[-5:]=='.evio')) ]
-        print "FILELIST = " + str(filelist)
         file_properties = ParseEVIOFiles(filelist)
         if len(file_properties) > 0:
             run_properties['num_events'] = file_properties['num_events']
@@ -275,8 +273,8 @@ def main(argv):
             run_properties['start_time'] = file_properties['start_time']
             run_properties['end_time'] = file_properties['end_time']
 
-    print "RUN PROPERTIES FOR RUN " + str(run_number)
-    print str(run_properties)
+    #print "RUN PROPERTIES FOR RUN " + str(run_number)
+    #rint str(run_properties)
 
     # Add information to DB
     ## initialize DB

@@ -46,8 +46,10 @@ def print_commands():
     print "The following commands are supported:\n"
     print "  initDB     initialize database tables"
     print "  clearDB    delete all tables in the database (use carefully!!)"
-    print "  AddRun     Add new run information"
-    print "  AddVersion Add new version information"
+#    print "  AddRun     Add new run information"
+#    print "  AddVersion Add new version information"
+    print "  Dump       Dump DB data to screen"
+    print "  DumpCSV    Dump comma-separated DB data"
     print "  help       print this message"
 
 
@@ -80,6 +82,7 @@ if __name__ == "__main__":
             ## handcraft something here
             #print "doesn't do anything sorry!"
     elif (cmd == "AddRun"):
+        # NEEDS TO UPDATE
         # extract info
         if(len(args) < 5 and not options.interactive):
             parser.print_help()
@@ -110,8 +113,29 @@ if __name__ == "__main__":
             sys.exit(0)
         runid = db.AddRunInfo(run_num, num_events, beam_current, luminosity)
     elif (cmd == "AddVersion"):
+        # NEEDS TO UPDATE
         i=1
         ## EMPTY
+    elif (cmd == "Dump"):
+        if(len(args)<2):
+            print "Please specify a table name to dump, or 'all'"
+            print "  valid tables are: " + " ".join(db.table_names)
+        if(args[1] == "all"):
+            for table in db.table_names:
+                db.DumpTable(table)
+                print ""
+        else:
+            db.DumpTable(args[1])
+    elif (cmd == "DumpCSV"):
+        if(len(args)<2):
+            print "Please specify a table name to dump, or 'all'"
+            print "  valid tables are: " + " ".join(db.table_names)
+        if(args[1] == "all"):
+            for table in db.table_names:
+                db.DumpTable(table,"csv")
+                print ""
+        else:
+            db.DumpTable(args[1],"csv")
     elif (cmd == "help"):
         print_commands()
         sys.exit(0)

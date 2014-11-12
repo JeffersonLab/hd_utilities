@@ -19,6 +19,7 @@ from optparse import OptionParser
 from datamon_db import datamon_db
 import make_monitoring_plots
 import process_monitoring_data
+import process_run_conditions
 
 ############################################
 ### GLOBALS
@@ -185,6 +186,10 @@ for rundir in rundirs_on_disk:
         cmdargs += " --file_list " + join(INPUT_DIRECTORY,rundir,'rootfiles.txt')
         print "  creating plots..."
         make_monitoring_plots.main(cmdargs.split())
+
+    # update the run metadata
+    cmdargs = str(runnum)
+    process_run_conditions.main(cmdargs.split())
 
     ## we did process the run!
     run_list.append(runnum)
