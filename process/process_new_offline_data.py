@@ -28,7 +28,10 @@ VERSION_NUMBER  =  2   ## hardcode for now
 
 MAKE_PLOTS = True
 MAKE_DB_SUMMARY = True
+MAKE_RUN_CONDITIONS = True
+
 FORCE_PROCESSING = False
+RUN_NUMBER = None
 ############################################
 
 def mkdir_p(path):
@@ -43,13 +46,17 @@ def mkdir_p(path):
 ### START PROCESSING
 
 # read in command line args
-parser = OptionParser(usage = "process_monitoring_data.py [options] run_number version_number file.root")
+parser = OptionParser(usage = "process_new_offline_data.py input_directory output_directory")
 parser.add_option("-p","--disable_plots", dest="disable_plotting", action="store_true",
                   help="Don't make PNG files for web display")
 parser.add_option("-d","--disable_summary", dest="disable_db_summary", action="store_true",
                   help="Don't calculate summary information and store it in the DB")
+parser.add_option("-c","--disable_conditions", dest="disable_run_conditions", action="store_true",
+                  help="Don't process and store run conditions information")
 parser.add_option("-f","--force", dest="force", action="store_true",
                   help="Ignore list of already processed runs")
+parser.add_option("-R","--run_number", dest="run_number", 
+                  help="Process only this particular run number")
 
 (options, args) = parser.parse_args(sys.argv)
 
@@ -64,8 +71,19 @@ if(options.disable_plotting):
     MAKE_PLOTS = False
 if(options.disable_db_summary):
     MAKE_DB_SUMMARY = False
+if(options.disable_run_conditions):
+    MAKE_RUN_CONDITIONS = False
 if(options.force):
-    FORCE = True
+    FORCE_PROCESSING = True
+if(options.run_number):
+    try:
+        RUN_NUMBER = int(options.run_number)
+    except ValueError:
+        print "Invalid run number = " + options.run_number
+        sys.exit(0)
+    if RUN_NUMBER <= 0:
+        print "Invalid run number = " + options.run_number
+        sys.exit(0)
 
 # check to see if the input directory is real
 if not os.path.isdir(INPUT_DIRECTORY):
@@ -84,7 +102,7 @@ if not os.path.exists(OUTPUT_DIRECTORY):
 
 # allow for incremental processing ...
 run_list = []
-if not FORCE and os.path.exists( join(OUTPUT_DIRECTORY,PROCESSED_RUN_LIST_FILE) ):
+if not FORCE_PROCESSING and os.path.exists( join(OUTPUT_DIRECTORY,PROCESSED_RUN_LIST_FILE) ):
     # read in list of runs we've already processed
     try:
         runlist_file = open(join(OUTPUT_DIRECTORY,PROCESSED_RUN_LIST_FILE))
@@ -94,7 +112,7 @@ if not FORCE and os.path.exists( join(OUTPUT_DIRECTORY,PROCESSED_RUN_LIST_FILE) 
             except ValueError:
                 print "Unexpected value in run file = " + line.strip() + " , skipping..."
             else:
-                print "processed run number = " + str(runnum)
+                #print "processed run number = " + str(runnum)
                 run_list.append( runnum )
         runlist_file.close()
     except IOError as e:
@@ -114,8 +132,12 @@ for dirname in sorted(dirs_on_disk):
         print "skipping directory " + dirname + " ..."
     else:
         if runnum not in run_list :
-            print "run number = " + str(runnum)
-            rundirs_on_disk.append(dirname)
+            #print "run number = " + str(runnum)
+            if RUN_NUMBER is None:
+                rundirs_on_disk.append(dirname)
+            else:
+                if runnum == RUN_NUMBER:
+                    rundirs_on_disk.append(dirname)
 
 
 # save processed runs 
@@ -172,6 +194,7 @@ for rundir in rundirs_on_disk:
         if MAKE_DB_SUMMARY:
             cmdargs  = "--file_number " + str(filenum) + " " + str(runnum) + " " + str(VERSION_NUMBER) + " " + join(INPUT_DIRECTORY,rundir,fname)
             print "  analyzing DB info..."
+            print "process_monitoring_data " + cmdargs
             process_monitoring_data.main(cmdargs.split()) 
     monitoring_files.close()
 
@@ -187,9 +210,10 @@ for rundir in rundirs_on_disk:
         print "  creating plots..."
         make_monitoring_plots.main(cmdargs.split())
 
-    # update the run metadata
-    cmdargs = str(runnum)
-    process_run_conditions.main(cmdargs.split())
+    if MAKE_RUN_CONDITIONS:
+        # update the run metadata
+        cmdargs = str(runnum)
+        process_run_conditions.main(cmdargs.split())
 
     ## we did process the run!
     run_list.append(runnum)
