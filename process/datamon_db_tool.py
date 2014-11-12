@@ -120,6 +120,7 @@ if __name__ == "__main__":
         if(len(args)<2):
             print "Please specify a table name to dump, or 'all'"
             print "  valid tables are: " + " ".join(db.table_names)
+            return
         if(args[1] == "all"):
             for table in db.table_names:
                 db.DumpTable(table)
@@ -130,6 +131,7 @@ if __name__ == "__main__":
         if(len(args)<2):
             print "Please specify a table name to dump, or 'all'"
             print "  valid tables are: " + " ".join(db.table_names)
+            return
         if(args[1] == "all"):
             for table in db.table_names:
                 db.DumpTable(table,"csv")
