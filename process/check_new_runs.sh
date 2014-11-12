@@ -4,13 +4,9 @@
 # Load standard environment for ROOT
 source /u/home/gluex/setup_jlab_commissioning.csh
 
-# load ROOT python bindings
-setenv PYTHONPATH $ROOTSYS/lib
-
-# need python 2.7 for MySQL bindings
-setenv PATH /apps/python/PRO/bin:$PATH
-setenv LD_LIBRARY_PATH /apps/python/PRO/lib:$LD_LIBRARY_PATH
+set MONITORING_HOME /u/home/gluex/halld/monitoring/process
+source $MONITORING_HOME/monitoring_env.sh
 
 # run the script
-cd /u/home/gluex/halld/monitoring/process
+cd $MONITORING_HOME
 ./check_new_runs.py
