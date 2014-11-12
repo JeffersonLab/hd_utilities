@@ -170,6 +170,14 @@ class datamon_db:
             print "Invalid table name = " + table_name
             return
 
+        # get field names
+        fields = []
+        db_cmd = "DESCRIBE " + table_name
+        self.db.execute(db_cmd)
+        descrows = self.db.fetchall()
+        for row in descrows:
+            fields.append(row[0])
+
         # get values
         db_cmd = "SELECT * FROM " + table_name
         self.db.execute(db_cmd)
@@ -177,14 +185,6 @@ class datamon_db:
 
         if mode=="":
             # default is to pretty print to the screen
-            # get field names
-            fields = []
-            db_cmd = "DESCRIBE " + table_name
-            self.db.execute(db_cmd)
-            descrows = self.db.fetchall()
-            for row in descrows:
-                fields.append(row[0])
-
             print "---------------------------------"
             print table_name.upper()
             print "---------------------------------"
@@ -194,6 +194,7 @@ class datamon_db:
             print table.draw() + "\n"
         elif mode.lower()=="csv":
             # simple print of comma separated values
+            print "# " + " ".join(fields)
             for row in rows:
                 print ",".join([str(e) for e in row])
 
