@@ -17,6 +17,11 @@ from datamon_db import datamon_db
 
 RADIATOR_TOLERANCE = 5  # allow 5 mm tolerance in determining which radiator
 
+# switches to decide if we process certain types of information
+#USE_EPICS = True
+#USE_EVIO_FILES = True
+#USE_CCDB = True
+
 def EVIO_SWAP64(x):
     return ( (((x) >> 56) & 0x00000000000000FFL) | \
                  (((x) >> 40) & 0x000000000000FF00L) | \
@@ -33,6 +38,42 @@ def EVIO_SWAP32(x):
                  (((x) >> 8)  & 0x0000FF00) | \
                  (((x) << 8)  & 0x00FF0000) | \
                  (((x) << 24) & 0xFF000000) )
+
+######################################
+# CCDB
+
+import ccdb.path_utils
+import ccdb.cmd.themes
+from ccdb import get_ccdb_home_path
+from ccdb.cmd.console_context import ConsoleContext
+from tempfile import NamedTemporaryFile
+
+def InitCCDB():
+    #create connection string:
+    ccdb_path = get_ccdb_home_path()
+    #sqlite_connection_str = os.getenv(CCDB_CONNECTION, "sqlite:///" + os.path.join(ccdb_path, "sql", "ccdb.sqlite"))
+    if os.environ['CCDB_CONNECTION']:
+        sqlite_connection_str = os.environ['CCDB_CONNECTION']
+    else:
+        sqlite_connection_str = "test"
+    #print "using CCDB connection = " + sqlite_connection_str
+
+     #create console context
+    context = ConsoleContext()                          # this is the main class
+    context.silent_exceptions = False                   # now all exception is raised and you can try-except them
+    context.theme = ccdb.cmd.themes.NoColorTheme()      # disable colored output
+    context.connection_string = sqlite_connection_str   # set connection string
+    #context.user_name = os.getenv(CCDB_USER, "gluex")  # your username
+    if 'CCDB_USER' in os.environ and os.environ['CCDB_USER'] is not None:
+        context.user_name = os.environ['CCDB_USER']
+    else:
+        context.user_name = "gluex"
+    context.register_utilities()                        # Initialization. Register all commands (ls, rm, mktbl etc...)
+
+    return context
+
+######################################
+
 
 
 # set default values
@@ -202,6 +243,8 @@ def ParseEVIOFiles(filelist):
             print "I/O error({0}): {1}".format(e.errno, e.strerror)
             return {}
 
+        
+
     # build results
     file_properties = {}
     file_properties["num_files"] = len(all_properties)
@@ -219,6 +262,29 @@ def ParseEVIOFiles(filelist):
     file_properties["start_time"] = format_date(file_properties["start_time"])
     file_properties["end_time"] = format_date(file_properties["end_time"])
     return file_properties
+
+def load_target_types(ccdb_context, run_number):
+    mapping = {}
+
+    # make temp file to store CCDB info in
+    f = NamedTemporaryFile()
+    ccdb_context.process_command_line("dump /TARGET/target_type_list:"+str(run_number)+" > "+f.name)
+
+    # read in info
+    f.flush()
+    lines = f.readlines()
+
+    if len(lines) < 2:
+        print "Problem writing out CCDB table: /TARGET/target_type_list"
+    else:
+        # skip the first line, which is junk
+        for x in range(1,len(lines)):
+            vals = lines[x].split()
+            #index = int(vals[0])
+            mapping[ int(vals[0]) ] = " ".join(vals[1:])
+
+    return mapping
+
 
 def main(argv):
     # configuration vars
@@ -273,8 +339,35 @@ def main(argv):
             run_properties['start_time'] = file_properties['start_time']
             run_properties['end_time'] = file_properties['end_time']
 
+    # pull out target information from the CCDB
+    # load CCDB connection
+    ccdb_context = InitCCDB()
+
+    # read target index -> name mapping definition in from the CCDB
+    target_types = load_target_types(ccdb_context, run_number)
+
+    # make temp file to store CCDB info in
+    fconst = NamedTemporaryFile()
+    ccdb_context.process_command_line("dump /TARGET/target_parms:"+str(run_number)+" > "+fconst.name)
+
+    # read in info
+    fconst.flush()
+    const_lines = fconst.readlines()
+
+    if len(const_lines) < 2:
+        print "Problem writing out CCDB constants to file!"
+    else:
+        # the first line of the output file from CCDB is junk, and our numbers are on the second line
+        vals = const_lines[1].split()
+        target_index = int(vals[0])
+        if target_index in target_types:
+            run_properties['target_type'] = target_types[target_index]
+        else:
+            print "Invalid target index from CCDB = " + str(target_index)
+        fconst.close()
+
     #print "RUN PROPERTIES FOR RUN " + str(run_number)
-    #rint str(run_properties)
+    #print str(run_properties)
 
     # Add information to DB
     ## initialize DB
