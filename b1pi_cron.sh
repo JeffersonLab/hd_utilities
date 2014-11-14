@@ -19,5 +19,5 @@ do
     env -u SSH_AUTH_SOCK ssh -i ~/.ssh/b1pi_cron $host > $logfile 2>&1
     mv -v $logfile $RUN_DIR/
 done
-/group/halld/Software/scripts/b1pi_macros/b1pi_message.sh
+/group/halld/Software/scripts/b1pi_test/b1pi_message.sh
 exit
