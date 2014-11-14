@@ -220,21 +220,37 @@ class datamon_db:
         db_cmd += " WHERE run_num="+str(run_num)
         self.db.execute(db_cmd, values)
         self.db_conn.commit()
-        
-#    def AddRunInfo(self, run_num, num_events, beam_current, luminosity):
-#        ## do some type checking
-#        #self.InsertData('run_info', [runid, run_num, num_events, beam_current, luminosity])  
-#        db_cmd = "UPDATE run_info SET num_events=%s,beam_current=%,luminosity=%s WHERE runid=%s"
-#        self.db.execute(db_cmd, [num_events, beam_current, luminosity, runid])
-#        self.db_conn.commit()
-#        
-#        # get the id of the run we just added
-#        return self.GetRunID(run_num)
 
-#    def AddVersionInfo(self, version_id, data_type, software_release, production_timestamp, data_version_string)
-#        ## do some type checking
-#        self.InsertData('version_info', [version_id, data_type, software_release, production_timestamp, data_version_string])
+    def AddVersionInfo(self, version_properties):
+        if(len(version_properties)==0):
+            return
+        # build query from dictionary of run_properties
+        db_cmd  = "INSERT INTO version_info  (" + ",".join(version_properties) + ")"
+        db_cmd += " VALUES (" + ",".join(["%s" for x in range(len(version_properties.values()))]) + ")"
+        self.db.execute(db_cmd, version_properties.values())
+        self.db_conn.commit()
         
+        # get the version_id of the new thing we inserted
+        self.db.execute("SELECT LAST_INSERT_ID()")
+        return self.db.fetchone()
+
+    def UpdateVersionInfo(self, version_id, version_properties):
+        if(len(version_properties)==0):
+            return
+        # build query from dictionary of run_properties
+        db_cmd = "UPDATE version_info SET "
+        values = []
+        for (col,value) in version_properties.items():
+            db_cmd += col+"=%s," 
+            values.append(value)
+        # get rid of trailing comma
+        db_cmd = db_cmd[:-1]
+        # finish off command
+        db_cmd += " WHERE version_id="+str(version_id)
+        self.db.execute(db_cmd, values)
+        self.db_conn.commit()
+        
+
     def GetRunID(self, run_num):
         self.db.execute('SELECT runid FROM run_info WHERE run_num=%s', (int(run_num),))
         run_info = self.db.fetchone()
