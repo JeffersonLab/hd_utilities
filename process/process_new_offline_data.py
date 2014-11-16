@@ -168,8 +168,8 @@ for rundir in rundirs_on_disk:
     ## TODO: create version info?    
 
     root_files = [ f for f in listdir(join(INPUT_DIRECTORY,rundir,RUN_DATE)) if (isfile(join(INPUT_DIRECTORY,rundir,RUN_DATE,f))and(f[-5:]=='.root')) ]
-    monitoring_root_files = []
-
+    
+    os.system("mkdir -p " + join(OUTPUT_DIRECTORY,rootfiles)
     # check each file and extract which file number it corresponds to
     monitoring_files = open(join(INPUT_DIRECTORY,rundir,RUN_DATE,'rootfiles.txt'),"w")
     for fname in sorted(root_files):
@@ -191,7 +191,10 @@ for rundir in rundirs_on_disk:
         if file_runnum != runnum :
             print "invalid filename = " + fname + ", skipping ..."
             continue
+        # save a list of the files to be processed
         print>>monitoring_files, join(INPUT_DIRECTORY,rundir,RUN_DATE,fname)
+        # also copy the files so they can be viewed on the web
+        os.system("cp " + join(INPUT_DIRECTORY,rundir,RUN_DATE,fname) + " " + join(OUTPUT_DIRECTORY,rootfiles))
 
         # we are good!  let's get some work done
         print "processing run " + str(runnum) + " file " + str(filenum) + " ..."
