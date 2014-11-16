@@ -5,9 +5,12 @@
 # This script should be run after offline monitoring ROOT files are generated
 # Runs through offline monitoring ROOT files, generates PNG images and inserts summary data to the website
 #
-# Takes two arguments:
-#  1. the directory to find the monitoring ROOT files
-#  2. the directory to store the PNG files (and other associated processing files)
+# Takes three arguments:
+#  
+#  1. the date string that specifies when the monitoring jobs were started
+#  2. the base directory where the monitoring files are stored
+#     We assume a directory of the form /volatile/halld/RunPeriod-2014-10/offline_monitoring/RRRRRR/$DATE/
+#  3. the directory to store the PNG files (and other associated processing files)
 #
 
 import sys,os,errno
@@ -24,7 +27,7 @@ import process_run_conditions
 ############################################
 ### GLOBALS
 PROCESSED_RUN_LIST_FILE = "processedrun.lst"
-VERSION_NUMBER  =  2   ## hardcode for now
+VERSION_NUMBER  =  3   ## hardcode for now
 
 MAKE_PLOTS = True
 MAKE_DB_SUMMARY = True
@@ -64,8 +67,9 @@ if(len(args) < 3):
     parser.print_help()
     sys.exit(0)
 
-INPUT_DIRECTORY = args[1]
-OUTPUT_DIRECTORY = args[2]
+RUN_DATE = args[1]
+INPUT_DIRECTORY = args[2]
+OUTPUT_DIRECTORY = args[3]
 
 if(options.disable_plotting):
     MAKE_PLOTS = False
@@ -84,6 +88,8 @@ if(options.run_number):
     if RUN_NUMBER <= 0:
         print "Invalid run number = " + options.run_number
         sys.exit(0)
+
+PROCESSED_RUN_LIST_FILE += RUN_DATE
 
 # check to see if the input directory is real
 if not os.path.isdir(INPUT_DIRECTORY):
@@ -124,7 +130,7 @@ if not FORCE_PROCESSING and os.path.exists( join(OUTPUT_DIRECTORY,PROCESSED_RUN_
 
 ###
 rundirs_on_disk = []
-dirs_on_disk = [ d for d in listdir(INPUT_DIRECTORY) if os.path.isdir(join(INPUT_DIRECTORY,d)) ]
+dirs_on_disk = [ d for d in listdir(INPUT_DIRECTORY) if os.path.isdir(join(INPUT_DIRECTORY,d,RUN_DATE)) ]
 for dirname in sorted(dirs_on_disk):
     try:
         runnum = int(dirname)
@@ -161,11 +167,11 @@ for rundir in rundirs_on_disk:
         db.CreateRun(runnum)
     ## TODO: create version info?    
 
-    root_files = [ f for f in listdir(join(INPUT_DIRECTORY,rundir)) if (isfile(join(INPUT_DIRECTORY,rundir,f))and(f[-5:]=='.root')) ]
+    root_files = [ f for f in listdir(join(INPUT_DIRECTORY,rundir,RUN_DATE)) if (isfile(join(INPUT_DIRECTORY,rundir,RUN_DATE,f))and(f[-5:]=='.root')) ]
     monitoring_root_files = []
 
     # check each file and extract which file number it corresponds to
-    monitoring_files = open(join(INPUT_DIRECTORY,rundir,'rootfiles.txt'),"w")
+    monitoring_files = open(join(INPUT_DIRECTORY,rundir,RUN_DATE,'rootfiles.txt'),"w")
     for fname in sorted(root_files):
         filenum = -1
         fname_fields = fname[:-5].split("_")
@@ -185,14 +191,14 @@ for rundir in rundirs_on_disk:
         if file_runnum != runnum :
             print "invalid filename = " + fname + ", skipping ..."
             continue
-        print>>monitoring_files, join(INPUT_DIRECTORY,rundir,fname)
+        print>>monitoring_files, join(INPUT_DIRECTORY,rundir,RUN_DATE,fname)
 
         # we are good!  let's get some work done
         print "processing run " + str(runnum) + " file " + str(filenum) + " ..."
 
         #  process monitoring data for each file
         if MAKE_DB_SUMMARY:
-            cmdargs  = "--file_number " + str(filenum) + " " + str(runnum) + " " + str(VERSION_NUMBER) + " " + join(INPUT_DIRECTORY,rundir,fname)
+            cmdargs  = "--file_number " + str(filenum) + " " + str(runnum) + " " + str(VERSION_NUMBER) + " " + join(INPUT_DIRECTORY,rundir,RUN_DATE,fname)
             print "  analyzing DB info..."
             print "process_monitoring_data " + cmdargs
             process_monitoring_data.main(cmdargs.split()) 
@@ -206,7 +212,7 @@ for rundir in rundirs_on_disk:
         #mkdir_p(monitoring_data_dir)
         os.system("mkdir -p " + monitoring_data_dir)  ## need error checks
         cmdargs += " --output_dir " + monitoring_data_dir
-        cmdargs += " --file_list " + join(INPUT_DIRECTORY,rundir,'rootfiles.txt')
+        cmdargs += " --file_list " + join(INPUT_DIRECTORY,rundir,RUN_DATE,'rootfiles.txt')
         print "  creating plots..."
         make_monitoring_plots.main(cmdargs.split())
 
