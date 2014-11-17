@@ -118,12 +118,6 @@ if ( -e $JANAFILE ) then
   rm -f $JANAFILE
 endif
 
-echo "-PPLUGINS=DAQ,TTab,TAGH_online,TAGM_online,BCAL_online,CDC_online,CDC_expert,FCAL_online,FDC_online,ST_online,TOF_online,monitoring_hists" > $JANAFILE
-echo "-PBFIELD_MAP=Magnets/Solenoid/solenoid_1000A_poisson_20141104" >> $JANAFILE
-echo "-PNTHREADS=1" >> $JANAFILE
-echo "-PTHREAD_TIMEOUT=300" >> $JANAFILE
-echo "-PCALIB_CONTEXT="\""calibtime=2014-11-06"\" >> $JANAFILE
-
 set RUN = ${MINRUN}
 while (${RUN} <= ${MAXRUN})
 	set FORMATTED_RUN = `printf %06d $RUN`
@@ -133,7 +127,7 @@ while (${RUN} <= ${MAXRUN})
 	# Settings for tape files
 	set SOURCETYPE        = "mss"
 	set INPUT_DIR         = "/mss/halld/RunPeriod-2014-10/rawdata/Run${FORMATTED_RUN}"
-	set INPUT_PREFIX      = "hd_raw_${FORMATTED_RUN}_"
+	set INPUT_PREFIX      = "hd_rawdata_${FORMATTED_RUN}_"
 	set INPUT_SUFFIX      = ".evio"
 	set THIS_DIR          = $PWD
 	set SCRIPT_OUTPUT_DIR = "${THIS_DIR}/${FORMATTED_RUN}/"
@@ -150,13 +144,20 @@ while (${RUN} <= ${MAXRUN})
 	set BFIELD_OPTION     = "-PBFIELD_MAP=Magnets/Solenoid/solenoid_1000A_poisson_20141104"
 	if($RUN == 9101) then
 	  set BFIELD_OPTION   = "-PBFIELD_MAP=Magnets/Solenoid/solenoid_1200A_poisson_20140520"
-	else if($RUN == 9102) then
+	else if($RUN > 1128) then
 	  set BFIELD_OPTION   = "-PBFIELD_TYPE=NoField"
 	#else
 	#  echo "run must be 9101 or 9102"
 	#  exit
 	endif
 	#---------------------------------------------------------------------------------------
+
+	echo "-PPLUGINS=DAQ,TTab,TAGH_online,TAGM_online,BCAL_online,CDC_online,CDC_expert,FCAL_online,FDC_online,ST_online,TOF_online,monitoring_hists" > $JANAFILE
+    echo ${BFIELD_OPTION} >> $JANAFILE
+    echo "-PNTHREADS=1" >> $JANAFILE
+    echo "-PTHREAD_TIMEOUT=300" >> $JANAFILE
+    echo "-PCALIB_CONTEXT="\""calibtime=2014-11-06"\" >> $JANAFILE
+
 
 	### Echo settings
 	echo "input dir    : ${INPUT_DIR}" 
