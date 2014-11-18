@@ -10,6 +10,7 @@ from optparse import OptionParser
 import os.path
 import sys
 from array import array
+import MySQLdb
 
 from datamon_db import datamon_db
 
@@ -53,7 +54,12 @@ def SumHistContents(root_file, hist_path):
     for bin in range(h.GetNbinsX()+1):
         sum += (bin-1)*h.GetBinContent(bin)
     return sum
-             
+
+def print_mysql_error(e):
+    try:
+        print "MySQL Error [%d]: %s" % (e.args[0], e.args[1])
+    except IndexError:
+        print "MySQL Error: %s" % str(e)             
 
 
 ###########################################
@@ -651,17 +657,44 @@ def main(argv):
     ## calculate number of events??
 
     # Do subdetector-specific tasks
-    ProcessCDC(mondb, root_file)
-    ProcessFDC(mondb, root_file)
-    ProcessFCAL(mondb, root_file)
-    ProcessBCAL(mondb, root_file)
-    ProcessSC(mondb, root_file)
-    ProcessTOF(mondb, root_file)
-    ProcessTAGH(mondb, root_file)
-    ProcessTAGM(mondb, root_file)
+    try:
+        ProcessCDC(mondb, root_file)
+    except MySQLdb.Error, e:
+        print_mysql_error(e)
+    try:
+        ProcessFDC(mondb, root_file)
+    except MySQLdb.Error, e:
+        print_mysql_error(e)
+    try:
+        ProcessFCAL(mondb, root_file)
+    except MySQLdb.Error, e:
+        print_mysql_error(e)
+    try:
+        ProcessBCAL(mondb, root_file)
+    except MySQLdb.Error, e:
+        print_mysql_error(e)
+    try:
+        ProcessSC(mondb, root_file)
+    except MySQLdb.Error, e:
+        print_mysql_error(e)
+    try:
+        ProcessTOF(mondb, root_file)
+    except MySQLdb.Error, e:
+        print_mysql_error(e)
+    try:
+        ProcessTAGH(mondb, root_file)
+    except MySQLdb.Error, e:
+        print_mysql_error(e)
+    try:
+        ProcessTAGM(mondb, root_file)
+    except MySQLdb.Error, e:
+        print_mysql_error(e)
 
     # Process higher-level data
-    ProcessAnalysisInfo(mondb, root_file)
+    try:
+        ProcessAnalysisInfo(mondb, root_file)
+    except MySQLdb.Error, e:
+        print_mysql_error(e)
 
     # cleanup
     root_file.Close()

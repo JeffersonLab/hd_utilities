@@ -244,15 +244,18 @@ def ParseEVIOFiles(filelist):
             return {}
 
         
-
     # build results
     file_properties = {}
+    # some sanity check?
+    if "start_time" not in all_properties:
+        return file_properties
+
     file_properties["num_files"] = len(all_properties)
     file_properties["num_events"] = -1
     file_properties["start_time"] = -1
     file_properties["end_time"] = -1
     for props in sorted(all_properties, key=lambda prop: int(prop["file_num"])):
-        if file_properties["start_time"] < 0 :
+        if  file_properties["start_time"] < 0 :
             file_properties["start_time"] = props["start_time"]
             file_properties["end_time"] = props["start_time"] + props["end_time"]
             file_properties["num_events"] = props["num_events"]

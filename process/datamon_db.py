@@ -53,6 +53,8 @@ class datamon_db:
         ## be careful with this!!
         #self.db.execute("DROP TABLE *")  
         for table in self.table_names:
+            if table == "run_info" or table == "version_info":
+                continue
             print "clearing " + table + "..."
             self.db.execute('DELETE FROM ' + table)
         ## reset autoincrement counters

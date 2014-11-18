@@ -220,6 +220,7 @@ for rundir in rundirs_on_disk:
     if MAKE_RUN_CONDITIONS:
         # update the run metadata
         cmdargs = str(runnum)
+        print "  saving conditions..."
         process_run_conditions.main(cmdargs.split())
 
     ## we did process the run!
