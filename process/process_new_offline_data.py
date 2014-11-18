@@ -89,8 +89,6 @@ if(options.run_number):
         print "Invalid run number = " + options.run_number
         sys.exit(0)
 
-PROCESSED_RUN_LIST_FILE += RUN_DATE
-
 # check to see if the input directory is real
 if not os.path.isdir(INPUT_DIRECTORY):
     print "Invalid input directory specified = " + INPUT_DIRECTORY
@@ -169,7 +167,7 @@ for rundir in rundirs_on_disk:
 
     root_files = [ f for f in listdir(join(INPUT_DIRECTORY,rundir,RUN_DATE)) if (isfile(join(INPUT_DIRECTORY,rundir,RUN_DATE,f))and(f[-5:]=='.root')) ]
     
-    os.system("mkdir -p " + join(OUTPUT_DIRECTORY,rootfiles)
+    os.system("mkdir -p " + join(OUTPUT_DIRECTORY,"rootfiles"))
     # check each file and extract which file number it corresponds to
     monitoring_files = open(join(INPUT_DIRECTORY,rundir,RUN_DATE,'rootfiles.txt'),"w")
     for fname in sorted(root_files):
@@ -194,7 +192,7 @@ for rundir in rundirs_on_disk:
         # save a list of the files to be processed
         print>>monitoring_files, join(INPUT_DIRECTORY,rundir,RUN_DATE,fname)
         # also copy the files so they can be viewed on the web
-        os.system("cp " + join(INPUT_DIRECTORY,rundir,RUN_DATE,fname) + " " + join(OUTPUT_DIRECTORY,rootfiles))
+        os.system("cp " + join(INPUT_DIRECTORY,rundir,RUN_DATE,fname) + " " + join(OUTPUT_DIRECTORY,"rootfiles"))
 
         # we are good!  let's get some work done
         print "processing run " + str(runnum) + " file " + str(filenum) + " ..."
