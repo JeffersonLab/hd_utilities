@@ -4,6 +4,8 @@
  * 2014/11/17 Kei Moriya
  *
  * Program that compares histograms from different ROOT files.
+ * Type "make" to compile. For user gluex, need to set ROOTSYS:
+ * source /home/gluex/setup_jlab_commissioning.csh
  *
  * For 1D plots, they will all be plotted on top of each other
  * with different colors. Optionally, all histograms can be
@@ -293,6 +295,11 @@ void MergeRootfile( TDirectory *target, TList *sourcelist, Bool_t doRenormalize 
 	    if (key2) {
 	      
 	      TH2 *h22 = (TH2*)key2->ReadObj();
+
+	      // Normalize total area of each hist to 1
+	      h11->Scale(1. / h11->Integral());
+	      h22->Scale(1. / h22->Integral());
+
 	      for(int i = 0; i <= nbinsx+1; i++){
 		for(int j = 0; j <= nbinsy+1; j++){
 		  if ( h11->GetBinContent(i,j) != 0 && h22->GetBinContent(i,j) != 0){
@@ -477,7 +484,7 @@ void MergeRootfile( TDirectory *target, TList *sourcelist, Bool_t doRenormalize 
 	    // renormalize to area
 	    if(doRenormalize==true){
 	      // If first file has no entries, don't change anything
-	      Double_t scale = h[0]->GetEntries() == 0 ? 1 : h[0]->GetEntries() / h[color]->GetEntries();
+	      Double_t scale = h[0]->Integral() == 0 ? 1 : h[0]->Integral() / h[color]->Integral();
 	      h[color]->Scale(scale);
 	    }
 	    h[color]->SetFillStyle(3001 + color);
