@@ -140,6 +140,10 @@ def ProcessFDC(db, root_file):
     NUM_FDC_STRIPS = 192
     NUM_FDC_WIRES = 96
 
+    fdc_num_events = root_file.Get(ROOTDIR_PREFIX+"FDC/fdc_num_events")
+    if(fdc_num_events != None):
+        number_of_events = fdc_num_events.GetBinContent(1)
+
     plane = 0
     for package in range(1,5):
         for chamber in range(1,7):
@@ -167,10 +171,6 @@ def ProcessFDC(db, root_file):
 
     ### Old calculation with 2D histograms
     """
-    fdc_num_events = root_file.Get(ROOTDIR_PREFIX+"FDC/fdc_num_events")
-    if(fdc_num_events != None):
-        number_of_events = fdc_num_events.GetBinContent(1)
-
     fdc_strip_occupancy_2d = root_file.Get(ROOTDIR_PREFIX+"FDC/fdcos")
     fdc_wire_occupancy_2d = root_file.Get(ROOTDIR_PREFIX+"FDC/fdcow")
     # sanity checks
@@ -452,7 +452,7 @@ def ProcessTAGH(db, root_file):
         number_of_events = tagh_num_events.GetBinContent(1)
 
     # get the occupancy
-    tagh_occupancy = root_file.Get(ROOTDIR_PREFIX+"TAGH/Hit_NHits")
+    tagh_occupancy = root_file.Get(ROOTDIR_PREFIX+"TAGH/Hit_Occupancy")
     # sanity checks
     if( tagh_occupancy == None ): 
         print "couldn't find TAGH occupancy histogram!"
