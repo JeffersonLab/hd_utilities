@@ -27,11 +27,11 @@ import process_run_conditions
 ############################################
 ### GLOBALS
 PROCESSED_RUN_LIST_FILE = "processedrun.lst"
-VERSION_NUMBER  =  3   ## hardcode for now
+VERSION_NUMBER  =  5   ## hardcode for now
 
 MAKE_PLOTS = True
 MAKE_DB_SUMMARY = True
-MAKE_RUN_CONDITIONS = True
+MAKE_RUN_CONDITIONS = False
 
 FORCE_PROCESSING = False
 RUN_NUMBER = None
@@ -54,8 +54,10 @@ parser.add_option("-p","--disable_plots", dest="disable_plotting", action="store
                   help="Don't make PNG files for web display")
 parser.add_option("-d","--disable_summary", dest="disable_db_summary", action="store_true",
                   help="Don't calculate summary information and store it in the DB")
-parser.add_option("-c","--disable_conditions", dest="disable_run_conditions", action="store_true",
-                  help="Don't process and store run conditions information")
+#parser.add_option("-c","--disable_conditions", dest="disable_run_conditions", action="store_true",
+#                  help="Don't process and store run conditions information")
+parser.add_option("-C","--process_conditions", dest="process_run_conditions", action="store_true",
+                  help="Process and store run conditions information")
 parser.add_option("-f","--force", dest="force", action="store_true",
                   help="Ignore list of already processed runs")
 parser.add_option("-R","--run_number", dest="run_number", 
@@ -75,8 +77,10 @@ if(options.disable_plotting):
     MAKE_PLOTS = False
 if(options.disable_db_summary):
     MAKE_DB_SUMMARY = False
-if(options.disable_run_conditions):
-    MAKE_RUN_CONDITIONS = False
+#if(options.disable_run_conditions):
+#    MAKE_RUN_CONDITIONS = False
+if(options.process_run_conditions):
+    MAKE_RUN_CONDITIONS = True
 if(options.force):
     FORCE_PROCESSING = True
 if(options.run_number):

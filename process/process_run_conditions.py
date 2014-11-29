@@ -17,6 +17,8 @@ from datamon_db import datamon_db
 
 RADIATOR_TOLERANCE = 5  # allow 5 mm tolerance in determining which radiator
 
+VERBOSE = False
+
 # switches to decide if we process certain types of information
 #USE_EPICS = True
 #USE_EVIO_FILES = True
@@ -169,6 +171,8 @@ def ParseEVIOFiles(filelist):
                 # Look for a "Go" event that we can use for the beginning of the run
                 if( (w & 0x0001D2FF) == 0x0001D2FF ): 
                     properties["start_time"] = EVIO_SWAP32(data[i+1]);
+                    if VERBOSE:
+                        print "Found start time = " + format_date(properties["start_time"])
                 # Physics Event Header bits that should be set
                 if( (w & 0x001050FF) != 0x001050FF ):
                     continue
@@ -229,10 +233,14 @@ def ParseEVIOFiles(filelist):
                     break
 
             # calculate results for a file
-            N = (properties["last_event"] - properties["first_event"]) + 1
+            # do a better job handling bad files?
+            N = 0
+            end_time = 0
+            if "first_event" in properties and "last_event" in properties:    
+                N = (properties["last_event"] - properties["first_event"]) + 1
+                end_time = 5.0E-9 * (float(properties["tlast_event"]) - float(properties["tfirst_event"]))
             if N == 0:
                 N = 1
-            end_time = 5.0E-9 * (float(properties["tlast_event"]) - float(properties["tfirst_event"]))
             properties["num_events"] = N
             properties["end_time"] = end_time
 
@@ -246,18 +254,25 @@ def ParseEVIOFiles(filelist):
         
     # build results
     file_properties = {}
-    # some sanity check?
-    if "start_time" not in all_properties:
-        return file_properties
+
+    if VERBOSE:
+        print "results from EVIO parsing = " + str(all_properties)
+        print "processing: "
 
     file_properties["num_files"] = len(all_properties)
     file_properties["num_events"] = -1
     file_properties["start_time"] = -1
     file_properties["end_time"] = -1
     for props in sorted(all_properties, key=lambda prop: int(prop["file_num"])):
-        if  file_properties["start_time"] < 0 :
-            file_properties["start_time"] = props["start_time"]
-            file_properties["end_time"] = props["start_time"] + props["end_time"]
+        if VERBOSE:
+            print str(props)
+        if file_properties["start_time"] < 0 :
+            # if there are DAQ problems, the GO event might not be properly written out
+            if "start_time" in props:
+                file_properties["start_time"] = props["start_time"]
+            else:
+                file_properties["start_time"] = 0
+            file_properties["end_time"] = file_properties["start_time"] + props["end_time"]
             file_properties["num_events"] = props["num_events"]
         else:
             file_properties["end_time"] += props["end_time"] 
@@ -369,8 +384,9 @@ def main(argv):
             print "Invalid target index from CCDB = " + str(target_index)
         fconst.close()
 
-    #print "RUN PROPERTIES FOR RUN " + str(run_number)
-    #print str(run_properties)
+    if VERBOSE:
+        print "RUN PROPERTIES FOR RUN " + str(run_number)
+        print str(run_properties)
 
     # Add information to DB
     ## initialize DB
