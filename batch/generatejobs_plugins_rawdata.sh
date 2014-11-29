@@ -117,6 +117,7 @@ echo "</gversions>" >> $XMLFILE
 set RUN = ${MINRUN}
 while (${RUN} <= ${MAXRUN})
 	set FORMATTED_RUN = `printf %06d $RUN`
+	echo "----------    Run = ${FORMATTED_RUN}   ---------------"
 
 	#---------------------------------------------------------------------------------------
 	#
@@ -124,7 +125,7 @@ while (${RUN} <= ${MAXRUN})
 	set SOURCETYPE        = "mss"
 	set INPUT_DIR         = "/mss/halld/RunPeriod-2014-10/rawdata/Run${FORMATTED_RUN}"
 	set INPUT_PREFIX      = "hd_rawdata_${FORMATTED_RUN}_"
-	if(${RUN} >= 960 && ${RUN} <= 980) then
+	if(${RUN} >= 800 && ${RUN} <= 980) then
           set INPUT_PREFIX    = "hd_raw_${FORMATTED_RUN}_"
 	endif
 	if(${RUN} == 984 || ${RUN} == 997) then
@@ -135,22 +136,31 @@ while (${RUN} <= ${MAXRUN})
 	endif
 	set INPUT_SUFFIX      = ".evio"
 	set THIS_DIR          = $PWD
-	set SCRIPT_OUTPUT_DIR = "${THIS_DIR}/${FORMATTED_RUN}/"
+	set SCRIPT_OUTPUT_DIR = "${THIS_DIR}/runs/${FORMATTED_RUN}/"
 	set OUTDIR            = "/volatile/halld/RunPeriod-2014-10/offline_monitoring/${FORMATTED_RUN}/${DATE}"
 	set PLUGINS           = "DAQ,TTab,TAGH_online,TAGM_online,BCAL_online,CDC_online,CDC_expert,FCAL_online,FDC_online,ST_online,TOF_online,monitoring_hists,evio_writer,2trackskim"
 #,PS_online,PSC_online"
 	set SCRIPTFILE        = "/home/gluex/halld/monitoring/batch/script.sh"
 	set SOURCEFILE        = "/home/gluex/setup_jlab_commissioning.csh"
-	set TIME              = 2880 # in minutes
-	set DISKSPACE         =  1 # in GB
+	set TIME              = 1440 # in minutes
+	set DISKSPACE         =  5 # in GB
 	set MEMORY            =  3 # in GB
 	set EMAIL             = "gluex@jlab.org"
 #	set BFIELD_OPTION     = "-PBFIELD_MAP=Magnets/Solenoid/solenoid_1200A_poisson_20140520"
 	set BFIELD_OPTION     = "-PBFIELD_MAP=Magnets/Solenoid/solenoid_1000A_poisson_20141104"
+	set JANAFILE_SUFFIX   = "_1000A"
+        set ADDITIONAL_OPTION = ""
 	if($RUN == 9101) then
 	  set BFIELD_OPTION   = "-PBFIELD_MAP=Magnets/Solenoid/solenoid_1200A_poisson_20140520"
-	else if($RUN > 1129) then
-	  set BFIELD_OPTION   = "-PBFIELD_TYPE=NoField -PDEFTAG:DTrackCandidate=StraightLine "
+	  set JANAFILE_SUFFIX   = "_1200A"
+	else if($RUN > 1129 && $RUN < 1449) then
+	  set BFIELD_OPTION   = "-PBFIELD_TYPE=NoField"
+          set ADDITIONAL_OPTION = "-PDEFTAG:DTrackCandidate=StraightLine"
+          set JANAFILE_SUFFIX   = "_0000A"
+	else if($RUN > 1448) then
+	  set BFIELD_OPTION   = "-PBFIELD_MAP=Magnets/Solenoid/solenoid_1200A_poisson_20140520"
+          set ADDITIONAL_OPTION = ""
+          set JANAFILE_SUFFIX   = "_1200A"
 	#else
 	#  echo "run must be 9101 or 9102"
 	#  exit
@@ -159,25 +169,29 @@ while (${RUN} <= ${MAXRUN})
 
 	# Create jana config file
 	set JANAFILE = "/work/halld/data_monitoring/run_conditions/jana_rawdata_comm_${YEAR}_${MONTH}_${DAY}.conf"
+	set JANAFILE_COPY = ${JANAFILE}${JANAFILE_SUFFIX}
 	if ( -e $JANAFILE ) then
 	rm -f $JANAFILE
 	endif
 
 	echo "-PPLUGINS=DAQ,TTab,TAGH_online,TAGM_online,BCAL_online,CDC_online,CDC_expert,FCAL_online,FDC_online,ST_online,TOF_online,monitoring_hists,evio_writer,2trackskim" > $JANAFILE
-	echo ${BFIELD_OPTION} >> $JANAFILE
+	echo ${BFIELD_OPTION} ${ADDITIONAL_OPTION} >> $JANAFILE
 	echo "-PNTHREADS=1" >> $JANAFILE
 	echo "-PTHREAD_TIMEOUT=300" >> $JANAFILE
 	# Grab date of JANA_CALIB_URL
 	set JANA_CALIB_URL_DATE = `echo $JANA_CALIB_URL | sed 's/sqlite:\/\/\/\/group\/halld\/www\/halldweb1\/html\/dist\/ccdb_//' | sed s/.sqlite//`
 	echo "-PCALIB_CONTEXT="\""calibtime=${JANA_CALIB_URL_DATE}"\" >> $JANAFILE
 
+	# Make a copy of the JANAFILE for this B field setting
+	cp $JANAFILE $JANAFILE_COPY
 
 	### Echo settings
-	echo "input dir    : ${INPUT_DIR}" 
-	echo "plugins      : $PLUGINS"
-	echo "Bfield option: ${BFIELD_OPTION}"
+	echo "input dir         : ${INPUT_DIR}" 
+	echo "plugins           : $PLUGINS"
+	echo "Bfield option     : ${BFIELD_OPTION}"
+	echo "additional option : ${ADDITIONAL_OPTION}"     
 
-	set RUN_SCRIPT = "${THIS_DIR}/run_rawdata_${FORMATTED_RUN}.sh"
+	set RUN_SCRIPT = "${THIS_DIR}/runscripts/run_rawdata_${FORMATTED_RUN}.sh"
 	if( -e $RUN_SCRIPT ) then
 	  rm -f $RUN_SCRIPT
 	endif
@@ -190,14 +204,24 @@ while (${RUN} <= ${MAXRUN})
 
 	# Create ls file. This is just all the runs within the
 	# input directory.
-	cd $INPUT_DIR
-	set LSFILE = "${THIS_DIR}/ls-evio_${FORMATTED_RUN}"
+	if( -e ${INPUT_DIR} ) then
+          echo "${INPUT_DIR} exists"
+     	  cd $INPUT_DIR
+        else
+	  echo "${INPUT_DIR} doesn't exist"
+	  @ RUN += 1
+          continue
+        endif
+
+	echo "AAA"
+
+	set LSFILE = "${THIS_DIR}/lsfiles/ls-evio_${FORMATTED_RUN}"
 	if ( -e $LSFILE ) then
 	  rm -f $LSFILE
 	endif
-	ls --color=never *.evio > $LSFILE
 
-	cat $LSFILE
+        ls --color=never *.evio > $LSFILE
+        cat $LSFILE
 
 	# Create input list file. This just tracks which
 	# files were present.
@@ -222,6 +246,7 @@ while (${RUN} <= ${MAXRUN})
 		echo '	<Variable name="env" value="setup_jlab_commissioning.csh"/>' >> ${OUTPUT_FILE}
 		echo '	<Variable name="svn" value="'${svn_sim_recon}'"/>' >> ${OUTPUT_FILE}
 		echo '	<Variable name="bfield_option" value="'${BFIELD_OPTION}'"/>' >> ${OUTPUT_FILE}
+		echo '	<Variable name="additional_option" value="'${ADDITIONAL_OPTION}'"/>' >> ${OUTPUT_FILE}
 		echo >> ${OUTPUT_FILE}
 
 		echo '	<Email email="'${EMAIL}'" request="false" job="false"/>' >> ${OUTPUT_FILE}
@@ -260,8 +285,9 @@ while (${RUN} <= ${MAXRUN})
 		echo '		<Job>' >> ${OUTPUT_FILE}
 		echo '			<Name name="rawdata_plugins.'${FORMATTED_RUN}'_${input_file_stubs}"/>' >> ${OUTPUT_FILE}
 		echo '			<Input src="'${SOURCETYPE}':'${INPUT_DIR}'/'${INPUT_PREFIX}'${input_file_stubs}'${INPUT_SUFFIX}'" dest="'${INPUT_PREFIX}'${input_file_stubs}'${INPUT_SUFFIX}'"/>' >> ${OUTPUT_FILE}
-		echo '			<Command>script.sh ${env} '${INPUT_PREFIX}'${input_file_stubs}'${INPUT_SUFFIX}' ${plugins} ${bfield_option} 1</Command>' >> ${OUTPUT_FILE}
+		echo '			<Command>script.sh ${env} '${INPUT_PREFIX}'${input_file_stubs}'${INPUT_SUFFIX}' ${plugins} ${bfield_option} ${additional_option} ${formatted_run}</Command>' >> ${OUTPUT_FILE}
 		echo '			<Output src="hd_root.root" dest="${output_dir_base}/hd_root_${formatted_run}_${input_file_stubs}.root"/>' >> ${OUTPUT_FILE}
+		echo '			<Output src="'${INPUT_PREFIX}'${input_file_stubs}.2tracks.evio" dest="${output_dir_base}/'${INPUT_PREFIX}'${input_file_stubs}.2tracks.evio"/>' >> ${OUTPUT_FILE}
 		echo '			<Stdout dest="${output_dir_base}/log/stdout_${formatted_run}_${input_file_stubs}.out"/>' >> ${OUTPUT_FILE}
 		echo '			<Stderr dest="${output_dir_base}/log/stderr_${formatted_run}_${input_file_stubs}.err"/>' >> ${OUTPUT_FILE}
 		echo '		</Job>' >> ${OUTPUT_FILE}
