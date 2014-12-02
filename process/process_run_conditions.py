@@ -162,7 +162,7 @@ def ParseEVIOFiles(filelist):
             properties["file_num"] = file_num
             # figure out the first event
             in_words = BUFFER_SIZE_WORDS
-            if filesize < BUFFER_SIZE_WORDS:
+            if filesize < BUFFER_SIZE_WORDS*4:
                 in_words = filesize/4
             data_in = f.read(4*in_words)
             data = struct.unpack(str(in_words)+"I", data_in)
