@@ -22,6 +22,7 @@ import process_run_conditions
 BASE_ONLINEMON_DIR = "/work/halld/online_monitoring"
 PROCESSED_RUN_LIST_FILE = "processedrun.lst.online"
 ONLINE_ROOT_DIR = BASE_ONLINEMON_DIR + '/root'
+ONLINE_CONDITION_DIR = BASE_ONLINEMON_DIR + '/conditions'
 
 MIN_RUN_NUMBER = 670
 VERSION_NUMBER  =  1   ## hardcode for now
@@ -85,7 +86,11 @@ except:
 # load the list of ROOT files, making sure that they have the right suffix
 # also, allow for a minimum run number to mask out early commissioning runs
 files_on_disk = [ f for f in listdir(ONLINE_ROOT_DIR) if (isfile(join(ONLINE_ROOT_DIR,f))and(f[-5:]=='.root')) ]
-run_numbers_on_disk = [ (int(fname[13:18]),fname) for fname in files_on_disk if (int(fname[13:18])>=MIN_RUN_NUMBER) ]
+#run_numbers_on_disk = [ (int(fname[13:18]),fname) for fname in files_on_disk if (int(fname[13:18])>=MIN_RUN_NUMBER) ]
+
+# kludge for now, since the online ROOT files have stopped since run 1764, get a new run if a new condition file shows up
+condition_files_on_disk = [ f for f in listdir(ONLINE_CONDITION_DIR) if (isfile(join(ONLINE_CONDITION_DIR,f))and(f[-4:]=='.dat')) ]
+run_numbers_on_disk = [ (int(fname[15:20]),fname) for fname in condition_files_on_disk if (int(fname[15:20])>=MIN_RUN_NUMBER) ]
 run_numbers_on_disk.sort(key=lambda runinfo: runinfo[0])
 
 # save processed runs - overwrite save files
