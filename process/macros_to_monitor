@@ -25,7 +25,11 @@
 /group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_FCALReconstruction_p2.C
 /group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_BCALReconstruction_p1.C
 /group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_BCALReconstruction_p2.C
-/group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Tracking.C
+/group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Tracking_p1.C
+/group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Tracking_p2.C
 /group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Kinematics_p1.C
 /group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Kinematics_p2.C
+/group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Kinematics_p3.C
+/group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Matching_p1.C
+/group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Matching_p2.C
 
