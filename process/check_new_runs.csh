@@ -1,5 +1,6 @@
 #!/bin/tcsh
 # Set environmental variables for cron job
+set LOCKFILE=lock.online
 
 # Load standard environment for ROOT
 source /home/gluex/setup_jlab_commissioning.csh
@@ -9,4 +10,11 @@ source $MONITORING_HOME/monitoring_env.csh
 
 # run the script
 cd $MONITORING_HOME
-./check_new_runs.py -p -d
+
+if ( ! -e $LOCKFILE ) then
+    touch $LOCKFILE
+    ./check_new_runs.py -p -d
+    rm $LOCKFILE
+else 
+    echo "process is locked by another job, exiting..."
+endif
