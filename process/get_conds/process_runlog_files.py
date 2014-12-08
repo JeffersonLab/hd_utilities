@@ -12,10 +12,10 @@ from os.path import isfile, join
 from optparse import OptionParser
 import xml.etree.ElementTree as ET
 
-#from datamon_db import datamon_db
+from datamon_db import datamon_db
 
 RAWDATA_DIR = "/gluonraid1/rawdata/volatile/RunPeriod-2014-10/rawdata"
-VERBOSE = True
+VERBOSE = False
 
 # set default values
 def init_property_mapping():
@@ -37,22 +37,24 @@ def parse_comment_file(fname, run_properties):
         for line in infile:
             if len(line)<15:
                 continue
-            key = line[:11]
+            key = line[:11].strip()
             sep = line[11:14]
-            value = line[14:]
+            value = line[14:].strip()
 
             properties[key] = value
 
     except IOError as e:
         print "I/O error({0}): {1}".format(e.errno, e.strerror)
-        return None
+        return run_properties
     except:
         print "Error: ", sys.exc_info()[0]
-        return None
+        #return None
 
     # save information from file
     if "RUN CONFIG" in properties:
-        run_properties["RUN CONFIG"] = properties["RUN CONFIG"]
+        run_properties["trigger_config_file"] = properties["RUN CONFIG"]
+
+    return run_properties
 
 def parse_log_file(fname, run_properties):
     properties = {}
@@ -76,14 +78,20 @@ def parse_log_file(fname, run_properties):
 
     except IOError as e:
         print "I/O error({0}): {1}".format(e.errno, e.strerror)
-        return None
+        return run_properties
     except:
         print "Error: ", sys.exc_info()[0]
         #return None
 
-    print str(properties)
+    if "start_time" in properties:
+        run_properties["start_time"] = properties["start_time"]
+    if "end_time" in properties:
+        run_properties["end_time"] = properties["end_time"]
+    if "num_events" in properties:
+        run_properties["num_events"] = properties["num_events"]
+    return run_properties
 
-def process_logs(run):
+def process_logs(db, run):
     runfile = "%06d" % run
     run_properties = init_property_mapping()
 
@@ -94,11 +102,18 @@ def process_logs(run):
         return
 
     comment_file_name = join(logdir,"run_%06d_comments.txt" % run)
-    parse_comment_file(comment_file_name, run_properties)
+    run_properties = parse_comment_file(comment_file_name, run_properties)
 
     log_file_name = join(logdir,"current_run.log")
-    parse_log_file(log_file_name,  run_properties)
+    run_properties = parse_log_file(log_file_name,  run_properties)
+    
+    # for now, only update numbers of events if we haven't been able to extract them from the files
+    nevents = db.GetNumEvents(run)
+    if nevents >= 0 and "num_events" in run_properties:
+        del run_properties["num_events"]
 
+    #print str(run_properties)
+    db.UpdateRunInfo(run, run_properties)
 
 def main(argv):
     # allow us to run over just one run at a time
@@ -116,8 +131,16 @@ def main(argv):
             print "invalid directory = " + d
     runs_on_disk.sort()
 
+    # Add information to DB
+    ## initialize DB
+    db = datamon_db()
     for run in runs_on_disk:
-        process_logs(run)
+        print "processing run %s ..." % (run)
+        ## add blank run to DB if it doesn't exist
+        if(db.GetRunID(run) < 0):
+            db.CreateRun(run)
+
+        process_logs(db,run)
 
 
 if __name__ == "__main__":
