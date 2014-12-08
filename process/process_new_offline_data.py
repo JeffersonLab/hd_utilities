@@ -228,9 +228,9 @@ for rundir in rundirs_on_disk:
         process_run_conditions.main(cmdargs.split())
 
     ## we did process the run!
-    run_list.append(runnum)
-    # save this face
-    print>>runlist_file, str(runnum)
+    if runnum not in run_list:
+        run_list.append(runnum)
+        print>>runlist_file, str(runnum)
 
 
 # cleanup 

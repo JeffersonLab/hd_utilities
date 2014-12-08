@@ -17,7 +17,7 @@ from datamon_db import datamon_db
 
 RADIATOR_TOLERANCE = 5  # allow 5 mm tolerance in determining which radiator
 
-VERBOSE = False
+VERBOSE = True
 
 # switches to decide if we process certain types of information
 #USE_EPICS = True
@@ -107,6 +107,8 @@ def format_date(timestamp):
 def parse_condition_file(fname):
     run_conditions = {}
     try:
+        if VERBOSE:
+            print "opening condition file = "  + fname
         infile = open(fname)
         for line in infile:
             tokens = line.strip().split()
@@ -343,13 +345,16 @@ def main(argv):
         run_properties['radiator_type'] = '3x10-4 RL'
         run_properties['luminosity'] = 22.7e-5 * float(run_properties['beam_current'])
     else:
-        run_properties['luminosity'] = run_properties['solenoid_current']
+        run_properties['radiator_type'] = 'None'
+        #run_properties['luminosity'] = run_properties['beam_current']
+        run_properties['luminosity'] = 0.
 
     # parse EVIO files to extract useful information
     # eventually the DAQ will report this properly?
     rawdata_evio_dir = RAWDATA_DIR_FORMAT % (run_number)
     if os.path.isdir(rawdata_evio_dir) :
         filelist = [ join(rawdata_evio_dir,f) for f in listdir(rawdata_evio_dir) if ((f[:10]=="hd_rawdata" or f[:6]=="hd_raw")and(f[-5:]=='.evio')) ]
+        filelist.sort()
         file_properties = ParseEVIOFiles(filelist)
         if len(file_properties) > 0:
             run_properties['num_events'] = file_properties['num_events']

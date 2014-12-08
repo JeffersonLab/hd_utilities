@@ -9,22 +9,28 @@
 import sys,os,errno
 from os import listdir
 from os.path import isfile, join
+from optparse import OptionParser
 
 # monitoring libraries
 from datamon_db import datamon_db
 import make_monitoring_plots
 import process_monitoring_data
+import process_run_conditions
 
 ############################################
 ### GLOBALS
 BASE_ONLINEMON_DIR = "/work/halld/online_monitoring"
-PROCESSED_RUN_LIST_FILE = "processedrun.lst"
+PROCESSED_RUN_LIST_FILE = "processedrun.lst.online"
 ONLINE_ROOT_DIR = BASE_ONLINEMON_DIR + '/root'
 
-MIN_RUN_NUMBER = 975
+MIN_RUN_NUMBER = 670
 VERSION_NUMBER  =  1   ## hardcode for now
 MONITORING_OUTPUT_DIR = "/work/halld/data_monitoring"
 RUN_PERIOD = "RunPeriod-2014-10"
+
+MAKE_PLOTS = True
+MAKE_DB_SUMMARY = True
+MAKE_RUN_CONDITIONS = True
 
 ############################################
 
@@ -39,6 +45,23 @@ def mkdir_p(path):
 
 ### START PROCESSING
 
+parser = OptionParser(usage = "process_new_offline_data.py input_directory output_directory")
+parser.add_option("-p","--disable_plots", dest="disable_plotting", action="store_true",
+                  help="Don't make PNG files for web display")
+parser.add_option("-d","--disable_summary", dest="disable_db_summary", action="store_true",
+                  help="Don't calculate summary information and store it in the DB")
+parser.add_option("-c","--disable_conditions", dest="disable_run_conditions", action="store_true",
+                  help="Don't process and store run conditions information")
+
+(options, args) = parser.parse_args(sys.argv)
+
+if(options.disable_plotting):
+    MAKE_PLOTS = False
+if(options.disable_db_summary):
+    MAKE_DB_SUMMARY = False
+if(options.disable_run_conditions):
+    MAKE_RUN_CONDITIONS = False
+
 # read in list of runs we've already processed
 run_list = []
 try:
@@ -49,7 +72,6 @@ try:
         except ValueError:
             print "Unexpected value in run file = " + line.strip() + " , skipping..."
         else:
-            print "run number = " + str(runnum)
             run_list.append( runnum )
     runlist_file.close()
 except IOError as e:
@@ -88,22 +110,30 @@ for (run,fname) in run_numbers_on_disk:
             db.CreateRun(run)
         ## TODO: create version info?
         
-        ## process monitoring data
-        cmdargs  = " --histogram_list /u/home/gluex/halld/monitoring/process/histograms_to_monitor" 
-        cmdargs += " --macro_list /u/home/gluex/halld/monitoring/process/macros_to_monitor "
-        cmdargs += " --root_dir rootspy/"
-        monitoring_data_dir = join(MONITORING_OUTPUT_DIR, RUN_PERIOD, ("Run%06d" % run))
-        #mkdir_p(monitoring_data_dir)
-        os.system("mkdir -p " + monitoring_data_dir)  ## need error checks
-        cmdargs += "--output_dir " + monitoring_data_dir
-        cmdargs += "  " + join(ONLINE_ROOT_DIR,fname)
-        print "  creating plots..."
-        make_monitoring_plots.main(cmdargs.split())
+        if MAKE_PLOTS:
+            ## process monitoring data
+            cmdargs  = " --histogram_list /u/home/gluex/halld/monitoring/process/histograms_to_monitor" 
+            cmdargs += " --macro_list /u/home/gluex/halld/monitoring/process/macros_to_monitor "
+            cmdargs += " --root_dir rootspy/"
+            monitoring_data_dir = join(MONITORING_OUTPUT_DIR, RUN_PERIOD, ("Run%06d" % run))
+            #mkdir_p(monitoring_data_dir)
+            os.system("mkdir -p " + monitoring_data_dir)  ## need error checks
+            cmdargs += "--output_dir " + monitoring_data_dir
+            cmdargs += "  " + join(ONLINE_ROOT_DIR,fname)
+            print "  creating plots..."
+            make_monitoring_plots.main(cmdargs.split())
 
-        cmdargs  = str(run) + " " + str(VERSION_NUMBER) + " " + join(ONLINE_ROOT_DIR,fname)
-        print "  analyzing DB info..."
-        process_monitoring_data.main(cmdargs.split()) 
+        if MAKE_DB_SUMMARY:
+            cmdargs  = str(run) + " " + str(VERSION_NUMBER) + " " + join(ONLINE_ROOT_DIR,fname)
+            print "  analyzing DB info..."
+            process_monitoring_data.main(cmdargs.split()) 
         
+        if MAKE_RUN_CONDITIONS:
+            # update the run metadata
+            cmdargs = str(run)
+            print "  saving conditions..."
+            process_run_conditions.main(cmdargs.split())
+
         ## we did process the run!
         run_list.append(run)
         # save this face
