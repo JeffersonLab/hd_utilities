@@ -6,7 +6,7 @@
 # Author: Sean Dobbs (s-dobbs@northwestern.edu), 2014
 
 import MySQLdb
-import texttable
+#import texttable
 class datamon_db:
     """Class for interaction with data monitoring DB"""
     def __init__(self, new_dbhost='hallddb.jlab.org'):
@@ -190,10 +190,10 @@ class datamon_db:
             print "---------------------------------"
             print table_name.upper()
             print "---------------------------------"
-            table = texttable.Texttable(max_width=0)
-            table.header(fields)
-            table.add_rows(rows,header=False)
-            print table.draw() + "\n"
+            #table = texttable.Texttable(max_width=0)
+            #table.header(fields)
+            #table.add_rows(rows,header=False)
+            #print table.draw() + "\n"
         elif mode.lower()=="csv":
             # simple print of comma separated values
             print "# " + " ".join(fields)
@@ -252,12 +252,21 @@ class datamon_db:
         self.db.execute(db_cmd, values)
         self.db_conn.commit()
         
-
+    ### functions to access data
     def GetRunID(self, run_num):
         self.db.execute('SELECT runid FROM run_info WHERE run_num=%s', (int(run_num),))
         run_info = self.db.fetchone()
         #print 'Got RUNID = ' + str(run_info)
         if run_info == None:
+            return -1
+        else:
+            return int(run_info[0])
+
+    def GetNumEvents(self, run_num):
+        self.db.execute('SELECT num_events FROM run_info WHERE run_num=%s', (int(run_num),))
+        run_info = self.db.fetchone()
+        #print 'Got NUMEVENTS = ' + str(run_info)
+        if run_info is None or run_info[0] is None:
             return -1
         else:
             return int(run_info[0])
