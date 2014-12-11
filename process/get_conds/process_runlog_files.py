@@ -9,13 +9,14 @@ import sys,os
 from os import listdir
 from os.path import isfile, join
 
+import subprocess
 from optparse import OptionParser
 import xml.etree.ElementTree as ET
 
 from datamon_db import datamon_db
 
 RAWDATA_DIR = "/gluonraid1/rawdata/volatile/RunPeriod-2014-10/rawdata"
-VERBOSE = False
+VERBOSE = True
 
 # set default values
 def init_property_mapping():
@@ -24,6 +25,16 @@ def init_property_mapping():
     }
     return run_properties
 
+
+# convert dates from "MM-DD-YY HH:MM:SS" -> "YYYY-MM-DD HH:MM:SS" 
+def format_datetime(dtstr):
+    try:
+        (date,time) = dtstr.split()
+        (month,day,year) = date.split('-')
+        return "20%s-%s-%s %s" %(year,month,day,time)
+    except:
+        # if there's any problems, then just return what we were given
+        return dtstr
 
 # get information from comment file 
 # format of non-comment fields:  char(12), " : ", char(*)
@@ -84,11 +95,80 @@ def parse_log_file(fname, run_properties):
         #return None
 
     if "start_time" in properties:
-        run_properties["start_time"] = properties["start_time"]
+        run_properties["start_time"] = format_datetime(properties["start_time"])
     if "end_time" in properties:
-        run_properties["end_time"] = properties["end_time"]
+        run_properties["end_time"] = format_datetime(properties["end_time"])
     if "num_events" in properties:
         run_properties["num_events"] = properties["num_events"]
+    return run_properties
+
+
+def extract_epics_info(run_properties):
+    EPICS_VARS = "IBCAD00CRCUR6,IPM5C11.VAL,IPM5C11A.VAL,IPM5C11B.VAL,IPM5C11C.VAL,MMSHLDE,HALLD:p,hd:collimator:motor.RBV,hd:converter:motor.RBV,HallD-PXI:Data:I_Shunt"
+    EPICS_VARS += ",hd:converter_at_home,hd:converter_at_a,hd:converter_at_b,hd:converter_at_c"
+    EPICS_VARS += ",hd:collimator_at_a,hd:collimator_at_b,hd:collimator_at_block"
+    run_endtime = "^10m"     ## if we couldn't figure out when the run ended, assume it was short and integrate variables over a 10 minute span
+    TOLERANCE = 0.05         ## 5% tolerance for checking if EPICS var is equal to 1 - needed since we are averaging over run
+
+    # don't do anything if we don't have a start time
+    if not "start_time" in run_properties:
+        return run_properties
+
+    # average EPICS variables over the whole run
+    if "end_time" in run_properties:
+        run_endtime = run_properties["end_time"]
+
+    cmds = []
+    cmds.append("myStats")
+    cmds.append("-b")
+    cmds.append(run_properties["start_time"])
+    cmds.append("-e")
+    cmds.append(run_endtime)
+    cmds.append("-l")
+    cmds.append(EPICS_VARS)
+
+    if VERBOSE:
+        print "MYA CMD = " + " ".join(cmds)
+
+    p = subprocess.Popen(cmds, stdout=subprocess.PIPE)
+    for line in p.stdout:
+        print line.strip()
+        tokens = line.strip().split()
+        if len(tokens) < 3:
+            continue
+        key = tokens[0]
+        value = tokens[2]    ## average value
+        if value == "N/A":
+            continue
+        if key == "IBCAD00CRCUR6":
+            run_properties["beam_current"] = value
+        if key == "HALLD:p":
+            run_properties["beam_energy"] = str(float(value)/1000.)
+        if key == "HallD-PXI:Data:I_Shunt":
+            run_properties["solenoid_current"] = value
+        if key == "hd:converter_at_home":
+            if abs(float(value) - 1.) < TOLERANCE:
+                run_properties["ps_converter"] = "Retracted"
+        if key == "hd:converter_at_a":
+            if abs(float(value) - 1.) < TOLERANCE:
+                run_properties["ps_converter"] = "1x10-3 RL"
+        if key == "hd:converter_at_b":
+            if abs(float(value) - 1.) < TOLERANCE:
+                run_properties["ps_converter"] = "3x10-4 RL"
+        if key == "hd:converter_at_c":
+            if abs(float(value) - 1.) < TOLERANCE:
+                run_properties["ps_converter"] = "5x10-3 RL"
+        if key == "hd:collimator_at_block":
+            if abs(float(value) - 1.) < TOLERANCE:
+                run_properties["collimator_diameter"] = "Blocking"
+        if key == "hd:collimator_at_a":
+            if abs(float(value) - 1.) < TOLERANCE:
+                run_properties["collimator_diameter"] = "3.4mm hole"
+        if key == "hd:collimator_at_b":
+            if abs(float(value) - 1.) < TOLERANCE:
+                run_properties["collimator_diameter"] = "5.0mm hole"
+            
+
     return run_properties
 
 def process_logs(db, run):
@@ -106,6 +186,8 @@ def process_logs(db, run):
 
     log_file_name = join(logdir,"current_run.log")
     run_properties = parse_log_file(log_file_name,  run_properties)
+    
+    run_properties = extract_epics_info(run_properties)
     
     # for now, only update numbers of events if we haven't been able to extract them from the files
     nevents = db.GetNumEvents(run)
