@@ -1,4 +1,5 @@
 # CDC
+cdc_raw_intpp
 cdc_int
 cdc_intpp
 cdc_raw_t 
@@ -32,6 +33,7 @@ psco
 #TAGH
 DigiHit_tdcTime
 DigiHit_PulseIntegral
+DigiHit_PedestalVsSlotID
 #TAGM
 tagm_hit_seen
 tagm_hit_time
