@@ -9,7 +9,7 @@
 #  
 #  1. the date string that specifies when the monitoring jobs were started
 #  2. the base directory where the monitoring files are stored
-#     We assume a directory of the form /volatile/halld/RunPeriod-2014-10/offline_monitoring/RRRRRR/$DATE/
+#     We assume a directory of the form /volatile/halld/RunPeriod-2014-10/offline_monitoring/$DATE/$DATATYPE/RRRRRR/
 #  3. the directory to store the PNG files (and other associated processing files)
 #
 
@@ -26,8 +26,9 @@ import process_run_conditions
 
 ############################################
 ### GLOBALS
-PROCESSED_RUN_LIST_FILE = "processedrun.lst"
-VERSION_NUMBER  =  5   ## hardcode for now
+#PROCESSED_RUN_LIST_FILE = "processedrun.lst"
+ROOTFILE_DIR = "ROOT"
+VERSION_NUMBER  =  7   ## hardcode for now
 
 MAKE_PLOTS = True
 MAKE_DB_SUMMARY = True
@@ -69,7 +70,7 @@ if(len(args) < 3):
     parser.print_help()
     sys.exit(0)
 
-RUN_DATE = args[1]
+REVISION = args[1]
 INPUT_DIRECTORY = args[2]
 OUTPUT_DIRECTORY = args[3]
 
@@ -109,53 +110,53 @@ if not os.path.exists(OUTPUT_DIRECTORY):
     
 
 # allow for incremental processing ...
-run_list = []
-if not FORCE_PROCESSING and os.path.exists( join(OUTPUT_DIRECTORY,PROCESSED_RUN_LIST_FILE) ):
-    # read in list of runs we've already processed
-    try:
-        runlist_file = open(join(OUTPUT_DIRECTORY,PROCESSED_RUN_LIST_FILE))
-        for line in runlist_file:
-            try:
-                runnum = int(line.strip())
-            except ValueError:
-                print "Unexpected value in run file = " + line.strip() + " , skipping..."
-            else:
-                #print "processed run number = " + str(runnum)
-                run_list.append( runnum )
-        runlist_file.close()
-    except IOError as e:
-        print "I/O error({0}): {1}".format(e.errno, e.strerror)
-    except:
-        print "Unexpected error:", sys.exc_info()[0]
-        sys.exit(0)
+#run_list = []
+#if not FORCE_PROCESSING and os.path.exists( join(OUTPUT_DIRECTORY,PROCESSED_RUN_LIST_FILE) ):
+#    # read in list of runs we've already processed
+#    try:
+#        runlist_file = open(join(OUTPUT_DIRECTORY,PROCESSED_RUN_LIST_FILE))
+#        for line in runlist_file:
+#            try:
+#                runnum = int(line.strip())
+#            except ValueError:
+#                print "Unexpected value in run file = " + line.strip() + " , skipping..."
+#            else:
+#                #print "processed run number = " + str(runnum)
+#                run_list.append( runnum )
+#        runlist_file.close()
+#    except IOError as e:
+#        print "I/O error({0}): {1}".format(e.errno, e.strerror)
+#    except:
+#        print "Unexpected error:", sys.exc_info()[0]
+#        sys.exit(0)
 
 
 ###
 rundirs_on_disk = []
-dirs_on_disk = [ d for d in listdir(INPUT_DIRECTORY) if os.path.isdir(join(INPUT_DIRECTORY,d,RUN_DATE)) ]
+dirs_on_disk = [ d for d in listdir(join(INPUT_DIRECTORY,REVISION,ROOTFILE_DIR)) if os.path.isdir(join(INPUT_DIRECTORY,REVISION,ROOTFILE_DIR,d)) ]
 for dirname in sorted(dirs_on_disk):
     try:
         runnum = int(dirname)
     except ValueError:
         print "skipping directory " + dirname + " ..."
     else:
-        if runnum not in run_list :
-            #print "run number = " + str(runnum)
-            if RUN_NUMBER is None:
+        #if runnum not in run_list :
+        #print "run number = " + str(runnum)
+        if RUN_NUMBER is None:
+            rundirs_on_disk.append(dirname)
+        else:
+            if runnum == RUN_NUMBER:
                 rundirs_on_disk.append(dirname)
-            else:
-                if runnum == RUN_NUMBER:
-                    rundirs_on_disk.append(dirname)
 
 
 # save processed runs 
-try:
-    runlist_file = open(join(OUTPUT_DIRECTORY,PROCESSED_RUN_LIST_FILE),'a')
-except IOError as e:
-    print "I/O error({0}): {1}".format(e.errno, e.strerror)
-except:
-    print "Unexpected error:", sys.exc_info()[0]
-    sys.exit(0)
+#try:
+#    runlist_file = open(join(OUTPUT_DIRECTORY,PROCESSED_RUN_LIST_FILE),'a')
+#except IOError as e:
+#    print "I/O error({0}): {1}".format(e.errno, e.strerror)
+#except:
+#    print "Unexpected error:", sys.exc_info()[0]
+#    sys.exit(0)
 
 # initialize DB
 db = datamon_db()
@@ -164,16 +165,27 @@ db = datamon_db()
 for rundir in rundirs_on_disk:
     runnum = int(rundir)    
 
+    print "checking run " + str(runnum)
+
     ## add blank run to DB if it doesn't exist
     if(db.GetRunID(runnum) < 0):
         db.CreateRun(runnum)
-    ## TODO: create version info?    
 
-    root_files = [ f for f in listdir(join(INPUT_DIRECTORY,rundir,RUN_DATE)) if (isfile(join(INPUT_DIRECTORY,rundir,RUN_DATE,f))and(f[-5:]=='.root')) ]
-    
-    os.system("mkdir -p " + join(OUTPUT_DIRECTORY,"rootfiles"))
-    # check each file and extract which file number it corresponds to
-    monitoring_files = open(join(INPUT_DIRECTORY,rundir,RUN_DATE,'rootfiles.txt'),"w")
+    rootfilespath = join(INPUT_DIRECTORY,REVISION,ROOTFILE_DIR)
+    root_files = [ f for f in listdir(join(rootfilespath,rundir)) if (isfile(join(rootfilespath,rundir,f))and(f[-5:]=='.root')) ]
+    rootfilelist_fname = join(INPUT_DIRECTORY,REVISION,"misc",rundir,"rootfiles.txt")
+
+    ##
+    new_files_exist = False
+    monitoring_files = {}
+    new_monitoring_files = {}
+    if not isfile(rootfilelist_fname):
+         processed_files = []
+    else:
+        rootfilelist_file = open(rootfilelist_fname)
+        processed_files = rootfilelist_file.read().splitlines()
+        rootfilelist_file.close()
+
     for fname in sorted(root_files):
         filenum = -1
         fname_fields = fname[:-5].split("_")
@@ -193,21 +205,51 @@ for rundir in rundirs_on_disk:
         if file_runnum != runnum :
             print "invalid filename = " + fname + ", skipping ..."
             continue
-        # save a list of the files to be processed
-        print>>monitoring_files, join(INPUT_DIRECTORY,rundir,RUN_DATE,fname)
-        # also copy the files so they can be viewed on the web
-        os.system("cp " + join(INPUT_DIRECTORY,rundir,RUN_DATE,fname) + " " + join(OUTPUT_DIRECTORY,"rootfiles"))
+        # save a mapping of the files to processed with their number within the run
+        monitoring_files[fname] = filenum
+        # check to see if we've processed this file already
+        if fname not in processed_files:
+            new_monitoring_files[fname] = filenum
+            new_files_exist = True
 
+    ## skip further processing if it's not needed
+    if not FORCE_PROCESSING and not new_files_exist:
+        continue
+    if len(monitoring_files) == 0:
+        continue
+
+    files_to_process = {}
+    if FORCE_PROCESSING:
+        files_to_process = monitoring_files
+    else:
+        files_to_process = new_monitoring_files
+
+    # loop over the files and do any pre-file processing we need to do
+    for (fname,filenum) in monitoring_files.items():
         # we are good!  let's get some work done
         print "processing run " + str(runnum) + " file " + str(filenum) + " ..."
 
         #  process monitoring data for each file
         if MAKE_DB_SUMMARY:
-            cmdargs  = "--file_number " + str(filenum) + " " + str(runnum) + " " + str(VERSION_NUMBER) + " " + join(INPUT_DIRECTORY,rundir,RUN_DATE,fname)
+            cmdargs  = "--file_number " + str(filenum) + " " + str(runnum) + " " + str(VERSION_NUMBER) + " " + join(rootfilespath,rundir,fname)
             print "  analyzing DB info..."
             print "process_monitoring_data " + cmdargs
             process_monitoring_data.main(cmdargs.split()) 
-    monitoring_files.close()
+
+
+    # sum all the files and place them in a web-viewable location
+    summed_rootfile = join(OUTPUT_DIRECTORY,"rootfiles","hd_root_" + rundir + ".root")
+    if isfile(summed_rootfile):
+        os.system("rm -f " + summed_rootfile)
+    os.system("mkdir -p " + join(OUTPUT_DIRECTORY,"rootfiles"))
+    # note hadd -k skips corrupt or missing files - we want to do our best but not fail here
+    os.system("hadd -v 0 " +  " ".join([summed_rootfile] + [join(rootfilespath,rundir,f) for f in monitoring_files.keys()] ))
+
+    # save the current list of files
+    monitoring_file_list = open(rootfilelist_fname,"w")
+    for fname in sorted(monitoring_files.keys()):
+        print>>monitoring_file_list, fname
+    monitoring_file_list.close()
 
     # make plots for the sum of all files in the run
     if MAKE_PLOTS:
@@ -217,7 +259,7 @@ for rundir in rundirs_on_disk:
         #mkdir_p(monitoring_data_dir)
         os.system("mkdir -p " + monitoring_data_dir)  ## need error checks
         cmdargs += " --output_dir " + monitoring_data_dir
-        cmdargs += " --file_list " + join(INPUT_DIRECTORY,rundir,RUN_DATE,'rootfiles.txt')
+        cmdargs += " --file_list " + rootfilelist_fname
         print "  creating plots..."
         make_monitoring_plots.main(cmdargs.split())
 
@@ -227,13 +269,8 @@ for rundir in rundirs_on_disk:
         print "  saving conditions..."
         process_run_conditions.main(cmdargs.split())
 
-    ## we did process the run!
-    if runnum not in run_list:
-        run_list.append(runnum)
-        print>>runlist_file, str(runnum)
-
 
 # cleanup 
-runlist_file.close()
+#runlist_file.close()
 
     
