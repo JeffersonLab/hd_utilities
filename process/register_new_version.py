@@ -74,9 +74,12 @@ def main(argv):
         return
         
     if cmd == "add":
+        if len(argv) < 2:
+            print_usage()
+            return
         filename = argv[1]
     elif cmd == "update":
-        if len(argv) <= 3:
+        if len(argv) < 3:
             print_usage()
             return
         try:
