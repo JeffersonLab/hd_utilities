@@ -6,5 +6,5 @@ LOGDIR=/home/gluex/halld/monitoring/log
 
 #* * * * * /home/gluex/halld/monitoring/process/check_monitoring_data.csh >& $LOG_DIR/check_monitoring_data.log.`date +%F_%T`
 #*/5 * * * * /home/gluex/halld/monitoring/process/check_monitoring_data.csh |& tee $LOG_DIR/check_monitoring_data.log.`date +%F_%T`
-*/15 * * * * /home/gluex/halld/monitoring/process/check_new_runs.csh
-10 */2 * * * /home/gluex/halld/monitoring/process/check_monitoring_data.csh
+#*/15 * * * * /home/gluex/halld/monitoring/process/check_new_runs.csh
+#10 * * * * /home/gluex/halld/monitoring/process/check_monitoring_data.csh
