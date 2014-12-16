@@ -13,9 +13,14 @@ import subprocess
 from optparse import OptionParser
 import xml.etree.ElementTree as ET
 
+from math import fabs
+import struct
+from datetime import datetime
+
 from datamon_db import datamon_db
 
 RAWDATA_DIR = "/gluonraid1/rawdata/volatile/RunPeriod-2014-10/rawdata"
+RAWDATA2_DIR = "/gluonraid2/rawdata/volatile/RunPeriod-2014-10/rawdata"
 VERBOSE = True
 
 # set default values
@@ -27,7 +32,7 @@ def init_property_mapping():
 
 
 # convert dates from "MM-DD-YY HH:MM:SS" -> "YYYY-MM-DD HH:MM:SS" 
-def format_datetime(dtstr):
+def reformat_datetime(dtstr):
     try:
         (date,time) = dtstr.split()
         (month,day,year) = date.split('-')
@@ -35,6 +40,12 @@ def format_datetime(dtstr):
     except:
         # if there's any problems, then just return what we were given
         return dtstr
+
+
+def format_date(timestamp):
+    dt = datetime.fromtimestamp(timestamp)
+    return str(datetime(dt.year,dt.month,dt.day,dt.hour,dt.minute,dt.second))
+
 
 # get information from comment file 
 # format of non-comment fields:  char(12), " : ", char(*)
@@ -95,9 +106,9 @@ def parse_log_file(fname, run_properties):
         #return None
 
     if "start_time" in properties:
-        run_properties["start_time"] = format_datetime(properties["start_time"])
+        run_properties["start_time"] = reformat_datetime(properties["start_time"])
     if "end_time" in properties:
-        run_properties["end_time"] = format_datetime(properties["end_time"])
+        run_properties["end_time"] = reformat_datetime(properties["end_time"])
     if "num_events" in properties:
         run_properties["num_events"] = properties["num_events"]
     return run_properties
@@ -171,12 +182,185 @@ def extract_epics_info(run_properties):
 
     return run_properties
 
-def process_logs(db, run):
+
+######################################
+# EVIO parsing stuff
+
+def EVIO_SWAP64(x):
+    return ( (((x) >> 56) & 0x00000000000000FFL) | \
+                 (((x) >> 40) & 0x000000000000FF00L) | \
+                 (((x) >> 24) & 0x0000000000FF0000L) | \
+                 (((x) >> 8)  & 0x00000000FF000000L) | \
+                 (((x) << 8)  & 0x000000FF00000000L) | \
+                 (((x) << 24) & 0x0000FF0000000000L) | \
+                 (((x) << 40) & 0x00FF000000000000L) | \
+                 (((x) << 56) & 0xFF00000000000000L) )
+
+
+def EVIO_SWAP32(x):
+    return ( (((x) >> 24) & 0x000000FF) | \
+                 (((x) >> 8)  & 0x0000FF00) | \
+                 (((x) << 8)  & 0x00FF0000) | \
+                 (((x) << 24) & 0xFF000000) )
+
+# algorithm taken from evio2db
+def ParseEVIOFiles(filelist):
+    BUFFER_SIZE_WORDS = 4000  
+    all_properties = []
+    # should double check file names
+    for fnamepath in filelist:
+        print "processing " + fnamepath + "..."
+        try:
+            # extract file number & check 
+            fname = fnamepath.split('/')[-1]
+            if len(fname) < 6 or fname[-5:] != ".evio":
+                print "bad file " + fname + " , skipping..."
+                continue
+            fparts = fname[:-5].split('_')
+            if len(fparts) < 4:
+                print "bad file " + fname + " , skipping..."
+                continue
+            try:
+                file_num = int(fparts[3])
+            except ValueError:
+                print "bad file " + fname + " , skipping..."
+                continue                
+
+            filesize = os.path.getsize(fnamepath)
+            f = open(fnamepath,"rb")
+            # initialize values
+            properties = {}
+            properties["file_num"] = file_num
+            # figure out the first event
+            in_words = BUFFER_SIZE_WORDS
+            if filesize < BUFFER_SIZE_WORDS*4:
+                in_words = filesize/4
+            data_in = f.read(4*in_words)
+            data = struct.unpack(str(in_words)+"I", data_in)
+            for i in xrange(len(data)):
+                w = data[i]
+                # Look for a "Go" event that we can use for the beginning of the run
+                if( (w & 0x0001D2FF) == 0x0001D2FF ): 
+                    properties["start_time"] = EVIO_SWAP32(data[i+1]);
+                    if VERBOSE:
+                        print "Found start time = " + format_date(properties["start_time"])
+                # Physics Event Header bits that should be set
+                if( (w & 0x001050FF) != 0x001050FF ):
+                    continue
+                # Physics Event Header bits that should not be set
+                if( (w & 0x000F0E00) != 0x00000000 ):
+                    continue
+                # Jump 2 words to Trigger bank
+                w = data[i+2];
+                # Built Trigger Bank bits that should be set
+                if( (w & 0x002020FF) != 0x002020FF ):
+                    continue
+                # First bank in Trigger bank should be 64bit int type
+                w = data[i+3];
+                if( (w & 0x00000A00) != 0x00000A00 ):
+                    continue
+                        
+                properties["first_event"]  = EVIO_SWAP64( (long(data[i+5])<<32) | long(data[i+4]) )
+                properties["tfirst_event"] = EVIO_SWAP64( (long(data[i+7])<<32) | long(data[i+6]) )
+                break
+
+            # figure out the last event - search through the file in chunks from the back
+            n = 0  # number of chunks we have looked through
+            last_event = 0
+            while True:
+                if(last_event > 0):
+                    break
+                n += 1
+                f.seek(-n*4*in_words, 2)
+                data_in = f.read(4*in_words)
+                Nwords = len(data_in)/4
+                data = struct.unpack(str(in_words)+"I", data_in)                
+                #for i in xrange(len(data)):
+                i = Nwords - 7
+                while True:
+                    i -= 1
+                    if i < 0:
+                        break
+                    w = data[i]
+                    # Physics Event Header bits that should be set
+                    if( (w & 0x001050FF) != 0x001050FF ):
+                        continue
+                    # Physics Event Header bits that should not be set
+                    if( (w & 0x000F0E00) != 0x00000000 ):
+                        continue
+                    # Jump 2 words to Trigger bank
+                    w = data[i+2];
+                    # Built Trigger Bank bits that should be set
+                    if( (w & 0x002020FF) != 0x002020FF ):
+                        continue
+                    # First bank in Trigger bank should be 64bit int type
+                    w = data[i+3];
+                    if( (w & 0x00000A00) != 0x00000A00 ):
+                        continue
+
+                    last_event = EVIO_SWAP64( (long(data[i+5])<<32) | long(data[i+4]) )
+                    properties["last_event"]  = last_event
+                    properties["tlast_event"] = EVIO_SWAP64( (long(data[i+7])<<32) | long(data[i+6]) )
+                    break
+
+            # calculate results for a file
+            # do a better job handling bad files?
+            N = 0
+            end_time = 0
+            if "first_event" in properties and "last_event" in properties:    
+                N = (properties["last_event"] - properties["first_event"]) + 1
+                end_time = 5.0E-9 * (float(properties["tlast_event"]) - float(properties["tfirst_event"]))
+            if N == 0:
+                N = 1
+            properties["num_events"] = N
+            properties["end_time"] = end_time
+
+            # we're all done!
+            all_properties.append(properties)
+
+        except IOError as e:
+            print "I/O error({0}): {1}".format(e.errno, e.strerror)
+            return {}
+
+        
+    # build results
+    file_properties = {}
+
+    if VERBOSE:
+        print "results from EVIO parsing = " + str(all_properties)
+        print "processing: "
+
+    file_properties["num_files"] = len(all_properties)
+    file_properties["num_events"] = -1
+    file_properties["start_time"] = -1
+    file_properties["end_time"] = -1
+    for props in sorted(all_properties, key=lambda prop: int(prop["file_num"])):
+        if VERBOSE:
+            print str(props)
+        if file_properties["start_time"] < 0 :
+            # if there are DAQ problems, the GO event might not be properly written out
+            if "start_time" in props:
+                file_properties["start_time"] = props["start_time"]
+            else:
+                file_properties["start_time"] = 0
+            file_properties["end_time"] = file_properties["start_time"] + props["end_time"]
+            file_properties["num_events"] = props["num_events"]
+        else:
+            file_properties["end_time"] += props["end_time"] 
+            file_properties["num_events"] += props["num_events"] 
+    file_properties["start_time"] = format_date(file_properties["start_time"])
+    file_properties["end_time"] = format_date(file_properties["end_time"])
+    return file_properties
+
+
+######################################
+
+def process_logs(db, run, d):
     runfile = "%06d" % run
     run_properties = init_property_mapping()
 
     # check to see if the log directory exists
-    logdir = join(RAWDATA_DIR,"Run"+runfile,"RunLog"+runfile)
+    logdir = join(d,"RunLog"+runfile)
     if not os.path.isdir(logdir):
         print "could not find log directory = " + logdir
         return
@@ -194,35 +378,64 @@ def process_logs(db, run):
     if nevents >= 0 and "num_events" in run_properties:
         del run_properties["num_events"]
 
+    # parse EVIO files to extract useful information
+    rawdata_evio_dir = d
+    if os.path.isdir(rawdata_evio_dir) :
+        filelist = [ join(rawdata_evio_dir,f) for f in listdir(rawdata_evio_dir) if ((f[:10]=="hd_rawdata" or f[:6]=="hd_raw")and(f[-5:]=='.evio')) ]
+        filelist.sort()
+        file_properties = ParseEVIOFiles(filelist)
+        if len(file_properties) > 0:
+            run_properties['num_events'] = file_properties['num_events']
+            run_properties['num_files'] = file_properties['num_files']
+            run_properties['start_time'] = file_properties['start_time']
+            run_properties['end_time'] = file_properties['end_time']
+
     #print str(run_properties)
     db.UpdateRunInfo(run, run_properties)
 
+
 def main(argv):
     # allow us to run over just one run at a time
-
+    MIN_RUN = -1
+    MAX_RUN = 1000000
+    parser = OptionParser(usage = "process_runlog_files.py [options]")
+    parser.add_option("-M","--min_run", dest="min_run",
+                      help="Minimum run number to process")
+    parser.add_option("-X","--max_run", dest="max_run",
+                      help="Maximum run number to process")
+    (options, args) = parser.parse_args(argv)
+    if options.min_run:
+        MIN_RUN = int(options.min_run)
+    if options.max_run:
+        MAX_RUN = int(options.max_run)
 
     # run over all files
-    dirs_on_disk = [ d for d in listdir(RAWDATA_DIR) if os.path.isdir(join(RAWDATA_DIR,d)) ]
+    dirs_on_disk  = [ join(RAWDATA_DIR,d) for d in listdir(RAWDATA_DIR) if os.path.isdir(join(RAWDATA_DIR,d)) ]
+    dirs_on_disk += [ join(RAWDATA2_DIR,d) for d in listdir(RAWDATA2_DIR) if os.path.isdir(join(RAWDATA2_DIR,d)) ]
     #runs_on_disk = [ int(d[3:]) for d in dirs_on_disk ]
-    runs_on_disk = []
+    runs_on_disk = {}
     for d in dirs_on_disk:
         try:
-            run = int(d[3:])
-            runs_on_disk.append(run)
+            path = d.split('/')
+            run = int(path[-1][3:])
+            runs_on_disk[run] = d
         except:
             print "invalid directory = " + d
-    runs_on_disk.sort()
+    #runs_on_disk.sort()
 
     # Add information to DB
     ## initialize DB
     db = datamon_db()
-    for run in runs_on_disk:
+    for (run,d) in sorted(runs_on_disk.items()):
+        if run<MIN_RUN or run>MAX_RUN:
+            continue
         print "processing run %s ..." % (run)
         ## add blank run to DB if it doesn't exist
         if(db.GetRunID(run) < 0):
             db.CreateRun(run)
 
-        process_logs(db,run)
+        # get info from logs and EPICS archive and EVIO files
+        process_logs(db,run,d)
 
 
 if __name__ == "__main__":
