@@ -172,21 +172,25 @@ for rundir in rundirs_on_disk:
         db.CreateRun(runnum)
 
     rootfilespath = join(INPUT_DIRECTORY,REVISION,ROOTFILE_DIR)
-    root_files = [ f for f in listdir(join(rootfilespath,rundir)) if (isfile(join(rootfilespath,rundir,f))and(f[-5:]=='.root')) ]
+    root_files = [ join(rootfilespath,rundir,f) for f in listdir(join(rootfilespath,rundir)) if (isfile(join(rootfilespath,rundir,f))and(f[-5:]=='.root')) ]
     rootfilelist_fname = join(INPUT_DIRECTORY,REVISION,"misc",rundir,"rootfiles.txt")
 
-    ##
+    ## only run over files that haven't already been processed
+    ## we use the "rootfiles.txt" file as a store of which files have been already processed
     new_files_exist = False
     monitoring_files = {}
     new_monitoring_files = {}
-    if not isfile(rootfilelist_fname):
-         processed_files = []
-    else:
+    processed_files = []
+    if isfile(rootfilelist_fname):
         rootfilelist_file = open(rootfilelist_fname)
         processed_files = rootfilelist_file.read().splitlines()
         rootfilelist_file.close()
 
-    for fname in sorted(root_files):
+    #print "procssed files = " + str(processed_files)
+    #print "current files = " + str(root_files)
+
+    for filepath in sorted(root_files):
+        fname = filepath.split('/')[-1]
         filenum = -1
         fname_fields = fname[:-5].split("_")
         # sanity checks
@@ -206,10 +210,10 @@ for rundir in rundirs_on_disk:
             print "invalid filename = " + fname + ", skipping ..."
             continue
         # save a mapping of the files to processed with their number within the run
-        monitoring_files[fname] = filenum
+        monitoring_files[filepath] = filenum
         # check to see if we've processed this file already
-        if fname not in processed_files:
-            new_monitoring_files[fname] = filenum
+        if filepath not in processed_files:
+            new_monitoring_files[filepath] = filenum
             new_files_exist = True
 
     ## skip further processing if it's not needed
@@ -231,7 +235,7 @@ for rundir in rundirs_on_disk:
 
         #  process monitoring data for each file
         if MAKE_DB_SUMMARY:
-            cmdargs  = "--file_number " + str(filenum) + " " + str(runnum) + " " + str(VERSION_NUMBER) + " " + join(rootfilespath,rundir,fname)
+            cmdargs  = "--file_number " + str(filenum) + " " + str(runnum) + " " + str(VERSION_NUMBER) + " " + fname
             print "  analyzing DB info..."
             print "process_monitoring_data " + cmdargs
             process_monitoring_data.main(cmdargs.split()) 
@@ -243,7 +247,7 @@ for rundir in rundirs_on_disk:
         os.system("rm -f " + summed_rootfile)
     os.system("mkdir -p " + join(OUTPUT_DIRECTORY,"rootfiles"))
     # note hadd -k skips corrupt or missing files - we want to do our best but not fail here
-    os.system("hadd -v 0 " +  " ".join([summed_rootfile] + [join(rootfilespath,rundir,f) for f in monitoring_files.keys()] ))
+    os.system("hadd -v 0 " +  " ".join([summed_rootfile] + monitoring_files.keys() ))
 
     # save the current list of files
     monitoring_file_list = open(rootfilelist_fname,"w")
