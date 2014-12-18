@@ -399,9 +399,9 @@ def main(argv):
     MIN_RUN = -1
     MAX_RUN = 1000000
     parser = OptionParser(usage = "process_runlog_files.py [options]")
-    parser.add_option("-M","--min_run", dest="min_run",
+    parser.add_option("-b","--min_run", dest="min_run",
                       help="Minimum run number to process")
-    parser.add_option("-X","--max_run", dest="max_run",
+    parser.add_option("-e","--max_run", dest="max_run",
                       help="Maximum run number to process")
     (options, args) = parser.parse_args(argv)
     if options.min_run:
