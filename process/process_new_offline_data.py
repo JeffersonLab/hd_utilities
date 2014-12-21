@@ -28,7 +28,7 @@ import process_run_conditions
 ### GLOBALS
 #PROCESSED_RUN_LIST_FILE = "processedrun.lst"
 ROOTFILE_DIR = "ROOT"
-VERSION_NUMBER  =  7   ## hardcode for now
+VERSION_NUMBER  =  8   ## hardcode for now
 
 MAKE_PLOTS = True
 MAKE_DB_SUMMARY = True
