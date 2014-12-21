@@ -28,7 +28,7 @@ import process_run_conditions
 ### GLOBALS
 #PROCESSED_RUN_LIST_FILE = "processedrun.lst"
 ROOTFILE_DIR = "ROOT"
-VERSION_NUMBER  =  8   ## hardcode for now
+VERSION_NUMBER  =  8  
 
 MAKE_PLOTS = True
 MAKE_DB_SUMMARY = True
@@ -63,6 +63,10 @@ parser.add_option("-f","--force", dest="force", action="store_true",
                   help="Ignore list of already processed runs")
 parser.add_option("-R","--run_number", dest="run_number", 
                   help="Process only this particular run number")
+parser.add_option("-V","--version_number", dest="version_number", 
+                  help="Save summary results with this DB version ID")
+parser.add_option("-v","--version", dest="version_string",
+                  help="Save summary results with a particular data version, specified using the string \"RunPeriod,Revision\", e.g., \"RunPeriod-2014-10,5\"")
 
 (options, args) = parser.parse_args(sys.argv)
 
@@ -73,6 +77,9 @@ if(len(args) < 3):
 REVISION = args[1]
 INPUT_DIRECTORY = args[2]
 OUTPUT_DIRECTORY = args[3]
+
+# initialize DB
+db = datamon_db()
 
 if(options.disable_plotting):
     MAKE_PLOTS = False
@@ -93,6 +100,34 @@ if(options.run_number):
     if RUN_NUMBER <= 0:
         print "Invalid run number = " + options.run_number
         sys.exit(0)
+if(options.version_string):
+    try: 
+        revision = -1
+        (run_period,revision_str) = options.version_string.split(",")
+        try:
+            revision = int(revision_str)
+        except ValueError:
+            print "Invalid revision = " + revision
+            sys.exit(0)
+        VERSION_NUMBER = db.GetVersionIDRunPeriod(run_period, revision)
+        if(VERSION_NUMBER<0):
+            print "version not found in DB = " + options.version_string
+            sys.exit(0)
+    except:
+        print "Invalid version specification = " + options.version_string
+        sys.exit(0)
+if(options.version_number):
+    try:
+        VERSION_NUMBER = int(options.version_number) 
+    except ValueError:
+        print "Invalid version number = " + options.version_number
+        sys.exit(0)
+    if VERSION_NUMBER <= 0:
+        print "Invalid version number = " + options.version_number
+        sys.exit(0)
+
+print "VERSION_NUMBER = " + str(VERSION_NUMBER)
+exit(0)
 
 # check to see if the input directory is real
 if not os.path.isdir(INPUT_DIRECTORY):
@@ -158,8 +193,6 @@ for dirname in sorted(dirs_on_disk):
 #    print "Unexpected error:", sys.exc_info()[0]
 #    sys.exit(0)
 
-# initialize DB
-db = datamon_db()
 
 # do the heavy work for each directory - one run per directory
 for rundir in rundirs_on_disk:

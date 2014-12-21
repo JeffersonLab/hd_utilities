@@ -275,7 +275,16 @@ class datamon_db:
             return -1
         else:
             return int(run_info[0])
+
+    def GetVersionIDRunPeriod(self, run_period, revision):
+        self.db.execute('SELECT version_id FROM version_info WHERE run_period=%s AND revision=%s', (run_period, revision))
+        version_info = self.db.fetchone()
+        if version_info is None or version_info[0] is None:
+            return -1
+        else:
+            return int(version_info[0])
  
+
     ### Functions to add data
     def AddCDCHits(self, runid, file_num, version_id, num_events, values):
         self.InsertData('cdc_hits', [runid, file_num, version_id, num_events] + values)
