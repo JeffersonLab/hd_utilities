@@ -199,6 +199,11 @@ class datamon_db:
             print "# " + " ".join(fields)
             for row in rows:
                 print ",".join([str(e) for e in row])
+        elif mode.lower()=="tsv":
+            # simple print of comma separated values
+            print "# " + " ".join(fields)
+            for row in rows:
+                print "\t".join([str(e) for e in row])
 
     ### Functions to deal with meta data
     def CreateRun(self, run_num):
