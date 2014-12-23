@@ -126,8 +126,6 @@ if(options.version_number):
         print "Invalid version number = " + options.version_number
         sys.exit(0)
 
-print "VERSION_NUMBER = " + str(VERSION_NUMBER)
-exit(0)
 
 # check to see if the input directory is real
 if not os.path.isdir(INPUT_DIRECTORY):
