@@ -13,6 +13,7 @@ from optparse import OptionParser
 import os.path
 import sys
 from array import array
+import re
 
 from datamon_db import datamon_db
 
@@ -81,6 +82,33 @@ def plot_2dhist(h):
 ##########################################################
 ## image creation has been moved to a different set of macros
 
+# function to see if a histogram "in_hnamepath" matches the path definition given by "hnamepath_def"
+# we make the following assumptions for the path definiton:
+# - if the path does not begin with a '/', then we assume that this specifies a histogram name
+# - if the path does begin with a '/', the we assume that this specifies a full path
+# - we allow the "*" wildcard in the path definition
+def match_hnamepath(hnamepath_def, in_hnamepath):
+    if len(hnamepath_def) == 0:
+        return False
+    
+    if hnamepath_def[0] != '/':
+        #  match based on histogram name
+        return hnamepath_def == in_hnamepath
+    else:
+        # translate '*' wildcard into regex language
+        hnamepath_def.replace('*', '.*')
+        result = re.match(hnamepath_def, in_hnamepath)
+        if result is None:
+            return False
+        else:
+            return True
+
+def match_hnamepaths(hnamepath_defs, in_hnamepath):
+    for hnamepath_def in hnamepath_defs:
+        if match_hnamepath(hnamepath_def, in_hnamepath):
+            return True
+    return False
+
 def print_canvas_png(fullpath):
     global OUTPUT_DIRECTORY
     c1.Print( OUTPUT_DIRECTORY + "/" + fullpath.replace("/","_") + ".png" )
@@ -109,7 +137,8 @@ def AccessHistogramsRecursively(the_dir, path, sum_hists, sum_dir, hists_to_sum)
 
         if(isinstance(obj,TH1)):
             #print "histogram =  " + str(obj.GetName())
-            if obj.GetName() not in hists_to_sum:
+            #if obj.GetName() not in hists_to_sum:
+            if not match_hnamepaths(hists_to_sum, path+"/"+obj.GetName()):
                 key = key_iter()
                 continue
 
@@ -136,7 +165,8 @@ def SavePlots(sum_hists, sum_dir, hists_to_plot, macros_to_run):
     # plot individual histograms
     if(len(sum_hists) > 0):
         for (hnamepath,h) in sum_hists.items():
-            if h.GetName() not in hists_to_plot: 
+#            if h.GetName() not in hists_to_plot: 
+            if not match_hnamepaths(hists_to_plot, hnamepath):
                 continue
             if(isinstance(h,TH2)):
                 plot_2dhist(h)
@@ -169,7 +199,7 @@ def SavePlots(sum_hists, sum_dir, hists_to_plot, macros_to_run):
 def extract_macro_hists(macro):
     macro_hists = []
     if not os.path.isfile(macro):
-        # say something?
+        # this file doesn't exist - should we say something here?
         return macro_hists
     # read through the file and extract the histograms tagged for RootSpy summing
     f = open(macro)
@@ -181,9 +211,11 @@ def extract_macro_hists(macro):
             continue
         if ( (tokens[0] == "//") and (tokens[1] == "hnamepath:") ):
             hnamepath = tokens[2]
-            hname = hnamepath.split('/')[-1]
-            if hname not in macro_hists:
-                macro_hists.append(hname)
+            if hnamepath not in macro_hists:
+                macro_hists.append(hnamepath)
+            #hname = hnamepath.split('/')[-1]
+            #if hname not in macro_hists:
+            #    macro_hists.append(hname)
     return macro_hists
 
 
@@ -332,6 +364,10 @@ def main(argv):
     c1.SetCanvasSize(CANVAS_WIDTH,CANVAS_HEIGHT)
     SavePlots(sum_hists, sum_dir, hists_to_plot, macros_to_run)
 
+    ## clean up some memory
+    sum_dir.Close()
+    del sum_hists
+    del hists_to_sum
 
 if __name__ == "__main__":
     main(sys.argv[1:])
