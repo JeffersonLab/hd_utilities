@@ -28,6 +28,7 @@ CANVAS_HEIGHT = 600
 OUTPUT_DIRECTORY = "."
 #PDF_FILE_NAME = "output"
 WEB_OUTPUT = True
+VERBOSE = False
 
 def init():
     CANVAS_WIDTH = 800
@@ -87,6 +88,7 @@ def plot_2dhist(h):
 # - if the path does not begin with a '/', then we assume that this specifies a histogram name
 # - if the path does begin with a '/', the we assume that this specifies a full path
 # - we allow the "*" wildcard in the path definition
+# NOTE: apparently this is very slow, need to optimize
 def match_hnamepath(hnamepath_def, in_hnamepath):
     if len(hnamepath_def) == 0:
         return False
@@ -108,6 +110,8 @@ def match_hnamepaths(hnamepath_defs, in_hnamepath):
         if match_hnamepath(hnamepath_def, in_hnamepath):
             return True
     return False
+############################################################
+
 
 def print_canvas_png(fullpath):
     global OUTPUT_DIRECTORY
@@ -136,9 +140,12 @@ def AccessHistogramsRecursively(the_dir, path, sum_hists, sum_dir, hists_to_sum)
         #print key.GetName() + " " + str(type(obj))
 
         if(isinstance(obj,TH1)):
+            if VERBOSE:
+                print "matching hname = %s, hnamepath = %s" %(obj.GetName(),obj_pathname)
             #print "histogram =  " + str(obj.GetName())
-            #if obj.GetName() not in hists_to_sum:
-            if not match_hnamepaths(hists_to_sum, path+"/"+obj.GetName()):
+            #if not match_hnamepaths(hists_to_sum, path+"/"+obj.GetName()):
+            # match either histogram names or full path names
+            if (obj.GetName() not in hists_to_sum) and (obj_pathname not in hists_to_sum):
                 key = key_iter()
                 continue
 
@@ -165,8 +172,8 @@ def SavePlots(sum_hists, sum_dir, hists_to_plot, macros_to_run):
     # plot individual histograms
     if(len(sum_hists) > 0):
         for (hnamepath,h) in sum_hists.items():
-#            if h.GetName() not in hists_to_plot: 
-            if not match_hnamepaths(hists_to_plot, hnamepath):
+            #if not match_hnamepaths(hists_to_plot, hnamepath):
+            if (h.GetName() not in hists_to_plot) and (hnamepath not in hists_to_plot): 
                 continue
             if(isinstance(h,TH2)):
                 plot_2dhist(h)
@@ -176,13 +183,14 @@ def SavePlots(sum_hists, sum_dir, hists_to_plot, macros_to_run):
             # Output canvas
             #print_canvas_pdf()
             if(WEB_OUTPUT):
-                print_canvas_png(hnamepath)
+                print_canvas_png("_"+hnamepath)  ## name hack for backward compatability
 
     # plot RootSpy macros
     if(len(macros_to_run) > 0):
         for macro_file in macros_to_run: 
             if os.path.isfile(macro_file):
-                #print "running macro = " + macro_file
+                if VERBOSE:
+                    print "running macro = " + macro_file
                 # run the macro
                 c1.Clear()
                 sum_dir.cd()
@@ -197,6 +205,8 @@ def SavePlots(sum_hists, sum_dir, hists_to_plot, macros_to_run):
                 print "could not find macro = " + macro_file + " !"
 
 def extract_macro_hists(macro):
+    if VERBOSE:
+        print "Extracting histograms needed for macros..."
     macro_hists = []
     if not os.path.isfile(macro):
         # this file doesn't exist - should we say something here?
@@ -211,11 +221,13 @@ def extract_macro_hists(macro):
             continue
         if ( (tokens[0] == "//") and (tokens[1] == "hnamepath:") ):
             hnamepath = tokens[2]
-            if hnamepath not in macro_hists:
-                macro_hists.append(hnamepath)
-            #hname = hnamepath.split('/')[-1]
-            #if hname not in macro_hists:
-            #    macro_hists.append(hname)
+            if VERBOSE:
+                print hnamepath
+            #if hnamepath not in macro_hists:
+            #    macro_hists.append(hnamepath)
+            hname = hnamepath.split('/')[-1]
+            if hname not in macro_hists:
+                macro_hists.append(hname)
     return macro_hists
 
 
@@ -342,7 +354,7 @@ def main(argv):
     ## initializing monitoring DB connection
     mondb = datamon_db()
 
-    ## save mapping of  "hnamepath => ROOT histogram object"
+    ## save mapping of  "hname or hnamepath => ROOT histogram object"
     sum_hists = {}
     sum_dir = TMemFile(".monitor_tmp.root","RECREATE")
 
@@ -355,7 +367,7 @@ def main(argv):
             continue
         else:
             print "processing file " + filename + " ..." 
-        AccessHistogramsRecursively(root_file, "/", sum_hists, sum_dir, hists_to_sum)
+        AccessHistogramsRecursively(root_file, "", sum_hists, sum_dir, hists_to_sum)
         root_file.Close()
 
 
