@@ -1,0 +1,28 @@
+
+2015/01/07 Kei Moriya
+
+This directory contains the scripts necessary to run the cron job
+for processing new run as they come in.
+See also instructions at
+https://halldweb1.jlab.org/wiki/index.php/Data_Monitoring_Procedures
+
+To run the cron job do
+crontab cron_plugins
+
+To check that the cron job is running do
+crontab -l
+
+To stop the cron job do
+crontab -r
+
+The cron job runs the script scan_for_jobs.sh.
+This script will search for new files that appear on /mss,
+and use the script generatejobs_plugins_rawdata.sh to create
+jobs for those files. The basic structure of generatejobs_plugins_rawdata.sh
+is the same as that in /home/gxproj1/halld/monitoring/batch.
+
+If it is necessary to roll back to a previous environment, use
+setup_previous.sh [year] [month] [day]
+This will set the sqlite date context, HDDS, sim-recon, and plugin
+builds to the date specified using the XML files that were generated
+on those dates (assuming they exist).

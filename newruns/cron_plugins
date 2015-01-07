@@ -1,0 +1,8 @@
+SHELL=/bin/tcsh
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:/site/bin
+MAILTO=kmoriya@jlab.org
+HOME=/home/gxproj1/halld/monitoring/newruns
+
+# Run ls every 10 min
+00 * * * * cd /home/gxproj1/halld/monitoring/newruns/; /home/gxproj1/halld/monitoring/newruns/scan_for_jobs.sh 2014 12 19 0 20
+# | tee /home/gxproj1/halld/monitoring/newruns/log/scan_for_jobs.log.`date +%F_%T`
