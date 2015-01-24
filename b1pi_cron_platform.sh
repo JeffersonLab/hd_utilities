@@ -9,6 +9,7 @@ export RUN_DIR=/u/scratch/$USER/b1pi/$TODAYS_DATE/$BMS_OSNAME
 
 # Setup environment based on sim-recon build we're using 
 source ${BUILD_DIR}/sim-recon/$BMS_OSNAME/setenv.sh
+export JANA_CALIB_CONTEXT="variation=mc"
 
 # do the test
 rm -rf $RUN_DIR
