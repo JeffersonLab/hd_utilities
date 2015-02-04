@@ -1,5 +1,5 @@
 #!/bin/sh
-hosts="jlabl1 ifarm1102 jlabl3"
+hosts="jlabl1 ifarm1102 jlabl3 ifarm1401"
 date_token=`date +%F`
 date_file=/u/scratch/$USER/b1pi_date.txt
 rm -fv $date_file
