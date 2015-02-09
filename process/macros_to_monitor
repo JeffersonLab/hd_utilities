@@ -2,6 +2,8 @@
 /group/halld/Software/builds/online/monitoring/src/plugins/BCAL_online/bcal_cluster.C
 /group/halld/Software/builds/online/monitoring/src/plugins/BCAL_online/bcal_summary.C
 /group/halld/Software/builds/online/monitoring/src/plugins/BCAL_online/bcal_occupancy.C
+/group/halld/Software/builds/online/monitoring/src/plugins/BCAL_online/bcal_times.C
+/group/halld/Software/builds/online/monitoring/src/plugins/BCAL_online/bcal_shower.C
 # CDC
 /group/halld/Software/builds/online/monitoring/src/plugins/CDC_online/CDC_occupancy.C
 # FCAL
@@ -30,7 +32,6 @@
 /group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Tracking_p3.C
 /group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Kinematics_p1.C
 /group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Kinematics_p2.C
-/group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Kinematics_p3.C
 /group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Matching_p1.C
 /group/halld/Software/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Matching_p2.C
 

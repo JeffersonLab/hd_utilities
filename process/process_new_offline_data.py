@@ -28,7 +28,7 @@ import process_run_conditions
 ### GLOBALS
 #PROCESSED_RUN_LIST_FILE = "processedrun.lst"
 ROOTFILE_DIR = "ROOT"
-VERSION_NUMBER  =  8  
+VERSION_NUMBER  =  -1
 
 MAKE_PLOTS = True
 MAKE_DB_SUMMARY = True
@@ -36,6 +36,9 @@ MAKE_RUN_CONDITIONS = False
 
 FORCE_PROCESSING = False
 RUN_NUMBER = None
+
+MIN_RUN = -1
+MAX_RUN = 1000000
 ############################################
 
 def mkdir_p(path):
@@ -67,6 +70,10 @@ parser.add_option("-V","--version_number", dest="version_number",
                   help="Save summary results with this DB version ID")
 parser.add_option("-v","--version", dest="version_string",
                   help="Save summary results with a particular data version, specified using the string \"RunPeriod,Revision\", e.g., \"RunPeriod-2014-10,5\"")
+parser.add_option("-b","--min_run", dest="min_run",
+                  help="Minimum run number to process")
+parser.add_option("-e","--max_run", dest="max_run",
+                  help="Maximum run number to process")
 
 (options, args) = parser.parse_args(sys.argv)
 
@@ -116,6 +123,7 @@ if(options.version_string):
     except:
         print "Invalid version specification = " + options.version_string
         sys.exit(0)
+    print "Configured RunPeriod = %s  Revision = %d  ->  VersionID = %d" % (run_period,revision,VERSION_NUMBER)
 if(options.version_number):
     try:
         VERSION_NUMBER = int(options.version_number) 
@@ -125,6 +133,10 @@ if(options.version_number):
     if VERSION_NUMBER <= 0:
         print "Invalid version number = " + options.version_number
         sys.exit(0)
+if options.min_run:
+    MIN_RUN = int(options.min_run)
+if options.max_run:
+    MAX_RUN = int(options.max_run)
 
 
 # check to see if the input directory is real
@@ -195,6 +207,8 @@ for dirname in sorted(dirs_on_disk):
 # do the heavy work for each directory - one run per directory
 for rundir in rundirs_on_disk:
     runnum = int(rundir)    
+    if runnum<MIN_RUN or runnum>MAX_RUN:
+        continue
 
     print "checking run " + str(runnum)
 

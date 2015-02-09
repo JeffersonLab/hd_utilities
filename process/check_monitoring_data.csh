@@ -2,12 +2,13 @@
 # Set environmental variables for cron job
 set LOCKFILE=lock.offline
 
-set JOBDATE=2014-12-19
-set INPUTDIR=/volatile/halld/RunPeriod-2014-10/offline_monitoring
-set OUTPUTDIR=/w/halld-scifs1a/data_monitoring/RunPeriod-2014-10/ver07
-set ARGS=" "
+set JOBDATE=ver10
+set INPUTDIR=/volatile/halld/offline_monitoring/RunPeriod-2014-10
+set OUTPUTDIR=/w/halld-scifs1a/data_monitoring/RunPeriod-2014-10/ver10
+set ARGS=" -v RunPeriod-2014-10,10 "
 #set ARGS="--force"
 #set ARGS="--force -d"
+#set ARGS="--force -d -b 2439"
 
 # Load standard environment for ROOT
 source /home/gluex/setup_jlab_commissioning.csh
