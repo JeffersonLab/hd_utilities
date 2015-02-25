@@ -33,6 +33,8 @@ MAKE_PLOTS = True
 MAKE_DB_SUMMARY = True
 MAKE_RUN_CONDITIONS = True
 
+NEWDIR_MODE = "775"
+
 ############################################
 
 def mkdir_p(path):
@@ -122,7 +124,7 @@ for (run,fname) in run_numbers_on_disk:
             cmdargs += " --root_dir rootspy/"
             monitoring_data_dir = join(MONITORING_OUTPUT_DIR, RUN_PERIOD, ("Run%06d" % run))
             #mkdir_p(monitoring_data_dir)
-            os.system("mkdir -p " + monitoring_data_dir)  ## need error checks
+            os.system("mkdir -m"+NEWDIR_MODE+" -p " + monitoring_data_dir)  ## need error checks
             cmdargs += "--output_dir " + monitoring_data_dir
             cmdargs += "  " + join(ONLINE_ROOT_DIR,fname)
             print "  creating plots..."

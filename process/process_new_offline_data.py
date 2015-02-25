@@ -37,6 +37,8 @@ MAKE_RUN_CONDITIONS = False
 FORCE_PROCESSING = False
 RUN_NUMBER = None
 
+NEWDIR_MODE = "775"
+
 MIN_RUN = -1
 MAX_RUN = 1000000
 ############################################
@@ -151,7 +153,7 @@ if os.path.exists(OUTPUT_DIRECTORY) and not os.path.isdir(OUTPUT_DIRECTORY):
 
 if not os.path.exists(OUTPUT_DIRECTORY):
     print "Creating directory " + OUTPUT_DIRECTORY + " ... "
-    os.system("mkdir -p " + OUTPUT_DIRECTORY)  ## need error checks
+    os.system("mkdir -m"+NEWDIR_MODE+" -p " + OUTPUT_DIRECTORY)  ## need error checks
     
 
 # allow for incremental processing ...
@@ -290,7 +292,7 @@ for rundir in rundirs_on_disk:
     summed_rootfile = join(OUTPUT_DIRECTORY,"rootfiles","hd_root_" + rundir + ".root")
     if isfile(summed_rootfile):
         os.system("rm -f " + summed_rootfile)
-    os.system("mkdir -p " + join(OUTPUT_DIRECTORY,"rootfiles"))
+    os.system("mkdir -m"+NEWDIR_MODE+" -p " + join(OUTPUT_DIRECTORY,"rootfiles"))
     # note hadd -k skips corrupt or missing files - we want to do our best but not fail here
     os.system("hadd -v 0 " +  " ".join([summed_rootfile] + monitoring_files.keys() ))
 
@@ -306,7 +308,7 @@ for rundir in rundirs_on_disk:
         cmdargs += " --macro_list /u/home/gluex/halld/monitoring/process/macros_to_monitor "
         monitoring_data_dir = join(OUTPUT_DIRECTORY,("Run%06d" % runnum))
         #mkdir_p(monitoring_data_dir)
-        os.system("mkdir -p " + monitoring_data_dir)  ## need error checks
+        os.system("mkdir -m"+NEWDIR_MODE+" -p " + monitoring_data_dir)  ## need error checks
         cmdargs += " --output_dir " + monitoring_data_dir
         cmdargs += " --file_list " + rootfilelist_fname
         print "  creating plots..."
