@@ -4,11 +4,10 @@ cdc_int
 cdc_intpp
 cdc_raw_t 
 cdc_ped
-cdc_windata_ped_mean
-cdc_windata_ped_width
 cdc_raw_intpp_vs_n
 cdc_raw_t_vs_n
 cdc_ped_vs_n
+cdc_windata_ped_vs_n
 # BCAL
 bcal_shower_plane
 # SC
