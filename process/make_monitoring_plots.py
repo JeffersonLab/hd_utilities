@@ -8,7 +8,7 @@
 #
 # Author: Sean Dobbs (s-dobbs@northwestern.edu), 2014
 
-from ROOT import TFile,TIter,TDirectory,TH1,TH2,TH1I,TH2I,TCanvas,gROOT,TMemFile
+from ROOT import TFile,TIter,TDirectory,TH1,TH2,TH1I,TH2I,TCanvas,gROOT,TMemFile,gStyle
 from optparse import OptionParser
 import os.path
 import sys
@@ -76,8 +76,19 @@ def plot_hist(h):
     h.Draw()
 
 def plot_2dhist(h):
+    LOGZ_HISTS = [ "cdc_raw_int_vs_n", "cdc_raw_t_vs_n", "cdc_ped_vs_n", "cdc_windata_ped_vs_n" ]
+    if h.GetName() in LOGZ_HISTS:
+        c1.SetLogz(1)
+
     h.SetStats(0)
     h.Draw("COLZ")
+
+def ClearPad(pad):
+    gStyle.Reset()
+    c1.Clear()
+    c1.SetLogx(0)
+    c1.SetLogy(0)
+    c1.SetLogz(0)
 
 
 ##########################################################
@@ -192,7 +203,7 @@ def SavePlots(sum_hists, sum_dir, hists_to_plot, macros_to_run):
                 if VERBOSE:
                     print "running macro = " + macro_file
                 # run the macro
-                c1.Clear()
+                ClearPad(c1)
                 sum_dir.cd()
                 gROOT.ProcessLine(".x " + macro_file)
                 # save the canvas - the name depends just on the file name
@@ -372,7 +383,7 @@ def main(argv):
 
 
     ## finally, make the plots and save them as files
-    c1.Clear()
+    ClearPad(c1)
     c1.SetCanvasSize(CANVAS_WIDTH,CANVAS_HEIGHT)
     SavePlots(sum_hists, sum_dir, hists_to_plot, macros_to_run)
 
