@@ -220,7 +220,14 @@ for rundir in rundirs_on_disk:
 
     rootfilespath = join(INPUT_DIRECTORY,REVISION,ROOTFILE_DIR)
     root_files = [ join(rootfilespath,rundir,f) for f in listdir(join(rootfilespath,rundir)) if (isfile(join(rootfilespath,rundir,f))and(f[-5:]=='.root')) ]
-    rootfilelist_fname = join(INPUT_DIRECTORY,REVISION,"misc",rundir,"rootfiles.txt")
+
+    # add directory if it doesn't exist
+    misc_dir = join(INPUT_DIRECTORY,REVISION,"misc",rundir)
+    if not os.path.exists(misc_dir):
+        os.system("mkdir -p " + misc_dir)
+    if not os.path.isdir(misc_dir):
+        print "file %s exists and is not a directory, skipping this run ..."%misc_dir
+    rootfilelist_fname = join(misc_dir,"rootfiles.txt")
 
     ## only run over files that haven't already been processed
     ## we use the "rootfiles.txt" file as a store of which files have been already processed
