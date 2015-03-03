@@ -311,8 +311,8 @@ for rundir in rundirs_on_disk:
 
     # make plots for the sum of all files in the run
     if MAKE_PLOTS:
-        cmdargs  = " --histogram_list /u/home/gluex/halld/monitoring/process/histograms_to_monitor" 
-        cmdargs += " --macro_list /u/home/gluex/halld/monitoring/process/macros_to_monitor "
+        cmdargs  = " --histogram_list histograms_to_monitor" 
+        cmdargs += " --macro_list macros_to_monitor "
         monitoring_data_dir = join(OUTPUT_DIRECTORY,("Run%06d" % runnum))
         #mkdir_p(monitoring_data_dir)
         os.system("mkdir -m"+NEWDIR_MODE+" -p " + monitoring_data_dir)  ## need error checks

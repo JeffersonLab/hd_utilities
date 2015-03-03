@@ -84,7 +84,7 @@ def plot_2dhist(h):
     h.Draw("COLZ")
 
 def ClearPad(pad):
-    gStyle.Reset()
+    gROOT.SetStyle("Plain")   # reset style
     c1.Clear()
     c1.SetLogx(0)
     c1.SetLogy(0)

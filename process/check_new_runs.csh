@@ -5,7 +5,7 @@ set LOCKFILE=lock.online
 # Load standard environment for ROOT
 source /home/gluex/setup_jlab_commissioning.csh
 
-set MONITORING_HOME=/home/gluex/halld/monitoring/process
+set MONITORING_HOME=/home/gxproj1/halld/monitoring/process
 source $MONITORING_HOME/monitoring_env.csh
 
 # run the script
