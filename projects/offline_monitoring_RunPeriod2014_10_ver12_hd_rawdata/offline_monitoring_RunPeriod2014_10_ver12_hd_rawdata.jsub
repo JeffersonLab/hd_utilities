@@ -1,0 +1,34 @@
+<Request>
+	<Variable name="run_period" value="2014-10"/>
+	<Variable name="version" value="12"/>
+	<Variable name="formatted_run" value="{run_number}"/>
+	<Variable name="formatted_file" value="{file_number}"/>
+	<Variable name="output_dir_base" value="/volatile/halld/offline_monitoring/RunPeriod-2014-10/ver12"/>
+	<Variable name="plugins" value="TAGH_online,TAGM_online,BCAL_online,CDC_online,CDC_expert,FCAL_online,FDC_online,ST_online,TOF_online,monitoring_hists,HLDetectorTiming,danarest,track_skimmer"/>
+        <!-- ,TOF_TDC_shift -->
+	<Variable name="env" value="setup_jlab.csh"/>
+	<Variable name="nthreads" value="6"/>
+	<Variable name="additional_option" value=""/>
+
+	<Email email="gxproj1@jlab.org" request="false" job="false"/>
+	<Project name="gluex"/>
+	<Track name="reconstruction"/>
+	<TimeLimit unit="minutes" time="720"/>
+	<DiskSpace space="40" unit="GB"/>
+	<Memory space="5000" unit="MB"/>
+	<CPU core="6"/>
+	<OS name="centos65"/>
+
+	<Input src="/home/gxproj1/halld/jproj/projects/offline_monitoring_RunPeriod2014_10_ver12_hd_rawdata/script.sh" dest="script.sh"/>
+	<Input src="/home/gxproj1/halld/jproj/projects/offline_monitoring_RunPeriod2014_10_ver12_hd_rawdata/setup_jlab.csh" dest="setup_jlab.csh"/>
+
+	<Job>
+	<!-- If we use a very long name for the jobName, the submission will fail -->
+		<Name name="offmon-2014-10_ver12.${formatted_run}_${formatted_file}"/>
+		<Input src="mss:/mss/halld/RunPeriod-${run_period}/rawdata/Run{run_number}/hd_rawdata_${formatted_run}_${formatted_file}.evio" dest="hd_rawdata_${formatted_run}_${formatted_file}.evio"/>
+		<Command>./script.sh ${env} hd_rawdata_${formatted_run}_${formatted_file}.evio ${plugins} ${formatted_run} ${formatted_file} ${output_dir_base} ${nthreads} ${additional_option} </Command>
+		<Stdout dest="file:${output_dir_base}/log/${formatted_run}/stdout_${formatted_run}_{file_number}.out"/>
+		<Stderr dest="file:${output_dir_base}/log/${formatted_run}/stderr_${formatted_run}_{file_number}.err"/>
+	</Job>
+
+</Request>

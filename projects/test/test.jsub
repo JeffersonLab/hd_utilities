@@ -1,0 +1,8 @@
+PROJECT: gluex
+JOBNAME: {project}_{run_number}_{file_number}
+TRACK: debug
+COMMAND: /home/marki/halld/jproj_auger_info/projects/{project}/{project}.csh
+OPTIONS: {project} {run_number} {file_number}
+TIME: 10
+OS: centos62
+DISK_SPACE: 1 GB

@@ -1,0 +1,8 @@
+data_type           = recon
+run_period          = RunPeriod-2014-10
+revision            = 11
+software_version    = soft_comm_2015_02_27.xml
+jana_config         = jana_rawdata_comm_2015_02_27.conf
+ccdb_context        = calibtime=2015-02-27
+production_time     = 2015-02-27
+dataVersionString   = recon_RunPeriod-2014-10_20150227_ver11

@@ -1,0 +1,620 @@
+
+/********************************************************************
+ *
+ * 2015/01/27 Kei Moriya
+ *
+ * Take in formatted file from format_jobs_data.C and
+ * do analysis.
+ *
+ * The script format_jobs_data.C has added to the original
+ * file the unix time of each stage time, as well as the
+ * integer values of mem and vmem (in kb).
+ *
+ * It has also changed the column error into errorCode,
+ * since the original error could have been one of
+ * - NULL
+ * - Job timed out.
+ * - exceeded resource limit.
+ * The error code will change these to 0, 1, 2, respectively.
+ *
+ ********************************************************************/
+
+#include <iostream>
+#include <iomanip>
+
+Int_t convert_to_sec(std::string input, Bool_t debug = false);
+
+int analyze(Int_t TOTALTIME = 50, Bool_t debug = false){
+
+  gStyle->SetOptStat(0);
+
+  char filename[200];
+
+  sprintf(filename,"formatted_jobs_data.txt");
+  ifstream IN(filename);
+  Int_t nlines = 0;
+
+  system("wc -l formatted_jobs_data.txt > ___tmp_wc.txt");
+  ifstream IN_wc("___tmp_wc.txt");
+  Int_t NTOTAL;
+  IN_wc >> NTOTAL;
+  system("rm -f ___tmp_wc.txt");
+  cout << "total of " << NTOTAL << " files to process..." << endl;
+
+  char command[200];
+  sprintf(command,"mkdir -p figures");
+  system(command);
+
+  Int_t id, run, file, jobId;
+  std::string timeChangeDay, timeChangeTime;
+  std::string hostname, status, exitCode, result;
+  std::string timeSubmittedDay,  timeSubmittedTime;  Long64_t utimeSubmitted;
+  std::string timeDependencyDay, timeDependencyTime; Long64_t utimeDependency;
+  std::string timePendingDay,    timePendingTime;    Long64_t utimePending;
+  std::string timeStagingInDay,  timeStagingInTime;  Long64_t utimeStagingIn;
+  std::string timeActiveDay,     timeActiveTime;     Long64_t utimeActive;
+  std::string timeStagingOutDay, timeStagingOutTime; Long64_t utimeStagingOut;
+  std::string timeCompleteDay,   timeCompleteTime;   Long64_t utimeComplete;
+  std::string walltime, cput, mem, vmem, error;      Int_t errorCode;
+
+  Int_t walltime_sec, cput_sec;
+
+  Int_t mem_int, vmem_int;
+  Int_t nevents, copyTime, pluginTime;
+  char command[400];
+
+  Int_t nTotal = 0;
+  const Int_t colors[6] = {kBlack, kRed, kYellow+2, kGreen+2, kBlue, kMagenta};
+
+  TFile *outfile = new TFile("analysis.root","recreate");
+  TH1F *hmem = new TH1F("hmem",";mem used (MB);",1000,0, 3. * 1000.);
+  TH1F *hvmem = new TH1F("hvmem",";vmem used (MB);",1000,0, 5. * 1000.);
+
+  // Times:
+  // 1. submitted
+  // 2. dependency
+  // 3. pending
+  // 4. stagingIn
+  // 5. active
+  // 6. stagingOut
+  // 7. complete
+  
+  // 7. - 1. (total)
+  TH1F *hcomplete_submitted = new TH1F("hcomplete_submitted",";completed time - submitted time (hours);",NTOTAL,0,NTOTAL);
+  
+  // 2. - 1.
+  TH1F *hdependency_submitted = new TH1F("hdependency_submitted",";dependency time - submitted time (hours);",NTOTAL,0,NTOTAL);
+
+  // 3. - 2.
+  TH1F *hpending_dependency = new TH1F("hpending_dependency",";pending time - dependency time (hours);",NTOTAL,0,NTOTAL);
+
+  // 4. - 3.
+  TH1F *hstagingIn_pending = new TH1F("hstagingIn_pending",";stagingIn time - pending time (hours);",NTOTAL,0,NTOTAL);
+
+  // 5. - 4.
+  TH1F *hactive_stagingIn = new TH1F("hactive_stagingIn",";active time - stagingIn time (hours);",NTOTAL,0,NTOTAL);
+
+  // 6. - 5.
+  TH1F *hstagingOut_active = new TH1F("hstagingOut_active",";stagingOut time - active time (hours);",NTOTAL,0,NTOTAL);
+
+  // 7. - 6.
+  TH1F *hcomplete_stagingOut = new TH1F("hcomplete_stagingOut",";complete time - stagingOut time (hours);",NTOTAL,0,NTOTAL);
+
+  // These will be used as stacked histograms for each stage
+  // 1. dependency
+  TH1F *hdependency_submitted_forStack = new TH1F("hdependency_submitted_forStack",";job # ; time (hrs)",NTOTAL,0,NTOTAL);
+  TH1F *hdependency_submitted_forStack___sec = new TH1F("hdependency_submitted_forStack___sec",";job # ; time (sec)",NTOTAL,0,NTOTAL);
+  // 2. pending
+  TH1F *hpending_dependency_forStack   = new TH1F("hpending_dependency_forStack",";job # ; time (hrs)",NTOTAL,0,NTOTAL);
+  TH1F *hpending_dependency_forStack___sec   = new TH1F("hpending_dependency_forStack___sec",";job # ; time (sec)",NTOTAL,0,NTOTAL);
+  // 3. stagingIn
+  TH1F *hstagingIn_pending_forStack    = new TH1F("hstagingIn_pending_forStack",";job # ; time (hrs)",NTOTAL,0,NTOTAL);
+  TH1F *hstagingIn_pending_forStack___sec    = new TH1F("hstagingIn_pending_forStack___sec",";job # ; time (sec)",NTOTAL,0,NTOTAL);
+  // 4. active
+  TH1F *hactive_stagingIn_forStack     = new TH1F("hactive_stagingIn_forStack",";job # ; time (hrs)",NTOTAL,0,NTOTAL);
+  TH1F *hactive_stagingIn_forStack___sec     = new TH1F("hactive_stagingIn_forStack___sec",";job # ; time (sec)",NTOTAL,0,NTOTAL);
+  // 5. stagingOut
+  TH1F *hstagingOut_active_forStack    = new TH1F("hstagingOut_active_forStack",";job # ; time (hrs)",NTOTAL,0,NTOTAL);
+  TH1F *hstagingOut_active_forStack___sec    = new TH1F("hstagingOut_active_forStack___sec",";job # ; time (sec)",NTOTAL,0,NTOTAL);
+
+  TH1F *hstagingOut_active_noError = new TH1F("hstagingOut_active_noError",";job # ;active time (hours);",NTOTAL,0,NTOTAL);
+  TH1F *hstagingOut_active_timedOut = new TH1F("hstagingOut_active_timedOut",";job # ;active time (hours);",NTOTAL,0,NTOTAL);
+  TH1F *hstagingOut_active_resourceLimit = new TH1F("hstagingOut_active_resourceLimit",";job # ;active time (hours);",NTOTAL,0,NTOTAL);
+
+  // 6. complete
+  TH1F *hcomplete_stagingOut_forStack  = new TH1F("hcomplete_stagingOut_forStack",";job # ; time (hrs)",NTOTAL,0,NTOTAL);
+  TH1F *hcomplete_stagingOut_forStack___sec  = new TH1F("hcomplete_stagingOut_forStack___sec",";job # ; time (sec)",NTOTAL,0,NTOTAL);
+
+  TH1F *hsubmitTimeSinceInit = new TH1F("hsubmitTimeSinceInit",";submit time since t_{0};",NTOTAL,0,NTOTAL);
+  TH1F *hcompleteTimeSinceInit = new TH1F("hcompleteTimeSinceInit",";complete time since t_{0};",NTOTAL,0,NTOTAL);
+
+  Long64_t INITIAL_SUBMIT;
+  Long64_t submitTimeSinceInit, completeTimeSinceInit;
+
+  // Times we check how many jobs were running.
+  // Check every 10 min, over 60 hours.
+  const Int_t NCHECKTIMES = TOTALTIME * 6;
+  Long64_t CHECKTIMES[NCHECKTIMES];
+  Int_t TIMESINCEINITFORCHECKTIMES[NCHECKTIMES];
+  Int_t jobsRunningAtCheckTimes[NCHECKTIMES];
+
+  TGraph *gcput_walltime = new TGraph(NTOTAL);
+
+  while(IN >> id >> run >> file >> jobId
+	>> timeChangeDay >> timeChangeTime
+	>> hostname >> status >> exitCode >> result
+	>> timeSubmittedDay  >> timeSubmittedTime
+	>> timeDependencyDay >> timeDependencyTime
+	>> timePendingDay    >> timePendingTime
+	>> timeStagingInDay  >> timeStagingInTime
+	>> timeActiveDay     >> timeActiveTime
+	>> timeStagingOutDay >> timeStagingOutTime
+	>> timeCompleteDay   >> timeCompleteTime
+	>> walltime >> cput >> mem >> vmem >> errorCode
+	>> utimeSubmitted
+	>> utimeDependency
+	>> utimePending
+	>> utimeStagingIn
+	>> utimeActive
+	>> utimeStagingOut
+	>> utimeComplete
+	>> mem_int >> vmem_int
+	>> nevents >> copyTime >> pluginTime){
+
+    if(debug){
+      cout << "---------- entry " << nTotal << " -------------------" << endl;
+      cout << "id = " << id << " run = " << run << " file = " << file << " jobId = " << jobId << endl
+	   << " timeChangeDay = " << timeChangeDay << " timeChangeTime = " << timeChangeTime << endl
+	   << " hostname = " << hostname << " status = " << status << " exitCode = " << exitCode << " result = " << result << endl
+	   << " timeSubmittedDay = " << timeSubmittedDay  << " timeSubmittedTime = " << timeSubmittedTime << endl
+	   << " timeDependencyDay = " << timeDependencyDay << " timeDependencyTime = " << timeDependencyTime << endl
+	   << " timePendingDay = " << timePendingDay    << " timePendingTime = " << timePendingTime << endl
+	   << " timeStagingInDay = " << timeStagingInDay  << " timeStagingInTime = " << timeStagingInTime << endl
+	   << " timeActiveDay = " << timeActiveDay     << " timeActiveTime = " << timeActiveTime << endl
+	   << " timeStagingOutDay = " << timeStagingOutDay << " timeStagingOutTime = " << timeStagingOutTime << endl
+	   << " timeCompleteDay = " << timeCompleteDay   << " timeCompleteTime = " << timeCompleteTime << endl
+	   << " walltime = " << walltime << " cput = " << cput << " mem = " << mem << " vmem = " << vmem << " errorCode = " << errorCode << endl
+	   << " utimeSubmitted = " << utimeSubmitted << endl
+	   << " utimeDependency = " << utimeDependency << endl
+	   << " utimePending = " << utimePending << endl
+	   << " utimeStagingIn = " << utimeStagingIn << endl
+	   << " utimeActive = " << utimeActive << endl
+	   << " utimeStagingOut = " << utimeStagingOut << endl
+	   << " utimeComplete = " << utimeComplete << endl
+	   << " mem = " << mem_int << " vmem = " << vmem_int << endl;
+    }
+
+    nTotal++;
+    if(nTotal % 1000 == 0) cout << "processed " << setw(5) << nTotal << " / " << NTOTAL << endl;
+
+    if(nTotal==1){
+      INITIAL_SUBMIT = utimeSubmitted;
+
+      // Set up times to check how many jobs were running
+      for(Int_t i=0;i<NCHECKTIMES;i++){
+	CHECKTIMES[i] = INITIAL_SUBMIT + 600 * i;
+	TIMESINCEINITFORCHECKTIMES[i] = 600 * i;
+      }
+    }
+
+    // How many jobs were running at CHECKTIME[i]
+    for(Int_t i=0;i<NCHECKTIMES;i++){
+      if(utimeActive < CHECKTIMES[i] && CHECKTIMES[i] < utimeStagingOut)
+	jobsRunningAtCheckTimes[i]++;
+    }
+
+    submitTimeSinceInit = utimeSubmitted  - INITIAL_SUBMIT;
+    completeTimeSinceInit = utimeComplete - INITIAL_SUBMIT;
+    // cout << submitTimeSinceInit << "   " << completeTimeSinceInit << endl;
+
+    hsubmitTimeSinceInit->Fill(submitTimeSinceInit / 3600.);
+    hcompleteTimeSinceInit->Fill(completeTimeSinceInit / 3600.);
+
+    hmem->Fill(mem_int / 1024.);
+    hvmem->Fill(vmem_int / 1024.);
+
+    // total time
+    hcomplete_submitted->Fill((utimeComplete - utimeSubmitted)/3600.);
+
+    hdependency_submitted->Fill((utimeDependency - utimeSubmitted)/3600.);
+    hpending_dependency->Fill((utimePending - utimeDependency)/3600.);
+    hstagingIn_pending->Fill((utimeStagingIn - utimePending)/3600.);
+    hactive_stagingIn->Fill((utimeActive - utimeStagingIn)/3600.);
+    hstagingOut_active->Fill((utimeStagingOut - utimeActive)/3600.);
+    hcomplete_stagingOut->Fill((utimeComplete - utimeStagingOut)/3600.);
+
+    hdependency_submitted_forStack->SetBinContent(nTotal,(utimeDependency - utimeSubmitted)/3600.);
+    hpending_dependency_forStack->SetBinContent(nTotal,(utimePending - utimeDependency)/3600.);
+    hstagingIn_pending_forStack->SetBinContent(nTotal,(utimeStagingIn - utimePending)/3600.);
+    hactive_stagingIn_forStack->SetBinContent(nTotal,(utimeActive - utimeStagingIn)/3600.);
+    hstagingOut_active_forStack->SetBinContent(nTotal,(utimeStagingOut - utimeActive)/3600.);
+    hcomplete_stagingOut_forStack->SetBinContent(nTotal,(utimeComplete - utimeStagingOut)/3600.);
+
+    // in sec
+    hdependency_submitted_forStack___sec->SetBinContent(nTotal,utimeDependency - utimeSubmitted);
+    hpending_dependency_forStack___sec->SetBinContent(nTotal,utimePending - utimeDependency);
+    hstagingIn_pending_forStack___sec->SetBinContent(nTotal,utimeStagingIn - utimePending);
+    hactive_stagingIn_forStack___sec->SetBinContent(nTotal,utimeActive - utimeStagingIn);
+    hstagingOut_active_forStack___sec->SetBinContent(nTotal,utimeStagingOut - utimeActive);
+    hcomplete_stagingOut_forStack___sec->SetBinContent(nTotal,utimeComplete - utimeStagingOut);
+
+    if(errorCode==0){
+      hstagingOut_active_noError->SetBinContent(nTotal,(utimeStagingOut - utimeActive)/3600.);
+    }else if(errorCode==1){
+      hstagingOut_active_timedOut->SetBinContent(nTotal,(utimeStagingOut - utimeActive)/3600.);
+    }else if(errorCode==2){
+      hstagingOut_active_resourceLimit->SetBinContent(nTotal,(utimeStagingOut - utimeActive)/3600.);
+    }
+
+    // convert walltime, cput into seconds
+    Int_t hour, min, sec;
+    walltime_sec = convert_to_sec(walltime);
+    cput_sec = convert_to_sec(cput);
+    gcput_walltime->SetPoint(nTotal-1,walltime_sec/3600.,cput_sec/3600.);
+
+  } // end of reading in each entry
+  
+  // Create a stacked of histograms for each stage
+  THStack *hs = new THStack("hs","");
+  hdependency_submitted_forStack->SetFillColor(colors[0]);
+  hdependency_submitted_forStack->SetLineColor(colors[0]);
+  hs->Add(hdependency_submitted_forStack);
+  hpending_dependency_forStack->SetFillColor(colors[1]);
+  hpending_dependency_forStack->SetLineColor(colors[1]);
+  hs->Add(hpending_dependency_forStack);
+  hstagingIn_pending_forStack->SetFillColor(colors[2]);
+  hstagingIn_pending_forStack->SetLineColor(colors[2]);
+  hs->Add(hstagingIn_pending_forStack);
+  hactive_stagingIn_forStack->SetFillColor(colors[3]);
+  hactive_stagingIn_forStack->SetLineColor(colors[3]);
+  hs->Add(hactive_stagingIn_forStack);
+  hstagingOut_active_forStack->SetFillColor(colors[4]);
+  hstagingOut_active_forStack->SetLineColor(colors[4]);
+  hs->Add(hstagingOut_active_forStack);
+  hcomplete_stagingOut_forStack->SetFillColor(colors[5]);
+  hcomplete_stagingOut_forStack->SetLineColor(colors[5]);
+  hs->Add(hcomplete_stagingOut_forStack);
+
+  hs->Write();
+
+  cout << "--------------------------------------------------" << endl;
+  cout << "total                            : " << nTotal << endl;
+
+  // calculate accumulate for
+  // hsubmitTimeSinceInit and hcompleteTimeSinceInit
+  TH1F *haccumulate_submitTimeSinceInit = new TH1F("haccumulate_submitTimeSinceInit",";submit time since t_{0}",NTOTAL,0,NTOTAL);
+  for(Int_t i=0;i<=haccumulate_submitTimeSinceInit->GetNbinsX()+1;i++){
+    Int_t total = 0;
+    for(Int_t bin=0;bin<=i;bin++){
+      total += hsubmitTimeSinceInit->GetBinContent(bin);
+    }
+    haccumulate_submitTimeSinceInit->SetBinContent(i,total);
+  }
+
+  TH1F *haccumulate_completeTimeSinceInit = new TH1F("haccumulate_completeTimeSinceInit",";complete time since t_{0}",NTOTAL,0,NTOTAL);
+  for(Int_t i=0;i<=haccumulate_completeTimeSinceInit->GetNbinsX()+1;i++){
+    Int_t total = 0;
+    for(Int_t bin=0;bin<=i;bin++){
+      total += hcompleteTimeSinceInit->GetBinContent(bin);
+    }
+    haccumulate_completeTimeSinceInit->SetBinContent(i,total);
+  }
+
+  TGraph *gjobsRunningAtCheckTimes = new TGraph(NCHECKTIMES);
+  for(Int_t i=0;i<NCHECKTIMES;i++){
+    gjobsRunningAtCheckTimes->SetPoint(i,TIMESINCEINITFORCHECKTIMES[i] / 3600.,jobsRunningAtCheckTimes[i]);
+  }
+
+  outfile->Write();
+
+  TCanvas *canvas = new TCanvas("canvas","canvas",1600,800);
+  canvas->SetTopMargin(0.035);
+  canvas->SetRightMargin(0.02);
+  canvas->SetLeftMargin(0.12);
+  hs->SetMinimum(0);
+  // hs->GetXaxis()->SetTitle("job #");
+  // hs->GetYaxis()->SetTitle("time (hrs)");
+  hs->Draw();
+  TLegend *legend = new TLegend(0.15,0.80,0.90,0.95);
+  legend->SetBorderSize(0);
+  legend->SetFillStyle(0);
+  legend->SetNColumns(3);
+  legend->SetTextSize(0.045);
+  legend->AddEntry(hdependency_submitted_forStack,"submit","F");
+  legend->AddEntry(hpending_dependency_forStack,"dependency","F");
+  legend->AddEntry(hstagingIn_pending_forStack,"pending","F");
+  legend->AddEntry(hactive_stagingIn_forStack,"stagingIn","F");
+  legend->AddEntry(hstagingOut_active_forStack,"active","F");
+  legend->AddEntry(hcomplete_stagingOut_forStack,"stagingOut","F");
+  legend->Draw("same");
+  sprintf(filename,"figures/001___timeline.pdf");
+  canvas->SaveAs(filename);
+  sprintf(filename,"figures/001___timeline.png");
+  canvas->SaveAs(filename);
+
+  legend->SetX1NDC(0.70);
+  legend->SetX2NDC(0.90);
+  legend->SetY1NDC(0.90);
+  legend->SetY2NDC(0.95);
+
+  // individual
+  hdependency_submitted_forStack->SetMinimum(0);
+  hdependency_submitted_forStack->Draw();
+  legend->Clear();
+  legend->AddEntry(hdependency_submitted_forStack,"submit","F");
+  legend->Draw("same");
+  sprintf(filename,"figures/002___submit.pdf");
+  canvas->SaveAs(filename);
+  sprintf(filename,"figures/002___submit.png");
+  canvas->SaveAs(filename);
+
+  hpending_dependency_forStack->SetMinimum(0);
+  hpending_dependency_forStack->Draw();
+  legend->Clear();
+  legend->AddEntry(hpending_dependency_forStack,"dependency","F");
+  legend->Draw("same");
+  sprintf(filename,"figures/003___dependency.pdf");
+  canvas->SaveAs(filename);
+  sprintf(filename,"figures/003___dependency.png");
+  canvas->SaveAs(filename);
+
+  hstagingIn_pending_forStack->SetMinimum(0);
+  hstagingIn_pending_forStack->Draw();
+  legend->Clear();
+  legend->AddEntry(hstagingIn_pending_forStack,"pending","F");
+  legend->Draw("same");
+  sprintf(filename,"figures/004___pending.pdf");
+  canvas->SaveAs(filename);
+  sprintf(filename,"figures/004___pending.png");
+  canvas->SaveAs(filename);
+
+  hactive_stagingIn_forStack->SetMinimum(0);
+  hactive_stagingIn_forStack->Draw();
+  legend->Clear();
+  legend->AddEntry(hactive_stagingIn_forStack,"stagingIn","F");
+  legend->Draw("same");
+  sprintf(filename,"figures/005___stagingIn.pdf");
+  canvas->SaveAs(filename);
+  sprintf(filename,"figures/005___stagingIn.png");
+  canvas->SaveAs(filename);
+
+  hstagingOut_active_forStack->SetMinimum(0);
+  hstagingOut_active_forStack->Draw();
+  legend->Clear();
+  legend->AddEntry(hstagingOut_active_forStack,"active","F");
+  legend->Draw("same");
+  sprintf(filename,"figures/006___active.pdf");
+  canvas->SaveAs(filename);
+  sprintf(filename,"figures/006___active.png");
+  canvas->SaveAs(filename);
+
+  hcomplete_stagingOut_forStack->SetMinimum(0);
+  hcomplete_stagingOut_forStack->Draw();
+  legend->Clear();
+  legend->AddEntry(hcomplete_stagingOut_forStack,"stagingOut","F");
+  legend->Draw("same");
+  sprintf(filename,"figures/007___stagingOut.pdf");
+  canvas->SaveAs(filename);
+  sprintf(filename,"figures/007___stagingOut.png");
+  canvas->SaveAs(filename);
+
+
+  // individual (in sec)
+
+  hdependency_submitted_forStack___sec->SetFillColor(colors[0]);
+  hdependency_submitted_forStack___sec->SetLineColor(colors[0]);
+  hpending_dependency_forStack___sec->SetFillColor(colors[1]);
+  hpending_dependency_forStack___sec->SetLineColor(colors[1]);
+  hstagingIn_pending_forStack___sec->SetFillColor(colors[2]);
+  hstagingIn_pending_forStack___sec->SetLineColor(colors[2]);
+  hactive_stagingIn_forStack___sec->SetFillColor(colors[3]);
+  hactive_stagingIn_forStack___sec->SetLineColor(colors[3]);
+  hstagingOut_active_forStack___sec->SetFillColor(colors[4]);
+  hstagingOut_active_forStack___sec->SetLineColor(colors[4]);
+  hcomplete_stagingOut_forStack___sec->SetFillColor(colors[5]);
+  hcomplete_stagingOut_forStack___sec->SetLineColor(colors[5]);
+
+  hdependency_submitted_forStack___sec->SetMinimum(0);
+  hdependency_submitted_forStack___sec->Draw();
+  legend->Clear();
+  legend->AddEntry(hdependency_submitted_forStack,"submit","F");
+  legend->Draw("same");
+  sprintf(filename,"figures/008___submit___sec.pdf");
+  canvas->SaveAs(filename);
+  sprintf(filename,"figures/008___submit___sec.png");
+  canvas->SaveAs(filename);
+
+  hpending_dependency_forStack___sec->SetMinimum(0);
+  hpending_dependency_forStack___sec->Draw();
+  legend->Clear();
+  legend->AddEntry(hpending_dependency_forStack,"dependency","F");
+  legend->Draw("same");
+  sprintf(filename,"figures/009___dependency___sec.pdf");
+  canvas->SaveAs(filename);
+  sprintf(filename,"figures/009___dependency___sec.png");
+  canvas->SaveAs(filename);
+
+  hstagingIn_pending_forStack___sec->SetMinimum(0);
+  hstagingIn_pending_forStack___sec->Draw();
+  legend->Clear();
+  legend->AddEntry(hstagingIn_pending_forStack,"pending","F");
+  legend->Draw("same");
+  sprintf(filename,"figures/010___pending___sec.pdf");
+  canvas->SaveAs(filename);
+  sprintf(filename,"figures/010___pending___sec.png");
+  canvas->SaveAs(filename);
+
+  hactive_stagingIn_forStack___sec->SetMinimum(0);
+  hactive_stagingIn_forStack___sec->Draw();
+  legend->Clear();
+  legend->AddEntry(hactive_stagingIn_forStack,"stagingIn","F");
+  legend->Draw("same");
+  sprintf(filename,"figures/011___stagingIn___sec.pdf");
+  canvas->SaveAs(filename);
+  sprintf(filename,"figures/011___stagingIn___sec.png");
+  canvas->SaveAs(filename);
+
+  hstagingOut_active_forStack___sec->SetMinimum(0);
+  hstagingOut_active_forStack___sec->Draw();
+  legend->Clear();
+  legend->AddEntry(hstagingOut_active_forStack,"active","F");
+  legend->Draw("same");
+  sprintf(filename,"figures/012___active___sec.pdf");
+  canvas->SaveAs(filename);
+  sprintf(filename,"figures/012___active___sec.png");
+  canvas->SaveAs(filename);
+
+  hcomplete_stagingOut_forStack___sec->SetMinimum(0);
+  hcomplete_stagingOut_forStack___sec->Draw();
+  legend->Clear();
+  legend->AddEntry(hcomplete_stagingOut_forStack,"stagingOut","F");
+  legend->Draw("same");
+  sprintf(filename,"figures/013___stagingOut___sec.pdf");
+  canvas->SaveAs(filename);
+  sprintf(filename,"figures/013___stagingOut___sec.png");
+  canvas->SaveAs(filename);
+
+  // plot active time against job #
+  legend->Clear();
+  hstagingOut_active_noError->SetLineColor(kBlue);
+  hstagingOut_active_noError->SetFillColor(kBlue);
+  // hstagingOut_active_noError->SetMaximum(hstagingOut_active_timedOut->GetMaximum() * 1.05);
+  hstagingOut_active_noError->SetMinimum(0);
+  hstagingOut_active_noError->Draw();
+  legend->AddEntry(hstagingOut_active_noError,"no error","F");
+
+  hstagingOut_active_timedOut->SetLineColor(kBlue-10);
+  hstagingOut_active_timedOut->SetFillColor(kBlue-10);
+  hstagingOut_active_timedOut->Draw("same");
+  legend->AddEntry(hstagingOut_active_timedOut,"timed out","F");
+
+  // plot active time against error
+  legend->SetX1NDC(0.15);
+  legend->SetX2NDC(0.90);
+
+  hstagingOut_active_resourceLimit->SetLineColor(kCyan);
+  hstagingOut_active_resourceLimit->SetFillColor(kCyan);
+  hstagingOut_active_resourceLimit->Draw("same");
+  legend->AddEntry(hstagingOut_active_resourceLimit,"resource limit","F");
+  legend->Draw("same");
+  sprintf(filename,"figures/014___activeByStatus.pdf");
+  canvas->SaveAs(filename);
+  sprintf(filename,"figures/014___activeByStatus.png");
+  canvas->SaveAs(filename);
+
+  // memory usage
+  hvmem->Draw();
+  sprintf(filename,"figures/015___vmem.pdf");
+  canvas->SaveAs(filename);
+  sprintf(filename,"figures/015___vmem.png");
+  canvas->SaveAs(filename);
+
+  hmem->Draw();
+  sprintf(filename,"figures/016___mem.pdf");
+  canvas->SaveAs(filename);
+  sprintf(filename,"figures/016___mem.png");
+  canvas->SaveAs(filename);
+
+  // time since submission
+  haccumulate_submitTimeSinceInit->SetMarkerStyle(20);
+  haccumulate_submitTimeSinceInit->SetMarkerSize(0.8);
+  haccumulate_submitTimeSinceInit->SetMarkerColor(kBlack);
+  haccumulate_submitTimeSinceInit->GetXaxis()->SetTitle("time since start (hrs)");
+  haccumulate_submitTimeSinceInit->Draw("P");
+
+  haccumulate_completeTimeSinceInit->SetMarkerStyle(20);
+  haccumulate_completeTimeSinceInit->SetMarkerSize(0.8);
+  haccumulate_completeTimeSinceInit->SetMarkerColor(kRed);
+  haccumulate_completeTimeSinceInit->Draw("Psame");
+  sprintf(filename,"figures/017___accumulate_time.pdf");
+  canvas->SaveAs(filename);
+  sprintf(filename,"figures/017___accumulate_time.png");
+  canvas->SaveAs(filename);
+
+  // cpu time vs walltime
+  gcput_walltime->SetMarkerStyle(20);
+  gcput_walltime->SetMarkerSize(0.5);
+  gcput_walltime->SetMarkerColor(kBlue);
+  gcput_walltime->SetTitle("");
+  gcput_walltime->GetXaxis()->SetTitle("wall time (hrs)");
+  gcput_walltime->GetYaxis()->SetTitle("cpu time (hrs)");
+
+  TF1 *flinear[6];
+  char fname[80];
+  for(Int_t i=0;i<6;i++){
+    sprintf(fname,"flinear_%d",i);
+    flinear[i] = new TF1(fname,"[0]*x",0,25);
+    flinear[i]->SetParameter(0,1.*(i+1.));
+    flinear[i]->SetLineColor(colors[i]);
+    flinear[i]->SetLineStyle(3);
+  }
+
+  gcput_walltime->GetXaxis()->SetLimits(0,25);
+  gcput_walltime->SetMinimum(0);
+  gcput_walltime->Draw("AP");
+
+  for(Int_t i=0;i<6;i++){
+    flinear[i]->Draw("same");
+  }
+
+  sprintf(filename,"figures/018___cput_walltime.pdf");
+  canvas->SaveAs(filename);
+  sprintf(filename,"figures/018___cput_walltime.png");
+  canvas->SaveAs(filename);
+
+  gcput_walltime->GetXaxis()->SetLimits(0,8);
+  gcput_walltime->SetMinimum(0);
+  gcput_walltime->SetMaximum(32);
+  gcput_walltime->Draw("AP");
+
+  for(Int_t i=0;i<6;i++){
+    flinear[i]->Draw("same");
+  }
+
+  sprintf(filename,"figures/019___cput_walltime_close.pdf");
+  canvas->SaveAs(filename);
+  sprintf(filename,"figures/019___cput_walltime_close.png");
+  canvas->SaveAs(filename);
+
+  // jobs running at a given time
+  gjobsRunningAtCheckTimes->SetMarkerStyle(20);
+  gjobsRunningAtCheckTimes->SetMarkerSize(0.5);
+  gjobsRunningAtCheckTimes->SetMarkerColor(kBlue);
+  gjobsRunningAtCheckTimes->SetTitle("");
+  gjobsRunningAtCheckTimes->GetXaxis()->SetTitle("time since launch (hrs)");
+  gjobsRunningAtCheckTimes->GetYaxis()->SetTitle("# active jobs");
+
+  gjobsRunningAtCheckTimes->SetMinimum(0);
+  gjobsRunningAtCheckTimes->Draw("AP");
+
+  sprintf(filename,"figures/020___jobsRunningAtCheckTimes.pdf");
+  canvas->SaveAs(filename);
+  sprintf(filename,"figures/020___jobsRunningAtCheckTimes.png");
+  canvas->SaveAs(filename);
+}
+
+Int_t convert_to_sec(std::string input, Bool_t debug){
+  // input is of form HH:MM:SS
+  if(debug) cout << "input = " << input << endl;
+
+  if(input == "NULL"){
+    if(debug) cout << "input was NULL" << endl;
+    return -999 * 3600;
+  }else if(input == "-999"){
+    if(debug) cout << "input was -999" << endl;
+    return -999 * 3600;
+  }
+
+  Int_t hour, min, sec;
+  hour = atoi(input.substr(0,2).c_str());
+  min = atoi(input.substr(3,2).c_str());
+  sec = atoi(input.substr(6,2).c_str());
+
+  if(debug){
+    cout << "hour = " << hour << endl;
+    cout << "min = " << min << endl;
+    cout << "sec = " << sec << endl;
+  }
+
+  return 3600 * hour + 60 * min + sec;
+}

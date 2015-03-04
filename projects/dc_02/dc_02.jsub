@@ -1,0 +1,9 @@
+PROJECT: gluex
+JOBNAME: {project}_{run_number}_{file_number}
+TRACK: simulation
+COMMAND: /home/gluex/halld/jproj/projects/{project}/{project}.csh
+OPTIONS: {project} {run_number} {file_number}
+MEMORY: 1500 MB
+TIME: 3000
+OS: centos62
+DISK_SPACE: 15 GB
