@@ -1,8 +1,0 @@
-data_type           = recon
-run_period          = RunPeriod-RUNPERIOD
-revision            = VERSION
-software_version    = soft_comm_YEAR_MONTH_DAY.xml
-jana_config         = jana_rawdata_comm_YEAR_MONTH_DAY.conf
-ccdb_context        = calibtime=YEAR-MONTH-DAY
-production_time     = YEAR-MONTH-DAY
-dataVersionString   = recon_RunPeriod-RUNPERIOD_YEARMONTHDAY_verVERSION

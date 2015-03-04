@@ -1,7 +1,0 @@
-PROJECT: gluex
-JOBNAME: {project}_{run_number}_{file_number}
-TRACK: simulation
-COMMAND: /home/marki/my/jproj/{project}.csh
-OPTIONS: {run_number} {file_number}
-#INPUT_FILES: /mss/hallb/primex/data/october_2004/primex{run_number}.dat.{file_number}
-MEMORY: 800 MB
