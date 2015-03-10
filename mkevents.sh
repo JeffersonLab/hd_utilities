@@ -17,7 +17,7 @@ echo "Copying ${b1pi_input} ..."
 cp $b1pi_input b1_pi.input
 
 echo "Running genr8 ..."
-genr8 -M${NEVENTS} -Ab1_pi.ascii < b1_pi.input
+genr8 -r1501 -M${NEVENTS} -Ab1_pi.ascii < b1_pi.input
 
 echo "Converting generated events to HDDM ..."
 genr8_2_hddm -V"${VERTEX}" b1_pi.ascii 
