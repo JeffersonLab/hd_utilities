@@ -1,7 +1,23 @@
 #include <iostream>
 #include <iomanip>
+#include <fstream>
+#include <cmath>
+#include <vector>
+#include <sstream>
+#include <map>
+#include "unistd.h" // to use optarg
+#include <assert.h>
 
-int format_jobs_data(Bool_t debug = false){
+// ROOT header files
+#include "TROOT.h"
+#include "TFile.h"
+#include "TH1F.h"
+
+using namespace std;
+
+int main(int argc, char **argv){
+
+  Bool_t debug = false;
 
   char filename[200];
 
@@ -360,4 +376,6 @@ int format_jobs_data(Bool_t debug = false){
   cout << "number of exceeded resource limit: " << nExceededResourceLimit << endl;
 
   outfile->Write();
+
+  return 0;
 }

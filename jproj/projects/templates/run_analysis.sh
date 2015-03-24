@@ -25,5 +25,11 @@ time root -b -q format_jobs_data.C
 time root -b -q analyze.C
 
 # Publish on web
-# NOT YET!!!!!
+mkdir -p /work/halld/data_monitoring/launch_analysis/launch_analysis/PROJECT
+set HTMLDIR = "/work/halld/data_monitoring/launch_analysis/launch_analysis/PROJECT"
+cp ./mystyle.css      $HTMLDIR
+cp ./results.html     $HTMLDIR
+cp ./figures/00[2-8]* $HTMLDIR
+cp ./figures/01[1-2]* $HTMLDIR
+cp ./figures/014*     $HTMLDIR
 
