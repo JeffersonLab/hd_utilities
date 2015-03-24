@@ -1,9 +1,12 @@
 #!/bin/tcsh
 
+# Update tables for jobs
+../status.sh
+
 # Create _aux table that contains information about launch from stdout files
 time mysql -hhallddb -ufarmer farming < ./create_offline_monAux.sql
 # If we need to reset the table, use this
-# time mysql -hhallddb -ufarmer farming -e "drop table ${PROJECT}_aux"
+# time mysql -hhallddb -ufarmer farming -e "drop table PROJECT_aux"
 
 # Fill in _aux table
 # If running this part again, delete processed_job_info.txt

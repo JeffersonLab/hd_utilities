@@ -126,9 +126,32 @@ int format_jobs_data(Bool_t debug = false){
       // << "timeCompleteDay = " << timeCompleteDay   << " " << "timeCompleteTime = " << timeCompleteTime << endl;
       
       IN >> walltime >> cput >> mem >> vmem >> error;
+    }else if(result == "FAILED"){
+      IN
+	>> timeSubmittedDay  >> timeSubmittedTime
+	>> timeDependencyDay >> timeDependencyTime
+	>> timePendingDay    >> timePendingTime
+	>> timeStagingInDay  >> timeStagingInTime
+	>> timeActiveDay     >> timeActiveTime
+	>> timeStagingOutDay >> timeStagingOutTime
+	>> timeCompleteDay   >> timeCompleteTime;
+      IN >> walltime >> cput >> mem >> vmem;
+      if(debug) cout << "walltime = " << walltime << " cput = " << cput << " mem = " << mem << " vmem = " << vmem << endl;
+
+      // Need to read in "Job failed with unknown reason."
+      IN >> error; // Job
+      if(debug) cout << error;
+      IN >> error; // failed
+      if(debug) cout << " " << error;
+      IN >> error; // with
+      if(debug) cout << " " << error;
+      IN >> error; // unknown
+      if(debug) cout << " " << error;
+      IN >> error; // reason
+      if(debug) cout << " " << error << endl;
+      errorCode = 3;
     }else{
       if(debug) cout << "in normal processing " << endl;
-
       IN
 	>> timeSubmittedDay  >> timeSubmittedTime
 	>> timeDependencyDay >> timeDependencyTime

@@ -50,7 +50,6 @@ ls -l
 echo "starting plugins............"
 date
 set START = `date +%s`
-echo "command is:       hd_root $INPUTFILE -PPLUGINS=$PLUGINS ${ADDITIONAL_OPTION} -PNTHREADS=$NTHREADS -PTHREAD_TIMEOUT=300 -PPRINT_PLUGIN_PATHS=1 # -PEVENTS_TO_KEEP=100"
 hd_root $INPUTFILE -PPLUGINS=$PLUGINS ${ADDITIONAL_OPTION} -PNTHREADS=$NTHREADS -PTHREAD_TIMEOUT=300 -PPRINT_PLUGIN_PATHS=1  # -PEVENTS_TO_KEEP=100
 echo "ending plugins ............."
 date
@@ -66,8 +65,8 @@ chmod 775 ${OUTDIR}/ROOT/${RUN_NUMBER}/hd_root_${RUN_NUMBER}_${FILE_NUMBER}.root
 # save 2track skim file
 set BASENAME = `basename $INPUTFILE .evio`
 mkdir -p -m 775 ${OUTDIR}/skims/${RUN_NUMBER}/
-cp -v ${BASENAME}.2tracks.evio ${OUTDIR}/skims/${RUN_NUMBER}/${BASENAME}.2tracks.evio
-chmod 775 ${BASENAME}.2tracks.evio ${OUTDIR}/skims/${RUN_NUMBER}/${BASENAME}.2tracks.evio
+# cp -v ${BASENAME}.2tracks.evio ${OUTDIR}/skims/${RUN_NUMBER}/${BASENAME}.2tracks.evio
+# chmod 775 ${BASENAME}.2tracks.evio ${OUTDIR}/skims/${RUN_NUMBER}/${BASENAME}.2tracks.evio
 
 # save TOF TDC shift file
 mkdir -p -m 775 ${OUTDIR}/misc/${RUN_NUMBER}/
@@ -79,6 +78,9 @@ cp -v dana_rest.hddm ${OUTDIR}/REST/${RUN_NUMBER}/dana_rest_${RUN_NUMBER}_${FILE
 chmod 775 ${OUTDIR}/REST/${RUN_NUMBER}/dana_rest_${RUN_NUMBER}_${FILE_NUMBER}.hddm
 
 # save the EventStore idxa files
+# (create directories in order so that permissions are set for each)
+mkdir -p -m 775 ${OUTDIR}/idxa/
+mkdir -p -m 775 ${OUTDIR}/idxa/${RUN_NUMBER}
 mkdir -p -m 775 ${OUTDIR}/idxa/${RUN_NUMBER}/${FILE_NUMBER}/
 cp -v *.idxa ${OUTDIR}/idxa/${RUN_NUMBER}/${FILE_NUMBER}/
 chmod 775 ${OUTDIR}/idxa/${RUN_NUMBER}/${FILE_NUMBER}/*.idxa

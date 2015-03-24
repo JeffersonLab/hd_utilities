@@ -9,7 +9,7 @@
 
 set PARENT_DIR = "/volatile/halld/offline_monitoring/RunPeriod-RUNPERIOD/verVERSION/log"
 
-set OUTFILE = /home/gxproj1/halld/jproj/projects/PROJECT/processed_job_info.txt
+set OUTFILE = /home/gxproj1/halld/jproj/projects/PROJECT/processing/processed_job_info.txt
 
 cd $PARENT_DIR
 

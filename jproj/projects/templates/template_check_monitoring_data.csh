@@ -15,7 +15,7 @@ set ARGS=" -v RunPeriod-RUNPERIOD,VERSION "
 # Load standard environment for ROOT
 source /home/gxproj1/setup_jlab.csh
 
-set MONITORING_HOME=/home/gxproj1/halld/jproj/projects/PROJECT
+set MONITORING_HOME=/home/gxproj1/halld/jproj/projects/PROJECT/processing
 source $MONITORING_HOME/monitoring_env.csh
 
 # run the script
