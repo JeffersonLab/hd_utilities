@@ -452,7 +452,7 @@ def ProcessTAGH(db, root_file):
         number_of_events = tagh_num_events.GetBinContent(1)
 
     # get the occupancy
-    tagh_occupancy = root_file.Get(ROOTDIR_PREFIX+"TAGH/Hit_Occupancy")
+    tagh_occupancy = root_file.Get(ROOTDIR_PREFIX+"TAGH/Hit/Hit_Occupancy")
     # sanity checks
     if( tagh_occupancy == None ): 
         print "couldn't find TAGH occupancy histogram!"
