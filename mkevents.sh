@@ -41,19 +41,10 @@ echo "Running mcsmear ..."
 mcsmear -PJANA:BATCH_MODE=1 hdgeant.hddm
 
 echo "Running hd_root with danarest ..."
-#nice hd_root --nthreads=Ncores -PPLUGINS=phys_tree hdgeant_smeared.hddm
-nice hd_root -PJANA:BATCH_MODE=1 --nthreads=Ncores -PPLUGINS=danarest -PBFIELD_MAP=Magnets/Solenoid/solenoid_1350_poisson_20130925 hdgeant_smeared.hddm
+nice hd_root -PJANA:BATCH_MODE=1 --nthreads=Ncores -PPLUGINS=danarest hdgeant_smeared.hddm
 
 echo "Running hd_root with b1pi_hists & monitoring_hists ..."
-#nice hd_root --nthreads=Ncores -PPLUGINS=phys_tree hdgeant_smeared.hddm
 nice hd_root -PJANA:BATCH_MODE=1 --nthreads=Ncores -PPLUGINS=b1pi_hists,monitoring_hists dana_rest.hddm
 
-#echo "Analyzing ntuple and make histograms"
-#root -b -q anal1.C
-
 echo "Create plots"
-#root -b -q makeallplots.C
 root -b -q mk_pics.C
-
-
-
