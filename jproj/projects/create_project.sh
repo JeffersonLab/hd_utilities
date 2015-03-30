@@ -168,8 +168,10 @@ cp /home/gxproj1/halld/jproj/projects/templates/process_run_conditions.py       
 cp /home/gxproj1/halld/jproj/projects/templates/run_processing.sh               ${OUTDIR}/processing
 cp /home/gxproj1/halld/jproj/projects/templates/register_new_version.py         ${OUTDIR}/processing
 # launch analysis scripts
-cp /home/gxproj1/halld/jproj/projects/templates/format_jobs_data.C              ${OUTDIR}/analysis
+cp /home/gxproj1/halld/jproj/projects/templates/Makefile                        ${OUTDIR}/analysis
+cp /home/gxproj1/halld/jproj/projects/templates/format_jobs_data.cc             ${OUTDIR}/analysis
 cp /home/gxproj1/halld/jproj/projects/templates/analyze.C                       ${OUTDIR}/analysis
+cp /home/gxproj1/halld/jproj/projects/templates/mystyle.css                     ${OUTDIR}/analysis
 #---                                                                          ---#
 #--------------------------------------------------------------------------------#
 
@@ -230,5 +232,10 @@ cp /home/gxproj1/halld/jproj/projects/templates/template_run_analysis.sh ${OUTDI
 cat ${OUTDIR}/analysis/template_run_analysis.sh | sed "s/PROJECT/${PROJECT}/" > ${OUTDIR}/analysis/run_analysis.sh
 chmod 775 ${OUTDIR}/analysis/run_analysis.sh
 rm -f ${OUTDIR}/analysis/template_run_analysis.sh
+
+cp /home/gxproj1/halld/jproj/projects/templates/template_results.html ${OUTDIR}/analysis
+cat ${OUTDIR}/analysis/template_results.html | sed "s/PROJECT/${PROJECT}/" > ${OUTDIR}/analysis/results.html
+chmod 775 ${OUTDIR}/analysis/results.html
+rm -f ${OUTDIR}/analysis/template_results.html
 #---                                                                          ---#
 #--------------------------------------------------------------------------------#
