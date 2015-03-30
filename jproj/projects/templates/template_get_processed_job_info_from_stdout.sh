@@ -11,6 +11,10 @@ set PARENT_DIR = "/volatile/halld/offline_monitoring/RunPeriod-RUNPERIOD/verVERS
 
 set OUTFILE = /home/gxproj1/halld/jproj/projects/PROJECT/analysis/processed_job_info.txt
 
+if( -e $OUTFILE) then
+  rm -f $OUTFILE
+endif
+
 cd $PARENT_DIR
 
 set NFILES = 0

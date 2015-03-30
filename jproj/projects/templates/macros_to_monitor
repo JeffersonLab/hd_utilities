@@ -26,8 +26,10 @@
 /home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_SCReconstruction_p3.C
 /home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_FCALReconstruction_p1.C
 /home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_FCALReconstruction_p2.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_FCALReconstruction_p3.C
 /home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_BCALReconstruction_p1.C
 /home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_BCALReconstruction_p2.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_BCALReconstruction_p3.C
 /home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Tracking_p1.C
 /home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Tracking_p2.C
 /home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Tracking_p3.C

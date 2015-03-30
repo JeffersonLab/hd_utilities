@@ -13,6 +13,9 @@ time mysql -hhallddb -ufarmer farming < ./create_offline_monAux.sql
 echo "running get_processed_job_info_from_stdout.sh........."
 time ./get_processed_job_info_from_stdout.sh
 
+# Write out results to table aux
+# CAUTION: Running this command multiple times will result
+# in multiple entries for the same run and file.
 echo "running write_inserts_aux.pl........."
 time write_inserts_aux.pl < processed_job_info.txt | mysql -hhallddb -ufarmer farming
 
@@ -22,7 +25,8 @@ time ./create_jobs_data_from_db.csh
 
 # Format the txt file
 echo "running format_jobs_data.C........."
-time root -b -q format_jobs_data.C
+make
+time ./format_jobs_data
 
 # Run analysis to create plots
 time root -b -q analyze.C
@@ -30,10 +34,6 @@ time root -b -q analyze.C
 # Publish on web
 mkdir -p /work/halld/data_monitoring/launch_analysis/PROJECT/
 set HTMLDIR = "/work/halld/data_monitoring/launch_analysis/PROJECT/"
-cp ./mystyle.css      $HTMLDIR
-cp ./results.html     $HTMLDIR
-cp ./figures/00[2-8]* $HTMLDIR
-cp ./figures/01[1-2]* $HTMLDIR
-cp ./figures/014*     $HTMLDIR
+cp ./mystyle.css ./results.html ./figures/00[1-8]* ./figures/01[1-2]* ./figures/014* $HTMLDIR
 
 
