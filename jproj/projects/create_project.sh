@@ -128,7 +128,19 @@ echo "<!---" >> $XMLFILE
 echo "<package name="\""clhep"\"" version="\""2.0.4.5"\""/>" >> $XMLFILE
 echo "<package name="\""geant4"\"" version="\""9.4"\""/>" >> $XMLFILE
 echo "-->" >> $XMLFILE
+
+set mem_requested  = `grep 'Memory space' templates/template.jsub | sed 's/.*space="//' | sed 's:".*::'`
+echo "<variable name = "\""mem_requested"\"" value="\""${mem_requested}"\""/>" >> $XMLFILE
+
+set diskspace  = `grep 'DiskSpace' templates/template.jsub | sed 's/.*space="//' | sed 's:".*::'`
+echo "<variable name = "\""DiskSpace"\"" value="\""${diskspace}"\""/>" >> $XMLFILE
+
+set ncores  = `grep 'CPU core' templates/template.jsub | sed 's/.*="//' | sed 's:".*::'`
+echo "<variable name = "\""ncores"\"" value="\""${ncores}"\""/>" >> $XMLFILE
+
 echo "</gversions>" >> $XMLFILE
+
+
 
 # Create jana file
 set JANAFILE = "/work/halld/data_monitoring/run_conditions/jana_rawdata_comm_ver${VERSION}.conf" # ${YEAR}_${MONTH}_${DAY}
