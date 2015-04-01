@@ -1,0 +1,141 @@
+
+2015/03/24 Kei Moriya
+
+Attempt to analyze offline monitoring results across launches.
+
+#-------------------------------------------------------------------------------------------------#
+#      1. Create table using create_cross_analysis_table.sql                                      #
+#-------------------------------------------------------------------------------------------------#
+
+Command is:
++-------------------------------------------------------------------------------+
+| time mysql -hhallddb -ufarmer farming < ./create_cross_analysis_table.sql     |
++-------------------------------------------------------------------------------+
+
+To drop table and start over, do
++-------------------------------------------------------------------------------+
+| time mysql -hhallddb -ufarmer farming -e "drop table cross_analysis_table"    |
++-------------------------------------------------------------------------------+
+
+#-------------------------------------------------------------------------------------------------#
+#      2. Populate the table with all raw evio files                                              #
+#-------------------------------------------------------------------------------------------------#
+Do
++-------------------------------------------------------------------------------+
+| ls /mss/halld/RunPeriod-2014-10/rawdata/Run*/hd_rawdata_*.evio > allfiles.txt |
++-------------------------------------------------------------------------------+
+
+Then format to separate run, file and insert into table cross_analysis_table
+Assuming allfiles.txt has format
+000981   000
+000982   000
+000985   000
+...
+do
++-------------------------------------------------------------------------------+
+| time write_inserts_cross_analysis.pl < allfiles.txt \                         |
+| mysql -hhallddb -ufarmer farming                                              |
++-------------------------------------------------------------------------------+
+
+#-------------------------------------------------------------------------------------------------#
+#      3. Add columns for each launch                                                             #
+#-------------------------------------------------------------------------------------------------#
+
+The columns to add are:
+[from Job table]
+- result
+- error
+- mem
+- vmem
+- cput
+[from aux table]
+- nevents
+- timePlugin
+- timeCopy
+
+Create text file containing info from Job table with command
++-------------------------------------------------------------------------------+
+| ./create_txt_file_from_dbs.sh [VER]                                           |
++-------------------------------------------------------------------------------+
+
+This creates a txt file jobinfo_verNN.txt which contains
+run, file, result, cput,    walltime,
+mem, vmem, error,  nevents, timeCopy,
+timePlugin.
+
+Create new columns in the table with
++-------------------------------------------------------------------------------+
+| ./add_columns.sh [VER]                                                        |
++-------------------------------------------------------------------------------+
+which creates a file add_columns.sql and calls
+time mysql -hhallddb -ufarmer farming < ./add_columns.sql
+to create the entries.
+
+Insert this into the cross_analysis_table with
+
++-------------------------------------------------------------------------------+
+| ./write_inserts_each_launch.sh [VER]                                          |
++-------------------------------------------------------------------------------+
+
+which will create a file write_inserts_ver[VER].pl and add in the
+contents of jobinfo_ver[VER].txt to the table.
+This will take ~ 4 min.
+
+#-------------------------------------------------------------------------------------------------#
+#      4. Create html tables comparing launches                                                   #
+#-------------------------------------------------------------------------------------------------#
+
+Spit out results of each launch as txt:
++-------------------------------------------------------------------------------+
+| mysql -hhallddb -ufarmer farming -s -r -e "select run, file, result_ver09, \  |
+| result_ver10, result_ver11, result_ver12 from cross_analysis_table" \         |
+| > results.txt                                                                 |
++-------------------------------------------------------------------------------+
+
+Format txt file for results into html.
+Possible outcomes are
+- SUCCESS
+- OVER_RLIMIT
+- TIMEOUT
+- FAILED
+- NULL
+
++-------------------------------------------------------------------------------+
+| format_results_to_html -N 4 -V 9                                              |
++-------------------------------------------------------------------------------+
+
+This creates the html files in the directory html, so copy them
+
++-------------------------------------------------------------------------------+
+| cp html/results*.html \                                                       |
+| /group/halld/www/halldweb/html/data_monitoring/launch_analysis/rap_sheet/     |
++-------------------------------------------------------------------------------+
+
++-------------------------------------------------------------------------------+
+| mysql -hhallddb -ufarmer farming -s -r -e "select run, file, result_ver09, \  |
+| result_ver10, result_ver11, result_ver12 from cross_analysis_table" \         |
+| > results.txt                                                                 |
++-------------------------------------------------------------------------------+
+
+#-------------------------------------------------------------------------------------------------#
+#      5. Compare timePlugin, mem, vmem across launches                                           #
+#-------------------------------------------------------------------------------------------------#
+
+Spit out results of each launch as txt:
++-------------------------------------------------------------------------------+
+| mysql -hhallddb -ufarmer farming -s -r -e "select run, file, mem_ver09, \     |
+| result_ver10, result_ver11, result_ver12 from cross_analysis_table" \         |
+| > results.txt                                                                 |
++-------------------------------------------------------------------------------+
+
+Format txt file for results into html.
+Possible outcomes are
+- SUCCESS
+- OVER_RLIMIT
+- TIMEOUT
+- FAILED
+- NULL
+
++-------------------------------------------------------------------------------+
+| format_results_to_html -N 4 -V 9                                              |
++-------------------------------------------------------------------------------+
