@@ -1,0 +1,172 @@
+<html>
+
+<head>
+<link rel="stylesheet" type="text/css" href="mystyle.css">
+<meta http-equiv="content-style-type" content="text/css">
+<title>
+Offline Monitoring Results for PROJECT
+</title>
+</head>
+
+<body>
+
+<h1>Offline Analysis Results for PROJECT</h1>
+
+<h3 style="color:red; text-align:right; font-size:1em;">Click on each figure to show pdf version</h3>
+
+<h2>Number of jobs at each stage against time</h2>
+<table style="width:100%">
+  <tr>
+    <td style="width:65%">
+      <a href="008______CumulativetimeSinceLaunch.pdf">
+	<img src="008______CumulativetimeSinceLaunch.png" width="75%">
+      </a>
+    </td>
+    <td style="width:35%; vertical-align: top;">
+      <h3>Each job has 7 stages: submit, dependency, pending, stage in, active, stage out, complete.
+	The number of jobs that have reached each stage since launch is shown. 
+      </h3>
+    </td>
+  </tr>
+</table>
+
+<hr>
+
+<h2>Start Time of Stages for Each Job</h2>
+<table style="width:100%">
+  <tr>
+    <td style="width:33%">
+      <a href="011______stageTimesEachJob_dependency.pdf">
+	<img src="011______stageTimesEachJob_dependency.png" width="100%">
+      </a>
+    </td>
+
+    <td style="width:33%">
+      <a href="012______stageTimesEachJob_pending.pdf">
+	<img src="012______stageTimesEachJob_pending.png" width="100%">
+      </a>
+    </td>
+    
+    <td style="width:33%">
+      <a href="014______stageTimesEachJob_active.pdf">
+	<img src="014______stageTimesEachJob_active.png" width="100%">
+      </a>
+    </td>
+  </tr>
+
+  <tr>
+    <td style="width:33%; vertical-align: top;">
+      <h3>Time spent in dependency (waiting for input file to be transferred to cache disk) for each job</h3>
+    </td>
+  
+    <td style="width:33%; vertical-align: top;">
+      <h3>Time spent in pending (waiting for slot to open on cluster nodes) for each job</h3>
+    </td>
+
+    </td>
+    <td style="width:33%; vertical-align: top;">
+      <h3>Time spent in active (actual processing of job) for each job</h3>
+    </td>
+  </tr>
+</table>
+
+<hr>
+
+<h2>Memory Usage</h2>
+<table style="width:100%">
+  <tr>
+    <td style="width:50%">
+    <a href="001______vmem.pdf">
+      <img src="001______vmem.png" width="100%">
+    </a>
+    </td>
+
+    <td style="width:50%">
+      <a href="002______mem.pdf">
+	<img src="002______mem.png" width="100%">
+      </a>
+    </td>
+  </tr>
+</table>
+
+<hr>
+
+<h2>Time Info</h2>
+<table style="width:100%">
+  <tr>
+    <td style="width:23%">
+      <a href="003______copyTime.pdf">
+        <img src="003______copyTime.png" width="90%">
+      </a>
+    </td>
+
+    <td style="width:23%">
+      <a href="004______walltime.pdf">
+	<img src="004______walltime.png" width="90%">
+      </a>
+    </td>
+  </tr>
+
+  <tr>
+    <td style="width:23%; vertical-align: top;">
+      <h3>Time to copy input file (typically 20GB for fall 2014 run) from cache disk to working node.</h3>
+    </td>
+  
+    <td style="width:23%; vertical-align: top;">
+      <h3>Wall time spent for each job.</h3>
+    </td>
+  </tr>
+
+  <tr>
+    <td style="width:23%">
+      <a href="005______cput_walltime.pdf">
+        <img src="005______cput_walltime.png" width="90%">
+      </a>
+    </td>
+
+    <td style="width:23%">
+      <a href="006______cput_timePlugin.pdf">
+	<img src="006______cput_timePlugin.png" width="90%">
+      </a>
+    </td>
+  </tr>
+
+  <tr>
+    <td style="width:23%; vertical-align: top;">
+      <h3>CPU time vs wall time. CPU time is the sum of all threads used, and ideally should be N times the wall time,
+      where N is the number of threads used.</h3>
+    </td>
+
+    <td style="width:23%; vertical-align: top;">
+      <h3>CPU time vs time actually spent to process plugins. The plugin times are given by the time command when
+      running the plugins.</h3>
+    </td>
+  </tr>
+</table>
+
+<hr>
+
+<h2>Number of jobs at each stage against time</h2>
+<table style="width:100%">
+  <tr>
+    <td style="width:65%">
+    <a href="007______timePlugin_per_event.pdf">
+        <img src="007______timePlugin_per_event.png" width="95%">
+    </a>
+    </td>
+    <td style="width:35%; vertical-align: top;">
+      <h3>Distribution of time to process plugin divided by number of events for each job. Note the log scale on the horizontal axis. Since some jobs
+      get stuck at a specific event, these jobs will have a much longer average processing time (full scale up to 10 s
+      shown in inset). For the overall average, we use only jobs that had an average processing time of less than 0.1 s
+      / event. Also note that we use multithread processing for these jobs, so that the processing time / event / thread
+      is higher.
+      </h3>
+    </td>
+  </tr>
+</table>
+
+<hr>
+
+</body>
+
+</html>
