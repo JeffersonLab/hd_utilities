@@ -1,5 +1,10 @@
 #!/bin/tcsh
 
+# Update tables for jobs
+cd ../
+./status.sh
+cd -
+
 # Create _aux table that contains information about launch from stdout files
 time mysql -hhallddb -ufarmer farming < ./create_offline_monAux.sql
 # If we need to reset the table, use this

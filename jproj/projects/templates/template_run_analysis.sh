@@ -8,6 +8,11 @@ time mysql -hhallddb -ufarmer farming < ./create_offline_monAux.sql
 # If we need to reset the table, use this
 # time mysql -hhallddb -ufarmer farming -e "drop table PROJECT_aux"
 
+# First fill the aux table with all jobIds. This ensures that even if
+# the job failed, we have an entry in the aux table. This way, we can
+# combine information in the tables even when the job failed.
+time mysql -hhallddb -ufarmer farming < ./fill_jobIds_monAux.sql
+
 # Fill in _aux table
 # If running this part again, delete processed_job_info.txt
 echo "running get_processed_job_info_from_stdout.sh........."

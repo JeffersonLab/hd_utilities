@@ -4,7 +4,7 @@
 	<Variable name="formatted_run" value="{run_number}"/>
 	<Variable name="formatted_file" value="{file_number}"/>
 	<Variable name="output_dir_base" value="/volatile/halld/offline_monitoring/RunPeriod-RUNPERIOD/verVERSION"/>
-	<Variable name="plugins" value="TAGH_online,TAGM_online,BCAL_online,CDC_online,CDC_expert,FCAL_online,FDC_online,ST_online,TOF_online,monitoring_hists,danarest,track_skimmer,BCAL_Eff,p2pi_hists,p3pi_hists"/>
+	<Variable name="plugins" value="TAGH_online,TAGM_online,BCAL_online,CDC_online,CDC_expert,FCAL_online,FDC_online,ST_online,TOF_online,RF_online,monitoring_hists,danarest,track_skimmer,BCAL_Eff,p2pi_hists,p3pi_hists,HLDetectorTiming,BCAL_inv_mass"/>
         <!-- ,TOF_TDC_shift,trackeff_missing -->
 	<Variable name="env" value="setup_jlab.csh"/>
 	<Variable name="nthreads" value="6"/>
