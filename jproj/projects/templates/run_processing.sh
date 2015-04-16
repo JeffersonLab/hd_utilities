@@ -7,3 +7,7 @@ source ./monitoring_env.csh
 
 # Create plots
 ./check_monitoring_data.csh
+
+# If we want to run the processing as a cron job,
+# use this
+# crontab cron_processing.txt
