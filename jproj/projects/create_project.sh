@@ -201,25 +201,34 @@ set DAY   = `date +"%d"`
 set RUNPERIOD_HYPHEN = `echo $RUNPERIOD | sed 's/_/-/'`
 
 # Sean's processing scripts
-cp /home/gxproj1/halld/jproj/projects/templates/template.jproj ${OUTDIR}/processing/
-cat ${OUTDIR}/processing/template.jproj | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s/FILETYPE/${FILETYPE}/" > ${OUTDIR}/${PROJECT}.jproj
-rm -f ${OUTDIR}/processing/template.jproj
+cp /home/gxproj1/halld/jproj/projects/templates/template.jproj ${OUTDIR}/
+cat ${OUTDIR}/template.jproj | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s/FILETYPE/${FILETYPE}/" > ${OUTDIR}/${PROJECT}.jproj
+rm -f ${OUTDIR}/template.jproj
 
-cp /home/gxproj1/halld/jproj/projects/templates/template.jsub ${OUTDIR}/processing/
-cat ${OUTDIR}/processing/template.jsub | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s/FILETYPE/${FILETYPE}/" | sed "s/PROJECT/${PROJECT}/" | sed "s/VERSION/${VERSION}/" > ${OUTDIR}/${PROJECT}.jsub
-rm -f ${OUTDIR}/processing/template.jsub
+cp /home/gxproj1/halld/jproj/projects/templates/template.jsub ${OUTDIR}/
+cat ${OUTDIR}/template.jsub | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s/PROJECT/${PROJECT}/" | sed "s/VERSION/${VERSION}/" > ${OUTDIR}/${PROJECT}.jsub
+rm -f ${OUTDIR}/template.jsub
 
 cp /home/gxproj1/halld/jproj/projects/templates/template_check_monitoring_data.csh ${OUTDIR}/processing/
-cat ${OUTDIR}/processing/template_check_monitoring_data.csh | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s/FILETYPE/${FILETYPE}/" | sed "s/PROJECT/${PROJECT}/" | sed "s/VERSION/${VERSION}/" > ${OUTDIR}/processing/check_monitoring_data.csh
+cat ${OUTDIR}/processing/template_check_monitoring_data.csh | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s/PROJECT/${PROJECT}/" | sed "s/VERSION/${VERSION}/" > ${OUTDIR}/processing/check_monitoring_data.csh
 chmod 775 ${OUTDIR}/processing/check_monitoring_data.csh
 rm -f ${OUTDIR}/processing/template_check_monitoring_data.csh
 
 cp /home/gxproj1/halld/jproj/projects/templates/template_version_file.txt ${OUTDIR}/processing/
-cat ${OUTDIR}/processing/template_version_file.txt | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s/FILETYPE/${FILETYPE}/" | sed "s/PROJECT/${PROJECT}/" | sed "s/VERSION/${VERSION}/" | sed "s/YEAR/${YEAR}/" | sed "s/MONTH/${MONTH}/" | sed "s/DAY/${DAY}/" > ${OUTDIR}/processing/version_file.txt
+cat ${OUTDIR}/processing/template_version_file.txt | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s/PROJECT/${PROJECT}/" | sed "s/VERSION/${VERSION}/" | sed "s/YEAR/${YEAR}/" | sed "s/MONTH/${MONTH}/" | sed "s/DAY/${DAY}/" > ${OUTDIR}/processing/version_file.txt
 chmod 775 ${OUTDIR}/processing/version_file.txt
 rm -f ${OUTDIR}/processing/template_version_file.txt
 
+cp /home/gxproj1/halld/jproj/projects/templates/template_cron_processing.txt ${OUTDIR}/processing/
+cat ${OUTDIR}/processing/template_cron_processing.txt | sed "s/PROJECT/${PROJECT}/"  > ${OUTDIR}/processing/cron_processing.txt
+rm -f ${OUTDIR}/analysis/template_cron_processing.txt
+
 # launch analysis scripts
+cp /home/gxproj1/halld/jproj/projects/templates/template_fill_jobIds_monAux.sql ${OUTDIR}/analysis/
+cat ${OUTDIR}/analysis/template_fill_jobIds_monAux.sql | sed "s/PROJECT/${PROJECT}/" > ${OUTDIR}/analysis/fill_jobIds_monAux.sql
+chmod 775 ${OUTDIR}/analysis/fill_jobIds_monAux.sql
+rm -f ${OUTDIR}/analysis/template_fill_jobIds_monAux.sql
+
 cp /home/gxproj1/halld/jproj/projects/templates/template_get_processed_job_info_from_stdout.sh ${OUTDIR}/analysis/
 cat ${OUTDIR}/analysis/template_get_processed_job_info_from_stdout.sh | sed "s/PROJECT/${PROJECT}/" | sed "s/VERSION/${VERSION}/" | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" > ${OUTDIR}/analysis/get_processed_job_info_from_stdout.sh
 chmod 775 ${OUTDIR}/analysis/get_processed_job_info_from_stdout.sh
