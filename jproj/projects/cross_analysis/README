@@ -82,14 +82,14 @@ contents of jobinfo_ver[VER].txt to the table.
 This will take ~ 4 min.
 
 #-------------------------------------------------------------------------------------------------#
-#      4. Create html tables comparing launches                                                   #
+#      4. Create html tables comparing results for each runfile                                   #
 #-------------------------------------------------------------------------------------------------#
 
 Spit out results of each launch as txt:
 +-------------------------------------------------------------------------------+
 | mysql -hhallddb -ufarmer farming -s -r -e "select run, file, result_ver09, \  |
-| result_ver10, result_ver11, result_ver12 from cross_analysis_table" \         |
-| > results.txt                                                                 |
+| result_ver10, result_ver11, result_ver12, result_ver13 \                      |
+|from cross_analysis_table" > results.txt                                       |
 +-------------------------------------------------------------------------------+
 
 Format txt file for results into html.
@@ -111,21 +111,13 @@ This creates the html files in the directory html, so copy them
 | /group/halld/www/halldweb/html/data_monitoring/launch_analysis/rap_sheet/     |
 +-------------------------------------------------------------------------------+
 
-+-------------------------------------------------------------------------------+
-| mysql -hhallddb -ufarmer farming -s -r -e "select run, file, result_ver09, \  |
-| result_ver10, result_ver11, result_ver12 from cross_analysis_table" \         |
-| > results.txt                                                                 |
-+-------------------------------------------------------------------------------+
-
 #-------------------------------------------------------------------------------------------------#
 #      5. Compare timePlugin, mem, vmem across launches                                           #
 #-------------------------------------------------------------------------------------------------#
 
 Spit out results of each launch as txt:
 +-------------------------------------------------------------------------------+
-| mysql -hhallddb -ufarmer farming -s -r -e "select run, file, mem_ver09, \     |
-| result_ver10, result_ver11, result_ver12 from cross_analysis_table" \         |
-| > results.txt                                                                 |
+| time ./spitout_timePlugin_mem_vmem.sh 5 9                                     |
 +-------------------------------------------------------------------------------+
 
 Format txt file for results into html.
@@ -137,5 +129,9 @@ Possible outcomes are
 - NULL
 
 +-------------------------------------------------------------------------------+
-| format_results_to_html -N 4 -V 9                                              |
+| process_timePlugin_mem_vmem -N 5 -V 9                                         |
+| cp figures/*ver13* \                                                          |
+| /group/halld/www/halldweb/html/data_monitoring/launch_analysis/cross_analysis/|
 +-------------------------------------------------------------------------------+
+
+Modify html page sources to reflect new figures.
