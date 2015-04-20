@@ -133,7 +133,8 @@ for (run,fname) in run_numbers_on_disk:
             make_monitoring_plots.main(cmdargs.split())
 
         if MAKE_DB_SUMMARY:
-            cmdargs  = str(run) + " " + str(VERSION_NUMBER) + " " + join(ONLINE_ROOT_DIR,fname)
+            cmdargs =  " --root_dir rootspy/ "
+            cmdargs += str(run) + " " + str(VERSION_NUMBER) + " " + join(ONLINE_ROOT_DIR,fname)
             print "  analyzing DB info..."
             process_monitoring_data.main(cmdargs.split()) 
         

@@ -13,7 +13,7 @@ cd $MONITORING_HOME
 
 if ( ! -e $LOCKFILE ) then
     touch $LOCKFILE
-    ./check_new_runs.py -c
+    ./check_new_runs.py -c -p
     rm $LOCKFILE
 else 
     echo "process is locked by another job, exiting..."
