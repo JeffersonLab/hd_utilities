@@ -452,7 +452,7 @@ def ProcessTAGH(db, root_file):
         number_of_events = tagh_num_events.GetBinContent(1)
 
     # get the occupancy
-    tagh_occupancy = root_file.Get(ROOTDIR_PREFIX+"TAGH/Hit_Occupancy")
+    tagh_occupancy = root_file.Get(ROOTDIR_PREFIX+"TAGH/Hit/Hit_Occupancy")
     # sanity checks
     if( tagh_occupancy == None ): 
         print "couldn't find TAGH occupancy histogram!"
@@ -508,6 +508,96 @@ def ProcessTAGM(db, root_file):
 
     ## insert into DB
     db.AddTAGMHits(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, number_of_events, avg_hits_per_sector)
+
+    ## calculate calibration info
+
+###########################################
+## For the coarse PS, we store the hits for all 16 paddles
+## and some calibration information
+##
+def ProcessPSC(db, root_file):
+    global RUN_NUMBER,VERSION_NUMBER,FILE_NUMBER
+
+    avg_hits_per_sector = []
+    number_of_events = -1 
+
+    psc_num_events = root_file.Get(ROOTDIR_PREFIX+"PSC/psc_num_events")
+    if(psc_num_events != None):
+        number_of_events = psc_num_events.GetBinContent(1)
+
+    # get the occupancy
+    psc_leftarm_occupancy = root_file.Get(ROOTDIR_PREFIX+"PSC/Hit/LeftArm/Hit_Occupancy_LeftArm")
+    psc_rightarm_occupancy = root_file.Get(ROOTDIR_PREFIX+"PSC/Hit/RightArm/Hit_Occupancy_RightArm")
+    # sanity checks
+    if( psc_leftarm_occupancy == None ): 
+        print "couldn't find PSC left arm occupancy histogram!"
+        return   
+    if( psc_rightarm_occupancy == None ): 
+        print "couldn't find PSC right arm occupancy histogram!"
+        return   
+
+    # calculate occupancy
+    for x in xrange(1,9):
+        avg_hits_per_sector += [ psc_leftarm_occupancy.GetBinContent(x) ]
+    for x in xrange(1,9):
+        avg_hits_per_sector += [ psc_rightarm_occupancy.GetBinContent(x) ]
+
+    ## insert into DB
+    db.AddPSCHits(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, number_of_events, avg_hits_per_sector)
+
+    ## calculate calibration info
+
+###########################################
+## For the fine PS, we store the hits for these 10 counters in each arm:
+##    1,6,17,45,68,81,105,106,127,145
+## and some calibration information
+##
+def ProcessPS(db, root_file):
+    global RUN_NUMBER,VERSION_NUMBER,FILE_NUMBER
+
+    avg_hits_per_sector = []
+    number_of_events = -1 
+
+    ps_num_events = root_file.Get(ROOTDIR_PREFIX+"PS/ps_num_events")
+    if(ps_num_events != None):
+        number_of_events = ps_num_events.GetBinContent(1)
+
+    # get the occupancy
+    ps_leftarm_occupancy = root_file.Get(ROOTDIR_PREFIX+"PS/Hit/LeftArm/Hit_Occupancy_LeftArm")
+    ps_rightarm_occupancy = root_file.Get(ROOTDIR_PREFIX+"PS/Hit/RightArm/Hit_Occupancy_RightArm")
+    # sanity checks
+    if( ps_leftarm_occupancy == None ): 
+        print "couldn't find PS left arm occupancy histogram!"
+        return   
+    if( ps_rightarm_occupancy == None ): 
+        print "couldn't find PS right arm occupancy histogram!"
+        return   
+
+    # calculate occupancy
+    avg_hits_per_sector += [ ps_leftarm_occupancy.GetBinContent(1) ]
+    avg_hits_per_sector += [ ps_leftarm_occupancy.GetBinContent(6) ]
+    avg_hits_per_sector += [ ps_leftarm_occupancy.GetBinContent(17) ]
+    avg_hits_per_sector += [ ps_leftarm_occupancy.GetBinContent(45) ]
+    avg_hits_per_sector += [ ps_leftarm_occupancy.GetBinContent(68) ]
+    avg_hits_per_sector += [ ps_leftarm_occupancy.GetBinContent(81) ]
+    avg_hits_per_sector += [ ps_leftarm_occupancy.GetBinContent(105) ]
+    avg_hits_per_sector += [ ps_leftarm_occupancy.GetBinContent(106) ]
+    avg_hits_per_sector += [ ps_leftarm_occupancy.GetBinContent(127) ]
+    avg_hits_per_sector += [ ps_leftarm_occupancy.GetBinContent(145) ]
+    avg_hits_per_sector += [ ps_rightarm_occupancy.GetBinContent(1) ]
+    avg_hits_per_sector += [ ps_rightarm_occupancy.GetBinContent(6) ]
+    avg_hits_per_sector += [ ps_rightarm_occupancy.GetBinContent(17) ]
+    avg_hits_per_sector += [ ps_rightarm_occupancy.GetBinContent(45) ]
+    avg_hits_per_sector += [ ps_rightarm_occupancy.GetBinContent(68) ]
+    avg_hits_per_sector += [ ps_rightarm_occupancy.GetBinContent(81) ]
+    avg_hits_per_sector += [ ps_rightarm_occupancy.GetBinContent(105) ]
+    avg_hits_per_sector += [ ps_rightarm_occupancy.GetBinContent(106) ]
+    avg_hits_per_sector += [ ps_rightarm_occupancy.GetBinContent(127) ]
+    avg_hits_per_sector += [ ps_rightarm_occupancy.GetBinContent(145) ]
+
+
+    ## insert into DB
+    db.AddPSHits(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, number_of_events, avg_hits_per_sector)
 
     ## calculate calibration info
 
@@ -578,17 +668,17 @@ def ProcessAnalysisInfo(db, root_file):
     analysis_data += [num_neutral,num_good_neutral]
 
     # Calculate number of various other reconstructed quantities    
-    analysis_data.append( SumHistContents(root_file, "Independent/Hist_NumReconstructedObjects/NumFCALShowers") )
-    analysis_data.append( SumHistContents(root_file, "Independent/Hist_NumReconstructedObjects/NumBCALShowers") )
-    analysis_data.append( SumHistContents(root_file, "Independent/Hist_NumReconstructedObjects/NumTOFPoints") )
-    analysis_data.append( SumHistContents(root_file, "Independent/Hist_NumReconstructedObjects/NumSCHits") )
-    analysis_data.append( SumHistContents(root_file, "Independent/Hist_NumReconstructedObjects/NumTAGHHits") )
-    analysis_data.append( SumHistContents(root_file, "Independent/Hist_NumReconstructedObjects/NumTAGMHits") )
+    analysis_data.append( SumHistContents(root_file, ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumFCALShowers") )
+    analysis_data.append( SumHistContents(root_file, ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumBCALShowers") )
+    analysis_data.append( SumHistContents(root_file, ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumTOFPoints") )
+    analysis_data.append( SumHistContents(root_file, ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumSCHits") )
+    analysis_data.append( SumHistContents(root_file, ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumTAGHHits") )
+    analysis_data.append( SumHistContents(root_file, ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumTAGMHits") )
 
-    analysis_data.append( SumHistContents(root_file, "Independent/Hist_NumReconstructedObjects/NumTrackBCALMatches") )
-    analysis_data.append( SumHistContents(root_file, "Independent/Hist_NumReconstructedObjects/NumTrackFCALMatches") )
-    analysis_data.append( SumHistContents(root_file, "Independent/Hist_NumReconstructedObjects/NumTrackTOFMatches") )
-    analysis_data.append( SumHistContents(root_file, "Independent/Hist_NumReconstructedObjects/NumTrackSCMatches") )
+    analysis_data.append( SumHistContents(root_file, ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumTrackBCALMatches") )
+    analysis_data.append( SumHistContents(root_file, ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumTrackFCALMatches") )
+    analysis_data.append( SumHistContents(root_file, ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumTrackTOFMatches") )
+    analysis_data.append( SumHistContents(root_file, ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumTrackSCMatches") )
 
     ## insert into DB
     db.AddAnalysisInfo(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, number_of_events, analysis_data)
@@ -687,6 +777,14 @@ def main(argv):
         print_mysql_error(e)
     try:
         ProcessTAGM(mondb, root_file)
+    except MySQLdb.Error, e:
+        print_mysql_error(e)
+    try:
+        ProcessPS(mondb, root_file)
+    except MySQLdb.Error, e:
+        print_mysql_error(e)
+    try:
+        ProcessPSC(mondb, root_file)
     except MySQLdb.Error, e:
         print_mysql_error(e)
 

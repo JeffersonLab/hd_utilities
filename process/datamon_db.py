@@ -22,7 +22,7 @@ class datamon_db:
         self.db = self.db_conn.cursor()
 
         ## table information
-        self.table_names = [ "run_info", "version_info", "sc_hits", "cdc_hits", "cdc_hits", "fdc_hits", "bcal_hits", "bcal_energies", "fcal_hits", "tof_hits", "tagm_hits", "tagh_hits", "ps_hits", "cdc_calib", "fdc_calib", "fcal_calib", "bcal_calib", "tof_calib", "sc_calib", "tagh_calib", "tagm_calib", "analysis_data" ]
+        self.table_names = [ "run_info", "version_info", "sc_hits", "cdc_hits", "cdc_hits", "fdc_hits", "bcal_hits", "bcal_energies", "fcal_hits", "tof_hits", "tagm_hits", "tagh_hits", "ps_hits", "psc_hits", "cdc_calib", "fdc_calib", "fcal_calib", "bcal_calib", "tof_calib", "sc_calib", "tagh_calib", "tagm_calib", "analysis_data" ]
 
         ## table definitions
         self.analysis_data = [ ("num_pos_tracks","INTEGER"), ("num_neg_tracks","INTEGER"), ("num_proton_tracks","INTEGER"), 
@@ -92,7 +92,8 @@ class datamon_db:
 
         self.db.execute('CREATE TABLE tagm_hits (runid INTEGER, file_num INTEGER, version_id INTEGER, num_det_events INTEGER, ' + " ".join(["column"+str(x)+"_hits INTEGER," for x in range(1,12)]) + ' column12_hits INTEGER)')
         self.db.execute('CREATE TABLE tagh_hits (runid INTEGER, file_num INTEGER, version_id INTEGER, num_det_events INTEGER, ' + " ".join(["sector"+str(x)+"_hits INTEGER," for x in range(1,5)]) + ' sector5_hits INTEGER)')
-        self.db.execute('CREATE TABLE ps_hits (runid INTEGER, file_num INTEGER, version_id INTEGER, num_det_events INTEGER, ' + " ".join(["sector"+str(x)+"_hits INTEGER," for x in range(1,10)]) + ' sector10_hits INTEGER)')
+        self.db.execute('CREATE TABLE ps_hits (runid INTEGER, file_num INTEGER, version_id INTEGER, num_det_events INTEGER, ' + " ".join(["sector"+str(x)+"_hits INTEGER," for x in range(1,20)]) + ' sector20_hits INTEGER)')
+        self.db.execute('CREATE TABLE psc_hits (runid INTEGER, file_num INTEGER, version_id INTEGER, num_det_events INTEGER, ' + " ".join(["sector"+str(x)+"_hits INTEGER," for x in range(1,16)]) + ' sector16_hits INTEGER)')
         
         ## Calibration
         self.db.execute('CREATE TABLE cdc_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, CDC_resid_mean DOUBLE, CDC_resid_sigma DOUBLE )')
@@ -304,6 +305,10 @@ class datamon_db:
         self.InsertData('tagh_hits', [runid, file_num, version_id, num_events] + values)
     def AddTAGMHits(self, runid, file_num, version_id, num_events, values):
         self.InsertData('tagm_hits', [runid, file_num, version_id, num_events] + values)
+    def AddPSHits(self, runid, file_num, version_id, num_events, values):
+        self.InsertData('ps_hits', [runid, file_num, version_id, num_events] + values)
+    def AddPSCHits(self, runid, file_num, version_id, num_events, values):
+        self.InsertData('psc_hits', [runid, file_num, version_id, num_events] + values)
 
     def AddCDCCalib(self, runid, file_num, version_id, num_events, values):
         self.InsertData('cdc_calib', [runid, file_num, version_id, num_events] + values)
