@@ -4,6 +4,7 @@
 /home/gxproj1/builds/online/packages/monitoring/src/plugins/BCAL_online/bcal_occupancy.C
 /home/gxproj1/builds/online/packages/monitoring/src/plugins/BCAL_online/bcal_times.C
 /home/gxproj1/builds/online/packages/monitoring/src/plugins/BCAL_online/bcal_shower.C
+/home/gxproj1/builds/online/packages/monitoring/src/plugins/BCAL_Eff/bcal_hist_eff.C
 # CDC
 /home/gxproj1/builds/online/packages/monitoring/src/plugins/CDC_online/CDC_occupancy.C
 # FCAL
@@ -14,24 +15,38 @@
 # TAGH
 /home/gxproj1/builds/online/packages/monitoring/src/plugins/TAGH_online/TAGH_hit.C
 # RECONSTRUCTION
-/home/gxproj1/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_NumHighLevelObjects.C
-/home/gxproj1/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_NumLowLevelObjects_p1.C
-/home/gxproj1/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_NumLowLevelObjects_p2.C
-/home/gxproj1/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_EventInfo.C
-/home/gxproj1/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_TOFReconstruction_p1.C
-/home/gxproj1/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_TOFReconstruction_p2.C
-/home/gxproj1/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_SCReconstruction_p1.C
-/home/gxproj1/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_SCReconstruction_p2.C
-/home/gxproj1/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_SCReconstruction_p3.C
-/home/gxproj1/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_FCALReconstruction_p1.C
-/home/gxproj1/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_FCALReconstruction_p2.C
-/home/gxproj1/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_BCALReconstruction_p1.C
-/home/gxproj1/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_BCALReconstruction_p2.C
-/home/gxproj1/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Tracking_p1.C
-/home/gxproj1/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Tracking_p2.C
-/home/gxproj1/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Tracking_p3.C
-/home/gxproj1/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Kinematics_p1.C
-/home/gxproj1/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Kinematics_p2.C
-/home/gxproj1/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Matching_p1.C
-/home/gxproj1/builds/sim-recon/sim-recon-commissioning/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Matching_p2.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_NumHighLevelObjects.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_NumLowLevelObjects_p1.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_NumLowLevelObjects_p2.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_EventInfo.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_TOFReconstruction_p1.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_TOFReconstruction_p2.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_SCReconstruction_p1.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_SCReconstruction_p2.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_SCReconstruction_p3.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_FCALReconstruction_p1.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_FCALReconstruction_p2.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_FCALReconstruction_p3.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_BCALReconstruction_p1.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_BCALReconstruction_p2.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_BCALReconstruction_p3.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Tracking_p1.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Tracking_p2.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Tracking_p3.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_TrackMultiplicity.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Kinematics_p1.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Kinematics_p2.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Matching_BCAL.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Matching_FCAL.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Matching_SC.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_Matching_TOF.C
+# ANALYSIS
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/p2pi_hists/HistMacro_kshort2pi.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/p2pi_hists/HistMacro_p2pi_pmiss.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/p2pi_hists/HistMacro_p2pi_preco1.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/p2pi_hists/HistMacro_p2pi_preco2.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/p3pi_hists/HistMacro_p3pi_pmiss_2FCAL.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/p3pi_hists/HistMacro_p3pi_pmiss_FCAL-BCAL.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/p3pi_hists/HistMacro_p3pi_preco_2FCAL.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/p3pi_hists/HistMacro_p3pi_preco_FCAL-BCAL.C
 
