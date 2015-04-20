@@ -102,8 +102,10 @@ class datamon_db:
         self.db.execute('CREATE TABLE bcal_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, BCAL_tresol_mean DOUBLE, BCAL_tresol_sigma DOUBLE )')
         self.db.execute('CREATE TABLE tof_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, TOF_tresol_mean DOUBLE, TOF_tresol_sigma DOUBLE )')
         self.db.execute('CREATE TABLE sc_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, SC_tresol_mean DOUBLE, SC_tresol_sigma DOUBLE )')
-        self.db.execute('CREATE TABLE tagh_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, TAGH_tresol_mean DOUBLE, TAGH_tresol_sigma DOUBLE )')
+        self.db.execute('CREATE TABLE tagh_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, TAGH_tresol_mean DOUBLE, TAGH_tresol_sigma DOUBLE, TAGH_frac_ADC_has_TDC_hit DOUBLE,  TAGH_frac_TDC_has_ADC_hit DOUBLE )')
         self.db.execute('CREATE TABLE tagm_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, TAGM_tresol_mean DOUBLE, TAGM_tresol_sigma DOUBLE )')
+        self.db.execute('CREATE TABLE ps_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, PS_tresol_mean DOUBLE, PS_tresol_sigma DOUBLE )')
+        self.db.execute('CREATE TABLE psc_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, PSC_tresol_mean DOUBLE, PSC_tresol_sigma DOUBLE, PSC_leftfrac_ADC_has_TDC_hit DOUBLE,  PSC_leftfrac_TDC_has_ADC_hit DOUBLE, PSC_rightfrac_ADC_has_TDC_hit DOUBLE,  PSC_rightfrac_TDC_has_ADC_hit DOUBLE)')
 
         ## analysis data
         #db_cmd = 'CREATE TABLE analysis_data (runid INTEGER, file_num INTEGER, version_id INTEGER,'
@@ -310,22 +312,26 @@ class datamon_db:
     def AddPSCHits(self, runid, file_num, version_id, num_events, values):
         self.InsertData('psc_hits', [runid, file_num, version_id, num_events] + values)
 
-    def AddCDCCalib(self, runid, file_num, version_id, num_events, values):
-        self.InsertData('cdc_calib', [runid, file_num, version_id, num_events] + values)
-    def AddFDCCalib(self, runid, file_num, version_id, num_events, values):
-        self.InsertData('fdc_calib', [runid, file_num, version_id, num_events] + values)
-    def AddFCALCalib(self, runid, file_num, version_id, num_events, values):
-        self.InsertData('fcal_calib', [runid, file_num, version_id, num_events] + values)
-    def AddBCALCalib(self, runid, file_num, version_id, num_events, values):
-        self.InsertData('bcal_calib', [runid, file_num, version_id, num_events] + values)
-    def AddTOFCalib(self, runid, file_num, version_id, num_events, values):
-        self.InsertData('tof_calib', [runid, file_num, version_id, num_events] + values)
-    def AddSCCalib(self, runid, file_num, version_id, num_events, values):
-        self.InsertData('st_calib', [runid, file_num, version_id, num_events] + values)
-    def AddTAGHCalib(self, runid, file_num, version_id, num_events, values):
-        self.InsertData('tagh_calib', [runid, file_num, version_id, num_events] + values)
-    def AddTAGMCalib(self, runid, file_num, version_id, num_events, values):
-        self.InsertData('tagm_calib', [runid, file_num, version_id, num_events] + values)
+    def AddCDCCalib(self, runid, file_num, version_id,  values):
+        self.InsertData('cdc_calib', [runid, file_num, version_id] + values)
+    def AddFDCCalib(self, runid, file_num, version_id,  values):
+        self.InsertData('fdc_calib', [runid, file_num, version_id] + values)
+    def AddFCALCalib(self, runid, file_num, version_id,  values):
+        self.InsertData('fcal_calib', [runid, file_num, version_id] + values)
+    def AddBCALCalib(self, runid, file_num, version_id,  values):
+        self.InsertData('bcal_calib', [runid, file_num, version_id] + values)
+    def AddTOFCalib(self, runid, file_num, version_id,  values):
+        self.InsertData('tof_calib', [runid, file_num, version_id] + values)
+    def AddSCCalib(self, runid, file_num, version_id,  values):
+        self.InsertData('st_calib', [runid, file_num, version_id] + values)
+    def AddTAGHCalib(self, runid, file_num, version_id,  values):
+        self.InsertData('tagh_calib', [runid, file_num, version_id] + values)
+    def AddTAGMCalib(self, runid, file_num, version_id,  values):
+        self.InsertData('tagm_calib', [runid, file_num, version_id] + values)
+    def AddPSCalib(self, runid, file_num, version_id,  values):
+        self.InsertData('ps_calib', [runid, file_num, version_id] + values)
+    def AddPSCCalib(self, runid, file_num, version_id,  values):
+        self.InsertData('psc_calib', [runid, file_num, version_id] + values)
 
     def AddAnalysisInfo(self, runid, file_num, version_id, num_events, values):
         self.InsertData('analysis_data', [runid, file_num, version_id, num_events] + values)

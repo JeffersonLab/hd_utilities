@@ -5,7 +5,7 @@
 #
 # Author: Sean Dobbs (s-dobbs@northwestern.edu), 2014
 
-from ROOT import TFile,TIter,TDirectory,TH1,TH2,TH1I,TH2I,TCanvas
+from ROOT import TFile,TIter,TDirectory,TH1,TH2,TH1I,TH2I,TCanvas,TFitResultPtr
 from optparse import OptionParser
 import os.path
 import sys
@@ -469,6 +469,25 @@ def ProcessTAGH(db, root_file):
     db.AddTAGHHits(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, number_of_events, avg_hits_per_sector)
 
     ## calculate calibration info
+    timing_mean = 0.
+    timing_sigma = 0.
+    timing_adc_has_tdc = 0.
+    timing_tdc_has_adc = 0.
+    # get timing info (only use only channel right now, they aren't aligned enough to sum over multiples)
+    tagh_timing = root_file.Get(ROOTDIR_PREFIX+"PSPair/PSC_PS_TAGH/PSTAGHTimeOffsets_L/PSTAGH_tdiffVsTAGHCounterID_L6")
+    if tagh_timing:
+        tagh_timing_proj = tagh_timing.ProjectionY("_py",2,2);
+        r = tagh_timing_proj.Fit("gaus","S");
+        timing_mean = r.Parameter(1)
+        timing_sigma = r.Parameter(2)
+    tagh_Hit_HasTDCvsHasADC = root_file.Get(ROOTDIR_PREFIX+"TAGH/Hit/Hit_HasTDCvsHasADC")
+    if tagh_Hit_HasTDCvsHasADC:
+        timing_adc_has_tdc = tagh_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (tagh_Hit_HasTDCvsHasADC.GetBinContent(2,1)+tagh_Hit_HasTDCvsHasADC.GetBinContent(2,2))
+        timing_tdc_has_adc = tagh_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (tagh_Hit_HasTDCvsHasADC.GetBinContent(1,2)+tagh_Hit_HasTDCvsHasADC.GetBinContent(2,2))
+
+    # fill DB
+    db.AddTAGHCalib(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, [timing_mean, timing_sigma, timing_adc_has_tdc, timing_tdc_has_adc])
+
 
 ###########################################
 ## For the tagger microscope, we store the avg number of hits per these columns:
@@ -510,6 +529,19 @@ def ProcessTAGM(db, root_file):
     db.AddTAGMHits(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, number_of_events, avg_hits_per_sector)
 
     ## calculate calibration info
+    timing_mean = 0.
+    timing_sigma = 0.
+    # get timing info (only use only channel right now, they aren't aligned enough to sum over multiples)
+    tagm_timing = root_file.Get(ROOTDIR_PREFIX+"PSPair/PSC_PS_TAGM/PSTAGMTimeOffsets_L/PSTAGH_tdiffVsTAGMColumn_L6")
+    if tagm_timing:
+        tagm_timing_proj = tagm_timing.ProjectionY("_py",2,2);
+        r = tagm_timing_proj.Fit("gaus","S");
+        timing_mean = r.Parameter(1)
+        timing_sigma = r.Parameter(2)
+
+    # fill DB
+    db.AddTAGMCalib(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, [timing_mean, timing_sigma])
+
 
 ###########################################
 ## For the coarse PS, we store the hits for all 16 paddles
@@ -546,6 +578,32 @@ def ProcessPSC(db, root_file):
     db.AddPSCHits(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, number_of_events, avg_hits_per_sector)
 
     ## calculate calibration info
+    timing_mean = 0.
+    timing_sigma = 0.
+    timing_right_adc_has_tdc = 0.
+    timing_right_tdc_has_adc = 0.
+    timing_left_adc_has_tdc = 0.
+    timing_left_tdc_has_adc = 0.
+    # get timing info (only use only channel right now, they aren't aligned enough to sum over multiples)
+    psc_timing = root_file.Get(ROOTDIR_PREFIX+"PSPair/PSC/PSCRightArmTimeOffsets/PSC_tdiffVsPSCIDRight_L6")
+    if psc_timing:
+        psc_timing_proj = psc_timing.ProjectionY("_py",2,2);
+        r = psc_timing_proj.Fit("gaus","S");
+        timing_mean = r.Parameter(1)
+        timing_sigma = r.Parameter(2)
+    tagh_Left_Hit_HasTDCvsHasADC = root_file.Get(ROOTDIR_PREFIX+"PSC/Hit/LeftArm/Hit_HasTDCvsHasADC_LeftArm")
+    if tagh_Left_Hit_HasTDCvsHasADC:
+        timing_left_adc_has_tdc = tagh_Left_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (tagh_Left_Hit_HasTDCvsHasADC.GetBinContent(2,1)+tagh_Left_Hit_HasTDCvsHasADC.GetBinContent(2,2))
+        timing_left_tdc_has_adc = tagh_Left_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (tagh_Left_Hit_HasTDCvsHasADC.GetBinContent(1,2)+tagh_Left_Hit_HasTDCvsHasADC.GetBinContent(2,2))
+    tagh_Right_Hit_HasTDCvsHasADC = root_file.Get(ROOTDIR_PREFIX+"PSC/Hit/RightArm/Hit_HasTDCvsHasADC_RightArm")
+    if tagh_Right_Hit_HasTDCvsHasADC:
+        timing_right_adc_has_tdc = tagh_Right_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (tagh_Right_Hit_HasTDCvsHasADC.GetBinContent(2,1)+tagh_Right_Hit_HasTDCvsHasADC.GetBinContent(2,2))
+        timing_right_tdc_has_adc = tagh_Right_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (tagh_Right_Hit_HasTDCvsHasADC.GetBinContent(1,2)+tagh_Right_Hit_HasTDCvsHasADC.GetBinContent(2,2))
+
+    # fill DB
+    db.AddPSCCalib(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, [timing_mean, timing_sigma, timing_left_adc_has_tdc, timing_left_tdc_has_adc,
+                                                             timing_right_adc_has_tdc, timing_right_tdc_has_adc ])
+
 
 ###########################################
 ## For the fine PS, we store the hits for these 10 counters in each arm:
