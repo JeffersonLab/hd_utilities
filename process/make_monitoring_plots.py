@@ -25,6 +25,7 @@ from datamon_db import datamon_db
 CANVAS_WIDTH = 800
 CANVAS_HEIGHT = 600
 
+BASE_ROOT_DIR = ""
 OUTPUT_DIRECTORY = "."
 #PDF_FILE_NAME = "output"
 WEB_OUTPUT = True
@@ -263,6 +264,8 @@ def main(argv):
                       help="Specify the list of names of histograms to plot")
     parser.add_option("-M","--macro_list", dest="macroname_list",
                       help="Specify the list of macro files to make plots of")
+    parser.add_option("-R","--root_dir", dest="root_dir",
+                      help="Specify the base directory in the ROOT file")
 #    parser.add_option("-i","--input_file", dest="input_file",
 #                      help="Specify the file name to process.")
 
@@ -291,6 +294,8 @@ def main(argv):
         else:
             CANVAS_WIDTH  = int(new_width)
             CANVAS_HEIGHT = int(new_height)
+    if(options.root_dir):
+        BASE_ROOT_DIR = options.root_dir
         
     
     ## build List of files to run over
@@ -378,7 +383,7 @@ def main(argv):
             continue
         else:
             print "processing file " + filename + " ..." 
-        AccessHistogramsRecursively(root_file, "", sum_hists, sum_dir, hists_to_sum)
+        AccessHistogramsRecursively(root_file, BASE_ROOT_DIR, sum_hists, sum_dir, hists_to_sum)
         root_file.Close()
 
 

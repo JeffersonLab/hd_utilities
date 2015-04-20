@@ -25,9 +25,12 @@ ONLINE_ROOT_DIR = BASE_ONLINEMON_DIR + '/root'
 ONLINE_CONDITION_DIR = BASE_ONLINEMON_DIR + '/conditions'
 
 MIN_RUN_NUMBER = 670
+MAX_RUN_NUMBER = 2439
 VERSION_NUMBER  =  1   ## hardcode for now
+#VERSION_NUMBER  =  14   ## hardcode for now
 MONITORING_OUTPUT_DIR = "/work/halld/data_monitoring"
 RUN_PERIOD = "RunPeriod-2014-10"
+#RUN_PERIOD = "RunPeriod-2015-01 "
 
 MAKE_PLOTS = True
 MAKE_DB_SUMMARY = True
@@ -86,14 +89,15 @@ except:
 
 # we decide if there's a new run by checking if a new online monitoring ROOT file has shown up
 # load the list of ROOT files, making sure that they have the right suffix
-# also, allow for a minimum run number to mask out early commissioning runs
+# also, allow for a run range to optionally process only a subset of the runs that exist
+# this is mainly for going back to process files that were created previously
 files_on_disk = [ f for f in listdir(ONLINE_ROOT_DIR) if (isfile(join(ONLINE_ROOT_DIR,f))and(f[-5:]=='.root')) ]
-#run_numbers_on_disk = [ (int(fname[13:18]),fname) for fname in files_on_disk if (int(fname[13:18])>=MIN_RUN_NUMBER) ]
+run_numbers_on_disk = [ (int(fname[13:18]),fname) for fname in files_on_disk if (int(fname[13:18])>=MIN_RUN_NUMBER and int(fname[13:18])<=MAX_RUN_NUMBER) ]
 
 # kludge for now, since the online ROOT files have stopped since run 1764, get a new run if a new condition file shows up
-condition_files_on_disk = [ f for f in listdir(ONLINE_CONDITION_DIR) if (isfile(join(ONLINE_CONDITION_DIR,f))and(f[-4:]=='.dat')) ]
-run_numbers_on_disk = [ (int(fname[15:20]),fname) for fname in condition_files_on_disk if (int(fname[15:20])>=MIN_RUN_NUMBER) ]
-run_numbers_on_disk.sort(key=lambda runinfo: runinfo[0])
+#condition_files_on_disk = [ f for f in listdir(ONLINE_CONDITION_DIR) if (isfile(join(ONLINE_CONDITION_DIR,f))and(f[-4:]=='.dat')) ]
+#run_numbers_on_disk = [ (int(fname[15:20]),fname) for fname in condition_files_on_disk if (int(fname[15:20])>=MIN_RUN_NUMBER) ]
+run_numbers_on_disk.sort(key=lambda runinfo: int(runinfo[0]))
 
 # save processed runs - overwrite save files
 try:
@@ -122,7 +126,8 @@ for (run,fname) in run_numbers_on_disk:
             cmdargs  = " --histogram_list /u/home/gluex/halld/monitoring/process/histograms_to_monitor" 
             cmdargs += " --macro_list /u/home/gluex/halld/monitoring/process/macros_to_monitor "
             cmdargs += " --root_dir rootspy/"
-            monitoring_data_dir = join(MONITORING_OUTPUT_DIR, RUN_PERIOD, ("Run%06d" % run))
+            #monitoring_data_dir = join(MONITORING_OUTPUT_DIR, RUN_PERIOD, "ver00", ("Run%06d" % run))
+            monitoring_data_dir = join(MONITORING_OUTPUT_DIR, RUN_PERIOD, "online", ("Run%06d" % run))
             #mkdir_p(monitoring_data_dir)
             os.system("mkdir -m"+NEWDIR_MODE+" -p " + monitoring_data_dir)  ## need error checks
             cmdargs += "--output_dir " + monitoring_data_dir
