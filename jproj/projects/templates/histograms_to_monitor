@@ -31,7 +31,7 @@ psct
 psco
 #TAGH
 DigiHit_tdcTime
-DigiHit_PulseIntegral
+DigiHit_RawIntegral
 DigiHit_PedestalVsSlotID
 #TAGM
 tagm_hit_seen

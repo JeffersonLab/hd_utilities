@@ -308,10 +308,10 @@ def load_target_types(ccdb_context, run_number):
 
 def main(argv):
     # configuration vars
-    RUN_PERIOD = "RunPeriod-2014-10"
+    RUN_PERIOD = "RunPeriod-RUNPERIOD"
     CONDITION_FILE_FORMAT = "/work/halld/online_monitoring/conditions/run_conditions%06d.dat"
     # assume that the files are loaded on the cache disk
-    RAWDATA_DIR_FORMAT = "/cache/mss/halld/RunPeriod-2014-10/rawdata/Run%06d"
+    RAWDATA_DIR_FORMAT = "/cache/mss/halld/RunPeriod-RUNPERIOD/rawdata/Run%06d"
 
     # read in run number from command line
     try:

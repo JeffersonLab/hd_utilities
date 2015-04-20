@@ -170,13 +170,11 @@ cp /home/gxproj1/setup_jlab.csh                                                 
 
 # Sean's processing scripts
 cp /home/gxproj1/halld/jproj/projects/templates/monitoring_env.csh              ${OUTDIR}/processing
-cp /home/gxproj1/halld/jproj/projects/templates/process_new_offline_data.py     ${OUTDIR}/processing
 cp /home/gxproj1/halld/jproj/projects/templates/datamon_db.py                   ${OUTDIR}/processing
 cp /home/gxproj1/halld/jproj/projects/templates/histograms_to_monitor           ${OUTDIR}/processing
 cp /home/gxproj1/halld/jproj/projects/templates/macros_to_monitor               ${OUTDIR}/processing
 cp /home/gxproj1/halld/jproj/projects/templates/make_monitoring_plots.py        ${OUTDIR}/processing
 cp /home/gxproj1/halld/jproj/projects/templates/process_monitoring_data.py      ${OUTDIR}/processing
-cp /home/gxproj1/halld/jproj/projects/templates/process_run_conditions.py       ${OUTDIR}/processing
 cp /home/gxproj1/halld/jproj/projects/templates/run_processing.sh               ${OUTDIR}/processing
 cp /home/gxproj1/halld/jproj/projects/templates/register_new_version.py         ${OUTDIR}/processing
 # launch analysis scripts
@@ -221,7 +219,15 @@ rm -f ${OUTDIR}/processing/template_version_file.txt
 
 cp /home/gxproj1/halld/jproj/projects/templates/template_cron_processing.txt ${OUTDIR}/processing/
 cat ${OUTDIR}/processing/template_cron_processing.txt | sed "s/PROJECT/${PROJECT}/"  > ${OUTDIR}/processing/cron_processing.txt
-rm -f ${OUTDIR}/analysis/template_cron_processing.txt
+rm -f ${OUTDIR}/processing/template_cron_processing.txt
+
+cp /home/gxproj1/halld/jproj/projects/templates/template_process_run_conditions.py ${OUTDIR}/processing/
+cat ${OUTDIR}/processing/template_process_run_conditions.py | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/"  > ${OUTDIR}/processing/process_run_conditions.py
+rm -f ${OUTDIR}/processing/template_process_run_conditions.py
+
+cp /home/gxproj1/halld/jproj/projects/templates/template_process_new_offline_data.py     ${OUTDIR}/processing
+cat ${OUTDIR}/processing/template_process_new_offline_data.py | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/"  > ${OUTDIR}/processing/process_new_offline_data.py
+rm -f ${OUTDIR}/processing/template_process_new_offline_data.py
 
 # launch analysis scripts
 cp /home/gxproj1/halld/jproj/projects/templates/template_fill_jobIds_monAux.sql ${OUTDIR}/analysis/
