@@ -24,13 +24,11 @@ PROCESSED_RUN_LIST_FILE = "processedrun.lst.online"
 ONLINE_ROOT_DIR = BASE_ONLINEMON_DIR + '/root'
 ONLINE_CONDITION_DIR = BASE_ONLINEMON_DIR + '/conditions'
 
-MIN_RUN_NUMBER = 670
-MAX_RUN_NUMBER = 2439
-VERSION_NUMBER  =  1   ## hardcode for now
-#VERSION_NUMBER  =  14   ## hardcode for now
+MIN_RUN_NUMBER = 2607
+MAX_RUN_NUMBER = 100000
+VERSION_NUMBER  =  15   ## hardcode for now
 MONITORING_OUTPUT_DIR = "/work/halld/data_monitoring"
-RUN_PERIOD = "RunPeriod-2014-10"
-#RUN_PERIOD = "RunPeriod-2015-01 "
+RUN_PERIOD = "RunPeriod-2015-03"
 
 MAKE_PLOTS = True
 MAKE_DB_SUMMARY = True
@@ -123,14 +121,13 @@ for (run,fname) in run_numbers_on_disk:
         
         if MAKE_PLOTS:
             ## process monitoring data
-            cmdargs  = " --histogram_list /u/home/gluex/halld/monitoring/process/histograms_to_monitor" 
+            cmdargs  = " --histogram_list /u/home/gluex/halld/monitoring/process/histograms_to_monitor " 
             cmdargs += " --macro_list /u/home/gluex/halld/monitoring/process/macros_to_monitor "
-            cmdargs += " --root_dir rootspy/"
-            #monitoring_data_dir = join(MONITORING_OUTPUT_DIR, RUN_PERIOD, "ver00", ("Run%06d" % run))
-            monitoring_data_dir = join(MONITORING_OUTPUT_DIR, RUN_PERIOD, "online", ("Run%06d" % run))
+            cmdargs += " --root_dir rootspy/ "
+            monitoring_data_dir = join(MONITORING_OUTPUT_DIR, RUN_PERIOD, "ver00", ("Run%06d" % run))
             #mkdir_p(monitoring_data_dir)
             os.system("mkdir -m"+NEWDIR_MODE+" -p " + monitoring_data_dir)  ## need error checks
-            cmdargs += "--output_dir " + monitoring_data_dir
+            cmdargs += " --output_dir " + monitoring_data_dir
             cmdargs += "  " + join(ONLINE_ROOT_DIR,fname)
             print "  creating plots..."
             make_monitoring_plots.main(cmdargs.split())
