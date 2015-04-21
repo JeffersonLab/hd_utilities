@@ -1,7 +1,7 @@
 #!/bin/tcsh
 
 if ( $1 == "" ) then
-  echo "add_columns.sh"
+  echo "write_inserts_each_launch.sh"
   echo "Need to specify version..."
   exit
 endif

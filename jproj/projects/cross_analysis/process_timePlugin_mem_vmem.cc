@@ -44,7 +44,7 @@ int main(int argc, char **argv){
   int  VER_INIT = 9;
   bool debug   = false;
 
-  const Int_t colors[] = {kBlack, kRed, kGreen+2, kBlue, kMagenta};
+  const Int_t colors[] = {kBlack, kRed, kGreen+2, kBlue, kMagenta, kPink-9};
 
   extern char* optarg;
   // Check command line arguments
@@ -85,6 +85,7 @@ int main(int argc, char **argv){
   std::string timePlugin[NVERS]; // in sec, can be "NULL"
   std::string mem[NVERS];        // in kb,  can be "NULL"
   std::string vmem[NVERS];       // in kb,  can be "NULL"
+  std::string nevents[NVERS];    // can be "NULL"
 
   int run_previous = -999;
   int hundreds_previous = -100;
@@ -99,6 +100,9 @@ int main(int argc, char **argv){
   TGraph *gtimePlugin[NVERS-1];
   TGraph *gmem[NVERS-1];
   TGraph *gvmem[NVERS-1];
+  TGraph *gnevents[NVERS-1];
+  TH1F *hnevents_diff[NVERS-1];
+  TGraph *gtimePlugin_per_event[NVERS-1];
   char gname[200];
   for(Int_t i=0;i<NVERS-1;i++){
     gtimePlugin[i] = new TGraph();
@@ -110,16 +114,28 @@ int main(int argc, char **argv){
     gvmem[i] = new TGraph();
     sprintf(gname,"gvmem_ver%2.2d_ver%2.2d",VER_INIT + NVERS - 1,VER_INIT + i);
     gvmem[i]->SetTitle(gname);
+    gnevents[i] = new TGraph();
+    sprintf(gname,"gnevents_ver%2.2d_ver%2.2d",VER_INIT + NVERS - 1,VER_INIT + i);
+    gnevents[i]->SetTitle(gname);
+    sprintf(gname,"hnevents_diff_ver%2.2d_ver%2.2d",VER_INIT + NVERS - 1,VER_INIT + i);
+    hnevents_diff[i] = new TH1F(gname,"",200,-100,100);
+
+    gtimePlugin_per_event[i] = new TGraph();
+    sprintf(gname,"gtimePlugin_per_event_ver%2.2d_ver%2.2d",VER_INIT + NVERS - 1,VER_INIT + i);
+    gtimePlugin_per_event[i]->SetTitle(gname);
   }
 
   Double_t timePlugin_value[NVERS];
   Double_t mem_value[NVERS];
   Double_t vmem_value[NVERS];
+  Double_t nevents_value[NVERS];
+  Double_t timePlugin_per_event_value[NVERS];
 
   while(IN >> run >> file){
     for(int i=0;i<NVERS;i++) IN >> timePlugin[i];
     for(int i=0;i<NVERS;i++) IN >> mem[i];
     for(int i=0;i<NVERS;i++) IN >> vmem[i];
+    for(int i=0;i<NVERS;i++) IN >> nevents[i];
 
     if(run != run_previous){
       if(debug) cout << "beginning of new run " << run << endl;
@@ -134,15 +150,17 @@ int main(int argc, char **argv){
 
     if(debug) cout << "processing run = " << run << " file = " << file << endl;
 
-    // Format input timePlugin, mem, vmem values to numbers
+    // Format input timePlugin, mem, vmem, nevents values to numbers
     for(int i=0;i<NVERS;i++){
       if(debug) cout << "i = " << i << " timePlugin[" << i << "] = " << timePlugin[i] << endl;
 
+      // timePlugin
       if(timePlugin[i] == "NULL") timePlugin_value[i] = -999;
       else                        timePlugin_value[i] = atof(timePlugin[i].c_str()) / 60.;
 
       if(debug) cout << "timePlugin value = " << timePlugin_value[i] << endl;
 
+      // mem
       if(mem[i] == "NULL") mem_value[i] = -999;
       else{
 	size_t pos = mem[i].find("k");
@@ -152,9 +170,9 @@ int main(int argc, char **argv){
 	if(debug) cout << "mem value will be set to : " << mem[i].replace(pos,2,"") << endl;
 	mem_value[i] = atof(mem[i].replace(pos,2,"").c_str()) / 1024.;
       }
-
       if(debug) cout << "mem value = " << mem_value[i] << endl;
 
+      // vmem
       if(vmem[i] == "NULL") vmem_value[i] = -999;
       else{
 	size_t pos = vmem[i].find("k");
@@ -164,8 +182,19 @@ int main(int argc, char **argv){
 	if(debug) cout << "vmem value will be set to : " << vmem[i].replace(pos,2,"") << endl;
 	vmem_value[i] = atof(vmem[i].replace(pos,2,"").c_str()) / 1024.;
       }
-
       if(debug) cout << "vmem value = " << vmem_value[i] << endl;
+
+      // nevents
+      if(nevents[i] == "NULL") nevents_value[i] = -999;
+      else                     nevents_value[i] = atof(nevents[i].c_str());
+      if(debug) cout << "nevents value = " << nevents[i] << endl;
+
+      // timePlugin_per_event
+      if(timePlugin_value[i] == -999 || nevents_value[i] == -999)
+	timePlugin_per_event_value[i] = -999;
+      else
+	timePlugin_per_event_value[i] = timePlugin_value[i] / nevents_value[i];
+
     }
 
     // Fill graphs with values
@@ -173,6 +202,9 @@ int main(int argc, char **argv){
       gtimePlugin[i]->SetPoint(gtimePlugin[i]->GetN(),timePlugin_value[i],timePlugin_value[NVERS-1]);
       gmem[i]->SetPoint(gmem[i]->GetN(),mem_value[i],mem_value[NVERS-1]);
       gvmem[i]->SetPoint(gvmem[i]->GetN(),vmem_value[i],vmem_value[NVERS-1]);
+      gnevents[i]->SetPoint(gnevents[i]->GetN(),nevents_value[i],nevents_value[NVERS-1]);
+      hnevents_diff[i]->Fill(nevents_value[NVERS-1] - nevents_value[i]);
+      gtimePlugin_per_event[i]->SetPoint(gtimePlugin_per_event[i]->GetN(),timePlugin_per_event_value[i],timePlugin_per_event_value[NVERS-1]);
     }
 
     ntotalAll++;
@@ -210,7 +242,7 @@ int main(int argc, char **argv){
     gtimePlugin[i]->GetYaxis()->SetTitleFont(132);
     gtimePlugin[i]->GetYaxis()->SetLabelSize(0.040);
     gtimePlugin[i]->GetYaxis()->SetLabelFont(132);
-    gtimePlugin[i]->GetYaxis()->SetTitleOffset(0.650);
+    gtimePlugin[i]->GetYaxis()->SetTitleOffset(0.700);
 
     gtimePlugin[i]->SetMarkerColor(colors[0]);
     gtimePlugin[i]->SetMarkerSize(1.2);
@@ -250,7 +282,7 @@ int main(int argc, char **argv){
     gmem[i]->GetYaxis()->SetTitleFont(132);
     gmem[i]->GetYaxis()->SetLabelSize(0.040);
     gmem[i]->GetYaxis()->SetLabelFont(132);
-    gmem[i]->GetYaxis()->SetTitleOffset(0.650);
+    gmem[i]->GetYaxis()->SetTitleOffset(0.700);
 
     gmem[i]->SetMarkerColor(colors[1]);
     gmem[i]->SetMarkerSize(1.2);
@@ -290,7 +322,7 @@ int main(int argc, char **argv){
     gvmem[i]->GetYaxis()->SetTitleFont(132);
     gvmem[i]->GetYaxis()->SetLabelSize(0.040);
     gvmem[i]->GetYaxis()->SetLabelFont(132);
-    gvmem[i]->GetYaxis()->SetTitleOffset(0.650);
+    gvmem[i]->GetYaxis()->SetTitleOffset(0.700);
 
     gvmem[i]->SetMarkerColor(colors[2]);
     gvmem[i]->SetMarkerSize(1.2);
@@ -311,6 +343,132 @@ int main(int argc, char **argv){
 
     sprintf(gname,"figures/003___vmem_ver%2.2d_ver%2.2d.png",VER_INIT+NVERS-1,VER_INIT+i);
     canvas->SaveAs(gname);
+    //_____________________________________________________________________________________________
+
+    // nevents
+    gnevents[i]->SetTitle("");
+    sprintf(gname,"# events for ver %2.2d",VER_INIT + i);
+    gnevents[i]->GetXaxis()->SetTitle(gname);
+    gnevents[i]->GetXaxis()->CenterTitle(gname);
+    gnevents[i]->GetXaxis()->SetTitleSize(0.050);
+    gnevents[i]->GetXaxis()->SetTitleFont(132);
+    gnevents[i]->GetXaxis()->SetLabelSize(0.040);
+    gnevents[i]->GetXaxis()->SetLabelFont(132);
+
+    sprintf(gname,"# events for ver %2.2d",VER_INIT + NVERS - 1);
+    gnevents[i]->GetYaxis()->SetTitle(gname);
+    gnevents[i]->GetYaxis()->CenterTitle(gname);
+    gnevents[i]->GetYaxis()->SetTitleSize(0.050);
+    gnevents[i]->GetYaxis()->SetTitleFont(132);
+    gnevents[i]->GetYaxis()->SetLabelSize(0.040);
+    gnevents[i]->GetYaxis()->SetLabelFont(132);
+    gnevents[i]->GetYaxis()->SetTitleOffset(0.700);
+
+    gnevents[i]->SetMarkerColor(colors[3]);
+    gnevents[i]->SetMarkerSize(1.2);
+    gnevents[i]->SetMarkerStyle(20);
+    gnevents[i]->SetLineColor(colors[3]);
+    gnevents[i]->SetLineWidth(1);
+    gnevents[i]->SetLineStyle(1);
+
+    gnevents[i]->GetXaxis()->SetLimits(0,35000);
+    gnevents[i]->SetMinimum(0);
+    gnevents[i]->SetMaximum(35000);
+
+    gnevents[i]->Draw("AP");
+
+    line_equal->SetX2(35000);
+    line_equal->SetY2(35000);
+    line_equal->Draw("same");
+
+    sprintf(gname,"figures/004___nevents_ver%2.2d_ver%2.2d.png",VER_INIT+NVERS-1,VER_INIT+i);
+    canvas->SaveAs(gname);
+    //_____________________________________________________________________________________________
+
+    // hnevents_diff
+    hnevents_diff[i]->SetTitle("");
+    sprintf(gname,"# events for ver %2.2d - # events for ver %2.2d",VER_INIT + NVERS - 1, VER_INIT + i);
+    hnevents_diff[i]->GetXaxis()->SetTitle(gname);
+    hnevents_diff[i]->GetXaxis()->CenterTitle(gname);
+    hnevents_diff[i]->GetXaxis()->SetTitleSize(0.050);
+    hnevents_diff[i]->GetXaxis()->SetTitleFont(132);
+    hnevents_diff[i]->GetXaxis()->SetLabelSize(0.040);
+    hnevents_diff[i]->GetXaxis()->SetLabelFont(132);
+
+    sprintf(gname,"counts");
+    hnevents_diff[i]->GetYaxis()->SetTitle(gname);
+    hnevents_diff[i]->GetYaxis()->CenterTitle(gname);
+    hnevents_diff[i]->GetYaxis()->SetTitleSize(0.050);
+    hnevents_diff[i]->GetYaxis()->SetTitleFont(132);
+    hnevents_diff[i]->GetYaxis()->SetLabelSize(0.040);
+    hnevents_diff[i]->GetYaxis()->SetLabelFont(132);
+    hnevents_diff[i]->GetYaxis()->SetTitleOffset(0.700);
+
+    hnevents_diff[i]->SetLineColor(colors[4]);
+    hnevents_diff[i]->SetLineWidth(1);
+    hnevents_diff[i]->SetLineStyle(1);
+
+    hnevents_diff[i]->SetMinimum(0.5);
+    // hnevents_diff[i]->SetMaximum(35000);
+
+    canvas->SetLogy(1);
+    hnevents_diff[i]->Draw("");
+
+    line_equal->SetX1(0);
+    line_equal->SetX2(0);
+    line_equal->SetY1(0);
+    line_equal->SetY2(hnevents_diff[i]->GetMaximum() * 1.05);
+    line_equal->Draw("same");
+
+    sprintf(gname,"figures/005___hnevents_diff_ver%2.2d_ver%2.2d.png",VER_INIT+NVERS-1,VER_INIT+i);
+    canvas->SaveAs(gname);
+    canvas->SetLogy(0);
+    //_____________________________________________________________________________________________
+
+    // timePlugin_per_event
+    gtimePlugin_per_event[i]->SetTitle("");
+    sprintf(gname,"plugin time/event for ver %2.2d (sec)",VER_INIT + i);
+    gtimePlugin_per_event[i]->GetXaxis()->SetTitle(gname);
+    gtimePlugin_per_event[i]->GetXaxis()->CenterTitle(gname);
+    gtimePlugin_per_event[i]->GetXaxis()->SetTitleSize(0.050);
+    gtimePlugin_per_event[i]->GetXaxis()->SetTitleFont(132);
+    gtimePlugin_per_event[i]->GetXaxis()->SetLabelSize(0.040);
+    gtimePlugin_per_event[i]->GetXaxis()->SetLabelFont(132);
+
+    sprintf(gname,"plugin time/event for ver %2.2d (sec)",VER_INIT + NVERS - 1);
+    gtimePlugin_per_event[i]->GetYaxis()->SetTitle(gname);
+    gtimePlugin_per_event[i]->GetYaxis()->CenterTitle(gname);
+    gtimePlugin_per_event[i]->GetYaxis()->SetTitleSize(0.050);
+    gtimePlugin_per_event[i]->GetYaxis()->SetTitleFont(132);
+    gtimePlugin_per_event[i]->GetYaxis()->SetLabelSize(0.040);
+    gtimePlugin_per_event[i]->GetYaxis()->SetLabelFont(132);
+    gtimePlugin_per_event[i]->GetYaxis()->SetTitleOffset(0.700);
+
+    gtimePlugin_per_event[i]->SetMarkerColor(colors[5]);
+    gtimePlugin_per_event[i]->SetMarkerSize(1.2);
+    gtimePlugin_per_event[i]->SetMarkerStyle(20);
+    gtimePlugin_per_event[i]->SetLineColor(colors[5]);
+    gtimePlugin_per_event[i]->SetLineWidth(1);
+    gtimePlugin_per_event[i]->SetLineStyle(1);
+
+    gtimePlugin_per_event[i]->GetXaxis()->SetLimits(pow(10.,-5.),1.);
+    gtimePlugin_per_event[i]->SetMinimum(pow(10.,-5.));
+    gtimePlugin_per_event[i]->SetMaximum(1.);
+
+    canvas->SetLogx(1);
+    canvas->SetLogy(1);
+    gtimePlugin_per_event[i]->Draw("AP");
+
+    line_equal->SetX1(pow(10.,-5.));
+    line_equal->SetY1(pow(10.,-5.));
+    line_equal->SetX2(1.);
+    line_equal->SetY2(1.);
+    line_equal->Draw("same");
+
+    sprintf(gname,"figures/006___timePlugin_per_event_ver%2.2d_ver%2.2d.png",VER_INIT+NVERS-1,VER_INIT+i);
+    canvas->SaveAs(gname);
+    canvas->SetLogx(0);
+    canvas->SetLogy(0);
     //_____________________________________________________________________________________________
 
   }

@@ -22,7 +22,7 @@ using namespace std;
 
 int main(int argc, char **argv){
 
-  int  NVERS   = 4;
+  int  NVERS   = 5;
   int  VER_INIT = 9;
   bool debug   = false;
 
@@ -65,9 +65,15 @@ int main(int argc, char **argv){
 
   ofstream OUT;
   char filename[200];
+  double value;
 
   // This is for every single run, file
-  int ntotalAll = 0;
+  int ntotalAll[NVERS];
+  int nsuccessAll[NVERS];
+  int nover_limitAll[NVERS];
+  int ntimeoutAll[NVERS];
+  int nfailedAll[NVERS];
+  int nnullAll[NVERS];
 
   // These are for each hundreds of runs
   int ntotal[NVERS];
@@ -84,6 +90,13 @@ int main(int argc, char **argv){
     ntimeout[i]    = 0;
     nfailed[i]     = 0;
     nnull[i]       = 0;
+
+    ntotalAll[i] = 0;
+    nsuccessAll[i] = 0;
+    nover_limitAll[i] = 0;
+    ntimeoutAll[i] = 0;
+    nfailedAll[i] = 0;
+    nnullAll[i] = 0;
   }
 
   bool isNewRun = false;
@@ -269,32 +282,37 @@ int main(int argc, char **argv){
 	sprintf(textcolor,"black");
 	sprintf(bgcolor,"#66FF99");
 	nsuccess[i]++;
+	nsuccessAll[i]++;
       }else if(results[i] == "OVER_RLIMIT"){
 	sprintf(textcolor,"red");
 	sprintf(bgcolor,"yellow");
 	nover_limit[i]++;
+	nover_limitAll[i]++;
       }else if(results[i] == "TIMEOUT"){
 	sprintf(textcolor,"white");
 	sprintf(bgcolor,"orange");
 	ntimeout[i]++;
+	ntimeoutAll[i]++;
       }else if(results[i] == "FAILED"){
 	sprintf(textcolor,"#ff0000");
 	sprintf(bgcolor,"black");
 	nfailed[i]++;
+	nfailedAll[i]++;
       }else if(results[i] == "NULL"){
 	sprintf(textcolor,"white");
 	sprintf(bgcolor,"gray");
 	nnull[i]++;
+	nnullAll[i]++;
       }else{
 	cout << "unknown result: " << results[i] << endl;
       }
       ntotal[i]++;
+      ntotalAll[i]++;
       sprintf(tdoutput," <td style=\" padding:15px; height:50px; width:100px; border:1px solid black; background-color:%s; color:%s;\">",bgcolor,textcolor);
       OUT << tdoutput << results[i] << "</td>";
     }
     OUT << " </tr>" << endl;
 
-    ntotalAll++;
   } // end of loop over input file
 
   // Finish table for each file fo final hundreds
@@ -329,7 +347,6 @@ int main(int argc, char **argv){
   OUT << "      <th style=\"border: 1px solid black; height:15px; width:150px;\">requested memory (MB)</th>";
   OUT << "    </tr>" << endl;
 
-  double value;
   for(int i=0;i<NVERS;i++){
     // total
     value = ntotal[i]==0 ? 0 : 100. * ntotal[i] / ntotal[i];
@@ -392,7 +409,80 @@ int main(int argc, char **argv){
   OUT << "</body>" << endl;
   OUT.close();
 
-  cout << "total of " << ntotalAll << " lines processed" << endl;
+  for(int i=0;i<NVERS;i++){
+    cout << "------------------------------------------------------" << endl;
+    cout << "ver "      << setw(2) << setfill('0') << VER_INIT + i << endl;
+    cout << "total of " << ntotalAll[i]                       <<  endl;
+    cout << "total of " << nsuccessAll[i]    << " success"    << endl;
+    cout << "total of " << nover_limitAll[i] << " over_limit" << endl;
+    cout << "total of " << ntimeoutAll[i]    << " timeout"    << endl;
+    cout << "total of " << nfailedAll[i]     << " failed"     << endl;
+    cout << "total of " << nnullAll[i]       << " null"       << endl;
+  }
+  // format this info into html table
+  ofstream OUT_ALLSTATS("allstats.html");
+
+  OUT_ALLSTATS << "<!-- Paste this html code to /group/halld/www/halldweb/html/data_monitoring/launch_analysis/index.html -->" << endl;
+  OUT_ALLSTATS << endl;
+  OUT_ALLSTATS << "  <hr style=\"width:80%;align:center;height:3px;color:#ff0000;border-color:#ff0000;background-color:#ff0000;\">" << endl;
+  OUT_ALLSTATS << endl;
+
+  // Create new table with stats for these hundreds
+  OUT_ALLSTATS << "  <table style=\"border: 1px solid black; table-layout: fixed;\">" << endl;
+  OUT_ALLSTATS << "    <tr style=\"background: #FAFAFA;\">" << endl;
+
+  OUT_ALLSTATS << "      <th style=\"border: 1px solid black; height:15px; width:150px;\">Version </th>" << endl;
+  OUT_ALLSTATS << "      <th style=\"border: 1px solid black; height:15px; width:150px;\">Total (%)</th>" << endl;
+  OUT_ALLSTATS << "      <th style=\"border: 1px solid black; height:15px; width:150px;\">Success (%)</th>" << endl;
+  OUT_ALLSTATS << "      <th style=\"border: 1px solid black; height:15px; width:150px;\">Over Limit (%)</th>" << endl;
+  OUT_ALLSTATS << "      <th style=\"border: 1px solid black; height:15px; width:150px;\">Timeout (%)</th>" << endl;
+  OUT_ALLSTATS << "      <th style=\"border: 1px solid black; height:15px; width:150px;\">Failed (%)</th>" << endl;
+  OUT_ALLSTATS << "      <th style=\"border: 1px solid black; height:15px; width:150px;\">NULL (%)</th>" << endl;
+  OUT_ALLSTATS << "    </tr>" << endl;
+  
+  for(int i=0;i<NVERS;i++){
+    value = ntotalAll[i]==0 ? 0 : 100. * ntotalAll[i] / ntotalAll[i];
+    OUT_ALLSTATS << "      <td style=\" padding:15px; height:50px; width:150px; border:1px solid black;\">VER"
+	<< setw(2) << setfill('0') << i + VER_INIT << "</td>"
+	<< "      <td style=\" padding:15px; height:50px; width:150px; border:1px solid black;\">"
+	<< setw(3) << setfill(' ') << ntotalAll[i] << " ("
+	<< std::fixed << std::setprecision(2) << setw(5) << value << ")</td>" << endl;
+
+    // success
+    value = ntotalAll[i]==0 ? 0 : 100. * nsuccessAll[i] / ntotalAll[i];
+    OUT_ALLSTATS	<< "      <td style=\" padding:15px; height:50px; width:150px; border:1px solid black;\">"
+	<< setw(3) << setfill(' ') << nsuccessAll[i] << " ("
+	<< std::fixed << std::setprecision(2) << setw(5) << value << ")</td>" << endl;
+
+    // over_limit
+    value = ntotalAll[i]==0 ? 0 : 100. * nover_limitAll[i] / ntotalAll[i];
+    OUT_ALLSTATS << "      <td style=\" padding:15px; height:50px; width:150px; border:1px solid black;\">"
+	<< setw(3) << setfill(' ') << nover_limitAll[i] << " ("
+	<< std::fixed << std::setprecision(2) << setw(5) << value << ")</td>" << endl;
+
+    // timeout
+    value = ntotalAll[i]==0 ? 0 : 100. * ntimeoutAll[i] / ntotalAll[i];
+    OUT_ALLSTATS << "      <td style=\" padding:15px; height:50px; width:150px; border:1px solid black;\">"
+	<< setw(3) << setfill(' ') << ntimeoutAll[i] << " ("
+	<< std::fixed << std::setprecision(2) << setw(5) << value << ")</td>" << endl;
+
+    // failed
+    value = ntotalAll[i]==0 ? 0 : 100. * nfailedAll[i] / ntotalAll[i];
+    OUT_ALLSTATS << "      <td style=\" padding:15px; height:50px; width:150px; border:1px solid black;\">"
+	<< setw(3) << setfill(' ') << nfailedAll[i] << " ("
+	<< std::fixed << std::setprecision(2) << setw(5) << value << ")</td>" << endl;
+
+    // null
+    value = ntotalAll[i]==0 ? 0 : 100. * nnullAll[i] / ntotalAll[i];
+    OUT_ALLSTATS << "      <td style=\" padding:15px; height:50px; width:150px; border:1px solid black;\">"
+	<< setw(3) << setfill(' ') << nnullAll[i] << " ("
+	<< std::fixed << std::setprecision(2) << setw(5) << value << ")</td>" << endl;
+    OUT_ALLSTATS << "    </tr>" << endl;
+  } // end of loop over vers
+
+  OUT_ALLSTATS << "  </table>" << endl;
+
+
 
   return 0;
 }
