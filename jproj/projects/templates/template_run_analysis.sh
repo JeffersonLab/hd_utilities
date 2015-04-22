@@ -39,8 +39,8 @@ time ./format_jobs_data
 time root -b -q analyze.C
 
 # Publish on web
-mkdir -p /group/halld/www/halldweb/html/data_monitoring/launch_analysis/launch_analysis/PROJECT/
-set HTMLDIR = "/group/halld/www/halldweb/html/data_monitoring/launch_analysis/launch_analysis/PROJECT/"
+set HTMLDIR = "/group/halld/www/halldweb/html/data_monitoring/launch_analysis/PROJECT/"
+mkdir -p $HTMLDIR
 cp ./mystyle.css ./results.html ./figures/00[1-8]* ./figures/01[1-2]* ./figures/014* $HTMLDIR
 
 

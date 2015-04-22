@@ -87,7 +87,7 @@ mkdir -p $OUTDIR/analysis
 source /home/gxproj1/setup_jlab.csh
 
 # Create xml files
-set XMLFILE = "/work/halld/data_monitoring/run_conditions/soft_comm_ver${VERSION}.xml"
+set XMLFILE = "/group/halld/data_monitoring/run_conditions/soft_comm_${RUNPERIOD}_ver${VERSION}.xml"
 if ( -e $XMLFILE ) then
   rm -f $XMLFILE
 endif
@@ -143,7 +143,7 @@ echo "</gversions>" >> $XMLFILE
 
 
 # Create jana file
-set JANAFILE = "/work/halld/data_monitoring/run_conditions/jana_rawdata_comm_ver${VERSION}.conf" # ${YEAR}_${MONTH}_${DAY}
+set JANAFILE = "/group/halld/data_monitoring/run_conditions/jana_rawdata_comm_${RUNPERIOD}_ver${VERSION}.conf" # ${YEAR}_${MONTH}_${DAY}
 echo $JANAFILE
 set plugins        = `grep 'name="plugins"' templates/template.jsub     | sed 's/.*value="//'         | sed 's:"/>.*::'`
 set nthreads       = `grep 'name="nthreads"' templates/template.jsub    | sed 's/.*value="//'         | sed 's:"/>.*::'`

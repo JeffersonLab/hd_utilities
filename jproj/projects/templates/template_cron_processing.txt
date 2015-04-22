@@ -2,9 +2,11 @@ SHELL=/bin/tcsh
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
 
-MAILTO=kmoriya
+MAILTO=kmoriya@jlab.org
 
-HOME=/home/gxprj1
+HOME=/home/gxproj1
 
 # Run every 2 hours at HH:45
+*/15 * * * * /home/gxproj1/halld/monitoring/process/check_new_runs.csh
+15 */6 * * * /home/gxproj1/halld/monitoring/process/update_runinfo.csh
 45 */2 * * * /home/gxproj1/halld/jproj/projects/PROJECT/processing/check_monitoring_data.csh
