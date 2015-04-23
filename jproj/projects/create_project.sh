@@ -227,6 +227,7 @@ rm -f ${OUTDIR}/processing/template_process_run_conditions.py
 
 cp /home/gxproj1/halld/jproj/projects/templates/template_process_new_offline_data.py     ${OUTDIR}/processing
 cat ${OUTDIR}/processing/template_process_new_offline_data.py | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/"  > ${OUTDIR}/processing/process_new_offline_data.py
+chmod 775 ${OUTDIR}/processing/process_new_offline_data.py
 rm -f ${OUTDIR}/processing/template_process_new_offline_data.py
 
 # launch analysis scripts
