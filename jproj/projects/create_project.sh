@@ -198,6 +198,16 @@ set DAY   = `date +"%d"`
 # run period be 2YYY-MM instead of 2YYY_MM
 set RUNPERIOD_HYPHEN = `echo $RUNPERIOD | sed 's/_/-/'`
 
+# offline cron job
+cp /home/gxproj1/halld/jproj/projects/templates/template_cron_newruns ${OUTDIR}/
+cat ${OUTDIR}/template_cron_newruns | sed "s/PROJECT/${PROJECT}/g" > ${OUTDIR}/cron_newruns
+rm -f ${OUTDIR}/template_cron_newruns
+
+cp /home/gxproj1/halld/jproj/projects/templates/template_newruns.sh ${OUTDIR}/
+cat ${OUTDIR}/template_newruns.sh | sed "s/PROJECT/${PROJECT}/g" > ${OUTDIR}/newruns.sh
+chmod 775 ${OUTDIR}/newruns.sh
+rm -f ${OUTDIR}/template_newruns.sh
+
 # Sean's processing scripts
 cp /home/gxproj1/halld/jproj/projects/templates/template.jproj ${OUTDIR}/
 cat ${OUTDIR}/template.jproj | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s/FILETYPE/${FILETYPE}/" > ${OUTDIR}/${PROJECT}.jproj
