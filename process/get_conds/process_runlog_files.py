@@ -5,7 +5,7 @@
 # Script for extracing condition information from run log files
 #
 
-import sys,os
+import sys,os,time
 from os import listdir
 from os.path import isfile, join
 
@@ -19,9 +19,12 @@ from datetime import datetime
 
 from datamon_db import datamon_db
 
-RAWDATA_DIR = "/gluonraid1/rawdata/volatile/RunPeriod-2014-10/rawdata"
-RAWDATA2_DIR = "/gluonraid2/rawdata/volatile/RunPeriod-2014-10/rawdata"
-VERBOSE = True
+#RAWDATA_DIR = "/gluonraid1/rawdata/volatile/RunPeriod-2014-10/rawdata"
+#RAWDATA2_DIR = "/gluonraid2/rawdata/volatile/RunPeriod-2014-10/rawdata"
+RAWDATA_DIR = "/gluonraid1/rawdata/volatile/RunPeriod-2015-03/rawdata"
+#RAWDATA2_DIR = "/gluonraid2/rawdata/volatile/RunPeriod-2015-03/rawdata"
+RAWDATA2_DIR = "/gluonraid1/rawdata/volatile/RunPeriod-2015-03/rawdata"
+#VERBOSE = True
 
 # set default values
 def init_property_mapping():
@@ -118,6 +121,7 @@ def extract_epics_info(run_properties):
     EPICS_VARS = "IBCAD00CRCUR6,IPM5C11.VAL,IPM5C11A.VAL,IPM5C11B.VAL,IPM5C11C.VAL,MMSHLDE,HALLD:p,hd:collimator:motor.RBV,hd:converter:motor.RBV,HallD-PXI:Data:I_Shunt"
     EPICS_VARS += ",hd:converter_at_home,hd:converter_at_a,hd:converter_at_b,hd:converter_at_c"
     EPICS_VARS += ",hd:collimator_at_a,hd:collimator_at_b,hd:collimator_at_block"
+    EPICS_VARS += ",hd:radiator_at_a,hd:radiator_at_b,hd:radiator_at_c"
     run_endtime = "^10m"     ## if we couldn't figure out when the run ended, assume it was short and integrate variables over a 10 minute span
     TOLERANCE = 0.05         ## 5% tolerance for checking if EPICS var is equal to 1 - needed since we are averaging over run
 
@@ -140,7 +144,8 @@ def extract_epics_info(run_properties):
 
     if VERBOSE:
         print "MYA CMD = " + " ".join(cmds)
-
+        
+    time.sleep(1.)  # delay so that we don't overload MYA archive
     p = subprocess.Popen(cmds, stdout=subprocess.PIPE)
     for line in p.stdout:
         print line.strip()
@@ -178,6 +183,15 @@ def extract_epics_info(run_properties):
         if key == "hd:collimator_at_b":
             if abs(float(value) - 1.) < TOLERANCE:
                 run_properties["collimator_diameter"] = "5.0mm hole"
+        if key == "hd:radiator_at_a":
+            if abs(float(value) - 1.) < TOLERANCE:
+                run_properties["radiator_type"] = "2x10-5 RL"
+        if key == "hd:radiator_at_b":
+            if abs(float(value) - 1.) < TOLERANCE:
+                run_properties["radiator_type"] = "1x10-4 RL"
+        if key == "hd:radiator_at_c":
+            if abs(float(value) - 1.) < TOLERANCE:
+                run_properties["radiator_type"] = "3x10-4 RL"
             
 
     return run_properties
