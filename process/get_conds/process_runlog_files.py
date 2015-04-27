@@ -25,6 +25,7 @@ RAWDATA_DIR = "/gluonraid1/rawdata/volatile/RunPeriod-2015-03/rawdata"
 #RAWDATA2_DIR = "/gluonraid2/rawdata/volatile/RunPeriod-2015-03/rawdata"
 RAWDATA2_DIR = "/gluonraid1/rawdata/volatile/RunPeriod-2015-03/rawdata"
 #VERBOSE = True
+VERBOSE = False
 
 # set default values
 def init_property_mapping():
@@ -148,7 +149,7 @@ def extract_epics_info(run_properties):
     time.sleep(1.)  # delay so that we don't overload MYA archive
     p = subprocess.Popen(cmds, stdout=subprocess.PIPE)
     for line in p.stdout:
-        print line.strip()
+        #print line.strip()
         tokens = line.strip().split()
         if len(tokens) < 3:
             continue
@@ -424,8 +425,10 @@ def main(argv):
         MAX_RUN = int(options.max_run)
 
     # run over all files
-    dirs_on_disk  = [ join(RAWDATA_DIR,d) for d in listdir(RAWDATA_DIR) if os.path.isdir(join(RAWDATA_DIR,d)) ]
-    dirs_on_disk += [ join(RAWDATA2_DIR,d) for d in listdir(RAWDATA2_DIR) if os.path.isdir(join(RAWDATA2_DIR,d)) ]
+    LOOKBACKTIME = 3*60*60
+    current_time = int(time.time())   
+    dirs_on_disk  = [ join(RAWDATA_DIR,d) for d in listdir(RAWDATA_DIR) if os.path.isdir(join(RAWDATA_DIR,d)) and ((current_time-os.path.getmtime(join(RAWDATA_DIR,d)))<LOOKBACKTIME) ]
+    dirs_on_disk += [ join(RAWDATA2_DIR,d) for d in listdir(RAWDATA2_DIR) if os.path.isdir(join(RAWDATA2_DIR,d)) and ((current_time-os.path.getmtime(join(RAWDATA_DIR,d)))<LOOKBACKTIME) ]
     #runs_on_disk = [ int(d[3:]) for d in dirs_on_disk ]
     runs_on_disk = {}
     for d in dirs_on_disk:
