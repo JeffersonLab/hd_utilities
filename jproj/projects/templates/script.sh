@@ -47,10 +47,81 @@ mv tmp.evio $INPUTFILE
 
 ls -l
 
+# 2015/04/27
+# SETTING MAGNETIC FIELD SETTING BY HAND
+# DEFAULT IS 0A FIELD
+set BFIELD_OPTION     = "-PBFIELD_TYPE=NoField"
+set ADDITIONAL_OPTION = "-PDEFTAG:DTrackCandidate=StraightLine"
+
+set RUN =  `echo $RUN_NUMBER | sed 's/^0*//'`
+echo "RUN = $RUN"
+
+# 300A field
+if      ( 2891 <= $RUN && $RUN <= 2895 ) then
+  set BFIELD_OPTION = "-PBFIELD_MAP=Magnets/Solenoid/solenoid_300A_poisson_20140819"
+  set ADDITIONAL_OPTION = ""
+else if ( $RUN == 2936 ) then
+  set BFIELD_OPTION = "-PBFIELD_MAP=Magnets/Solenoid/solenoid_300A_poisson_20140819"
+  set ADDITIONAL_OPTION = ""
+else if ( 2947 <= $RUN && $RUN <= 2976 ) then
+  set BFIELD_OPTION = "-PBFIELD_MAP=Magnets/Solenoid/solenoid_300A_poisson_20140819"
+  set ADDITIONAL_OPTION = ""
+else if ( 2947 <= $RUN && $RUN <= 2979 ) then
+  set BFIELD_OPTION = "-PBFIELD_MAP=Magnets/Solenoid/solenoid_300A_poisson_20140819"
+  set ADDITIONAL_OPTION = ""
+
+# 800A field
+else if ( 2842 <= $RUN && $RUN <= 2845) then
+  set BFIELD_OPTION = "-PBFIELD_MAP=Magnets/Solenoid/solenoid_800A_poisson_20150427"
+  set ADDITIONAL_OPTION = ""
+else if ( $RUN == 2848 ) then
+  set BFIELD_OPTION = "-PBFIELD_MAP=Magnets/Solenoid/solenoid_800A_poisson_20150427"
+  set ADDITIONAL_OPTION = ""
+else if ( $RUN == 2851 ) then
+  set BFIELD_OPTION = "-PBFIELD_MAP=Magnets/Solenoid/solenoid_800A_poisson_20150427"
+  set ADDITIONAL_OPTION = ""
+else if ( 2854 <= $RUN && $RUN <= 2859 ) then
+  set BFIELD_OPTION = "-PBFIELD_MAP=Magnets/Solenoid/solenoid_800A_poisson_20150427"
+  set ADDITIONAL_OPTION = ""
+else if ( 2881 <= $RUN && $RUN <= 2884 ) then
+  set BFIELD_OPTION = "-PBFIELD_MAP=Magnets/Solenoid/solenoid_800A_poisson_20150427"
+  set ADDITIONAL_OPTION = ""
+else if ( $RUN == 2896 ) then
+  set BFIELD_OPTION = "-PBFIELD_MAP=Magnets/Solenoid/solenoid_800A_poisson_20150427"
+  set ADDITIONAL_OPTION = ""
+else if ( $RUN == 2902 ) then
+  set BFIELD_OPTION = "-PBFIELD_MAP=Magnets/Solenoid/solenoid_800A_poisson_20150427"
+  set ADDITIONAL_OPTION = ""
+else if ( 2914 <= $RUN && $RUN <= 2935 ) then
+  set BFIELD_OPTION = "-PBFIELD_MAP=Magnets/Solenoid/solenoid_800A_poisson_20150427"
+  set ADDITIONAL_OPTION = ""
+else if ( 2937 <= $RUN && $RUN <= 2946 ) then
+  set BFIELD_OPTION = "-PBFIELD_MAP=Magnets/Solenoid/solenoid_800A_poisson_20150427"
+  set ADDITIONAL_OPTION = ""
+else if ( 3027 <= $RUN && $RUN <= 3034 ) then
+  set BFIELD_OPTION = "-PBFIELD_MAP=Magnets/Solenoid/solenoid_800A_poisson_20150427"
+  set ADDITIONAL_OPTION = ""
+
+# 1000A field
+else if ( 3036 <= $RUN && $RUN <= 3047 ) then
+  set BFIELD_OPTION     = "-PBFIELD_MAP=Magnets/Solenoid/solenoid_1000A_poisson_20141104"
+  set ADDITIONAL_OPTION = ""
+
+# 1200A field
+else if( $RUN == 3035 ) then
+  set BFIELD_OPTION     = "-PBFIELD_MAP=Magnets/Solenoid/solenoid_1200A_poisson_20140520"
+  set ADDITIONAL_OPTION = ""
+else if ( 3048 <= $RUN && $RUN <= 3100 ) then
+  set BFIELD_OPTION     = "-PBFIELD_MAP=Magnets/Solenoid/solenoid_1200A_poisson_20140520"
+  set ADDITIONAL_OPTION = ""
+endif
+
+echo "run = ${RUN}   BFIELD_OPTION = ${BFIELD_OPTION}   ADDITIONAL_OPTION = ${ADDITIONAL_OPTION}"
+
 echo "starting plugins............"
 date
 set START = `date +%s`
-hd_root $INPUTFILE -PPLUGINS=$PLUGINS ${ADDITIONAL_OPTION} -PNTHREADS=$NTHREADS -PTHREAD_TIMEOUT=300 -PPRINT_PLUGIN_PATHS=1  # -PEVENTS_TO_KEEP=100
+hd_root ${BFIELD_OPTION} ${ADDITIONAL_OPTION} $INPUTFILE -PPLUGINS=$PLUGINS ${ADDITIONAL_OPTION} -PNTHREADS=$NTHREADS -PTHREAD_TIMEOUT=300 -PPRINT_PLUGIN_PATHS=1  # -PEVENTS_TO_KEEP=100
 echo "ending plugins ............."
 date
 set END = `date +%s`
