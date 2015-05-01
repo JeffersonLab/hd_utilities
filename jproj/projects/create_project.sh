@@ -201,7 +201,7 @@ set RUNPERIOD_HYPHEN = `echo $RUNPERIOD | sed 's/_/-/'`
 cp /home/gxproj1/halld/jproj/projects/templates/template_update_files.sh ${OUTDIR}/
 cat ${OUTDIR}/template_update_files.sh | sed "s/PROJECT/${PROJECT}/g" > ${OUTDIR}/update_files.sh
 rm -f ${OUTDIR}/template_update_files.sh
-chmod u+x ./update_files.sh
+chmod u+x ${OUTDIR}/update_files.sh
 
 # offline cron job
 cp /home/gxproj1/halld/jproj/projects/templates/template_cron_newruns ${OUTDIR}/
