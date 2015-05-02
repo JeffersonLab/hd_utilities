@@ -29,6 +29,8 @@ pso
 psce
 psct
 psco
+# PSPair
+PS_E
 #TAGH
 DigiHit_tdcTime
 DigiHit_RawIntegral
