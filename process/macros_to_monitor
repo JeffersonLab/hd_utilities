@@ -14,6 +14,20 @@
 /home/gxproj1/builds/online/packages/monitoring/src/plugins/FCAL_online/fcal_hit_timing.C
 # TAGH
 /home/gxproj1/builds/online/packages/monitoring/src/plugins/TAGH_online/TAGH_hit.C
+/home/gxproj1/builds/online/packages/monitoring/src/plugins/TAGH_online/TAGH_hit2.C
+# PS
+/home/gxproj1/builds/online/packages/monitoring/src/plugins/PSC_online/PSC_hit.C
+/home/gxproj1/builds/online/packages/monitoring/src/plugins/PSC_online/PSC_hit2.C
+/home/gxproj1/builds/online/packages/monitoring/src/plugins/PSC_online/PSC_hit3.C
+/home/gxproj1/builds/online/packages/monitoring/src/plugins/PS_online/PS_hit.C
+/home/gxproj1/builds/online/packages/monitoring/src/plugins/PS_online/PS_hit2.C
+/home/gxproj1/builds/online/packages/monitoring/src/plugins/PSPair_online/PS_eff.C
+/home/gxproj1/builds/online/packages/monitoring/src/plugins/PSPair_online/PS_PSC_coinc.C
+/home/gxproj1/builds/online/packages/monitoring/src/plugins/PSPair_online/PS_TAG_energy.C
+/home/gxproj1/builds/online/packages/monitoring/src/plugins/PSPair_online/TAG_2D_eff.C
+/home/gxproj1/builds/online/packages/monitoring/src/plugins/PSPair_online/TAG_eff.C
+# Trigger
+/home/gxproj1/builds/online/packages/monitoring/src/plugins/TRIG_online/trig_fcalbcal.C
 # RECONSTRUCTION
 /home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_NumHighLevelObjects.C
 /home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_NumLowLevelObjects_p1.C
