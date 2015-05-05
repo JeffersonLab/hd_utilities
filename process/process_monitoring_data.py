@@ -568,8 +568,10 @@ def ProcessTAGH(db, root_file):
         timing_sigma = r.Parameter(2)
     tagh_Hit_HasTDCvsHasADC = root_file.Get(ROOTDIR_PREFIX+"TAGH/Hit/Hit_HasTDCvsHasADC")
     if tagh_Hit_HasTDCvsHasADC:
-        timing_adc_has_tdc = tagh_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (tagh_Hit_HasTDCvsHasADC.GetBinContent(2,1)+tagh_Hit_HasTDCvsHasADC.GetBinContent(2,2))
-        timing_tdc_has_adc = tagh_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (tagh_Hit_HasTDCvsHasADC.GetBinContent(1,2)+tagh_Hit_HasTDCvsHasADC.GetBinContent(2,2))
+        if tagh_Hit_HasTDCvsHasADC.GetBinContent(2,1)+tagh_Hit_HasTDCvsHasADC.GetBinContent(2,2) > 0:
+            timing_adc_has_tdc = tagh_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (tagh_Hit_HasTDCvsHasADC.GetBinContent(2,1)+tagh_Hit_HasTDCvsHasADC.GetBinContent(2,2))
+        if tagh_Hit_HasTDCvsHasADC.GetBinContent(1,2)+tagh_Hit_HasTDCvsHasADC.GetBinContent(2,2) > 0:
+            timing_tdc_has_adc = tagh_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (tagh_Hit_HasTDCvsHasADC.GetBinContent(1,2)+tagh_Hit_HasTDCvsHasADC.GetBinContent(2,2))
 
     # fill DB
     db.AddTAGHCalib(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, [timing_mean, timing_sigma, timing_adc_has_tdc, timing_tdc_has_adc])
@@ -689,14 +691,18 @@ def ProcessPSC(db, root_file):
         r = psc_timing_proj.Fit("gaus","SQ");
         timing_mean = r.Parameter(1)
         timing_sigma = r.Parameter(2)
-    tagh_Left_Hit_HasTDCvsHasADC = root_file.Get(ROOTDIR_PREFIX+"PSC/Hit/LeftArm/Hit_HasTDCvsHasADC_LeftArm")
-    if tagh_Left_Hit_HasTDCvsHasADC:
-        timing_left_adc_has_tdc = tagh_Left_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (tagh_Left_Hit_HasTDCvsHasADC.GetBinContent(2,1)+tagh_Left_Hit_HasTDCvsHasADC.GetBinContent(2,2))
-        timing_left_tdc_has_adc = tagh_Left_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (tagh_Left_Hit_HasTDCvsHasADC.GetBinContent(1,2)+tagh_Left_Hit_HasTDCvsHasADC.GetBinContent(2,2))
-    tagh_Right_Hit_HasTDCvsHasADC = root_file.Get(ROOTDIR_PREFIX+"PSC/Hit/RightArm/Hit_HasTDCvsHasADC_RightArm")
-    if tagh_Right_Hit_HasTDCvsHasADC:
-        timing_right_adc_has_tdc = tagh_Right_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (tagh_Right_Hit_HasTDCvsHasADC.GetBinContent(2,1)+tagh_Right_Hit_HasTDCvsHasADC.GetBinContent(2,2))
-        timing_right_tdc_has_adc = tagh_Right_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (tagh_Right_Hit_HasTDCvsHasADC.GetBinContent(1,2)+tagh_Right_Hit_HasTDCvsHasADC.GetBinContent(2,2))
+    psc_Left_Hit_HasTDCvsHasADC = root_file.Get(ROOTDIR_PREFIX+"PSC/Hit/LeftArm/Hit_HasTDCvsHasADC_LeftArm")
+    if psc_Left_Hit_HasTDCvsHasADC:
+        if psc_Left_Hit_HasTDCvsHasADC.GetBinContent(2,1)+psc_Left_Hit_HasTDCvsHasADC.GetBinContent(2,2) > 0:
+            timing_left_adc_has_tdc = psc_Left_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (psc_Left_Hit_HasTDCvsHasADC.GetBinContent(2,1)+psc_Left_Hit_HasTDCvsHasADC.GetBinContent(2,2))
+        if psc_Left_Hit_HasTDCvsHasADC.GetBinContent(1,2)+psc_Left_Hit_HasTDCvsHasADC.GetBinContent(2,2) > 0:
+            timing_left_tdc_has_adc = psc_Left_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (psc_Left_Hit_HasTDCvsHasADC.GetBinContent(1,2)+psc_Left_Hit_HasTDCvsHasADC.GetBinContent(2,2))
+    psc_Right_Hit_HasTDCvsHasADC = root_file.Get(ROOTDIR_PREFIX+"PSC/Hit/RightArm/Hit_HasTDCvsHasADC_RightArm")
+    if psc_Right_Hit_HasTDCvsHasADC:
+        if psc_Right_Hit_HasTDCvsHasADC.GetBinContent(2,1)+psc_Right_Hit_HasTDCvsHasADC.GetBinContent(2,2) > 0:
+            timing_right_adc_has_tdc = psc_Right_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (psc_Right_Hit_HasTDCvsHasADC.GetBinContent(2,1)+psc_Right_Hit_HasTDCvsHasADC.GetBinContent(2,2))
+        if psc_Right_Hit_HasTDCvsHasADC.GetBinContent(1,2)+psc_Right_Hit_HasTDCvsHasADC.GetBinContent(2,2) > 0:
+            timing_right_tdc_has_adc = psc_Right_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (psc_Right_Hit_HasTDCvsHasADC.GetBinContent(1,2)+psc_Right_Hit_HasTDCvsHasADC.GetBinContent(2,2))
 
     # fill DB
     db.AddPSCCalib(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, [timing_mean, timing_sigma, timing_left_adc_has_tdc, timing_left_tdc_has_adc,

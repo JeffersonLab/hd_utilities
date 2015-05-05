@@ -6,6 +6,7 @@
 # Author: Sean Dobbs (s-dobbs@northwestern.edu), 2014
 
 import MySQLdb
+
 #import texttable
 class datamon_db:
     """Class for interaction with data monitoring DB"""
@@ -44,6 +45,13 @@ class datamon_db:
                                 ('quad3_layer3_up', 'INTEGER'), ('quad3_layer3_down', 'INTEGER'), ('quad3_layer4_up', 'INTEGER'), ('quad3_layer4_down', 'INTEGER'), 
                                 ('quad4_layer1_up', 'INTEGER'), ('quad4_layer1_down', 'INTEGER'), ('quad4_layer2_up', 'INTEGER'), ('quad4_layer2_down', 'INTEGER'), 
                                 ('quad4_layer3_up', 'INTEGER'), ('quad4_layer3_down', 'INTEGER'), ('quad4_layer4_up', 'INTEGER'), ('quad4_layer4_down', 'INTEGER') ]
+
+
+    def print_mysql_error(self, e):
+        try:
+            print "MySQL Error [%d]: %s" % (e.args[0], e.args[1])
+        except IndexError:
+            print "MySQL Error: %s" % str(e)             
 
     def CloseDB(self):
         self.db_conn.commit()
@@ -167,8 +175,12 @@ class datamon_db:
         if(self.verbose):
             print db_cmd + '  <--  ' + str(values)
         #print "Insert cmd = " + str(db_cmd)
-        self.db.execute(db_cmd, values)
-        self.db_conn.commit()
+        try:
+            self.db.execute(db_cmd, values)
+            self.db_conn.commit()
+        except MySQLdb.Error, e:
+            # right now, just print out errors
+            self.print_mysql_error(e)
 
     def DumpTable(self, table_name, mode=""):
         if table_name not in self.table_names:
