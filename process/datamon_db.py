@@ -99,7 +99,7 @@ class datamon_db:
         self.db.execute('CREATE TABLE cdc_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, CDC_resid_mean DOUBLE, CDC_resid_sigma DOUBLE )')
         self.db.execute('CREATE TABLE fdc_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, FDC_resid_mean DOUBLE, FDC_resid_sigma DOUBLE )')
         self.db.execute('CREATE TABLE fcal_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, FCAL_tresol_mean DOUBLE, FCAL_tresol_sigma DOUBLE )')
-        self.db.execute('CREATE TABLE bcal_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, BCAL_tresol_mean DOUBLE, BCAL_tresol_sigma DOUBLE )')
+        self.db.execute('CREATE TABLE bcal_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, BCAL_tresol_mean DOUBLE, BCAL_tresol_sigma DOUBLE, layer1_eff DOUBLE, layer2_eff DOUBLE, layer3_eff DOUBLE, layer4_eff DOUBLE, layer1_enhanced_eff DOUBLE, layer2_enhanced_eff DOUBLE, layer3_enhanced_eff DOUBLE, layer4_enhanced_eff DOUBLE )')
         self.db.execute('CREATE TABLE tof_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, TOF_tresol_mean DOUBLE, TOF_tresol_sigma DOUBLE )')
         self.db.execute('CREATE TABLE sc_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, SC_tresol_mean DOUBLE, SC_tresol_sigma DOUBLE )')
         self.db.execute('CREATE TABLE tagh_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, TAGH_tresol_mean DOUBLE, TAGH_tresol_sigma DOUBLE, TAGH_frac_ADC_has_TDC_hit DOUBLE,  TAGH_frac_TDC_has_ADC_hit DOUBLE )')
