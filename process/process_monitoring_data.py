@@ -264,9 +264,12 @@ def ProcessFCAL(db, root_file):
         max = htime.GetBinCenter( htime.GetMaximumBin() )
         # fit within 6 ns of peak
         r = htime.Fit("gaus","SQ", "", -6+max, 6+max)
-        timing_mean = r.Parameter(1)
-        timing_sigma = r.Parameter(2)
-        calib_vals += [ timing_mean, timing_sigma ]
+        if r != None:
+            timing_mean = r.Parameter(1)
+            timing_sigma = r.Parameter(2)
+            calib_vals += [ timing_mean, timing_sigma ]
+        else:
+            calib_vals += [0., 0.]
 
     # fill DB
     db.AddFCALCalib(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, calib_vals)
@@ -408,12 +411,15 @@ def ProcessBCAL(db, root_file):
         print "Couldn't find BCAL timing histogram"
         calib_vals += [0., 0.]
     else:
-        max = htime.GetBinCenter( h.GetMaximumBin() )
+        max = htime.GetBinCenter( htime.GetMaximumBin() )
         # fit within 4 ns of peak
         r = htime.Fit("gaus","SQ", "", -4+max, 4+max)
-        timing_mean = r.Parameter(1)
-        timing_sigma = r.Parameter(2)
-        calib_vals += [ timing_mean, timing_sigma ]
+        if r != None:
+            timing_mean = r.Parameter(1)
+            timing_sigma = r.Parameter(2)
+            calib_vals += [ timing_mean, timing_sigma ]
+        else:
+            calib_vals += [0., 0.]
 
     # second, get efficiencies
     bcal_eff = root_file.Get(ROOTDIR_PREFIX+"bcal_eff/h1eff_eff")    
@@ -501,9 +507,12 @@ def ProcessTOF(db, root_file):
         max = htime.GetBinCenter( htime.GetMaximumBin() )
         # fit within 4 ns of peak
         r = htime.Fit("gaus","SQ", "", -6+max, 6+max)
-        timing_mean = r.Parameter(1)
-        timing_sigma = r.Parameter(2)
-        calib_vals += [ timing_mean, timing_sigma ]
+        if r != None:
+            timing_mean = r.Parameter(1)
+            timing_sigma = r.Parameter(2)
+            calib_vals += [ timing_mean, timing_sigma ]
+        else:
+            calib_vals += [0., 0.]
 
     # fill DB
     db.AddTOFCalib(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, calib_vals)
@@ -689,8 +698,9 @@ def ProcessPSC(db, root_file):
     if psc_timing:
         psc_timing_proj = psc_timing.ProjectionY("_py",2,2);
         r = psc_timing_proj.Fit("gaus","SQ");
-        timing_mean = r.Parameter(1)
-        timing_sigma = r.Parameter(2)
+        if r != None:
+            timing_mean = r.Parameter(1)
+            timing_sigma = r.Parameter(2)
     psc_Left_Hit_HasTDCvsHasADC = root_file.Get(ROOTDIR_PREFIX+"PSC/Hit/LeftArm/Hit_HasTDCvsHasADC_LeftArm")
     if psc_Left_Hit_HasTDCvsHasADC:
         if psc_Left_Hit_HasTDCvsHasADC.GetBinContent(2,1)+psc_Left_Hit_HasTDCvsHasADC.GetBinContent(2,2) > 0:
