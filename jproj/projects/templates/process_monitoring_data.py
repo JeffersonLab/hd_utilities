@@ -5,7 +5,7 @@
 #
 # Author: Sean Dobbs (s-dobbs@northwestern.edu), 2014
 
-from ROOT import TFile,TIter,TDirectory,TH1,TH2,TH1I,TH2I,TCanvas
+from ROOT import TFile,TIter,TDirectory,TH1,TH2,TH1I,TH2I,TCanvas,TFitResultPtr,TF1
 from optparse import OptionParser
 import os.path
 import sys
@@ -253,6 +253,27 @@ def ProcessFCAL(db, root_file):
     db.AddFCALHits(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, number_of_events, hits_per_channel)
 
     ## calculate calibration info
+    calib_vals = []
+
+    # first, check timing
+    htime = root_file.Get(ROOTDIR_PREFIX+"HLDetectorTiming/TRACKING/FCAL - SC Target Time")
+    if( htime == None ):
+        print "Couldn't find FCAL timing histogram"
+        calib_vals += [0., 0.]
+    else:
+        max = htime.GetBinCenter( htime.GetMaximumBin() )
+        # fit within 6 ns of peak
+        r = htime.Fit("gaus","SQ", "", -6+max, 6+max)
+        if r != None:
+            timing_mean = r.Parameter(1)
+            timing_sigma = r.Parameter(2)
+            calib_vals += [ timing_mean, timing_sigma ]
+        else:
+            calib_vals += [0., 0.]
+
+    # fill DB
+    db.AddFCALCalib(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, calib_vals)
+
 
 ###########################################
 ## For the BCAL, we store the avg number of hits and avg energies for the up and down stream channels of
@@ -380,9 +401,50 @@ def ProcessBCAL(db, root_file):
         ## insert into DB
         db.AddBCALEnergies(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, number_of_events, avg_hit_energy_per_quadrant)
 
-
                     
     ## calculate calibration info
+    calib_vals = []
+
+    # first, check timing
+    htime = root_file.Get(ROOTDIR_PREFIX+"HLDetectorTiming/TRACKING/BCAL - SC Target Time")
+    if( htime == None ):
+        print "Couldn't find BCAL timing histogram"
+        calib_vals += [0., 0.]
+    else:
+        max = htime.GetBinCenter( htime.GetMaximumBin() )
+        # fit within 4 ns of peak
+        r = htime.Fit("gaus","SQ", "", -4+max, 4+max)
+        if r != None:
+            timing_mean = r.Parameter(1)
+            timing_sigma = r.Parameter(2)
+            calib_vals += [ timing_mean, timing_sigma ]
+        else:
+            calib_vals += [0., 0.]
+
+    # second, get efficiencies
+    bcal_eff = root_file.Get(ROOTDIR_PREFIX+"bcal_eff/h1eff_eff")    
+    bcal_layer = root_file.Get(ROOTDIR_PREFIX+"bcal_eff/h1eff_layer")    
+    bcal_layertot = root_file.Get(ROOTDIR_PREFIX+"bcal_eff/h1eff_layertot")    
+    if( bcal_eff == None or bcal_layer == None or bcal_layertot == None):
+        print "Could not find BCAL efficiency histograms"
+        calib_vals += [0., 0., 0., 0.]
+    else:
+        bcal_eff.Divide(bcal_layer,bcal_layertot,1,1,"B")
+        calib_vals += [ bcal_eff.GetBinContent(2), bcal_eff.GetBinContent(3), bcal_eff.GetBinContent(4), bcal_eff.GetBinContent(5) ]
+
+    bcal_enhanced_eff = root_file.Get(ROOTDIR_PREFIX+"bcal_eff/h1eff2_eff2")    
+    bcal_enhanced_layer = root_file.Get(ROOTDIR_PREFIX+"bcal_eff/h1eff2_layer")    
+    bcal_enhanced_layertot = root_file.Get(ROOTDIR_PREFIX+"bcal_eff/h1eff2_layertot")    
+    if( bcal_enhanced_eff == None or bcal_enhanced_layer == None or bcal_enhanced_layertot == None):
+        print "Could not find BCAL enhanced efficiency histograms"
+        calib_vals += [0., 0., 0., 0.]
+    else:
+        bcal_enhanced_eff.Divide(bcal_layer,bcal_enhanced_layertot,1,1,"B")
+        calib_vals += [ bcal_enhanced_eff.GetBinContent(2), bcal_enhanced_eff.GetBinContent(3), bcal_enhanced_eff.GetBinContent(4), bcal_enhanced_eff.GetBinContent(5) ]
+
+    # fill DB
+    db.AddBCALCalib(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, calib_vals)
+
 
 ###########################################
 ## For the TOF, we store the avg number of hits per some arbitrary grouping
@@ -434,6 +496,27 @@ def ProcessTOF(db, root_file):
     db.AddTOFHits(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, number_of_events, plane1_up+plane1_down+plane2_up+plane2_down)
 
     ## calculate calibration info
+    calib_vals = []
+
+    # first, check timing
+    htime = root_file.Get(ROOTDIR_PREFIX+"HLDetectorTiming/TRACKING/TOF - SC Target Time")
+    if( htime == None ):
+        print "Couldn't find TOF timing histogram"
+        calib_vals += [0., 0.]
+    else:
+        max = htime.GetBinCenter( htime.GetMaximumBin() )
+        # fit within 4 ns of peak
+        r = htime.Fit("gaus","SQ", "", -6+max, 6+max)
+        if r != None:
+            timing_mean = r.Parameter(1)
+            timing_sigma = r.Parameter(2)
+            calib_vals += [ timing_mean, timing_sigma ]
+        else:
+            calib_vals += [0., 0.]
+
+    # fill DB
+    db.AddTOFCalib(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, calib_vals)
+
 
 
 ###########################################
@@ -469,6 +552,39 @@ def ProcessTAGH(db, root_file):
     db.AddTAGHHits(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, number_of_events, avg_hits_per_sector)
 
     ## calculate calibration info
+    #h = f.Get("HLDetectorTiming/TRACKING/TAGH - SC Target Time")
+    #hy = h.ProjectionY()
+    #max = hy.GetBinCenter( hy.GetMaximumBin() )
+    ## fit within 15 ns of peak
+    ##r = hy.Fit("gaus","SQ", "", -4+max, 4+max)
+    #fn = TF1("fn", "gaus(0)+[3]", -15+max, 15+max)
+    #fn.SetParameter(0,1000)
+    #fn.SetParameter(2,1)
+    #r = hy.Fit("fn","SQ", "", -15+max, 15+max)
+    #timing_mean = r.Parameter(1)
+    #timing_sigma = r.Parameter(2)
+
+    timing_mean = 0.
+    timing_sigma = 0.
+    timing_adc_has_tdc = 0.
+    timing_tdc_has_adc = 0.
+    # get timing info (only use only channel right now, they aren't aligned enough to sum over multiples)
+    tagh_timing = root_file.Get(ROOTDIR_PREFIX+"PSPair/PSC_PS_TAGH/PSTAGHTimeOffsets_L/PSTAGH_tdiffVsTAGHCounterID_L6")
+    if tagh_timing:
+        tagh_timing_proj = tagh_timing.ProjectionY("_py",2,2);
+        r = tagh_timing_proj.Fit("gaus","SQ");
+        timing_mean = r.Parameter(1)
+        timing_sigma = r.Parameter(2)
+    tagh_Hit_HasTDCvsHasADC = root_file.Get(ROOTDIR_PREFIX+"TAGH/Hit/Hit_HasTDCvsHasADC")
+    if tagh_Hit_HasTDCvsHasADC:
+        if tagh_Hit_HasTDCvsHasADC.GetBinContent(2,1)+tagh_Hit_HasTDCvsHasADC.GetBinContent(2,2) > 0:
+            timing_adc_has_tdc = tagh_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (tagh_Hit_HasTDCvsHasADC.GetBinContent(2,1)+tagh_Hit_HasTDCvsHasADC.GetBinContent(2,2))
+        if tagh_Hit_HasTDCvsHasADC.GetBinContent(1,2)+tagh_Hit_HasTDCvsHasADC.GetBinContent(2,2) > 0:
+            timing_tdc_has_adc = tagh_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (tagh_Hit_HasTDCvsHasADC.GetBinContent(1,2)+tagh_Hit_HasTDCvsHasADC.GetBinContent(2,2))
+
+    # fill DB
+    db.AddTAGHCalib(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, [timing_mean, timing_sigma, timing_adc_has_tdc, timing_tdc_has_adc])
+
 
 ###########################################
 ## For the tagger microscope, we store the avg number of hits per these columns:
@@ -508,6 +624,152 @@ def ProcessTAGM(db, root_file):
 
     ## insert into DB
     db.AddTAGMHits(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, number_of_events, avg_hits_per_sector)
+
+    ## calculate calibration info
+    #h = f.Get("HLDetectorTiming/TRACKING/TAGM - SC Target Time")
+    #hy = h.ProjectionY()
+    #max = hy.GetBinCenter( hy.GetMaximumBin() )
+    ## fit within 15 ns of peak
+    ##r = hy.Fit("gaus","SQ", "", -4+max, 4+max)
+    #fn = TF1("fn", "gaus(0)+[3]", -15+max, 15+max)
+    #fn.SetParameter(0,1000)
+    #fn.SetParameter(2,1)
+    #r = hy.Fit("fn","SQ", "", -15+max, 15+max)
+    #timing_mean = r.Parameter(1)
+    #timing_sigma = r.Parameter(2)
+
+    timing_mean = 0.
+    timing_sigma = 0.
+    # get timing info (only use only channel right now, they aren't aligned enough to sum over multiples)
+    tagm_timing = root_file.Get(ROOTDIR_PREFIX+"PSPair/PSC_PS_TAGM/PSTAGMTimeOffsets_L/PSTAGH_tdiffVsTAGMColumn_L6")
+    if tagm_timing:
+        tagm_timing_proj = tagm_timing.ProjectionY("_py",2,2);
+        r = tagm_timing_proj.Fit("gaus","SQ");
+        timing_mean = r.Parameter(1)
+        timing_sigma = r.Parameter(2)
+
+    # fill DB
+    db.AddTAGMCalib(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, [timing_mean, timing_sigma])
+
+
+###########################################
+## For the coarse PS, we store the hits for all 16 paddles
+## and some calibration information
+##
+def ProcessPSC(db, root_file):
+    global RUN_NUMBER,VERSION_NUMBER,FILE_NUMBER
+
+    avg_hits_per_sector = []
+    number_of_events = -1 
+
+    psc_num_events = root_file.Get(ROOTDIR_PREFIX+"PSC/psc_num_events")
+    if(psc_num_events != None):
+        number_of_events = psc_num_events.GetBinContent(1)
+
+    # get the occupancy
+    psc_leftarm_occupancy = root_file.Get(ROOTDIR_PREFIX+"PSC/Hit/LeftArm/Hit_Occupancy_LeftArm")
+    psc_rightarm_occupancy = root_file.Get(ROOTDIR_PREFIX+"PSC/Hit/RightArm/Hit_Occupancy_RightArm")
+    # sanity checks
+    if( psc_leftarm_occupancy == None ): 
+        print "couldn't find PSC left arm occupancy histogram!"
+        return   
+    if( psc_rightarm_occupancy == None ): 
+        print "couldn't find PSC right arm occupancy histogram!"
+        return   
+
+    # calculate occupancy
+    for x in xrange(1,9):
+        avg_hits_per_sector += [ psc_leftarm_occupancy.GetBinContent(x) ]
+    for x in xrange(1,9):
+        avg_hits_per_sector += [ psc_rightarm_occupancy.GetBinContent(x) ]
+
+    ## insert into DB
+    db.AddPSCHits(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, number_of_events, avg_hits_per_sector)
+
+    ## calculate calibration info
+    timing_mean = 0.
+    timing_sigma = 0.
+    timing_right_adc_has_tdc = 0.
+    timing_right_tdc_has_adc = 0.
+    timing_left_adc_has_tdc = 0.
+    timing_left_tdc_has_adc = 0.
+    # get timing info (only use only channel right now, they aren't aligned enough to sum over multiples)
+    psc_timing = root_file.Get(ROOTDIR_PREFIX+"PSPair/PSC/PSCRightArmTimeOffsets/PSC_tdiffVsPSCIDRight_L6")
+    if psc_timing:
+        psc_timing_proj = psc_timing.ProjectionY("_py",2,2);
+        r = psc_timing_proj.Fit("gaus","SQ");
+        if r != None:
+            timing_mean = r.Parameter(1)
+            timing_sigma = r.Parameter(2)
+    psc_Left_Hit_HasTDCvsHasADC = root_file.Get(ROOTDIR_PREFIX+"PSC/Hit/LeftArm/Hit_HasTDCvsHasADC_LeftArm")
+    if psc_Left_Hit_HasTDCvsHasADC:
+        if psc_Left_Hit_HasTDCvsHasADC.GetBinContent(2,1)+psc_Left_Hit_HasTDCvsHasADC.GetBinContent(2,2) > 0:
+            timing_left_adc_has_tdc = psc_Left_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (psc_Left_Hit_HasTDCvsHasADC.GetBinContent(2,1)+psc_Left_Hit_HasTDCvsHasADC.GetBinContent(2,2))
+        if psc_Left_Hit_HasTDCvsHasADC.GetBinContent(1,2)+psc_Left_Hit_HasTDCvsHasADC.GetBinContent(2,2) > 0:
+            timing_left_tdc_has_adc = psc_Left_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (psc_Left_Hit_HasTDCvsHasADC.GetBinContent(1,2)+psc_Left_Hit_HasTDCvsHasADC.GetBinContent(2,2))
+    psc_Right_Hit_HasTDCvsHasADC = root_file.Get(ROOTDIR_PREFIX+"PSC/Hit/RightArm/Hit_HasTDCvsHasADC_RightArm")
+    if psc_Right_Hit_HasTDCvsHasADC:
+        if psc_Right_Hit_HasTDCvsHasADC.GetBinContent(2,1)+psc_Right_Hit_HasTDCvsHasADC.GetBinContent(2,2) > 0:
+            timing_right_adc_has_tdc = psc_Right_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (psc_Right_Hit_HasTDCvsHasADC.GetBinContent(2,1)+psc_Right_Hit_HasTDCvsHasADC.GetBinContent(2,2))
+        if psc_Right_Hit_HasTDCvsHasADC.GetBinContent(1,2)+psc_Right_Hit_HasTDCvsHasADC.GetBinContent(2,2) > 0:
+            timing_right_tdc_has_adc = psc_Right_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (psc_Right_Hit_HasTDCvsHasADC.GetBinContent(1,2)+psc_Right_Hit_HasTDCvsHasADC.GetBinContent(2,2))
+
+    # fill DB
+    db.AddPSCCalib(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, [timing_mean, timing_sigma, timing_left_adc_has_tdc, timing_left_tdc_has_adc,
+                                                             timing_right_adc_has_tdc, timing_right_tdc_has_adc ])
+
+
+###########################################
+## For the fine PS, we store the hits for these 10 counters in each arm:
+##    1,6,17,45,68,81,105,106,127,145
+## and some calibration information
+##
+def ProcessPS(db, root_file):
+    global RUN_NUMBER,VERSION_NUMBER,FILE_NUMBER
+
+    avg_hits_per_sector = []
+    number_of_events = -1 
+
+    ps_num_events = root_file.Get(ROOTDIR_PREFIX+"PS/ps_num_events")
+    if(ps_num_events != None):
+        number_of_events = ps_num_events.GetBinContent(1)
+
+    # get the occupancy
+    ps_leftarm_occupancy = root_file.Get(ROOTDIR_PREFIX+"PS/Hit/LeftArm/Hit_Occupancy_LeftArm")
+    ps_rightarm_occupancy = root_file.Get(ROOTDIR_PREFIX+"PS/Hit/RightArm/Hit_Occupancy_RightArm")
+    # sanity checks
+    if( ps_leftarm_occupancy == None ): 
+        print "couldn't find PS left arm occupancy histogram!"
+        return   
+    if( ps_rightarm_occupancy == None ): 
+        print "couldn't find PS right arm occupancy histogram!"
+        return   
+
+    # calculate occupancy
+    avg_hits_per_sector += [ ps_leftarm_occupancy.GetBinContent(1) ]
+    avg_hits_per_sector += [ ps_leftarm_occupancy.GetBinContent(6) ]
+    avg_hits_per_sector += [ ps_leftarm_occupancy.GetBinContent(17) ]
+    avg_hits_per_sector += [ ps_leftarm_occupancy.GetBinContent(45) ]
+    avg_hits_per_sector += [ ps_leftarm_occupancy.GetBinContent(68) ]
+    avg_hits_per_sector += [ ps_leftarm_occupancy.GetBinContent(81) ]
+    avg_hits_per_sector += [ ps_leftarm_occupancy.GetBinContent(105) ]
+    avg_hits_per_sector += [ ps_leftarm_occupancy.GetBinContent(106) ]
+    avg_hits_per_sector += [ ps_leftarm_occupancy.GetBinContent(127) ]
+    avg_hits_per_sector += [ ps_leftarm_occupancy.GetBinContent(145) ]
+    avg_hits_per_sector += [ ps_rightarm_occupancy.GetBinContent(1) ]
+    avg_hits_per_sector += [ ps_rightarm_occupancy.GetBinContent(6) ]
+    avg_hits_per_sector += [ ps_rightarm_occupancy.GetBinContent(17) ]
+    avg_hits_per_sector += [ ps_rightarm_occupancy.GetBinContent(45) ]
+    avg_hits_per_sector += [ ps_rightarm_occupancy.GetBinContent(68) ]
+    avg_hits_per_sector += [ ps_rightarm_occupancy.GetBinContent(81) ]
+    avg_hits_per_sector += [ ps_rightarm_occupancy.GetBinContent(105) ]
+    avg_hits_per_sector += [ ps_rightarm_occupancy.GetBinContent(106) ]
+    avg_hits_per_sector += [ ps_rightarm_occupancy.GetBinContent(127) ]
+    avg_hits_per_sector += [ ps_rightarm_occupancy.GetBinContent(145) ]
+
+
+    ## insert into DB
+    db.AddPSHits(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, number_of_events, avg_hits_per_sector)
 
     ## calculate calibration info
 
@@ -578,17 +840,17 @@ def ProcessAnalysisInfo(db, root_file):
     analysis_data += [num_neutral,num_good_neutral]
 
     # Calculate number of various other reconstructed quantities    
-    analysis_data.append( SumHistContents(root_file, "Independent/Hist_NumReconstructedObjects/NumFCALShowers") )
-    analysis_data.append( SumHistContents(root_file, "Independent/Hist_NumReconstructedObjects/NumBCALShowers") )
-    analysis_data.append( SumHistContents(root_file, "Independent/Hist_NumReconstructedObjects/NumTOFPoints") )
-    analysis_data.append( SumHistContents(root_file, "Independent/Hist_NumReconstructedObjects/NumSCHits") )
-    analysis_data.append( SumHistContents(root_file, "Independent/Hist_NumReconstructedObjects/NumTAGHHits") )
-    analysis_data.append( SumHistContents(root_file, "Independent/Hist_NumReconstructedObjects/NumTAGMHits") )
+    analysis_data.append( SumHistContents(root_file, ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumFCALShowers") )
+    analysis_data.append( SumHistContents(root_file, ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumBCALShowers") )
+    analysis_data.append( SumHistContents(root_file, ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumTOFPoints") )
+    analysis_data.append( SumHistContents(root_file, ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumSCHits") )
+    analysis_data.append( SumHistContents(root_file, ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumTAGHHits") )
+    analysis_data.append( SumHistContents(root_file, ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumTAGMHits") )
 
-    analysis_data.append( SumHistContents(root_file, "Independent/Hist_NumReconstructedObjects/NumTrackBCALMatches") )
-    analysis_data.append( SumHistContents(root_file, "Independent/Hist_NumReconstructedObjects/NumTrackFCALMatches") )
-    analysis_data.append( SumHistContents(root_file, "Independent/Hist_NumReconstructedObjects/NumTrackTOFMatches") )
-    analysis_data.append( SumHistContents(root_file, "Independent/Hist_NumReconstructedObjects/NumTrackSCMatches") )
+    analysis_data.append( SumHistContents(root_file, ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumTrackBCALMatches") )
+    analysis_data.append( SumHistContents(root_file, ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumTrackFCALMatches") )
+    analysis_data.append( SumHistContents(root_file, ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumTrackTOFMatches") )
+    analysis_data.append( SumHistContents(root_file, ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumTrackSCMatches") )
 
     ## insert into DB
     db.AddAnalysisInfo(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, number_of_events, analysis_data)
@@ -687,6 +949,14 @@ def main(argv):
         print_mysql_error(e)
     try:
         ProcessTAGM(mondb, root_file)
+    except MySQLdb.Error, e:
+        print_mysql_error(e)
+    try:
+        ProcessPS(mondb, root_file)
+    except MySQLdb.Error, e:
+        print_mysql_error(e)
+    try:
+        ProcessPSC(mondb, root_file)
     except MySQLdb.Error, e:
         print_mysql_error(e)
 
