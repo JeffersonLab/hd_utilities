@@ -6,6 +6,7 @@
 /home/gxproj1/builds/online/packages/monitoring/src/plugins/BCAL_online/bcal_shower.C
 /home/gxproj1/builds/online/packages/monitoring/src/plugins/BCAL_Eff/bcal_hist_eff.C
 /home/gxproj1/builds/online/packages/monitoring/src/plugins/BCAL_inv_mass/bcal_inv_mass.C
+/home/gxproj1/builds/online/packages/monitoring/src/plugins/BCAL_inv_mass/bcal_fcal_inv_mass.C
 # CDC
 /home/gxproj1/builds/online/packages/monitoring/src/plugins/CDC_online/CDC_occupancy.C
 # FCAL
