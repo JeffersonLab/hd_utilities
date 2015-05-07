@@ -32,32 +32,32 @@ def display_options():
     charts.append(["fdc_ostrip", "__FDC_fdcos", "FDC Strip Hits", "Package", 6, "(sum(plane1_hits)+sum(plane3_hits)+sum(plane4_hits)+sum(plane6_hits)+sum(plane7_hits)+sum(plane9_hits)+sum(plane10_hits)+sum(plane12_hits))/sum(num_det_events), (sum(plane13_hits)+sum(plane15_hits)+sum(plane16_hits)+sum(plane18_hits)+sum(plane19_hits)+sum(plane21_hits)+sum(plane22_hits)+sum(plane24_hits))/sum(num_det_events), (sum(plane25_hits)+sum(plane27_hits)+sum(plane28_hits)+sum(plane30_hits)+sum(plane31_hits)+sum(plane33_hits)+sum(plane34_hits)+sum(plane36_hits))/sum(num_det_events), (sum(plane37_hits)+sum(plane39_hits)+sum(plane40_hits)+sum(plane42_hits)+sum(plane43_hits)+sum(plane45_hits)+sum(plane46_hits)+sum(plane48_hits))/sum(num_det_events), (sum(plane49_hits)+sum(plane51_hits)+sum(plane52_hits)+sum(plane54_hits)+sum(plane55_hits)+sum(plane57_hits)+sum(plane58_hits)+sum(plane60_hits))/sum(num_det_events), (sum(plane61_hits)+sum(plane63_hits)+sum(plane64_hits)+sum(plane66_hits)+sum(plane67_hits)+sum(plane69_hits)+sum(plane70_hits)+sum(plane72_hits))/sum(num_det_events) from fdc_hits JOIN version_info ON fdc_hits",[],"fdc_hits"])
     charts.append(["fdc_owire", "__FDC_fdcos", "FDC Wire Hits", "Package", 6, "(sum(plane2_hits)+sum(plane5_hits)+sum(plane8_hits)+sum(plane11_hits))/sum(num_det_events), (sum(plane14_hits)+sum(plane17_hits)+sum(plane20_hits)+sum(plane23_hits))/sum(num_det_events), (sum(plane26_hits)+sum(plane29_hits)+sum(plane32_hits)+sum(plane35_hits))/sum(num_det_events), (sum(plane38_hits)+sum(plane41_hits)+sum(plane44_hits)+sum(plane47_hits))/sum(num_det_events), (sum(plane50_hits)+sum(plane53_hits)+sum(plane56_hits)+sum(plane59_hits))/sum(num_det_events), (sum(plane62_hits)+sum(plane65_hits)+sum(plane68_hits)+sum(plane71_hits))/sum(num_det_events) from fdc_hits JOIN version_info ON fdc_hits",[],"fdc_hits"])
 
-    #charts.append(["fdc_o_1", "__FDC_fdcos", "FDC Package 1 Hits/Event", "Plane", 12, "sum(plane1_hits)/sum(num_det_events), sum(plane2_hits)/sum(num_det_events), sum(plane3_hits)/sum(num_det_events), sum(plane4_hits)/sum(num_det_events), sum(plane5_hits)/sum(num_det_events), sum(plane6_hits)/sum(num_det_events), sum(plane7_hits)/sum(num_det_events), sum(plane8_hits)/sum(num_det_events), sum(plane9_hits)/sum(num_det_events), sum(plane10_hits)/sum(num_det_events), sum(plane11_hits)/sum(num_det_events), sum(plane12_hits)/sum(num_det_events) from fdc_hits JOIN version_info ON fdc_hits",["Strip1","Wire1","Strip2","Strip3","Wire2","Strip4","Strip5","Wire3","Strip6","Strip7","Wire4","Strip8"],"fdc_hits"])
-    #charts.append(["fdc_o_2", "__FDC_fdcos", "FDC Package 2 Hits/Event", "Plane", 12, "sum(plane13_hits)/sum(num_det_events), sum(plane14_hits)/sum(num_det_events), sum(plane15_hits)/sum(num_det_events), sum(plane16_hits)/sum(num_det_events), sum(plane17_hits)/sum(num_det_events), sum(plane18_hits)/sum(num_det_events), sum(plane19_hits)/sum(num_det_events), sum(plane20_hits)/sum(num_det_events), sum(plane21_hits)/sum(num_det_events), sum(plane22_hits)/sum(num_det_events), sum(plane23_hits)/sum(num_det_events), sum(plane24_hits)/sum(num_det_events) from fdc_hits JOIN version_info ON fdc_hits",["Strip1","Wire1","Strip2","Strip3","Wire2","Strip4","Strip5","Wire3","Strip6","Strip7","Wire4","Strip8"],"fdc_hits"])
-    #charts.append(["fdc_o_3", "__FDC_fdcos", "FDC Package 3 Hits/Event", "Plane", 12, "sum(plane25_hits)/sum(num_det_events), sum(plane26_hits)/sum(num_det_events), sum(plane27_hits)/sum(num_det_events), sum(plane28_hits)/sum(num_det_events), sum(plane29_hits)/sum(num_det_events), sum(plane30_hits)/sum(num_det_events), sum(plane31_hits)/sum(num_det_events), sum(plane32_hits)/sum(num_det_events), sum(plane33_hits)/sum(num_det_events), sum(plane34_hits)/sum(num_det_events), sum(plane35_hits)/sum(num_det_events), sum(plane36_hits)/sum(num_det_events) from fdc_hits JOIN version_info ON fdc_hits",["Strip1","Wire1","Strip2","Strip3","Wire2","Strip4","Strip5","Wire3","Strip6","Strip7","Wire4","Strip8"],"fdc_hits"])
-    #charts.append(["fdc_o_4", "__FDC_fdcos", "FDC Package 4 Hits/Event", "Plane", 12, "sum(plane37_hits)/sum(num_det_events), sum(plane38_hits)/sum(num_det_events), sum(plane39_hits)/sum(num_det_events), sum(plane40_hits)/sum(num_det_events), sum(plane41_hits)/sum(num_det_events), sum(plane42_hits)/sum(num_det_events), sum(plane43_hits)/sum(num_det_events), sum(plane44_hits)/sum(num_det_events), sum(plane45_hits)/sum(num_det_events), sum(plane46_hits)/sum(num_det_events), sum(plane47_hits)/sum(num_det_events), sum(plane48_hits)/sum(num_det_events) from fdc_hits JOIN version_info ON fdc_hits",["Strip1","Wire1","Strip2","Strip3","Wire2","Strip4","Strip5","Wire3","Strip6","Strip7","Wire4","Strip8"],"fdc_hits"])
-    #charts.append(["fdc_o_5", "__FDC_fdcos", "FDC Package 5 Hits/Event", "Plane", 12, "sum(plane49_hits)/sum(num_det_events), sum(plane50_hits)/sum(num_det_events), sum(plane51_hits)/sum(num_det_events), sum(plane52_hits)/sum(num_det_events), sum(plane53_hits)/sum(num_det_events), sum(plane54_hits)/sum(num_det_events), sum(plane55_hits)/sum(num_det_events), sum(plane56_hits)/sum(num_det_events), sum(plane57_hits)/sum(num_det_events), sum(plane58_hits)/sum(num_det_events), sum(plane59_hits)/sum(num_det_events), sum(plane60_hits)/sum(num_det_events) from fdc_hits JOIN version_info ON fdc_hits",["Strip1","Wire1","Strip2","Strip3","Wire2","Strip4","Strip5","Wire3","Strip6","Strip7","Wire4","Strip8"],"fdc_hits"])
-    #charts.append(["fdc_o_6", "__FDC_fdcos", "FDC Package 6 Hits/Event", "Plane", 12, "sum(plane61_hits)/sum(num_det_events), sum(plane62_hits)/sum(num_det_events), sum(plane63_hits)/sum(num_det_events), sum(plane64_hits)/sum(num_det_events), sum(plane65_hits)/sum(num_det_events), sum(plane66_hits)/sum(num_det_events), sum(plane67_hits)/sum(num_det_events), sum(plane68_hits)/sum(num_det_events), sum(plane69_hits)/sum(num_det_events), sum(plane70_hits)/sum(num_det_events), sum(plane71_hits)/sum(num_det_events), sum(plane72_hits)/sum(num_det_events) from fdc_hits JOIN version_info ON fdc_hits",["Strip1","Wire1","Strip2","Strip3","Wire2","Strip4","Strip5","Wire3","Strip6","Strip7","Wire4","Strip8"],"fdc_hits"])
-
     # BCAL
     charts.append(["bcal_o_up","bcal_occupancy", "BCAL Upstream Hits/Event", "Quadrant", 4, "(sum(bcalhits_quad1_layer1_up)+sum(bcalhits_quad1_layer2_up)+sum(bcalhits_quad1_layer3_up)+sum(bcalhits_quad1_layer4_up))/sum(num_det_events), (sum(bcalhits_quad2_layer1_up)+sum(bcalhits_quad2_layer2_up)+sum(bcalhits_quad2_layer3_up)+sum(bcalhits_quad2_layer4_up))/sum(num_det_events), (sum(bcalhits_quad3_layer1_up)+sum(bcalhits_quad3_layer2_up)+sum(bcalhits_quad3_layer3_up)+sum(bcalhits_quad3_layer4_up))/sum(num_det_events), (sum(bcalhits_quad4_layer1_up)+sum(bcalhits_quad4_layer2_up)+sum(bcalhits_quad4_layer3_up)+sum(bcalhits_quad4_layer4_up))/sum(num_det_events)  from bcal_hits JOIN version_info ON bcal_hits",[],"bcal_hits"])
     charts.append(["bcal_o_down","bcal_occupancy", "BCAL Downstream Hits/Event", "Quadrant", 4, "(sum(bcalhits_quad1_layer1_down)+sum(bcalhits_quad1_layer2_down)+sum(bcalhits_quad1_layer3_down)+sum(bcalhits_quad1_layer4_down))/sum(num_det_events), (sum(bcalhits_quad2_layer1_down)+sum(bcalhits_quad2_layer2_down)+sum(bcalhits_quad2_layer3_down)+sum(bcalhits_quad2_layer4_down))/sum(num_det_events), (sum(bcalhits_quad3_layer1_down)+sum(bcalhits_quad3_layer2_down)+sum(bcalhits_quad3_layer3_down)+sum(bcalhits_quad3_layer4_down))/sum(num_det_events), (sum(bcalhits_quad4_layer1_down)+sum(bcalhits_quad4_layer2_down)+sum(bcalhits_quad4_layer3_down)+sum(bcalhits_quad4_layer4_down))/sum(num_det_events) from bcal_hits JOIN version_info ON bcal_hits",[],"bcal_hits"])
+    charts.append(["bcal_tres","", "BCAL Time Resolution", "", 2, "(sum(BCAL_tresol_mean))/num_files, (sum(BCAL_tresol_sigma))/num_files from bcal_calib JOIN version_info ON bcal_calib",["Mean","Sigma"],"bcal_calib"])
+    charts.append(["bcal_effic","bcal_hist_eff", "BCAL Layer Efficiency", "", 8, "(sum(layer1_eff))/num_files, (sum(layer2_eff))/num_files, (sum(layer3_eff))/num_files, (sum(layer4_eff))/num_files, (sum(layer1_enhanced_eff))/num_files, (sum(layer2_enhanced_eff))/num_files, (sum(layer3_enhanced_eff))/num_files, (sum(layer4_enhanced_eff))/num_files from bcal_calib JOIN version_info ON bcal_calib",["Layer1","Layer2","Layer3","Layer4","Layer1Enhanced","Layer2Enhanced","Layer3Enhanced","Layer4Enhanced"],"bcal_calib"])
 
     # FCAL
     charts.append(["fcal_o_inner","__fcal_digOcc2D", "FCAL Inner Ring Hits/Event", "Inner", 4, "sum(channel1_hits)/sum(num_det_events), sum(channel2_hits)/sum(num_det_events), sum(channel3_hits)/sum(num_det_events), sum(channel4_hits)/sum(num_det_events) from fcal_hits JOIN version_info ON fcal_hits",[],"fcal_hits"])
     charts.append(["fcal_o_mid_outer", "__fcal_digOcc2D", "FCAL Mid and Outer Ring Hits/Event", "", 8, "sum(channel5_hits)/sum(num_det_events), sum(channel6_hits)/sum(num_det_events), sum(channel7_hits)/sum(num_det_events), sum(channel8_hits)/sum(num_det_events), sum(channel9_hits)/sum(num_det_events), sum(channel10_hits)/sum(num_det_events), sum(channel11_hits)/sum(num_det_events), sum(channel12_hits)/sum(num_det_events) from fcal_hits JOIN version_info ON fcal_hits",["Mid1","Mid2","Mid3","Mid4","Outer1","Outer2","Outer3","Outer4"],"fcal_hits"])
-    
+    charts.append(["fcal_tres","", "FCAL Time Resolution", "", 2, "(sum(FCAL_tresol_mean))/num_files, (sum(FCAL_tresol_sigma))/num_files from fcal_calib JOIN version_info ON fcal_calib",["Mean","Sigma"],"fcal_calib"])
+
     # SC
     charts.append(["sc_o", "", "SC/ST Paddle Hits/Event", "Paddle", 10, "sum(pad3_hits)/sum(num_det_events), sum(pad6_hits)/sum(num_det_events), sum(pad9_hits)/sum(num_det_events), sum(pad12_hits)/sum(num_det_events), sum(pad15_hits)/sum(num_det_events), sum(pad18_hits)/sum(num_det_events), sum(pad21_hits)/sum(num_det_events), sum(pad24_hits)/sum(num_det_events), sum(pad27_hits)/sum(num_det_events), sum(pad30_hits)/sum(num_det_events) from sc_hits JOIN version_info ON sc_hits",["Paddle3", "Paddle6", "Paddle9", "Paddle12", "Paddle15", "Paddle18", "Paddle21", "Paddle24", "Paddle27", "Paddle30"],"sc_hits"])
 
     # TOF
     charts.append(["tof_o", "__tof_tofo1", "TOF Group Hits/Event", "Group", 16, "sum(group1_hits)/sum(num_det_events), sum(group2_hits)/sum(num_det_events), sum(group3_hits)/sum(num_det_events), sum(group4_hits)/sum(num_det_events), sum(group5_hits)/sum(num_det_events), sum(group6_hits)/sum(num_det_events), sum(group7_hits)/sum(num_det_events), sum(group8_hits)/sum(num_det_events), sum(group9_hits)/sum(num_det_events), sum(group10_hits)/sum(num_det_events), sum(group11_hits)/sum(num_det_events), sum(group12_hits)/sum(num_det_events), sum(group13_hits)/sum(num_det_events), sum(group14_hits)/sum(num_det_events), sum(group15_hits)/sum(num_det_events), sum(group16_hits)/sum(num_det_events) from tof_hits JOIN version_info ON tof_hits",[],"tof_hits"])
+    charts.append(["tof_tres","", "TOF Time Resolution", "", 2, "(sum(TOF_tresol_mean))/num_files, (sum(TOF_tresol_sigma))/num_files from tof_calib JOIN version_info ON tof_calib",["Mean","Sigma"],"tof_calib"])
 
     # TAGM
     charts.append(["tagm_o", "", "TAGM Hits/Event", "Column", 8, "sum(column1_hits)/sum(num_det_events), sum(column2_hits)/sum(num_det_events), sum(column3_hits)/sum(num_det_events), sum(column4_hits)/sum(num_det_events), sum(column5_hits)/sum(num_det_events), sum(column6_hits)/sum(num_det_events), sum(column7_hits)/sum(num_det_events), sum(column8_hits)/sum(num_det_events) from tagm_hits JOIN version_info ON tagm_hits",[],"tagm_hits"])
+    charts.append(["tagm_tres","", "TAGM Time Resolution", "", 2, "(sum(TAGM_tresol_mean))/num_files, (sum(TAGM_tresol_sigma))/num_files from tagm_calib JOIN version_info ON tagm_calib",["Mean","Sigma"],"tagm_calib"])
 
     # TAGH
     charts.append(["tagh_o", "", "TAGH Hits/Event", "Sector", 5, "sum(sector1_hits)/sum(num_det_events), sum(sector2_hits)/sum(num_det_events), sum(sector3_hits)/sum(num_det_events), sum(sector4_hits)/sum(num_det_events), sum(sector5_hits)/sum(num_det_events) from tagh_hits JOIN version_info ON tagh_hits",[],"tagh_hits"])
+    charts.append(["tagh_tres","", "TAGH Time Resolution", "", 2, "(sum(TAGH_tresol_mean))/num_files, (sum(TAGH_tresol_sigma))/num_files from tagh_calib JOIN version_info ON tagh_calib",["Mean","Sigma"],"tagh_calib"])
+    charts.append(["tagh_ADC_TDC","", "TAGH ADC-TDC fraction", "", 2, "(sum(TAGH_frac_ADC_has_TDC_hit))/num_files, (sum(TAGH_frac_TDC_has_ADC_hit))/num_files from tagh_calib JOIN version_info ON tagh_calib",["Fraction_ADC_has_TDC_hit","Fraction_TDC_has_ADC_hit"],"tagh_calib"])
 
     #RECO (need better event counter...)
     charts.append(["track_mult", "__Independent_Hist_TrackMultiplicity_NumGoodReconstructedParticles", "Track Multiplicity", "", 4, "sum(num_pos_tracks)/sum(num_events), sum(num_neg_tracks)/sum(num_events), sum(num_good_pos_tracks)/sum(num_events), sum(num_good_neg_tracks)/sum(num_events) from analysis_data JOIN version_info ON analysis_data",["Positive Tracks","Negative Tracks","Good Positive Tracks","Good Negative Tracks"],"analysis_data"])
@@ -80,10 +80,27 @@ def get_data(options, view, name):
     revision = int(float(revision_str))
     if options == None or options[0] == None:
         #curs.execute("select runid, version_id, %s WHERE num_det_events>0 and runid>0 GROUP BY runid" % (view))
-        curs.execute("SELECT run_num, revision, %s.version_id=version_info.version_id JOIN run_info on run_info.run_num=%s.runid WHERE (num_det_events>0 or num_det_events=-1) and run_num>0 and revision=%d %s GROUP BY run_num, revision" % (view, name, revision, options[3]))
+        curs.execute("SELECT run_num, revision, %s.version_id=version_info.version_id JOIN run_info on run_info.run_num=%s.runid WHERE (num_det_events>0 or num_det_events=-1) and num_events>0 and run_num>0 and revision=%d %s GROUP BY run_num, revision" % (view, name, revision, options[3]))
     else:
-        #curs.execute("SELECT runid, version_id, %s WHERE runid>%d and runid<%d and num_det_events>0 GROUP BY runid" % (view, options[0], options[1]))
-        curs.execute("SELECT run_num, revision, %s.version_id=version_info.version_id JOIN run_info on run_info.run_num=%s.runid WHERE (num_det_events>0 or num_det_events=-1) and run_num>=%d and run_num<=%d and revision=%d %s GROUP BY run_num, revision" % (view, name, options[0], options[1], revision, options[3]))
+        curs.execute("SELECT run_num, revision, %s.version_id=version_info.version_id JOIN run_info on run_info.run_num=%s.runid WHERE (num_det_events>0 or num_det_events=-1) and num_events>0 and run_num>=%d and run_num<=%d and revision=%d %s GROUP BY run_num, revision" % (view, name, options[0], options[1], revision, options[3]))
+
+    rows=curs.fetchall()
+
+    return rows
+
+
+# get data from the database
+# if an interval is passed,
+# return a list of records from the database
+def get_data_calib(options, view, name):
+
+    revision_str = str(options[2])
+    revision_str = revision_str.replace("ver","")
+    revision = int(float(revision_str))
+    if options == None or options[0] == None:
+        curs.execute("SELECT run_num, revision, %s.version_id=version_info.version_id JOIN run_info on run_info.run_num=%s.runid WHERE num_files>0 and run_num>0 and revision=%d %s GROUP BY run_num, revision" % (view, name, revision, options[3]))
+    else:
+        curs.execute("SELECT run_num, revision, %s.version_id=version_info.version_id JOIN run_info on run_info.run_num=%s.runid WHERE num_files>0 and run_num>=%d and run_num<=%d and revision=%d %s GROUP BY run_num, revision" % (view, name, options[0], options[1], revision, options[3]))
 
     rows=curs.fetchall()
 
@@ -297,43 +314,54 @@ def print_chart_selector():
 
     print """<div id="nav" class="link-list">"""
     print "<form>"
-    print "Select plots to display:"
+    print "<b>Select plots to display:</b>"
     print "<input type=\"button\" id=\"chart_selector\" onclick=\"chart_select()\" value=\"Display\">"
-    print "<br> Check All <input type=\"checkbox\" onclick=\"toggle(this)\" >"
-    print "<br><br> <b>Detector Summaries:</b> <br>"
-    print "CDC <input type=\"checkbox\" name=\"chart\" value=\"cdc_o\" checked>"
-    print "FDC Strip <input type=\"checkbox\" name=\"chart\" value=\"fdc_ostrip\" checked>"
+    print "<br> <b>Check All</b> <input type=\"checkbox\" onclick=\"toggle(this)\" >"
+    print "<br><br>" # <b>Detector Summaries:</b> <br>"
+    print "<b>CDC:</b> Hit <input type=\"checkbox\" name=\"chart\" value=\"cdc_o\" checked>"
+    print "<br><br>"
+    print "<b>FDC:</b> Hit Strip <input type=\"checkbox\" name=\"chart\" value=\"fdc_ostrip\" checked>"
     print "Wire <input type=\"checkbox\" name=\"chart\" value=\"fdc_owire\" checked>"
+    print "<br><br>"
+    print "<b>BCAL:</b>"
     print "<br>"
-    print "BCAL: Up <input type=\"checkbox\" name=\"chart\" value=\"bcal_o_up\" checked>"
+    print "Hit Up <input type=\"checkbox\" name=\"chart\" value=\"bcal_o_up\" checked>"
     print "Down <input type=\"checkbox\" name=\"chart\" value=\"bcal_o_down\" checked>"
     print "<br>"
-    print "FCAL: Inner <input type=\"checkbox\" name=\"chart\" value=\"fcal_o_inner\" checked>"
-    print "Mid-Outer <input type=\"checkbox\" name=\"chart\" value=\"fcal_o_mid_outer\" checked>"
+    print "Time Resolution <input type=\"checkbox\" name=\"chart\" value=\"bcal_tres\" checked>"
     print "<br>"
-    print "SC/ST <input type=\"checkbox\" name=\"chart\" value=\"sc_o\" checked>"
-    print "TOF <input type=\"checkbox\" name=\"chart\" value=\"tof_o\" checked>"
+    print "Layer Efficiency <input type=\"checkbox\" name=\"chart\" value=\"bcal_effic\" checked>"
+    print "<br><br>"
+    print "<b>FCAL:</b>"
     print "<br>"
-    print "TAGM <input type=\"checkbox\" name=\"chart\" value=\"tagm_o\" checked>"
-    print "TAGH <input type=\"checkbox\" name=\"chart\" value=\"tagm_o\" checked>"
-    
-    print "<br><br> <b>Detector Details:</b> <br>"
-    print "FDC Packages: <br>"
-    print "<input type=\"checkbox\" name=\"chart\" value=\"fdc_o_1\"> 1"
-    print "<input type=\"checkbox\" name=\"chart\" value=\"fdc_o_2\"> 2"
-    print "<input type=\"checkbox\" name=\"chart\" value=\"fdc_o_3\"> 3"
-    print "<input type=\"checkbox\" name=\"chart\" value=\"fdc_o_4\"> 4"
-    print "<input type=\"checkbox\" name=\"chart\" value=\"fdc_o_5\"> 5"
-    print "<input type=\"checkbox\" name=\"chart\" value=\"fdc_o_6\"> 6"
+    print "Hit Inner <input type=\"checkbox\" name=\"chart\" value=\"fcal_o_inner\" checked>"
+    print "Hit Mid-Outer <input type=\"checkbox\" name=\"chart\" value=\"fcal_o_mid_outer\" checked>"
+    print "<br>"
+    print "Time Resolution <input type=\"checkbox\" name=\"chart\" value=\"fcal_tres\" checked>"
+    print "<br><br>"
+    print "<b>SC/ST:</b> Hit <input type=\"checkbox\" name=\"chart\" value=\"sc_o\" checked>"
+    print "<br><br>"
+    print "<b>TOF:</b>"
+    print "Hit <input type=\"checkbox\" name=\"chart\" value=\"tof_o\" checked>"
+    print "<br>"
+    print "Time Resolution <input type=\"checkbox\" name=\"chart\" value=\"tof_tres\" checked>"
+    print "<br><br>"
+    print "<b>TAGM:</b>"
+    print "Hit <input type=\"checkbox\" name=\"chart\" value=\"tagm_o\" checked>"
+    print "<br>"
+    print "Time Resolution <input type=\"checkbox\" name=\"chart\" value=\"tagm_tres\" checked>"
+    print "<br><br>"
+    print "<b>TAGH:</b>"
+    print "Hit <input type=\"checkbox\" name=\"chart\" value=\"tagh_o\" checked>"
+    print "<br>"
+    print "Time Resolution <input type=\"checkbox\" name=\"chart\" value=\"tagh_tres\" checked>"
+    print "ADC-TDC Fraction <input type=\"checkbox\" name=\"chart\" value=\"tagh_ADC_TDC\" checked>"
 
     print "<br><br> <b>Reconstruction Summaries:</b> <br>"
     print "Track: Multiplicity <input type=\"checkbox\" name=\"chart\" value=\"track_mult\" checked>"
     print "Match <input type=\"checkbox\" name=\"chart\" value=\"track_match\" checked> "
     print "<br>"
     print "Shower: Multiplicity <input type=\"checkbox\" name=\"chart\" value=\"shower_mult\" checked>"
-   
-    print "<br><br> <b>Reconstruction Details:</b> <br>"
-    print "<br>"
 
     print "</form>"
     
@@ -345,7 +373,7 @@ def get_options():
     run_number_str = []
     run_number = []
 
-    verName = "ver01"
+    verName = "ver13"
     query = ""
 
     if "ver" in form:
@@ -400,6 +428,8 @@ def main():
         # pull info from data_monitoring DB
         if form_num == 2:
             records=get_num_events(options, chart[5])
+        elif "calib" in chart[7]:
+            records=get_data_calib(options, chart[5], chart[7])
         else:
             records=get_data(options, chart[5], chart[7])
 

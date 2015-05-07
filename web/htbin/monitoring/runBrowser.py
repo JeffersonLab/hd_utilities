@@ -80,7 +80,7 @@ def printHTMLHead(title):
     print """
      <style>
 	  div.link-list {
-          width:18.0em;
+          width:20.0em;
 	  height: 98%;
 	  position:absolute;
           padding-left:1%;
@@ -90,7 +90,7 @@ def printHTMLHead(title):
 	}
 	#main {
 	  height: 101%;
-          margin-left:19.0em;
+          margin-left:21.0em;
           padding-left:1em;
           padding-right:2em;
 	  overflow-y: scroll;
@@ -399,6 +399,8 @@ def main():
 		tagh_charts = [["__TAGH_DigiHit_DigiHit_RawIntegral","DigiRawInt"],["__TAGH_DigiHit_DigiHit_tdcTime","DigiTDCTime"],["__TAGH_DigiHit_DigiHit_PedestalVsSlotID","DigiPedVsSlot"],["TAGH_hit","HitSummary"],["TAGH_hit2","HitSummary2"]]
 	if revision > 3:
 		ps_charts = [["PSC_hit","PSC1"],["PSC_hit2","PSC2"],["PSC_hit3","PSC3"],["PS_hit","PS1"],["PS_hit2","PS2"],["__PSPair_PSC_PS_PS_E","PS_E"],["PS_PSC_coinc","PairCoinc"],["PS_eff","PairEff"],["PS_TAG_energy","PairTagEnergy"],["TAG_eff","TagEff"],["TAG_2D_eff","Tag2DEff"]]
+        if revision > 4:
+		rf_charts = [["HistMacro_RF_p1","RF1"],["HistMacro_RF_p1","RF2"],["HistMacro_RF_p1","RF3"]]
         ana_charts1 = [["HistMacro_EventInfo","EventInfo"],["HistMacro_NumLowLevelObjects_p1","LLObjects1"],["HistMacro_NumLowLevelObjects_p2","LLObjects2"],["HistMacro_NumHighLevelObjects","HLObjects"],["__Independent_Hist_TrackMultiplicity_NumGoodReconstructedParticles","TrackMult"],["HistMacro_Tracking_p1","Tracking1"],["HistMacro_Tracking_p2","Tracking2"],["HistMacro_Tracking_p3","Tracking3"],["HistMacro_Matching_BCAL","MatchBCAL"],["HistMacro_Matching_FCAL","MatchFCAL"],["HistMacro_Matching_SC","MatchSC/ST"],["HistMacro_Matching_TOF","MatchTOF"]]
         if revision < 4: 
             ana_charts2 = [["HistMacro_FCALReconstruction_p1","FCAL1"],["HistMacro_FCALReconstruction_p2","FCAL2"],["HistMacro_BCALReconstruction_p1","BCAL1"],["HistMacro_BCALReconstruction_p2","BCAL2"],["HistMacro_SCReconstruction_p1","SC/ST1"],["HistMacro_SCReconstruction_p2","SC/ST2"],["HistMacro_SCReconstruction_p3","SC/ST3"],["HistMacro_TOFReconstruction_p1","TOF1"],["HistMacro_TOFReconstruction_p2","TOF2"],["HistMacro_Kinematics_p1","Kinematics1"],["HistMacro_Kinematics_p2","Kinematics2"]]
@@ -453,6 +455,13 @@ def main():
 	   <tr>"""
 	print "<td>PS:</td>"
 	print_row(options, ps_charts)
+    	print "</table>"
+
+    if revision > 4 and options[2] == 'RunPeriod-2015-03':
+	print """<table style="width:200px; font-size:0.8em">
+	   <tr>"""
+	print "<td>RF:</td>"
+	print_row(options, rf_charts)
     	print "</table>"
 
     print """<table style="width:200px; font-size:0.8em">
