@@ -28,6 +28,10 @@
 /home/gxproj1/builds/online/packages/monitoring/src/plugins/PSPair_online/PS_TAG_energy.C
 /home/gxproj1/builds/online/packages/monitoring/src/plugins/PSPair_online/TAG_2D_eff.C
 /home/gxproj1/builds/online/packages/monitoring/src/plugins/PSPair_online/TAG_eff.C
+# RF
+/home/gxproj1/builds/online/packages/monitoring/src/plugins/RF_online/HistMacro_RF_p1.C
+/home/gxproj1/builds/online/packages/monitoring/src/plugins/RF_online/HistMacro_RF_p2.C
+/home/gxproj1/builds/online/packages/monitoring/src/plugins/RF_online/HistMacro_RF_p3.C
 # Trigger
 /home/gxproj1/builds/online/packages/monitoring/src/plugins/TRIG_online/trig_fcalbcal.C
 # RECONSTRUCTION
