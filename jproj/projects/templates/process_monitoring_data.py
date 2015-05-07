@@ -414,7 +414,7 @@ def ProcessBCAL(db, root_file):
         max = htime.GetBinCenter( htime.GetMaximumBin() )
         # fit within 4 ns of peak
         r = htime.Fit("gaus","SQ", "", -4+max, 4+max)
-        if r != None:
+        if int(r) == 0:
             timing_mean = r.Parameter(1)
             timing_sigma = r.Parameter(2)
             calib_vals += [ timing_mean, timing_sigma ]
@@ -507,7 +507,8 @@ def ProcessTOF(db, root_file):
         max = htime.GetBinCenter( htime.GetMaximumBin() )
         # fit within 4 ns of peak
         r = htime.Fit("gaus","SQ", "", -6+max, 6+max)
-        if r != None:
+        #if r != None:
+        if int(r) == 0:
             timing_mean = r.Parameter(1)
             timing_sigma = r.Parameter(2)
             calib_vals += [ timing_mean, timing_sigma ]
@@ -573,8 +574,9 @@ def ProcessTAGH(db, root_file):
     if tagh_timing:
         tagh_timing_proj = tagh_timing.ProjectionY("_py",2,2);
         r = tagh_timing_proj.Fit("gaus","SQ");
-        timing_mean = r.Parameter(1)
-        timing_sigma = r.Parameter(2)
+        if int(r) == 0:
+            timing_mean = r.Parameter(1)
+            timing_sigma = r.Parameter(2)
     tagh_Hit_HasTDCvsHasADC = root_file.Get(ROOTDIR_PREFIX+"TAGH/Hit/Hit_HasTDCvsHasADC")
     if tagh_Hit_HasTDCvsHasADC:
         if tagh_Hit_HasTDCvsHasADC.GetBinContent(2,1)+tagh_Hit_HasTDCvsHasADC.GetBinContent(2,2) > 0:
@@ -645,8 +647,9 @@ def ProcessTAGM(db, root_file):
     if tagm_timing:
         tagm_timing_proj = tagm_timing.ProjectionY("_py",2,2);
         r = tagm_timing_proj.Fit("gaus","SQ");
-        timing_mean = r.Parameter(1)
-        timing_sigma = r.Parameter(2)
+        if int(r) == 0:
+            timing_mean = r.Parameter(1)
+            timing_sigma = r.Parameter(2)
 
     # fill DB
     db.AddTAGMCalib(RUN_NUMBER, FILE_NUMBER, VERSION_NUMBER, [timing_mean, timing_sigma])
