@@ -244,7 +244,7 @@ def extract_macro_hists(macro):
 
 
 def main(argv):
-    global CANVAS_WIDTH,CANVAS_HEIGHT,OUTPUT_DIRECTORY
+    global CANVAS_WIDTH,CANVAS_HEIGHT,OUTPUT_DIRECTORY,BASE_ROOT_DIR
     
     init()
     # initialize lists used to store data
