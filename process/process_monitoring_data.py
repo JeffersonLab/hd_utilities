@@ -264,7 +264,7 @@ def ProcessFCAL(db, root_file):
         max = htime.GetBinCenter( htime.GetMaximumBin() )
         # fit within 6 ns of peak
         r = htime.Fit("gaus","SQ", "", -6+max, 6+max)
-        if r != None:
+        if int(r) == 0:
             timing_mean = r.Parameter(1)
             timing_sigma = r.Parameter(2)
             calib_vals += [ timing_mean, timing_sigma ]
@@ -701,7 +701,7 @@ def ProcessPSC(db, root_file):
     if psc_timing:
         psc_timing_proj = psc_timing.ProjectionY("_py",2,2);
         r = psc_timing_proj.Fit("gaus","SQ");
-        if r != None:
+        if int(r) == 0:
             timing_mean = r.Parameter(1)
             timing_sigma = r.Parameter(2)
     psc_Left_Hit_HasTDCvsHasADC = root_file.Get(ROOTDIR_PREFIX+"PSC/Hit/LeftArm/Hit_HasTDCvsHasADC_LeftArm")

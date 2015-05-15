@@ -203,10 +203,13 @@ def SavePlots(sum_hists, sum_dir, hists_to_plot, macros_to_run):
             if os.path.isfile(macro_file):
                 if VERBOSE:
                     print "running macro = " + macro_file
-                # run the macro
+                # run the macro`
                 ClearPad(c1)
                 sum_dir.cd()
-                gROOT.ProcessLine(".x " + macro_file)
+                try:
+                    gROOT.ProcessLine(".x " + macro_file)
+                except:
+                    print "Error processing "+macro_file
                 # save the canvas - the name depends just on the file name
                 img_fname = macro_file.split('/')[-1]
                 #print "SPLIT =  " +  img_fname[0:-2] + " / " + img_fname[-2:]

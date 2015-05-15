@@ -161,7 +161,10 @@ if not os.path.exists(OUTPUT_DIRECTORY):
 LIBDIR = os.getenv("MONITORING_LIBDIR", join(os.getcwd(),"lib"))    
 lib_macros = [ join(LIBDIR,f) for f in listdir(LIBDIR) if f[-2:]=='.C' ]
 for macro in lib_macros:
-    gROOT.ProcessLine(".L "+macro)
+    try:
+        gROOT.ProcessLine(".L "+macro)
+    except: 
+        print "Error processing "+macro
 
 # allow for incremental processing ...
 #run_list = []
@@ -308,7 +311,7 @@ for rundir in rundirs_on_disk:
         os.system("rm -f " + summed_rootfile)
     os.system("mkdir -m"+NEWDIR_MODE+" -p " + join(OUTPUT_DIRECTORY,"rootfiles"))
     # note hadd -k skips corrupt or missing files - we want to do our best but not fail here
-    ##os.system("hadd -v 0 " +  " ".join([summed_rootfile] + monitoring_files.keys() ))
+    os.system("hadd -v 0 " +  " ".join([summed_rootfile] + monitoring_files.keys() ))
 
     # save the current list of files
     monitoring_file_list = open(rootfilelist_fname,"w")
