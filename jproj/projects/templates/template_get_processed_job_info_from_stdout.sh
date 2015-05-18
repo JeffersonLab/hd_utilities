@@ -21,7 +21,7 @@ set NFILES = 0
 
 foreach FILE ( `ls 00*/stdout*` )
   set NEVENTS = ""
-  set NEVENTS = `tail -n 40 $FILE | grep -a -B 5 'Closed ROOT file' | grep -a 'events processed' | gawk '{print $3}'`
+  set NEVENTS = `tail -n 60 $FILE | grep -a -B 5 'Closed ROOT file' | grep -a 'events processed' | gawk '{print $3}'`
   if ( $NEVENTS == "" ) then
     set NEVENTS = "-999"
   endif

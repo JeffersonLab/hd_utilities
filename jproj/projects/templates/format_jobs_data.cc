@@ -150,6 +150,7 @@ int main(int argc, char **argv){
       // << "timeCompleteDay = " << timeCompleteDay   << " " << "timeCompleteTime = " << timeCompleteTime << endl;
       
       IN >> walltime >> cput >> mem >> vmem >> error;
+      errorCode = 5;
     }else if(result == "FAILED"){
       cout << "result was FAILED" << endl;
       IN
