@@ -235,7 +235,7 @@ def extract_macro_hists(macro):
         if (len(tokens) < 3):
             continue
         if ( (tokens[0] == "//") and (tokens[1] == "hnamepath:") ):
-            hnamepath = tokens[2]
+            hnamepath = " ".join(tokens[2:])
             if VERBOSE:
                 print hnamepath
             #if hnamepath not in macro_hists:
