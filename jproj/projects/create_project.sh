@@ -6,17 +6,21 @@
 # directories from the template directory.
 #
 # Usage:
-# ./create_project.sh [project name] [file type]
+# ./create_project.sh [project name]
 #
 # 1. [project name] MUST include substring RunPeriod2YYY-MM
-# 2. [file type] is prefix of raw data files to be searched for
+#
+# There used to be a second option [file type] which was
+# to distinguish file names of the form hd_raw and hd_rawdata,
+# but since we don't care about the very early runs of 2014-10
+# that had the hd_raw form, this has been taken out, and
+# hd_rawdata is assumed for the raw file name.
 #
 #----------------------------------------------------------------------
 
 set PROJECT = $1
-set FILETYPE = $2
 
-if ( $PROJECT == "" || $FILETYPE == "" ) then
+if ( $PROJECT == "" ) then
   echo "Usage:"
   echo "./create_project.sh [project name]"
   echo "project name MUST contain"
@@ -84,7 +88,7 @@ mkdir -p $OUTDIR/analysis
 
 # Need to have GLUEX variables set to get info
 # on versions of software
-source /home/gxproj1/setup_jlab.csh
+# source /home/gxproj1/setup_jlab.csh
 
 # Create xml files
 set XMLFILE = "/group/halld/data_monitoring/run_conditions/soft_comm_${RUNPERIOD}_ver${VERSION}.xml"
@@ -215,7 +219,7 @@ rm -f ${OUTDIR}/template_newruns.sh
 
 # Sean's processing scripts
 cp /home/gxproj1/halld/jproj/projects/templates/template.jproj ${OUTDIR}/
-cat ${OUTDIR}/template.jproj | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s/FILETYPE/${FILETYPE}/" > ${OUTDIR}/${PROJECT}.jproj
+cat ${OUTDIR}/template.jproj | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" > ${OUTDIR}/${PROJECT}.jproj
 rm -f ${OUTDIR}/template.jproj
 
 cp /home/gxproj1/halld/jproj/projects/templates/template.jsub ${OUTDIR}/
