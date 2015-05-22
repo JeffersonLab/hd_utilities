@@ -59,7 +59,17 @@ setenv JANA_RESOURCE_DIR /group/halld/www/halldweb/html/resources
 if ( ! $?JANA_PLUGIN_PATH ) then
 	setenv JANA_PLUGIN_PATH 
 endif
-setenv JANA_PLUGIN_PATH /home/gxproj1/builds/online/packages/monitoring/${BMS_OSNAME}/plugins\:${HALLD_HOME}/${BMS_OSNAME}/plugins\:${JANA_HOME}/plugins/\:${HALLD_MY}/${BMS_OSNAME}/plugins
+
+# Set ONLINEPLUGINSHOME directory so that we can pick out the svn rev.
+setenv ONLINEPLUGINSHOME ${HOME}/builds/online/packages/monitoring/src/plugins
+
+if ( ! -e $ONLINEPLUGINSHOME ) then
+  echo "Could not set ONLINEPLUGINSHOME to ${HOME}/builds/online/packages/monitoring/${BMS_OSNAME}/plugins"
+  echo "Edit file setup_jlab-2014-10.csh so that directory with online plugins is set correctly"
+  exit
+endif
+
+setenv JANA_PLUGIN_PATH ${ONLINEPLUGINSHOME}/../../${BMS_OSNAME}\:${HALLD_HOME}/${BMS_OSNAME}/plugins\:${JANA_HOME}/plugins/\:${HALLD_MY}/${BMS_OSNAME}/plugins
 
 # setenv JANA_CALIB_CONTEXT "variation=mc"
 # calibtime=2014-09-30"
