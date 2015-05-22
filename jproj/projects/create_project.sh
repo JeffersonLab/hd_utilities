@@ -229,7 +229,7 @@ set YEAR  = `date +"%Y"`
 set MONTH = `date +"%m"`
 set DAY   = `date +"%d"`
 
-cp templates/clear.sh ${OUTDIR}/
+cp templates/template_clear.sh ${OUTDIR}/
 cat ${OUTDIR}/template_clear.sh | sed "s:PROJHOME:${PROJHOME}:g" > ${OUTDIR}/clear.sh
 rm -f ${OUTDIR}/template_clear.sh
 chmod u+x ${OUTDIR}/clear.sh
