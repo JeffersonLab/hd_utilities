@@ -16,9 +16,14 @@
 # that had the hd_raw form, this has been taken out, and
 # hd_rawdata is assumed for the raw file name.
 #
+# It is assumed that this file was checked out via
+# svn co https://halldsvn.jlab.org/repos/trunk/scripts/monitoring/jproj/
+# so that the directories ../scripts/ and ./templates/ exists.
+#
 #----------------------------------------------------------------------
 
 set PROJECT = $1
+set PROJECTHOME = $PWD
 
 if ( $PROJECT == "" ) then
   echo "Usage:"
@@ -34,6 +39,14 @@ endif
 set POS = `echo $PROJECT | gawk '{print index($1,"RunPeriod")}'`
 set POS = `expr $POS + 9`
 set RUNPERIOD = `expr substr $PROJECT $POS 7`
+
+# The reason for RUNPERIOD and RUNPERIOD_HYPHEN
+# is because mysql will not allow tables with a "-"
+# in them, while the directory names used on tape are
+# e.g. 2014-10. Therefore we need to have two similar
+# variables.
+set RUNPERIOD_HYPHEN = `echo $RUNPERIOD | sed 's/_/-/'`
+
 echo "POS = $POS RUNPERIOD = $RUNPERIOD"
 if ( $POS == 0 ) then
   echo "Usage:"
@@ -76,7 +89,7 @@ if($REPLY == "n" ) then
 endif
 
 # Create directory
-set OUTDIR = "/home/gxproj1/halld/jproj/projects/${PROJECT}"
+set OUTDIR = "${PROJECTHOME}/${PROJECT}"
 
 if ( -e $OUTDIR ) then
   echo "Directory $OUTDIR already exists......"
@@ -86,15 +99,17 @@ mkdir -p $OUTDIR
 mkdir -p $OUTDIR/processing
 mkdir -p $OUTDIR/analysis
 
-# Need to have GLUEX variables set to get info
-# on versions of software
-# source /home/gxproj1/setup_jlab.csh
-
 # Create xml files
 set XMLFILE = "/group/halld/data_monitoring/run_conditions/soft_comm_${RUNPERIOD}_ver${VERSION}.xml"
 if ( -e $XMLFILE ) then
-  rm -f $XMLFILE
+  echo "XMLFILE $XMLFILE already exists,"
+  echo "conflict with previous launch?"
+  echo "Manually delete the above file to create a new version"
+  exit
 endif
+
+# Get correct environment variables so we can get svn vers.
+source templates/setup_jlab-${RUNPERIOD_HYPHEN}.csh
 
 # Get svn revision number to put in output file name
 cd $HDDS_HOME
@@ -107,7 +122,9 @@ set sim_recon_ver = `svn info | grep 'Revision' | gawk '{print $2}'`
 echo "sim-recon revision = ${sim_recon_ver}"
 cd -
 
-cd /home/gxproj1/builds/online/packages/monitoring/src/plugins
+# The variable ONLINEPLUGINSHOME is set within setup_jlab-[RUNPERIOD_HYPHEN].csh
+echo "ONLINEPLUGINSHOME = ${ONLINEPLUGINSHOME}"
+cd ${ONLINEPLUGINSHOME}
 set plugins_ver = `svn info | grep 'Revision' | gawk '{print $2}'`
 echo "plugins revision   = ${plugins_ver}"
 cd -
@@ -147,8 +164,14 @@ echo "</gversions>" >> $XMLFILE
 
 
 # Create jana file
-set JANAFILE = "/group/halld/data_monitoring/run_conditions/jana_rawdata_comm_${RUNPERIOD}_ver${VERSION}.conf" # ${YEAR}_${MONTH}_${DAY}
-echo $JANAFILE
+set JANAFILE = "/group/halld/data_monitoring/run_conditions/jana_rawdata_comm_${RUNPERIOD}_ver${VERSION}.conf"
+if ( -e $JANAFILE ) then
+  echo "JANAFILE $JANAFILE already exists,"
+  echo "conflict with previous launch?"
+  echo "Manually delete the above file to create a new version"
+  exit
+endif
+
 set plugins        = `grep 'name="plugins"' templates/template.jsub     | sed 's/.*value="//'         | sed 's:"/>.*::'`
 set nthreads       = `grep 'name="nthreads"' templates/template.jsub    | sed 's/.*value="//'         | sed 's:"/>.*::'`
 set thread_timeout = `grep 'PTHREAD_TIMEOUT' templates/script.sh | sed 's/.*THREAD_TIMEOUT=//' | sed 's:-PPRINT_PLUGIN.*::'`
@@ -165,31 +188,27 @@ endif
 #---                Copy files that don't need modification                   ---#
 
 # submission/jproj scripts
-cp /home/gxproj1/halld/jproj/projects/templates/clear.sh                        ${OUTDIR}/
-cp /home/gxproj1/halld/jproj/projects/templates/script.sh                       ${OUTDIR}/
-cp /home/gxproj1/halld/jproj/projects/templates/status.sh                       ${OUTDIR}/
-# note: this is not from templates directory, but the one in home directory.
-# This ensures consistency with what gxproj1 sees.
-cp /home/gxproj1/setup_jlab.csh                                                 ${OUTDIR}/
+cp templates/clear.sh                           ${OUTDIR}/
+cp templates/script.sh                          ${OUTDIR}/
+cp templates/status.sh                          ${OUTDIR}/
+cp templates/setup_jlab-${RUNPERIOD_HYPHEN}.csh ${OUTDIR}/
 
 # Sean's processing scripts
-cp /home/gxproj1/halld/jproj/projects/templates/monitoring_env.csh              ${OUTDIR}/processing
-cp /home/gxproj1/halld/jproj/projects/templates/datamon_db.py                   ${OUTDIR}/processing
-cp /home/gxproj1/halld/jproj/projects/templates/histograms_to_monitor           ${OUTDIR}/processing
-cp /home/gxproj1/halld/jproj/projects/templates/macros_to_monitor               ${OUTDIR}/processing
-cp /home/gxproj1/halld/jproj/projects/templates/make_monitoring_plots.py        ${OUTDIR}/processing
-cp /home/gxproj1/halld/jproj/projects/templates/process_monitoring_data.py      ${OUTDIR}/processing
-cp /home/gxproj1/halld/jproj/projects/templates/run_processing.sh               ${OUTDIR}/processing
-cp /home/gxproj1/halld/jproj/projects/templates/register_new_version.py         ${OUTDIR}/processing
+cp templates/monitoring_env.csh              ${OUTDIR}/processing
+cp templates/datamon_db.py                   ${OUTDIR}/processing
+cp templates/histograms_to_monitor           ${OUTDIR}/processing
+cp templates/macros_to_monitor               ${OUTDIR}/processing
+cp templates/make_monitoring_plots.py        ${OUTDIR}/processing
+cp templates/process_monitoring_data.py      ${OUTDIR}/processing
+cp templates/run_processing.sh               ${OUTDIR}/processing
+cp templates/register_new_version.py         ${OUTDIR}/processing
 # launch analysis scripts
-cp /home/gxproj1/halld/jproj/projects/templates/Makefile                        ${OUTDIR}/analysis
-cp /home/gxproj1/halld/jproj/projects/templates/format_jobs_data.cc             ${OUTDIR}/analysis
-cp /home/gxproj1/halld/jproj/projects/templates/analyze.C                       ${OUTDIR}/analysis
-cp /home/gxproj1/halld/jproj/projects/templates/mystyle.css                     ${OUTDIR}/analysis
+cp templates/Makefile                        ${OUTDIR}/analysis
+cp templates/format_jobs_data.cc             ${OUTDIR}/analysis
+cp templates/analyze.C                       ${OUTDIR}/analysis
+cp templates/mystyle.css                     ${OUTDIR}/analysis
 #---                                                                          ---#
 #--------------------------------------------------------------------------------#
-
-
 
 #--------------------------------------------------------------------------------#
 #---                   Copy files that need modification                      ---#
@@ -198,89 +217,86 @@ set DATE  = `date +"%Y-%m-%d"`
 set YEAR  = `date +"%Y"`
 set MONTH = `date +"%m"`
 set DAY   = `date +"%d"`
-# Since the jproj file is looking for data files, we need to have the
-# run period be 2YYY-MM instead of 2YYY_MM
-set RUNPERIOD_HYPHEN = `echo $RUNPERIOD | sed 's/_/-/'`
 
-cp /home/gxproj1/halld/jproj/projects/templates/template_update_files.sh ${OUTDIR}/
+cp templates/template_update_files.sh ${OUTDIR}/
 cat ${OUTDIR}/template_update_files.sh | sed "s/PROJECT/${PROJECT}/g" > ${OUTDIR}/update_files.sh
 rm -f ${OUTDIR}/template_update_files.sh
 chmod u+x ${OUTDIR}/update_files.sh
 
 # offline cron job
-cp /home/gxproj1/halld/jproj/projects/templates/template_cron_newruns ${OUTDIR}/
+cp templates/template_cron_newruns ${OUTDIR}/
 cat ${OUTDIR}/template_cron_newruns | sed "s/PROJECT/${PROJECT}/g" > ${OUTDIR}/cron_newruns
 rm -f ${OUTDIR}/template_cron_newruns
 
-cp /home/gxproj1/halld/jproj/projects/templates/template_newruns.sh ${OUTDIR}/
+cp templates/template_newruns.sh ${OUTDIR}/
 cat ${OUTDIR}/template_newruns.sh | sed "s/PROJECT/${PROJECT}/g" > ${OUTDIR}/newruns.sh
 chmod 775 ${OUTDIR}/newruns.sh
 rm -f ${OUTDIR}/template_newruns.sh
 
 # Sean's processing scripts
-cp /home/gxproj1/halld/jproj/projects/templates/template.jproj ${OUTDIR}/
+cp templates/template.jproj ${OUTDIR}/
 cat ${OUTDIR}/template.jproj | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" > ${OUTDIR}/${PROJECT}.jproj
 rm -f ${OUTDIR}/template.jproj
 
-cp /home/gxproj1/halld/jproj/projects/templates/template.jsub ${OUTDIR}/
+cp templates/template.jsub ${OUTDIR}/
 cat ${OUTDIR}/template.jsub | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s/PROJECT/${PROJECT}/" | sed "s/VERSION/${VERSION}/" > ${OUTDIR}/${PROJECT}.jsub
 rm -f ${OUTDIR}/template.jsub
 
-cp /home/gxproj1/halld/jproj/projects/templates/template_check_monitoring_data.csh ${OUTDIR}/processing/
+cp templates/template_check_monitoring_data.csh ${OUTDIR}/processing/
 cat ${OUTDIR}/processing/template_check_monitoring_data.csh | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s/PROJECT/${PROJECT}/" | sed "s/VERSION/${VERSION}/" > ${OUTDIR}/processing/check_monitoring_data.csh
 chmod 775 ${OUTDIR}/processing/check_monitoring_data.csh
 rm -f ${OUTDIR}/processing/template_check_monitoring_data.csh
 
-cp /home/gxproj1/halld/jproj/projects/templates/template_version_file.txt ${OUTDIR}/processing/
+cp templates/template_version_file.txt ${OUTDIR}/processing/
 cat ${OUTDIR}/processing/template_version_file.txt | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s/PROJECT/${PROJECT}/" | sed "s/VERSION/${VERSION}/" | sed "s/YEAR/${YEAR}/" | sed "s/MONTH/${MONTH}/" | sed "s/DAY/${DAY}/" > ${OUTDIR}/processing/version_file.txt
 chmod 775 ${OUTDIR}/processing/version_file.txt
 rm -f ${OUTDIR}/processing/template_version_file.txt
 
-cp /home/gxproj1/halld/jproj/projects/templates/template_cron_processing.txt ${OUTDIR}/processing/
+cp templates/template_cron_processing.txt ${OUTDIR}/processing/
 cat ${OUTDIR}/processing/template_cron_processing.txt | sed "s/PROJECT/${PROJECT}/"  > ${OUTDIR}/processing/cron_processing.txt
 rm -f ${OUTDIR}/processing/template_cron_processing.txt
 
-cp /home/gxproj1/halld/jproj/projects/templates/template_process_run_conditions.py ${OUTDIR}/processing/
+cp templates/template_process_run_conditions.py ${OUTDIR}/processing/
 cat ${OUTDIR}/processing/template_process_run_conditions.py | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/"  > ${OUTDIR}/processing/process_run_conditions.py
 rm -f ${OUTDIR}/processing/template_process_run_conditions.py
 
-cp /home/gxproj1/halld/jproj/projects/templates/template_process_new_offline_data.py     ${OUTDIR}/processing
+cp templates/template_process_new_offline_data.py     ${OUTDIR}/processing
 cat ${OUTDIR}/processing/template_process_new_offline_data.py | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/"  > ${OUTDIR}/processing/process_new_offline_data.py
 chmod 775 ${OUTDIR}/processing/process_new_offline_data.py
 rm -f ${OUTDIR}/processing/template_process_new_offline_data.py
 
 # launch analysis scripts
-cp /home/gxproj1/halld/jproj/projects/templates/template_fill_jobIds_monAux.sql ${OUTDIR}/analysis/
+cp templates/template_fill_jobIds_monAux.sql ${OUTDIR}/analysis/
 cat ${OUTDIR}/analysis/template_fill_jobIds_monAux.sql | sed "s/PROJECT/${PROJECT}/" > ${OUTDIR}/analysis/fill_jobIds_monAux.sql
 chmod 775 ${OUTDIR}/analysis/fill_jobIds_monAux.sql
 rm -f ${OUTDIR}/analysis/template_fill_jobIds_monAux.sql
 
-cp /home/gxproj1/halld/jproj/projects/templates/template_get_processed_job_info_from_stdout.sh ${OUTDIR}/analysis/
+cp templates/template_get_processed_job_info_from_stdout.sh ${OUTDIR}/analysis/
 cat ${OUTDIR}/analysis/template_get_processed_job_info_from_stdout.sh | sed "s/PROJECT/${PROJECT}/" | sed "s/VERSION/${VERSION}/" | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" > ${OUTDIR}/analysis/get_processed_job_info_from_stdout.sh
 chmod 775 ${OUTDIR}/analysis/get_processed_job_info_from_stdout.sh
 rm -f ${OUTDIR}/analysis/template_get_processed_job_info_from_stdout.sh
 
-cp /home/gxproj1/halld/jproj/projects/templates/template_create_offline_monAux.sql ${OUTDIR}/analysis/
+cp templates/template_create_offline_monAux.sql ${OUTDIR}/analysis/
 cat ${OUTDIR}/analysis/template_create_offline_monAux.sql | sed "s/PROJECT/${PROJECT}/" > ${OUTDIR}/analysis/create_offline_monAux.sql
 chmod 775 ${OUTDIR}/analysis/create_offline_monAux.sql
 rm -f ${OUTDIR}/analysis/template_create_offline_monAux.sql
 
-cp /home/gxproj1/halld/jproj/projects/templates/template_write_inserts_aux.pl ${OUTDIR}/analysis/
+cp templates/template_write_inserts_aux.pl ${OUTDIR}/analysis/
 cat ${OUTDIR}/analysis/template_write_inserts_aux.pl | sed "s/PROJECT/${PROJECT}/" > ${OUTDIR}/analysis/write_inserts_aux.pl
 chmod 775 ${OUTDIR}/analysis/write_inserts_aux.pl
 rm -f ${OUTDIR}/analysis/template_write_inserts_aux.pl
 
-cp /home/gxproj1/halld/jproj/projects/templates/template_create_jobs_data_from_db.csh ${OUTDIR}/analysis/
+cp templates/template_create_jobs_data_from_db.csh ${OUTDIR}/analysis/
 cat ${OUTDIR}/analysis/template_create_jobs_data_from_db.csh | sed "s/PROJECT/${PROJECT}/" > ${OUTDIR}/analysis/create_jobs_data_from_db.csh
 chmod 775 ${OUTDIR}/analysis/create_jobs_data_from_db.csh
 rm -f ${OUTDIR}/analysis/template_create_jobs_data_from_db.csh
 
-cp /home/gxproj1/halld/jproj/projects/templates/template_run_analysis.sh ${OUTDIR}/analysis
+cp templates/template_run_analysis.sh ${OUTDIR}/analysis
 cat ${OUTDIR}/analysis/template_run_analysis.sh | sed "s/PROJECT/${PROJECT}/" > ${OUTDIR}/analysis/run_analysis.sh
 chmod 775 ${OUTDIR}/analysis/run_analysis.sh
 rm -f ${OUTDIR}/analysis/template_run_analysis.sh
 
-cp /home/gxproj1/halld/jproj/projects/templates/template_results.html ${OUTDIR}/analysis
+cp templates/template_results.html ${OUTDIR}/analysis
 cat ${OUTDIR}/analysis/template_results.html | sed "s/PROJECT/${PROJECT}/" > ${OUTDIR}/analysis/results.html
 chmod 775 ${OUTDIR}/analysis/results.html
 rm -f ${OUTDIR}/analysis/template_results.html
