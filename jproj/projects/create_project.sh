@@ -23,7 +23,9 @@
 #----------------------------------------------------------------------
 
 set PROJECT = $1
-set PROJECTHOME = $PWD
+set PROJHOME = $PWD
+echo "PROJHOME =  $PROJHOME"
+set USERNAME = $USER
 
 if ( $PROJECT == "" ) then
   echo "Usage:"
@@ -47,7 +49,7 @@ set RUNPERIOD = `expr substr $PROJECT $POS 7`
 # variables.
 set RUNPERIOD_HYPHEN = `echo $RUNPERIOD | sed 's/_/-/'`
 
-echo "POS = $POS RUNPERIOD = $RUNPERIOD"
+# echo "POS = $POS RUNPERIOD = $RUNPERIOD"
 if ( $POS == 0 ) then
   echo "Usage:"
   echo "./create_project.sh [project name]"
@@ -62,7 +64,7 @@ endif
 set POS = `echo $PROJECT | gawk '{print index($1,"ver")}'`
 set POS = `expr $POS + 3`
 set VERSION = `expr substr $PROJECT $POS 2`
-echo "POS = $POS VERSION = $VERSION"
+# echo "POS = $POS VERSION = $VERSION"
 if ( $POS == 0 ) then
   echo "Usage:"
   echo "./create_project.sh [project name]"
@@ -89,7 +91,7 @@ if($REPLY == "n" ) then
 endif
 
 # Create directory
-set OUTDIR = "${PROJECTHOME}/${PROJECT}"
+set OUTDIR = "${PROJHOME}/${PROJECT}"
 
 if ( -e $OUTDIR ) then
   echo "Directory $OUTDIR already exists......"
@@ -111,6 +113,9 @@ endif
 # Get correct environment variables so we can get svn vers.
 source templates/setup_jlab-${RUNPERIOD_HYPHEN}.csh
 
+echo
+echo
+
 # Get svn revision number to put in output file name
 cd $HDDS_HOME
 set hdds_ver = `svn info | grep 'Revision' | gawk '{print $2}'`
@@ -123,7 +128,7 @@ echo "sim-recon revision = ${sim_recon_ver}"
 cd -
 
 # The variable ONLINEPLUGINSHOME is set within setup_jlab-[RUNPERIOD_HYPHEN].csh
-echo "ONLINEPLUGINSHOME = ${ONLINEPLUGINSHOME}"
+# echo "ONLINEPLUGINSHOME = ${ONLINEPLUGINSHOME}"
 cd ${ONLINEPLUGINSHOME}
 set plugins_ver = `svn info | grep 'Revision' | gawk '{print $2}'`
 echo "plugins revision   = ${plugins_ver}"
@@ -161,7 +166,10 @@ echo "<variable name = "\""ncores"\"" value="\""${ncores}"\""/>" >> $XMLFILE
 
 echo "</gversions>" >> $XMLFILE
 
-
+echo "---------------------------------------------------------------------------------------------------------------"
+echo "contents of XMLFILE : $XMLFILE"
+echo "---------------------------------------------------------------------------------------------------------------"
+cat $XMLFILE
 
 # Create jana file
 set JANAFILE = "/group/halld/data_monitoring/run_conditions/jana_rawdata_comm_${RUNPERIOD}_ver${VERSION}.conf"
@@ -184,13 +192,17 @@ else
   echo "-PCALIB_CONTEXT="\"\" >> $JANAFILE
 endif
 
+echo "---------------------------------------------------------------------------------------------------------------"
+echo "contents of JANAFILE : $JANAFILE"
+echo "---------------------------------------------------------------------------------------------------------------"
+cat $JANAFILE
+
 #--------------------------------------------------------------------------------#
 #---                Copy files that don't need modification                   ---#
 
 # submission/jproj scripts
 cp templates/clear.sh                           ${OUTDIR}/
 cp templates/script.sh                          ${OUTDIR}/
-cp templates/status.sh                          ${OUTDIR}/
 cp templates/setup_jlab-${RUNPERIOD_HYPHEN}.csh ${OUTDIR}/
 
 # Sean's processing scripts
@@ -218,8 +230,13 @@ set YEAR  = `date +"%Y"`
 set MONTH = `date +"%m"`
 set DAY   = `date +"%d"`
 
+cp templates/template_status.sh ${OUTDIR}/
+cat ${OUTDIR}/template_status.sh | sed "s:PROJHOME:${PROJHOME}:g" > ${OUTDIR}/status.sh
+rm -f ${OUTDIR}/template_status.sh
+chmod u+x ${OUTDIR}/status.sh
+
 cp templates/template_update_files.sh ${OUTDIR}/
-cat ${OUTDIR}/template_update_files.sh | sed "s/PROJECT/${PROJECT}/g" > ${OUTDIR}/update_files.sh
+cat ${OUTDIR}/template_update_files.sh | sed "s/PROJECT/${PROJECT}/g" | sed "s:PROJHOME:${PROJHOME}:g" > ${OUTDIR}/update_files.sh
 rm -f ${OUTDIR}/template_update_files.sh
 chmod u+x ${OUTDIR}/update_files.sh
 
@@ -239,7 +256,7 @@ cat ${OUTDIR}/template.jproj | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" > ${OUTDIR
 rm -f ${OUTDIR}/template.jproj
 
 cp templates/template.jsub ${OUTDIR}/
-cat ${OUTDIR}/template.jsub | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s/PROJECT/${PROJECT}/" | sed "s/VERSION/${VERSION}/" > ${OUTDIR}/${PROJECT}.jsub
+cat ${OUTDIR}/template.jsub | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/g" | sed "s/PROJECT/${PROJECT}/" | sed "s/VERSION/${VERSION}/" | sed "s/USERNAME/${USER}/" | sed "s:PROJHOME:${PROJHOME}:" > ${OUTDIR}/${PROJECT}.jsub
 rm -f ${OUTDIR}/template.jsub
 
 cp templates/template_check_monitoring_data.csh ${OUTDIR}/processing/

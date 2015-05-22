@@ -1,6 +1,6 @@
 #!/bin/tcsh
 
-source /home/gxproj1/halld/jproj/scripts/setup.csh
+source PROJHOME/../scripts/setup.csh
 
 # Update DB for files 000 - 019 only
 foreach FILE ( `seq 0 19` )
