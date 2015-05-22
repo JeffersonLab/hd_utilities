@@ -166,9 +166,4 @@ end
 # create directory for log files
 mkdir -p -m 775 ${OUTDIR}/log/${RUN_NUMBER}/
 
-# Set up python environment, then
-# update monitoring information.
-# echo "updating database ............."
-# source /u/home/gxproj1/halld/monitoring/process/monitoring_env.csh
-# /u/home/gxproj1/halld/monitoring/process/process_run_conditions.py $RUN_NUMBER
 echo "ending job ............."
