@@ -201,7 +201,6 @@ cat $JANAFILE
 #---                Copy files that don't need modification                   ---#
 
 # submission/jproj scripts
-cp templates/clear.sh                           ${OUTDIR}/
 cp templates/script.sh                          ${OUTDIR}/
 cp templates/setup_jlab-${RUNPERIOD_HYPHEN}.csh ${OUTDIR}/
 
@@ -229,6 +228,11 @@ set DATE  = `date +"%Y-%m-%d"`
 set YEAR  = `date +"%Y"`
 set MONTH = `date +"%m"`
 set DAY   = `date +"%d"`
+
+cp templates/clear.sh ${OUTDIR}/
+cat ${OUTDIR}/template_clear.sh | sed "s:PROJHOME:${PROJHOME}:g" > ${OUTDIR}/clear.sh
+rm -f ${OUTDIR}/template_clear.sh
+chmod u+x ${OUTDIR}/clear.sh
 
 cp templates/template_status.sh ${OUTDIR}/
 cat ${OUTDIR}/template_status.sh | sed "s:PROJHOME:${PROJHOME}:g" > ${OUTDIR}/status.sh
