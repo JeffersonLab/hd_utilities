@@ -112,7 +112,7 @@ endif
 if ( ! $?JANA_PLUGIN_PATH ) then
   setenv JANA_PLUGIN_PATH 
 endif
-setenv JANA_PLUGIN_PATH ${ONLINEPLUGINSHOME}/../../${BMS_OSNAME}\:${HALLD_HOME}/${BMS_OSNAME}/plugins\:${JANA_HOME}/plugins/
+setenv JANA_PLUGIN_PATH ${ONLINEPLUGINSHOME}/../../${BMS_OSNAME}/plugins\:${HALLD_HOME}/${BMS_OSNAME}/plugins\:${JANA_HOME}/plugins/
 
 # setenv JANA_CALIB_CONTEXT "variation=mc"
 # calibtime=2014-09-30"
