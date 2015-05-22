@@ -9,7 +9,7 @@
 
 set PARENT_DIR = "/volatile/halld/offline_monitoring/RunPeriod-RUNPERIOD/verVERSION/log"
 
-set OUTFILE = /home/gxproj1/halld/jproj/projects/PROJECT/analysis/processed_job_info.txt
+set OUTFILE = PROJHOME/PROJECT/analysis/processed_job_info.txt
 
 if( -e $OUTFILE) then
   rm -f $OUTFILE

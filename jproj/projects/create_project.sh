@@ -289,7 +289,7 @@ chmod 775 ${OUTDIR}/analysis/fill_jobIds_monAux.sql
 rm -f ${OUTDIR}/analysis/template_fill_jobIds_monAux.sql
 
 cp templates/template_get_processed_job_info_from_stdout.sh ${OUTDIR}/analysis/
-cat ${OUTDIR}/analysis/template_get_processed_job_info_from_stdout.sh | sed "s/PROJECT/${PROJECT}/" | sed "s/VERSION/${VERSION}/" | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" > ${OUTDIR}/analysis/get_processed_job_info_from_stdout.sh
+cat ${OUTDIR}/analysis/template_get_processed_job_info_from_stdout.sh | sed "s/PROJECT/${PROJECT}/" | sed "s/VERSION/${VERSION}/" | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s:PROJHOME:${PROJHOME}:" > ${OUTDIR}/analysis/get_processed_job_info_from_stdout.sh
 chmod 775 ${OUTDIR}/analysis/get_processed_job_info_from_stdout.sh
 rm -f ${OUTDIR}/analysis/template_get_processed_job_info_from_stdout.sh
 
