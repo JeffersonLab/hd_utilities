@@ -4,13 +4,13 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin
 
 MAILTO=kmoriya@jlab.org
 
-HOME=/home/gxproj1
+HOME=/home/USERNAME
 
 # Run every 2 hours at HH:45
-*/15 * * * * /home/gxproj1/halld/monitoring/process/check_new_runs.csh
-15 */6 * * * /home/gxproj1/halld/monitoring/process/update_runinfo.csh
-45 */2 * * * /home/gxproj1/halld/jproj/projects/PROJECT/processing/check_monitoring_data.csh
+*/15 * * * * PROJHOME/PROJECT/processing/check_new_runs.csh
+15 */6 * * * PROJHOME/PROJECT/processing/update_runinfo.csh
+45 */2 * * * PROJHOME/PROJECT/processing/check_monitoring_data.csh
 
 # This is for processing new runs appearing on tape.
 # Run every hour: arguments are project name, max file number
-30 */1 * * * /home/gxproj1/halld/jproj/projects/PROJECT/newruns.sh 20
+30 */1 * * * PROJHOME/PROJECT/processing/newruns.sh 20

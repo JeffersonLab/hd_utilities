@@ -205,8 +205,8 @@ cp templates/script.sh                          ${OUTDIR}/
 cp templates/setup_jlab-${RUNPERIOD_HYPHEN}.csh ${OUTDIR}/
 
 # Sean's processing scripts
-cp templates/monitoring_env.csh              ${OUTDIR}/processing
 cp templates/datamon_db.py                   ${OUTDIR}/processing
+cp templates/check_new_runs.py               ${OUTDIR}/processing
 cp templates/histograms_to_monitor           ${OUTDIR}/processing
 cp templates/macros_to_monitor               ${OUTDIR}/processing
 cp templates/make_monitoring_plots.py        ${OUTDIR}/processing
@@ -255,6 +255,11 @@ chmod 775 ${OUTDIR}/newruns.sh
 rm -f ${OUTDIR}/template_newruns.sh
 
 # Sean's processing scripts
+cp templates/template_monitoring_env.csh ${OUTDIR}/processing
+cat ${OUTDIR}/processing/template_monitoring_env.csh | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s/PROJECT/${PROJECT}/" | sed "s:PROJHOME:${PROJHOME}:" > ${OUTDIR}/processing/monitoring_env.csh
+chmod 775 ${OUTDIR}/processing/monitoring_env.csh
+rm -f ${OUTDIR}/processing/template_monitoring_env.csh
+
 cp templates/template.jproj ${OUTDIR}/
 cat ${OUTDIR}/template.jproj | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" > ${OUTDIR}/${PROJECT}.jproj
 rm -f ${OUTDIR}/template.jproj
@@ -264,17 +269,17 @@ cat ${OUTDIR}/template.jsub | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/g" | sed "s/P
 rm -f ${OUTDIR}/template.jsub
 
 cp templates/template_check_monitoring_data.csh ${OUTDIR}/processing/
-cat ${OUTDIR}/processing/template_check_monitoring_data.csh | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s/PROJECT/${PROJECT}/" | sed "s/VERSION/${VERSION}/" > ${OUTDIR}/processing/check_monitoring_data.csh
+cat ${OUTDIR}/processing/template_check_monitoring_data.csh | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s:PROJHOME:${PROJHOME}:" | sed "s/PROJECT/${PROJECT}/" | sed "s/VERSION/${VERSION}/" > ${OUTDIR}/processing/check_monitoring_data.csh
 chmod 775 ${OUTDIR}/processing/check_monitoring_data.csh
 rm -f ${OUTDIR}/processing/template_check_monitoring_data.csh
 
 cp templates/template_version_file.txt ${OUTDIR}/processing/
-cat ${OUTDIR}/processing/template_version_file.txt | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s/PROJECT/${PROJECT}/" | sed "s/VERSION/${VERSION}/" | sed "s/YEAR/${YEAR}/" | sed "s/MONTH/${MONTH}/" | sed "s/DAY/${DAY}/" > ${OUTDIR}/processing/version_file.txt
+cat ${OUTDIR}/processing/template_version_file.txt | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s/RUN_PERIOD_HYPHEN/${RUNPERIOD}/" | sed "s/PROJECT/${PROJECT}/" | sed "s/VERSION/${VERSION}/" | sed "s/YEAR/${YEAR}/" | sed "s/MONTH/${MONTH}/" | sed "s/DAY/${DAY}/" > ${OUTDIR}/processing/version_file.txt
 chmod 775 ${OUTDIR}/processing/version_file.txt
 rm -f ${OUTDIR}/processing/template_version_file.txt
 
 cp templates/template_cron_processing.txt ${OUTDIR}/processing/
-cat ${OUTDIR}/processing/template_cron_processing.txt | sed "s/PROJECT/${PROJECT}/"  > ${OUTDIR}/processing/cron_processing.txt
+cat ${OUTDIR}/processing/template_cron_processing.txt | sed "s/PROJECT/${PROJECT}/" | sed "s:PROJHOME:${PROJHOME}:" | sed "s/USERNAME/${USERNAME}/"  > ${OUTDIR}/processing/cron_processing.txt
 rm -f ${OUTDIR}/processing/template_cron_processing.txt
 
 cp templates/template_process_run_conditions.py ${OUTDIR}/processing/
@@ -285,6 +290,11 @@ cp templates/template_process_new_offline_data.py     ${OUTDIR}/processing
 cat ${OUTDIR}/processing/template_process_new_offline_data.py | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/"  > ${OUTDIR}/processing/process_new_offline_data.py
 chmod 775 ${OUTDIR}/processing/process_new_offline_data.py
 rm -f ${OUTDIR}/processing/template_process_new_offline_data.py
+
+cp templates/template_check_new_runs.csh ${OUTDIR}/processing/
+cat ${OUTDIR}/processing/template_check_new_runs.csh | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s:PROJHOME:${PROJHOME}:" | sed "s/PROJECT/${PROJECT}/" > ${OUTDIR}/processing/check_new_runs.csh
+chmod 775 ${OUTDIR}/processing/check_new_runs.csh
+rm -f ${OUTDIR}/processing/template_check_new_runs.csh
 
 # launch analysis scripts
 cp templates/template_fill_jobIds_monAux.sql ${OUTDIR}/analysis/

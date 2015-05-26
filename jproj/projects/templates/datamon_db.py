@@ -6,6 +6,7 @@
 # Author: Sean Dobbs (s-dobbs@northwestern.edu), 2014
 
 import MySQLdb
+
 #import texttable
 class datamon_db:
     """Class for interaction with data monitoring DB"""
@@ -22,7 +23,7 @@ class datamon_db:
         self.db = self.db_conn.cursor()
 
         ## table information
-        self.table_names = [ "run_info", "version_info", "sc_hits", "cdc_hits", "cdc_hits", "fdc_hits", "bcal_hits", "bcal_energies", "fcal_hits", "tof_hits", "tagm_hits", "tagh_hits", "ps_hits", "cdc_calib", "fdc_calib", "fcal_calib", "bcal_calib", "tof_calib", "sc_calib", "tagh_calib", "tagm_calib", "analysis_data" ]
+        self.table_names = [ "run_info", "version_info", "sc_hits", "cdc_hits", "cdc_hits", "fdc_hits", "bcal_hits", "bcal_energies", "fcal_hits", "tof_hits", "tagm_hits", "tagh_hits", "ps_hits", "psc_hits", "cdc_calib", "fdc_calib", "fcal_calib", "bcal_calib", "tof_calib", "sc_calib", "tagh_calib", "tagm_calib", "analysis_data" ]
 
         ## table definitions
         self.analysis_data = [ ("num_pos_tracks","INTEGER"), ("num_neg_tracks","INTEGER"), ("num_proton_tracks","INTEGER"), 
@@ -44,6 +45,13 @@ class datamon_db:
                                 ('quad3_layer3_up', 'INTEGER'), ('quad3_layer3_down', 'INTEGER'), ('quad3_layer4_up', 'INTEGER'), ('quad3_layer4_down', 'INTEGER'), 
                                 ('quad4_layer1_up', 'INTEGER'), ('quad4_layer1_down', 'INTEGER'), ('quad4_layer2_up', 'INTEGER'), ('quad4_layer2_down', 'INTEGER'), 
                                 ('quad4_layer3_up', 'INTEGER'), ('quad4_layer3_down', 'INTEGER'), ('quad4_layer4_up', 'INTEGER'), ('quad4_layer4_down', 'INTEGER') ]
+
+
+    def print_mysql_error(self, e):
+        try:
+            print "MySQL Error [%d]: %s" % (e.args[0], e.args[1])
+        except IndexError:
+            print "MySQL Error: %s" % str(e)             
 
     def CloseDB(self):
         self.db_conn.commit()
@@ -92,17 +100,20 @@ class datamon_db:
 
         self.db.execute('CREATE TABLE tagm_hits (runid INTEGER, file_num INTEGER, version_id INTEGER, num_det_events INTEGER, ' + " ".join(["column"+str(x)+"_hits INTEGER," for x in range(1,12)]) + ' column12_hits INTEGER)')
         self.db.execute('CREATE TABLE tagh_hits (runid INTEGER, file_num INTEGER, version_id INTEGER, num_det_events INTEGER, ' + " ".join(["sector"+str(x)+"_hits INTEGER," for x in range(1,5)]) + ' sector5_hits INTEGER)')
-        self.db.execute('CREATE TABLE ps_hits (runid INTEGER, file_num INTEGER, version_id INTEGER, num_det_events INTEGER, ' + " ".join(["sector"+str(x)+"_hits INTEGER," for x in range(1,10)]) + ' sector10_hits INTEGER)')
+        self.db.execute('CREATE TABLE ps_hits (runid INTEGER, file_num INTEGER, version_id INTEGER, num_det_events INTEGER, ' + " ".join(["sector"+str(x)+"_hits INTEGER," for x in range(1,20)]) + ' sector20_hits INTEGER)')
+        self.db.execute('CREATE TABLE psc_hits (runid INTEGER, file_num INTEGER, version_id INTEGER, num_det_events INTEGER, ' + " ".join(["sector"+str(x)+"_hits INTEGER," for x in range(1,16)]) + ' sector16_hits INTEGER)')
         
         ## Calibration
         self.db.execute('CREATE TABLE cdc_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, CDC_resid_mean DOUBLE, CDC_resid_sigma DOUBLE )')
         self.db.execute('CREATE TABLE fdc_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, FDC_resid_mean DOUBLE, FDC_resid_sigma DOUBLE )')
         self.db.execute('CREATE TABLE fcal_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, FCAL_tresol_mean DOUBLE, FCAL_tresol_sigma DOUBLE )')
-        self.db.execute('CREATE TABLE bcal_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, BCAL_tresol_mean DOUBLE, BCAL_tresol_sigma DOUBLE )')
+        self.db.execute('CREATE TABLE bcal_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, BCAL_tresol_mean DOUBLE, BCAL_tresol_sigma DOUBLE, layer1_eff DOUBLE, layer2_eff DOUBLE, layer3_eff DOUBLE, layer4_eff DOUBLE, layer1_enhanced_eff DOUBLE, layer2_enhanced_eff DOUBLE, layer3_enhanced_eff DOUBLE, layer4_enhanced_eff DOUBLE )')
         self.db.execute('CREATE TABLE tof_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, TOF_tresol_mean DOUBLE, TOF_tresol_sigma DOUBLE )')
         self.db.execute('CREATE TABLE sc_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, SC_tresol_mean DOUBLE, SC_tresol_sigma DOUBLE )')
-        self.db.execute('CREATE TABLE tagh_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, TAGH_tresol_mean DOUBLE, TAGH_tresol_sigma DOUBLE )')
+        self.db.execute('CREATE TABLE tagh_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, TAGH_tresol_mean DOUBLE, TAGH_tresol_sigma DOUBLE, TAGH_frac_ADC_has_TDC_hit DOUBLE,  TAGH_frac_TDC_has_ADC_hit DOUBLE )')
         self.db.execute('CREATE TABLE tagm_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, TAGM_tresol_mean DOUBLE, TAGM_tresol_sigma DOUBLE )')
+        self.db.execute('CREATE TABLE ps_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, PS_tresol_mean DOUBLE, PS_tresol_sigma DOUBLE )')
+        self.db.execute('CREATE TABLE psc_calib (runid INTEGER, file_num INTEGER, version_id INTEGER, PSC_tresol_mean DOUBLE, PSC_tresol_sigma DOUBLE, PSC_leftfrac_ADC_has_TDC_hit DOUBLE,  PSC_leftfrac_TDC_has_ADC_hit DOUBLE, PSC_rightfrac_ADC_has_TDC_hit DOUBLE,  PSC_rightfrac_TDC_has_ADC_hit DOUBLE)')
 
         ## analysis data
         #db_cmd = 'CREATE TABLE analysis_data (runid INTEGER, file_num INTEGER, version_id INTEGER,'
@@ -164,8 +175,12 @@ class datamon_db:
         if(self.verbose):
             print db_cmd + '  <--  ' + str(values)
         #print "Insert cmd = " + str(db_cmd)
-        self.db.execute(db_cmd, values)
-        self.db_conn.commit()
+        try:
+            self.db.execute(db_cmd, values)
+            self.db_conn.commit()
+        except MySQLdb.Error, e:
+            # right now, just print out errors
+            self.print_mysql_error(e)
 
     def DumpTable(self, table_name, mode=""):
         if table_name not in self.table_names:
@@ -304,23 +319,31 @@ class datamon_db:
         self.InsertData('tagh_hits', [runid, file_num, version_id, num_events] + values)
     def AddTAGMHits(self, runid, file_num, version_id, num_events, values):
         self.InsertData('tagm_hits', [runid, file_num, version_id, num_events] + values)
+    def AddPSHits(self, runid, file_num, version_id, num_events, values):
+        self.InsertData('ps_hits', [runid, file_num, version_id, num_events] + values)
+    def AddPSCHits(self, runid, file_num, version_id, num_events, values):
+        self.InsertData('psc_hits', [runid, file_num, version_id, num_events] + values)
 
-    def AddCDCCalib(self, runid, file_num, version_id, num_events, values):
-        self.InsertData('cdc_calib', [runid, file_num, version_id, num_events] + values)
-    def AddFDCCalib(self, runid, file_num, version_id, num_events, values):
-        self.InsertData('fdc_calib', [runid, file_num, version_id, num_events] + values)
-    def AddFCALCalib(self, runid, file_num, version_id, num_events, values):
-        self.InsertData('fcal_calib', [runid, file_num, version_id, num_events] + values)
-    def AddBCALCalib(self, runid, file_num, version_id, num_events, values):
-        self.InsertData('bcal_calib', [runid, file_num, version_id, num_events] + values)
-    def AddTOFCalib(self, runid, file_num, version_id, num_events, values):
-        self.InsertData('tof_calib', [runid, file_num, version_id, num_events] + values)
-    def AddSCCalib(self, runid, file_num, version_id, num_events, values):
-        self.InsertData('st_calib', [runid, file_num, version_id, num_events] + values)
-    def AddTAGHCalib(self, runid, file_num, version_id, num_events, values):
-        self.InsertData('tagh_calib', [runid, file_num, version_id, num_events] + values)
-    def AddTAGMCalib(self, runid, file_num, version_id, num_events, values):
-        self.InsertData('tagm_calib', [runid, file_num, version_id, num_events] + values)
+    def AddCDCCalib(self, runid, file_num, version_id,  values):
+        self.InsertData('cdc_calib', [runid, file_num, version_id] + values)
+    def AddFDCCalib(self, runid, file_num, version_id,  values):
+        self.InsertData('fdc_calib', [runid, file_num, version_id] + values)
+    def AddFCALCalib(self, runid, file_num, version_id,  values):
+        self.InsertData('fcal_calib', [runid, file_num, version_id] + values)
+    def AddBCALCalib(self, runid, file_num, version_id,  values):
+        self.InsertData('bcal_calib', [runid, file_num, version_id] + values)
+    def AddTOFCalib(self, runid, file_num, version_id,  values):
+        self.InsertData('tof_calib', [runid, file_num, version_id] + values)
+    def AddSCCalib(self, runid, file_num, version_id,  values):
+        self.InsertData('st_calib', [runid, file_num, version_id] + values)
+    def AddTAGHCalib(self, runid, file_num, version_id,  values):
+        self.InsertData('tagh_calib', [runid, file_num, version_id] + values)
+    def AddTAGMCalib(self, runid, file_num, version_id,  values):
+        self.InsertData('tagm_calib', [runid, file_num, version_id] + values)
+    def AddPSCalib(self, runid, file_num, version_id,  values):
+        self.InsertData('ps_calib', [runid, file_num, version_id] + values)
+    def AddPSCCalib(self, runid, file_num, version_id,  values):
+        self.InsertData('psc_calib', [runid, file_num, version_id] + values)
 
     def AddAnalysisInfo(self, runid, file_num, version_id, num_events, values):
         self.InsertData('analysis_data', [runid, file_num, version_id, num_events] + values)

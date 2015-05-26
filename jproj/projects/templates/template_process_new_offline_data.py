@@ -18,6 +18,8 @@ from os import listdir
 from os.path import isfile, join
 from optparse import OptionParser
 
+from ROOT import gROOT
+
 # monitoring libraries
 from datamon_db import datamon_db
 import make_monitoring_plots
@@ -154,7 +156,15 @@ if os.path.exists(OUTPUT_DIRECTORY) and not os.path.isdir(OUTPUT_DIRECTORY):
 if not os.path.exists(OUTPUT_DIRECTORY):
     print "Creating directory " + OUTPUT_DIRECTORY + " ... "
     os.system("mkdir -m"+NEWDIR_MODE+" -p " + OUTPUT_DIRECTORY)  ## need error checks
-    
+
+# see if there are libraries to load
+LIBDIR = os.getenv("MONITORING_LIBDIR", join(os.getcwd(),"lib"))    
+lib_macros = [ join(LIBDIR,f) for f in listdir(LIBDIR) if f[-2:]=='.C' ]
+for macro in lib_macros:
+    try:
+        gROOT.ProcessLine(".L "+macro)
+    except: 
+        print "Error processing "+macro
 
 # allow for incremental processing ...
 #run_list = []
