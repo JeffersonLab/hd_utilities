@@ -552,6 +552,7 @@ int analyze(Int_t TOTALTIME = 80, Bool_t debug = false){
   gcput_timePlugin->GetYaxis()->SetTitle("cpu time (hrs)");
 
   gcput_timePlugin->GetXaxis()->SetLimits(0,5);
+  gcput_timePlugin->SetMinimum(0);
   gcput_timePlugin->SetMaximum(30);
   gcput_timePlugin->Draw("AP");
 
