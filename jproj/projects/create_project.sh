@@ -98,8 +98,13 @@ if ( -e $OUTDIR ) then
   exit
 endif
 mkdir -p $OUTDIR
-mkdir -p $OUTDIR/processing
 mkdir -p $OUTDIR/analysis
+# Instead of creating directory "processing", check out
+# https://halldsvn.jlab.org/repos/trunk/scripts/monitoring/process
+cd $OUTDIR
+echo "checking out https://halldsvn.jlab.org/repos/trunk/scripts/monitoring/process...................."
+svn co https://halldsvn.jlab.org/repos/trunk/scripts/monitoring/process
+cd -
 
 # Create xml files
 set XMLFILE = "/group/halld/data_monitoring/run_conditions/soft_comm_${RUNPERIOD}_ver${VERSION}.xml"
@@ -204,16 +209,17 @@ cat $JANAFILE
 cp templates/script.sh                          ${OUTDIR}/
 cp templates/setup_jlab-${RUNPERIOD_HYPHEN}.csh ${OUTDIR}/
 
-# Sean's processing scripts
-cp templates/datamon_db.py                   ${OUTDIR}/processing
-cp templates/check_new_runs.py               ${OUTDIR}/processing
-cp templates/histograms_to_monitor           ${OUTDIR}/processing
-cp templates/macros_to_monitor               ${OUTDIR}/processing
-cp templates/make_monitoring_plots.py        ${OUTDIR}/processing
-cp templates/process_monitoring_data.py      ${OUTDIR}/processing
-cp templates/run_processing.sh               ${OUTDIR}/processing
-cp templates/register_new_version.py         ${OUTDIR}/processing
-# launch analysis scripts
+### Sean's processing scripts
+# cp templates/datamon_db.py                   ${OUTDIR}/process
+# cp templates/check_new_runs.py               ${OUTDIR}/process
+# cp templates/histograms_to_monitor           ${OUTDIR}/process
+# cp templates/macros_to_monitor               ${OUTDIR}/process
+# cp templates/make_monitoring_plots.py        ${OUTDIR}/process
+# cp templates/process_monitoring_data.py      ${OUTDIR}/process
+cp templates/run_process.sh                    ${OUTDIR}/process
+# cp templates/register_new_version.py         ${OUTDIR}/process
+
+### launch analysis scripts
 cp templates/Makefile                        ${OUTDIR}/analysis
 cp templates/format_jobs_data.cc             ${OUTDIR}/analysis
 cp templates/analyze.C                       ${OUTDIR}/analysis
@@ -254,11 +260,10 @@ cat ${OUTDIR}/template_newruns.sh | sed "s/PROJECT/${PROJECT}/g" > ${OUTDIR}/new
 chmod 775 ${OUTDIR}/newruns.sh
 rm -f ${OUTDIR}/template_newruns.sh
 
-# Sean's processing scripts
-cp templates/template_monitoring_env.csh ${OUTDIR}/processing
-cat ${OUTDIR}/processing/template_monitoring_env.csh | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s/PROJECT/${PROJECT}/" | sed "s:PROJHOME:${PROJHOME}:" > ${OUTDIR}/processing/monitoring_env.csh
-chmod 775 ${OUTDIR}/processing/monitoring_env.csh
-rm -f ${OUTDIR}/processing/template_monitoring_env.csh
+# Sean's process scripts
+cat ${OUTDIR}/process/template_monitoring_env.csh | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s/PROJECT/${PROJECT}/" | sed "s:PROJHOME:${PROJHOME}:" > ${OUTDIR}/process/monitoring_env.csh
+chmod 775 ${OUTDIR}/process/monitoring_env.csh
+rm -f ${OUTDIR}/process/template_monitoring_env.csh
 
 cp templates/template.jproj ${OUTDIR}/
 cat ${OUTDIR}/template.jproj | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" > ${OUTDIR}/${PROJECT}.jproj
@@ -268,33 +273,30 @@ cp templates/template.jsub ${OUTDIR}/
 cat ${OUTDIR}/template.jsub | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/g" | sed "s/PROJECT/${PROJECT}/" | sed "s/VERSION/${VERSION}/" | sed "s/USERNAME/${USER}/" | sed "s:PROJHOME:${PROJHOME}:" > ${OUTDIR}/${PROJECT}.jsub
 rm -f ${OUTDIR}/template.jsub
 
-cp templates/template_check_monitoring_data.csh ${OUTDIR}/processing/
-cat ${OUTDIR}/processing/template_check_monitoring_data.csh | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s:PROJHOME:${PROJHOME}:" | sed "s/PROJECT/${PROJECT}/" | sed "s/VERSION/${VERSION}/" > ${OUTDIR}/processing/check_monitoring_data.csh
-chmod 775 ${OUTDIR}/processing/check_monitoring_data.csh
-rm -f ${OUTDIR}/processing/template_check_monitoring_data.csh
+cat ${OUTDIR}/process/template_check_monitoring_data.csh | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s:PROJHOME:${PROJHOME}:" | sed "s/PROJECT/${PROJECT}/" | sed "s/VERSION/${VERSION}/" > ${OUTDIR}/process/check_monitoring_data.csh
+chmod 775 ${OUTDIR}/process/check_monitoring_data.csh
+rm -f ${OUTDIR}/process/template_check_monitoring_data.csh
 
-cp templates/template_version_file.txt ${OUTDIR}/processing/
-cat ${OUTDIR}/processing/template_version_file.txt | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s/RUN_PERIOD_HYPHEN/${RUNPERIOD}/" | sed "s/PROJECT/${PROJECT}/" | sed "s/VERSION/${VERSION}/" | sed "s/YEAR/${YEAR}/" | sed "s/MONTH/${MONTH}/" | sed "s/DAY/${DAY}/" > ${OUTDIR}/processing/version_file.txt
-chmod 775 ${OUTDIR}/processing/version_file.txt
-rm -f ${OUTDIR}/processing/template_version_file.txt
+cat ${OUTDIR}/process/template_version_file.txt | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s/RUN_PERIOD_HYPHEN/${RUNPERIOD}/" | sed "s/PROJECT/${PROJECT}/" | sed "s/VERSION/${VERSION}/" | sed "s/YEAR/${YEAR}/" | sed "s/MONTH/${MONTH}/" | sed "s/DAY/${DAY}/" > ${OUTDIR}/process/version_file.txt
+chmod 775 ${OUTDIR}/process/version_file.txt
+rm -f ${OUTDIR}/process/template_version_file.txt
 
-cp templates/template_cron_processing.txt ${OUTDIR}/processing/
-cat ${OUTDIR}/processing/template_cron_processing.txt | sed "s/PROJECT/${PROJECT}/" | sed "s:PROJHOME:${PROJHOME}:" | sed "s/USERNAME/${USERNAME}/"  > ${OUTDIR}/processing/cron_processing.txt
-rm -f ${OUTDIR}/processing/template_cron_processing.txt
+cat ${OUTDIR}/process/template_cron_process.txt | sed "s/PROJECT/${PROJECT}/" | sed "s:PROJHOME:${PROJHOME}:" | sed "s/USERNAME/${USERNAME}/"  > ${OUTDIR}/process/cron_process.txt
+rm -f ${OUTDIR}/process/template_cron_process.txt
 
-cp templates/template_process_run_conditions.py ${OUTDIR}/processing/
-cat ${OUTDIR}/processing/template_process_run_conditions.py | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/"  > ${OUTDIR}/processing/process_run_conditions.py
-rm -f ${OUTDIR}/processing/template_process_run_conditions.py
+# cp templates/template_process_run_conditions.py ${OUTDIR}/process/
+# cat ${OUTDIR}/process/template_process_run_conditions.py | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/"  > ${OUTDIR}/process/process_run_conditions.py
+# rm -f ${OUTDIR}/process/template_process_run_conditions.py
 
-cp templates/template_process_new_offline_data.py     ${OUTDIR}/processing
-cat ${OUTDIR}/processing/template_process_new_offline_data.py | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/"  > ${OUTDIR}/processing/process_new_offline_data.py
-chmod 775 ${OUTDIR}/processing/process_new_offline_data.py
-rm -f ${OUTDIR}/processing/template_process_new_offline_data.py
+# cp templates/template_process_new_offline_data.py     ${OUTDIR}/process
+# cat ${OUTDIR}/process/template_process_new_offline_data.py | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/"  > ${OUTDIR}/process/process_new_offline_data.py
+# chmod 775 ${OUTDIR}/process/process_new_offline_data.py
+# rm -f ${OUTDIR}/process/template_process_new_offline_data.py
 
-cp templates/template_check_new_runs.csh ${OUTDIR}/processing/
-cat ${OUTDIR}/processing/template_check_new_runs.csh | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s:PROJHOME:${PROJHOME}:" | sed "s/PROJECT/${PROJECT}/" > ${OUTDIR}/processing/check_new_runs.csh
-chmod 775 ${OUTDIR}/processing/check_new_runs.csh
-rm -f ${OUTDIR}/processing/template_check_new_runs.csh
+# cp templates/template_check_new_runs.csh ${OUTDIR}/process/
+# cat ${OUTDIR}/process/template_check_new_runs.csh | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s:PROJHOME:${PROJHOME}:" | sed "s/PROJECT/${PROJECT}/" > ${OUTDIR}/process/check_new_runs.csh
+# chmod 775 ${OUTDIR}/process/check_new_runs.csh
+# rm -f ${OUTDIR}/process/template_check_new_runs.csh
 
 # launch analysis scripts
 cp templates/template_fill_jobIds_monAux.sql ${OUTDIR}/analysis/
