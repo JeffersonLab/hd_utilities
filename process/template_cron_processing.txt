@@ -1,0 +1,16 @@
+SHELL=/bin/tcsh
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+
+MAILTO=s-dobbs@northwestern.edu
+
+HOME=/home/USERNAME
+
+# Run every 2 hours at HH:45
+*/15 * * * * PROJHOME/PROJECT/processing/check_new_runs.csh
+15 */6 * * * PROJHOME/PROJECT/processing/update_runinfo.csh
+45 */2 * * * PROJHOME/PROJECT/processing/check_monitoring_data.csh
+
+# This is for processing new runs appearing on tape.
+# Run every hour: arguments are project name, max file number
+30 */1 * * * PROJHOME/PROJECT/processing/newruns.sh 20
