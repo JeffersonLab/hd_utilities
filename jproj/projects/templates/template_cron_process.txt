@@ -2,7 +2,7 @@ SHELL=/bin/tcsh
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
 
-MAILTO=kmoriya@jlab.org
+MAILTO=s-dobbs@northwestern.edu
 
 HOME=/home/USERNAME
 

@@ -10,4 +10,4 @@ source ./monitoring_env.csh
 
 # If we want to run the processing as a cron job,
 # use this
-# crontab cron_processing.txt
+# crontab cron_process.txt
