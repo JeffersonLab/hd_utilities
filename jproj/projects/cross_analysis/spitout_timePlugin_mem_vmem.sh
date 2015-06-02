@@ -1,12 +1,13 @@
 #!/bin/tcsh
 
-set NVERS = $1
-set VER_INIT = $2
+set VER_INIT = $1
+set VER_LAST = $2
+set NVERS = `expr ${VER_LAST} - ${VER_INIT} + 1`
 
 if ( $NVERS == "" || ${VER_INIT} == "" ) then
   echo "--------------------------------------------------------------------------------"
   echo "Usage:"
-  echo "spitout_timePlugin_mem_vmem.sh [# of versions] [ver # of first launch]"
+  echo "spitout_timePlugin_mem_vmem.sh [ver # of first launch] [ver # of last launch] "
   echo "--------------------------------------------------------------------------------"
   echo ""
   echo "This script will create a txt file timePlugin_mem_vmem.txt"
@@ -16,15 +17,19 @@ if ( $NVERS == "" || ${VER_INIT} == "" ) then
   exit
 endif
 
-set VER_FINAL = `expr ${VER_INIT} + ${NVERS} - 1`
-
 set TIMEPLUGIN_STRING = ""
 set MEM_STRING = ""
 set VMEM_STRING = ""
 set NEVENTS_STRING = ""
 
-foreach VER ( `seq ${VER_INIT} ${VER_FINAL}` )
+foreach VER ( `seq ${VER_INIT} ${VER_LAST}` )
   set FORMATTED_VER = `printf %02d $VER`
+
+  # SKIPPED LAUNCHES
+  if ( ${FORMATTED_VER} == 14) then
+    echo "skipping VER${VER}"
+    continue
+  endif
 
   if ( ${VER} == ${VER_INIT} ) then
     set TIMEPLUGIN_STRING = "timePlugin_ver${FORMATTED_VER}"

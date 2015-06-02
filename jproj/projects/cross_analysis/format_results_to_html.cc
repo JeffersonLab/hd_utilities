@@ -17,31 +17,39 @@
 #include "unistd.h" // to use optarg
 #include <assert.h>
 #include <stdlib.h>
+#include <algorithm>    // std::find
 
 using namespace std;
 
 int main(int argc, char **argv){
 
-  int  NVERS   = 5;
-  int  VER_INIT = 9;
+  int  VER_LAST = 15;
+  int  VER_INIT =  9;
   bool debug   = false;
+  std::vector<int> SKIPPED_LAUNCHES;
+  SKIPPED_LAUNCHES.push_back(14);
+  cout << "Skipped launches: " << endl;
+  for(int i=0;i<SKIPPED_LAUNCHES.size();i++){
+    cout << "   ver" << setw(2) << setfill('0') << SKIPPED_LAUNCHES[i] << endl;
+  }
+  cout << "-----------------------------" << endl;
 
   extern char* optarg;
   // Check command line arguments
   int c;
-  while((c = getopt(argc,argv,"hN:V:d")) != -1){
+  while((c = getopt(argc,argv,"hF:V:d")) != -1){
     switch(c){
     case 'h':
       cout << "format_results_to_html: " << endl;
       cout << "Options:" << endl;
       cout << "\t-h    This message" << endl;
-      cout << "\t-N    Set number of launch versions to process" << endl;
+      cout << "\t-F    Set final  launch version to process" << endl;
       cout << "\t-V    Version number of first launch to analyze" << endl;
       cout << "\t-d    Print debug messages" << endl;
       exit(-1);
       break;
-    case 'N':
-      NVERS = atoi(optarg);
+    case 'F':
+      VER_LAST = atoi(optarg);
       break;
     case 'V':
       VER_INIT = atoi(optarg);
@@ -53,6 +61,24 @@ int main(int argc, char **argv){
       break;
     }
   }
+
+  // Get the launch ver numbers
+  std::vector<int> LAUNCHVERS;
+  for(int i=VER_INIT;i<=VER_LAST;i++){
+    std::vector<int>::iterator it;
+    it = find (SKIPPED_LAUNCHES.begin(), SKIPPED_LAUNCHES.end(), i);
+    if (it != SKIPPED_LAUNCHES.end()){
+      cout << "skipping launch ver" << setw(2) << setfill('0') << i << endl;
+    }else{
+      LAUNCHVERS.push_back(i);
+    }
+  }
+
+  cout << "TOTAL OF " << LAUNCHVERS.size() << " LAUNCHES" << endl;
+  for(int i=0;i<LAUNCHVERS.size();i++){
+    cout << "  " << setw(2) << setfill('0') << i+1 << " : " <<  setw(2) << setfill('0') << LAUNCHVERS[i] << endl;
+  }
+  int NVERS = LAUNCHVERS.size();
 
   ifstream IN("results.txt");
 
@@ -164,7 +190,7 @@ int main(int argc, char **argv){
 	    // total
 	    value = ntotal[i]==0 ? 0 : 100. * ntotal[i] / ntotal[i];
 	    OUT << "      <td style=\" padding:15px; height:50px; width:150px; border:1px solid black;\">VER"
-		<< setw(2) << setfill('0') << i + VER_INIT << "</td>"
+		<< setw(2) << setfill('0') << LAUNCHVERS[i] << "</td>"
 		<< "      <td style=\" padding:15px; height:50px; width:150px; border:1px solid black;\">"
 		<< setw(3) << setfill(' ') << ntotal[i] << " ("
 		<< std::fixed << std::setprecision(2) << setw(5) << value << ")</td>" << endl;
@@ -200,8 +226,8 @@ int main(int argc, char **argv){
 		<< std::fixed << std::setprecision(2) << setw(5) << value << ")</td>" << endl;
 
 	    // Get requested memory from jsub file for each launch
-	    if(i + VER_INIT >= 11){
-	      sprintf(command,"grep 'Memory space' /home/gxproj1/halld/jproj/projects/offline_monitoring_RunPeriod2014_10_ver%2.2d_hd_rawdata/offline_monitoring_RunPeriod2014_10_ver%2.2d_hd_rawdata.jsub | sed 's/.*space=\"//' | sed 's/\".*//' > ___tmp.txt",i + VER_INIT,i + VER_INIT);
+	    if(LAUNCHVERS[i] >= 11){
+	      sprintf(command,"grep 'Memory space' /home/gxproj1/halld/jproj/projects/offline_monitoring_RunPeriod2014_10_ver%2.2d_hd_rawdata/offline_monitoring_RunPeriod2014_10_ver%2.2d_hd_rawdata.jsub | sed 's/.*space=\"//' | sed 's/\".*//' > ___tmp.txt",LAUNCHVERS[i],LAUNCHVERS[i]);
 	      system(command);
 	      ifstream in("___tmp.txt");
 	      in >> value;
@@ -255,7 +281,7 @@ int main(int argc, char **argv){
 	OUT << "      <th style=\"border: 1px solid black; height:15px; width:100px;\">file</th>";
 	for(int i=0;i<NVERS;i++){
 	OUT << " <th style=\"border: 1px solid black; height:15px; width:100px;\">VER"
-	    << setw(2) << setfill('0') << VER_INIT + i << "</th>";
+	    << setw(2) << setfill('0') << LAUNCHVERS[i] << "</th>";
 	}
 	OUT << "</tr>" << endl;
 
@@ -351,7 +377,7 @@ int main(int argc, char **argv){
     // total
     value = ntotal[i]==0 ? 0 : 100. * ntotal[i] / ntotal[i];
     OUT << "      <td style=\" padding:15px; height:50px; width:150px; border:1px solid black;\">VER"
-	<< setw(2) << setfill('0') << i + VER_INIT << "</td>"
+	<< setw(2) << setfill('0') << LAUNCHVERS[i] << "</td>"
 	<< "      <td style=\" padding:15px; height:50px; width:150px; border:1px solid black;\">"
 	<< setw(3) << setfill(' ') << ntotal[i] << " ("
 	<< std::fixed << std::setprecision(2) << setw(5) << value << ")</td>" << endl;
@@ -387,8 +413,8 @@ int main(int argc, char **argv){
 	<< std::fixed << std::setprecision(2) << setw(5) << value << ")</td>" << endl;
 
     // Get requested memory from jsub file for each launch
-    if(i + VER_INIT >= 11){
-      sprintf(command,"grep 'Memory space' /home/gxproj1/halld/jproj/projects/offline_monitoring_RunPeriod2014_10_ver%2.2d_hd_rawdata/offline_monitoring_RunPeriod2014_10_ver%2.2d_hd_rawdata.jsub | sed 's/.*space=\"//' | sed 's/\".*//' > ___tmp.txt",i + VER_INIT,i + VER_INIT);
+    if(LAUNCHVERS[i] >= 11){
+      sprintf(command,"grep 'Memory space' /home/gxproj1/halld/jproj/projects/offline_monitoring_RunPeriod2014_10_ver%2.2d_hd_rawdata/offline_monitoring_RunPeriod2014_10_ver%2.2d_hd_rawdata.jsub | sed 's/.*space=\"//' | sed 's/\".*//' > ___tmp.txt",LAUNCHVERS[i],LAUNCHVERS[i]);
       system(command);
       ifstream in("___tmp.txt");
       in >> value;
@@ -411,7 +437,7 @@ int main(int argc, char **argv){
 
   for(int i=0;i<NVERS;i++){
     cout << "------------------------------------------------------" << endl;
-    cout << "ver "      << setw(2) << setfill('0') << VER_INIT + i << endl;
+    cout << "ver "      << setw(2) << setfill('0') << LAUNCHVERS[i] << endl;
     cout << "total of " << ntotalAll[i]                       <<  endl;
     cout << "total of " << nsuccessAll[i]    << " success"    << endl;
     cout << "total of " << nover_limitAll[i] << " over_limit" << endl;
@@ -443,7 +469,7 @@ int main(int argc, char **argv){
   for(int i=0;i<NVERS;i++){
     value = ntotalAll[i]==0 ? 0 : 100. * ntotalAll[i] / ntotalAll[i];
     OUT_ALLSTATS << "      <td style=\" padding:15px; height:50px; width:150px; border:1px solid black;\">VER"
-	<< setw(2) << setfill('0') << i + VER_INIT << "</td>"
+	<< setw(2) << setfill('0') << LAUNCHVERS[i] << "</td>"
 	<< "      <td style=\" padding:15px; height:50px; width:150px; border:1px solid black;\">"
 	<< setw(3) << setfill(' ') << ntotalAll[i] << " ("
 	<< std::fixed << std::setprecision(2) << setw(5) << value << ")</td>" << endl;
