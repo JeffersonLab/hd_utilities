@@ -4,8 +4,8 @@
 	<Variable name="formatted_run" value="{run_number}"/>
 	<Variable name="formatted_file" value="{file_number}"/>
 	<Variable name="output_dir_base" value="/volatile/halld/offline_monitoring/RunPeriod-RUNPERIOD/verVERSION"/>
-	<Variable name="plugins" value="TAGH_online,TAGM_online,BCAL_online,CDC_online,CDC_expert,FCAL_online,FDC_online,ST_online,TOF_online,PS_online,PSC_online,PSPair_online,TPOL_online,TOF_TDC_shift,monitoring_hists,danarest,track_skimmer,BCAL_Eff,p2pi_hists,p3pi_hists,HLDetectorTiming,BCAL_inv_mass,trackeff_missing,TRIG_online,CDC_drift,RF_online"/>
-        <!-- ,TOF_TDC_shift,trackeff_missing -->
+	<Variable name="plugins" value="TAGH_online,TAGM_online,BCAL_online,CDC_online,CDC_expert,FCAL_online,FDC_online,ST_ONLINE_LOWLEVEL_Monitoring,ST_ONLINE_TRACKING_Monitoring,TOF_online,PS_online,PSC_online,PSPair_online,TPOL_online,TOF_TDC_shift,monitoring_hists,danarest,BCAL_Eff,p2pi_hists,p3pi_hists,HLDetectorTiming,BCAL_inv_mass,trackeff_missing,TRIG_online,CDC_drift,RF_online"/>
+        <!-- ,TOF_TDC_shift,trackeff_missing,track_skimmer,ST_online-->
 	<Variable name="env" value="setup_jlab-RUNPERIOD.csh"/>
 	<Variable name="nthreads" value="6"/>
 	<Variable name="additional_option" value=""/>
