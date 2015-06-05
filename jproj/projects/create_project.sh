@@ -261,6 +261,7 @@ chmod 775 ${OUTDIR}/newruns.sh
 rm -f ${OUTDIR}/template_newruns.sh
 
 # Sean's process scripts
+rm -f ${OUTDIR}/process/monitoring_env.csh
 cat ${OUTDIR}/process/template_monitoring_env.csh | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s/PROJECT/${PROJECT}/" | sed "s:PROJHOME:${PROJHOME}:" > ${OUTDIR}/process/monitoring_env.csh
 chmod 775 ${OUTDIR}/process/monitoring_env.csh
 rm -f ${OUTDIR}/process/template_monitoring_env.csh
@@ -273,6 +274,7 @@ cp templates/template.jsub ${OUTDIR}/
 cat ${OUTDIR}/template.jsub | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/g" | sed "s/PROJECT/${PROJECT}/" | sed "s/VERSION/${VERSION}/" | sed "s/USERNAME/${USER}/" | sed "s:PROJHOME:${PROJHOME}:" > ${OUTDIR}/${PROJECT}.jsub
 rm -f ${OUTDIR}/template.jsub
 
+rm -f ${OUTDIR}/process/check_monitoring_data.csh
 cat ${OUTDIR}/process/template_check_monitoring_data.csh | sed "s/RUNPERIOD/${RUNPERIOD_HYPHEN}/" | sed "s:PROJHOME:${PROJHOME}:" | sed "s/PROJECT/${PROJECT}/" | sed "s/VERSION/${VERSION}/" > ${OUTDIR}/process/check_monitoring_data.csh
 chmod 775 ${OUTDIR}/process/check_monitoring_data.csh
 rm -f ${OUTDIR}/process/template_check_monitoring_data.csh
