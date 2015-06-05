@@ -15,20 +15,26 @@
 
 using namespace std;
 
-int main(int argc, char **argv){
+void getUtime(std::string input, Long64_t &utime, Long64_t default_value);
+void getMemory(std::string input, Int_t &mem_int, Int_t default_value);
+void getNumber(std::string input, Int_t &num, Int_t default_value);
 
-  Bool_t debug = false;
+Bool_t debug = false;
+
+int main(int argc, char **argv){
 
   char filename[200];
 
-  sprintf(filename,"jobs_data.txt");
+  sprintf(filename,"new_jobs_data.txt");
   ifstream IN(filename);
 
   // Count how many jobs were processed
-  system("wc -l jobs_data.txt > ___tmp_wc.txt");
+  system("wc -l new_jobs_data.txt > ___tmp_wc.txt");
   ifstream IN_wc("___tmp_wc.txt");
   Int_t NTOTAL;
   IN_wc >> NTOTAL;
+  // There are 24 lines per entry
+  NTOTAL /= 24;
   system("rm -f ___tmp_wc.txt");
   cout << "total of " << NTOTAL << " files to process..." << endl;
 
@@ -36,223 +42,267 @@ int main(int argc, char **argv){
   ofstream OUT(filename);
   Int_t nlines = 0;
 
+  // Read variables that can be assigned as "NULL"
+  // as strings, convert to ints if not NULL.
   Int_t id, run, file, jobId;
-  std::string timeChangeDay, timeChangeTime;
+  std::string timeChange;
   std::string hostname, status, exitCode, result;
-  std::string timeSubmittedDay,  timeSubmittedTime;  Long64_t utimeSubmitted;
-  std::string timeDependencyDay, timeDependencyTime; Long64_t utimeDependency;
-  std::string timePendingDay,    timePendingTime;    Long64_t utimePending;
-  std::string timeStagingInDay,  timeStagingInTime;  Long64_t utimeStagingIn;
-  std::string timeActiveDay,     timeActiveTime;     Long64_t utimeActive;
-  std::string timeStagingOutDay, timeStagingOutTime; Long64_t utimeStagingOut;
-  std::string timeCompleteDay,   timeCompleteTime;   Long64_t utimeComplete;
-  std::string walltime, cput, mem, vmem, error;      Int_t errorCode;
-  Int_t nevents, timeCopy, timePlugin;
+  std::string timeSubmitted;  Long64_t utimeSubmitted;
+  std::string timeDependency; Long64_t utimeDependency;
+  std::string timePending;    Long64_t utimePending;
+  std::string timeStagingIn;  Long64_t utimeStagingIn;
+  std::string timeActive;     Long64_t utimeActive;
+  std::string timeStagingOut; Long64_t utimeStagingOut;
+  std::string timeComplete;   Long64_t utimeComplete;
+  std::string walltime, cput, mem, vmem, error;
+  std::string neventsString, timeCopyString, timePluginString;
 
+  // convert read values into ints
   Int_t mem_int, vmem_int;
-  char command[400];
+  Int_t nevents, timeCopy, timePlugin;
+  Int_t errorCode;
 
   Int_t nTotal = 0;
-  Int_t nTimedOut = 0;
-  Int_t nExceededResourceLimit = 0;
+  Int_t nSuccess = 0;
+  Int_t nTimeOut = 0;
+  Int_t nOverRlimit = 0;
+  Int_t nInputFail = 0;
+  Int_t nNoJobStatus = 0;
+  Int_t nFailUnknown = 0;
 
   sprintf(filename,"results.root");
   TFile *outfile = new TFile(filename,"recreate");
   TH1F *hmem = new TH1F("hmem",";mem used (MB);",1000,0, 3. * 1000.);
   TH1F *hvmem = new TH1F("hvmem",";vmem used (MB);",1000,0, 5. * 1000.);
 
-  ofstream OUT_timedout("timedout.txt");
-  ofstream OUT_exceededResourceLimit("exceededResourceLimit.txt");
+  ofstream OUT_Success("success.txt");
+  ofstream OUT_TimeOut("timeout.txt");
+  ofstream OUT_OverRlimit("overrlimit.txt");
+  ofstream OUT_InputFail("inputfail.txt");
+  ofstream OUT_NoJobStatus("nojobstatus.txt");
+  ofstream OUT_FailUnknown("failunknown.txt");
 
   while(IN >> id >> run >> file >> jobId
-	>> timeChangeDay >> timeChangeTime
-	>> hostname >> status >> exitCode >> result){
+	>> timeChange
+	>> hostname >> status >> exitCode >> result
+	>> timeSubmitted >> timeDependency >> timePending
+	>> timeStagingIn >> timeActive     >> timeStagingOut
+	>> timeComplete
+	>> walltime >> cput
+	>> mem >> vmem >> error
+	>> neventsString >>  timeCopyString >> timePluginString){
     
-    if(debug) cout << "hostname = " << hostname << " status = " << status << " exitCode = " << exitCode << " result = " << result << endl;
+    if(debug && result != "SUCCESS"){
+      cout << "-----------------------------------------------------------------------------------" << endl;
+      cout << "id = " << id << " run = " << run << " file = " << file << " jobId = " << jobId << endl
+	   << " timeChange = " << timeChange << endl
+	   << " hostname = " << hostname << " status = " << status << " exitCode = " << exitCode << " result = " << result << endl
+	   << " timeSubmitted = " << timeSubmitted << endl
+	   << " timeDependency = " << timeDependency << endl
+	   << " timePending = " << timePending << endl
+	   << " timeStagingIn = " << timeStagingIn << endl
+	   << " timeActive = " << timeActive << endl
+	   << " timeStagingOut = " << timeStagingOut << endl
+	   << " timeComplete = " << timeComplete << endl
+	   << " walltime = " << walltime << " cput = " << cput << " mem = " << mem << " vmem = " << vmem << endl
+	   << " error = " << error << endl
+	   << " nevents = " << nevents << " timeCopy = " << timeCopy << " timePlugin = " << timePlugin << endl;
+    }
 
+    if(result == "TIMEOUT"){
+      nTimeOut++;
+      OUT_TimeOut << setw(6) << setfill('0') << run << "   " << setw(3) << setfill('0') << file << endl;
+    }
+    else if(result == "OVER_RLIMIT"){
+      nOverRlimit++;
+      OUT_OverRlimit << setw(6) << setfill('0') << run << "   " << setw(3) << setfill('0') << file << endl;
+    }
+    else if(result == "FAILED" && error == "fail_to_get_input_file"){
+      nInputFail++;
+      OUT_InputFail << setw(6) << setfill('0') << run << "   " << setw(3) << setfill('0') << file << endl;
+    }
+    else if(result == "FAILED" && error == "No_job_status_in_batch_system_and_we_never_recorded_a_finish."){
+      nNoJobStatus++;
+      OUT_NoJobStatus << setw(6) << setfill('0') << run << "   " << setw(3) << setfill('0') << file << endl;
+    }
+    else if(result == "FAILED" && error == "Job_failed_with_unknown_reason"){
+      nFailUnknown++;
+      OUT_FailUnknown << setw(6) << setfill('0') << run << "   " << setw(3) << setfill('0') << file << endl;
+    }
+    else if(result == "SUCCESS"){
+      nSuccess++;
+      OUT_Success << setw(6) << setfill('0') << run << "   " << setw(3) << setfill('0') << file << endl;
+    }
+    else{
+      cout << "job did not fit into any of known categories" << endl;
+      cout << "-----------------------------------------------------------------------------------" << endl;
+      cout << "id = " << id << " run = " << run << " file = " << file << " jobId = " << jobId << endl
+	   << " timeChange = " << timeChange << endl
+	   << " hostname = " << hostname << " status = " << status << " exitCode = " << exitCode << " result = " << result << endl
+	   << " timeSubmitted = " << timeSubmitted << endl
+	   << " timeDependency = " << timeDependency << endl
+	   << " timePending = " << timePending << endl
+	   << " timeStagingIn = " << timeStagingIn << endl
+	   << " timeActive = " << timeActive << endl
+	   << " timeStagingOut = " << timeStagingOut << endl
+	   << " timeComplete = " << timeComplete << endl
+	   << " walltime = " << walltime << " cput = " << cput << " mem = " << mem << " vmem = " << vmem << endl
+	   << " error = " << error << endl
+	   << " nevents = " << nevents << " timeCopy = " << timeCopy << " timePlugin = " << timePlugin << endl;
+      abort();
+    }
+
+    // Convert times into utime
+    getUtime(timeSubmitted,utimeSubmitted,-10000);
+    if(debug) cout << utimeSubmitted << endl;
+
+    getUtime(timeDependency,utimeDependency,-20000);
+    if(debug) cout << utimeDependency << endl;
+
+    getUtime(timePending,utimePending,-40000);
+    if(debug) cout << utimePending << endl;
+
+    getUtime(timeStagingIn,utimeStagingIn,-80000);
+    if(debug) cout << utimeStagingIn << endl;
+
+    getUtime(timeActive,utimeActive,-160000);
+    if(debug) cout << utimeActive << endl;
+
+    getUtime(timeStagingOut,utimeStagingOut,-320000);
+    if(debug) cout << utimeStagingOut << endl;
+
+    getUtime(timeComplete,utimeComplete,-640000);
+    if(debug) cout << utimeComplete << endl;
+
+    getMemory(mem,mem_int,-999 * 1024);
+    getMemory(vmem,vmem_int,-999 * 1024);
+    if(debug) cout << mem_int << "   " << vmem_int << endl;
+
+    getNumber(neventsString,nevents,-999);
+    getNumber(timeCopyString,timeCopy,-999);
+    getNumber(timePluginString,timePlugin,-999);
+    if(debug) cout << "nevents = " << nevents << " timeCopy = " << timeCopy << " timePlugin =  " << timePlugin << endl;
+
+    OUT << id << "\t" << run << "\t" << file << "\t" << jobId
+	<< "\t" << timeChange
+	<< "\t" << hostname          << "\t" << status << "\t" << exitCode << "\t" << result
+	<< "\t" << timeSubmitted
+	<< "\t" << timeDependency
+	<< "\t" << timePending
+	<< "\t" << timeStagingIn
+	<< "\t" << timeActive
+	<< "\t" << timeStagingOut
+	<< "\t" << timeComplete
+	<< "\t" << walltime          << "\t" << cput << "\t" << mem << "\t" << vmem << "\t" << errorCode
+	<< "\t" << utimeSubmitted    << "\t" << utimeDependency
+	<< "\t" << utimePending      << "\t" << utimeStagingIn
+	<< "\t" << utimeActive       << "\t" << utimeStagingOut << "\t" << utimeComplete
+	<< "\t" << mem_int           << "\t" << vmem_int
+	<< "\t" << nevents           << "\t" << timeCopy << "\t" << timePlugin << endl;
+
+    nTotal++;
+    if(nTotal % 200 == 0) cout << "processed " << setw(5) << nTotal << " / " << NTOTAL << endl;
+  }
+
+  /*
     if(hostname == "NULL" && status == "NULL"){
-      if(debug) cout << "hostname is NULL AND status is NULL" << endl;
-      // If status was NULL, entries for
-      // timeCompleteDay,   timeCompleteTime
-      // cput, mem, vmem, error will be empty.
-      IN
-	>> timeSubmittedDay  >> timeSubmittedTime
-	>> timeDependencyDay >> timeDependencyTime
-	>> timePendingDay    >> timePendingTime
-	>> timeStagingInDay  >> timeStagingInTime
-	>> timeActiveDay     >> timeActiveTime
-	>> timeStagingOutDay >> timeStagingOutTime;
-
-      timeCompleteDay = "NULL";
-      timeCompleteTime = "NULL";
-      walltime = "-999";
-      cput     = "-999";
-      mem      = "-999";
-      vmem     = "-999";
-      error    = "-999";
+    if(debug){
+    cout << "hostname is NULL AND status is NULL" << endl;
+    // If status was NULL, entries for
+    // timeCompleteDay,   timeCompleteTime
+    // cput, mem, vmem, error will be empty.
+    cout << "timeComplete     = " << timeComplete     << endl;
+    cout << "timeCompleteTime = " << timeCompleteTime << endl;
+    cout << "walltime         = " << walltime;
+    cout << "cput             = " << cput;
+    cout << "mem              = " << mem;
+    cout << "vmem             = " << vmem;
+    cout << "error            = " << error;
+    }
+    walltime = "-999";
+    cput     = "-999";
+    mem      = "-999";
+    vmem     = "-999";
+    error    = "-999";
     }else if(hostname == "NULL" && status == "PENDING"){
-      IN
-	>> timeSubmittedDay  >> timeSubmittedTime
-	>> timeDependencyDay >> timeDependencyTime
-	>> timePendingDay    >> timePendingTime
-	>> timeStagingInDay  >> timeStagingInTime
-	>> timeActiveDay     >> timeActiveTime
-	>> timeStagingOutDay >> timeStagingOutTime
-	>> timeCompleteDay   >> timeCompleteTime;
-
-      if(debug) cout << "in PENDING " << endl;
-      // If job was not submitted, entries for
-      // cput, mem, vmem, error will be empty.
-      IN >> walltime;
-      walltime = "-999";
-      cput     = "-999";
-      mem      = "-999";
-      vmem     = "-999";
-      error    = "-999";
+    if(debug){ cout << "in PENDING " << endl;
+    // If job was not submitted, entries for
+    // cput, mem, vmem, error will be empty.
+    cout << "walltime         = " << walltime;
+    cout << "cput             = " << cput;
+    cout << "mem              = " << mem;
+    cout << "vmem             = " << vmem;
+    cout << "error            = " << error;
+    }
+    walltime = "-999";
+    cput     = "-999";
+    mem      = "-999";
+    vmem     = "-999";
+error    = "-999";
     }else if(hostname == "NULL" && status == "DEPENDENCY"){
-      IN
-	>> timeSubmittedDay  >> timeSubmittedTime
-	>> timeDependencyDay >> timeDependencyTime
-	>> timePendingDay    >> timePendingTime
-	>> timeStagingInDay  >> timeStagingInTime
-	>> timeActiveDay     >> timeActiveTime
-	>> timeStagingOutDay >> timeStagingOutTime
-	>> timeCompleteDay   >> timeCompleteTime;
-
-      if(debug) cout << "in DEPENDENCY " << endl;
-      // If job was in DEPENDENCY, entries for
-      // walltime, cput, mem, vmem, error will be empty.
+      if(debug){ cout << "in DEPENDENCY " << endl;
+	// If job was in DEPENDENCY, entries for
+	// walltime, cput, mem, vmem, error will be empty.
+	cout << "walltime         = " << walltime;
+	cout << "cput             = " << cput;
+	cout << "mem              = " << mem;
+	cout << "vmem             = " << vmem;
+	cout << "error            = " << error;
+      }
       walltime = "-999";
       cput     = "-999";
       mem      = "-999";
       vmem     = "-999";
       error    = "-999";
     }else if(status == "ACTIVE"){
-      IN
-	>> timeSubmittedDay  >> timeSubmittedTime
-	>> timeDependencyDay >> timeDependencyTime
-	>> timePendingDay    >> timePendingTime
-	>> timeStagingInDay  >> timeStagingInTime
-	>> timeActiveDay     >> timeActiveTime
-	// the final two are NULL, so no time
-	>> timeStagingOutDay
-	>> timeCompleteDay;
+      cout << "status was ACTIVE" << endl;
+      if(debug){
+	cout << "timeStagingOutTime = " << timeStagingOutTime << endl;
+	cout << "timeCompleteTime   = " << timeCompleteTime   << endl;
+      }
       timeStagingOutTime = "NULL";
       timeCompleteTime   = "NULL";
-      if(debug) cout << "status was ACTIVE" << endl;
-      // cout << "exitCode = " << exitCode << " result = " << result << endl;
-      // cout << "timeSubmittedDay = " << timeSubmittedDay  << " " << "timeSubmittedTime = " << timeSubmittedTime << endl
-      // << "timeDependencyDay = " << timeDependencyDay << " " << "timeDependencyTime = " << timeDependencyTime << endl
-      // << "timePendingDay = " << timePendingDay    << " " << "timePendingTime = " << timePendingTime << endl
-      // << "timeStagingInDay = " << timeStagingInDay  << " " << "timeStagingInTime = " << timeStagingInTime << endl
-      // << "timeActiveDay = " << timeActiveDay     << " " << "timeActiveTime = " << timeActiveTime << endl
-      // << "timeStagingOutDay = " << timeStagingOutDay << " " << "timeStagingOutTime = " << timeStagingOutTime << endl
-      // << "timeCompleteDay = " << timeCompleteDay   << " " << "timeCompleteTime = " << timeCompleteTime << endl;
-      
-      IN >> walltime >> cput >> mem >> vmem >> error;
       errorCode = 5;
     }else if(result == "FAILED"){
       cout << "result was FAILED" << endl;
-      IN
-	>> timeSubmittedDay  >> timeSubmittedTime
-	>> timeDependencyDay >> timeDependencyTime;
-
-      // If job failed to get input file, then
-      // pending, stagingIn, active, stagingOut
-      // will all be NULL
-      IN >> timePendingDay;
-      // If this is a failure with unknown reason,
-      // we will have all times
-      if(timePendingDay != "NULL"){
-	IN >> timePendingTime
-	   >> timeStagingInDay  >> timeStagingInTime
-	   >> timeActiveDay     >> timeActiveTime
-	   >> timeStagingOutDay >> timeStagingOutTime
-	   >> timeCompleteDay   >> timeCompleteTime;
-	IN >> walltime >> cput >> mem >> vmem;
-	if(debug) cout << "walltime = " << walltime << " cput = " << cput << " mem = " << mem << " vmem = " << vmem << endl;
-	
-	// Need to read in either
-	// "Job failed with unknown reason."
-	IN >> error; // "Job"
-	if(debug) cout << error;
-	IN >> error; // failed
-	if(debug) cout << " " << error;
-	IN >> error; // with
-	if(debug) cout << " " << error;
-	IN >> error; // unknown
-	if(debug) cout << " " << error;
-	IN >> error; // reason
-	if(debug) cout << " " << error << endl;
-	errorCode = 3;
-	cout << "(Job failed with unknown reason)" << endl;
+      if(debug){
+	// If job failed to get input file, then
+	// pending, stagingIn, active, stagingOut
+	// will all be NULL
+	cout << "timePendingDay = " << timePendingDay;
+	// If this is a failure with unknown reason,
+	// we will have all times
+      }
+      errorCode = 3;
+      cout << "(Job failed with unknown reason)" << endl;
       }else{
-	IN >> timeStagingInDay >> timeActiveDay >> timeStagingOutDay
-	   >> timeCompleteDay   >> timeCompleteTime;
-	timeStagingInTime  = "NULL";
-	timeActiveTime     = "NULL";
-	timeStagingOutTime = "NULL";
-	IN >> walltime >> cput >> mem >> vmem;
-
-	// Need to read in
-	// "fail to get input file"
-	IN >> error; // "fail"
-	if(debug) cout << error;
-	IN >> error; // to
-	if(debug) cout << " " << error;
-	IN >> error; // get
-	if(debug) cout << " " << error;
-	IN >> error; // input
-	if(debug) cout << " " << error;
-	IN >> error; // file
-	if(debug) cout << " " << error << endl;
+	cout << "timeStagingInTime  = " << timeStagingInTime << endl;
+	cout << "timeActiveTime     = " << timeActiveTime << endl;
+	cout << "timeStagingOutTime = " << timeStagingOutTime << endl;
+	cout << "walltime         = " << walltime;
+	cout << "cput             = " << cput;
+	cout << "mem              = " << mem;
+	cout << "vmem             = " << vmem;
+	cout << "error            = " << error;
 	errorCode = 4;
 	cout << "(fail to get input file)" << endl;
       }
     }else if(result == "TIMEOUT"){
       if(debug) cout << "result was TIMEOUT" << endl;
-      IN
-	>> timeSubmittedDay  >> timeSubmittedTime
-	>> timeDependencyDay >> timeDependencyTime
-	>> timePendingDay    >> timePendingTime
-	>> timeStagingInDay  >> timeStagingInTime
-	>> timeActiveDay     >> timeActiveTime
-	>> timeStagingOutDay >> timeStagingOutTime
-	>> timeCompleteDay   >> timeCompleteTime;
-      IN >> walltime >> cput >> mem >> vmem;
-      if(debug) cout << "walltime = " << walltime << " cput = " << cput << " mem = " << mem << " vmem = " << vmem << endl;
-
-      // Need to read in "Job timed out."
-      IN >> error; // Job
-      if(debug) cout << error;
-      IN >> error; // timed
-      if(debug) cout << " " << error;
-      IN >> error; // out.
-      if(debug) cout << " " << error << endl;
+      cout << "timeStagingInTime  = " << timeStagingInTime << endl;
+      cout << "timeActiveTime     = " << timeActiveTime << endl;
+      cout << "timeStagingOutTime = " << timeStagingOutTime << endl;
+      cout << "walltime         = " << walltime;
+      cout << "cput             = " << cput;
+      cout << "mem              = " << mem;
+      cout << "vmem             = " << vmem;
+      cout << "error            = " << error;
       errorCode = 1;
 
       OUT_timedout << setw(6) << setfill('0') << run << "   " << setw(3) << setfill('0') << file << endl;
       nTimedOut++;
     }else{
       if(debug) cout << "in normal processing " << endl;
-      IN
-	>> timeSubmittedDay  >> timeSubmittedTime
-	>> timeDependencyDay >> timeDependencyTime
-	>> timePendingDay    >> timePendingTime
-	>> timeStagingInDay  >> timeStagingInTime
-	>> timeActiveDay     >> timeActiveTime
-	>> timeStagingOutDay >> timeStagingOutTime
-	>> timeCompleteDay   >> timeCompleteTime;
-
-      // cout << timeSubmittedDay  << " " << timeSubmittedTime << endl
-      // << timeDependencyDay << " " << timeDependencyTime << endl
-      // << timePendingDay    << " " << timePendingTime << endl
-      // << timeStagingInDay  << " " << timeStagingInTime << endl
-      // << timeActiveDay     << " " << timeActiveTime << endl
-      // << timeStagingOutDay << " " << timeStagingOutTime << endl
-      // << timeCompleteDay   << " " << timeCompleteTime << endl;
-
-      IN >> walltime >> cput >> mem >> vmem;
       if(debug) cout << "walltime = " << walltime << " cput = " << cput << " mem = " << mem << " vmem = " << vmem << endl;
       // Need to get "error". This can be either NULL or "Job timed out."
       IN >> error;
@@ -446,15 +496,66 @@ int main(int argc, char **argv){
     if(debug) cout << run << "   " << file << "   " << mem_int << "   " << vmem_int << endl;
   } // end of reading in each entry
 
-  cout << "--------------------------------------------------" << endl;
-  cout << "total                            : " << nTotal << endl;
-  cout << "number of timed out              : " << nTimedOut << endl;
-  cout << "number of exceeded resource limit: " << nExceededResourceLimit << endl;
-
+  */
+  cout << "--------------------------------------------------"  << endl;
+  cout << "total                            : " << setw(5) << setfill(' ') << nTotal       << endl;
+  cout << "number of success                : " << setw(5) << setfill(' ') << nSuccess     << endl;
+  cout << "number of timed out              : " << setw(5) << setfill(' ') << nTimeOut     << endl;
+  cout << "number of exceeded resource limit: " << setw(5) << setfill(' ') << nOverRlimit  << endl;
+  cout << "number of fail to get input file : " << setw(5) << setfill(' ') << nInputFail   << endl;
+  cout << "number of no job status          : " << setw(5) << setfill(' ') << nNoJobStatus << endl;
+  cout << "number of fail for unknown reason: " << setw(5) << setfill(' ') << nFailUnknown << endl;
   outfile->Write();
 
   // cleanup
   system("rm -f ___tmp1.txt");
-
   return 0;
+}
+
+void getUtime(std::string input, Long64_t &utime, Long64_t default_value){
+  char command[400];
+  ifstream IN_tmp;
+  if(input != "NULL"){
+    size_t pos = input.find("_");
+    if(pos==std::string::npos){
+      cout << "could not find '_' in date-time string..." << endl;
+      abort();
+    }
+    std::string day  = input.substr(0,pos);
+    std::string time = input.substr(pos+1);
+    if(debug) cout << "day = " << day << " time = " << time << endl;
+    sprintf(command,"date -d \"%s %s\" +%%s > ___tmp1.txt",day.c_str(), time.c_str());
+    system(command);
+    IN_tmp.open("___tmp1.txt");
+    IN_tmp >> utime;
+    IN_tmp.close();
+    system("rm -f ___tmp1");
+  }else{
+    if(debug) cout << input << " is NULL" << endl;
+    utime = default_value;
+  }
+
+}
+
+void getMemory(std::string input, Int_t &mem_int, Int_t default_value){
+  char command[400];
+  ifstream IN_tmp;
+  if(input != "-999"){
+    sprintf(command,"echo \"%s\" | sed 's:kb::' > ___tmp1.txt",input.c_str());
+    system(command);
+    IN_tmp.open("___tmp1.txt");
+    IN_tmp >> mem_int;
+    IN_tmp.close();
+    system("rm -f ___tmp1.txt");
+  }else{
+    mem_int = default_value;
+  }
+}
+
+void getNumber(std::string input, Int_t &num, Int_t default_value){
+  if(input != "NULL"){
+    num = atoi(input.c_str());
+  }else{
+    num = default_value;
+  }
 }

@@ -10,13 +10,6 @@
  * file the unix time of each stage time, as well as the
  * integer values of mem and vmem (in kb).
  *
- * It has also changed the column error into errorCode,
- * since the original error could have been one of
- * - NULL
- * - Job timed out.
- * - exceeded resource limit.
- * The error code will change these to 0, 1, 2, respectively.
- *
  ********************************************************************/
 
 #include <iostream>
@@ -53,15 +46,15 @@ int analyze(Int_t TOTALTIME = 80, Bool_t debug = false){
 
   // Variables to read in
   Int_t id, run, file, jobId;
-  std::string timeChangeDay, timeChangeTime;
+  std::string timeChange;
   std::string hostname, status, exitCode, result;
-  std::string timeSubmittedDay,  timeSubmittedTime;  Long64_t utimeSubmitted;
-  std::string timeDependencyDay, timeDependencyTime; Long64_t utimeDependency;
-  std::string timePendingDay,    timePendingTime;    Long64_t utimePending;
-  std::string timeStagingInDay,  timeStagingInTime;  Long64_t utimeStagingIn;
-  std::string timeActiveDay,     timeActiveTime;     Long64_t utimeActive;
-  std::string timeStagingOutDay, timeStagingOutTime; Long64_t utimeStagingOut;
-  std::string timeCompleteDay,   timeCompleteTime;   Long64_t utimeComplete;
+  std::string timeSubmitted;  Long64_t utimeSubmitted;
+  std::string timeDependency; Long64_t utimeDependency;
+  std::string timePending;    Long64_t utimePending;
+  std::string timeStagingIn;  Long64_t utimeStagingIn;
+  std::string timeActive;     Long64_t utimeActive;
+  std::string timeStagingOut; Long64_t utimeStagingOut;
+  std::string timeComplete;   Long64_t utimeComplete;
   std::string walltime, cput, mem, vmem, error;      Int_t errorCode;
   Int_t nevents, timeCopy, timePlugin;
 
@@ -176,15 +169,15 @@ int analyze(Int_t TOTALTIME = 80, Bool_t debug = false){
   //                                       //
   ///////////////////////////////////////////
   while(IN >> id >> run >> file >> jobId
-	>> timeChangeDay >> timeChangeTime
+	>> timeChange
 	>> hostname >> status >> exitCode >> result
-	>> timeSubmittedDay  >> timeSubmittedTime
-	>> timeDependencyDay >> timeDependencyTime
-	>> timePendingDay    >> timePendingTime
-	>> timeStagingInDay  >> timeStagingInTime
-	>> timeActiveDay     >> timeActiveTime
-	>> timeStagingOutDay >> timeStagingOutTime
-	>> timeCompleteDay   >> timeCompleteTime
+	>> timeSubmitted
+	>> timeDependency
+	>> timePending
+	>> timeStagingIn
+	>> timeActive
+	>> timeStagingOut
+	>> timeComplete
 	>> walltime >> cput >> mem >> vmem >> errorCode
 	>> utimeSubmitted
 	>> utimeDependency
@@ -199,15 +192,15 @@ int analyze(Int_t TOTALTIME = 80, Bool_t debug = false){
     if(debug){
       cout << "---------- entry " << nTotal << " -------------------" << endl;
       cout << "id = " << id << " run = " << run << " file = " << file << " jobId = " << jobId << endl
-	   << " timeChangeDay = " << timeChangeDay << " timeChangeTime = " << timeChangeTime << endl
+	   << " timeChange = " << timeChange << endl
 	   << " hostname = " << hostname << " status = " << status << " exitCode = " << exitCode << " result = " << result << endl
-	   << " timeSubmittedDay = " << timeSubmittedDay  << " timeSubmittedTime = " << timeSubmittedTime << endl
-	   << " timeDependencyDay = " << timeDependencyDay << " timeDependencyTime = " << timeDependencyTime << endl
-	   << " timePendingDay = " << timePendingDay    << " timePendingTime = " << timePendingTime << endl
-	   << " timeStagingInDay = " << timeStagingInDay  << " timeStagingInTime = " << timeStagingInTime << endl
-	   << " timeActiveDay = " << timeActiveDay     << " timeActiveTime = " << timeActiveTime << endl
-	   << " timeStagingOutDay = " << timeStagingOutDay << " timeStagingOutTime = " << timeStagingOutTime << endl
-	   << " timeCompleteDay = " << timeCompleteDay   << " timeCompleteTime = " << timeCompleteTime << endl
+	   << " timeSubmitted = " << timeSubmitted << endl
+	   << " timeDependency = " << timeDependency << endl
+	   << " timePending = " << timePending << endl
+	   << " timeStagingIn = " << timeStagingIn << endl
+	   << " timeActive = " << timeActive << endl
+	   << " timeStagingOut = " << timeStagingOut << endl
+	   << " timeComplete = " << timeComplete << endl
 	   << " walltime = " << walltime << " cput = " << cput << " mem = " << mem << " vmem = " << vmem << " errorCode = " << errorCode << endl
 	   << " utimeSubmitted = " << utimeSubmitted << endl
 	   << " utimeDependency = " << utimeDependency << endl
