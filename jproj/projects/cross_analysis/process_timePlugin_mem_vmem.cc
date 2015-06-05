@@ -40,23 +40,17 @@ using namespace std;
 
 int main(int argc, char **argv){
 
+  std::string RUNPERIOD = "";
   int  VER_INIT =  9;
   int  VER_LAST = 15;
   bool debug   = false;
-  std::vector<int> SKIPPED_LAUNCHES;
-  SKIPPED_LAUNCHES.push_back(14);
-  cout << "Skipped launches: " << endl;
-  for(int i=0;i<SKIPPED_LAUNCHES.size();i++){
-    cout << "   ver" << setw(2) << setfill('0') << SKIPPED_LAUNCHES[i] << endl;
-  }
-  cout << "-----------------------------" << endl;
 
   const Int_t colors[] = {kBlack, kRed, kGreen+2, kBlue, kMagenta, kPink-9};
 
   extern char* optarg;
   // Check command line arguments
   int c;
-  while((c = getopt(argc,argv,"hV:F:d")) != -1){
+  while((c = getopt(argc,argv,"hV:F:R:d")) != -1){
     switch(c){
     case 'h':
       cout << "process_timePlugin_mem_vmem: " << endl;
@@ -64,6 +58,7 @@ int main(int argc, char **argv){
       cout << "\t-h    This message" << endl;
       cout << "\t-V    Version number of first launch to analyze" << endl;
       cout << "\t-F    Set final  launch version to process" << endl;
+      cout << "\t-R    Run period" << endl;
       cout << "\t-d    Print debug messages" << endl;
       exit(-1);
       break;
@@ -73,6 +68,9 @@ int main(int argc, char **argv){
     case 'V':
       VER_INIT = atoi(optarg);
       break;
+    case 'R':
+      RUNPERIOD = optarg;
+      break;
     case 'd':
       debug = true;
       break;
@@ -80,6 +78,24 @@ int main(int argc, char **argv){
       break;
     }
   }
+
+  if(RUNPERIOD != "2014_10" && RUNPERIOD != "2015_03"){
+    cout << "RUNPERIOD must be 2014_10 or 2015_03" << endl;
+    abort();
+  }
+  cout << "RUNPERIOD: " << RUNPERIOD << endl;
+  char command[200];
+  sprintf(command,"mkdir -p figures/%s",RUNPERIOD.c_str());
+  system(command);
+
+  std::vector<int> SKIPPED_LAUNCHES;
+  if(RUNPERIOD=="2014_10")      SKIPPED_LAUNCHES.push_back(14);
+  else if(RUNPERIOD=="2015_03") SKIPPED_LAUNCHES.push_back(1);
+  cout << "Skipped launches: " << endl;
+  for(int i=0;i<SKIPPED_LAUNCHES.size();i++){
+    cout << "   ver" << setw(2) << setfill('0') << SKIPPED_LAUNCHES[i] << endl;
+  }
+  cout << "-----------------------------" << endl;
 
   // Get the launch ver numbers
   std::vector<int> LAUNCHVERS;
@@ -99,7 +115,12 @@ int main(int argc, char **argv){
   }
   int NVERS = LAUNCHVERS.size();
 
-  ifstream IN("timePlguin_mem_vmem.txt");
+  ifstream IN;
+  if(RUNPERIOD == "2014_10"){
+    IN.open("timePlguin_mem_vmem.txt");
+  }else if(RUNPERIOD == "2015_03"){
+    IN.open("timePlguin_mem_vmem_2015_03.txt");
+  }
   if(!IN){
     cout << "infile timePlguin_mem_vmem.txt does not exist!!!" << endl;
     abort();
@@ -290,7 +311,7 @@ int main(int argc, char **argv){
     line_equal->SetY2(360);
     line_equal->Draw("same");
 
-    sprintf(gname,"figures/001___timePlugin_ver%2.2d_ver%2.2d.png",VER_LAST,LAUNCHVERS[i]);
+    sprintf(gname,"figures/%s/001___timePlugin_ver%2.2d_ver%2.2d.png",RUNPERIOD.c_str(),VER_LAST,LAUNCHVERS[i]);
     canvas->SaveAs(gname);
     //_____________________________________________________________________________________________
 
@@ -330,7 +351,7 @@ int main(int argc, char **argv){
     line_equal->SetY2(5000);
     line_equal->Draw("same");
 
-    sprintf(gname,"figures/002___mem_ver%2.2d_ver%2.2d.png",VER_LAST,LAUNCHVERS[i]);
+    sprintf(gname,"figures/%s/002___mem_ver%2.2d_ver%2.2d.png",RUNPERIOD.c_str(),VER_LAST,LAUNCHVERS[i]);
     canvas->SaveAs(gname);
     //_____________________________________________________________________________________________
 
@@ -370,7 +391,7 @@ int main(int argc, char **argv){
     line_equal->SetY2(5000);
     line_equal->Draw("same");
 
-    sprintf(gname,"figures/003___vmem_ver%2.2d_ver%2.2d.png",VER_LAST,LAUNCHVERS[i]);
+    sprintf(gname,"figures/%s/003___vmem_ver%2.2d_ver%2.2d.png",RUNPERIOD.c_str(),VER_LAST,LAUNCHVERS[i]);
     canvas->SaveAs(gname);
     //_____________________________________________________________________________________________
 
@@ -410,7 +431,7 @@ int main(int argc, char **argv){
     line_equal->SetY2(35000);
     line_equal->Draw("same");
 
-    sprintf(gname,"figures/004___nevents_ver%2.2d_ver%2.2d.png",VER_LAST,LAUNCHVERS[i]);
+    sprintf(gname,"figures/%s/004___nevents_ver%2.2d_ver%2.2d.png",RUNPERIOD.c_str(),VER_LAST,LAUNCHVERS[i]);
     canvas->SaveAs(gname);
     //_____________________________________________________________________________________________
 
@@ -449,7 +470,7 @@ int main(int argc, char **argv){
     line_equal->SetY2(hnevents_diff[i]->GetMaximum() * 1.05);
     line_equal->Draw("same");
 
-    sprintf(gname,"figures/005___hnevents_diff_ver%2.2d_ver%2.2d.png",VER_LAST,LAUNCHVERS[i]);
+    sprintf(gname,"figures/%s/005___hnevents_diff_ver%2.2d_ver%2.2d.png",RUNPERIOD.c_str(),VER_LAST,LAUNCHVERS[i]);
     canvas->SaveAs(gname);
     canvas->SetLogy(0);
     //_____________________________________________________________________________________________
@@ -494,7 +515,7 @@ int main(int argc, char **argv){
     line_equal->SetY2(1.);
     line_equal->Draw("same");
 
-    sprintf(gname,"figures/006___timePlugin_per_event_ver%2.2d_ver%2.2d.png",VER_LAST,LAUNCHVERS[i]);
+    sprintf(gname,"figures/%s/006___timePlugin_per_event_ver%2.2d_ver%2.2d.png",RUNPERIOD.c_str(),VER_LAST,LAUNCHVERS[i]);
     canvas->SaveAs(gname);
     canvas->SetLogx(0);
     canvas->SetLogy(0);

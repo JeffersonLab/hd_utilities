@@ -101,7 +101,7 @@ Possible outcomes are
 - NULL
 
 +-------------------------------------------------------------------------------+
-| format_results_to_html -N 4 -V 9                                              |
+| format_results_to_html -V 9 -F 15                                             |
 +-------------------------------------------------------------------------------+
 
 This creates the html files in the directory html, so copy them
@@ -117,7 +117,7 @@ This creates the html files in the directory html, so copy them
 
 Spit out results of each launch as txt:
 +-------------------------------------------------------------------------------+
-| time ./spitout_timePlugin_mem_vmem.sh 5 9                                     |
+| time ./spitout_timePlugin_mem_vmem.sh 9 15                                    |
 +-------------------------------------------------------------------------------+
 
 Format txt file for results into html.
@@ -129,7 +129,7 @@ Possible outcomes are
 - NULL
 
 +-------------------------------------------------------------------------------+
-| process_timePlugin_mem_vmem -N 5 -V 9                                         |
+| process_timePlugin_mem_vmem -V 9 -F 15                                        |
 | cp figures/*ver13* \                                                          |
 | /group/halld/www/halldweb/html/data_monitoring/launch_analysis/cross_analysis/|
 +-------------------------------------------------------------------------------+
