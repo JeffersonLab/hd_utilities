@@ -26,18 +26,12 @@ int main(int argc, char **argv){
   int  VER_LAST = 15;
   int  VER_INIT =  9;
   bool debug   = false;
-  std::vector<int> SKIPPED_LAUNCHES;
-  SKIPPED_LAUNCHES.push_back(14);
-  cout << "Skipped launches: " << endl;
-  for(int i=0;i<SKIPPED_LAUNCHES.size();i++){
-    cout << "   ver" << setw(2) << setfill('0') << SKIPPED_LAUNCHES[i] << endl;
-  }
-  cout << "-----------------------------" << endl;
+  std::string RUNPERIOD = "2014_10";
 
   extern char* optarg;
   // Check command line arguments
   int c;
-  while((c = getopt(argc,argv,"hF:V:d")) != -1){
+  while((c = getopt(argc,argv,"hR:F:V:d")) != -1){
     switch(c){
     case 'h':
       cout << "format_results_to_html: " << endl;
@@ -45,6 +39,7 @@ int main(int argc, char **argv){
       cout << "\t-h    This message" << endl;
       cout << "\t-F    Set final  launch version to process" << endl;
       cout << "\t-V    Version number of first launch to analyze" << endl;
+      cout << "\t-R    Set run period (e.g., 2015_03)" << endl;
       cout << "\t-d    Print debug messages" << endl;
       exit(-1);
       break;
@@ -54,6 +49,9 @@ int main(int argc, char **argv){
     case 'V':
       VER_INIT = atoi(optarg);
       break;
+    case 'R':
+      RUNPERIOD = optarg;
+      break;
     case 'd':
       debug = true;
       break;
@@ -61,6 +59,19 @@ int main(int argc, char **argv){
       break;
     }
   }
+
+  std::vector<int> SKIPPED_LAUNCHES;
+
+  if(RUNPERIOD == "2014_10")
+    SKIPPED_LAUNCHES.push_back(14);
+  else if(RUNPERIOD == "2015_03")
+    SKIPPED_LAUNCHES.push_back(1);
+
+  cout << "Skipped launches for " << RUNPERIOD << ": " << endl;
+  for(int i=0;i<SKIPPED_LAUNCHES.size();i++){
+    cout << "   ver" << setw(2) << setfill('0') << SKIPPED_LAUNCHES[i] << endl;
+  }
+  cout << "-----------------------------" << endl;
 
   // Get the launch ver numbers
   std::vector<int> LAUNCHVERS;
@@ -80,7 +91,10 @@ int main(int argc, char **argv){
   }
   int NVERS = LAUNCHVERS.size();
 
-  ifstream IN("results.txt");
+  char filename[200];
+  if(RUNPERIOD=="2014_10") sprintf(filename,"results.txt");
+  else                     sprintf(filename,"results_%s.txt",RUNPERIOD.c_str());
+  ifstream IN(filename);
 
   // input variables
   int run, file;
@@ -90,7 +104,6 @@ int main(int argc, char **argv){
   int hundreds_previous = -100;
 
   ofstream OUT;
-  char filename[200];
   double value;
 
   // This is for every single run, file
@@ -226,8 +239,8 @@ int main(int argc, char **argv){
 		<< std::fixed << std::setprecision(2) << setw(5) << value << ")</td>" << endl;
 
 	    // Get requested memory from jsub file for each launch
-	    if(LAUNCHVERS[i] >= 11){
-	      sprintf(command,"grep 'Memory space' /home/gxproj1/halld/jproj/projects/offline_monitoring_RunPeriod2014_10_ver%2.2d_hd_rawdata/offline_monitoring_RunPeriod2014_10_ver%2.2d_hd_rawdata.jsub | sed 's/.*space=\"//' | sed 's/\".*//' > ___tmp.txt",LAUNCHVERS[i],LAUNCHVERS[i]);
+	    if((RUNPERIOD == "2014_10" && LAUNCHVERS[i] >= 11) || RUNPERIOD != "2014_10"){
+	      sprintf(command,"grep 'Memory space' /group/halld/data_monitoring/run_conditions/offline_monitoring_RunPeriod%s_ver%2.2d_hd_rawdata.jsub | sed 's/.*space=\"//' | sed 's/\".*//' > ___tmp.txt",RUNPERIOD.c_str(),LAUNCHVERS[i]);
 	      system(command);
 	      ifstream in("___tmp.txt");
 	      in >> value;
@@ -264,7 +277,9 @@ int main(int argc, char **argv){
 	// We are still at beginning of new hundreds
 
 	cout << "start of new hundreds " << (run / 100) << endl;
-	sprintf(filename,"html/results_%6.6d.html",(run / 100) * 100);
+	sprintf(filename,"mkdir -p html_%s",RUNPERIOD.c_str());
+	system(filename);
+	sprintf(filename,"html_%s/results_%6.6d.html",RUNPERIOD.c_str(),(run / 100) * 100);
 	OUT.open(filename);
 	OUT << "<head>" << endl;
 	OUT << "<link rel=\"stylesheet\" type=\"text/css\" href=\"../mystyle.css\">" << endl;
@@ -413,8 +428,13 @@ int main(int argc, char **argv){
 	<< std::fixed << std::setprecision(2) << setw(5) << value << ")</td>" << endl;
 
     // Get requested memory from jsub file for each launch
-    if(LAUNCHVERS[i] >= 11){
-      sprintf(command,"grep 'Memory space' /home/gxproj1/halld/jproj/projects/offline_monitoring_RunPeriod2014_10_ver%2.2d_hd_rawdata/offline_monitoring_RunPeriod2014_10_ver%2.2d_hd_rawdata.jsub | sed 's/.*space=\"//' | sed 's/\".*//' > ___tmp.txt",LAUNCHVERS[i],LAUNCHVERS[i]);
+    if((RUNPERIOD == "2014_10" && LAUNCHVERS[i] >= 11) || RUNPERIOD != "2014_10"){
+      sprintf(command,"grep 'Memory space' /group/halld/data_monitoring/run_conditions/offline_monitoring_RunPeriod%s_ver%2.2d_hd_rawdata.jsub | sed 's/.*space=\"//' | sed 's/\".*//' > ___tmp.txt",RUNPERIOD.c_str(),LAUNCHVERS[i]);
+      system(command);
+      ifstream in("___tmp.txt");
+      in >> value;
+    }else if(RUNPERIOD == "2015_03"){
+      sprintf(command,"grep 'Memory space' /home/gxproj2/halld/monitoring/jproj/projects/offline_monitoring_RunPeriod2015_03_ver%2.2d_hd_rawdata/offline_monitoring_RunPeriod2015_03_ver%2.2d_hd_rawdata.jsub | sed 's/.*space=\"//' | sed 's/\".*//' > ___tmp.txt",LAUNCHVERS[i],LAUNCHVERS[i]);
       system(command);
       ifstream in("___tmp.txt");
       in >> value;
@@ -446,7 +466,11 @@ int main(int argc, char **argv){
     cout << "total of " << nnullAll[i]       << " null"       << endl;
   }
   // format this info into html table
-  ofstream OUT_ALLSTATS("allstats.html");
+  ofstream OUT_ALLSTATS;
+  
+  if(RUNPERIOD == "2014_10") sprintf(filename,"allstats.html");
+  else                       sprintf(filename,"allstats_%s.html",RUNPERIOD.c_str());
+  OUT_ALLSTATS.open(filename);
 
   OUT_ALLSTATS << "<!-- Paste this html code to /group/halld/www/halldweb/html/data_monitoring/launch_analysis/index.html -->" << endl;
   OUT_ALLSTATS << endl;
