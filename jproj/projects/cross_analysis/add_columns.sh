@@ -1,11 +1,13 @@
 #!/bin/tcsh
 
-if ( $1 == "" ) then
-  echo "add_columns.sh"
-  echo "Need to specify version..."
+if ( $1 == "" || $2 == "" ) then
+  echo "Usage:"
+  echo "add_columns.sh  [run period] [ver #]"
+  echo "example:   add_columns.sh 2015_03 03"
   exit
 endif
-set VER = $1
+set RUNPERIOD = $1
+set VER       = $2
 
 set OUTFILE = "add_columns.sql"
 
@@ -13,7 +15,11 @@ if ( -e $OUTFILE) then
   rm -f $OUTFILE
 endif
 
-echo "ALTER TABLE "'`cross_analysis_table`'" ADD COLUMN (" >  $OUTFILE
+if ( $RUNPERIOD == "2014_10") then
+  echo "ALTER TABLE "'`cross_analysis_table`'" ADD COLUMN (" >  $OUTFILE
+else
+  echo "ALTER TABLE "'`cross_analysis_table_'"${RUNPERIOD}"'`'" ADD COLUMN (" >  $OUTFILE
+endif
 echo ' `result_ver'"${VER}"'`'"     VARCHAR(40),"            >> $OUTFILE
 echo ' `cput_ver'"${VER}"'`'"       VARCHAR(40),"            >> $OUTFILE
 echo ' `walltime_ver'"${VER}"'`'"   VARCHAR(40),"            >> $OUTFILE
