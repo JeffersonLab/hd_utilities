@@ -1,19 +1,24 @@
 #!/bin/tcsh
 
-if ( $1 == "" ) then
-  echo "write_inserts_each_launch.sh"
-  echo "Need to specify version..."
+if ( $1 == "" || $2 == "" ) then
+  echo "write_inserts_each_launch.sh [run period] [ver #]"
+  echo "example:   write_inserts_each_launch.sh 2015_03 03"
   exit
 endif
-set VER = $1
+set RUNPERIOD = $1
+set VER       = $2
 
-set OUTFILE = "write_inserts_ver${VER}.pl"
+set OUTFILE = "write_inserts_${RUNPERIOD}_ver${VER}.pl"
 if ( -e $OUTFILE) then
   rm -f $OUTFILE
 endif
 
 echo '#\!/usr/bin/env perl'                    > $OUTFILE
-echo '$tablename = "cross_analysis_table";'   >> $OUTFILE
+if($RUNPERIOD == "2010_10") then
+  echo '$tablename = "cross_analysis_table";'   >> $OUTFILE
+else
+  echo '$tablename = "cross_analysis_table_'"${RUNPERIOD}"'";'   >> $OUTFILE
+endif
 echo 'while (<>) {'                           >> $OUTFILE
 echo '    chomp;'                             >> $OUTFILE
 echo '    @t0 = split;'                       >> $OUTFILE
@@ -43,6 +48,11 @@ echo "           WHERE        run = "'$'"run AND file = "'$'"file;\\n"'";' >> $O
 echo             "}"                                                       >> $OUTFILE
 echo "exit;" >> $OUTFILE
 
-chmod u+x ./write_inserts_ver${VER}.pl
+chmod u+x ./write_inserts_${RUNPERIOD}_ver${VER}.pl
 
-time ./write_inserts_ver${VER}.pl  < jobinfo_ver${VER}.txt | mysql -hhallddb -ufarmer farming
+
+if($RUNPERIOD == "2010_10") then
+  time ./write_inserts_${RUNPERIOD}_ver${VER}.pl  < jobinfo_ver${VER}.txt | mysql -hhallddb -ufarmer farming
+else
+  time ./write_inserts_${RUNPERIOD}_ver${VER}.pl  < jobinfo_${RUNPERIOD}_ver${VER}.txt | mysql -hhallddb -ufarmer farming
+endif
