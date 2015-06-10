@@ -14,6 +14,7 @@ set OUTFILE = PROJHOME/PROJECT/analysis/processed_job_info.txt
 if( -e $OUTFILE) then
   rm -f $OUTFILE
 endif
+touch $OUTFILE
 
 cd $PARENT_DIR
 
