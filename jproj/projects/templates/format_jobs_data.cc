@@ -125,7 +125,7 @@ int main(int argc, char **argv){
       nNoJobStatus++;
       OUT_NoJobStatus << setw(6) << setfill('0') << run << "   " << setw(3) << setfill('0') << file << endl;
     }
-    else if(result == "FAILED" && error == "Job_failed_with_unknown_reason"){
+    else if(result == "FAILED" && error == "Job_failed_with_unknown_reason."){
       nFailUnknown++;
       OUT_FailUnknown << setw(6) << setfill('0') << run << "   " << setw(3) << setfill('0') << file << endl;
     }
