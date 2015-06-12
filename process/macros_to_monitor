@@ -34,6 +34,13 @@
 /home/gxproj1/builds/online/packages/monitoring/src/plugins/RF_online/HistMacro_RF_p1.C
 /home/gxproj1/builds/online/packages/monitoring/src/plugins/RF_online/HistMacro_RF_p2.C
 /home/gxproj1/builds/online/packages/monitoring/src/plugins/RF_online/HistMacro_RF_p3.C
+# HLDetectorTiming
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Utilities/plugins/HLDetectorTiming/HistMacro_CalorimeterTiming.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Utilities/plugins/HLDetectorTiming/HistMacro_PIDSystemTiming.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Utilities/plugins/HLDetectorTiming/HistMacro_TaggerRFAlignment.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Utilities/plugins/HLDetectorTiming/HistMacro_TaggerSCAlignment.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Utilities/plugins/HLDetectorTiming/HistMacro_TaggerTiming.C
+/home/gxproj1/builds/sim-recon/sim-recon/src/programs/Utilities/plugins/HLDetectorTiming/HistMacro_TrackMatchedTiming.C
 # RECONSTRUCTION
 /home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_NumHighLevelObjects.C
 /home/gxproj1/builds/sim-recon/sim-recon/src/programs/Analysis/plugins/monitoring_hists/HistMacro_NumLowLevelObjects_p1.C
