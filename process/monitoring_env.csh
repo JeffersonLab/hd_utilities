@@ -1,5 +1,6 @@
 # load standard environment
 source $HOME/setup_jlab.csh
+#source $HOME/setup_jlab_commissioning.csh
 
 # load ROOT python bindings
 setenv PYTHONPATH $ROOTSYS/lib

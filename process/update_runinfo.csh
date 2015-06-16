@@ -1,9 +1,9 @@
 #!/bin/tcsh
 
 # Load standard environment for ROOT
-source /home/gxproj1/setup_jlab.csh
+source /home/gluex/setup_jlab.csh
 
-set MONITORING_HOME=/home/gxproj1/halld/monitoring/process
+set MONITORING_HOME=/home/gluex/halld/monitoring/process
 source $MONITORING_HOME/monitoring_env.csh
 
 # run the script

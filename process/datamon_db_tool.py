@@ -60,7 +60,7 @@ if __name__ == "__main__":
     parser = OptionParser(usage = "datamon_db_tool.py [options] [command]")
     parser.add_option("-I","--interactive", dest="interactive", action="store_true",
                       help="Interactive mode")
-
+    
     (options, args) = parser.parse_args()
 
     if(len(args) < 1):

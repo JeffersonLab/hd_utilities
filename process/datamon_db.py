@@ -6,6 +6,7 @@
 # Author: Sean Dobbs (s-dobbs@northwestern.edu), 2014
 
 import MySQLdb
+import logging
 
 #import texttable
 class datamon_db:
@@ -48,10 +49,11 @@ class datamon_db:
 
 
     def print_mysql_error(self, e):
-        try:
-            print "MySQL Error [%d]: %s" % (e.args[0], e.args[1])
-        except IndexError:
-            print "MySQL Error: %s" % str(e)             
+        if self.verbose:     # disable error printing by default, for now
+            try:
+                logging.error("MySQL Error [%d]: %s" % (e.args[0], e.args[1]))
+            except IndexError:
+                logging.error("MySQL Error: %s" % str(e))
 
     def CloseDB(self):
         self.db_conn.commit()
@@ -170,10 +172,10 @@ class datamon_db:
 
     def InsertData(self, table_name, values):
         if(len(values) == 0):
-            print 'Trying to add data to DB without any data'
+            logging.warn('Trying to add data to DB without any data')
         db_cmd = 'INSERT INTO ' + table_name + ' VALUES (' + " ".join(['%s,' for i in xrange(len(values)-1)]) +  ' %s)'
         if(self.verbose):
-            print db_cmd + '  <--  ' + str(values)
+            logging.info(db_cmd + '  <--  ' + str(values))
         #print "Insert cmd = " + str(db_cmd)
         try:
             self.db.execute(db_cmd, values)
@@ -184,7 +186,7 @@ class datamon_db:
 
     def DumpTable(self, table_name, mode=""):
         if table_name not in self.table_names:
-            print "Invalid table name = " + table_name
+            logging.warn("Invalid table name = " + table_name)
             return
 
         # get field names

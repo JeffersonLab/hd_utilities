@@ -3,7 +3,7 @@
 # Run over ROOT files containing monitoring data
 # and make images to show on the web
 #
-# TODO: Use hnamepaths!!
+# TODO: Use full hnamepaths!!
 # TODO: throw exceptions?
 #
 # Author: Sean Dobbs (s-dobbs@northwestern.edu), 2014
@@ -14,249 +14,256 @@ import os.path
 import sys
 from array import array
 import re
+import logging
 
 from datamon_db import datamon_db
 
 ##########################################################
-## Globals
-##########################################################
+class make_monitoring_plots:
+
+    def __init__(self):
+        self.CANVAS_WIDTH = 800
+        self.CANVAS_HEIGHT = 600
+
+        self.VERBOSE = 1
+
+        # initialize lists used to store data
+        self.histlist_filename = None
+        self.macrolist_filename = None
+        self.hists_to_plot = []
+        self.macros_to_run = []
+
+        # name of file that containes the histogram
+        self.rootfile_name = None
+
+        self.base_root_dir = ""
+        self.output_directory = "."
 
 
-CANVAS_WIDTH = 800
-CANVAS_HEIGHT = 600
-
-BASE_ROOT_DIR = ""
-OUTPUT_DIRECTORY = "."
-#PDF_FILE_NAME = "output"
-WEB_OUTPUT = True
-VERBOSE = False
-
-def init():
-    CANVAS_WIDTH = 800
-    CANVAS_HEIGHT = 600
-
-    OUTPUT_DIRECTORY = "."
-    WEB_OUTPUT = True
-    
-
-# the canvas
-c1  = TCanvas("c1","",CANVAS_WIDTH,CANVAS_HEIGHT)
+        # the canvas we plot on
+        self.c1  = TCanvas("c1","",self.CANVAS_WIDTH,self.CANVAS_HEIGHT)
 
 
-##########################################################
+    ##########################################################
+    ## Helper functions
+    ##########################################################
 
-"""
-## low level histograms
-HISTS_TO_PLOT = [ "NumSCHits", "NumBCALHits", "NumFCALHits", "NumCDCHits", "NumTOFHits",
-                  "NumFDCWireHits", "NumFDCCathodeHits", "NumTAGMHits", "NumTAGHHits" ]
-HISTS_TO_PLOT += [ "cdc_o", "cdc_e", "cdc__t",     ## CDC
-                   "fdcow", "fdcos",               ## FDC
-                   "digHitE", "digT", "digOcc2D",  ## FCAL 
-                   'bcal_fadc_occ', 'bcal_fadc_E', 'bcal_fadc_t',  ## BCAL
-                   "tofe", "toft", "tofo1", "tofo2",   ## TOF
-                   "st_sec_adc_dhit", "st_pi_dhit", "st_pt_dhit" ]      ## START COUNTER
+    def plot_hist(self, h):
+        #c1.Clear()
+        h.SetStats(0)
+        h.Draw()
 
-# higher level histograms
-HISTS_TO_PLOT += [ "NumReconstructedParticles", "NumGoodReconstructedParticles",
-                   "NumPosChargedTracks", "NumNegChargedTracks", "NumFCALShowers",
-                   "NumBCALShowers", "NumTOFPoints", "NumTrackBCALMatches",
-                   "NumTrackFCALMatches","NumTrackTOFMatches","NumTrackSCMatches" ]
-"""
+    def plot_2dhist(self, h):
+        # by request, plot certain histograms with a logarithmic Z scale
+        LOGZ_HISTS = [ "cdc_raw_int_vs_n", "cdc_raw_t_vs_n", "cdc_ped_vs_n", "cdc_windata_ped_vs_n" ]
+        if h.GetName() in LOGZ_HISTS:
+            self.c1.SetLogz(1)
+            
+        h.SetStats(0)
+        h.Draw("COLZ")
 
-#HISTS_TO_PLOT = []
-#HISTS_TO_SUM = []
-#MACROS_TO_RUN = []
+    def ClearPad(self, pad):
+        gROOT.SetStyle("Plain")   # reset style
+        self.c1.Clear()
+        self.c1.SetLogx(0)
+        self.c1.SetLogy(0)
+        self.c1.SetLogz(0)
 
-##########################################################
-## Histogram drawing definitions
-##########################################################
+    def print_canvas_png(self, fullpath):
+        self.c1.Print( self.output_directory + "/" + fullpath.replace("/","_") + ".png" )
 
-def plot_hist(h):
-    #c1.Clear()
-    h.SetStats(0)
-    h.Draw()
+    def SumHistContents(self, root_file, hist_path):
+        h = root_file.Get(hist_path)
+        if(h == None):
+            logging.warn("Could not load " + hist_path)
+            return -1
 
-def plot_2dhist(h):
-    LOGZ_HISTS = [ "cdc_raw_int_vs_n", "cdc_raw_t_vs_n", "cdc_ped_vs_n", "cdc_windata_ped_vs_n" ]
-    if h.GetName() in LOGZ_HISTS:
-        c1.SetLogz(1)
-
-    h.SetStats(0)
-    h.Draw("COLZ")
-
-def ClearPad(pad):
-    gROOT.SetStyle("Plain")   # reset style
-    c1.Clear()
-    c1.SetLogx(0)
-    c1.SetLogy(0)
-    c1.SetLogz(0)
-
-
-##########################################################
-## image creation has been moved to a different set of macros
-
-# function to see if a histogram "in_hnamepath" matches the path definition given by "hnamepath_def"
-# we make the following assumptions for the path definiton:
-# - if the path does not begin with a '/', then we assume that this specifies a histogram name
-# - if the path does begin with a '/', the we assume that this specifies a full path
-# - we allow the "*" wildcard in the path definition
-# NOTE: apparently this is very slow, need to optimize
-def match_hnamepath(hnamepath_def, in_hnamepath):
-    if len(hnamepath_def) == 0:
-        return False
-    
-    if hnamepath_def[0] != '/':
-        #  match based on histogram name
-        return hnamepath_def == in_hnamepath
-    else:
-        # translate '*' wildcard into regex language
-        hnamepath_def.replace('*', '.*')
-        result = re.match(hnamepath_def, in_hnamepath)
-        if result is None:
-            return False
-        else:
-            return True
-
-def match_hnamepaths(hnamepath_defs, in_hnamepath):
-    for hnamepath_def in hnamepath_defs:
-        if match_hnamepath(hnamepath_def, in_hnamepath):
-            return True
-    return False
-############################################################
-
-
-def print_canvas_png(fullpath):
-    global OUTPUT_DIRECTORY
-    c1.Print( OUTPUT_DIRECTORY + "/" + fullpath.replace("/","_") + ".png" )
-
-
-def SumHistContents(root_file, hist_path):
-    h = root_file.Get(hist_path)
-    if(h == None):
-        print "Could not load " + hist_path
-        return -1
-
-    sum = 0
-    for bin in range(h.GetNbinsX()+1):
-        sum += (bin-1)*h.GetBinContent(bin)
-    return sum
+        sum = 0
+        for bin in range(h.GetNbinsX()+1):
+            sum += (bin-1)*h.GetBinContent(bin)
+        return sum
              
 
-def AccessHistogramsRecursively(the_dir, path, sum_hists, sum_dir, hists_to_sum):
-    # loop over all keys in the current directory
-    key_iter = TIter(the_dir.GetListOfKeys())
-    key = key_iter()
-    while( key ):
-        obj = key.ReadObj()
-        obj_pathname = path+"/"+key.GetName()
-        #print key.GetName() + " " + str(type(obj))
+    ##########################################################
+    # These functions are still under development - they work but are slooooow
 
-        if(isinstance(obj,TH1)):
-            if VERBOSE:
-                print "matching hname = %s, hnamepath = %s" %(obj.GetName(),obj_pathname)
-            #print "histogram =  " + str(obj.GetName())
-            #if not match_hnamepaths(hists_to_sum, path+"/"+obj.GetName()):
-            # match either histogram names or full path names
-            if (obj.GetName() not in hists_to_sum) and (obj_pathname not in hists_to_sum):
-                key = key_iter()
-                continue
-
-            # we want to sum up histograms over multiple ROOT files
-            hnamepath = obj_pathname
-            if not hnamepath in sum_hists.keys():
-                sum_hists[hnamepath] = obj.Clone()
-                sum_hists[hnamepath].SetDirectory(sum_dir)
+    # function to see if a histogram "in_hnamepath" matches the path definition given by "hnamepath_def"
+    # we make the following assumptions for the path definiton:
+    # - if the path does not begin with a '/', then we assume that this specifies a histogram name
+    # - if the path does begin with a '/', the we assume that this specifies a full path
+    # - we allow the "*" wildcard in the path definition
+    # NOTE: apparently this is very slow, need to optimize
+    def match_hnamepath(self, hnamepath_def, in_hnamepath):
+        if len(hnamepath_def) == 0:
+            return False
+    
+        if hnamepath_def[0] != '/':
+            #  match based on histogram name
+            return hnamepath_def == in_hnamepath
+        else:
+            # translate '*' wildcard into regex language
+            hnamepath_def.replace('*', '.*')
+            result = re.match(hnamepath_def, in_hnamepath)
+            if result is None:
+                return False
             else:
-                sum_hists[hnamepath].Add(obj)
-            
-        # if the object is a directory, access what's inside
-        if(isinstance(obj, TDirectory)):
-            new_sum_dir = sum_dir.GetDirectory(key.GetName())
-            if(not new_sum_dir):
-                new_sum_dir = sum_dir.mkdir(key.GetName())
-            AccessHistogramsRecursively(obj, obj_pathname, sum_hists, new_sum_dir, hists_to_sum)
-        # move to next item in the directory
+                return True
+
+    def match_hnamepaths(self, hnamepath_defs, in_hnamepath):
+        for hnamepath_def in hnamepath_defs:
+            if self.match_hnamepath(hnamepath_def, in_hnamepath):
+                return True
+        return False
+
+    ############################################################
+
+    # parse file containing items, one on each line, and turn it into a list
+    def ParseFile(self, filename):
+        data = []
+        with open(filename) as f:
+            for line in f:
+                name = line.strip()
+                if name == "":
+                    continue
+                if name[0] == '#':
+                    continue        
+                data.append(name)
+        return data
+
+    def PlotHistsRecursive(self, the_dir, path, hists_to_plot):
+        # loop over all keys in the current directory, ROOT-style
+        key_iter = TIter(the_dir.GetListOfKeys())
         key = key_iter()
-    
+        while( key ):
+            obj = key.ReadObj()
+            obj_pathname = path+"/"+key.GetName()
 
-def SavePlots(sum_hists, sum_dir, hists_to_plot, macros_to_run):
-    global WEB_OUTPUT
-    # plot individual histograms
-    if(len(sum_hists) > 0):
-        for (hnamepath,h) in sum_hists.items():
-            #if not match_hnamepaths(hists_to_plot, hnamepath):
-            if (h.GetName() not in hists_to_plot) and (hnamepath not in hists_to_plot): 
-                continue
-            if(isinstance(h,TH2)):
-                plot_2dhist(h)
-            else:
-                plot_hist(h)
+            # if the object is a histogram, then see if we should plot it
+            if(isinstance(obj,TH1)):
+                if self.VERBOSE>1:
+                    logging.info("matching hname = %s, hnamepath = %s" %(obj.GetName(),obj_pathname))
+                #if not match_hnamepaths(hists_to_sum, path+"/"+obj.GetName()):
+                # match either histogram names or full path names
+                if (obj.GetName() not in hists_to_plot) and (obj_pathname not in hists_to_plot):
+                    key = key_iter()
+                    continue
+
+                # plot histogram
+                if(isinstance(obj,TH2)):
+                    self.plot_2dhist(obj)
+                else:
+                    self.plot_hist(obj)
+
+                # save image to disk
+                self.print_canvas_png("_"+obj_pathname)  ## name hack for backward compatability
+                #print_canvas_pdf()
             
-            # Output canvas
-            #print_canvas_pdf()
-            if(WEB_OUTPUT):
-                print_canvas_png("_"+hnamepath)  ## name hack for backward compatability
+            # if the object is a directory, access what's inside
+            if(isinstance(obj, TDirectory)):
+                self.PlotHistsRecursive(obj, obj_pathname, hists_to_plot)
 
-    # plot RootSpy macros
-    if(len(macros_to_run) > 0):
-        for macro_file in macros_to_run: 
-            if os.path.isfile(macro_file):
-                if VERBOSE:
-                    print "running macro = " + macro_file
-                # run the macro`
-                ClearPad(c1)
-                sum_dir.cd()
-                try:
-                    gROOT.ProcessLine(".x " + macro_file)
-                except:
-                    print "Error processing "+macro_file
-                # save the canvas - the name depends just on the file name
-                img_fname = macro_file.split('/')[-1]
-                #print "SPLIT =  " +  img_fname[0:-2] + " / " + img_fname[-2:]
-                if img_fname[-2:] == ".C":
-                    img_fname = img_fname[0:-2]
-                print_canvas_png(img_fname)
-            else:
-                print "could not find macro = " + macro_file + " !"
+            # END OF LOOP - move to next item in the directory
+            key = key_iter()
 
-def extract_macro_hists(macro):
-    if VERBOSE:
-        print "Extracting histograms needed for macros..."
-    macro_hists = []
-    if not os.path.isfile(macro):
-        # this file doesn't exist - should we say something here?
+
+    def SavePlots(self, root_dir, dir_path, hists_to_plot, macros_to_run):
+        # plot individual histograms 
+        if(len(hists_to_plot) > 0):
+            # since we select histograms by their full path or just their name
+            # we have to search through the directory tree, so the 
+            # plotting logic is inside this function
+            self.PlotHistsRecursive(root_dir,dir_path,hists_to_plot)
+
+        # plot RootSpy macros
+        # the basic algorithm is for each macro, first build a clean slate, then execute the macro
+        if(len(macros_to_run) > 0):
+            for macro_file in macros_to_run: 
+                if os.path.isfile(macro_file):
+                    if self.VERBOSE>0:
+                        logging.info("running macro = " + macro_file)
+                    # run the macro inside CINT
+                    self.ClearPad(self.c1)
+                    root_dir.cd()
+                    try:
+                        gROOT.ProcessLine(".x " + macro_file)
+                    except:
+                        logging.error("Error processing "+macro_file)
+                    # save the canvas - the name depends just on the file name
+                    img_fname = macro_file.split('/')[-1]
+                    if img_fname[-2:] == ".C":
+                        img_fname = img_fname[0:-2]
+                    self.print_canvas_png(img_fname)
+                else:
+                    logging.info("could not find macro = " + macro_file + " !")
+
+    """
+    ### this was needed when we were adding together histograms, but I don't think that we need it anymore
+    def extract_macro_hists(macro):
+        if VERBOSE>1:
+            logging.info("Extracting histograms needed for macros...")
+        macro_hists = []
+        if not os.path.isfile(macro):
+            # this file doesn't exist - should we say something here?
+            return macro_hists
+        # read through the file and extract the histograms tagged for RootSpy summing
+        f = open(macro)
+        for line in f:
+            tokens = line.strip().split()
+            #print str(tokens)
+            # histograms are tagged as  "// hnamepath: /path/to/a/hist"
+            if (len(tokens) < 3):
+                continue
+            if ( (tokens[0] == "//") and (tokens[1] == "hnamepath:") ):
+                hnamepath = " ".join(tokens[2:])
+                if VERBOSE>1:
+                    print hnamepath
+                hname = hnamepath.split('/')[-1]
+                if hname not in macro_hists:
+                    macro_hists.append(hname)
         return macro_hists
-    # read through the file and extract the histograms tagged for RootSpy summing
-    f = open(macro)
-    for line in f:
-        tokens = line.strip().split()
-        #print str(tokens)
-        # histograms are tagged as  "// hnamepath: /path/to/a/hist"
-        if (len(tokens) < 3):
-            continue
-        if ( (tokens[0] == "//") and (tokens[1] == "hnamepath:") ):
-            hnamepath = " ".join(tokens[2:])
-            if VERBOSE:
-                print hnamepath
-            #if hnamepath not in macro_hists:
-            #    macro_hists.append(hnamepath)
-            hname = hnamepath.split('/')[-1]
-            if hname not in macro_hists:
-                macro_hists.append(hname)
-    return macro_hists
+    """
 
 
-def main(argv):
-    global CANVAS_WIDTH,CANVAS_HEIGHT,OUTPUT_DIRECTORY,BASE_ROOT_DIR
-    
-    init()
-    # initialize lists used to store data
-    hists_to_plot = []
-    hists_to_sum  = []
-    macros_to_run = []
-    
+    def MakePlots(self):
+        ## some sanity checks
+        if self.rootfile_name is None:
+            logging.critical("No ROOT file set!")
+            return
+        if self.histlist_filename is None and self.macrolist_filename is None:
+            logging.critical("No files containing the histograms or macros to plot set!")
+            return
+
+        # decide which histograms/macros we should make plots of
+        if self.histlist_filename:
+            self.hists_to_plot = self.ParseFile(self.histlist_filename)
+        else:
+            self.hists_to_plot = []
+        if self.macrolist_filename:
+            self.macros_to_run = self.ParseFile(self.macrolist_filename)
+        else:
+            self.macros_to_run = []
+
+        ## more sanity checks
+        if len(self.hists_to_plot) == 0 and len(self.macros_to_run) == 0:
+            logging.critical("No histograms or macro to save!")
+            return
+
+        # make the plots
+        root_file = TFile(self.rootfile_name)
+        # should handle bad files better?
+        if(root_file is None):
+            logging.critical("Could not open file: " + filename)
+            return
+
+        self.ClearPad(self.c1)
+        self.c1.SetCanvasSize(self.CANVAS_WIDTH,self.CANVAS_HEIGHT)
+        self.SavePlots(root_file.GetDirectory(self.base_root_dir), self.base_root_dir, self.hists_to_plot, self.macros_to_run)
+
+
+
+if __name__ == "__main__":
     # read in command line args
-    parser = OptionParser(usage = "make_monitoring_plots.py [options] <list of files to process>")
+    parser = OptionParser(usage = "make_monitoring_plots.py [options] ROOT_file")
     parser.add_option("-D","--output_dir", dest="output_dir",
                       help="Directory where output files will be stored")
     parser.add_option("-S","--canvas_size", dest="canvas_size",
@@ -269,25 +276,15 @@ def main(argv):
                       help="Specify the list of macro files to make plots of")
     parser.add_option("-R","--root_dir", dest="root_dir",
                       help="Specify the base directory in the ROOT file")
-#    parser.add_option("-i","--input_file", dest="input_file",
-#                      help="Specify the file name to process.")
 
     (options, args) = parser.parse_args(argv)
 
-#    if( options.file_list is None and  options.input_file is None ):
-#        print "Either an input file (-i) or file list (-f) must be specified!"
-#        parser.print_help()
-#        exit(0)
-
-#    if( options.file_list is not None and options.input_file is not None ):
-#        print "Please specify either -i or -f options, not both!"
-#        parser.print_help()
-#        exit(0)
-
+    # set up the main class
+    plotter = make_monitoring_plots.make_monitoring_plots()
 
     if(options.output_dir):
         if(os.path.isdir(options.output_dir)):
-            OUTPUT_DIRECTORY = options.output_dir
+            plotter.output_directory = options.output_dir
         else:
             print "WARNING: Output directory '"+options.output_dir+"' does not exist, defaulting to current directory..."
     if(options.canvas_size):
@@ -295,110 +292,21 @@ def main(argv):
         if( not new_width or not new_height ):
             print "Invalid canvas sizes specified, using defaults..."
         else:
-            CANVAS_WIDTH  = int(new_width)
-            CANVAS_HEIGHT = int(new_height)
+            plotter.CANVAS_WIDTH  = int(new_width)
+            plotter.CANVAS_HEIGHT = int(new_height)
     if(options.root_dir):
-        BASE_ROOT_DIR = options.root_dir
-        
-    
-    ## build List of files to run over
-    file_list = []
-    # get files passed in on command line
-    for line in args:
-        file_name = line.strip()
-        if file_name == "":
-            continue
-        if file_name[0] == '#':
-            continue
-        if os.path.isfile(file_name):
-            file_list.append(file_name)
-        else:
-            print "input file does not exist: " + file_name
-    if(options.file_list):
-        f = open(options.file_list)
-        for line in f:
-            file_name = line.strip()
-            if file_name == "":
-                continue
-            if file_name[0] == '#':
-                continue
-            if os.path.isfile(file_name):
-                file_list.append(file_name)
-            else:
-                print "input file does not exist: " + file_name
-        f.close()
+        plotter.base_root_dir = options.root_dir
 
-    ## load lists of objects to save
-    histf = open(options.hname_list)
-    for line in histf:
-        hname = line.strip()
-        if hname == "":
-            continue
-        if hname[0] == '#':
-            continue        
-        hists_to_plot.append(hname)
-    histf.close()
-    macrof = open(options.macroname_list)
-    for line in macrof:
-        macroname = line.strip()
-        if macroname == "":
-            continue
-        if macroname[0] == '#':
-            continue        
-        macros_to_run.append(macroname)
-    macrof.close()
+    if(options.hname_list):
+        plotter.histlist_filename = options.hname_list
+    if(options.macroname_list):
+        plotter.macrolist_filename = options.macroname_list
 
-    ## sanity checks
-    if(len(file_list) == 0):
-        print "No input files given!"
-        return
-        #sys.exit(0)
-    if(len(hists_to_plot) == 0):
-        print "No histograms to save!"
-    if(len(macros_to_run) == 0):
-        print "No macros to save!"
+    # extract the name of the file to process
+    if len(args) < 1:
+        parser.print_help()
+    else:
+        self.rootfile_name = args[0]
 
-
-    ## we need to sum both the histograms that we plotting by themselves
-    ## and the histograms used by the macros we want
-    hists_to_sum = hists_to_plot
-    if(len(macros_to_run) > 0):
-        for macro in macros_to_run:
-            new_macros = extract_macro_hists(macro)
-            # merge lists without duplicates
-            if not new_macros or len(new_macros) == 0:
-                continue
-            hists_to_sum = list( set(hists_to_sum) | set(new_macros) )
-
-    ## initializing monitoring DB connection
-    mondb = datamon_db()
-
-    ## save mapping of  "hname or hnamepath => ROOT histogram object"
-    sum_hists = {}
-    sum_dir = TMemFile(".monitor_tmp.root","RECREATE")
-
-    ## run over data to make some plots
-    for filename in file_list:
-        root_file = TFile(filename)
-        # should handle bad files better!
-        if(root_file is None):
-            print "Could not open file: " + filename
-            continue
-        else:
-            print "processing file " + filename + " ..." 
-        AccessHistogramsRecursively(root_file, BASE_ROOT_DIR, sum_hists, sum_dir, hists_to_sum)
-        root_file.Close()
-
-
-    ## finally, make the plots and save them as files
-    ClearPad(c1)
-    c1.SetCanvasSize(CANVAS_WIDTH,CANVAS_HEIGHT)
-    SavePlots(sum_hists, sum_dir, hists_to_plot, macros_to_run)
-
-    ## clean up some memory
-    sum_dir.Close()
-    del sum_hists
-    del hists_to_sum
-
-if __name__ == "__main__":
-    main(sys.argv[1:])
+        # do the heavy work
+        plotter.Run()
