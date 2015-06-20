@@ -21,7 +21,7 @@ import multiprocessing
 import logging
 import pickle
 
-from ROOT import gROOT
+from ROOT import gROOT,gSystem
 
 # monitoring libraries
 from datamon_db import datamon_db
@@ -81,7 +81,7 @@ class ProcessMonDataConfig:
         # set up output logging
         if options.logfile:
             logging.basicConfig(filename=options.logfile,level=logging.INFO)
-            gSystem.RedirectOutput(self.LOGFILE)
+            gSystem.RedirectOutput(options.logfile)
         else:
             logging.basicConfig(level=logging.INFO)
         # limit ROOT output  
