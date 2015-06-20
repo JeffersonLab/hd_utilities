@@ -55,7 +55,7 @@ class ProcessMonDataConfig:
         # ignore checks if we've previously processed all monitoring ROOT files
         self.FORCE_PROCESSING = False   
         # control level of output
-        self.VERBOSE = 1
+        self.VERBOSE = 2
 
         self.REVISION = None           # data period revision (see DB)
         self.INPUT_DIRECTORY = None    # base directory where output of monitoring jobs is stored
@@ -191,6 +191,7 @@ class ProcessMonDataConfig:
                 runnum = int(dirname)
             except ValueError:
                 logging.error("skipping directory " + dirname + " ...")
+            rundirs_on_disk.append(dirname)
         return rundirs_on_disk
 
     def BuildROOTFileList(self,rundir):
@@ -378,6 +379,8 @@ if __name__ == "__main__":
 
     # Check which runs have been already processed
     rundirs_on_disk = config.BuildListOfProcessedRunsOnDisk()
+
+    print "rundirs_on_disk = " + str(rundirs_on_disk)
     
     # For each run, check to see if there are any ROOT files we haven't processed yet
     # If that is true, then we need to process the run - N.B. most of our outputs
