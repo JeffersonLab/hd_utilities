@@ -824,7 +824,7 @@ class summarize_monitoring_data:
         if(self.VERSION_NUMBER < 1):
             logging.error("bad version number! = " + str(self.VERSION_NUMBER))
             return
-        if(self.FILE_NUMBER < 1):
+        if(self.FILE_NUMBER < 0):
             logging.error("bad file number! = " + str(self.FILE_NUMBER))
             return
 
