@@ -30,10 +30,13 @@ class summarize_monitoring_data:
         self.FILE_NAME = ""
         self.ROOTDIR_PREFIX = ""
 
+        self.mondb = None 
+        self.root_file = None
+
     ##########################################################
 
-    def SumHistContents(self, root_file, hist_path):
-        h = root_file.Get(hist_path)
+    def SumHistContents(self, the_file, hist_path):
+        h = the_file.Get(hist_path)
         if(h == None):
             logging.error("Could not load histogram " + hist_path)
             return -1
@@ -52,27 +55,27 @@ class summarize_monitoring_data:
                 logging.warn("MySQL Error: %s" % str(e))
 
     # deprecated
-    def CallAndCatchDBErrors(self, func):
-        try:
-            func(self.mondb, self.root_file)
-        except MySQLdb.Error, e:
-            self.print_mysql_error(e)
+    #def CallAndCatchDBErrors(self, func):
+    #    try:
+    #        func(self.mondb, self.root_file)
+    #    except MySQLdb.Error, e:
+    #        self.print_mysql_error(e)
 
 
     ###########################################
     ## For the CDC, we store the avg number of hits per straw in each superlayer (4 rings)
     ##
-    def ProcessCDCHits(self, db, root_file):
+    def ProcessCDCHits(self):
         # Store fixed geometry
         nstraws = array('i', [0,42,42,54,54,66,66,80,80,93,93,106,106,123,123,135,135,146,146,158,158,170,170,182,182,197,197,209,209])
         avg_hits_per_superlayer = []
         number_of_events = -1   
     
-        cdc_num_events = root_file.Get(self.ROOTDIR_PREFIX+"CDC/cdc_num_events")
+        cdc_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"CDC/cdc_num_events")
         if(cdc_num_events != None):
             number_of_events = cdc_num_events.GetBinContent(1)
 
-        cdc_occupancy = root_file.Get(self.ROOTDIR_PREFIX+"CDC/cdc_o")
+        cdc_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"CDC/cdc_o")
         # sanity checks
         if(cdc_occupancy == None):
             logging.error("couldn't find CDC occupancy histogram!")
@@ -90,21 +93,21 @@ class summarize_monitoring_data:
             avg_hits_per_superlayer.append( nhits / nstraw )
 
         ## insert into DB
-        db.AddCDCHits(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, number_of_events, avg_hits_per_superlayer)
+        self.mondb.AddCDCHits(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, number_of_events, avg_hits_per_superlayer)
 
 
     ###########################################
     ## For the Start Counter, we store the avg number of hits per paddle
     ##
-    def ProcessSCHits(self, db, root_file):
+    def ProcessSCHits(self):
         avg_hits_per_sector = []
         number_of_events = -1   
 
-        st_num_events = root_file.Get(self.ROOTDIR_PREFIX+"st/st_num_events")
+        st_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"st/st_num_events")
         if(st_num_events != None):
             number_of_events = st_num_events.GetBinContent(1)
 
-        sc_occupancy = root_file.Get(self.ROOTDIR_PREFIX+"st/st_sec_adc_dhit")
+        sc_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"st/st_sec_adc_dhit")
         # sanity checks
         if(sc_occupancy == None):
             logging.error("couldn't find Start Counter occupancy histogram!")
@@ -114,20 +117,20 @@ class summarize_monitoring_data:
             avg_hits_per_sector.append( sc_occupancy.GetBinContent(paddle+1) )  ## histograms start counting at 1
 
         ## insert into DB
-        db.AddSCHits(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, number_of_events, avg_hits_per_sector)
+        self.mondb.AddSCHits(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, number_of_events, avg_hits_per_sector)
 
     ###########################################
     ## For the FDC, we store the avg number of hits per channel in each plane
     ## (note that we might want to correct for the half-length cathode strips)
     ##
-    def ProcessFDCHits(self, db, root_file):
+    def ProcessFDCHits(self):
         NUM_FDC_STRIPS = 192
         NUM_FDC_WIRES = 96
         avg_hits_per_plane = []
         fdc_avg_hits_per_channel = []
         number_of_events = -1 
 
-        fdc_num_events = root_file.Get(self.ROOTDIR_PREFIX+"FDC/fdc_num_events")
+        fdc_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"FDC/fdc_num_events")
         if(fdc_num_events != None):
             number_of_events = fdc_num_events.GetBinContent(1)
 
@@ -137,27 +140,27 @@ class summarize_monitoring_data:
                 # each chamber has 3 planes: cathode strip/wire/cathode strip
                 nhits = 0
                 hname = "FDC/Package_%d/fdc_pack%d_chamber%d_upstream_cathode_occ" % (package,package,chamber)
-                fdc_strip_occ = root_file.Get(self.ROOTDIR_PREFIX+hname)
+                fdc_strip_occ = self.root_file.Get(self.ROOTDIR_PREFIX+hname)
                 if(fdc_strip_occ != None):
                     nhits = fdc_strip_occ.Integral()
                 fdc_avg_hits_per_channel.append( nhits/NUM_FDC_STRIPS )
 
                 nhits = 0
                 hname = "FDC/Package_%d/fdc_pack%d_chamber%d_wire_occ" % (package,package,chamber)
-                fdc_wire_occ = root_file.Get(self.ROOTDIR_PREFIX+hname)
+                fdc_wire_occ = self.root_file.Get(self.ROOTDIR_PREFIX+hname)
                 if(fdc_wire_occ != None):
                     nhits = fdc_wire_occ.Integral()
                 fdc_avg_hits_per_channel.append( nhits/NUM_FDC_WIRES )
 
                 nhits = 0
                 hname = "FDC/Package_%d/fdc_pack%d_chamber%d_downstream_cathode_occ" % (package,package,chamber)
-                fdc_strip_occ = root_file.Get(self.ROOTDIR_PREFIX+hname)
+                fdc_strip_occ = self.root_file.Get(self.ROOTDIR_PREFIX+hname)
                 if(fdc_strip_occ != None):
                     nhits = fdc_strip_occ.Integral()
                 fdc_avg_hits_per_channel.append( nhits/NUM_FDC_STRIPS )
 
         ## insert into DB
-        db.AddFDCHits(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, number_of_events, fdc_avg_hits_per_channel)
+        self.mondb.AddFDCHits(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, number_of_events, fdc_avg_hits_per_channel)
 
 
     ###########################################
@@ -166,15 +169,15 @@ class summarize_monitoring_data:
     ##   4 symmetric midway to edge:   (13,29)  (45,29)  (29,13)  (29,45)
     ##   4 symmetric around edge:      ( 0,29)  (58,29)  (29, 0)  (29,58)
     ##
-    def ProcessFCALHits(self, db, root_file):
+    def ProcessFCALHits(self):
         hits_per_channel = []
         number_of_events = -1 
 
-        fcal_num_events = root_file.Get(self.ROOTDIR_PREFIX+"fcal/fcal_num_events")
+        fcal_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"fcal/fcal_num_events")
         if(fcal_num_events != None):
             number_of_events = fcal_num_events.GetBinContent(1)
 
-        fcal_occupancy = root_file.Get(self.ROOTDIR_PREFIX+"fcal/digOcc2D")
+        fcal_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"fcal/digOcc2D")
         # sanity checks
         if(fcal_occupancy == None):
             logging.error("couldn't find FCAL occupancy histogram!")
@@ -211,15 +214,15 @@ class summarize_monitoring_data:
         hits_per_channel.append( 0 )
 
         ## insert into DB
-        db.AddFCALHits(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, number_of_events, hits_per_channel)
+        self.mondb.AddFCALHits(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, number_of_events, hits_per_channel)
 
     # For FCAL calibrations, store timing information
-    def ProcessFCALCalib(self, db, root_file):
+    def ProcessFCALCalib(self):
         ## calculate calibration info
         calib_vals = []
 
         # first, check timing
-        htime = root_file.Get(self.ROOTDIR_PREFIX+"HLDetectorTiming/TRACKING/FCAL - SC Target Time")
+        htime = self.root_file.Get(self.ROOTDIR_PREFIX+"HLDetectorTiming/TRACKING/FCAL - SC Target Time")
         if( htime == None ):
             logging.error("Couldn't find FCAL timing histogram")
             calib_vals += [0., 0.]
@@ -235,7 +238,7 @@ class summarize_monitoring_data:
                 calib_vals += [0., 0.]
                 
         # fill DB
-        db.AddFCALCalib(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, calib_vals)
+        self.mondb.AddFCALCalib(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, calib_vals)
 
 
     ###########################################
@@ -244,16 +247,16 @@ class summarize_monitoring_data:
     ##
     ## Note: Need to add histograms to get energies out of 
     ##
-    def ProcessBCALHits(self, db, root_file):
+    def ProcessBCALHits(self):
         avg_hits_per_quadrant = []
         avg_hit_energy_per_quadrant = []
         number_of_events = -1 
 
-        bcal_num_events = root_file.Get(self.ROOTDIR_PREFIX+"bcal/bcal_num_events")
+        bcal_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"bcal/bcal_num_events")
         if(bcal_num_events != None):
             number_of_events = bcal_num_events.GetBinContent(1)
 
-        bcal_occupancy = root_file.Get(self.ROOTDIR_PREFIX+"bcal/bcal_fadc_occ")
+        bcal_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"bcal/bcal_fadc_occ")
         # sanity checks
         if(bcal_occupancy == None):
             logging.error("couldn't find BCAL occupancy histogram!")
@@ -305,10 +308,10 @@ class summarize_monitoring_data:
             avg_hits_per_quadrant += [nhits_layer3_up, nhits_layer3_down, nhits_layer4_up, nhits_layer4_down]
 
         ## insert into DB
-        db.AddBCALHits(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, number_of_events, avg_hits_per_quadrant)
+        self.mondb.AddBCALHits(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, number_of_events, avg_hits_per_quadrant)
 
         ## monitor BCAL energies, if available
-        bcal_energies = root_file.Get(self.ROOTDIR_PREFIX+"bcal/bcal_fadc_occ")
+        bcal_energies = self.root_file.Get(self.ROOTDIR_PREFIX+"bcal/bcal_fadc_occ")
         # sanity checks
         if(bcal_energies == None):
             logging.error("couldn't find BCAL energies-per-channel histogram, skipping...")
@@ -359,16 +362,16 @@ class summarize_monitoring_data:
                 avg_hit_energy_per_quadrant += [energies_layer3_up, energies_layer3_down, energies_layer4_up, energies_layer4_down]
 
             ## insert into DB
-            db.AddBCALEnergies(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, number_of_events, avg_hit_energy_per_quadrant)
+            self.mondb.AddBCALEnergies(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, number_of_events, avg_hit_energy_per_quadrant)
 
 
     # For BCAL, save timing and efficiency information
-    def ProcessBCALCalib(self, db, root_file):
+    def ProcessBCALCalib(self):
         ## calculate calibration info
         calib_vals = []
 
         # first, check timing
-        htime = root_file.Get(self.ROOTDIR_PREFIX+"HLDetectorTiming/TRACKING/BCAL - SC Target Time")
+        htime = self.root_file.Get(self.ROOTDIR_PREFIX+"HLDetectorTiming/TRACKING/BCAL - SC Target Time")
         if( htime == None ):
             logging.error("Couldn't find BCAL timing histogram")
             calib_vals += [0., 0.]
@@ -384,9 +387,9 @@ class summarize_monitoring_data:
                 calib_vals += [0., 0.]
 
         # second, get efficiencies
-        bcal_eff = root_file.Get(self.ROOTDIR_PREFIX+"bcal_eff/h1eff_eff")    
-        bcal_layer = root_file.Get(self.ROOTDIR_PREFIX+"bcal_eff/h1eff_layer")    
-        bcal_layertot = root_file.Get(self.ROOTDIR_PREFIX+"bcal_eff/h1eff_layertot")    
+        bcal_eff = self.root_file.Get(self.ROOTDIR_PREFIX+"bcal_eff/h1eff_eff")    
+        bcal_layer = self.root_file.Get(self.ROOTDIR_PREFIX+"bcal_eff/h1eff_layer")    
+        bcal_layertot = self.root_file.Get(self.ROOTDIR_PREFIX+"bcal_eff/h1eff_layertot")    
         if( bcal_eff == None or bcal_layer == None or bcal_layertot == None):
             logging.error("Could not find BCAL efficiency histograms")
             calib_vals += [0., 0., 0., 0.]
@@ -394,9 +397,9 @@ class summarize_monitoring_data:
             bcal_eff.Divide(bcal_layer,bcal_layertot,1,1,"B")
             calib_vals += [ bcal_eff.GetBinContent(2), bcal_eff.GetBinContent(3), bcal_eff.GetBinContent(4), bcal_eff.GetBinContent(5) ]
 
-        bcal_enhanced_eff = root_file.Get(self.ROOTDIR_PREFIX+"bcal_eff/h1eff2_eff2")    
-        bcal_enhanced_layer = root_file.Get(self.ROOTDIR_PREFIX+"bcal_eff/h1eff2_layer")    
-        bcal_enhanced_layertot = root_file.Get(self.ROOTDIR_PREFIX+"bcal_eff/h1eff2_layertot")    
+        bcal_enhanced_eff = self.root_file.Get(self.ROOTDIR_PREFIX+"bcal_eff/h1eff2_eff2")    
+        bcal_enhanced_layer = self.root_file.Get(self.ROOTDIR_PREFIX+"bcal_eff/h1eff2_layer")    
+        bcal_enhanced_layertot = self.root_file.Get(self.ROOTDIR_PREFIX+"bcal_eff/h1eff2_layertot")    
         if( bcal_enhanced_eff == None or bcal_enhanced_layer == None or bcal_enhanced_layertot == None):
             logging.error("Could not find BCAL enhanced efficiency histograms")
             calib_vals += [0., 0., 0., 0.]
@@ -405,23 +408,23 @@ class summarize_monitoring_data:
             calib_vals += [ bcal_enhanced_eff.GetBinContent(2), bcal_enhanced_eff.GetBinContent(3), bcal_enhanced_eff.GetBinContent(4), bcal_enhanced_eff.GetBinContent(5) ]
 
         # fill DB
-        db.AddBCALCalib(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, calib_vals)
+        self.mondb.AddBCALCalib(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, calib_vals)
 
 
     ###########################################
     ## For the TOF, we store the avg number of hits per some arbitrary grouping
     ##
-    def ProcessTOFHits(self, db, root_file):
+    def ProcessTOFHits(self):
         avg_hits_per_sector = []
         number_of_events = -1 
 
-        tof_num_events = root_file.Get(self.ROOTDIR_PREFIX+"tof/tof_num_events")
+        tof_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"tof/tof_num_events")
         if(tof_num_events != None):
             number_of_events = tof_num_events.GetBinContent(1)
 
         # the TOF occupancy is split into two histos for the two planes
-        tof1_occupancy = root_file.Get(self.ROOTDIR_PREFIX+"tof/tofo1")
-        tof2_occupancy = root_file.Get(self.ROOTDIR_PREFIX+"tof/tofo2")
+        tof1_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"tof/tofo1")
+        tof2_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"tof/tofo2")
         # sanity checks
         if( (tof1_occupancy == None) or (tof2_occupancy == None)):
             logging.error("couldn't find TOF occupancy histogram!")
@@ -452,15 +455,15 @@ class summarize_monitoring_data:
             plane2_down.append(nhitsdown/11)
 
         ## insert into DB
-        db.AddTOFHits(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, number_of_events, plane1_up+plane1_down+plane2_up+plane2_down)
+        self.mondb.AddTOFHits(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, number_of_events, plane1_up+plane1_down+plane2_up+plane2_down)
 
     # keep timing calibrations
-    def ProcessTOFCalib(self, db, root_file):
+    def ProcessTOFCalib(self):
         ## calculate calibration info
         calib_vals = []
 
         # first, check timing
-        htime = root_file.Get(self.ROOTDIR_PREFIX+"HLDetectorTiming/TRACKING/TOF - SC Target Time")
+        htime = self.root_file.Get(self.ROOTDIR_PREFIX+"HLDetectorTiming/TRACKING/TOF - SC Target Time")
         if( htime == None ):
             logging.error("Couldn't find TOF timing histogram")
             calib_vals += [0., 0.]
@@ -476,7 +479,7 @@ class summarize_monitoring_data:
                 calib_vals += [0., 0.]
 
         # fill DB
-        db.AddTOFCalib(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, calib_vals)
+        self.mondb.AddTOFCalib(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, calib_vals)
 
 
 
@@ -484,16 +487,16 @@ class summarize_monitoring_data:
     ## For the tagger hodoscope, we store the avg number of hits per these groups:
     ##   8-10, 50-52, 110-112, 170-172, 210-212
     ##
-    def ProcessTAGHHits(self, db, root_file):
+    def ProcessTAGHHits(self):
         avg_hits_per_sector = []
         number_of_events = -1 
 
-        tagh_num_events = root_file.Get(self.ROOTDIR_PREFIX+"TAGH/tagh_num_events")
+        tagh_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"TAGH/tagh_num_events")
         if(tagh_num_events != None):
             number_of_events = tagh_num_events.GetBinContent(1)
 
         # get the occupancy
-        tagh_occupancy = root_file.Get(self.ROOTDIR_PREFIX+"TAGH/Hit/Hit_Occupancy")
+        tagh_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"TAGH/Hit/Hit_Occupancy")
         # sanity checks
         if( tagh_occupancy == None ): 
             logging.error("couldn't find TAGH occupancy histogram!")
@@ -507,10 +510,10 @@ class summarize_monitoring_data:
         avg_hits_per_sector += [ (tagh_occupancy.GetBinContent(210)+tagh_occupancy.GetBinContent(211)+tagh_occupancy.GetBinContent(212))/3. ]
 
         ## insert into DB
-        db.AddTAGHHits(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, number_of_events, avg_hits_per_sector)
+        self.mondb.AddTAGHHits(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, number_of_events, avg_hits_per_sector)
 
     # store timing calibrations, based on PS/Tagger intercalibration
-    def ProcessTAGHCalib(self, db, root_file):
+    def ProcessTAGHCalib(self):
         # OLD calibrations
         ## calculate calibration info
         #h = f.Get("HLDetectorTiming/TRACKING/TAGH - SC Target Time")
@@ -530,14 +533,14 @@ class summarize_monitoring_data:
         timing_adc_has_tdc = 0.
         timing_tdc_has_adc = 0.
         # get timing info (only use only channel right now, they aren't aligned enough to sum over multiples)
-        tagh_timing = root_file.Get(self.ROOTDIR_PREFIX+"PSPair/PSC_PS_TAGH/PSTAGHTimeOffsets_L/PSTAGH_tdiffVsTAGHCounterID_L6")
+        tagh_timing = self.root_file.Get(self.ROOTDIR_PREFIX+"PSPair/PSC_PS_TAGH/PSTAGHTimeOffsets_L/PSTAGH_tdiffVsTAGHCounterID_L6")
         if tagh_timing:
             tagh_timing_proj = tagh_timing.ProjectionY("_py",2,2);
             r = tagh_timing_proj.Fit("gaus","SQ");
             if int(r) == 0:
                 timing_mean = r.Parameter(1)
                 timing_sigma = r.Parameter(2)
-        tagh_Hit_HasTDCvsHasADC = root_file.Get(self.ROOTDIR_PREFIX+"TAGH/Hit/Hit_HasTDCvsHasADC")
+        tagh_Hit_HasTDCvsHasADC = self.root_file.Get(self.ROOTDIR_PREFIX+"TAGH/Hit/Hit_HasTDCvsHasADC")
         if tagh_Hit_HasTDCvsHasADC:
             if tagh_Hit_HasTDCvsHasADC.GetBinContent(2,1)+tagh_Hit_HasTDCvsHasADC.GetBinContent(2,2) > 0:
                 timing_adc_has_tdc = tagh_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (tagh_Hit_HasTDCvsHasADC.GetBinContent(2,1)+tagh_Hit_HasTDCvsHasADC.GetBinContent(2,2))
@@ -545,23 +548,23 @@ class summarize_monitoring_data:
                 timing_tdc_has_adc = tagh_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (tagh_Hit_HasTDCvsHasADC.GetBinContent(1,2)+tagh_Hit_HasTDCvsHasADC.GetBinContent(2,2))
 
         # fill DB
-        db.AddTAGHCalib(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, [timing_mean, timing_sigma, timing_adc_has_tdc, timing_tdc_has_adc])
+        self.mondb.AddTAGHCalib(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, [timing_mean, timing_sigma, timing_adc_has_tdc, timing_tdc_has_adc])
 
 
     ###########################################
     ## For the tagger microscope, we store the avg number of hits per these columns:
     ##   6-8, 24-26, 78-80, 96-98
     ##
-    def ProcessTAGMHits(self, db, root_file):
+    def ProcessTAGMHits(self):
         avg_hits_per_sector = []
         number_of_events = -1 
 
-        tagm_num_events = root_file.Get(self.ROOTDIR_PREFIX+"tagm/tagm_num_events")
+        tagm_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"tagm/tagm_num_events")
         if(tagm_num_events != None):
             number_of_events = tagm_num_events.GetBinContent(1)
 
         # get the occupancy
-        tagm_occupancy = root_file.Get(self.ROOTDIR_PREFIX+"tagm/tagm_adc_seen")
+        tagm_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"tagm/tagm_adc_seen")
         # sanity checks
         if( tagm_occupancy == None ): 
             logging.error("couldn't find TAGM occupancy histogram!")
@@ -582,10 +585,10 @@ class summarize_monitoring_data:
         avg_hits_per_sector += [ tagm_occupancy.GetBinContent(98) ]
         
         ## insert into DB
-        db.AddTAGMHits(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, number_of_events, avg_hits_per_sector)
+        self.mondb.AddTAGMHits(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, number_of_events, avg_hits_per_sector)
 
     # store timing calibrations, based on PS/Tagger intercalibration
-    def ProcessTAGMCalib(self, db, root_file):
+    def ProcessTAGMCalib(self):
         ## calculate calibration info
         #h = f.Get("HLDetectorTiming/TRACKING/TAGM - SC Target Time")
         #hy = h.ProjectionY()
@@ -602,7 +605,7 @@ class summarize_monitoring_data:
         timing_mean = 0.
         timing_sigma = 0.
         # get timing info (only use only channel right now, they aren't aligned enough to sum over multiples)
-        tagm_timing = root_file.Get(self.ROOTDIR_PREFIX+"PSPair/PSC_PS_TAGM/PSTAGMTimeOffsets_L/PSTAGH_tdiffVsTAGMColumn_L6")
+        tagm_timing = self.root_file.Get(self.ROOTDIR_PREFIX+"PSPair/PSC_PS_TAGM/PSTAGMTimeOffsets_L/PSTAGH_tdiffVsTAGMColumn_L6")
         if tagm_timing:
             tagm_timing_proj = tagm_timing.ProjectionY("_py",2,2);
             r = tagm_timing_proj.Fit("gaus","SQ");
@@ -611,24 +614,24 @@ class summarize_monitoring_data:
                 timing_sigma = r.Parameter(2)
 
         # fill DB
-        db.AddTAGMCalib(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, [timing_mean, timing_sigma])
+        self.mondb.AddTAGMCalib(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, [timing_mean, timing_sigma])
 
 
     ###########################################
     ## For the coarse PS, we store the hits for all 16 paddles
     ## and some calibration information
     ##
-    def ProcessPSCHits(self, db, root_file):
+    def ProcessPSCHits(self):
         avg_hits_per_sector = []
         number_of_events = -1 
 
-        psc_num_events = root_file.Get(self.ROOTDIR_PREFIX+"PSC/psc_num_events")
+        psc_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"PSC/psc_num_events")
         if(psc_num_events != None):
             number_of_events = psc_num_events.GetBinContent(1)
 
         # get the occupancy
-        psc_leftarm_occupancy = root_file.Get(self.ROOTDIR_PREFIX+"PSC/Hit/LeftArm/Hit_Occupancy_LeftArm")
-        psc_rightarm_occupancy = root_file.Get(self.ROOTDIR_PREFIX+"PSC/Hit/RightArm/Hit_Occupancy_RightArm")
+        psc_leftarm_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"PSC/Hit/LeftArm/Hit_Occupancy_LeftArm")
+        psc_rightarm_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"PSC/Hit/RightArm/Hit_Occupancy_RightArm")
         # sanity checks
         if( psc_leftarm_occupancy == None ): 
             logging.error("couldn't find PSC left arm occupancy histogram!")
@@ -644,10 +647,10 @@ class summarize_monitoring_data:
             avg_hits_per_sector += [ psc_rightarm_occupancy.GetBinContent(x) ]
 
         ## insert into DB
-        db.AddPSCHits(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, number_of_events, avg_hits_per_sector)
+        self.mondb.AddPSCHits(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, number_of_events, avg_hits_per_sector)
 
     # store timing calibrations, based on PS/Tagger intercalibration
-    def ProcessPSCCalib(self, db, root_file):
+    def ProcessPSCCalib(self):
         ## calculate calibration info
         timing_mean = 0.
         timing_sigma = 0.
@@ -656,20 +659,20 @@ class summarize_monitoring_data:
         timing_left_adc_has_tdc = 0.
         timing_left_tdc_has_adc = 0.
         # get timing info (only use only channel right now, they aren't aligned enough to sum over multiples)
-        psc_timing = root_file.Get(self.ROOTDIR_PREFIX+"PSPair/PSC/PSCRightArmTimeOffsets/PSC_tdiffVsPSCIDRight_L6")
+        psc_timing = self.root_file.Get(self.ROOTDIR_PREFIX+"PSPair/PSC/PSCRightArmTimeOffsets/PSC_tdiffVsPSCIDRight_L6")
         if psc_timing:
             psc_timing_proj = psc_timing.ProjectionY("_py",2,2);
             r = psc_timing_proj.Fit("gaus","SQ");
             if int(r) == 0:
                 timing_mean = r.Parameter(1)
                 timing_sigma = r.Parameter(2)
-        psc_Left_Hit_HasTDCvsHasADC = root_file.Get(self.ROOTDIR_PREFIX+"PSC/Hit/LeftArm/Hit_HasTDCvsHasADC_LeftArm")
+        psc_Left_Hit_HasTDCvsHasADC = self.root_file.Get(self.ROOTDIR_PREFIX+"PSC/Hit/LeftArm/Hit_HasTDCvsHasADC_LeftArm")
         if psc_Left_Hit_HasTDCvsHasADC:
             if psc_Left_Hit_HasTDCvsHasADC.GetBinContent(2,1)+psc_Left_Hit_HasTDCvsHasADC.GetBinContent(2,2) > 0:
                 timing_left_adc_has_tdc = psc_Left_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (psc_Left_Hit_HasTDCvsHasADC.GetBinContent(2,1)+psc_Left_Hit_HasTDCvsHasADC.GetBinContent(2,2))
             if psc_Left_Hit_HasTDCvsHasADC.GetBinContent(1,2)+psc_Left_Hit_HasTDCvsHasADC.GetBinContent(2,2) > 0:
                 timing_left_tdc_has_adc = psc_Left_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (psc_Left_Hit_HasTDCvsHasADC.GetBinContent(1,2)+psc_Left_Hit_HasTDCvsHasADC.GetBinContent(2,2))
-        psc_Right_Hit_HasTDCvsHasADC = root_file.Get(self.ROOTDIR_PREFIX+"PSC/Hit/RightArm/Hit_HasTDCvsHasADC_RightArm")
+        psc_Right_Hit_HasTDCvsHasADC = self.root_file.Get(self.ROOTDIR_PREFIX+"PSC/Hit/RightArm/Hit_HasTDCvsHasADC_RightArm")
         if psc_Right_Hit_HasTDCvsHasADC:
             if psc_Right_Hit_HasTDCvsHasADC.GetBinContent(2,1)+psc_Right_Hit_HasTDCvsHasADC.GetBinContent(2,2) > 0:
                 timing_right_adc_has_tdc = psc_Right_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (psc_Right_Hit_HasTDCvsHasADC.GetBinContent(2,1)+psc_Right_Hit_HasTDCvsHasADC.GetBinContent(2,2))
@@ -677,7 +680,7 @@ class summarize_monitoring_data:
                 timing_right_tdc_has_adc = psc_Right_Hit_HasTDCvsHasADC.GetBinContent(2,2) / (psc_Right_Hit_HasTDCvsHasADC.GetBinContent(1,2)+psc_Right_Hit_HasTDCvsHasADC.GetBinContent(2,2))
 
         # fill DB
-        db.AddPSCCalib(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, [timing_mean, timing_sigma, timing_left_adc_has_tdc, timing_left_tdc_has_adc,
+        self.mondb.AddPSCCalib(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, [timing_mean, timing_sigma, timing_left_adc_has_tdc, timing_left_tdc_has_adc,
                                                              timing_right_adc_has_tdc, timing_right_tdc_has_adc ])
 
 
@@ -686,17 +689,17 @@ class summarize_monitoring_data:
     ##    1,6,17,45,68,81,105,106,127,145
     ## and some calibration information
     ##
-    def ProcessPSHits(self, db, root_file):
+    def ProcessPSHits(self):
         avg_hits_per_sector = []
         number_of_events = -1 
 
-        ps_num_events = root_file.Get(self.ROOTDIR_PREFIX+"PS/ps_num_events")
+        ps_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"PS/ps_num_events")
         if(ps_num_events != None):
             number_of_events = ps_num_events.GetBinContent(1)
 
         # get the occupancy
-        ps_leftarm_occupancy = root_file.Get(self.ROOTDIR_PREFIX+"PS/Hit/LeftArm/Hit_Occupancy_LeftArm")
-        ps_rightarm_occupancy = root_file.Get(self.ROOTDIR_PREFIX+"PS/Hit/RightArm/Hit_Occupancy_RightArm")
+        ps_leftarm_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"PS/Hit/LeftArm/Hit_Occupancy_LeftArm")
+        ps_rightarm_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"PS/Hit/RightArm/Hit_Occupancy_RightArm")
         # sanity checks
         if( ps_leftarm_occupancy == None ): 
             logging.error("couldn't find PS left arm occupancy histogram!")
@@ -729,26 +732,26 @@ class summarize_monitoring_data:
         
 
         ## insert into DB
-        db.AddPSHits(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, number_of_events, avg_hits_per_sector)
+        self.mondb.AddPSHits(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, number_of_events, avg_hits_per_sector)
 
     
 
     ###########################################
     ## Save various count rates for reconstruction-level quantities
     ##
-    def ProcessAnalysisInfo(self, db, root_file):
+    def ProcessAnalysisInfo(self):
         avg_hits_per_sector = []
         number_of_events = -1   
 
-        num_events = root_file.Get("IsEvent")
+        num_events = self.root_file.Get("IsEvent")
         if(num_events != None):
             number_of_events = num_events.GetBinContent(2)
 
         ## extract data generated by the monitoring_hists plugin
         analysis_data = []
     
-        num_particles = root_file.Get(self.ROOTDIR_PREFIX+"Independent/Hist_TrackMultiplicity/NumReconstructedParticles")
-        num_good_particles = root_file.Get(self.ROOTDIR_PREFIX+"Independent/Hist_TrackMultiplicity/NumGoodReconstructedParticles")
+        num_particles = self.root_file.Get(self.ROOTDIR_PREFIX+"Independent/Hist_TrackMultiplicity/NumReconstructedParticles")
+        num_good_particles = self.root_file.Get(self.ROOTDIR_PREFIX+"Independent/Hist_TrackMultiplicity/NumGoodReconstructedParticles")
         # sanity checks
         if(num_particles == None or num_good_particles == None):
             logging.error("couldn't find Analysis particle count histograms!")
@@ -796,20 +799,20 @@ class summarize_monitoring_data:
         analysis_data += [num_neutral,num_good_neutral]
 
         # Calculate number of various other reconstructed quantities    
-        analysis_data.append( self.SumHistContents(root_file, self.ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumFCALShowers") )
-        analysis_data.append( self.SumHistContents(root_file, self.ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumBCALShowers") )
-        analysis_data.append( self.SumHistContents(root_file, self.ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumTOFPoints") )
-        analysis_data.append( self.SumHistContents(root_file, self.ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumSCHits") )
-        analysis_data.append( self.SumHistContents(root_file, self.ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumTAGHHits") )
-        analysis_data.append( self.SumHistContents(root_file, self.ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumTAGMHits") )
+        analysis_data.append( self.SumHistContents(self.root_file, self.ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumFCALShowers") )
+        analysis_data.append( self.SumHistContents(self.root_file, self.ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumBCALShowers") )
+        analysis_data.append( self.SumHistContents(self.root_file, self.ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumTOFPoints") )
+        analysis_data.append( self.SumHistContents(self.root_file, self.ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumSCHits") )
+        analysis_data.append( self.SumHistContents(self.root_file, self.ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumTAGHHits") )
+        analysis_data.append( self.SumHistContents(self.root_file, self.ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumTAGMHits") )
         
-        analysis_data.append( self.SumHistContents(root_file, self.ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumTrackBCALMatches") )
-        analysis_data.append( self.SumHistContents(root_file, self.ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumTrackFCALMatches") )
-        analysis_data.append( self.SumHistContents(root_file, self.ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumTrackTOFMatches") )
-        analysis_data.append( self.SumHistContents(root_file, self.ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumTrackSCMatches") )
+        analysis_data.append( self.SumHistContents(self.root_file, self.ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumTrackBCALMatches") )
+        analysis_data.append( self.SumHistContents(self.root_file, self.ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumTrackFCALMatches") )
+        analysis_data.append( self.SumHistContents(self.root_file, self.ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumTrackTOFMatches") )
+        analysis_data.append( self.SumHistContents(self.root_file, self.ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumTrackSCMatches") )
 
         ## insert into DB
-        db.AddAnalysisInfo(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, number_of_events, analysis_data)
+        self.mondb.AddAnalysisInfo(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, number_of_events, analysis_data)
 
 
     # do processing for results from a single EVIO file
@@ -834,21 +837,23 @@ class summarize_monitoring_data:
         self.root_file = TFile(self.FILE_NAME)
 
         # keep summary info about the hits in different subdetectors
-        self.ProcessCDCHits(self.mondb, self.root_file)
-        self.ProcessFDCHits(self.mondb, self.root_file)
-        self.ProcessFCALHits(self.mondb, self.root_file)
-        self.ProcessBCALHits(self.mondb, self.root_file)
-        self.ProcessSCHits(self.mondb, self.root_file)
-        self.ProcessTOFHits(self.mondb, self.root_file)
-        self.ProcessTAGHHits(self.mondb, self.root_file)
-        self.ProcessTAGMHits(self.mondb, self.root_file)
-        self.ProcessPSHits(self.mondb, self.root_file)
-        self.ProcessPSCHits(self.mondb, self.root_file)
+        self.ProcessCDCHits()
+        self.ProcessFDCHits()
+        self.ProcessFCALHits()
+        self.ProcessBCALHits()
+        self.ProcessSCHits()
+        self.ProcessTOFHits()
+        self.ProcessTAGHHits()
+        self.ProcessTAGMHits()
+        self.ProcessPSHits()
+        self.ProcessPSCHits()
 
-        self.ProcessAnalysisInfo(self.mondb, self.root_file)
+        self.ProcessAnalysisInfo()
 
         # cleanup
-        self.root_file.Close()
+        #self.root_file.Close()
+        del self.root_file
+        del self.mondb
 
 
     # do processing for results for a whole run 
@@ -874,29 +879,31 @@ class summarize_monitoring_data:
         self.root_file = TFile(self.FILE_NAME)
 
         # keep summary info about the hits in different subdetectors
-        self.ProcessCDCHits(self.mondb, self.root_file)
-        self.ProcessFDCHits(self.mondb, self.root_file)
-        self.ProcessFCALHits(self.mondb, self.root_file)
-        self.ProcessBCALHits(self.mondb, self.root_file)
-        self.ProcessSCHits(self.mondb, self.root_file)
-        self.ProcessTOFHits(self.mondb, self.root_file)
-        self.ProcessTAGHHits(self.mondb, self.root_file)
-        self.ProcessTAGMHits(self.mondb, self.root_file)
-        self.ProcessPSHits(self.mondb, self.root_file)
-        self.ProcessPSCHits(self.mondb, self.root_file)
+        self.ProcessCDCHits()
+        self.ProcessFDCHits()
+        self.ProcessFCALHits()
+        self.ProcessBCALHits()
+        self.ProcessSCHits()
+        self.ProcessTOFHits()
+        self.ProcessTAGHHits()
+        self.ProcessTAGMHits()
+        self.ProcessPSHits()
+        self.ProcessPSCHits()
 
-        self.ProcessAnalysisInfo(self.mondb, self.root_file)
+        self.ProcessAnalysisInfo()
 
         # keep summary info on calibrations
-        self.ProcessFCALCalib(self.mondb, self.root_file)
-        self.ProcessBCALCalib(self.mondb, self.root_file)
-        self.ProcessTOFCalib(self.mondb, self.root_file)
-        self.ProcessTAGHCalib(self.mondb, self.root_file)
-        self.ProcessTAGMCalib(self.mondb, self.root_file)
-        self.ProcessPSCCalib(self.mondb, self.root_file)
+        self.ProcessFCALCalib()
+        self.ProcessBCALCalib()
+        self.ProcessTOFCalib()
+        self.ProcessTAGHCalib()
+        self.ProcessTAGMCalib()
+        self.ProcessPSCCalib()
 
         # cleanup
-        self.root_file.Close()
+        #self.root_file.Close()
+        del self.root_file
+        del self.mondb
 
 
 

@@ -33,8 +33,9 @@ class make_monitoring_plots:
         self.hists_to_plot = []
         self.macros_to_run = []
 
-        # name of file that containes the histogram
+        # name of file that containes the histogram - should get rid of this?
         self.rootfile_name = None
+        self.root_file = None       # the actual ROOT file
 
         self.base_root_dir = ""
         self.output_directory = "."
@@ -42,6 +43,11 @@ class make_monitoring_plots:
 
         # the canvas we plot on
         self.c1  = TCanvas("c1","",self.CANVAS_WIDTH,self.CANVAS_HEIGHT)
+
+    def __del__(self):
+        del self.c1
+        if self.root_file:
+            del self.root_file
 
 
     ##########################################################
@@ -70,10 +76,11 @@ class make_monitoring_plots:
         self.c1.SetLogz(0)
 
     def print_canvas_png(self, fullpath):
+        #print "Making plot = " +  self.output_directory + "/" + fullpath.replace("/","_") + ".png" # tmp
         self.c1.Print( self.output_directory + "/" + fullpath.replace("/","_") + ".png" )
 
-    def SumHistContents(self, root_file, hist_path):
-        h = root_file.Get(hist_path)
+    def SumHistContents(self, the_file, hist_path):
+        h = the_file.Get(hist_path)
         if(h == None):
             logging.warn("Could not load " + hist_path)
             return -1
@@ -249,15 +256,15 @@ class make_monitoring_plots:
             return
 
         # make the plots
-        root_file = TFile(self.rootfile_name)
+        self.root_file = TFile(self.rootfile_name)
         # should handle bad files better?
-        if(root_file is None):
+        if(self.root_file is None):
             logging.critical("Could not open file: " + filename)
             return
 
         self.ClearPad(self.c1)
         self.c1.SetCanvasSize(self.CANVAS_WIDTH,self.CANVAS_HEIGHT)
-        self.SavePlots(root_file.GetDirectory(self.base_root_dir), self.base_root_dir, self.hists_to_plot, self.macros_to_run)
+        self.SavePlots(self.root_file.GetDirectory(self.base_root_dir), self.base_root_dir, self.hists_to_plot, self.macros_to_run)
 
 
 
