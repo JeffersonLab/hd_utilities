@@ -323,11 +323,13 @@ def ProcessOfflineData(args):
 
     # CLEANUP
     ## save some information about what has been processed so far
+    rootfiles = []
     with open(join(misc_dir,"rootfiles.txt"),"w") as outf:
-        for filepath in rootfilespath:
-            print>>outf,filepath
+        for (fname,filenum) in monitoring_files.items():
+            rootfiles.append(fname)
+            print>>outf,fname
     try:
-        pickle.dump( rootfile_nums, open(join(misc_dir,"processed_files.dat"),"w") )
+        pickle.dump( rootfiles, open(join(misc_dir,"processed_files.dat"),"w") )
     except Exception, e:
         logging.error("Couldn't save list of processed files: %s"%str(e))
 
