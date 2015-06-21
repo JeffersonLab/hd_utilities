@@ -5,7 +5,8 @@ set LOCKFILE=lock.offline
 set VERSION=ver18
 set INPUTDIR=/volatile/halld/offline_monitoring/RunPeriod-2014-10
 set OUTPUTDIR=/w/halld-scifs1a/data_monitoring/RunPeriod-2014-10/ver18
-set ARGS=" -v RunPeriod-2014-10,18 "
+set ARGS=" -v RunPeriod-2014-10,18  --force "
+#set ARGS=" -v RunPeriod-2014-10,18 "
 #set ARGS=" -v RunPeriod-2014-10,17 -b 2438 -e 2440 --force "
 #set ARGS=" -v RunPeriod-2014-10,17 -R 2438 --force"
 #set ARGS=""
@@ -38,7 +39,8 @@ cd $MONITORING_HOME
 
 if ( ! -e $LOCKFILE ) then
     touch $LOCKFILE
-    ./process_new_offline_data.py $ARGS $VERSION $INPUTDIR $OUTPUTDIR --logfile=$MONITORING_LOGDIR/check_monitoring_data.`date +%F_%T`.log
+    #./process_new_offline_data.py $ARGS $VERSION $INPUTDIR $OUTPUTDIR --logfile=$MONITORING_LOGDIR/check_monitoring_data.`date +%F_%T`.log
+    ./process_new_offline_data.py $ARGS $VERSION $INPUTDIR $OUTPUTDIR 
     rm $LOCKFILE
 else 
     echo "process is locked by another job, exiting..."
