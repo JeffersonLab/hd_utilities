@@ -279,11 +279,15 @@ def ProcessOfflineData(args):
     summed_rootfile = join(config.OUTPUT_DIRECTORY,"rootfiles","hd_root_" + rundir + ".root")  # figure out the output filename
     if config.MAKE_SUMMED_ROOTFILE:
         # make sure the output cirectory exists
-        os.system("mkdir -m"+config.NEWDIR_MODE+" -p " + join(config.OUTPUT_DIRECTORY,"rootfiles"))
+        if not isdir(join(config.OUTPUT_DIRECTORY,"rootfiles")):
+            os.system("mkdir -m"+config.NEWDIR_MODE+" -p " + join(config.OUTPUT_DIRECTORY,"rootfiles"))
         if isfile(summed_rootfile):
             os.system("rm -f " + summed_rootfile)  # hadd requires us to 
         # note hadd -k skips corrupt or missing files - we want to do our best but not fail here
-        os.system("hadd -k -v 0 " +  " ".join([summed_rootfile] + monitoring_files.keys() ))
+        #os.system("hadd -k -v 0 " +  " ".join([summed_rootfile] + monitoring_files.keys() ))
+        #print "MAKE SUMMED FILE = " + summed_rootfile
+        #print "SUM THESE FILES = " + str(monitoring_files.keys())
+        os.system("hadd -v 0 " +  " ".join([summed_rootfile] + monitoring_files.keys() ))
 
     # sanity check - does the summed file exist?
     if not isfile(summed_rootfile):
@@ -304,9 +308,12 @@ def ProcessOfflineData(args):
     if config.MAKE_PLOTS:
         if config.VERBOSE>1:
             print "  creating plots..."
-        monitoring_data_dir = join(config.OUTPUT_DIRECTORY,("Run%06d" % runnum))
-        os.system("mkdir -m"+config.NEWDIR_MODE+" -p " + monitoring_data_dir)  ## need error checks
-            
+        monitoring_data_dir = join(config.OUTPUT_DIRECTORY,("Run%06d" % run))
+        retval = os.system("mkdir -m"+config.NEWDIR_MODE+" -p " + monitoring_data_dir)  ## need error checks
+        if retval != 0:
+            print "ERROR MAKING DIRECTORY (#"+str(retval)+") = "+"mkdir -m"+config.NEWDIR_MODE+" -p " + monitoring_data_dir
+            sys.exit(0)
+
         plotter = make_monitoring_plots.make_monitoring_plots()
         plotter.histlist_filename = "histograms_to_monitor"
         plotter.macrolist_filename = "macros_to_monitor"
@@ -332,6 +339,15 @@ def ProcessOfflineData(args):
         pickle.dump( rootfiles, open(join(misc_dir,"processed_files.dat"),"w") )
     except Exception, e:
         logging.error("Couldn't save list of processed files: %s"%str(e))
+
+    # cleanup memory
+    del summarizer
+    del plotter
+    del monitoring_files
+
+    if config.VERBOSE>0:
+        print "Done with run %d !"%run
+
 
 ############################################
 
