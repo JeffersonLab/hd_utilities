@@ -155,22 +155,22 @@ int main(int argc, char **argv){
   char gname[200];
   for(Int_t i=0;i<N;i++){
     gtimePlugin[i] = new TGraph();
-    sprintf(gname,"gtimePlugin_ver%2.2d_ver%2.2d",VER_LAST,LAUNCHVERS[i]);
+    sprintf(gname,"gtimePlugin_ver%2.2d_ver%2.2d",VER_LAST,LAUNCHVERS[NVERS-1-N+i]);
     gtimePlugin[i]->SetTitle(gname);
     gmem[i] = new TGraph();
-    sprintf(gname,"gmem_ver%2.2d_ver%2.2d",VER_LAST,LAUNCHVERS[i]);
+    sprintf(gname,"gmem_ver%2.2d_ver%2.2d",VER_LAST,LAUNCHVERS[NVERS-1-N+i]);
     gmem[i]->SetTitle(gname);
     gvmem[i] = new TGraph();
-    sprintf(gname,"gvmem_ver%2.2d_ver%2.2d",VER_LAST,LAUNCHVERS[i]);
+    sprintf(gname,"gvmem_ver%2.2d_ver%2.2d",VER_LAST,LAUNCHVERS[NVERS-1-N+i]);
     gvmem[i]->SetTitle(gname);
     gnevents[i] = new TGraph();
-    sprintf(gname,"gnevents_ver%2.2d_ver%2.2d",VER_LAST,LAUNCHVERS[i]);
+    sprintf(gname,"gnevents_ver%2.2d_ver%2.2d",VER_LAST,LAUNCHVERS[NVERS-1-N+i]);
     gnevents[i]->SetTitle(gname);
-    sprintf(gname,"hnevents_diff_ver%2.2d_ver%2.2d",VER_LAST,LAUNCHVERS[i]);
+    sprintf(gname,"hnevents_diff_ver%2.2d_ver%2.2d",VER_LAST,LAUNCHVERS[NVERS-1-N+i]);
     hnevents_diff[i] = new TH1F(gname,"",200,-100,100);
 
     gtimePlugin_per_event[i] = new TGraph();
-    sprintf(gname,"gtimePlugin_per_event_ver%2.2d_ver%2.2d",VER_LAST,LAUNCHVERS[i]);
+    sprintf(gname,"gtimePlugin_per_event_ver%2.2d_ver%2.2d",VER_LAST,LAUNCHVERS[NVERS-1-N+i]);
     gtimePlugin_per_event[i]->SetTitle(gname);
   }
 
@@ -249,12 +249,12 @@ int main(int argc, char **argv){
     // Fill graphs with values
     for(Int_t i=0;i<N;i++){
       // Values with index of NVERS-1 are final launch
-      gtimePlugin[i]->SetPoint(gtimePlugin[i]->GetN(),timePlugin_value[i],timePlugin_value[NVERS-1]);
-      gmem[i]->SetPoint(gmem[i]->GetN(),mem_value[i],mem_value[NVERS-1]);
-      gvmem[i]->SetPoint(gvmem[i]->GetN(),vmem_value[i],vmem_value[NVERS-1]);
-      gnevents[i]->SetPoint(gnevents[i]->GetN(),nevents_value[i],nevents_value[NVERS-1]);
-      hnevents_diff[i]->Fill(nevents_value[NVERS-1] - nevents_value[i]);
-      gtimePlugin_per_event[i]->SetPoint(gtimePlugin_per_event[i]->GetN(),timePlugin_per_event_value[i],timePlugin_per_event_value[NVERS-1]);
+      gtimePlugin[i]->SetPoint(gtimePlugin[i]->GetN(),timePlugin_value[NVERS-1-N+i],timePlugin_value[NVERS-1]);
+      gmem[i]->SetPoint(gmem[i]->GetN(),mem_value[NVERS-1-N+i],mem_value[NVERS-1]);
+      gvmem[i]->SetPoint(gvmem[i]->GetN(),vmem_value[NVERS-1-N+i],vmem_value[NVERS-1]);
+      gnevents[i]->SetPoint(gnevents[i]->GetN(),nevents_value[NVERS-1-N+i],nevents_value[NVERS-1]);
+      hnevents_diff[i]->Fill(nevents_value[NVERS-1] - nevents_value[NVERS-1-N+i]);
+      gtimePlugin_per_event[i]->SetPoint(gtimePlugin_per_event[i]->GetN(),timePlugin_per_event_value[NVERS-1-N+i],timePlugin_per_event_value[NVERS-1]);
     }
 
     ntotalAll++;
@@ -277,7 +277,7 @@ int main(int argc, char **argv){
 
     // timePlugin
     gtimePlugin[i]->SetTitle("");
-    sprintf(gname,"plugin time for ver %2.2d (min)",LAUNCHVERS[i]);
+    sprintf(gname,"plugin time for ver %2.2d (min)",LAUNCHVERS[NVERS-1-N+i]);
     gtimePlugin[i]->GetXaxis()->SetTitle(gname);
     gtimePlugin[i]->GetXaxis()->CenterTitle(gname);
     gtimePlugin[i]->GetXaxis()->SetTitleSize(0.050);
@@ -311,13 +311,13 @@ int main(int argc, char **argv){
     line_equal->SetY2(360);
     line_equal->Draw("same");
 
-    sprintf(gname,"figures/%s/001___timePlugin_ver%2.2d_ver%2.2d.png",RUNPERIOD.c_str(),VER_LAST,LAUNCHVERS[i]);
+    sprintf(gname,"figures/%s/001___timePlugin_ver%2.2d_ver%2.2d.png",RUNPERIOD.c_str(),VER_LAST,LAUNCHVERS[NVERS-1-N+i]);
     canvas->SaveAs(gname);
     //_____________________________________________________________________________________________
 
     // mem
     gmem[i]->SetTitle("");
-    sprintf(gname,"mem for ver %2.2d (MB)",LAUNCHVERS[i]);
+    sprintf(gname,"mem for ver %2.2d (MB)",LAUNCHVERS[NVERS-1-N+i]);
     gmem[i]->GetXaxis()->SetTitle(gname);
     gmem[i]->GetXaxis()->CenterTitle(gname);
     gmem[i]->GetXaxis()->SetTitleSize(0.050);
@@ -351,13 +351,13 @@ int main(int argc, char **argv){
     line_equal->SetY2(5000);
     line_equal->Draw("same");
 
-    sprintf(gname,"figures/%s/002___mem_ver%2.2d_ver%2.2d.png",RUNPERIOD.c_str(),VER_LAST,LAUNCHVERS[i]);
+    sprintf(gname,"figures/%s/002___mem_ver%2.2d_ver%2.2d.png",RUNPERIOD.c_str(),VER_LAST,LAUNCHVERS[NVERS-1-N+i]);
     canvas->SaveAs(gname);
     //_____________________________________________________________________________________________
 
     // vmem
     gvmem[i]->SetTitle("");
-    sprintf(gname,"vmem for ver %2.2d (MB)",LAUNCHVERS[i]);
+    sprintf(gname,"vmem for ver %2.2d (MB)",LAUNCHVERS[NVERS-1-N+i]);
     gvmem[i]->GetXaxis()->SetTitle(gname);
     gvmem[i]->GetXaxis()->CenterTitle(gname);
     gvmem[i]->GetXaxis()->SetTitleSize(0.050);
@@ -391,13 +391,13 @@ int main(int argc, char **argv){
     line_equal->SetY2(5000);
     line_equal->Draw("same");
 
-    sprintf(gname,"figures/%s/003___vmem_ver%2.2d_ver%2.2d.png",RUNPERIOD.c_str(),VER_LAST,LAUNCHVERS[i]);
+    sprintf(gname,"figures/%s/003___vmem_ver%2.2d_ver%2.2d.png",RUNPERIOD.c_str(),VER_LAST,LAUNCHVERS[NVERS-1-N+i]);
     canvas->SaveAs(gname);
     //_____________________________________________________________________________________________
 
     // nevents
     gnevents[i]->SetTitle("");
-    sprintf(gname,"# events for ver %2.2d",LAUNCHVERS[i]);
+    sprintf(gname,"# events for ver %2.2d",LAUNCHVERS[NVERS-1-N+i]);
     gnevents[i]->GetXaxis()->SetTitle(gname);
     gnevents[i]->GetXaxis()->CenterTitle(gname);
     gnevents[i]->GetXaxis()->SetTitleSize(0.050);
@@ -431,13 +431,13 @@ int main(int argc, char **argv){
     line_equal->SetY2(35000);
     line_equal->Draw("same");
 
-    sprintf(gname,"figures/%s/004___nevents_ver%2.2d_ver%2.2d.png",RUNPERIOD.c_str(),VER_LAST,LAUNCHVERS[i]);
+    sprintf(gname,"figures/%s/004___nevents_ver%2.2d_ver%2.2d.png",RUNPERIOD.c_str(),VER_LAST,LAUNCHVERS[NVERS-1-N+i]);
     canvas->SaveAs(gname);
     //_____________________________________________________________________________________________
 
     // hnevents_diff
     hnevents_diff[i]->SetTitle("");
-    sprintf(gname,"# events for ver %2.2d - # events for ver %2.2d",VER_LAST, LAUNCHVERS[i]);
+    sprintf(gname,"# events for ver %2.2d - # events for ver %2.2d",VER_LAST, LAUNCHVERS[NVERS-1-N+i]);
     hnevents_diff[i]->GetXaxis()->SetTitle(gname);
     hnevents_diff[i]->GetXaxis()->CenterTitle(gname);
     hnevents_diff[i]->GetXaxis()->SetTitleSize(0.050);
@@ -470,14 +470,14 @@ int main(int argc, char **argv){
     line_equal->SetY2(hnevents_diff[i]->GetMaximum() * 1.05);
     line_equal->Draw("same");
 
-    sprintf(gname,"figures/%s/005___hnevents_diff_ver%2.2d_ver%2.2d.png",RUNPERIOD.c_str(),VER_LAST,LAUNCHVERS[i]);
+    sprintf(gname,"figures/%s/005___hnevents_diff_ver%2.2d_ver%2.2d.png",RUNPERIOD.c_str(),VER_LAST,LAUNCHVERS[NVERS-1-N+i]);
     canvas->SaveAs(gname);
     canvas->SetLogy(0);
     //_____________________________________________________________________________________________
 
     // timePlugin_per_event
     gtimePlugin_per_event[i]->SetTitle("");
-    sprintf(gname,"plugin time/event for ver %2.2d (sec)",LAUNCHVERS[i]);
+    sprintf(gname,"plugin time/event for ver %2.2d (sec)",LAUNCHVERS[NVERS-1-N+i]);
     gtimePlugin_per_event[i]->GetXaxis()->SetTitle(gname);
     gtimePlugin_per_event[i]->GetXaxis()->CenterTitle(gname);
     gtimePlugin_per_event[i]->GetXaxis()->SetTitleSize(0.050);
@@ -515,7 +515,7 @@ int main(int argc, char **argv){
     line_equal->SetY2(1.);
     line_equal->Draw("same");
 
-    sprintf(gname,"figures/%s/006___timePlugin_per_event_ver%2.2d_ver%2.2d.png",RUNPERIOD.c_str(),VER_LAST,LAUNCHVERS[i]);
+    sprintf(gname,"figures/%s/006___timePlugin_per_event_ver%2.2d_ver%2.2d.png",RUNPERIOD.c_str(),VER_LAST,LAUNCHVERS[NVERS-1-N+i]);
     canvas->SaveAs(gname);
     canvas->SetLogx(0);
     canvas->SetLogy(0);
