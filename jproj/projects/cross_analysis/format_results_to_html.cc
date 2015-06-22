@@ -95,6 +95,10 @@ int main(int argc, char **argv){
   if(RUNPERIOD=="2014_10") sprintf(filename,"results.txt");
   else                     sprintf(filename,"results_%s.txt",RUNPERIOD.c_str());
   ifstream IN(filename);
+  if(!IN){
+    cout << "input file " << filename << " does not exist" << endl;
+    abort();
+  }
 
   // input variables
   int run, file;
@@ -155,6 +159,7 @@ int main(int argc, char **argv){
   while(IN >> run >> file){
     for(int i=0;i<NVERS;i++){
       IN >> results[i];
+      if(debug) cout << "i = " << i << " results[i] = " << results[i] << endl;
     }
 
     if(run != run_previous){

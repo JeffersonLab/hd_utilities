@@ -87,9 +87,7 @@ This will take ~ 4 min.
 
 Spit out results of each launch as txt:
 +-------------------------------------------------------------------------------+
-| mysql -hhallddb -ufarmer farming -s -r -e "select run, file, result_ver09, \  |
-| result_ver10, result_ver11, result_ver12, result_ver13 \                      |
-|from cross_analysis_table" > results.txt                                       |
+| time ./spitout_results.sh [run period] [initial run] [final run]              |
 +-------------------------------------------------------------------------------+
 
 Format txt file for results into html.
@@ -101,15 +99,17 @@ Possible outcomes are
 - NULL
 
 +-------------------------------------------------------------------------------+
-| format_results_to_html -V 9 -F 15                                             |
+| set LAUNCH = "offline_monitoring_RunPeriod2015_03_ver08_hd_rawdata"           |
+| cp ../${LAUNCH}/${LAUNCH}.jsub /group/halld/data_monitoring/run_conditions/   |
+| format_results_to_html -R 2015_03 -V 9 -F 15                                  |
 +-------------------------------------------------------------------------------+
 
 This creates the html files in the directory html, so copy them
 
-+-------------------------------------------------------------------------------+
-| cp html/results*.html \                                                       |
-| /group/halld/www/halldweb/html/data_monitoring/launch_analysis/rap_sheet/     |
-+-------------------------------------------------------------------------------+
++---------------------------------------------------------------------------------------------+
+| cp html/results*.html \                                                                     |
+| /group/halld/www/halldweb/html/data_monitoring/launch_analysis/rap_sheet_[run period] /     |
++---------------------------------------------------------------------------------------------+
 
 #-------------------------------------------------------------------------------------------------#
 #      5. Compare timePlugin, mem, vmem across launches                                           #
@@ -117,7 +117,7 @@ This creates the html files in the directory html, so copy them
 
 Spit out results of each launch as txt:
 +-------------------------------------------------------------------------------+
-| time ./spitout_timePlugin_mem_vmem.sh 9 15                                    |
+| time ./spitout_timePlugin_mem_vmem.sh 2015_03 9 15                            |
 +-------------------------------------------------------------------------------+
 
 Format txt file for results into html.
@@ -128,10 +128,10 @@ Possible outcomes are
 - FAILED
 - NULL
 
-+-------------------------------------------------------------------------------+
-| process_timePlugin_mem_vmem -V 9 -F 15                                        |
-| cp figures/*ver13* \                                                          |
-| /group/halld/www/halldweb/html/data_monitoring/launch_analysis/cross_analysis/|
-+-------------------------------------------------------------------------------+
++--------------------------------------------------------------------------------------------+
+| process_timePlugin_mem_vmem -R 2015_03 -V 9 -F 15                                          |
+| cp figures/[run period]/*ver13* \                                                          |
+| /group/halld/www/halldweb/html/data_monitoring/launch_analysis/cross_analysis/[run period] |
++--------------------------------------------------------------------------------------------+
 
 Modify html page sources to reflect new figures.
