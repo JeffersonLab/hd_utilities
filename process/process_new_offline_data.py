@@ -43,7 +43,7 @@ def mkdir_p(path):
 
 class ProcessMonDataConfig:
     def __init__(self):
-        self.NTHREAD = 4
+        self.NTHREAD = 2
         self.VERSION_NUMBER  =  -1
 
         # switches to control what type of processing we do
@@ -331,6 +331,7 @@ def ProcessOfflineData(args):
     # CLEANUP
     ## save some information about what has been processed so far
     rootfiles = []
+    misc_dir = join(config.INPUT_DIRECTORY,config.REVISION,"misc",rundir)
     with open(join(misc_dir,"rootfiles.txt"),"w") as outf:
         for (fname,filenum) in monitoring_files.items():
             rootfiles.append(fname)
@@ -347,6 +348,7 @@ def ProcessOfflineData(args):
 
     if config.VERBOSE>0:
         print "Done with run %d !"%run
+
 
 
 ############################################
@@ -380,6 +382,8 @@ if __name__ == "__main__":
                       help="Base file name to save logs to")
     parser.add_option("-t","--nthreads", dest="nthreads",
                       help="Number of threads to use")
+    parser.add_option("-S","--serial", dest="serial", action="store_true",
+                      help="Disable parallel processing.")
     
     (options, args) = parser.parse_args(sys.argv)
 
@@ -458,12 +462,14 @@ if __name__ == "__main__":
     if len(runs_to_process)==0:
         sys.exit(0)
 
-    # process in parallel
-    p = multiprocessing.Pool(config.NTHREAD)
-    p.map(ProcessOfflineData, runs_to_process)
-    # process serially
-    #for run_args in runs_to_process:
-    #    ProcessOfflineData(run_args)
+    if options.serial is None:
+        # process in parallel
+        p = multiprocessing.Pool(config.NTHREAD)
+        p.map(ProcessOfflineData, runs_to_process)
+    else:
+        # process serially
+        for run_args in runs_to_process:
+            ProcessOfflineData(run_args)
 
 
     
