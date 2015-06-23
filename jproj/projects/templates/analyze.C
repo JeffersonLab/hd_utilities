@@ -77,7 +77,7 @@ int analyze(Int_t TOTALTIME = 80, Bool_t debug = false){
   TFile *outfile = new TFile("analysis.root","recreate");
 
   // ---   Used mem, vmem for each job                                                 --- //
-  TH1F *hmem = new TH1F("hmem",";mem used (MB);",1000,0, 3. * 1000.);
+  TH1F *hmem = new TH1F("hmem",";mem used (MB);",1000,0, 5. * 1000.);
   TH1F *hvmem = new TH1F("hvmem",";vmem used (MB);",1000,0, 5. * 1000.);
 
   // ---   walltime, timeCopy, timePlugin                                              --- //
