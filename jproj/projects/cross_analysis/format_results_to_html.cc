@@ -92,8 +92,7 @@ int main(int argc, char **argv){
   int NVERS = LAUNCHVERS.size();
 
   char filename[200];
-  if(RUNPERIOD=="2014_10") sprintf(filename,"results.txt");
-  else                     sprintf(filename,"results_%s.txt",RUNPERIOD.c_str());
+  sprintf(filename,"results_%s.txt",RUNPERIOD.c_str());
   ifstream IN(filename);
   if(!IN){
     cout << "input file " << filename << " does not exist" << endl;
