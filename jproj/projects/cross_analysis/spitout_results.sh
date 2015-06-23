@@ -50,7 +50,7 @@ foreach VER ( `seq ${VER_INIT} ${VER_LAST}` )
 end
 
 if ( $RUNPERIOD == "2014_10" ) then
-  time mysql -hhallddb -ufarmer farming -s -r -e "select run, file, ${ALL_VERS_STRING} FROM cross_analysis_table_${RUNPERIOD}" > $OUTFILE
+  time mysql -hhallddb -ufarmer farming -s -r -e "select run, file, ${ALL_VERS_STRING} FROM cross_analysis_table" > $OUTFILE
 else if ( $RUNPERIOD == "2015_03" ) then
   time mysql -hhallddb -ufarmer farming -s -r -e "select run, file, ${ALL_VERS_STRING} FROM cross_analysis_table_${RUNPERIOD}" > $OUTFILE
 endif
