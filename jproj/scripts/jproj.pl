@@ -135,12 +135,12 @@ sub update {
     $name_escaped =~ s/\*/\\\*/g;
     @token2 = split(/$name_escaped/, $input_string);
     $dir = @token2[0];
-    print "$dir $name\n";
+    print "dir = $dir name = $name\n";
     @token3 = split(/\*/, $name);
     $prerun = $token3[0];
     $separator = $token3[1];
     $postfile = $token3[2];
-    print "$prerun $separator $postfile\n";
+    print "prerun = $prerun separator = $separator postfile = $postfile\n";
     $file_number_requested = $ARGV[2];
     if ($file_number_requested ne '') {
 	print "file number requested = $file_number_requested\n";
@@ -155,6 +155,9 @@ sub update {
         @field = split(/\//, $file);
 	$this_name = $field[$#field];
 	print "this_name(1) = $this_name\n";
+	$run_in_dir_name = $field[$#field -1];
+	$run_in_dir_name =~ s/Run//;
+	# print "run_in_dir_name = $run_in_dir_name\n";
 	open(MSSFILE, $file);
 	my $tapevolser = 0;
 	my $tapefileposition = 0;
@@ -181,6 +184,15 @@ sub update {
 	@token6 = split(/$separator/, $this_name);
 	$run = $token6[0];
 	$file_number = $token6[1];
+	print "run = $run file_number = $file_number \n";
+
+	if ($run != $run_in_dir_name) {
+	    # Found a file where the directory name RunRRRRRR does not
+            # match the one for the file.
+	    print "skipping file $file due to mismatch of run number!!\n";
+	    next;
+	}
+
 	if ($file_number_requested eq '' || $file_number_requested == $file_number) {
 	    $sql = "SELECT * FROM $project WHERE run = $run and $file_number = file";
 	    make_query($dbh_db, \$sth);
