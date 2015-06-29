@@ -8,7 +8,7 @@
 #
 # Author: Sean Dobbs (s-dobbs@northwestern.edu), 2014
 
-from ROOT import TFile,TIter,TDirectory,TH1,TH2,TH1I,TH2I,TCanvas,gROOT,TMemFile,gStyle
+from ROOT import TFile,TIter,TDirectory,TH1,TH2,TH1I,TH2I,TCanvas,gROOT,TMemFile,gStyle,gDirectory
 from optparse import OptionParser
 import os.path
 import sys
@@ -17,6 +17,9 @@ import re
 import logging
 
 from datamon_db import datamon_db
+
+# debugging
+#from memory_profiler import profile
 
 ##########################################################
 class make_monitoring_plots:
@@ -40,14 +43,15 @@ class make_monitoring_plots:
         self.base_root_dir = ""
         self.output_directory = "."
 
-
         # the canvas we plot on
         self.c1  = TCanvas("c1","",self.CANVAS_WIDTH,self.CANVAS_HEIGHT)
 
     def __del__(self):
         del self.c1
-        if self.root_file:
-            del self.root_file
+        del self.hists_to_plot
+        del self.macros_to_run
+        #if self.root_file:
+        #    del self.root_file
 
 
     ##########################################################
@@ -171,7 +175,7 @@ class make_monitoring_plots:
 
             # END OF LOOP - move to next item in the directory
             key = key_iter()
-
+        del key_iter
 
     def SavePlots(self, root_dir, dir_path, hists_to_plot, macros_to_run):
         # plot individual histograms 
@@ -202,7 +206,7 @@ class make_monitoring_plots:
                     self.print_canvas_png(img_fname)
                 else:
                     logging.info("could not find macro = " + macro_file + " !")
-
+                    
     """
     ### this was needed when we were adding together histograms, but I don't think that we need it anymore
     def extract_macro_hists(macro):
@@ -245,7 +249,7 @@ class make_monitoring_plots:
             self.hists_to_plot = self.ParseFile(self.histlist_filename)
         else:
             self.hists_to_plot = []
-        if self.macrolist_filename:
+            if self.macrolist_filename:
             self.macros_to_run = self.ParseFile(self.macrolist_filename)
         else:
             self.macros_to_run = []
@@ -259,7 +263,7 @@ class make_monitoring_plots:
         self.root_file = TFile(self.rootfile_name)
         # should handle bad files better?
         if(self.root_file is None):
-            logging.critical("Could not open file: " + filename)
+            logging.critical("Could not open file: " + self.rootfile_name)
             return
 
         self.ClearPad(self.c1)
@@ -284,10 +288,10 @@ if __name__ == "__main__":
     parser.add_option("-R","--root_dir", dest="root_dir",
                       help="Specify the base directory in the ROOT file")
 
-    (options, args) = parser.parse_args(argv)
+    (options, args) = parser.parse_args(sys.argv)
 
     # set up the main class
-    plotter = make_monitoring_plots.make_monitoring_plots()
+    plotter = make_monitoring_plots()
 
     if(options.output_dir):
         if(os.path.isdir(options.output_dir)):
@@ -313,7 +317,7 @@ if __name__ == "__main__":
     if len(args) < 1:
         parser.print_help()
     else:
-        self.rootfile_name = args[0]
+        plotter.rootfile_name = args[0]
 
         # do the heavy work
-        plotter.Run()
+        plotter.MakePlots()

@@ -23,11 +23,17 @@ import pickle
 
 from ROOT import gROOT,gSystem
 
+# debugging
+from memory_profiler import profile
+from pympler import tracker
+
 # monitoring libraries
 from datamon_db import datamon_db
 import summarize_monitoring_data
 import make_monitoring_plots
 #import process_run_conditions
+
+from sys import getsizeof, stderr
 
 ############################################
 
@@ -149,6 +155,7 @@ class ProcessMonDataConfig:
         if options.nthreads:
             self.NTHREADS = options.nthreads
 
+
     def BuildEnvironment(self):
         """
         Perform any pre-processing we need for this run
@@ -177,6 +184,7 @@ class ProcessMonDataConfig:
                 except: 
                     logging.info("Error processing "+macro)
         
+
     def BuildListOfProcessedRunsOnDisk(self):
         """
         Outputs list of runs that the batch jobs have finished processing
@@ -188,6 +196,7 @@ class ProcessMonDataConfig:
         
         for dirname in sorted(dirs_on_disk):
             try:
+                #print "dirname = " + dirname
                 runnum = int(dirname)
             except ValueError:
                 logging.error("skipping directory " + dirname + " ...")
@@ -202,12 +211,18 @@ class ProcessMonDataConfig:
         """
         monitoring_files = {}
 
+        try:
+            runnum = int(rundir)
+        except ValueError:
+            logging.error("invalid run directory = " + fname + ", skipping ...")
+            return
+
         rootfilespath = join(self.INPUT_DIRECTORY,self.REVISION,self.ROOTFILE_DIR)  # base directory where the ROOT files are stored
         # get all files ending in ".root" for the given run
         root_files = [ join(rootfilespath,rundir,f) for f in listdir(join(rootfilespath,rundir)) 
                        if (isfile(join(rootfilespath,rundir,f))and(f[-5:]=='.root')) ]
 
-        if config.VERBOSE>2:
+        if self.VERBOSE>2:
             print "Looking for ROOT files in "+join(rootfilespath,rundir)
             print "  found = "+str(root_files)
 
@@ -239,6 +254,7 @@ class ProcessMonDataConfig:
 
 ############################################
 
+
 def ProcessOfflineData(args):
     """
     Process the monitoring data for a run.  The arguments are:
@@ -261,11 +277,11 @@ def ProcessOfflineData(args):
     # individual files, so run it for each file in any case
     # The MySQL indexes will prevent us from overwriting data in the DB
     # We might want to remove this?
-    summarizer = summarize_monitoring_data.summarize_monitoring_data()
-    summarizer.RUN_NUMBER = run
-    summarizer.VERSION_NUMBER = config.VERSION_NUMBER
-    for (fname,filenum) in monitoring_files.items():
-        if config.MAKE_DB_SUMMARY:
+    if config.MAKE_DB_SUMMARY:
+        summarizer = summarize_monitoring_data.summarize_monitoring_data()
+        summarizer.RUN_NUMBER = run
+        summarizer.VERSION_NUMBER = config.VERSION_NUMBER
+        for (fname,filenum) in monitoring_files.items():
             if config.VERBOSE>1:
                 print "  summarizing run %d file %d ..."%(run,filenum)
             summarizer.FILE_NUMBER = filenum
@@ -309,10 +325,11 @@ def ProcessOfflineData(args):
         if config.VERBOSE>1:
             print "  creating plots..."
         monitoring_data_dir = join(config.OUTPUT_DIRECTORY,("Run%06d" % run))
-        retval = os.system("mkdir -m"+config.NEWDIR_MODE+" -p " + monitoring_data_dir)  ## need error checks
-        if retval != 0:
-            print "ERROR MAKING DIRECTORY (#"+str(retval)+") = "+"mkdir -m"+config.NEWDIR_MODE+" -p " + monitoring_data_dir
-            sys.exit(0)
+        if not isdir(monitoring_data_dir):
+            retval = os.system("mkdir -m"+config.NEWDIR_MODE+" -p " + monitoring_data_dir)  ## need error checks
+            if retval != 0:
+                print "ERROR MAKING DIRECTORY (#"+str(retval)+") = "+"mkdir -m"+config.NEWDIR_MODE+" -p " + monitoring_data_dir
+                sys.exit(0)
 
         plotter = make_monitoring_plots.make_monitoring_plots()
         plotter.histlist_filename = "histograms_to_monitor"
@@ -342,8 +359,10 @@ def ProcessOfflineData(args):
         logging.error("Couldn't save list of processed files: %s"%str(e))
 
     # cleanup memory
-    del summarizer
-    del plotter
+    if config.MAKE_DB_SUMMARY:
+        del summarizer
+    if config.MAKE_PLOTS:
+        del plotter
     del monitoring_files
 
     if config.VERBOSE>0:
@@ -354,8 +373,7 @@ def ProcessOfflineData(args):
 ############################################
 
 
-## main function 
-if __name__ == "__main__":
+def main():
     # Define command line options
     parser = OptionParser(usage = "process_new_offline_data.py input_directory output_directory")
     parser.add_option("-p","--disable_plots", dest="disable_plotting", action="store_true",
@@ -402,8 +420,6 @@ if __name__ == "__main__":
     # Check which runs have been already processed
     rundirs_on_disk = config.BuildListOfProcessedRunsOnDisk()
 
-    print "rundirs_on_disk = " + str(rundirs_on_disk)
-    
     # For each run, check to see if there are any ROOT files we haven't processed yet
     # If that is true, then we need to process the run - N.B. most of our outputs
     # depend on the full results from a run
@@ -447,7 +463,11 @@ if __name__ == "__main__":
             continue
 
         ## figure out which files are new from the last run
-        rootfiles_to_process = [ f[0] for f in rootfile_map if f[0] not in rootfiles_already_processed ]
+        rootfiles_to_process = [ f for f in sorted(rootfile_map.keys()) if f not in rootfiles_already_processed ]
+
+        #print "ROOTFILES_ALREADY_PROCESSED = " + str(rootfiles_already_processed)
+        #print "ROOTFILE_MAP = " + str(rootfile_map)
+        #print "ROOTFILES_TO_PROCESS = " + str(rootfiles_to_process)
 
         ## if there's new information, or if the user wants us to anyway, 
         ## add the run to the list of the ones we should process
@@ -455,6 +475,9 @@ if __name__ == "__main__":
             runs_to_process.append( (runnum, config, rootfile_map) )
 
     ## loop DONE 
+
+    #print "TOTAL SIZE OF RUNS_TO_PROCESS = " + str(total_size(runs_to_process))
+    #sys.exit(0)
 
     ## Start processing all the runs!
     if config.VERBOSE>0:
@@ -471,5 +494,8 @@ if __name__ == "__main__":
         for run_args in runs_to_process:
             ProcessOfflineData(run_args)
 
-
     
+
+## main function 
+if __name__ == "__main__":
+    main()

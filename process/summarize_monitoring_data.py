@@ -18,7 +18,6 @@ from datamon_db import datamon_db
 ##########################################################
 class summarize_monitoring_data:
     def __init__(self):
-
         # initialize defaults
         self.VERBOSE = 0
         self.OUTPUT_DIRECTORY = "."
@@ -32,6 +31,10 @@ class summarize_monitoring_data:
 
         self.mondb = None 
         self.root_file = None
+
+#    def __del__(self):
+#        if self.root_file:
+#            del self.root_file
 
     ##########################################################
 

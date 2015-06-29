@@ -210,6 +210,7 @@ if __name__ == "__main__":
              except ValueError:
                  logging.critical("Invalid revision = " + revision)
                  sys.exit(0)
+             db = datamon_db()
              checker.VERSION_NUMBER = db.GetVersionIDRunPeriod(run_period, revision)
              if(checker.VERSION_NUMBER<0):
                  logging.critical("version not found in DB = " + options.version_string)
