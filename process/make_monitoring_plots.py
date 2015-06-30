@@ -249,7 +249,7 @@ class make_monitoring_plots:
             self.hists_to_plot = self.ParseFile(self.histlist_filename)
         else:
             self.hists_to_plot = []
-            if self.macrolist_filename:
+        if self.macrolist_filename:
             self.macros_to_run = self.ParseFile(self.macrolist_filename)
         else:
             self.macros_to_run = []

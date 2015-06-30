@@ -31,6 +31,7 @@ from pympler import tracker
 from datamon_db import datamon_db
 import summarize_monitoring_data
 import make_monitoring_plots
+import phadd
 #import process_run_conditions
 
 from sys import getsizeof, stderr
@@ -303,7 +304,10 @@ def ProcessOfflineData(args):
         #os.system("hadd -k -v 0 " +  " ".join([summed_rootfile] + monitoring_files.keys() ))
         #print "MAKE SUMMED FILE = " + summed_rootfile
         #print "SUM THESE FILES = " + str(monitoring_files.keys())
-        os.system("hadd -v 0 " +  " ".join([summed_rootfile] + monitoring_files.keys() ))
+        #os.system("hadd -v 0 " +  " ".join([summed_rootfile] + monitoring_files.keys() ))
+        hadder = phadd.phadd(summed_rootfile, sorted(monitoring_files.keys()), " -v 0 ", 6, 10)
+        hadder.Add()
+        del hadder
 
     # sanity check - does the summed file exist?
     if not isfile(summed_rootfile):
@@ -400,8 +404,8 @@ def main():
                       help="Base file name to save logs to")
     parser.add_option("-t","--nthreads", dest="nthreads",
                       help="Number of threads to use")
-    parser.add_option("-S","--serial", dest="serial", action="store_true",
-                      help="Disable parallel processing.")
+    parser.add_option("-A","--parallel", dest="parallel", action="store_true",
+                      help="Enable parallel processing.")
     
     (options, args) = parser.parse_args(sys.argv)
 
@@ -485,14 +489,14 @@ def main():
     if len(runs_to_process)==0:
         sys.exit(0)
 
-    if options.serial is None:
-        # process in parallel
-        p = multiprocessing.Pool(config.NTHREAD)
-        p.map(ProcessOfflineData, runs_to_process)
-    else:
+    if options.parallel is None:
         # process serially
         for run_args in runs_to_process:
             ProcessOfflineData(run_args)
+    else:
+        # process in parallel
+        p = multiprocessing.Pool(config.NTHREAD)
+        p.map(ProcessOfflineData, runs_to_process)
 
     
 
