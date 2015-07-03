@@ -14,6 +14,11 @@
 /home/gxproj1/builds/online/packages/monitoring/src/plugins/FCAL_online/fcal_cluster_space.C
 /home/gxproj1/builds/online/packages/monitoring/src/plugins/FCAL_online/fcal_hit_energy.C
 /home/gxproj1/builds/online/packages/monitoring/src/plugins/FCAL_online/fcal_hit_timing.C
+# SC
+/home/gxproj1/builds/online/packages/monitoring/src/plugins/ST_online_lowlevel/ST_Monitoring_Waveform_ch4.C
+/home/gxproj1/builds/online/packages/monitoring/src/plugins/ST_online_lowlevel/ST_Monitoring_Multi.C 
+/home/gxproj1/builds/online/packages/monitoring/src/plugins/ST_online_tracking/ST_Monitoring_Pid.C
+/home/gxproj1/builds/online/packages/monitoring/src/plugins/ST_online_tracking/ST_Monitoring_Eff.C
 # TAGH
 /home/gxproj1/builds/online/packages/monitoring/src/plugins/TAGH_online/TAGH_hit.C
 /home/gxproj1/builds/online/packages/monitoring/src/plugins/TAGH_online/TAGH_hit2.C
