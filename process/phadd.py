@@ -6,6 +6,7 @@ import multiprocessing
 from multiprocessing.pool import ThreadPool
 from optparse import OptionParser
 import tempfile
+import uuid
 
 def run_hadd(args):
     haddargs  = args[0]
@@ -17,7 +18,7 @@ def run_hadd(args):
     return targetfile 
 
 class phadd:
-    def __init__(self, in_targetfile, in_sourcefiles, in_args="", in_nthreads=6, in_chunksize=10):
+    def __init__(self, in_targetfile, in_sourcefiles, in_args="", in_nthreads=6, in_chunksize=20):
         self.targetfile = in_targetfile   # final file name to save result in
         if in_sourcefiles is None or len(in_sourcefiles) < 0:
             raise RuntimeError("phadd: No files passed to add!")
@@ -43,7 +44,8 @@ class phadd:
         njobs = len(self.sourcefiles)/self.chunksize + 1
         jobs = []
         for x in xrange(njobs):
-            sumfilename = os.path.join(tempfile.gettempdir(),"phadd_tmp_%s.root"%next(tempfile._get_candidate_names()))
+            #sumfilename = os.path.join(tempfile.gettempdir(),"phadd_tmp_%s.root"%next(tempfile._get_candidate_names()))
+            sumfilename = os.path.join(tempfile.gettempdir(),"phadd_tmp_%s.root"%str(uuid.uuid4()))
             if x == njobs-1:
                 jobs += [ [self.haddargs, sumfilename, self.sourcefiles[x*self.chunksize:] ] ]
             else:
