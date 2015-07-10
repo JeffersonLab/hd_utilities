@@ -18,16 +18,9 @@
 # $BUILD_SCRIPTS/gluex_env.csh is sourced.
 #
 # Use common build for these
-setenv BUILD_SCRIPTS /group/halld/Software/builds/build_scripts/build_scripts
-setenv BMS_OSNAME `$BUILD_SCRIPTS/osrelease.pl`
-setenv ROOTSYS     /group/halld/Software/builds/$BMS_OSNAME/root/root_5.34.26
-setenv EVIOROOT    /group/halld/Software/builds/$BMS_OSNAME/evio/evio-4.3.1/Linux-x86_64
-setenv XERCESCROOT /group/halld/Software/builds/$BMS_OSNAME/xerces-c/xerces-c-3.1.1
-
-# `$BUILD_SCRIPTS/cue_root.pl`
-setenv CERN_CUE `$BUILD_SCRIPTS/cue_cernlib.pl`
-setenv CERN `$BUILD_SCRIPTS/cue_cernlib.pl`
-setenv CERN_LEVEL 2005
+setenv BUILD_SCRIPTS /group/halld/Software/scripts/build_scripts
+setenv BMS_OSNAME `/group/halld/Software/scripts/osrelease.pl`
+setenv GLUEX_TOP /group/halld/Software/builds/$BMS_OSNAME
 
 # We will have our own versions of
 # - sim-recon
@@ -36,76 +29,76 @@ setenv CERN_LEVEL 2005
 # - jana
 
 # Top level directory
-setenv GLUEX_TOP ${HOME}/builds
+setenv MY_TOP ${HOME}/builds
 
-setenv HALLD_HOME  ${GLUEX_TOP}/sim-recon/sim-recon
-setenv HDDS_HOME   ${GLUEX_TOP}/hdds/hdds
+setenv HALLD_HOME  ${MY_TOP}/sim-recon/sim-recon
+setenv HDDS_HOME   ${MY_TOP}/hdds/hdds
 # CCDB must be built before JANA
 # To get CCDB via svn, use
 # svn co https://phys12svn.jlab.org/repos/trunk/ccdb
-setenv CCDB_HOME   ${GLUEX_TOP}/ccdb/ccdb_1.05
-setenv JANA_HOME   ${GLUEX_TOP}/jana/jana_0.7.3/$BMS_OSNAME
+setenv CCDB_HOME   ${MY_TOP}/ccdb/ccdb_1.05
+setenv JANA_HOME   ${MY_TOP}/jana/jana_0.7.3/$BMS_OSNAME
 
 #------------------------------------------------------------#
 #                Check that all directories exist            #
 #------------------------------------------------------------#
 if ( ! (-e $GLUEX_TOP) ) then
-  echo "---setup_jlab-2015-03.csh:   Variable GLUEX_TOP could not be set to"
-  echo "---setup_jlab-2015-03.csh:   $GLUEX_TOP (does not exist)"
-  echo "---setup_jlab-2015-03.csh:   aborting..."
+  echo "---setup_jlab-2014-10.csh:   Variable GLUEX_TOP could not be set to"
+  echo "---setup_jlab-2014-10.csh:   $GLUEX_TOP (does not exist)"
+  echo "---setup_jlab-2014-10.csh:   aborting..."
   exit
 endif
 
 if ( ! (-e $HALLD_HOME) ) then
-  echo "---setup_jlab-2015-03.csh:   Variable HALLD_HOME could not be set to"
-  echo "---setup_jlab-2015-03.csh:   $HALLD_HOME (does not exist)"
-  echo "---setup_jlab-2015-03.csh:   aborting..."
+  echo "---setup_jlab-2014-10.csh:   Variable HALLD_HOME could not be set to"
+  echo "---setup_jlab-2014-10.csh:   $HALLD_HOME (does not exist)"
+  echo "---setup_jlab-2014-10.csh:   aborting..."
   exit
 endif
 
 if ( ! (-e $HDDS_HOME) ) then
-  echo "---setup_jlab-2015-03.csh:   Variable HDDS_HOME could not be set to"
-  echo "---setup_jlab-2015-03.csh:   $HDDS_HOME (does not exist)"
-  echo "---setup_jlab-2015-03.csh:   aborting..."
+  echo "---setup_jlab-2014-10.csh:   Variable HDDS_HOME could not be set to"
+  echo "---setup_jlab-2014-10.csh:   $HDDS_HOME (does not exist)"
+  echo "---setup_jlab-2014-10.csh:   aborting..."
   exit
 endif
 
 if ( ! (-e $CCDB_HOME) ) then
-  echo "---setup_jlab-2015-03.csh:   Variable CCDB_HOME could not be set to"
-  echo "---setup_jlab-2015-03.csh:   $CCDB_HOME (does not exist)"
-  echo "---setup_jlab-2015-03.csh:   aborting..."
+  echo "---setup_jlab-2014-10.csh:   Variable CCDB_HOME could not be set to"
+  echo "---setup_jlab-2014-10.csh:   $CCDB_HOME (does not exist)"
+  echo "---setup_jlab-2014-10.csh:   aborting..."
   exit
 endif
 
 if ( ! (-e $JANA_HOME) ) then
-  echo "---setup_jlab-2015-03.csh:   Variable JANA_HOME could not be set to"
-  echo "---setup_jlab-2015-03.csh:   $JANA_HOME (does not exist)"
-  echo "---setup_jlab-2015-03.csh:   aborting..."
+  echo "---setup_jlab-2014-10.csh:   Variable JANA_HOME could not be set to"
+  echo "---setup_jlab-2014-10.csh:   $JANA_HOME (does not exist)"
+  echo "---setup_jlab-2014-10.csh:   aborting..."
   exit
 endif
 
 # -----------------------------------------------------------------
 # THIS SCRIPT WILL ADD MODIFY PATH AND LD_LIBRARY_PATH TO INCLUDE
 #  ENVIRONMENT VARIABLES SET ABOVE
-source $BUILD_SCRIPTS/gluex_env.csh
+source /group/halld/Software/scripts/build_scripts/gluex_env.csh
 # -----------------------------------------------------------------
 
 # Add 
 # setenv LD_LIBRARY_PATH $EVIOROOT/lib:$LD_LIBRARY_PATH
 
 # make sure to set the correct calibtime
-setenv JANA_CALIB_URL  sqlite:///${GLUEX_TOP}/ccdb.sqlite # mysql://ccdb_user@hallddb.jlab.org/ccdb
-setenv CCDB_CONNECTION sqlite:///${GLUEX_TOP}/ccdb.sqlite # mysql://ccdb_user@hallddb.jlab.org/ccdb
+setenv JANA_CALIB_URL  sqlite:///${MY_TOP}/ccdb.sqlite # mysql://ccdb_user@hallddb.jlab.org/ccdb
+setenv CCDB_CONNECTION sqlite:///${MY_TOP}/ccdb.sqlite # mysql://ccdb_user@hallddb.jlab.org/ccdb
 # /group/halld/www/halldweb/html/dist/ccdb.sqlite
 # setenv JANA_CALIB_CONTEXT "calibtime=2015-02-11T00:00"
 setenv JANA_RESOURCE_DIR /group/halld/www/halldweb/html/resources
 
 # Set ONLINEPLUGINSHOME directory so that we can pick out the svn rev.
-setenv ONLINEPLUGINSHOME ${GLUEX_TOP}/online/packages/monitoring/src/plugins
+setenv ONLINEPLUGINSHOME ${MY_TOP}/online/packages/monitoring/src/plugins
 
 if ( ! -e $ONLINEPLUGINSHOME ) then
-  echo "---setup_jlab-2015-03.csh:   Could not set ONLINEPLUGINSHOME to ${HOME}/builds/online/packages/monitoring/${BMS_OSNAME}/plugins"
-  echo "---setup_jlab-2015-03.csh:   Edit file setup_jlab-2015-03.csh so that directory with online plugins is set correctly"
+  echo "---setup_jlab-2014-10.csh:   Could not set ONLINEPLUGINSHOME to ${HOME}/builds/online/packages/monitoring/${BMS_OSNAME}/plugins"
+  echo "---setup_jlab-2014-10.csh:   Edit file setup_jlab-2014-10.csh so that directory with online plugins is set correctly"
   exit
 endif
 
