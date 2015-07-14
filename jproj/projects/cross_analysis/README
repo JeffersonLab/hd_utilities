@@ -34,7 +34,7 @@ Assuming allfiles.txt has format
 do
 +-------------------------------------------------------------------------------+
 | time write_inserts_cross_analysis.pl < allfiles.txt \                         |
-| mysql -hhallddb -ufarmer farming                                              |
+| | mysql -hhallddb -ufarmer farming                                            |
 +-------------------------------------------------------------------------------+
 
 #-------------------------------------------------------------------------------------------------#
@@ -52,10 +52,11 @@ The columns to add are:
 - nevents
 - timePlugin
 - timeCopy
+- segfault
 
 Create text file containing info from Job table with command
 +-------------------------------------------------------------------------------+
-| ./create_txt_file_from_dbs.sh [VER]                                           |
+| ./create_txt_file_from_dbs.sh [RUN PERIOD] [VER]                              |
 +-------------------------------------------------------------------------------+
 
 This creates a txt file jobinfo_verNN.txt which contains
@@ -63,9 +64,15 @@ run, file, result, cput,    walltime,
 mem, vmem, error,  nevents, timeCopy,
 timePlugin.
 
+
+Substitute all jobs that had segfault to have status "SEGFAULT" and not "SUCCESS"
++-------------------------------------------------------------------------------+
+| root -b -q './substitute_segfault_status.C("jobinfo_2015_03_ver09.txt")'      |
++-------------------------------------------------------------------------------+
+
 Create new columns in the table with
 +-------------------------------------------------------------------------------+
-| ./add_columns.sh [VER]                                                        |
+| ./add_columns.sh [RUN PERIOD] [VER]                                           |
 +-------------------------------------------------------------------------------+
 which creates a file add_columns.sql and calls
 time mysql -hhallddb -ufarmer farming < ./add_columns.sql
@@ -74,7 +81,7 @@ to create the entries.
 Insert this into the cross_analysis_table with
 
 +-------------------------------------------------------------------------------+
-| ./write_inserts_each_launch.sh [VER]                                          |
+| ./write_inserts_each_launch.sh [RUN PERIOD] [VER]                             |
 +-------------------------------------------------------------------------------+
 
 which will create a file write_inserts_ver[VER].pl and add in the

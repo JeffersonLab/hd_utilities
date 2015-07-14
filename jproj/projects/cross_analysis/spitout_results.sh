@@ -25,7 +25,7 @@ if ( $RUNPERIOD != "2014_10" && $RUNPERIOD != "2015_03" ) then
 endif
 
 set OUTFILE = "results_${RUNPERIOD}.txt"
-set ALL_VERS_STRING = ""
+set ALL_RESULT_VERS_STRING = ""
 
 foreach VER ( `seq ${VER_INIT} ${VER_LAST}` )
   set FORMATTED_VER = `printf %02d $VER`
@@ -42,15 +42,25 @@ foreach VER ( `seq ${VER_INIT} ${VER_LAST}` )
   endif
 
   if ( ${VER} == ${VER_INIT} ) then
-    set ALL_VERS_STRING = "result_ver${FORMATTED_VER}"
+    set ALL_RESULT_VERS_STRING = "result_ver${FORMATTED_VER}"
   else
-    set ALL_VERS_STRING = "${ALL_VERS_STRING}, result_ver${FORMATTED_VER}"
+    set ALL_RESULT_VERS_STRING = "${ALL_RESULT_VERS_STRING}, result_ver${FORMATTED_VER}"
   endif
+
+#  if ( ${VER} == ${VER_INIT} ) then
+#    set ALL_SEGFAULT_VERS_STRING = "segfault_ver${FORMATTED_VER}"
+#  else
+#    set ALL_SEGFAULT_VERS_STRING = "${ALL_SEGFAULT_VERS_STRING}, segfault_ver${FORMATTED_VER}"
+#  endif
 
 end
 
 if ( $RUNPERIOD == "2014_10" ) then
-  time mysql -hhallddb -ufarmer farming -s -r -e "select run, file, ${ALL_VERS_STRING} FROM cross_analysis_table" > $OUTFILE
+  # , ${ALL_SEGFAULT_VERS_STRING}
+  time mysql -hhallddb -ufarmer farming -s -r -e "select run, file, ${ALL_RESULT_VERS_STRING} FROM cross_analysis_table" > $OUTFILE
 else if ( $RUNPERIOD == "2015_03" ) then
-  time mysql -hhallddb -ufarmer farming -s -r -e "select run, file, ${ALL_VERS_STRING} FROM cross_analysis_table_${RUNPERIOD}" > $OUTFILE
+  # echo "ALL_SEGFAULT_VERS_STRING = $ALL_SEGFAULT_VERS_STRING"
+  # , ${ALL_SEGFAULT_VERS_STRING}
+  echo "select run, file, ${ALL_RESULT_VERS_STRING} FROM cross_analysis_table_${RUNPERIOD}"
+  time mysql -hhallddb -ufarmer farming -s -r -e "select run, file, ${ALL_RESULT_VERS_STRING} FROM cross_analysis_table_${RUNPERIOD}" > $OUTFILE
 endif

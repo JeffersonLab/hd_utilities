@@ -5,7 +5,7 @@
 /* and for each launch new columns will be added */
 /*                                               */
 -- DROP TABLE IF EXISTS `cross_analysis_table`;
-CREATE TABLE `cross_analysis_table` (
+CREATE TABLE `cross_analysis_table_2015_03` (
   `id`   int(11) NOT NULL AUTO_INCREMENT,
   `run`  int(11) DEFAULT NULL,
   `file` int(11) DEFAULT NULL,

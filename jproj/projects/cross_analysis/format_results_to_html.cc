@@ -116,6 +116,7 @@ int main(int argc, char **argv){
   int ntimeoutAll[NVERS];
   int nfailedAll[NVERS];
   int nnullAll[NVERS];
+  int nsegfaultAll[NVERS];
 
   // These are for each hundreds of runs
   int ntotal[NVERS];
@@ -124,6 +125,7 @@ int main(int argc, char **argv){
   int ntimeout[NVERS];
   int nfailed[NVERS];
   int nnull[NVERS];
+  int nsegfault[NVERS];
 
   for(int i=0;i<NVERS;i++){
     ntotal[i]      = 0;
@@ -132,6 +134,7 @@ int main(int argc, char **argv){
     ntimeout[i]    = 0;
     nfailed[i]     = 0;
     nnull[i]       = 0;
+    nsegfault[i]       = 0;
 
     ntotalAll[i] = 0;
     nsuccessAll[i] = 0;
@@ -139,6 +142,7 @@ int main(int argc, char **argv){
     ntimeoutAll[i] = 0;
     nfailedAll[i] = 0;
     nnullAll[i] = 0;
+    nsegfaultAll[i] = 0;
   }
 
   bool isNewRun = false;
@@ -178,6 +182,7 @@ int main(int argc, char **argv){
 	      cout << "ntimeout["    << i << "] = " << ntimeout[i]    << endl;
 	      cout << "nfailed["     << i << "] = " << nfailed[i]     << endl;
 	      cout << "nnull["       << i << "] = " << nnull[i]       << endl;
+	      cout << "nsegfault["   << i << "] = " << nsegfault[i]   << endl;
 	    }
 	  }
 
@@ -199,6 +204,7 @@ int main(int argc, char **argv){
 	  OUT << "      <th style=\"border: 1px solid black; height:15px; width:150px;\">Timeout (%)</th>";
 	  OUT << "      <th style=\"border: 1px solid black; height:15px; width:150px;\">Failed (%)</th>";
 	  OUT << "      <th style=\"border: 1px solid black; height:15px; width:150px;\">NULL (%)</th>";
+	  OUT << "      <th style=\"border: 1px solid black; height:15px; width:150px;\">Segfault</th>";
 	  OUT << "      <th style=\"border: 1px solid black; height:15px; width:150px;\">requested memory (MB)</th>";
 	  OUT << "    </tr>" << endl;
 
@@ -242,6 +248,12 @@ int main(int argc, char **argv){
 		<< setw(3) << setfill(' ') << nnull[i] << " ("
 		<< std::fixed << std::setprecision(2) << setw(5) << value << ")</td>" << endl;
 
+	    // segfault
+	    value = ntotal[i]==0 ? 0 : 100. * nsegfault[i] / ntotal[i];
+	    OUT << "      <td style=\" padding:15px; height:50px; width:150px; border:1px solid black;\">"
+		<< setw(3) << setfill(' ') << nsegfault[i] << " ("
+		<< std::fixed << std::setprecision(2) << setw(5) << value << ")</td>" << endl;
+
 	    // Get requested memory from jsub file for each launch
 	    if((RUNPERIOD == "2014_10" && LAUNCHVERS[i] >= 11) || RUNPERIOD != "2014_10"){
 	      sprintf(command,"grep 'Memory space' /group/halld/data_monitoring/run_conditions/offline_monitoring_RunPeriod%s_ver%2.2d_hd_rawdata.jsub | sed 's/.*space=\"//' | sed 's/\".*//' > ___tmp.txt",RUNPERIOD.c_str(),LAUNCHVERS[i]);
@@ -275,6 +287,7 @@ int main(int argc, char **argv){
 	    ntimeout[i]    = 0;
 	    nfailed[i]     = 0;
 	    nnull[i]       = 0;
+	    nsegfault[i]   = 0;
 	  }
 	} // end of OUT.is_open() is true
 
@@ -348,6 +361,11 @@ int main(int argc, char **argv){
 	sprintf(bgcolor,"gray");
 	nnull[i]++;
 	nnullAll[i]++;
+      }else if(results[i] == "SEGFAULT"){
+	sprintf(textcolor,"black");
+	sprintf(bgcolor,"red");
+	nsegfault[i]++;
+	nsegfaultAll[i]++;
       }else{
 	cout << "unknown result: " << results[i] << endl;
       }
@@ -374,6 +392,7 @@ int main(int argc, char **argv){
       cout << "ntimeout["    << i << "] = " << ntimeout[i]    << endl;
       cout << "nfailed["     << i << "] = " << nfailed[i]     << endl;
       cout << "nnull["       << i << "] = " << nnull[i]       << endl;
+      cout << "nsegfault["   << i << "] = " << nsegfault[i]   << endl;
     }
   }
 
@@ -389,6 +408,7 @@ int main(int argc, char **argv){
   OUT << "      <th style=\"border: 1px solid black; height:15px; width:150px;\">Timeout (%)</th>";
   OUT << "      <th style=\"border: 1px solid black; height:15px; width:150px;\">Failed (%)</th>";
   OUT << "      <th style=\"border: 1px solid black; height:15px; width:150px;\">NULL (%)</th>";
+  OUT << "      <th style=\"border: 1px solid black; height:15px; width:150px;\">Segfault</th>";
   OUT << "      <th style=\"border: 1px solid black; height:15px; width:150px;\">requested memory (MB)</th>";
   OUT << "    </tr>" << endl;
 
@@ -431,6 +451,12 @@ int main(int argc, char **argv){
 	<< setw(3) << setfill(' ') << nnull[i] << " ("
 	<< std::fixed << std::setprecision(2) << setw(5) << value << ")</td>" << endl;
 
+    // segfault
+    value = ntotal[i]==0 ? 0 : 100. * nsegfault[i] / ntotal[i];
+    OUT << "      <td style=\" padding:15px; height:50px; width:150px; border:1px solid black;\">"
+	<< setw(3) << setfill(' ') << nsegfault[i] << " ("
+	<< std::fixed << std::setprecision(2) << setw(5) << value << ")</td>" << endl;
+
     // Get requested memory from jsub file for each launch
     if((RUNPERIOD == "2014_10" && LAUNCHVERS[i] >= 11) || RUNPERIOD != "2014_10"){
       sprintf(command,"grep 'Memory space' /group/halld/data_monitoring/run_conditions/offline_monitoring_RunPeriod%s_ver%2.2d_hd_rawdata.jsub | sed 's/.*space=\"//' | sed 's/\".*//' > ___tmp.txt",RUNPERIOD.c_str(),LAUNCHVERS[i]);
@@ -468,6 +494,7 @@ int main(int argc, char **argv){
     cout << "total of " << ntimeoutAll[i]    << " timeout"    << endl;
     cout << "total of " << nfailedAll[i]     << " failed"     << endl;
     cout << "total of " << nnullAll[i]       << " null"       << endl;
+    cout << "total of " << nsegfaultAll[i]   << " segfault"   << endl;
   }
   // format this info into html table
   ofstream OUT_ALLSTATS;
@@ -492,6 +519,7 @@ int main(int argc, char **argv){
   OUT_ALLSTATS << "      <th style=\"border: 1px solid black; height:15px; width:150px;\">Timeout (%)</th>" << endl;
   OUT_ALLSTATS << "      <th style=\"border: 1px solid black; height:15px; width:150px;\">Failed (%)</th>" << endl;
   OUT_ALLSTATS << "      <th style=\"border: 1px solid black; height:15px; width:150px;\">NULL (%)</th>" << endl;
+  OUT_ALLSTATS << "      <th style=\"border: 1px solid black; height:15px; width:150px;\">Segfault (%)</th>" << endl;
   OUT_ALLSTATS << "    </tr>" << endl;
   
   for(int i=0;i<NVERS;i++){
@@ -531,6 +559,13 @@ int main(int argc, char **argv){
     OUT_ALLSTATS << "      <td style=\" padding:15px; height:50px; width:150px; border:1px solid black;\">"
 	<< setw(3) << setfill(' ') << nnullAll[i] << " ("
 	<< std::fixed << std::setprecision(2) << setw(5) << value << ")</td>" << endl;
+
+    // segfault
+    value = ntotalAll[i]==0 ? 0 : 100. * nsegfaultAll[i] / ntotalAll[i];
+    OUT_ALLSTATS << "      <td style=\" padding:15px; height:50px; width:150px; border:1px solid black;\">"
+	<< setw(3) << setfill(' ') << nsegfaultAll[i] << " ("
+	<< std::fixed << std::setprecision(2) << setw(5) << value << ")</td>" << endl;
+
     OUT_ALLSTATS << "    </tr>" << endl;
   } // end of loop over vers
 

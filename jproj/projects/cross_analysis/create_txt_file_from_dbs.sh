@@ -31,7 +31,7 @@ echo $TABLEAUX
 echo $OUTFILE
 
 
-mysql -hhallddb -ufarmer farming -s -r -e "select run, file, result, cput, walltime, mem, vmem, nevents, timeCopy, timePlugin, error \
+mysql -hhallddb -ufarmer farming -s -r -e "select run, file, result, cput, walltime, mem, vmem, nevents, timeCopy, timePlugin, segfault  \
 from ${TABLEJOB}, ${TABLEAUX} where ${TABLEJOB}.jobId = ${TABLEAUX}.jobId" > tmp.txt
 
 cat tmp.txt | sed 's:Job exceeded resource limit.:resource_limit:' \
@@ -40,3 +40,4 @@ cat tmp.txt | sed 's:Job exceeded resource limit.:resource_limit:' \
             | sed 's:fail to get input file:input_fail:' \
             > $OUTFILE
 rm -f tmp.txt
+

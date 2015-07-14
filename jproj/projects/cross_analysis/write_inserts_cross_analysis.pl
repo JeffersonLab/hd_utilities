@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-$tablename = "cross_analysis_table";
+$tablename = "cross_analysis_table_2015_03";
 
 while (<>) {
     chomp;
