@@ -24,8 +24,8 @@ import pickle
 from ROOT import gROOT,gSystem
 
 # debugging
-from memory_profiler import profile
-from pympler import tracker
+#from memory_profiler import profile
+#from pympler import tracker
 
 # monitoring libraries
 from datamon_db import datamon_db
@@ -101,8 +101,11 @@ class ProcessMonDataConfig:
             self.MAKE_DB_SUMMARY = False
         #if(options.process_run_conditions):
         #    MAKE_RUN_CONDITIONS = True
+        if(options.disable_hadd):
+            self.MAKE_SUMMED_ROOTFILE = False
         if(options.force):
             self.FORCE_PROCESSING = True
+
 
         # should we process only one run?
         if(options.run_number):
@@ -386,8 +389,10 @@ def main():
                       help="Don't calculate summary information and store it in the DB")
     #parser.add_option("-c","--disable_conditions", dest="disable_run_conditions", action="store_true",
     #                  help="Don't process and store run conditions information")
-    parser.add_option("-C","--process_conditions", dest="process_run_conditions", action="store_true",
-                      help="Process and store run conditions information")
+    #parser.add_option("-C","--process_conditions", dest="process_run_conditions", action="store_true",
+    #                  help="Process and store run conditions information")
+    parser.add_option("-s","--disable_hadd", dest="disable_hadd", action="store_true",
+                      help="Don't sum ouptut histograms into one combined file.")
     parser.add_option("-f","--force", dest="force", action="store_true",
                       help="Ignore list of already processed runs")
     parser.add_option("-R","--run_number", dest="run_number", 
