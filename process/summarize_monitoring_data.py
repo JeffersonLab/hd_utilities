@@ -32,10 +32,6 @@ class summarize_monitoring_data:
         self.mondb = None 
         self.root_file = None
 
-#    def __del__(self):
-#        if self.root_file:
-#            del self.root_file
-
     ##########################################################
 
     def SumHistContents(self, the_file, hist_path):

@@ -50,8 +50,9 @@ class make_monitoring_plots:
         del self.c1
         del self.hists_to_plot
         del self.macros_to_run
-        #if self.root_file:
-        #    del self.root_file
+        if self.root_file:
+            self.root_file.Close()
+            #del self.root_file
 
 
     ##########################################################
