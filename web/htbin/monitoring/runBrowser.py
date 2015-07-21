@@ -265,7 +265,7 @@ def get_options():
     run_number_str = []
     run_number = []
     
-    verName = "ver04"
+    verName = "ver09"
     periodName = "RunPeriod-2015-03"
 
     if "ver" in form:
@@ -349,9 +349,11 @@ def main():
             bcal_charts = [["bcal_summary","DigiSummary"],["bcal_occupancy","DigiOccupancy"],["bcal_cluster","Cluster"],["__bcal_bcal_shower_plane","ShowerPosition"]]
         elif revision < 12:
             bcal_charts = [["bcal_summary","DigiSummary"],["bcal_times","DigiTime"],["bcal_occupancy","DigiOccupancy"],["bcal_cluster","Cluster"],["bcal_shower","Shower"]]
-        else: 
+        elif revision < 14: 
             bcal_charts = [["bcal_summary","DigiSummary"],["bcal_times","DigiTime"],["bcal_occupancy","DigiOccupancy"],["bcal_cluster","Cluster"],["bcal_shower","Shower"],["bcal_hist_eff","Effic"]]
-        
+        else:
+            bcal_charts = [["bcal_summary","DigiSummary"],["bcal_times","DigiTime"],["bcal_occupancy","DigiOccupancy"],["bcal_cluster","Cluster"],["bcal_shower","Shower"],["bcal_hist_eff","Effic"],["bcal_inv_mass","BCALInvMass"],["bcal_fcal_inv_mass","B/FCALInvMass"]]
+
         fcal_charts = [["__fcal_digHitE","DigiPulseInt"],["__fcal_digOcc2D","DigiOccupancy"],["__fcal_digT","DigiTime"],["fcal_hit_energy","HitSummary"],["fcal_hit_timing","HitTime"],["fcal_cluster_et","ClusterEnergyTime"],["fcal_cluster_space","ClusterSpace"]]
         tof_charts = [["__tof_tofe","Energy"],["__tof_toft","Time"],["__tof_tofo1","OccupancyPlane1"],["__tof_tofo2","OccupancyPlane2"]]
         st_charts = [["__st_st_pi_dhit","DigiPulseInt"],["__st_st_pt_dhit","DigiTime"],["__st_st_sec_adc_dhit","DigiOccupancy"]]
@@ -365,6 +367,9 @@ def main():
             tagh_charts = [["__TAGH_DigiHit_DigiHit_PulseIntegral","DigiPulseInt"],["__TAGH_DigiHit_DigiHit_tdcTime","DigiTDCTime"],["__TAGH_DigiHit_DigiHit_PedestalVsSlotID","DigiPedVsSlot"],["TAGH_hit","HitSummary"]]
         else:
             tagh_charts = [["__TAGH_DigiHit_DigiHit_RawIntegral","DigiRawInt"],["__TAGH_DigiHit_DigiHit_tdcTime","DigiTDCTime"],["__TAGH_DigiHit_DigiHit_PedestalVsSlotID","DigiPedVsSlot"],["TAGH_hit","HitSummary"]]
+
+        if revision > 15:
+            hldetectortiming_charts = [["HistMacro_TaggerTiming","Tagger Timing"],["HistMacro_TaggerRFAlignment","Tagger-RF"],["HistMacro_TaggerSCAlignment","Tagger-SC"],["HistMacro_CalorimeterTiming","FCAL/BCAL"],["HistMacro_PIDSystemTiming","SC/TOF"],["HistMacro_TrackMatchedTiming","Track Matched Timing"]]
 
         if revision < 4:
             ana_charts1 = [["HistMacro_EventInfo","EventInfo"],["HistMacro_NumLowLevelObjects_p1","LLObjects1"],["HistMacro_NumLowLevelObjects_p2","LLObjects2"],["HistMacro_NumHighLevelObjects","HLObjects"],["__Independent_Hist_TrackMultiplicity_NumGoodReconstructedParticles","TrackMult"],["HistMacro_Tracking","TrackSummary"],["HistMacro_Kinematics_p1","Kinematics1"],["HistMacro_Kinematics_p2","Kinematics2"]]
@@ -386,26 +391,36 @@ def main():
         cdc_charts = [["__CDC_cdc_raw_intpp","RawInt"],["__CDC_cdc_raw_t","Time"],["CDC_occupancy","Occupancy"],["__CDC_cdc_ped","Pedestal"],["__CDC_cdc_raw_intpp_vs_n","RawIntVsN"],["__CDC_cdc_raw_t_vs_n","RawTimeVsN"],["__CDC_cdc_ped_vs_n","PedVsN"],["__CDC_cdc_windata_ped_vs_n","WinDataPedVsN"]]
         fdc_charts = [["__FDC_fdcos","FdcStripOcc"],["__FDC_fdcow","FdcWireOcc"]]
         if revision < 4:
-		bcal_charts = [["bcal_summary","DigiSummary"],["bcal_times","DigiTime"],["bcal_occupancy","DigiOccupancy"],["bcal_cluster","Cluster"],["bcal_shower","Shower"],["bcal_hist_eff","Effic"]]
-	else:
+                bcal_charts = [["bcal_summary","DigiSummary"],["bcal_times","DigiTime"],["bcal_occupancy","DigiOccupancy"],["bcal_cluster","Cluster"],["bcal_shower","Shower"],["bcal_hist_eff","Effic"]]
+	elif revision < 5:
 		bcal_charts = [["bcal_summary","DigiSummary"],["bcal_times","DigiTime"],["bcal_occupancy","DigiOccupancy"],["bcal_cluster","Cluster"],["bcal_shower","Shower"],["bcal_hist_eff","Effic"],["bcal_inv_mass","InvMass"],["trig_fcalbcal","Trigger"]]
+        else:
+               	bcal_charts = [["bcal_summary","DigiSummary"],["bcal_times","DigiTime"],["bcal_occupancy","DigiOccupancy"],["bcal_cluster","Cluster"],["bcal_shower","Shower"],["bcal_hist_eff","Effic"],["bcal_inv_mass","BCALInvMass"],["bcal_fcal_inv_mass","B/FCALInvMass"],["trig_fcalbcal","Trigger"]]
+   
         fcal_charts = [["__fcal_digHitE","DigiPulseInt"],["__fcal_digOcc2D","DigiOccupancy"],["__fcal_digT","DigiTime"],["fcal_hit_energy","HitSummary"],["fcal_hit_timing","HitTime"],["fcal_cluster_et","ClusterEnergyTime"],["fcal_cluster_space","ClusterSpace"]]
         tof_charts = [["__tof_tofe","Energy"],["__tof_toft","Time"],["__tof_tofo1","OccupancyPlane1"],["__tof_tofo2","OccupancyPlane2"]]
-        st_charts = [["__st_st_pi_dhit","DigiPulseInt"],["__st_st_pt_dhit","DigiTime"],["__st_st_sec_adc_dhit","DigiOccupancy"]]
+        if revision < 9:
+		st_charts = [["__st_st_pi_dhit","DigiPulseInt"],["__st_st_pt_dhit","DigiTime"],["__st_st_sec_adc_dhit","DigiOccupancy"]]
+	else:
+		st_charts = [["ST_Monitoring_Waveform_ch4","LowWaveform"],["ST_Monitoring_Multi","LowMulti"],["ST_Monitoring_Pid","TrackingPID"],["ST_Monitoring_Eff","TrackingEff"]]
         tagm_charts = [["__tagm_tagm_adc_pint","DigiPulseInt"],["__tagm_tagm_adc_mult","DigiMultiplicity"],["__tagm_tagm_hit_seen","HitOccupancy"],["__tagm_tagm_hit_time","HitTime"]]
         if revision < 4:
 		tagh_charts = [["__TAGH_DigiHit_DigiHit_RawIntegral","DigiRawInt"],["__TAGH_DigiHit_DigiHit_tdcTime","DigiTDCTime"],["__TAGH_DigiHit_DigiHit_PedestalVsSlotID","DigiPedVsSlot"],["TAGH_hit","HitSummary"]]
 	else:
 		tagh_charts = [["__TAGH_DigiHit_DigiHit_RawIntegral","DigiRawInt"],["__TAGH_DigiHit_DigiHit_tdcTime","DigiTDCTime"],["__TAGH_DigiHit_DigiHit_PedestalVsSlotID","DigiPedVsSlot"],["TAGH_hit","HitSummary"],["TAGH_hit2","HitSummary2"]]
 	if revision > 3:
-		ps_charts = [["PSC_hit","PSC1"],["PSC_hit2","PSC2"],["PSC_hit3","PSC3"],["PS_hit","PS1"],["PS_hit2","PS2"],["__PSPair_PSC_PS_PS_E","PS_E"],["PS_PSC_coinc","PairCoinc"],["PS_eff","PairEff"],["PS_TAG_energy","PairTagEnergy"],["TAG_eff","TagEff"],["TAG_2D_eff","Tag2DEff"]]
+		ps_charts = [["PSC_hit","PSC1"],["PSC_hit2","PSC2"],["PSC_hit3","PSC3"],["PS_hit","PS1"],["PS_hit2","PS2"],["__PSPair_PSC_PS_PS_E","PS_E"],["PS_PSC_coinc","PairCoinc"],["PS_eff","PairEff"],["PS_TAG_energy","PairTagEnergy"]] #,["TAG_eff","TagEff"],["TAG_2D_eff","Tag2DEff"]]
         if revision > 4:
-		rf_charts = [["HistMacro_RF_p1","RF1"],["HistMacro_RF_p1","RF2"],["HistMacro_RF_p1","RF3"]]
+		rf_charts = [["HistMacro_RF_p1","RF1"],["HistMacro_RF_p2","RF2"],["HistMacro_RF_p3","RF3"]]
+        if revision > 5:
+		hldetectortiming_charts = [["HistMacro_TaggerTiming","Tagger Timing"],["HistMacro_TaggerRFAlignment","Tagger-RF"],["HistMacro_TaggerSCAlignment","Tagger-SC"],["HistMacro_CalorimeterTiming","FCAL/BCAL"],["HistMacro_PIDSystemTiming","SC/TOF"],["HistMacro_TrackMatchedTiming","Track Matched Timing"]]
         ana_charts1 = [["HistMacro_EventInfo","EventInfo"],["HistMacro_NumLowLevelObjects_p1","LLObjects1"],["HistMacro_NumLowLevelObjects_p2","LLObjects2"],["HistMacro_NumHighLevelObjects","HLObjects"],["__Independent_Hist_TrackMultiplicity_NumGoodReconstructedParticles","TrackMult"],["HistMacro_Tracking_p1","Tracking1"],["HistMacro_Tracking_p2","Tracking2"],["HistMacro_Tracking_p3","Tracking3"],["HistMacro_Matching_BCAL","MatchBCAL"],["HistMacro_Matching_FCAL","MatchFCAL"],["HistMacro_Matching_SC","MatchSC/ST"],["HistMacro_Matching_TOF","MatchTOF"]]
         if revision < 4: 
             ana_charts2 = [["HistMacro_FCALReconstruction_p1","FCAL1"],["HistMacro_FCALReconstruction_p2","FCAL2"],["HistMacro_BCALReconstruction_p1","BCAL1"],["HistMacro_BCALReconstruction_p2","BCAL2"],["HistMacro_SCReconstruction_p1","SC/ST1"],["HistMacro_SCReconstruction_p2","SC/ST2"],["HistMacro_SCReconstruction_p3","SC/ST3"],["HistMacro_TOFReconstruction_p1","TOF1"],["HistMacro_TOFReconstruction_p2","TOF2"],["HistMacro_Kinematics_p1","Kinematics1"],["HistMacro_Kinematics_p2","Kinematics2"]]
-        else:
-             ana_charts2 = [["HistMacro_FCALReconstruction_p1","FCAL1"],["HistMacro_FCALReconstruction_p2","FCAL2"],["HistMacro_FCALReconstruction_p3","FCAL3"],["HistMacro_BCALReconstruction_p1","BCAL1"],["HistMacro_BCALReconstruction_p2","BCAL2"],["HistMacro_BCALReconstruction_p3","BCAL3"],["HistMacro_SCReconstruction_p1","SC/ST1"],["HistMacro_SCReconstruction_p2","SC/ST2"],["HistMacro_SCReconstruction_p3","SC/ST3"],["HistMacro_TOFReconstruction_p1","TOF1"],["HistMacro_TOFReconstruction_p2","TOF2"],["HistMacro_Kinematics_p1","Kinematics1"],["HistMacro_Kinematics_p2","Kinematics2"]]
+        if revision < 8:
+            ana_charts2 = [["HistMacro_FCALReconstruction_p1","FCAL1"],["HistMacro_FCALReconstruction_p2","FCAL2"],["HistMacro_FCALReconstruction_p3","FCAL3"],["HistMacro_BCALReconstruction_p1","BCAL1"],["HistMacro_BCALReconstruction_p2","BCAL2"],["HistMacro_BCALReconstruction_p3","BCAL3"],["HistMacro_SCReconstruction_p1","SC/ST1"],["HistMacro_SCReconstruction_p2","SC/ST2"],["HistMacro_SCReconstruction_p3","SC/ST3"],["HistMacro_TOFReconstruction_p1","TOF1"],["HistMacro_TOFReconstruction_p2","TOF2"],["HistMacro_Kinematics_p1","Kinematics1"],["HistMacro_Kinematics_p2","Kinematics2"]]
+	else:
+            ana_charts2 = [["HistMacro_FCALReconstruction_p1","FCAL1"],["HistMacro_FCALReconstruction_p2","FCAL2"],["HistMacro_FCALReconstruction_p3","FCAL3"],["HistMacro_BCALReconstruction_p1","BCAL1"],["HistMacro_BCALReconstruction_p2","BCAL2"],["HistMacro_BCALReconstruction_p3","BCAL3"],["HistMacro_SCReconstruction_p1","SC/ST1"],["HistMacro_SCReconstruction_p2","SC/ST2"],["HistMacro_TOFReconstruction_p1","TOF1"],["HistMacro_TOFReconstruction_p2","TOF2"],["HistMacro_Kinematics_p1","Kinematics1"],["HistMacro_Kinematics_p2","Kinematics2"]]
         ana_charts3 = [["HistMacro_p2pi_pmiss","&pi;<sup>+</sup>&pi;<sup>-</sup>1"],["HistMacro_p2pi_preco1","&pi;<sup>+</sup>&pi;<sup>-</sup>2"],["HistMacro_p3pi_pmiss_2FCAL","&pi;<sup>+</sup>&pi;<sup>-</sup>&pi;<sup>0</sup>(2FCAL)"],["HistMacro_p3pi_pmiss_FCAL-BCAL","&pi;<sup>+</sup>&pi;<sup>-</sup>&pi;<sup>0</sup>(F/BCAL)"]]
 
     # set names to "rootspy" if these are online histograms 
@@ -462,6 +477,13 @@ def main():
 	   <tr>"""
 	print "<td>RF:</td>"
 	print_row(options, rf_charts)
+    	print "</table>"
+
+    if (revision > 5 and options[2] == 'RunPeriod-2015-03') or (revision > 15 and options[2] == 'RunPeriod-2014-10'):
+	print """<table style="font-size:0.8em">
+	   <tr>"""
+	print "<td>HLDetectorTiming:</td>"
+	print_row(options, hldetectortiming_charts)
     	print "</table>"
 
     print """<table style="width:200px; font-size:0.8em">

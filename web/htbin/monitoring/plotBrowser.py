@@ -65,6 +65,7 @@ def show_plots(records, plotName, verName, periodName):
 
     loc_i = 0
     temp_runs = []
+
     for run in records:
         temp_runs.append(run[0])
 
@@ -90,6 +91,25 @@ def show_plots(records, plotName, verName, periodName):
             temp_runs = []
 
         loc_i = loc_i+1
+
+    # show remaining plots which didn't make a full row of 3
+    print "<table border=\"1\">"
+    print "<tr>"
+    for temp_run in temp_runs:
+        print "<td style='text-align:center; font-size:1.5em' >"
+        print "<b><a href=\"/cgi-bin/data_monitoring/monitoring/runBrowser.py?run_number=%s&ver=%s&period=%s\"  target=\"_blank\"> Run %s </b>" % (temp_run, verName, periodName, temp_run)
+        print "</td>"
+    print "</tr>"
+    print "<tr>"
+    for temp_run in temp_runs:
+        print "<td>"
+        web_link = "https://halldweb.jlab.org/work/halld/data_monitoring/%s/%s/Run%06d/%s.png" % (periodName, verName, temp_run, plotName)
+        print "<img width=400px src=\"%s\" onclick=\"window.open('%s', '_blank')\" >" % (web_link, web_link)
+        print "</td>"
+    print "</tr>"
+    print "</table>"
+    print "<br>"
+    print ""
 
     #print "</table>"
 
@@ -180,11 +200,17 @@ def print_option_selector(options):
     plotNames.append(["PS_PSC_coinc","PS/PSC Pair Coincidences"])
     plotNames.append(["PS_eff","PS(fine) Efficiency"])
     plotNames.append(["PS_TAG_energy","PS/Tagger Energy Correlation"])
-    plotNames.append(["TAG_eff","Tagging Efficiency"])
-    plotNames.append(["TAG_2D_eff","Tagging Efficiency 2D"])
+    #plotNames.append(["TAG_eff","Tagging Efficiency"])
+    #plotNames.append(["TAG_2D_eff","Tagging Efficiency 2D"])
     plotNames.append(["HistMacro_RF_p1","RF Summary 1"])
     plotNames.append(["HistMacro_RF_p2","RF Summary 2"])
     plotNames.append(["HistMacro_RF_p3","RF Summary 3"])
+    plotNames.append(["HistMacro_TaggerTiming","HLDetectorTiming Tagger Timing"])
+    plotNames.append(["HistMacro_TaggerRFAlignment","HLDetectorTiming Tagger-RF"])
+    plotNames.append(["HistMacro_TaggerSCAlignment","HLDetectorTiming Tagger-SC"])
+    plotNames.append(["HistMacro_CalorimeterTiming","HLDetectorTiming FCAL/BCAL"])
+    plotNames.append(["HistMacro_PIDSystemTiming","HLDetectorTiming SC/TOF"])
+    plotNames.append(["HistMacro_TrackMatchedTiming","HLDetectorTiming Track Matched Timing"])
     plotNames.append(["HistMacro_EventInfo","Event Info"])
     plotNames.append(["HistMacro_NumLowLevelObjects_p1","Low Level Objects 1"])
     plotNames.append(["HistMacro_NumLowLevelObjects_p2","Low Level Objects 2"])
@@ -278,7 +304,7 @@ def get_options():
     run_number = []
 
     plotName = "CDC_occupancy"
-    verName = "ver04"
+    verName = "ver09"
     periodName = "RunPeriod-2015-03"
     query = ""
 
