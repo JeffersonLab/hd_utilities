@@ -23,9 +23,11 @@ def get_data(options):
     revision_str = revision_str.replace("ver","")
     revision = int(float(revision_str))
     if options[0] == None:
-        curs.execute("SELECT distinct r.run_num from run_info r, version_info v, fdc_hits c WHERE c.runid=r.run_num and v.version_id=c.version_id and run_num>0 and start_time>0 and revision=%d and run_period='%s' %s ORDER BY r.run_num" % (revision, options[5], options[4]))
+        query = "SELECT distinct r.run_num from run_info r, version_info v, fdc_hits c WHERE c.runid=r.run_num and v.version_id=c.version_id and run_num>0 and start_time>0 and revision=%s and run_period=%s %s ORDER BY r.run_num"
+        curs.execute(query, (str(revision), str(options[5]), str(options[4])))
     else:
-        curs.execute("SELECT distinct r.run_num from run_info r, version_info v, cdc_hits c WHERE c.runid=r.run_num and v.version_id=c.version_id and run_num>=%d and run_num<=%d and start_time>0 and revision=%d and run_period='%s' %s ORDER BY r.run_num" % (options[0], options[1], revision, options[5], options[4]))
+        query = "SELECT distinct r.run_num from run_info r, version_info v, cdc_hits c WHERE c.runid=r.run_num and v.version_id=c.version_id and run_num>=%s and run_num<=%s and start_time>0 and revision=%s and run_period=%s %s ORDER BY r.run_num"
+        curs.execute(query, (str(options[0]), str(options[1]), str(revision), str(options[5]), str(options[4])))
     rows=curs.fetchall()
 
     return rows
@@ -34,9 +36,11 @@ def get_data(options):
 def get_versions(options):
 
     if options == None:
-        curs.execute("SELECT revision, dataVersionString, run_period from version_info ORDER BY revision DESC")
+        query = "SELECT revision, dataVersionString, run_period from version_info ORDER BY revision DESC"
+        curs.execute(query)
     else:
-        curs.execute("SELECT revision, dataVersionString, run_period from version_info where run_period='%s' ORDER BY revision DESC" % options[5]) 
+        query = "SELECT revision, dataVersionString, run_period from version_info where run_period=%s ORDER BY revision DESC"
+        curs.execute(query, (str(options[5]))) 
     rows=curs.fetchall()
 
     return rows
@@ -44,7 +48,8 @@ def get_versions(options):
 # get list of periods from the DB
 def get_periods(options):
 
-    curs.execute("SELECT DISTINCT run_period from version_info ORDER BY run_period DESC")
+    query = "SELECT DISTINCT run_period from version_info ORDER BY run_period DESC"
+    curs.execute(query)
     rows=curs.fetchall()
 
     return rows

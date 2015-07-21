@@ -22,7 +22,8 @@ def get_data(options):
     revision_str = str(options[1])
     revision_str = revision_str.replace("ver","")
     revision = int(float(revision_str))
-    curs.execute("SELECT distinct r.run_num, r.start_time, r.num_events from run_info r, version_info v, fdc_hits c WHERE c.runid=r.run_num and v.version_id=c.version_id and run_num>0 and revision=%d and run_period='%s' ORDER BY r.run_num" % (revision,options[2]))    
+    query = "SELECT distinct r.run_num, r.start_time, r.num_events from run_info r, version_info v, fdc_hits c WHERE c.runid=r.run_num and v.version_id=c.version_id and run_num>0 and revision=%s and run_period=%s ORDER BY r.run_num"
+    curs.execute(query, (revision, str(options[2])))    
     rows=curs.fetchall()
 
     return rows
@@ -33,7 +34,8 @@ def get_data_singlerun(options):
     revision_str = str(options[1])
     revision_str = revision_str.replace("ver","")
     revision = int(float(revision_str))
-    curs.execute("SELECT distinct r.run_num, r.start_time, r.num_events, r.beam_current, r.radiator_type, r.solenoid_current, r.trigger_config_file from run_info r, version_info v, fdc_hits c WHERE c.runid=r.run_num and v.version_id=c.version_id and run_num>0 and revision=%d and r.run_num=%d ORDER BY r.run_num" % (revision, options[0]))
+    query = "SELECT distinct r.run_num, r.start_time, r.num_events, r.beam_current, r.radiator_type, r.solenoid_current, r.trigger_config_file from run_info r, version_info v, fdc_hits c WHERE c.runid=r.run_num and v.version_id=c.version_id and run_num>0 and revision=%s and r.run_num=%s ORDER BY r.run_num"
+    curs.execute(query, (revision, options[0]))
     rows=curs.fetchall()
 
     return rows
@@ -41,7 +43,8 @@ def get_data_singlerun(options):
 # get list of versions from the DB
 def get_versions(options):
 
-    curs.execute("SELECT revision, dataVersionString, run_period from version_info where run_period='%s' ORDER BY revision DESC" % options[2]) 
+    query = "SELECT revision, dataVersionString, run_period from version_info where run_period=%s ORDER BY revision DESC"
+    curs.execute(query, (str(options[2])))
     rows=curs.fetchall()
 
     return rows
@@ -49,7 +52,8 @@ def get_versions(options):
 # get list of periods from the DB
 def get_periods(options):
 
-    curs.execute("SELECT DISTINCT run_period from version_info ORDER BY run_period DESC")
+    query = "SELECT DISTINCT run_period from version_info ORDER BY run_period DESC"
+    curs.execute(query)
     rows=curs.fetchall()
 
     return rows
@@ -60,7 +64,8 @@ def get_dates(options):
     revision_str = str(options[1])
     revision_str = revision_str.replace("ver","")
     revision = int(float(revision_str)) 
-    curs.execute("SELECT DISTINCT DATE(r.start_time) FROM run_info r, version_info v, fdc_hits c WHERE c.runid=r.run_num and v.version_id=c.version_id and run_num>0 and start_time>'2014-11-01' and revision=%d  and run_period='%s' GROUP BY start_time" % (revision,options[2]))
+    query = "SELECT DISTINCT DATE(r.start_time) FROM run_info r, version_info v, fdc_hits c WHERE c.runid=r.run_num and v.version_id=c.version_id and run_num>0 and start_time>'2014-11-01' and revision=%s  and run_period=%s GROUP BY start_time"
+    curs.execute(query, (revision, str(options[2])))
     rows=curs.fetchall()
 
     return rows
