@@ -39,6 +39,15 @@ foreach FILE ( `ls 00*/stdout*` )
     set TIMEPLUGIN = "-999"
   endif
 
+  set SEGFAULT = ""
+  set SEGFAULT = `tail -n 60 $FILE | grep -a 'Segmentation fault' | gawk '{print $1}'`
+  if ( $SEGFAULT == "" ) then
+    set SEGFAULT = "0"
+  else
+    echo "SEGFAULT was $SEGFAULT for $FILE"
+    set SEGFAULT = "1"
+  endif
+
   # Get run and file so we can query the database for jobId
   set RUNNUM  = `basename $FILE | gawk '{print substr($0,8,6)}'`
   set FILENUM = `basename $FILE | gawk '{print substr($0,15,3)}'`
@@ -46,7 +55,7 @@ foreach FILE ( `ls 00*/stdout*` )
   # Get jobId from monitoring database
   set JOBID = `mysql -hhallddb -ufarmer farming -s -r -e "select jobId from PROJECTJob where run = $RUNNUM and file = $FILENUM" | tail -n 1`
   if ( $JOBID != "" ) then
-    echo "$JOBID   $RUNNUM   $FILENUM   $NEVENTS   $TIMECOPY   $TIMEPLUGIN" | gawk '{printf "%-8s   %06d   %03d   %8s   %6d   %6d\n", $1,$2,$3,$4,$5,$6}' >> $OUTFILE
+    echo "$JOBID   $RUNNUM   $FILENUM   $NEVENTS   $TIMECOPY   $TIMEPLUGIN   $SEGFAULT" | gawk '{printf "%-8s   %06d   %03d   %8s   %6d   %6d   %2d\n", $1,$2,$3,$4,$5,$6,$7}' >> $OUTFILE
   endif
 
   @ NFILES += 1

@@ -6,5 +6,6 @@ CREATE TABLE `PROJECT_aux` (
   `nevents` int(11) DEFAULT NULL,
   `timeCopy` int(11) DEFAULT NULL,
   `timePlugin` int(11) DEFAULT NULL,
+  `segfault` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;

@@ -55,11 +55,11 @@ int main(int argc, char **argv){
   std::string timeStagingOut; Long64_t utimeStagingOut;
   std::string timeComplete;   Long64_t utimeComplete;
   std::string walltime, cput, mem, vmem, error;
-  std::string neventsString, timeCopyString, timePluginString;
+  std::string neventsString, timeCopyString, timePluginString, segfaultString;
 
   // convert read values into ints
   Int_t mem_int, vmem_int;
-  Int_t nevents, timeCopy, timePlugin;
+  Int_t nevents, timeCopy, timePlugin, segfault;
   Int_t errorCode;
 
   Int_t nTotal = 0;
@@ -69,6 +69,10 @@ int main(int argc, char **argv){
   Int_t nInputFail = 0;
   Int_t nNoJobStatus = 0;
   Int_t nFailUnknown = 0;
+
+  // Count how many segfaults
+  // These will be counted within success
+  Int_t nSegfaults = 0;
 
   sprintf(filename,"results.root");
   TFile *outfile = new TFile(filename,"recreate");
@@ -90,9 +94,11 @@ int main(int argc, char **argv){
 	>> timeComplete
 	>> walltime >> cput
 	>> mem >> vmem >> error
-	>> neventsString >>  timeCopyString >> timePluginString){
+	>> neventsString >>  timeCopyString >> timePluginString >> segfaultString){
+
+    if(debug) cout << "==================   beginning of new entry   ============================" << endl;
     
-    if(debug && result != "SUCCESS"){
+    if(debug){ //  && result != "SUCCESS"
       cout << "-----------------------------------------------------------------------------------" << endl;
       cout << "id = " << id << " run = " << run << " file = " << file << " jobId = " << jobId << endl
 	   << " timeChange = " << timeChange << endl
@@ -106,7 +112,7 @@ int main(int argc, char **argv){
 	   << " timeComplete = " << timeComplete << endl
 	   << " walltime = " << walltime << " cput = " << cput << " mem = " << mem << " vmem = " << vmem << endl
 	   << " error = " << error << endl
-	   << " nevents = " << nevents << " timeCopy = " << timeCopy << " timePlugin = " << timePlugin << endl;
+	   << " nevents = " << nevents << " timeCopy = " << timeCopy << " timePlugin = " << timePlugin << " segfault = " << segfault << endl;
     }
 
     if(result == "TIMEOUT"){
@@ -148,8 +154,16 @@ int main(int argc, char **argv){
 	   << " timeComplete = " << timeComplete << endl
 	   << " walltime = " << walltime << " cput = " << cput << " mem = " << mem << " vmem = " << vmem << endl
 	   << " error = " << error << endl
-	   << " nevents = " << nevents << " timeCopy = " << timeCopy << " timePlugin = " << timePlugin << endl;
+	   << " nevents = " << nevents << " timeCopy = " << timeCopy << " timePlugin = " << timePlugin << " segfault = " << segfault << endl;
       abort();
+    }
+
+    if(segfault == 1){
+      nSegfaults++;
+      // If it was a segfault, then result should be SUCCESS
+      assert(result=="SUCCESS");
+      // Subtract off from SUCCESS
+      nSuccess--;
     }
 
     // Convert times into utime
@@ -181,7 +195,8 @@ int main(int argc, char **argv){
     getNumber(neventsString,nevents,-999);
     getNumber(timeCopyString,timeCopy,-999);
     getNumber(timePluginString,timePlugin,-999);
-    if(debug) cout << "nevents = " << nevents << " timeCopy = " << timeCopy << " timePlugin =  " << timePlugin << endl;
+    getNumber(segfaultString,segfault,-999);
+    if(debug) cout << "nevents = " << nevents << " timeCopy = " << timeCopy << " timePlugin =  " << timePlugin << " segfault = " << segfault << endl;
 
     OUT << id << "\t" << run << "\t" << file << "\t" << jobId
 	<< "\t" << timeChange
@@ -198,7 +213,7 @@ int main(int argc, char **argv){
 	<< "\t" << utimePending      << "\t" << utimeStagingIn
 	<< "\t" << utimeActive       << "\t" << utimeStagingOut << "\t" << utimeComplete
 	<< "\t" << mem_int           << "\t" << vmem_int
-	<< "\t" << nevents           << "\t" << timeCopy << "\t" << timePlugin << endl;
+	<< "\t" << nevents           << "\t" << timeCopy << "\t" << timePlugin << "\t" << segfault << endl;
 
     nTotal++;
     if(nTotal % 200 == 0) cout << "processed " << setw(5) << nTotal << " / " << NTOTAL << endl;
@@ -505,6 +520,7 @@ error    = "-999";
   cout << "number of fail to get input file : " << setw(5) << setfill(' ') << nInputFail   << endl;
   cout << "number of no job status          : " << setw(5) << setfill(' ') << nNoJobStatus << endl;
   cout << "number of fail for unknown reason: " << setw(5) << setfill(' ') << nFailUnknown << endl;
+  cout << "number of segmentation faults    : " << setw(5) << setfill(' ') << nSegfaults   << endl;
   outfile->Write();
 
   // cleanup
