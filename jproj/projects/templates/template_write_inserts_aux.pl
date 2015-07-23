@@ -9,8 +9,9 @@ while (<>) {
     $nevents = $t0[3];
     $timeCopy = $t0[4];
     $timePlugin = $t0[5];
+    $segfault   = $t0[6];
     if ($jobId > 100000000 || $jobId < 10000000) {die "bad job id"}
-    print "UPDATE $tablename SET nevents = $nevents, timeCopy = $timeCopy, timePlugin = $timePlugin WHERE jobId = $jobId;\n";
+    print "UPDATE $tablename SET nevents = $nevents, timeCopy = $timeCopy, timePlugin = $timePlugin, segfault = $segfault WHERE jobId = $jobId;\n";
 }
 exit;
 
