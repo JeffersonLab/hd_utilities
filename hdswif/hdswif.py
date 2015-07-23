@@ -27,8 +27,8 @@ global PROJECT, TRACK, NCORES, DISK, RAM, TIMELIMIT, OS, VERBOSE, PLUGINS, SCRIP
 
 # Job options that shouldn't change during lifetime of a workflow
 PLUGINS       = "TAGH_online,TAGM_online,BCAL_online,CDC_online,CDC_expert,FCAL_online,FDC_online,ST_online_lowlevel,ST_online_tracking,TOF_online,PS_online,PSC_online,PSPair_online,TPOL_online,TOF_TDC_shift,monitoring_hists,danarest,BCAL_Eff,p2pi_hists,p3pi_hists,HLDetectorTiming,BCAL_inv_mass,trackeff_missing,TRIG_online,CDC_drift,RF_online"
-SCRIPTFILE    = "/home/gxproj1/halld/hdswif/script.sh"
-ENVFILE       = "/home/gxproj1/halld/jproj/projects/template/setup_jlab-2015-03.csh"
+SCRIPTFILE    = "/home/gxproj5/halld/hdswif/script.sh"
+ENVFILE       = "/home/gxproj5/halld/hdswif/setup_jlab-2015-03.csh"
 
 # Set job configuration parameters.
 # All jobs will be sent in with this configuration:
@@ -60,6 +60,9 @@ def cancel(workflow):
 
 def delete(workflow):
     os.system("swif cancel " + workflow + " -delete")
+
+def list():
+    os.system("swif list")
 
 def run(workflow):
     os.system("swif run " + workflow)
@@ -116,21 +119,28 @@ def add_job(WORKFLOW, OUTPUT_TOPDIR, RUNPERIOD, mssfile):
 
     # Get back FORMATTED_RUN, FORMATTED_FILE from mssfile (full path to evio file)
     # set name for regexp run_file
-    regexp = re.compile(r"(?P<run_file>\d\d\d\d\d\d_\d\d\d)")
-    run_file = regexp.search(mssfile).group('run_file')
-    # print "run_line = " + str(run_file)
+    print "mssfile = " + mssfile
+    match = ""
+    run_file = ""
+    try:
+        match = re.match(r"(\d\d\d)",mssfile) # _\d\d\d
+        run_file = match.group(1)
+    except AttributeError:
+        "could not find regexp for " + mssfile
+    print "match = " + str(match)
+    print "run_file = " + str(run_file)
 
     # Replace _\d\d\d to get run
     pattern = r"_\d\d\d"
     regexp = re.compile(pattern)
     thisrun  = regexp.sub("",str(run_file))
-    # print "thisrun = " + thisrun
+    print "thisrun = " + thisrun
 
     # Replace \d\d\d\d\d\d_ to get run
     pattern = r"\d\d\d\d\d\d_"
     regexp = re.compile(pattern)
     thisfile = regexp.sub("",run_file)
-    # print "thisfile = " + thisfile
+    print "thisfile = " + thisfile
 
     # Get input file basename
     basename = os.path.basename(mssfile)
@@ -150,14 +160,14 @@ def add_job(WORKFLOW, OUTPUT_TOPDIR, RUNPERIOD, mssfile):
         + str(" -input " + basename + " " + mssfile + " \\\n") \
     + str(" -stdout " + OUTPUT_TOPDIR + "/log/" + thisrun + "/stdout_" + thisrun + "_" + thisfile + ".out \\\n") \
     + str(" -stderr " + OUTPUT_TOPDIR + "/log/" + thisrun + "/stderr_" + thisrun + "_" + thisfile + ".err \\\n") \
-    + str(" -name " + WORKFLOW + "_" + thisrun + "_" + thisfile + " \\\n") \
+    + str(" -name offmon" + "_" + thisrun + "_" + thisfile + " \\\n") \
     + str(SCRIPTFILE + " " + SCRIPT_ARGS)
 
     if(VERBOSE == True):
         print "job add command is \n" + str(add_command)
 
     # Execute swif add for this job
-    os.system(add_command)
+    # os.system(add_command)
     
     
 def main(argv):
@@ -172,7 +182,7 @@ def main(argv):
     # Read in command line args
     parser = OptionParser(usage = str("\n"
                                       + "hdswif.py [option] [workflow]\n"
-                                      + "[option] = {create, run (n), status, add, cancel, delete}\n"
+                                      + "[option] = {create, list, run (n), status, add, cancel, delete}\n"
                                       + "Options for add:\n"
                                       + "-r (run) -f (file)\n"
                                       + "-p (project) -T (track) -n (cores) -d (disk) -m (RAM) -t (time) -o (OS)\n"
@@ -225,7 +235,12 @@ def main(argv):
     if(options.verbose):
         VERBOSE = True
 
-    # Make sure we have at least two arguments,
+    # If we want to list workflows, list and exit
+    if(len(args)==1 and args[0] == "list"):
+        list()
+        return
+
+    # For all other cases, make sure we have at least two arguments,
     # swif command and workflow
     if(len(args) < 2):
         parser.print_help()
@@ -250,7 +265,8 @@ def main(argv):
 
     # If we want to run workflow, run it and exit
     elif(args[0] == "run"):
-        run(WORKFLOW)
+        if(len(args) == 2):
+            run(WORKFLOW)
         if(len(args) == 3):
             runnjobs(WORKFLOW, args[2])
         return
