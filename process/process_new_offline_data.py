@@ -85,6 +85,10 @@ class ProcessMonDataConfig:
         self.INPUT_DIRECTORY = args[2]
         self.OUTPUT_DIRECTORY = args[3]
 
+        # fix directories used in MC production
+        if self.REVISION == "mc":
+            self.ROOTFILE_DIR = "hd_root"
+
         # set up output logging
         if options.logfile:
             logging.basicConfig(filename=options.logfile,level=logging.INFO)
@@ -194,17 +198,32 @@ class ProcessMonDataConfig:
         Outputs list of runs that the batch jobs have finished processing
         """
         rundirs_on_disk = []
-        # The monitoring ROOT files are stored in one directory per run
-        dirs_on_disk = [ d for d in listdir(join(self.INPUT_DIRECTORY,self.REVISION,self.ROOTFILE_DIR)) 
-                         if os.path.isdir(join(self.INPUT_DIRECTORY,self.REVISION,self.ROOTFILE_DIR,d)) ]
+        if self.REVISION == "mc":
+            # the monitoring ROOT files are all stored in one directory
+            monitoring_files = [ f for f in listdir(join(self.INPUT_DIRECTORY,self.ROOTFILE_DIR)) 
+                                 if (isfile(join(self.INPUT_DIRECTORY,self.ROOTFILE_DIR,f))and(f[-5:]=='.root')) ]
+            for fname in monitoring_files:
+                tokens = fname[:-5].split('_')
+                if len(tokens) < 3:
+                    continue
+                try:
+                    runnum = int(tokens[2])
+                except ValueError:
+                    logging.error("skipping file " + fname + " ...")
+                rundirs_on_disk.append(tokens[2])
+                
+        else:
+            # The monitoring ROOT files are stored in one directory per run
+            dirs_on_disk = [ d for d in listdir(join(self.INPUT_DIRECTORY,self.REVISION,self.ROOTFILE_DIR)) 
+                             if os.path.isdir(join(self.INPUT_DIRECTORY,self.REVISION,self.ROOTFILE_DIR,d)) ]
         
-        for dirname in sorted(dirs_on_disk):
-            try:
-                #print "dirname = " + dirname
-                runnum = int(dirname)
-            except ValueError:
-                logging.error("skipping directory " + dirname + " ...")
-            rundirs_on_disk.append(dirname)
+            for dirname in sorted(dirs_on_disk):
+                try:
+                    runnum = int(dirname)
+                except ValueError:
+                    logging.error("skipping directory " + dirname + " ...")
+                rundirs_on_disk.append(dirname)
+
         return rundirs_on_disk
 
     def BuildROOTFileList(self,rundir):
@@ -221,10 +240,16 @@ class ProcessMonDataConfig:
             logging.error("invalid run directory = " + fname + ", skipping ...")
             return
 
-        rootfilespath = join(self.INPUT_DIRECTORY,self.REVISION,self.ROOTFILE_DIR)  # base directory where the ROOT files are stored
+        if self.REVISION == "mc":
+            rootfilespath = join(self.INPUT_DIRECTORY,self.ROOTFILE_DIR)
+        else:
+            rootfilespath = join(self.INPUT_DIRECTORY,self.REVISION,self.ROOTFILE_DIR)  # base directory where the ROOT files are stored
         # get all files ending in ".root" for the given run
         root_files = [ join(rootfilespath,rundir,f) for f in listdir(join(rootfilespath,rundir)) 
                        if (isfile(join(rootfilespath,rundir,f))and(f[-5:]=='.root')) ]
+        if self.REVISION == "mc":
+            # for MC monitoring files, since they are all in one directory, only keep files that have the correct run
+            root_files = [ f for f in root_files if rundir==f[8:14] ]
 
         if self.VERBOSE>2:
             print "Looking for ROOT files in "+join(rootfilespath,rundir)
@@ -452,7 +477,10 @@ def main():
             db.CreateRun(runnum)
 
         ## make sure we have a directory to store some meta-information
-        misc_dir = join(config.INPUT_DIRECTORY,config.REVISION,"misc",rundir)
+        if config.REVISION == "mc":
+            misc_dir = join(config.INPUT_DIRECTORY,"misc",rundir)
+        else:
+            misc_dir = join(config.INPUT_DIRECTORY,config.REVISION,"misc",rundir)
         rootfiles_already_processed = []
         if not os.path.exists(misc_dir):
             os.system("mkdir -p " + misc_dir)
