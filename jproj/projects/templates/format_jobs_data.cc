@@ -33,8 +33,8 @@ int main(int argc, char **argv){
   ifstream IN_wc("___tmp_wc.txt");
   Int_t NTOTAL;
   IN_wc >> NTOTAL;
-  // There are 24 lines per entry
-  NTOTAL /= 24;
+  // There are 25 lines per entry
+  NTOTAL /= 25;
   system("rm -f ___tmp_wc.txt");
   cout << "total of " << NTOTAL << " files to process..." << endl;
 

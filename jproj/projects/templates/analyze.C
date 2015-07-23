@@ -56,7 +56,7 @@ int analyze(Int_t TOTALTIME = 80, Bool_t debug = false){
   std::string timeStagingOut; Long64_t utimeStagingOut;
   std::string timeComplete;   Long64_t utimeComplete;
   std::string walltime, cput, mem, vmem, error;      Int_t errorCode;
-  Int_t nevents, timeCopy, timePlugin;
+  Int_t nevents, timeCopy, timePlugin, segfault;
 
   Int_t walltime_sec, cput_sec;
   Int_t hostnameNum;
@@ -187,7 +187,7 @@ int analyze(Int_t TOTALTIME = 80, Bool_t debug = false){
 	>> utimeStagingOut
 	>> utimeComplete
 	>> mem_int >> vmem_int
-	>> nevents >> timeCopy >> timePlugin){
+	>> nevents >> timeCopy >> timePlugin >> segfault){
     
     if(debug){
       cout << "---------- entry " << nTotal << " -------------------" << endl;
