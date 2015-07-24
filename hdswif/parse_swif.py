@@ -58,7 +58,7 @@ table_name = 'offline_monitoring_RunPeriod2015_03_ver90_hd_rawdata'
 # Drop Job table if it exists
 db_cmd = str("DROP TABLE IF EXISTS `" + table_name + "Job`")
 # print db_cmd
-db_conn.cursor().execute(db_cmd)
+# db_conn.cursor().execute(db_cmd)
 
 # Create Job table that holds Auger info
 db_cmd = str(
@@ -97,7 +97,7 @@ db_cmd = str(
     ") ENGINE=MyISAM;"
 )
 # print db_cmd
-db_conn.cursor().execute(db_cmd)
+# db_conn.cursor().execute(db_cmd)
 
 # Get <name>, then <attempts> and info within
 for job in status:
@@ -109,13 +109,59 @@ for job in status:
         run_num  = match.group(1)
         file_num = match.group(2)
 
-    # Find attempt
+    # Find auger_id
     for auger_id in job.iter('auger_id'):
         # print "auger_id.tag = " + str(auger_id.tag) + " auger_id.text = " + str(auger_id.text)
         auger_id_text = str(auger_id.text)
-        print name_text + "   " + run_num + "   " + file_num + "   " + auger_id_text
+        # print name_text + "   " + run_num + "   " + file_num + "   " + auger_id_text
 
         db_cmd = 'INSERT INTO ' + table_name + 'Job SET run=' + run_num + ", file=" + file_num + ", jobId = " + auger_id_text
         # print db_cmd
-        db_conn.cursor().execute(db_cmd)
+        # db_conn.cursor().execute(db_cmd)
 
+    # Find rtime
+    rtime_text = ""
+    for rtime in job.iter('rtime'):
+        # print "rtime.tag = " + str(rtime.tag) + " rtime.text = " + str(rtime.text)
+        rtime_text = str(rtime.text)
+
+    # Find stime
+    stime_text = ""
+    for stime in job.iter('stime'):
+        # print "stime.tag = " + str(stime.tag) + " stime.text = " + str(stime.text)
+        stime_text = str(stime.text)
+
+    # Find utime
+    utime_text = ""
+    for utime in job.iter('utime'):
+        # print "utime.tag = " + str(utime.tag) + " utime.text = " + str(utime.text)
+        utime_text = str(utime.text)
+
+    # Find maxrss
+    maxrss_text = ""
+    for maxrss in job.iter('maxrss'):
+        # print "maxrss.tag = " + str(maxrss.tag) + " maxrss.text = " + str(maxrss.text)
+        maxrss_text = str(maxrss.text)
+
+    # Find auger_cpu_sec
+    auger_cpu_sec_text = ""
+    for auger_cpu_sec in job.iter('auger_cpu_sec'):
+        # print "auger_cpu_sec.tag = " + str(auger_cpu_sec.tag) + " auger_cpu_sec.text = " + str(auger_cpu_sec.text)
+        auger_cpu_sec_text = str(auger_cpu_sec.text)
+
+    # Find auger_mem_kb
+    auger_mem_kb_text = ""
+    for auger_mem_kb in job.iter('auger_mem_kb'):
+        # print "auger_mem_kb.tag = " + str(auger_mem_kb.tag) + " auger_mem_kb.text = " + str(auger_mem_kb.text)
+        auger_mem_kb_text = str(auger_mem_kb.text)
+
+    # Find auger_wall_sec
+    auger_wall_sec_text = ""
+    for auger_wall_sec in job.iter('auger_wall_sec'):
+        # print "auger_wall_sec.tag = " + str(auger_wall_sec.tag) + " auger_wall_sec.text = " + str(auger_wall_sec.text)
+        auger_wall_sec_text = str(auger_wall_sec.text)
+
+    # Comparison of swif and Auger resource usage.
+    # Save this output as txt file and analyze.
+    if(rtime_text != ""):
+        print str(rtime_text) + "   " + str(stime_text) + "   " + str(utime_text) + "   " + str(maxrss_text) + "   " + str(auger_cpu_sec_text) + "   " + str(auger_mem_kb_text) + "   " + str(auger_wall_sec_text)

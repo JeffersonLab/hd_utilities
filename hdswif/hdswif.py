@@ -119,28 +119,22 @@ def add_job(WORKFLOW, OUTPUT_TOPDIR, RUNPERIOD, mssfile):
 
     # Get back FORMATTED_RUN, FORMATTED_FILE from mssfile (full path to evio file)
     # set name for regexp run_file
-    print "mssfile = " + mssfile
     match = ""
-    run_file = ""
+    thisrun = 0
+    thisfile = 0
     try:
-        match = re.match(r"(\d\d\d)",mssfile) # _\d\d\d
-        run_file = match.group(1)
+        match = re.search(r"(\d\d\d\d\d\d)_(\d\d\d)",mssfile) # _\d\d\d
+        thisrun  = match.group(1)
+        thisfile = match.group(2)
     except AttributeError:
         "could not find regexp for " + mssfile
-    print "match = " + str(match)
-    print "run_file = " + str(run_file)
 
-    # Replace _\d\d\d to get run
-    pattern = r"_\d\d\d"
-    regexp = re.compile(pattern)
-    thisrun  = regexp.sub("",str(run_file))
-    print "thisrun = " + thisrun
+    if(thisrun == 0 or thisfile == 0):
+        print "couldn't find run and file number in " + mssfile
+        exit
 
-    # Replace \d\d\d\d\d\d_ to get run
-    pattern = r"\d\d\d\d\d\d_"
-    regexp = re.compile(pattern)
-    thisfile = regexp.sub("",run_file)
-    print "thisfile = " + thisfile
+    if(VERBOSE == True):
+        print "thisrun = " + thisrun + "  thisfile = " + thisfile
 
     # Get input file basename
     basename = os.path.basename(mssfile)
@@ -158,16 +152,17 @@ def add_job(WORKFLOW, OUTPUT_TOPDIR, RUNPERIOD, mssfile):
     add_command = str("swif add-job -workflow " + WORKFLOW + " -project " + PROJECT + " -track " + TRACK + " \\\n") \
         + str(" -cores " + str(NCORES) + " -disk " + str(DISK) + "g -ram " + str(RAM) + "g -time " + str(TIMELIMIT) + "h -os " + OS + " \\\n") \
         + str(" -input " + basename + " " + mssfile + " \\\n") \
-    + str(" -stdout " + OUTPUT_TOPDIR + "/log/" + thisrun + "/stdout_" + thisrun + "_" + thisfile + ".out \\\n") \
-    + str(" -stderr " + OUTPUT_TOPDIR + "/log/" + thisrun + "/stderr_" + thisrun + "_" + thisfile + ".err \\\n") \
-    + str(" -name offmon" + "_" + thisrun + "_" + thisfile + " \\\n") \
-    + str(SCRIPTFILE + " " + SCRIPT_ARGS)
+        + str(" -tag user_run r" + thisrun + " -tag user_file f" + thisfile + " \\\n") \
+        + str(" -name offmon" + "_" + thisrun + "_" + thisfile + " \\\n") \
+        + str(" -stdout " + OUTPUT_TOPDIR + "/log/" + thisrun + "/stdout_" + thisrun + "_" + thisfile + ".out \\\n") \
+        + str(" -stderr " + OUTPUT_TOPDIR + "/log/" + thisrun + "/stderr_" + thisrun + "_" + thisfile + ".err \\\n") \
+        + str(SCRIPTFILE + " " + SCRIPT_ARGS)
 
     if(VERBOSE == True):
         print "job add command is \n" + str(add_command)
 
     # Execute swif add for this job
-    # os.system(add_command)
+    os.system(add_command)
     
     
 def main(argv):
