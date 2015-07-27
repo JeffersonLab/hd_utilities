@@ -184,6 +184,20 @@ class datamon_db:
             # right now, just print out errors
             self.print_mysql_error(e)
 
+    def ReplaceData(self, table_name, values):
+        if(len(values) == 0):
+            logging.warn('Trying to add data to DB without any data')
+        db_cmd = 'REPLACE INTO ' + table_name + ' VALUES (' + " ".join(['%s,' for i in xrange(len(values)-1)]) +  ' %s)'
+        if(self.verbose):
+            logging.info(db_cmd + '  <--  ' + str(values))
+        #print "Insert cmd = " + str(db_cmd)
+        try:
+            self.db.execute(db_cmd, values)
+            self.db_conn.commit()
+        except MySQLdb.Error, e:
+            # right now, just print out errors
+            self.print_mysql_error(e)
+
     def DumpTable(self, table_name, mode=""):
         if table_name not in self.table_names:
             logging.warn("Invalid table name = " + table_name)
@@ -304,49 +318,49 @@ class datamon_db:
 
     ### Functions to add data
     def AddCDCHits(self, runid, file_num, version_id, num_events, values):
-        self.InsertData('cdc_hits', [runid, file_num, version_id, num_events] + values)
+        self.ReplaceData('cdc_hits', [runid, file_num, version_id, num_events] + values)
     def AddFDCHits(self, runid, file_num, version_id, num_events, values):
-        self.InsertData('fdc_hits', [runid, file_num, version_id, num_events] + values)
+        self.ReplaceData('fdc_hits', [runid, file_num, version_id, num_events] + values)
     def AddFCALHits(self, runid, file_num, version_id, num_events, values):
-        self.InsertData('fcal_hits', [runid, file_num, version_id, num_events] + values)
+        self.ReplaceData('fcal_hits', [runid, file_num, version_id, num_events] + values)
     def AddBCALHits(self, runid, file_num, version_id, num_events, values):
-        self.InsertData('bcal_hits', [runid, file_num, version_id, num_events] + values)
+        self.ReplaceData('bcal_hits', [runid, file_num, version_id, num_events] + values)
     def AddBCALEnergies(self, runid, file_num, version_id, num_events, values):
-        self.InsertData('bcal_energies', [runid, file_num, version_id, num_events] + values)
+        self.ReplaceData('bcal_energies', [runid, file_num, version_id, num_events] + values)
     def AddTOFHits(self, runid, file_num, version_id, num_events, values):
-        self.InsertData('tof_hits', [runid, file_num, version_id, num_events] + values)
+        self.ReplaceData('tof_hits', [runid, file_num, version_id, num_events] + values)
     def AddSCHits(self, runid, file_num, version_id, num_events, values):
-        self.InsertData('sc_hits', [runid, file_num, version_id, num_events] + values)
+        self.ReplaceData('sc_hits', [runid, file_num, version_id, num_events] + values)
     def AddTAGHHits(self, runid, file_num, version_id, num_events, values):
-        self.InsertData('tagh_hits', [runid, file_num, version_id, num_events] + values)
+        self.ReplaceData('tagh_hits', [runid, file_num, version_id, num_events] + values)
     def AddTAGMHits(self, runid, file_num, version_id, num_events, values):
-        self.InsertData('tagm_hits', [runid, file_num, version_id, num_events] + values)
+        self.ReplaceData('tagm_hits', [runid, file_num, version_id, num_events] + values)
     def AddPSHits(self, runid, file_num, version_id, num_events, values):
-        self.InsertData('ps_hits', [runid, file_num, version_id, num_events] + values)
+        self.ReplaceData('ps_hits', [runid, file_num, version_id, num_events] + values)
     def AddPSCHits(self, runid, file_num, version_id, num_events, values):
-        self.InsertData('psc_hits', [runid, file_num, version_id, num_events] + values)
+        self.ReplaceData('psc_hits', [runid, file_num, version_id, num_events] + values)
 
     def AddCDCCalib(self, runid, file_num, version_id,  values):
-        self.InsertData('cdc_calib', [runid, file_num, version_id] + values)
+        self.ReplaceData('cdc_calib', [runid, file_num, version_id] + values)
     def AddFDCCalib(self, runid, file_num, version_id,  values):
-        self.InsertData('fdc_calib', [runid, file_num, version_id] + values)
+        self.ReplaceData('fdc_calib', [runid, file_num, version_id] + values)
     def AddFCALCalib(self, runid, file_num, version_id,  values):
-        self.InsertData('fcal_calib', [runid, file_num, version_id] + values)
+        self.ReplaceData('fcal_calib', [runid, file_num, version_id] + values)
     def AddBCALCalib(self, runid, file_num, version_id,  values):
-        self.InsertData('bcal_calib', [runid, file_num, version_id] + values)
+        self.ReplaceData('bcal_calib', [runid, file_num, version_id] + values)
     def AddTOFCalib(self, runid, file_num, version_id,  values):
-        self.InsertData('tof_calib', [runid, file_num, version_id] + values)
+        self.ReplaceData('tof_calib', [runid, file_num, version_id] + values)
     def AddSCCalib(self, runid, file_num, version_id,  values):
-        self.InsertData('st_calib', [runid, file_num, version_id] + values)
+        self.ReplaceData('st_calib', [runid, file_num, version_id] + values)
     def AddTAGHCalib(self, runid, file_num, version_id,  values):
-        self.InsertData('tagh_calib', [runid, file_num, version_id] + values)
+        self.ReplaceData('tagh_calib', [runid, file_num, version_id] + values)
     def AddTAGMCalib(self, runid, file_num, version_id,  values):
-        self.InsertData('tagm_calib', [runid, file_num, version_id] + values)
+        self.ReplaceData('tagm_calib', [runid, file_num, version_id] + values)
     def AddPSCalib(self, runid, file_num, version_id,  values):
-        self.InsertData('ps_calib', [runid, file_num, version_id] + values)
+        self.ReplaceData('ps_calib', [runid, file_num, version_id] + values)
     def AddPSCCalib(self, runid, file_num, version_id,  values):
-        self.InsertData('psc_calib', [runid, file_num, version_id] + values)
+        self.ReplaceData('psc_calib', [runid, file_num, version_id] + values)
 
     def AddAnalysisInfo(self, runid, file_num, version_id, num_events, values):
-        self.InsertData('analysis_data', [runid, file_num, version_id, num_events] + values)
+        self.ReplaceData('analysis_data', [runid, file_num, version_id, num_events] + values)
 
