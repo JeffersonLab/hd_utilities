@@ -102,11 +102,11 @@ class summarize_monitoring_data:
         avg_hits_per_sector = []
         number_of_events = -1   
 
-        st_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"st/st_num_events")
+        st_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"st_lowlevel/st_num_events")
         if(st_num_events != None):
             number_of_events = st_num_events.GetBinContent(1)
 
-        sc_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"st/st_sec_adc_dhit")
+        sc_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"st_lowlevel/h1_adc_sec")
         # sanity checks
         if(sc_occupancy == None):
             logging.error("couldn't find Start Counter occupancy histogram!")
