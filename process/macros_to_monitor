@@ -72,12 +72,8 @@
 /home/gxproj5/builds/sim-recon/sim-recon/src/plugins/Analysis/monitoring_hists/HistMacro_Matching_SC.C
 /home/gxproj5/builds/sim-recon/sim-recon/src/plugins/Analysis/monitoring_hists/HistMacro_Matching_TOF.C
 # ANALYSIS
-/home/gxproj5/builds/sim-recon/sim-recon/src/plugins/Analysis/p2pi_hists/HistMacro_kshort2pi.C
 /home/gxproj5/builds/sim-recon/sim-recon/src/plugins/Analysis/p2pi_hists/HistMacro_p2pi_pmiss.C
 /home/gxproj5/builds/sim-recon/sim-recon/src/plugins/Analysis/p2pi_hists/HistMacro_p2pi_preco1.C
-/home/gxproj5/builds/sim-recon/sim-recon/src/plugins/Analysis/p2pi_hists/HistMacro_p2pi_preco2.C
-/home/gxproj5/builds/sim-recon/sim-recon/src/plugins/Analysis/p3pi_hists/HistMacro_p3pi_pmiss_2FCAL.C
-/home/gxproj5/builds/sim-recon/sim-recon/src/plugins/Analysis/p3pi_hists/HistMacro_p3pi_pmiss_FCAL-BCAL.C
 /home/gxproj5/builds/sim-recon/sim-recon/src/plugins/Analysis/p3pi_hists/HistMacro_p3pi_preco_2FCAL.C
 /home/gxproj5/builds/sim-recon/sim-recon/src/plugins/Analysis/p3pi_hists/HistMacro_p3pi_preco_FCAL-BCAL.C
 
