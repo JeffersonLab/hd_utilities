@@ -310,7 +310,7 @@ def ProcessOfflineData(args):
         summarizer = summarize_monitoring_data.summarize_monitoring_data()
         summarizer.RUN_NUMBER = run
         summarizer.VERSION_NUMBER = config.VERSION_NUMBER
-        for (fname,filenum) in monitoring_files.items():
+        for (fname,filenum) in sorted(monitoring_files.items()):
             if config.VERBOSE>1:
                 print "  summarizing run %d file %d ..."%(run,filenum)
             summarizer.FILE_NUMBER = filenum

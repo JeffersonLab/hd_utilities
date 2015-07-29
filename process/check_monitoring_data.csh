@@ -6,6 +6,7 @@ set VERSION=ver10
 set INPUTDIR=/volatile/halld/offline_monitoring/RunPeriod-2015-03
 set OUTPUTDIR=/work/halld/data_monitoring/RunPeriod-2015-03/$VERSION
 set ARGS=" -v RunPeriod-2015-03,10 "
+#set ARGS=" -v RunPeriod-2015-03,10 "
 
 # Load standard environment for ROOT
 #source /home/gxproj5/setup_jlab.csh
