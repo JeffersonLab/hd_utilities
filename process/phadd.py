@@ -19,44 +19,70 @@ def run_hadd(args):
 
 class phadd:
     def __init__(self, in_targetfile, in_sourcefiles, in_args="", in_nthreads=6, in_chunksize=20):
+        self.nthreads = 0
+        self.p = None
+        self.Init(in_targetfile, in_sourcefiles, in_args, in_nthreads, in_chunksize)
+
+    def __del__(self):
+        # stop all threads
+        self.p.terminate()
+        self.p.join()
+
+
+    def Init(self, in_targetfile, in_sourcefiles, in_args="", in_nthreads=6, in_chunksize=20):
         self.targetfile = in_targetfile   # final file name to save result in
         if in_sourcefiles is None or len(in_sourcefiles) < 0:
             raise RuntimeError("phadd: No files passed to add!")
         else:
             self.sourcefiles = in_sourcefiles  # ROOT files to add
-        if in_nthreads<1:
-            raise RuntimeError("phadd: Invalid number of threads = "+str(in_nthreads))
-        self.nthreads = in_nthreads    # how many threads should be split this up into?
         if in_chunksize<1:
             raise RuntimeError("phadd: Invalid chunk size = "+str(in_chunksize))
         self.chunksize = in_chunksize  # how many files should each thread add at once?
         self.haddargs = in_args
 
-        ## Multiprocessing in python generally requires separate processes due to
-        ## the global interpreter lock, but since we are just executing shell processes
-        ## in parallel, we can use threads to save on memory usage
-        ## Each thread will block until the call to os.system() is done, and another
-        ## thread can be started while the other is blocking
-        self.p = ThreadPool(self.nthreads)
+        if in_nthreads<1:
+            raise RuntimeError("phadd: Invalid number of threads = "+str(in_nthreads))
+        # only remake the thread pool if we're changing the number of threads we're using
+        if self.nthreads != in_nthreads:
+            self.nthreads = in_nthreads    # how many threads should be split this up into?
+            if self.p is not None:
+                # stop all of the threads
+                self.p.terminate()
+                self.p.join()
+                del self.p
+
+            ## Multiprocessing in python generally requires separate processes due to
+            ## the global interpreter lock, but since we are just executing shell processes
+            ## in parallel, we can use threads to save on memory usage
+            ## Each thread will block until the call to os.system() is done, and another
+            ## thread can be started while the other is blocking
+            self.p = ThreadPool(self.nthreads)
 
     def Add(self):
-        # split up files
-        njobs = len(self.sourcefiles)/self.chunksize + 1
-        jobs = []
-        for x in xrange(njobs):
-            #sumfilename = os.path.join(tempfile.gettempdir(),"phadd_tmp_%s.root"%next(tempfile._get_candidate_names()))
-            sumfilename = os.path.join(tempfile.gettempdir(),"phadd_tmp_%s.root"%str(uuid.uuid4()))
-            if x == njobs-1:
-                jobs += [ [self.haddargs, sumfilename, self.sourcefiles[x*self.chunksize:] ] ]
-            else:
-                jobs += [ [self.haddargs, sumfilename, self.sourcefiles[x*self.chunksize:(x+1)*self.chunksize] ] ]
-        # run over them
-        tempsumfiles = self.p.map(run_hadd,jobs)
-        # add the results up
-        os.system("hadd %s %s %s"%(self.haddargs,self.targetfile," ".join(tempsumfiles)))
-        # delete temp files
-        for fname in tempsumfiles:
-            os.system("rm "+fname)
+        if len(self.sourcefiles) == 1:
+            # merging one file is easy!  just copy it
+            os.system("cp %s %s"%(self.sourcefiles[0],self.targetfile))
+        elif len(self.sourcefiles) <= self.chunksize:
+            # if we have fewer files than our chunk size, then we can just do one round of adding files
+            os.system("hadd %s %s %s"%(self.haddargs,self.targetfile," ".join(self.sourcefiles)))
+        else:
+            # do two rounds of merging - first split up the files
+            njobs = len(self.sourcefiles)/self.chunksize + 1
+            jobs = []
+            for x in xrange(njobs):
+                #sumfilename = os.path.join(tempfile.gettempdir(),"phadd_tmp_%s.root"%next(tempfile._get_candidate_names()))
+                sumfilename = os.path.join(tempfile.gettempdir(),"phadd_tmp_%s.root"%str(uuid.uuid4()))
+                if x == njobs-1:
+                    jobs += [ [self.haddargs, sumfilename, self.sourcefiles[x*self.chunksize:] ] ]
+                else:
+                    jobs += [ [self.haddargs, sumfilename, self.sourcefiles[x*self.chunksize:(x+1)*self.chunksize] ] ]
+            # run over them
+            tempsumfiles = self.p.map(run_hadd,jobs)
+            # add the results up
+            os.system("hadd %s %s %s"%(self.haddargs,self.targetfile," ".join(tempsumfiles)))
+            # delete temp files
+            for fname in tempsumfiles:
+                os.system("rm "+fname)
 
 ## main function 
 if __name__ == "__main__":
