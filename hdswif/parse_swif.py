@@ -1,7 +1,3 @@
-import xml.etree.ElementTree as ET
-import re
-import MySQLdb
-
 #--------------------------------------------------------------------#
 #                                                                    #
 # 2015/07/23 Kei Moriya                                              #
@@ -9,9 +5,9 @@ import MySQLdb
 # Parse the xml output of swif.                                      #
 #                                                                    #
 # The root element of swif output is an element called               #
-# <status>                                                           #
+# <workflow_status>                                                  #
 #                                                                    #
-# Within <status>, each job is put into an element called            #
+# Within <workflow_status>, each job is put into an element called   #
 #   <job>                                                            #
 #                                                                    #
 # Each <job> element has child elements                              #
@@ -29,139 +25,741 @@ import MySQLdb
 #                                                                    #
 #--------------------------------------------------------------------#
 
-# Read in xml file and create tree, root
-tree = ET.parse('output.xml')
-# root element is <status>
-status = tree.getroot()
+import sys, os
+from os import mkdir
+from optparse import OptionParser
+import xml.etree.ElementTree as ET
+import re
+import calendar
+from datetime import datetime
+from matplotlib import pyplot as plt
 
-print "status.tag = " + str(status.tag) + "   status.text = " + str(status.text)
+# To use PyROOT, we need environment variable PYTHONPAT,
+# for that we need ROOTSYS to be defined
+ROOTSYS = str(os.environ.get('ROOTSYS','NOTSET'))
+if ROOTSYS == 'NOTSET':
+    print 'Environment variable ROOTSYS must be set to a version of ROOT built with PyROOT support'
+    exit()
 
-# Within <status> there are <job> tags
-#for job in status:
-#    print "job.tag = " + str(job.tag) + "job.text = " + str(job.text)
-#    for job_child in job:
-#        print "job_child.tag = " + str(job_child.tag) + "   job_child.text = " + str(job_child.text)
+PATH = str(os.environ.get('PATH','NOTSET'))
+if PATH == 'NOTSET':
+    PATH = ROOTSYS + '/bin'
+else:
+    PATH = ROOTSYS + '/bin:' + PATH
 
-# Can find any grandchild element
-nSuccess = 0
-for auger_state in status.iter('auger_final_state'):
-    # print "auger_state.text = " + auger_state.text
-    if(auger_state.text == "SUCCESS"):
-        nSuccess+= 1
+PYTHONPATH = str(os.environ.get('PYTHONPATH','NOTSET'))
+if PYTHONPATH == 'NOTSET':
+    PYTHONPATH = ROOTSYS + '/lib'
+else:
+    PYTHONPATH = ROOTSYS + '/lib:' + PYTHONPATH
 
-print "Number of success: " + str(nSuccess)
+os.environ["PYTHONPATH"]      = PYTHONPATH
+sys.path.append(str(ROOTSYS + '/lib/'))
 
-# Create MySQL connection
-db_conn = MySQLdb.connect(host='hallddb', user='farmer', passwd='', db='farming')
-table_name = 'offline_monitoring_RunPeriod2015_03_ver90_hd_rawdata'
+from ROOT import gROOT, gStyle, TCanvas, TH1F, TGraph, TH2F, TF1, TLine, TLatex
+import ROOT
+gStyle.SetOptStat(False)
+ROOT.gROOT.SetBatch(True)
 
-# Drop Job table if it exists
-db_cmd = str("DROP TABLE IF EXISTS `" + table_name + "Job`")
-# print db_cmd
-# db_conn.cursor().execute(db_cmd)
+def main(argv):
 
-# Create Job table that holds Auger info
-db_cmd = str(
-    "CREATE TABLE `" + table_name + "Job` (" +
-    "`id` int(11) NOT NULL AUTO_INCREMENT," + 
-    "`run` int(11) DEFAULT NULL," + 
-    "`file` int(11) DEFAULT NULL," + 
-    "`jobId` int(11) DEFAULT NULL," + 
-    "`timeChange` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," + 
-    "`username` varchar(64) DEFAULT NULL," + 
-    "`project` varchar(64) DEFAULT NULL," + 
-    "`name` varchar(64) DEFAULT NULL," + 
-    "`queue` varchar(64) DEFAULT NULL," + 
-    "`hostname` varchar(64) DEFAULT NULL," + 
-    "`nodeTags` varchar(64) DEFAULT NULL," + 
-    "`coresRequested` int(11) DEFAULT NULL," + 
-    "`memoryRequested` int(11) DEFAULT NULL," + 
-    "`status` varchar(64) DEFAULT NULL," + 
-    "`exitCode` int(11) DEFAULT NULL," + 
-    "`result` varchar(64) DEFAULT NULL," + 
-    "`timeSubmitted` datetime DEFAULT NULL," + 
-    "`timeDependency` datetime DEFAULT NULL," + 
-    "`timePending` datetime DEFAULT NULL," + 
-    "`timeStagingIn` datetime DEFAULT NULL," + 
-    "`timeActive` datetime DEFAULT NULL," + 
-    "`timeStagingOut` datetime DEFAULT NULL," + 
-    "`timeComplete` datetime DEFAULT NULL," + 
-    "`walltime` varchar(8) DEFAULT NULL," + 
-    "`cput` varchar(8) DEFAULT NULL," + 
-    "`mem` varchar(64) DEFAULT NULL," + 
-    "`vmem` varchar(64) DEFAULT NULL," + 
-    "`script` varchar(1024) DEFAULT NULL," + 
-    "`files` varchar(1024) DEFAULT NULL," + 
-    "`error` varchar(1024) DEFAULT NULL," + 
-    "PRIMARY KEY (`id`)" + 
-    ") ENGINE=MyISAM;"
-)
-# print db_cmd
-# db_conn.cursor().execute(db_cmd)
+    # XML file to parse
+    parser = OptionParser(usage = "\n parse_swif.py [XML file]")
+    (options, args) = parser.parse_args(argv)
 
-# Get <name>, then <attempts> and info within
-for job in status:
-    # Find job
-    for name in job.iter('name'):
-        # print "name.tag = " + str(name.tag) + " name.text = " + str(name.text)
-        name_text = str(name.text)
-        match = re.match(r"offmon_(\d\d\d\d\d\d)_(\d\d\d)",name_text)
-        run_num  = match.group(1)
-        file_num = match.group(2)
+    filename = args[0]
 
-    # Find auger_id
-    for auger_id in job.iter('auger_id'):
-        # print "auger_id.tag = " + str(auger_id.tag) + " auger_id.text = " + str(auger_id.text)
-        auger_id_text = str(auger_id.text)
-        # print name_text + "   " + run_num + "   " + file_num + "   " + auger_id_text
+    filename_base = filename.rsplit('.xml')[0]
 
-        db_cmd = 'INSERT INTO ' + table_name + 'Job SET run=' + run_num + ", file=" + file_num + ", jobId = " + auger_id_text
-        # print db_cmd
-        # db_conn.cursor().execute(db_cmd)
+    # Read in xml file and create tree, root
+    tree = ET.parse(filename)
+    # root element is <workflow_status>
+    workflow_status = tree.getroot()
 
-    # Find rtime
-    rtime_text = ""
-    for rtime in job.iter('rtime'):
-        # print "rtime.tag = " + str(rtime.tag) + " rtime.text = " + str(rtime.text)
-        rtime_text = str(rtime.text)
+    #--------------------------------------------------------------------
+    # Get summary information
+    summary = workflow_status.find('summary')
+    workflow_name_text  = summary.find('workflow_name').text
+    suspended_text      = summary.find('suspended').text
+    job_limit           = 0 if (summary.find('job_limit') is None) else summary.find('job_limit').text
+    nTotal              = summary.find('jobs').text
+    nUndispatched       = summary.find('undispatched').text
+    nDispatched         = summary.find('dispatched').text
+    nProblems           = summary.find('problems').text
+    nSucceeded          = summary.find('succeeded').text
+    nFailed             = summary.find('failed').text
+    nCanceled           = summary.find('canceled').text
+    nAttempts           = 0 if (summary.find('attempts') is None) else summary.find('attempts').text
 
-    # Find stime
-    stime_text = ""
-    for stime in job.iter('stime'):
-        # print "stime.tag = " + str(stime.tag) + " stime.text = " + str(stime.text)
-        stime_text = str(stime.text)
+    nDependency = 0 if (summary.find('auger_depend') is None) else summary.find('auger_depend').text
+    nPending    = 0 if (summary.find('auger_pending') is None) else summary.find('auger_pending').text
+    nStagingIn  = 0 if (summary.find('auger_staging_in') is None) else summary.find('auger_staging_in').text
+    nActive     = 0 if (summary.find('auger_active') is None) else summary.find('auger_active').text
+    nStagingOut = 0 if (summary.find('auger_staging_out') is None) else summary.find('auger_staging_out').text
+    nFinishing  = 0 if (summary.find('auger_finishing') is None) else summary.find('auger_finishing').text
+    
+    current_time = summary.find('current_ts').text
 
-    # Find utime
-    utime_text = ""
-    for utime in job.iter('utime'):
-        # print "utime.tag = " + str(utime.tag) + " utime.text = " + str(utime.text)
-        utime_text = str(utime.text)
+    # output file
+    outfile = open("summary_" + filename_base + ".html","w")
+    outfile.write('<html>\n')
+    outfile.write('  <head>\n')
+    outfile.write('  <link rel="stylesheet" type="text/css" href="mystyle.css">\n')
+    outfile.write('  <meta http-equiv="content-style-type" content="text/css">\n')
+    outfile.write('  <title>Summary of ' + workflow_name_text + '</title>\n')
+    outfile.write('  </head>\n')
+    outfile.write('  <body>\n')
+    outfile.write('  <h1>' + workflow_name_text + '</h1>\n')
+    outfile.write('  <hr>\n')
 
-    # Find maxrss
-    maxrss_text = ""
-    for maxrss in job.iter('maxrss'):
-        # print "maxrss.tag = " + str(maxrss.tag) + " maxrss.text = " + str(maxrss.text)
-        maxrss_text = str(maxrss.text)
+    #--------------------------------------------------------------------
+    # Iterate over auger_state and find how many jobs succeeded.
+    # The iterator can find any grandchild element independent
+    # of how nested the element is.
+    nSuccess = 0
+    for auger_state in workflow_status.iter('auger_final_state'):
+        if(auger_state.text == "SUCCESS"):
+            nSuccess+= 1
 
-    # Find auger_cpu_sec
-    auger_cpu_sec_text = ""
-    for auger_cpu_sec in job.iter('auger_cpu_sec'):
-        # print "auger_cpu_sec.tag = " + str(auger_cpu_sec.tag) + " auger_cpu_sec.text = " + str(auger_cpu_sec.text)
-        auger_cpu_sec_text = str(auger_cpu_sec.text)
+            
+    #--------------------------------------------------------------------
+    # Print stats to screen
+    print "------------------------------------------------------------"
+    print "Undispatched        : " + str(nUndispatched)
+    print "Currently dispatched: " + str(nDispatched)
+    print "Number of succeeded : " + str(nSuccess)
+    print "Number of failed    : " + str(nFailed)
+    print "Number of problems  : " + str(nProblems)
+    print "Number of canceled  : " + str(nCanceled)
+    print "Total               : " + str(nTotal)
 
-    # Find auger_mem_kb
-    auger_mem_kb_text = ""
-    for auger_mem_kb in job.iter('auger_mem_kb'):
-        # print "auger_mem_kb.tag = " + str(auger_mem_kb.tag) + " auger_mem_kb.text = " + str(auger_mem_kb.text)
-        auger_mem_kb_text = str(auger_mem_kb.text)
+    #--------------------------------------------------------------------
+    # Print Auger stats to screen
+    print "------------------------------------------------------------"
+    print "Currently running jobs:"
+    print "Dependency        : " + str(nDependency)
+    print "Pending           : " + str(nPending)
+    print "StagingIn         : " + str(nStagingIn)
+    print "Active            : " + str(nActive)
+    print "Staging Out       : " + str(nStagingOut)
+    print "Finishing         : " + str(nFinishing)
+    print "Dispatched Total  : " + str(nDispatched)
 
-    # Find auger_wall_sec
-    auger_wall_sec_text = ""
-    for auger_wall_sec in job.iter('auger_wall_sec'):
-        # print "auger_wall_sec.tag = " + str(auger_wall_sec.tag) + " auger_wall_sec.text = " + str(auger_wall_sec.text)
-        auger_wall_sec_text = str(auger_wall_sec.text)
+    #--------------------------------------------------------------------
+    # Create table of current job status
+    outfile.write('  <h2>Status</h2>\n')
+    outfile.write('  <h3>Info retrieved: ' + current_time + '</h3>\n')
+    if not job_limit is '':
+        outfile.write('  <h3>Job Limit: ' + str(job_limit) + '</h3>\n')
+        outfile.write('  <h3>Total attempts: ' + str(nAttempts) + '</h3>\n')
+        outfile.write('  <table style="border: 0px; table-layout: fixed;">\n')
 
-    # Comparison of swif and Auger resource usage.
-    # Save this output as txt file and analyze.
-    if(rtime_text != ""):
-        print str(rtime_text) + "   " + str(stime_text) + "   " + str(utime_text) + "   " + str(maxrss_text) + "   " + str(auger_cpu_sec_text) + "   " + str(auger_mem_kb_text) + "   " + str(auger_wall_sec_text)
+    # Header for dispatched, undispatched, total
+        outfile.write('    <tr style="background: #99CCFF;">\n')
+        outfile.write('      <th style="border: 0px; height:10px; width:100px;">Undispatched</th>\n')
+        outfile.write('      <th style="border: 0px; height:10px; width:100px;">Dispatched</th>\n')
+        outfile.write('      <th style="border: 0px; height:10px; width:100px;">Succeeded</th>\n')
+        outfile.write('      <th style="border: 0px; height:10px; width:100px;">Failed</th>\n')
+        outfile.write('      <th style="border: 0px; height:10px; width:100px;">Problems</th>\n')
+        outfile.write('      <th style="border: 0px; height:10px; width:100px;">Canceled</th>\n')
+        outfile.write('      <th style="border: 0px; height:10px; width:100px;">Total</th>\n')
+        outfile.write('    </tr>\n')
+
+    # Row for dispatched, undispatched, total
+        outfile.write('    <tr>\n')
+        output_text = '      <td>' + str(nUndispatched) + '</td>\n'
+        outfile.write(output_text)
+        output_text = '      <td>' + str(nDispatched) + '</td>\n'
+        outfile.write(output_text)
+        output_text = '      <td>' + str(nSucceeded) + '</td>\n'
+        outfile.write(output_text)
+        output_text = '      <td>' + str(nFailed) + '</td>\n'
+        outfile.write(output_text)
+        output_text = '      <td>' + str(nProblems) + '</td>\n'
+        outfile.write(output_text)
+        output_text = '      <td>' + str(nCanceled) + '</td>\n'
+        outfile.write(output_text)
+        output_text = '      <td><b>' + str(nTotal) + '</b></td>\n'
+        outfile.write(output_text)
+        outfile.write('    </tr>\n')
+        outfile.write('  </table>\n')
+        
+        outfile.write('  <br><br>\n')
+
+    # Table showing Auger states:
+    # - depend
+    # - pending
+    # - staging in
+    # - active
+    # - staging out
+    # - finishing
+    outfile.write('  <h2>Auger Status</h2>\n')
+    outfile.write('  <table style="border: 0px; table-layout: fixed;">\n')
+    
+    # Header for dependency, pending, active, complete, undispatched, total
+    outfile.write('    <tr style="background: #99CCFF;">\n')
+    outfile.write('      <th style="border: 0px; height:10px; width:100px;">Dependency</th>\n')
+    outfile.write('      <th style="border: 0px; height:10px; width:100px;">Pending</th>\n')
+    outfile.write('      <th style="border: 0px; height:10px; width:100px;">Staging In</th>\n')
+    outfile.write('      <th style="border: 0px; height:10px; width:100px;">Active</th>\n')
+    outfile.write('      <th style="border: 0px; height:10px; width:100px;">Staging Out</th>\n')
+    outfile.write('      <th style="border: 0px; height:10px; width:100px;">Finishing</th>\n')
+    outfile.write('      <th style="border: 0px; height:10px; width:100px;">Dispatched Total</th>\n')
+    outfile.write('    </tr>\n')
+    
+    # Row for dependency, pending, active, complete, undispatched, total
+    outfile.write('    <tr>\n')
+    output_text = '      <td>' + str(nDependency) + '</td>\n'
+    outfile.write(output_text)
+    output_text = '      <td>' + str(nPending) + '</td>\n'
+    outfile.write(output_text)
+    output_text = '      <td>' + str(nStagingIn) + '</td>\n'
+    outfile.write(output_text)
+    output_text = '      <td>' + str(nActive) + '</td>\n'
+    outfile.write(output_text)
+    output_text = '      <td>' + str(nStagingOut) + '</td>\n'
+    outfile.write(output_text)
+    output_text = '      <td>' + str(nFinishing) + '</td>\n'
+    outfile.write(output_text)
+    output_text = '      <td><b>' + str(nDispatched) + '</b></td>\n'
+    outfile.write(output_text)
+    outfile.write('    </tr>\n')
+    
+    outfile.write('  </table>\n')
+    outfile.write('  <hr>\n')
+    
+    #--------------------------------------------------------------------
+    # Make histogram of number of attempts
+    # This can be done by looking at the <num_attempts>
+    # element for each job.
+    hnum_attempts = TH1F("hnum_attemps", ";# attempts", 10, -0.5, 9.5)
+    for num_attempts in workflow_status.iter("num_attempts"):
+        hnum_attempts.Fill(int(num_attempts.text))
+    
+    c1 = TCanvas( 'c1', 'Example with Formula', 0, 0, 1200, 600 )
+    # c1.find_all_primitives()
+    # c1.SetMinimum(0.5)
+    c1.SetLogy(1)
+    
+    latex = TLatex()
+    latex.SetTextColor(ROOT.kBlack)
+    latex.SetTextSize(0.06)
+    latex.SetTextAlign(12)
+    latex.SetNDC(1)
+    
+    hnum_attempts.SetBarWidth(0.20)
+    hnum_attempts.SetBarOffset(0.50 - hnum_attempts.GetBarWidth()/2.)
+    hnum_attempts.Draw("bar,textsame")
+    
+    # Total # of jobs is length of workflow_status
+    # since this includes all <job> tags, minus 1 for
+    # the <summary> tag
+    text = "total jobs: " + str(len(workflow_status) - 1)
+    latex.DrawLatex(0.50,0.80,text)
+    
+    text = "total attempts: " + str(nAttempts)
+    latex.DrawLatex(0.50,0.70,text)
+    c1.Update()
+    figureDir = 'figures/' + workflow_name_text
+    if not os.path.exists(figureDir): os.makedirs(figureDir)
+    c1.SaveAs(figureDir + '/hnum_attempts.png')
+    c1.SetLogy(0)
+    c1.Close()
+    
+    outfile.write('    <h2>Number of Attempts</h2>\n')
+    outfile.write('    <a href = "' + figureDir + '/hnum_attempts.png">\n')
+    outfile.write('      <img src = "' + figureDir + '/hnum_attempts.png" width = "70%">\n')
+    outfile.write('    </a>\n')
+    outfile.write('    <hr>\n')
+    
+    #--------------------------------------------------------------------
+    # Find max ram_bytes
+    max_ram_requested = 1
+    min_ram_requested = 100
+    
+    for job in workflow_status.iter('job'):
+        for user_run in job.iter('user_run'):
+            run_name = user_run.text
+        for user_file in job.iter('user_file'):
+            file_name = user_file.text
+        attempts = job.find('attempts')
+    
+        total_attempts = len(list(attempts.iter('attempt')))
+        nattempts = 0
+        for attempt in attempts.iter('attempt'):
+            nattempts += 1
+            # Get requested RAM
+            ram_bytes_name = ""
+            for ram_bytes in attempt.findall('ram_bytes'):
+                ram_bytes_name = int(int(ram_bytes.text) / 1000 / 1000/ 1000)
+                if max_ram_requested < ram_bytes_name:
+                    max_ram_requested = int(ram_bytes_name)
+    
+                if min_ram_requested > ram_bytes_name:
+                    min_ram_requested = int(ram_bytes_name)
+
+    # Get the first dispatch time, which sets when the job
+    # submissions began
+    MIN_DISPATCH_TS_POSIX = 9999999999
+    LAUNCH_TIME = ''
+    time_text = ''
+    # Also get the max time which is the final
+    # auger_ts_complete time
+    MAXTIME = 0
+    # Get <name>, then <attempts> and info within
+    for job in workflow_status:
+        for dispatch_ts in job.iter('dispatch_ts'):
+            # rpartition will strip off the final '.0' if it exists, then
+            # return the 3-tuple before the separator, the separator, and after the separator
+            dispatch_ts_text = str(dispatch_ts.text).rpartition(".0")[0]
+            time_text = str(dispatch_ts.text).rpartition(".0")[0]
+            dispatch_ts_posix = calendar.timegm(datetime.strptime(dispatch_ts_text, '%Y-%m-%d %H:%M:%S').timetuple())
+            if dispatch_ts_posix < MIN_DISPATCH_TS_POSIX:
+                MIN_DISPATCH_TS_POSIX = dispatch_ts_posix
+                LAUNCH_TIME = time_text
+
+        for auger_ts_complete in job.iter('auger_ts_complete'):
+            auger_complete_ts_text = str(auger_ts_complete.text).rpartition(".0")[0]
+            auger_complete_ts_posix = calendar.timegm(datetime.strptime(auger_complete_ts_text, '%Y-%m-%d %H:%M:%S').timetuple())
+            if auger_complete_ts_posix > MAXTIME:
+                MAXTIME = auger_complete_ts_posix
+
+    # Histograms for time since start of submission
+    # maximum time for jobs to finish since launch
+    # Range of time histogram
+    TOTALTIME = int(float(MAXTIME - MIN_DISPATCH_TS_POSIX) / 3600.) + 1.0
+    print 'TOTALTIME = ', TOTALTIME, ' hrs'
+    htimeSinceLaunch_submitted = TH1F("htimeSinceLaunch_submitted", ";submit time since launch (hrs)", TOTALTIME * 10, 0,TOTALTIME)
+    htimeSinceLaunch_dependency = TH1F("htimeSinceLaunch_dependency", ";dependency time since launch (hrs)", TOTALTIME * 10, 0,TOTALTIME)
+    htimeSinceLaunch_pending = TH1F("htimeSinceLaunch_pending", ";pending time since launch (hrs)", TOTALTIME * 10, 0,TOTALTIME)
+    htimeSinceLaunch_stagingIn = TH1F("htimeSinceLaunch_stagingIn", ";staging in time since launch (hrs)", TOTALTIME * 10, 0,TOTALTIME)
+    htimeSinceLaunch_active = TH1F("htimeSinceLaunch_active", ";active since launch (hrs)", TOTALTIME * 10, 0,TOTALTIME)
+    htimeSinceLaunch_stagingOut = TH1F("htimeSinceLaunch_stagingOut", ";staging out time since launch (hrs)", TOTALTIME * 10, 0,TOTALTIME)
+    htimeSinceLaunch_complete = TH1F("htimeSinceLaunch_complete", ";complete time since launch (hrs)", TOTALTIME * 10, 0,TOTALTIME)
+
+    # Histograms for duration of dependency, pending and active
+    hDurationDependency = TH1F("hDurationDependency",";time spent in dependency (hrs)",240,0,24)
+    hDurationPending = TH1F("hDurationPending",";time spent in pending (hrs)",240,0,6)
+    hDurationActive = TH1F("hDurationActive",";time spent in active (hrs)",240,0,8)
+    
+    hmaxrss = TH1F("hmaxrss", ";maxrss (GB)", 200, 0,max_ram_requested)
+    hauger_mem = TH1F("hauger_mem", ";mem (GB)", 200, 0,max_ram_requested + 1)
+    hwalltime = TH1F("hwalltime", ";wall time (hrs)", 200, 0,5)
+    gcput_walltime = TGraph()
+    gcput_walltime.SetName("hcput_walltime")
+    gcput_walltime.SetTitle("");
+    gcput_walltime.GetXaxis().SetTitle("wall time (hrs)");
+    gcput_walltime.GetYaxis().SetTitle("cpu time (hrs)");
+    gcput_walltime.SetMarkerStyle(20);
+    gcput_walltime.SetMarkerSize(0.3);
+    gcput_walltime.SetMarkerColor(ROOT.kBlue);
+    
+    # Get <name>, then <attempts> and info within
+    for job in workflow_status:
+        # Find job
+        for name in job.iter('name'):
+            name_text = str(name.text)
+            match = re.match(r"offmon_(\d\d\d\d\d\d)_(\d\d\d)",name_text)
+            run_num  = match.group(1)
+            file_num = match.group(2)
+    
+        # Find auger_id
+        for auger_id in job.iter('auger_id'):
+            auger_id_text = str(auger_id.text)
+    
+        # Find rtime
+        rtime_text = ""
+        for rtime in job.iter('rtime'):
+            rtime_text = str(rtime.text)
+    
+        # Find stime
+        stime_text = ""
+        for stime in job.iter('stime'):
+            stime_text = str(stime.text)
+    
+        # Find utime
+        utime_text = ""
+        for utime in job.iter('utime'):
+            utime_text = str(utime.text)
+    
+        # Find maxrss
+        maxrss_text = ""
+        for maxrss in job.iter('maxrss'):
+            maxrss_text = str(maxrss.text)
+            hmaxrss.Fill(float(maxrss_text) / 1000. / 1000.)
+    
+        # Find auger_cpu_sec
+        auger_cpu_sec_text = ""
+        for auger_cpu_sec in job.iter('auger_cpu_sec'):
+            auger_cpu_sec_text = str(auger_cpu_sec.text)
+    
+        # Find auger_mem_kb
+        auger_mem_kb_text = ""
+        for auger_mem_kb in job.iter('auger_mem_kb'):
+            auger_mem_kb_text = str(auger_mem_kb.text)
+            hauger_mem.Fill(float(auger_mem_kb_text) / 1000. / 1000.)
+    
+        # Find auger_wall_sec
+        auger_wall_sec_text = ""
+        for auger_wall_sec in job.iter('auger_wall_sec'):
+            auger_wall_sec_text = str(auger_wall_sec.text)
+            hwalltime.Fill(float(auger_wall_sec_text) / 3600.)
+            gcput_walltime.SetPoint(gcput_walltime.GetN(),float(auger_wall_sec_text) / 3600.,float(auger_cpu_sec_text) / 3600.)
+
+        # Get ts_submitted
+        auger_ts_submitted = ""
+        ts_submitted_posix = 0
+        for auger_ts_submitted in job.iter('auger_ts_submitted'):
+            # rpartition will strip off the final '.0' if it exists, then
+            # return the 3-tuple before the separator, the separator, and after the separator
+            auger_ts_submitted_text = str(auger_ts_submitted.text).rpartition(".0")[0]
+            ts_submitted_posix = calendar.timegm(datetime.strptime(auger_ts_submitted_text, '%Y-%m-%d %H:%M:%S').timetuple())
+            # Fill hist of submit time since launch
+            htimeSinceLaunch_submitted.Fill(float(ts_submitted_posix - MIN_DISPATCH_TS_POSIX) / 3600.)
+    
+        # Get ts_dependency
+        auger_ts_dependency = ""
+        ts_dependency_posix = 0
+        for auger_ts_dependency in job.iter('auger_ts_dependency'):
+            # rpartition will strip off the final '.0' if it exists, then
+            # return the 3-tuple before the separator, the separator, and after the separator
+            auger_ts_dependency_text = str(auger_ts_dependency.text).rpartition(".0")[0]
+            ts_dependency_posix = calendar.timegm(datetime.strptime(auger_ts_dependency_text, '%Y-%m-%d %H:%M:%S').timetuple())
+            # Fill hist of dependency time since launch
+            htimeSinceLaunch_dependency.Fill(float(ts_dependency_posix - MIN_DISPATCH_TS_POSIX) / 3600.)
+
+        # Get ts_pending
+        auger_ts_pending = ""
+        ts_pending_posix = 0
+        for auger_ts_pending in job.iter('auger_ts_pending'):
+            # rpartition will strip off the final '.0' if it exists, then
+            # return the 3-tuple before the separator, the separator, and after the separator
+            auger_ts_pending_text = str(auger_ts_pending.text).rpartition(".0")[0]
+            ts_pending_posix = calendar.timegm(datetime.strptime(auger_ts_pending_text, '%Y-%m-%d %H:%M:%S').timetuple())
+            # Fill hist of pending time since launch
+            htimeSinceLaunch_pending.Fill(float(ts_pending_posix - MIN_DISPATCH_TS_POSIX) / 3600.)
+    
+            # Fill hist of duration for dependency
+            hDurationDependency.Fill(float(ts_pending_posix - ts_dependency_posix) / 3600.)
+    
+        # Get ts_stagingIn
+        auger_ts_stagingIn = ""
+        ts_stagingIn_posix = 0
+        for auger_ts_stagingIn in job.iter('auger_ts_staging_in'):
+            # rpartition will strip off the final '.0' if it exists, then
+            # return the 3-tuple before the separator, the separator, and after the separator
+            auger_ts_stagingIn_text = str(auger_ts_stagingIn.text).rpartition(".0")[0]
+            ts_stagingIn_posix = calendar.timegm(datetime.strptime(auger_ts_stagingIn_text, '%Y-%m-%d %H:%M:%S').timetuple())
+            # Fill hist of staging in time since launch
+            htimeSinceLaunch_stagingIn.Fill(float(ts_stagingIn_posix - MIN_DISPATCH_TS_POSIX) / 3600.)
+
+            # Fill hist of duration for pending
+            hDurationPending.Fill(float(ts_stagingIn_posix - ts_pending_posix) / 3600.)
+    
+        # Get ts_active
+        auger_ts_active = ""
+        ts_active_posix = 0
+        for auger_ts_active in job.iter('auger_ts_active'):
+            # rpartition will strip off the final '.0' if it exists, then
+            # return the 3-tuple before the separator, the separator, and after the separator
+            auger_ts_active_text = str(auger_ts_active.text).rpartition(".0")[0]
+            ts_active_posix = calendar.timegm(datetime.strptime(auger_ts_active_text, '%Y-%m-%d %H:%M:%S').timetuple())
+            # Fill hist of active time since launch
+            htimeSinceLaunch_active.Fill(float(ts_active_posix - MIN_DISPATCH_TS_POSIX) / 3600.)
+    
+        # Get ts_stagingOut
+        auger_ts_stagingOut = ""
+        ts_stagingOut_posix = 0
+        for auger_ts_stagingOut in job.iter('auger_ts_staging_out'):
+            # rpartition will strip off the final '.0' if it exists, then
+            # return the 3-tuple before the separator, the separator, and after the separator
+            auger_ts_stagingOut_text = str(auger_ts_stagingOut.text).rpartition(".0")[0]
+            ts_stagingOut_posix = calendar.timegm(datetime.strptime(auger_ts_stagingOut_text, '%Y-%m-%d %H:%M:%S').timetuple())
+            # Fill hist of staging out time since launch
+            htimeSinceLaunch_stagingOut.Fill(float(ts_stagingOut_posix - MIN_DISPATCH_TS_POSIX) / 3600.)
+    
+            # Fill hist of duration for active
+            hDurationActive.Fill(float(ts_stagingOut_posix - ts_active_posix) / 3600.)
+
+        # Get ts_complete
+        auger_ts_complete = ""
+        ts_complete_posix = 0
+        for auger_ts_complete in job.iter('auger_ts_complete'):
+            # rpartition will strip off the final '.0' if it exists, then
+            # return the 3-tuple before the separator, the separator, and after the separator
+            auger_ts_complete_text = str(auger_ts_complete.text).rpartition(".0")[0]
+            ts_complete_posix = calendar.timegm(datetime.strptime(auger_ts_complete_text, '%Y-%m-%d %H:%M:%S').timetuple())
+            # Fill hist of complete time since launch
+            htimeSinceLaunch_complete.Fill(float(ts_complete_posix - MIN_DISPATCH_TS_POSIX) / 3600.)
+    
+    # Create histograms of cumulative jobs at each stage since launch
+    hCumulativeTimeSinceLaunch_submitted = htimeSinceLaunch_submitted.Clone("hCumulativeTimeSinceLaunch_submitted")
+    hCumulativeTimeSinceLaunch_submitted.Clear()
+    hCumulativeTimeSinceLaunch_dependency = htimeSinceLaunch_dependency.Clone("hCumulativeTimeSinceLaunch_dependency")
+    hCumulativeTimeSinceLaunch_dependency.Clear()
+    hCumulativeTimeSinceLaunch_pending = htimeSinceLaunch_pending.Clone("hCumulativeTimeSinceLaunch_pending")
+    hCumulativeTimeSinceLaunch_pending.Clear()
+    hCumulativeTimeSinceLaunch_stagingIn = htimeSinceLaunch_stagingIn.Clone("hCumulativeTimeSinceLaunch_stagingIn")
+    hCumulativeTimeSinceLaunch_stagingIn.Clear()
+    hCumulativeTimeSinceLaunch_active = htimeSinceLaunch_active.Clone("hCumulativeTimeSinceLaunch_active")
+    hCumulativeTimeSinceLaunch_active.Clear()
+    hCumulativeTimeSinceLaunch_stagingOut = htimeSinceLaunch_stagingOut.Clone("hCumulativeTimeSinceLaunch_stagingOut")
+    hCumulativeTimeSinceLaunch_stagingOut.Clear()
+    hCumulativeTimeSinceLaunch_complete = htimeSinceLaunch_complete.Clone("hCumulativeTimeSinceLaunch_complete")
+    hCumulativeTimeSinceLaunch_complete.Clear()
+    
+    # submitted
+    for i in range(0,hCumulativeTimeSinceLaunch_submitted.GetNbinsX()+2):
+        total = 0
+        for j in range(0,i+1):
+            total += htimeSinceLaunch_submitted.GetBinContent(j)
+        hCumulativeTimeSinceLaunch_submitted.SetBinContent(i,total)
+    
+    # dependency
+    for i in range(0,hCumulativeTimeSinceLaunch_dependency.GetNbinsX()+2):
+        total = 0
+        for j in range(0,i+1):
+            total += htimeSinceLaunch_dependency.GetBinContent(j)
+        hCumulativeTimeSinceLaunch_dependency.SetBinContent(i,total)
+    
+    # pending
+    for i in range(0,hCumulativeTimeSinceLaunch_pending.GetNbinsX()+2):
+        total = 0
+        for j in range(0,i+1):
+            total += htimeSinceLaunch_pending.GetBinContent(j)
+        hCumulativeTimeSinceLaunch_pending.SetBinContent(i,total)
+    
+    # stagingIn
+    for i in range(0,hCumulativeTimeSinceLaunch_stagingIn.GetNbinsX()+2):
+        total = 0
+        for j in range(0,i+1):
+            total += htimeSinceLaunch_stagingIn.GetBinContent(j)
+        hCumulativeTimeSinceLaunch_stagingIn.SetBinContent(i,total)
+    
+    # active
+    for i in range(0,hCumulativeTimeSinceLaunch_active.GetNbinsX()+2):
+        total = 0
+        for j in range(0,i+1):
+            total += htimeSinceLaunch_active.GetBinContent(j)
+        hCumulativeTimeSinceLaunch_active.SetBinContent(i,total)
+    
+    # stagingOut
+    for i in range(0,hCumulativeTimeSinceLaunch_stagingOut.GetNbinsX()+2):
+        total = 0
+        for j in range(0,i+1):
+            total += htimeSinceLaunch_stagingOut.GetBinContent(j)
+        hCumulativeTimeSinceLaunch_stagingOut.SetBinContent(i,total)
+    
+    # complete
+    for i in range(0,hCumulativeTimeSinceLaunch_complete.GetNbinsX()+2):
+        total = 0
+        for j in range(0,i+1):
+            total += htimeSinceLaunch_complete.GetBinContent(j)
+        hCumulativeTimeSinceLaunch_complete.SetBinContent(i,total)
+    
+    #--------------------------------------------------------------------
+    # Draw # of jobs reaching each stage since
+    # beginning of launch
+    
+    # Colors of each stage
+    colors = (ROOT.kBlack, ROOT.kRed, ROOT.kYellow+2, ROOT.kGreen+2, ROOT.kBlue, ROOT.kMagenta, ROOT.kGray+1)
+    
+    c1 = TCanvas( 'c1', 'Example with Formula', 0, 0, 1200, 600 )
+    hCumulativeTimeSinceLaunch_submitted.SetLineColor(colors[0])
+    hCumulativeTimeSinceLaunch_submitted.SetMinimum(0)
+    hCumulativeTimeSinceLaunch_submitted.Draw()
+    hCumulativeTimeSinceLaunch_dependency.SetLineColor(colors[1])
+    hCumulativeTimeSinceLaunch_dependency.Draw("same")
+    hCumulativeTimeSinceLaunch_pending.SetLineColor(colors[2])
+    hCumulativeTimeSinceLaunch_pending.Draw("same")
+    hCumulativeTimeSinceLaunch_stagingIn.SetLineColor(colors[3])
+    hCumulativeTimeSinceLaunch_stagingIn.Draw("same")
+    hCumulativeTimeSinceLaunch_active.SetLineColor(colors[4])
+    hCumulativeTimeSinceLaunch_active.Draw("same")
+    hCumulativeTimeSinceLaunch_stagingOut.SetLineColor(colors[5])
+    hCumulativeTimeSinceLaunch_stagingOut.Draw("same")
+    hCumulativeTimeSinceLaunch_complete.SetLineColor(colors[6])
+    hCumulativeTimeSinceLaunch_complete.Draw("same")
+
+    text = "launch: " + LAUNCH_TIME
+    latex.DrawLatex(0.40,0.25,text)
+
+    text = 'time to complete: ' + str(format((MAXTIME - MIN_DISPATCH_TS_POSIX)/3600., '.2f')) + ' hrs'
+    latex.DrawLatex(0.40,0.20,text)
+    
+    c1.Update()
+    figureDir = 'figures/' + workflow_name_text
+    if not os.path.exists(figureDir): os.makedirs(figureDir)
+    c1.SaveAs(figureDir + '/cumulativeNumsSinceLaunch.png')
+    c1.Close()
+    
+    outfile.write('    <h2>Number of jobs reaching each stage since launch</h2>\n')
+    outfile.write('    <a href = "' + figureDir + '/cumulativeNumsSinceLaunch.png">\n')
+    outfile.write('      <img src = "' + figureDir + '/cumulativeNumsSinceLaunch.png" width = "70%">\n')
+    outfile.write('    </a>\n')
+    outfile.write('    <hr>\n')
+    
+###     #--------------------------------------------------------------------
+###     # Draw maxrss histogram
+###     c1 = TCanvas( 'c1', 'Example with Formula', 0, 0, 1200, 600 )
+###     hmaxrss.Draw()
+###     c1.Update()
+###     figureDir = 'figures/' + workflow_name_text
+###     if not os.path.exists(figureDir): os.makedirs(figureDir)
+###     c1.SaveAs(figureDir + '/hmaxrss.png')
+###     c1.Close()
+###     
+###     outfile.write('    <h2>MAX RSS reported by SWIF</h2>\n')
+###     outfile.write('    <a href = "' + figureDir + '/hmaxrss.png">\n')
+###     outfile.write('      <img src = "' + figureDir + '/hmaxrss.png" width = "70%">\n')
+###     outfile.write('    </a>\n')
+###     outfile.write('    <hr>\n')
+    
+    #--------------------------------------------------------------------
+    # Draw duration of dependency, pending, active
+    c1 = TCanvas( 'c1', 'Example with Formula', 0, 0, 2400, 600 )
+    c1.Divide(3,1,.002,.002)
+    c1.cd(1)
+    hDurationDependency.Draw()
+    c1.cd(2)
+    hDurationPending.Draw()
+    c1.cd(3)
+    hDurationActive.Draw()
+    
+    c1.Update()
+    figureDir = 'figures/' + workflow_name_text
+    if not os.path.exists(figureDir): os.makedirs(figureDir)
+    c1.SaveAs(figureDir + '/duration.png')
+    c1.Close()
+    
+    outfile.write('    <h2>Duration of Each Stage</h2>\n')
+    outfile.write('    <a href = "' + figureDir + '/duration.png">\n')
+    outfile.write('      <img src = "' + figureDir + '/duration.png" width = "100%">\n')
+    outfile.write('    </a>\n')
+    outfile.write('    <hr>\n')
+
+    #--------------------------------------------------------------------
+    # Draw wall time, cpu time vs wall time
+    c1 = TCanvas( 'c1', 'Example with Formula', 0, 0, 1800, 600 )
+    c1.Divide(2,1,.002,.002)
+    c1.cd(1)
+    hwalltime.Draw()
+    c1.cd(2)
+    gcput_walltime.GetXaxis().SetLimits(0,5);
+    gcput_walltime.SetMinimum(0);
+    gcput_walltime.SetMaximum(30);
+    gcput_walltime.Draw("AP")
+    
+    flinear = []
+    line_colors = (ROOT.kBlack, ROOT.kRed, ROOT.kYellow+2, ROOT.kGreen+2, ROOT.kBlue, ROOT.kMagenta)
+    for i in range(0,6):
+        fname  = 'flinear' + '_' + str(i)
+        f = TF1(fname,"[0]*x",0,5)
+        flinear.append(f)
+        flinear[i].SetParameter(0,i+1.)
+        flinear[i].SetLineColor(line_colors[i])
+        flinear[i].SetLineStyle(3)
+        flinear[i].Draw("same")
+
+    c1.Update()
+    figureDir = 'figures/' + workflow_name_text
+    if not os.path.exists(figureDir): os.makedirs(figureDir)
+    c1.SaveAs(figureDir + '/walltime.png')
+    c1.Close()
+    
+    outfile.write('    <h2>Wall Time, CPU Time vs Wall Time</h2>\n')
+    outfile.write('    <a href = "' + figureDir + '/walltime.png">\n')
+    outfile.write('      <img src = "' + figureDir + '/walltime.png" width = "80%">\n')
+    outfile.write('    </a>\n')
+    outfile.write('    <hr>\n')
+
+    #--------------------------------------------------------------------
+    # Draw auger_mem histogram
+    c1 = TCanvas( 'c1', 'Example with Formula', 0, 0, 1200, 600 )
+    hauger_mem.Draw()
+    
+    line_auger_mem = TLine(min_ram_requested,0,min_ram_requested,hauger_mem.GetMaximum() * 1.05)
+    line_auger_mem.SetLineColor(ROOT.kRed)
+    line_auger_mem.SetLineStyle(2)
+    line_auger_mem.SetLineWidth(1)
+    line_auger_mem.Draw("same")
+
+    text = "min. RAM requested: " + str(min_ram_requested) + " GB"
+    latex.SetTextColor(ROOT.kRed)
+    latex.DrawLatex(0.50,0.85,text)
+    latex.SetTextColor(ROOT.kBlack)
+    
+    c1.Update()
+    figureDir = 'figures/' + workflow_name_text
+    if not os.path.exists(figureDir): os.makedirs(figureDir)
+    c1.SaveAs(figureDir + '/hauger_mem.png')
+    c1.Close()
+    
+    outfile.write('    <h2>MAX Memory reported by AUGER</h2>\n')
+    outfile.write('    <a href = "' + figureDir + '/hauger_mem.png">\n')
+    outfile.write('      <img src = "' + figureDir + '/hauger_mem.png" width = "70%">\n')
+    outfile.write('    </a>\n')
+    outfile.write('    <hr>\n')
+
+    #--------------------------------------------------------------------
+    # Find jobs that had problems, make table of
+    # run, file, problem, resolution
+    
+    outfile.write('  <h2>Problem Jobs</h2>\n')
+    outfile.write('  <table style="border: 0px; table-layout: fixed;">\n')
+    outfile.write('    <tr style="background: #99CCFF;">\n')
+    outfile.write('      <th style="border: 0px; height:10px; width:100px;">Run</th>\n')
+    outfile.write('      <th style="border: 0px; height:10px; width:100px;">File</th>\n')
+    outfile.write('      <th style="border: 0px; height:10px; width:50px;">RAM (GB)</th>\n')
+    outfile.write('      <th style="border: 0px; height:10px; width:50px;">Attempt</th>\n')
+    outfile.write('      <th style="border: 0px; height:10px; width:200px;">Problem</th>\n')
+    outfile.write('      <th style="border: 0px; height:10px; width:200px;">Resolution</th>\n')
+    outfile.write('    </tr>\n')
+    
+    for job in workflow_status.iter('job'):
+        for user_run in job.iter('user_run'):
+            run_name = user_run.text
+        for user_file in job.iter('user_file'):
+            file_name = user_file.text
+
+        attempts = job.find('attempts')
+        for attempt in attempts.iter('attempt'):
+            # Iterate over all problems in a single job
+            hadProblem = False
+            problem_name    = ""
+            resolution_name = ""
+    
+            for problem in attempt.findall('problem'):
+                problem_name = problem.text
+                hadProblem = True
+                if hadProblem == True:
+                    for resolution in attempt.iter('resolution'):
+                        resolution_name = resolution.text
+                    outfile.write('    <tr>\n')
+                    output_text = '      <td>' + run_name + '</td>\n'
+                    outfile.write(output_text)
+                    output_text = ('      <td>' + file_name + '</td>\n')
+                    outfile.write(output_text)
+                    output_text = ('      <td>' + str(ram_bytes_name) + '</td>\n')
+                    outfile.write(output_text)
+                    output_text = ('      <td>' + str(nattempts) + ' / ' + str(total_attempts) + '</td>\n')
+                    outfile.write(output_text)
+                    output_text = ('      <td>' + problem_name + '</td>\n')
+                    outfile.write(output_text)
+                    output_text = ('      <td>' + resolution_name + '</td>\n')
+                    outfile.write(output_text)
+                    outfile.write('    </tr>\n')
+    outfile.write('    </table>\n')
+    outfile.write('    <hr>\n')
+
+    #--------------------------------------------------------------------
+    # Close output file
+    outfile.write('  </body>\n')
+    outfile.write('</html>\n')
+
+#------------------------------         end of main function          ---------------------------------#
+    
+## main function 
+if __name__ == "__main__":
+    main(sys.argv[1:])
+    

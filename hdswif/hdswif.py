@@ -13,44 +13,20 @@
 # The function add will add jobs with configurable
 # run parameters.
 #
+# Much of this code has been borrowed from Sean's monitoring
+# scripts.
+#
 ###############################################################
 
 from optparse import OptionParser
 import os.path
 import sys
 import re
+import subprocess
 
-#--------------------------------------------------------+
-#                        Globals                         |
-#--------------------------------------------------------+
-global PROJECT, TRACK, NCORES, DISK, RAM, TIMELIMIT, OS, VERBOSE, PLUGINS, SCRIPTFILE, ENVFILE
-
-# Job options that shouldn't change during lifetime of a workflow
-PLUGINS       = "TAGH_online,TAGM_online,BCAL_online,CDC_online,CDC_expert,FCAL_online,FDC_online,ST_online_lowlevel,ST_online_tracking,TOF_online,PS_online,PSC_online,PSPair_online,TPOL_online,TOF_TDC_shift,monitoring_hists,danarest,BCAL_Eff,p2pi_hists,p3pi_hists,HLDetectorTiming,BCAL_inv_mass,trackeff_missing,TRIG_online,CDC_drift,RF_online"
-SCRIPTFILE    = "/home/gxproj5/halld/hdswif/script.sh"
-ENVFILE       = "/home/gxproj5/halld/hdswif/setup_jlab-2015-03.csh"
-
-# Set job configuration parameters.
-# All jobs will be sent in with this configuration:
-
-PROJECT       = "gluex"
-TRACK         = "reconstruction"       # Use debug for quick debugging
-NCORES        = 6                      # Number of CPU cores
-DISK          = 40                     # Disk usage in GB
-RAM           = 5                      # Max RAM usage in GB
-TIMELIMIT     = 8                      # Max walltime in hours
-OS            = "centos65"             # Specify CentOS65 machines
+import parse_swif
 
 VERBOSE = False
-
-def init():
-    PROJECT       = "gluex"
-    TRACK         = "reconstruction"       # Use debug for quick debugging
-    NCORES        = 6                      # Number of CPU cores
-    DISK          = 40                     # Disk usage in GB
-    RAM           = 5                      # Max RAM usage in GB
-    TIMELIMIT     = 8                      # Max walltime in hours
-    OS            = "centos65"             # Specify CentOS65 machines
 
 def create(workflow):
     os.system("swif create " + workflow)
@@ -65,16 +41,20 @@ def list():
     os.system("swif list")
 
 def run(workflow):
-    os.system("swif run " + workflow)
+    os.system("swif run " + workflow + " -errorlimit none")
 
 def runnjobs(workflow, n):
-    os.system("swif run " + workflow + " -joblimit " + n)
+    os.system("swif run " + workflow + " -joblimit " + n + " -errorlimit none")
 
 def status(workflow):
     os.system("swif status " + workflow)
 
 def fullstatus(workflow, format):
-    os.system("swif status " + workflow + " -runs -display " + format)
+    os.system("swif status " + workflow + " -runs -summary -display " + format)
+
+def resubmit(workflow, ram):
+    os.system("swif modify-jobs " + workflow + " -ram add " + str(ram) + "gb -problems AUGER-OVER_RLIMIT")
+    os.system("swif run " + workflow + " -errorlimit none")
 
 def is_number(string):
     try:
@@ -92,8 +72,8 @@ def find_files(RUNPERIOD, FORMATTED_RUN, FORMATTED_FILE):
     #
     # If option "all" is used for either run or file,
     # find will be run with *.
-    topdir = "/mss/halld/RunPeriod-" + RUNPERIOD + "/rawdata/Run" + FORMATTED_RUN
-    os.system("find " + topdir + " -name 'hd_rawdata_" + FORMATTED_RUN + "_" + FORMATTED_FILE + ".evio' > ___files.txt")
+    topdir = "/mss/halld/RunPeriod-" + RUNPERIOD + "/rawdata/Run*" + FORMATTED_RUN + "*"
+    os.system("find " + topdir + " -name 'hd_rawdata_*" + FORMATTED_RUN + "*_*" + FORMATTED_FILE + "*.evio' > ___files.txt")
     file_handler = open("___files.txt",'r')
     count = 0
     _file_list = [] # create empty list
@@ -108,11 +88,7 @@ def find_files(RUNPERIOD, FORMATTED_RUN, FORMATTED_FILE):
     os.system("rm -f ___files.txt")
     return _file_list
 
-def add_job(WORKFLOW, OUTPUT_TOPDIR, RUNPERIOD, mssfile):
-    # These variables are defined at the beginning of the file for
-    # clarity, so are in global scope but are used
-    # only in this function
-    global PLUGINS, SCRIPTFILE, ENVFILE
+def add_job(WORKFLOW, config_dict, mssfile):
 
     # This is so VERBOSE is consistent throughout the program
     global VERBOSE
@@ -131,56 +107,55 @@ def add_job(WORKFLOW, OUTPUT_TOPDIR, RUNPERIOD, mssfile):
 
     if(thisrun == 0 or thisfile == 0):
         print "couldn't find run and file number in " + mssfile
-        exit
 
-    if(VERBOSE == True):
-        print "thisrun = " + thisrun + "  thisfile = " + thisfile
+    else:
+        if(VERBOSE == True):
+            print "thisrun = " + thisrun + "  thisfile = " + thisfile
 
-    # Get input file basename
-    basename = os.path.basename(mssfile)
-    if(VERBOSE == True):
-        print "basename = " + basename
+        # Get input file basename
+        basename = os.path.basename(mssfile)
+        if(VERBOSE == True):
+            print "basename = " + basename
 
-    # Create SCRIPT_ARGS
-    SCRIPT_ARGS = str(ENVFILE + " " + basename + " " + PLUGINS + " " + thisrun + " " + thisfile + " " + OUTPUT_TOPDIR + " " + str(NCORES))
-    if(VERBOSE == True):
-        print "SCRIPT_ARGS = " + SCRIPT_ARGS
+        # Create SCRIPT_ARGS
+        SCRIPT_ARGS = str(config_dict['ENVFILE'] + " " + basename + " " + thisrun + " " + thisfile + " " +
+                          config_dict['OUTPUT_TOPDIR'] + " " + str(config_dict['NCORES']))
+        if(VERBOSE == True):
+            print "SCRIPT_ARGS = " + SCRIPT_ARGS
 
-    if(VERBOSE == True):
-        print "SCRIPTFILE = " + SCRIPTFILE
-
-    add_command = str("swif add-job -workflow " + WORKFLOW + " -project " + PROJECT + " -track " + TRACK + " \\\n") \
-        + str(" -cores " + str(NCORES) + " -disk " + str(DISK) + "g -ram " + str(RAM) + "g -time " + str(TIMELIMIT) + "h -os " + OS + " \\\n") \
-        + str(" -input " + basename + " " + mssfile + " \\\n") \
-        + str(" -tag user_run r" + thisrun + " -tag user_file f" + thisfile + " \\\n") \
-        + str(" -name offmon" + "_" + thisrun + "_" + thisfile + " \\\n") \
-        + str(" -stdout " + OUTPUT_TOPDIR + "/log/" + thisrun + "/stdout_" + thisrun + "_" + thisfile + ".out \\\n") \
-        + str(" -stderr " + OUTPUT_TOPDIR + "/log/" + thisrun + "/stderr_" + thisrun + "_" + thisfile + ".err \\\n") \
-        + str(SCRIPTFILE + " " + SCRIPT_ARGS)
-
-    if(VERBOSE == True):
-        print "job add command is \n" + str(add_command)
-
-    # Execute swif add for this job
-    os.system(add_command)
-    
+        add_command = str("swif add-job -workflow " + WORKFLOW + " -project " + config_dict['PROJECT'] + " \\\n") \
+            + str(" -track " + config_dict['TRACK'] + " -cores " + str(config_dict['NCORES']) + " -disk " + str(config_dict['DISK']) + "g \\\n") \
+            + str(" -ram " + str(config_dict['RAM']) + "g -time " + str(config_dict['TIMELIMIT']) + "h -os " + config_dict['OS'] + " \\\n") \
+            + str(" -input " + basename + " " + mssfile + " \\\n") \
+            + str(" -tag user_run " + thisrun + " -tag user_file " + thisfile + " \\\n") \
+            + str(" -name offmon" + "_" + thisrun + "_" + thisfile + " \\\n") \
+            + str(" -stdout " + config_dict['OUTPUT_TOPDIR'] + "/log/" + thisrun + "/stdout_" + thisrun + "_" + thisfile + ".out \\\n") \
+            + str(" -stderr " + config_dict['OUTPUT_TOPDIR'] + "/log/" + thisrun + "/stderr_" + thisrun + "_" + thisfile + ".err \\\n") \
+            + str(config_dict['SCRIPTFILE'] + " " + SCRIPT_ARGS)
+        
+        if(VERBOSE == True):
+            print "job add command is \n" + str(add_command)
+            
+        # Execute swif add for this job
+        os.system(add_command)
     
 def main(argv):
-    global PROJECT, TRACK, NCORES, DISK, RAM, TIMELIMIT, OS, VERBOSE
+    global VERBOSE
 
     # Default to run over all runs, files
     RUN            = "all"
     FILE           = "all"
     FORMATTED_RUN  = ""
     FORMATTED_FILE = ""
+    USERCONFIGFILE = ""
 
     # Read in command line args
     parser = OptionParser(usage = str("\n"
                                       + "hdswif.py [option] [workflow]\n"
-                                      + "[option] = {create, list, run (n), status, add, cancel, delete}\n"
+                                      + "[option] = {create, list, run (n), status, add, resubmit, summary, cancel, delete}\n"
                                       + "Options for add:\n"
                                       + "-r (run) -f (file)\n"
-                                      + "-p (project) -T (track) -n (cores) -d (disk) -m (RAM) -t (time) -o (OS)\n"
+                                      + "-c [config]\n"
                                       + "options in [ ] are required, options in ( ) are optional for running\n"
                                       + ""
                                       + "(use -V 1 for verbose mode)"))
@@ -189,20 +164,8 @@ def main(argv):
     parser.add_option("-f","--file   ", dest="file",
                       help="file")
 
-    parser.add_option("-p","--project", dest="project",
-                      help="Project name")
-    parser.add_option("-T","--track  ", dest="track",
-                      help="Track name")
-    parser.add_option("-n","--ncores  ", dest="ncores",
-                      help="Ncores")
-    parser.add_option("-d","--disk   ", dest="disk",
-                      help="Disk usage")
-    parser.add_option("-m","--ram    ", dest="ram",
-                      help="RAM usage")
-    parser.add_option("-t","--time   ", dest="timelimit",
-                      help="time limit")
-    parser.add_option("-o","--OS      ", dest="os",
-                      help="OS")
+    parser.add_option("-c","--config ", dest="config",
+                      help="config")
     parser.add_option("-V","--verbose    ",dest="verbose",
                       help="verbose")
     
@@ -213,20 +176,8 @@ def main(argv):
     if(options.file):
         FILE = options.file
 
-    if(options.project):
-        PROJECT = options.project
-    if(options.track):
-        TRACK = options.track
-    if(options.ncores):
-        NCORES = options.ncores
-    if(options.disk):
-        DISK = options.disk
-    if(options.ram):
-        RAM = options.ram
-    if(options.timelimit):
-        TIMELIMIT = options.timelimit
-    if(options.os):
-        OS = options.os
+    if(options.config):
+        USERCONFIGFILE = options.config
     if(options.verbose):
         VERBOSE = True
 
@@ -276,7 +227,53 @@ def main(argv):
                 print "display format = {xml, json, simple}"
                 return
             fullstatus(WORKFLOW, str(args[2]))
+        else:
+            print "hdswif.py status [workflow] [display format]"
+            print "display format = {xml, json, simple}"
+            return
         return
+
+    # If we want to create a summary of the workflow, call summary
+    elif(args[0] == "summary"):
+        # Check if xml output file exists
+        filename = str('swif_output_' + WORKFLOW + '.xml')
+        if os.path.isfile(filename):
+            print 'File ', filename, ' already exists'
+            answer = raw_input('Overwrite? (y/n)   ')
+            while(not(answer == 'y' or answer == 'n')):
+                answer = raw_input('Overwrite? (y/n)   ')
+            if answer == 'n':
+                print 'abort creating summary file for [', WORKFLOW, ']'
+            else:
+                # Create the xml file to parse
+                print 'Creating XML output file........'
+                os.system("swif status " + WORKFLOW + " -runs -summary -display xml > " + filename)
+                print 'Created summary file ', filename, '..............'
+
+        # Call parse_swif
+        parse_swif.main([filename])
+        return
+
+    # If we want to check status of workflow, check it and exit
+    elif(args[0] == "resubmit"):
+        if(len(args) == 2):
+            # Default is to add 2GB of RAM
+            resubmit(WORKFLOW,2)
+            return
+        if(len(args) == 3):
+            if(is_number(args[2]) == True):
+                resubmit(WORKFLOW, int(args[2]))
+                return
+            else:
+                print "hdswif.py resubmit [workflow] [RAM to add]"
+                print "[RAM to add] is in units of GB"
+                return
+        else:
+            print "hdswif.py resubmit [workflow] [RAM to add]"
+            print "[RAM to add] is in units of GB"
+            return
+
+    # We should only have add left at this stage
     else:
         if(args[0] != "add"):
             print "hdswif.py options:"
@@ -287,40 +284,126 @@ def main(argv):
     #       We are in add mode now             |
     #------------------------------------------+
 
-    # Initialize all configuration parameters
-    init()
+    # Below is default configuration, is updated
+    # if -c config_file is specified
+    config_dict = {
+        'PROJECT'        : 'gluex',
+        'TRACK'          : 'reconstruction',
+        'OS'             : 'centos65',
+        'RUNPERIOD'      : '2015-03',
+        'VERSION'        : '99',                  # Used to specify output top directory
+        'OUTPUT_TOPDIR'  : '/volatile/halld/home/gxproj5/hdswif_test/RunPeriod-[RUNPERIOD]/ver[VERSION]', # # Needs to be full path
+        'NCORES'         : 6,
+        'DISK'           : 40,
+        'RAM'            : 5,
+        'TIMELIMIT'      : 8,
+        'SCRIPTFILE'     : '/home/gxproj5/halld/hdswif/user_script.sh',           # Needs to be full path
+        'ENVFILE'        : '/home/gxproj5/halld/hdswif/setup_jlab-2015-03.csh',   # Needs to be full path
+        }
 
-    # Make sure we have at least 4 arguments,
-    # ./hdswif.py run [workflow] [run period] [version]
-    if(len(args) < 4):
-        print "To add jobs,"
-        print "hdswif.py run [workflow] [run period] [version]"
-        return
-        create(args[1])
-        return
-    RUNPERIOD = str(args[2])
-    VERSION   = str(args[3])
+    # Read in config file if specified
+    if USERCONFIGFILE != '':
+        user_dict = {}
+        # Check if config file exists
+        if (not os.path.isfile(USERCONFIGFILE)) or (not os.path.exists(USERCONFIGFILE)):
+            print 'Config file ', USERCONFIGFILE, ' is not a readable file'
+            print 'Exiting...'
+            exit()
 
-    if(not(RUNPERIOD == "2015-03" or RUNPERIOD == "2014-10")):
-        print "hdswif.py add [workflow] [run period] [version]"
-        print "run period must be {2014-10, 2015-03}"
-        return
+        # Read in user config file
+        infile_config = open(USERCONFIGFILE,'r')
 
-    OUTPUT_TOPDIR = "/volatile/halld/offline_monitoring/RunPeriod-" + RUNPERIOD + "/ver" + VERSION
+        for line in infile_config:
 
-    print "---   creating workflow   " + WORKFLOW + "   ---"
-    print "run period        = " + RUNPERIOD
-    print "version           = " + VERSION
-    print "output dir        = " + OUTPUT_TOPDIR
-    print ""
+            # Ignore empty lines
+            # print 'line = ', line, ' split: ', line.split()
+            if len(line.split()) == 0:
+                continue
+
+            # Do not update if line begins with #
+            if line.split()[0][0] == '#':
+                continue
+
+            # Add new key/value pair into user_dict
+            user_dict[str(line.split()[0])] = line.split()[1]
+        
+        #  Update all of the values in config_dict
+        # with those specified by the user
+        config_dict.update(user_dict)
+
+        if VERBOSE == True:
+            print 'Updated config_dict with user config file'
+            print 'config_dict is: ', config_dict.items()
+
+    # At this stage we have all the key/value combinations
+    # that the user specified. Some of these may depend on
+    # other configuration parameters, so update the values
+    # containing [key] within the values corresponding to
+    # those keys.
+    #
+    # Example:
+    # OUTPUT_TOPDIR /volatile/halld/test/RunPeriod-[RUNPERIOD]/ver[VERSION]
+    # depends on other config parameters RUNPERIOD and VERSION
+    # 
+    # NOTE: The method assumes there are no circular dependencies
+    # which would not make sense,
+        
+    # Iterate over key/value pairs in dictionary
+    # If we find a replacement, we need to start over.
+    # The parameter found keeps track of whether we found
+    # a replacement or not.
+    found = 1
+    while(found):
+        for key, value in config_dict.items():
+            found = 0
+            
+            # print '================================================================'
+            # print 'key = ', key, ' value = ', value
+            # For each one see if any values contain [P] where
+            # P is a different value
+            for other_key, other_value in config_dict.items():
+                # print 'other_key = ', other_key, ' other_value = ', other_value
+                # print 'searching for ', str('[' + other_key + ']')
+                if str(value).find(str('[' + other_key + ']')) != -1:
+                    # Found replacement
+                    found = 1
+                    new_value = value.replace(str('[' + other_key + ']'),other_value)
+                    # print 'key = ', key, ' new value = ', new_value
+                    # Replace new key/value pair into config_dict
+                    new_pair = {key : new_value}
+                    config_dict.update(new_pair)
+                    del new_pair
+                    # print '--------------------'
+                    
+                    # Break out of loop over other_key, other_value
+                    break
+            # Break out of loop over key, value
+            if found == 1:
+                break
+            
+            # If we do not find a replacement we will finish the loop
+
+    if VERBOSE == True:
+        print 'config_dict is: ', config_dict.items()
+
+    # config_dict has now been updated if config file was specified
+    print "+++   adding jobs to workflow:   " + WORKFLOW + "   +++"
     print "---   Job configuration parameters:   ---"
-    print "PROJECT           = " + PROJECT
-    print "TRACK             = " + TRACK
-    print "NCORES            = " + str(NCORES)
-    print "DISK              = " + str(DISK)
-    print "RAM               = " + str(RAM)
-    print "TIMELIMIT         = " + str(TIMELIMIT)
-    print "OS                = " + OS
+    print "PROJECT           = " + config_dict['PROJECT']
+    print "TRACK             = " + config_dict['TRACK']
+    print "OS                = " + config_dict['OS']
+    print "NCORES            = " + str(config_dict['NCORES'])
+    print "DISK              = " + str(config_dict['DISK'])
+    print "RAM               = " + str(config_dict['RAM'])
+    print "TIMELIMIT         = " + str(config_dict['TIMELIMIT'])
+    print "JOBNAMEBASE       = " + str(config_dict['JOBNAMEBASE'])
+    print "RUNPERIOD         = " + config_dict['RUNPERIOD']
+    print "VERSION           = " + config_dict['VERSION']
+    print "OUTPUT_TOPDIR     = " + config_dict['OUTPUT_TOPDIR']
+    print "SCRIPTFILE        = " + config_dict['SCRIPTFILE']
+    print "ENVFILE           = " + config_dict['ENVFILE']
+    print ""
+    print "-----------------------------------------"
 
     # Format run and file numbers
     if(is_number(RUN) == True):
@@ -328,18 +411,14 @@ def main(argv):
     elif(RUN == "all"):
         FORMATTED_RUN = "*"
     else:
-        print "hdswif.py add [workflow] [run period] [version] -r (run)"
-        print "run must be number or \"all\""
-        return
+        FORMATTED_RUN = RUN
 
     if(is_number(FILE) == True):
         FORMATTED_FILE = "{:0>3d}".format(int(FILE))
     elif(FILE == "all"):
         FORMATTED_FILE = "*"
     else:
-        print "hdswif.py add [workflow] [run period] [version] -f (file)"
-        print "file must be number or \"all\""
-        return
+        FORMATTED_FILE = FILE
 
     if(VERBOSE == True):
         print "FORMATTED_RUN = " + FORMATTED_RUN + " FORMATTED_FILE = " + FORMATTED_FILE
@@ -347,9 +426,8 @@ def main(argv):
     #------------------------------------------+
     #    Find raw evio files to submit         |
     #------------------------------------------+
-
     file_list = []
-    file_list = find_files(RUNPERIOD, FORMATTED_RUN, FORMATTED_FILE)
+    file_list = find_files(config_dict['RUNPERIOD'], FORMATTED_RUN, FORMATTED_FILE)
     if(VERBOSE == True):
         for file in file_list:
             print file
@@ -361,7 +439,7 @@ def main(argv):
 
     # Loop over files found for given run and file
     for mssfile in file_list:
-        add_job(WORKFLOW, OUTPUT_TOPDIR, RUNPERIOD, mssfile)
+        add_job(WORKFLOW, config_dict, mssfile)
 
 if __name__ == "__main__":
    main(sys.argv[1:])
