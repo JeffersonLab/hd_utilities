@@ -290,6 +290,7 @@ def main(argv):
         'PROJECT'        : 'gluex',
         'TRACK'          : 'reconstruction',
         'OS'             : 'centos65',
+        'JOBNAMEBASE'    : 'offmon_'
         'RUNPERIOD'      : '2015-03',
         'VERSION'        : '99',                  # Used to specify output top directory
         'OUTPUT_TOPDIR'  : '/volatile/halld/home/gxproj5/hdswif_test/RunPeriod-[RUNPERIOD]/ver[VERSION]', # # Needs to be full path
