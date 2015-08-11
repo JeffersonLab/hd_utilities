@@ -221,7 +221,7 @@ def main(argv):
     elif(args[0] == "status"):
         if(len(args) == 2):
             status(WORKFLOW)
-        if(len(args) == 3):
+        elif(len(args) == 3):
             if(not(args[2] == "xml" or args[2] == "json" or args[2] == "simple")):
                 print "hdswif.py status [workflow] [display format]"
                 print "display format = {xml, json, simple}"
@@ -235,20 +235,31 @@ def main(argv):
 
     # If we want to create a summary of the workflow, call summary
     elif(args[0] == "summary"):
-        # Check if xml output file exists
         filename = str('swif_output_' + WORKFLOW + '.xml')
+        if VERBOSE == True:
+            print 'output file name is ', filename
+
+        # Check if xml output file exists
+        recreate = True
+
         if os.path.isfile(filename):
             print 'File ', filename, ' already exists'
-            answer = raw_input('Overwrite? (y/n)   ')
-            while(not(answer == 'y' or answer == 'n')):
+            
+            while(1):
                 answer = raw_input('Overwrite? (y/n)   ')
-            if answer == 'n':
-                print 'abort creating summary file for [', WORKFLOW, ']'
-            else:
-                # Create the xml file to parse
-                print 'Creating XML output file........'
-                os.system("swif status " + WORKFLOW + " -runs -summary -display xml > " + filename)
-                print 'Created summary file ', filename, '..............'
+                if answer == 'n':
+                    print 'Not recreating summary file for [', WORKFLOW, ']'
+                    recreate = False
+                    break
+                elif answer == 'y':
+                    recreate = True
+                    break
+
+        # Create the xml file to parse
+        if recreate == True:
+            print 'Creating XML output file........'
+            os.system("swif status " + WORKFLOW + " -runs -summary -display xml > " + filename)
+            print 'Created summary file ', filename, '..............'
 
         # Call parse_swif
         parse_swif.main([filename])

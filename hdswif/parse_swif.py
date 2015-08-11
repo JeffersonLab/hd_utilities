@@ -57,6 +57,7 @@ os.environ["PYTHONPATH"]      = PYTHONPATH
 sys.path.append(str(ROOTSYS + '/lib/'))
 
 from ROOT import gROOT, gStyle, TCanvas, TH1F, TGraph, TH2F, TF1, TLine, TLatex
+TLine.DrawClone._creates = False # This will allow use of DrawClone
 import ROOT
 gStyle.SetOptStat(False)
 ROOT.gROOT.SetBatch(True)
@@ -132,6 +133,7 @@ def main(argv):
     print "Number of problems  : " + str(nProblems)
     print "Number of canceled  : " + str(nCanceled)
     print "Total               : " + str(nTotal)
+    print "Total attempts      : " + str(nAttempts)
 
     #--------------------------------------------------------------------
     # Print Auger stats to screen
@@ -284,10 +286,7 @@ def main(argv):
             file_name = user_file.text
         attempts = job.find('attempts')
     
-        total_attempts = len(list(attempts.iter('attempt')))
-        nattempts = 0
         for attempt in attempts.iter('attempt'):
-            nattempts += 1
             # Get requested RAM
             ram_bytes_name = ""
             for ram_bytes in attempt.findall('ram_bytes'):
@@ -344,6 +343,7 @@ def main(argv):
     
     hmaxrss = TH1F("hmaxrss", ";maxrss (GB)", 200, 0,max_ram_requested)
     hauger_mem = TH1F("hauger_mem", ";mem (GB)", 200, 0,max_ram_requested + 1)
+    hauger_vmem = TH1F("hauger_vmem", ";vmem (GB)", 200, 0,max_ram_requested + 1)
     hwalltime = TH1F("hwalltime", ";wall time (hrs)", 200, 0,5)
     gcput_walltime = TGraph()
     gcput_walltime.SetName("hcput_walltime")
@@ -398,6 +398,12 @@ def main(argv):
         for auger_mem_kb in job.iter('auger_mem_kb'):
             auger_mem_kb_text = str(auger_mem_kb.text)
             hauger_mem.Fill(float(auger_mem_kb_text) / 1000. / 1000.)
+
+        # Find auger_vmem_kb
+        auger_vmem_kb_text = ""
+        for auger_vmem_kb in job.iter('auger_vmem_kb'):
+            auger_vmem_kb_text = str(auger_vmem_kb.text)
+            hauger_vmem.Fill(float(auger_vmem_kb_text) / 1000. / 1000.)
     
         # Find auger_wall_sec
         auger_wall_sec_text = ""
@@ -675,14 +681,27 @@ def main(argv):
 
     #--------------------------------------------------------------------
     # Draw auger_mem histogram
-    c1 = TCanvas( 'c1', 'Example with Formula', 0, 0, 1200, 600 )
+    c1 = TCanvas( 'c1', 'Example with Formula', 0, 0, 1800, 600 )
+    c1.Divide(2,1,.002,.002)
+    c1.cd(1)
     hauger_mem.Draw()
-    
+
     line_auger_mem = TLine(min_ram_requested,0,min_ram_requested,hauger_mem.GetMaximum() * 1.05)
     line_auger_mem.SetLineColor(ROOT.kRed)
     line_auger_mem.SetLineStyle(2)
     line_auger_mem.SetLineWidth(1)
-    line_auger_mem.Draw("same")
+    line_auger_mem.DrawClone("same")
+
+    text = "min. RAM requested: " + str(min_ram_requested) + " GB"
+    latex.SetTextColor(ROOT.kRed)
+    latex.DrawLatex(0.50,0.85,text)
+    latex.SetTextColor(ROOT.kBlack)
+    
+    c1.cd(2)
+    hauger_vmem.Draw()
+
+    line_auger_mem.SetY2(hauger_vmem.GetMaximum() * 1.05)
+    line_auger_mem.DrawClone("same")
 
     text = "min. RAM requested: " + str(min_ram_requested) + " GB"
     latex.SetTextColor(ROOT.kRed)
@@ -723,7 +742,10 @@ def main(argv):
             file_name = user_file.text
 
         attempts = job.find('attempts')
+        total_attempts = len(list(attempts.iter('attempt')))
+        nattempts = 0
         for attempt in attempts.iter('attempt'):
+            nattempts += 1
             # Iterate over all problems in a single job
             hadProblem = False
             problem_name    = ""
