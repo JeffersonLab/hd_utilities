@@ -62,6 +62,8 @@ import ROOT
 gStyle.SetOptStat(False)
 ROOT.gROOT.SetBatch(True)
 
+import create_ordered_hists
+
 def main(argv):
 
     # XML file to parse
@@ -605,6 +607,25 @@ def main(argv):
     outfile.write('    </a>\n')
     outfile.write('    <hr>\n')
     
+
+    #--------------------------------------------------------------------
+    # Create histograms of dependency and pending times
+    # ordered by submission time.
+    # This is done in the module create_ordered_hists.py
+    create_ordered_hists.main([filename])
+
+    outfile.write('    <h2>Time Spent in Dependency</h2>\n')
+    outfile.write('    <a href = "' + figureDir + '/hDependency.png">\n')
+    outfile.write('      <img src = "' + figureDir + '/hDependency.png" width = "70%">\n')
+    outfile.write('    </a>\n')
+    outfile.write('    <hr>\n')
+
+    outfile.write('    <h2>Time Spent in Pending</h2>\n')
+    outfile.write('    <a href = "' + figureDir + '/hPending.png">\n')
+    outfile.write('      <img src = "' + figureDir + '/hPending.png" width = "70%">\n')
+    outfile.write('    </a>\n')
+    outfile.write('    <hr>\n')
+
 ###     #--------------------------------------------------------------------
 ###     # Draw maxrss histogram
 ###     c1 = TCanvas( 'c1', 'Example with Formula', 0, 0, 1200, 600 )
