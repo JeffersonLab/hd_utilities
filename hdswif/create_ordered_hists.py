@@ -75,7 +75,7 @@ def main(argv):
 
     # Print out unique times
     # for i in range(len(submit_times)):
-        # print 'submit_times[', i, '] = ', submit_times[i]
+    #     print 'submit_times[', i, '] = ', submit_times[i]
 
     NSUBMITTIMES = len(submit_times)
     print 'Number of submit times: ', NSUBMITTIMES
@@ -95,18 +95,20 @@ def main(argv):
     # and put the prep_wait_sec value into an array
     # for the corresponding dispatch_ts
 
-    dispatch_ts_text = ''
-    prep_wait_sec_text = ''
     nTotal = 0
-    for attempt in workflow_status:
+    for attempt in workflow_status.iter('attempt'):
+
+        dispatch_ts_text   = '-999'
+        prep_wait_sec_text = '-999'
+        idle_wait_sec_text = '-999'
+
         for dispatch_ts in attempt.iter('dispatch_ts'):
             dispatch_ts_text = str(dispatch_ts.text)
         for prep_wait_sec in attempt.iter('prep_wait_sec'):
             prep_wait_sec_text = str(prep_wait_sec.text)
         for idle_wait_sec in attempt.iter('idle_wait_sec'):
             idle_wait_sec_text = str(idle_wait_sec.text)
-
-        # print 'dispatch_ts_text = ', dispatch_ts_text, ' prep_wait_sec_text = ', prep_wait_sec_text
+        # print 'dispatch_ts_text = ', dispatch_ts_text, ' prep_wait_sec_text = ', prep_wait_sec_text, ' idle_wait_sec_text = ', idle_wait_sec_text
 
         # Add the dependency time to the correct dispatch batch
         # Loop over unique submit times
@@ -136,7 +138,7 @@ def main(argv):
 
                 nTotal += 1
 
-    # print dict_submit_time_dependency_times
+    # print 'dictionary for dependencyTimes = ', dict_submit_time_dependency_times
     print 'nTotal = ', nTotal
 
     # Create list of histograms
@@ -156,7 +158,7 @@ def main(argv):
         hDependencyList[timeIndex].SetLineColor(colors[timeIndex % 7])
         array_for_dependencyTime = dict_submit_time_dependency_times.get(time,'NotFound')
         if array_for_dependencyTime == 'NotFound':
-            print 'This should not happen!'
+            print 'This should not happen for dependencyTime!'
             exit()
         
         array_for_dependencyTime.sort()
@@ -175,7 +177,7 @@ def main(argv):
         hPendingList[timeIndex].SetLineColor(colors[timeIndex % 7])
         array_for_pendingTime = dict_submit_time_pending_times.get(time,'NotFound')
         if array_for_pendingTime == 'NotFound':
-            print 'This should not happen!'
+            print 'This should not happen for pendingTime!'
             exit()
         
         array_for_pendingTime.sort()

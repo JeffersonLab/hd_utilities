@@ -52,13 +52,22 @@ def status(workflow):
 def fullstatus(workflow, format):
     os.system("swif status " + workflow + " -runs -summary -display " + format)
 
-def resubmit(workflow, ram):
-    os.system("swif modify-jobs " + workflow + " -ram add " + str(ram) + "gb -problems AUGER-OVER_RLIMIT")
+def resubmit(workflow, problem, num):
+
+    if problem == 'RLIMIT':
+        os.system("swif modify-jobs " + workflow + " -ram add " + str(num) + "gb -problems AUGER-OVER_RLIMIT")
+    elif problem == 'TIMEOUT':
+        os.system("swif modify-jobs " + workflow + " -time add " + str(num) + "h -problems AUGER-TIMEOUT")
+    else:
+        print 'Unknown problem ', problem, ', cannot resolve.'
+        print 'Check SWIF help menu for more options'
+        return
+
     os.system("swif run " + workflow + " -errorlimit none")
 
 def is_number(string):
     try:
-        int(string)
+        float(string)
         return True
     except ValueError:
         return False
@@ -125,7 +134,7 @@ def add_job(WORKFLOW, config_dict, mssfile):
 
         add_command = str("swif add-job -workflow " + WORKFLOW + " -project " + config_dict['PROJECT'] + " \\\n") \
             + str(" -track " + config_dict['TRACK'] + " -cores " + str(config_dict['NCORES']) + " -disk " + str(config_dict['DISK']) + "g \\\n") \
-            + str(" -ram " + str(config_dict['RAM']) + "g -time " + str(config_dict['TIMELIMIT']) + "h -os " + config_dict['OS'] + " \\\n") \
+            + str(" -ram " + str(config_dict['RAM']) + "g -time " + str(config_dict['TIMELIMIT']) + "m -os " + config_dict['OS'] + " \\\n") \
             + str(" -input " + basename + " " + mssfile + " \\\n") \
             + str(" -tag user_run " + thisrun + " -tag user_file " + thisfile + " \\\n") \
             + str(" -name offmon" + "_" + thisrun + "_" + thisfile + " \\\n") \
@@ -151,22 +160,30 @@ def main(argv):
 
     # Read in command line args
     parser = OptionParser(usage = str("\n"
+                                      + "----------------------------------\n"
                                       + "hdswif.py [option] [workflow]\n"
                                       + "[option] = {create, list, run (n), status, add, resubmit, summary, cancel, delete}\n"
+                                      + "----------------------------------\n"
                                       + "Options for add:\n"
-                                      + "-r (run) -f (file)\n"
-                                      + "-c [config]\n"
+                                      + "-c [config] -r (run) -f (file)\n"
                                       + "options in [ ] are required, options in ( ) are optional for running\n"
                                       + ""
+                                      + "----------------------------------\n"
+                                      + "Options for resubmit:\n"
+                                      + "[problem] (additional resources)\n"
+                                      + "[problem] = TIMEOUT, RLIMIT\n"
+                                      + "resources in units of hrs for TIMEOUT, GB for RLIMIT\n"
+                                      + "----------------------------------\n"
+                                      + "options in [ ] are required, options in ( ) are optional for running\n"
                                       + "(use -V 1 for verbose mode)"))
-    parser.add_option("-r","--run    ", dest="run",
+    parser.add_option("-r","--run", dest="run",
                       help="run")
-    parser.add_option("-f","--file   ", dest="file",
+    parser.add_option("-f","--file", dest="file",
                       help="file")
 
-    parser.add_option("-c","--config ", dest="config",
+    parser.add_option("-c","--config", dest="config",
                       help="config")
-    parser.add_option("-V","--verbose    ",dest="verbose",
+    parser.add_option("-V","--verbose",dest="verbose",
                       help="verbose")
     
     (options, args) = parser.parse_args(argv)
@@ -265,38 +282,47 @@ def main(argv):
         parse_swif.main([filename])
         return
 
-    # If we want to check status of workflow, check it and exit
+    # Resubmit jobs by problem
     elif(args[0] == "resubmit"):
-        if(len(args) == 2):
-            # Default is to add 2GB of RAM
-            resubmit(WORKFLOW,2)
-            return
         if(len(args) == 3):
+            # Assume args[1] is workflow,
+            # args[2] is problem
+            # Currently supports RLIMIT, TIMEOUT
+            # Default is to add 2GB of RAM
+            resubmit(args[1],args[2],2)
+            exit()
+        elif(len(args) == 4):
             if(is_number(args[2]) == True):
-                resubmit(WORKFLOW, int(args[2]))
-                return
+                # Assume args[1] is problem
+                # Currently supports RLIMIT, TIMEOUT
+                resubmit(args[1], args[2], float(args[3]))
+                exit()
             else:
-                print "hdswif.py resubmit [workflow] [RAM to add]"
-                print "[RAM to add] is in units of GB"
-                return
+                print 'A'
+                print "hdswif.py resubmit [workflow] [problem] [resource to add]"
+                print "[problem] = TIMEOUT, RLIMIT"
+                print "[resource to add] is in units of hrs for TIMEOUT, GB for RLIMIT"
+                exit()
         else:
-            print "hdswif.py resubmit [workflow] [RAM to add]"
-            print "[RAM to add] is in units of GB"
-            return
+            print 'B'
+            print "hdswif.py resubmit [workflow] [problem] [resource to add]"
+            print "[problem] = TIMEOUT, RLIMIT"
+            print "[resource to add] is in units of hrs for TIMEOUT, GB for RLIMIT"
+            exit()
 
     # We should only have add left at this stage
     else:
         if(args[0] != "add"):
             print "hdswif.py options:"
-            print "create   delete   run  status   add"
-            return
+            print "create, list, run (n), status, add, resubmit, summary, cancel, delete"
+            exit()
 
     #------------------------------------------+
     #       We are in add mode now             |
     #------------------------------------------+
 
     # Below is default configuration, is updated
-    # if -c config_file is specified
+    # with user-specified config file
     config_dict = {
         'PROJECT'        : 'gluex',
         'TRACK'          : 'reconstruction',
@@ -313,39 +339,43 @@ def main(argv):
         'ENVFILE'        : '/home/gxproj5/halld/hdswif/setup_jlab-2015-03.csh',   # Needs to be full path
         }
 
-    # Read in config file if specified
-    if USERCONFIGFILE != '':
-        user_dict = {}
-        # Check if config file exists
-        if (not os.path.isfile(USERCONFIGFILE)) or (not os.path.exists(USERCONFIGFILE)):
-            print 'Config file ', USERCONFIGFILE, ' is not a readable file'
-            print 'Exiting...'
-            exit()
+    # Read in config file
+    if USERCONFIGFILE == '':
+        print 'hdswif.py add [workflow] -c [config file] -r (run) -f (file)'
+        print 'User MUST specify config file'
+        exit()
 
-        # Read in user config file
-        infile_config = open(USERCONFIGFILE,'r')
+    user_dict = {}
+    # Check if config file exists
+    if (not os.path.isfile(USERCONFIGFILE)) or (not os.path.exists(USERCONFIGFILE)):
+        print 'Config file ', USERCONFIGFILE, ' is not a readable file'
+        print 'Exiting...'
+        exit()
 
-        for line in infile_config:
-
-            # Ignore empty lines
-            # print 'line = ', line, ' split: ', line.split()
-            if len(line.split()) == 0:
-                continue
-
-            # Do not update if line begins with #
-            if line.split()[0][0] == '#':
-                continue
-
-            # Add new key/value pair into user_dict
-            user_dict[str(line.split()[0])] = line.split()[1]
+    # Read in user config file
+    infile_config = open(USERCONFIGFILE,'r')
         
-        #  Update all of the values in config_dict
-        # with those specified by the user
-        config_dict.update(user_dict)
+    for line in infile_config:
 
-        if VERBOSE == True:
-            print 'Updated config_dict with user config file'
-            print 'config_dict is: ', config_dict.items()
+        # Ignore empty lines
+        # print 'line = ', line, ' split: ', line.split()
+        if len(line.split()) == 0:
+            continue
+
+        # Do not update if line begins with #
+        if line.split()[0][0] == '#':
+            continue
+
+        # Add new key/value pair into user_dict
+        user_dict[str(line.split()[0])] = line.split()[1]
+        
+    #  Update all of the values in config_dict
+    # with those specified by the user
+    config_dict.update(user_dict)
+
+    if VERBOSE == True:
+        print 'Updated config_dict with user config file'
+        print 'config_dict is: ', config_dict.items()
 
     # At this stage we have all the key/value combinations
     # that the user specified. Some of these may depend on

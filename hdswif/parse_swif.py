@@ -348,10 +348,8 @@ def main(argv):
     hauger_vmem = TH1F("hauger_vmem", ";vmem (GB)", 200, 0,max_ram_requested + 1)
     hwalltime = TH1F("hwalltime", ";wall time (hrs)", 200, 0,5)
     gcput_walltime = TGraph()
-    gcput_walltime.SetName("hcput_walltime")
+    gcput_walltime.SetName("gcput_walltime")
     gcput_walltime.SetTitle("");
-    gcput_walltime.GetXaxis().SetTitle("wall time (hrs)");
-    gcput_walltime.GetYaxis().SetTitle("cpu time (hrs)");
     gcput_walltime.SetMarkerStyle(20);
     gcput_walltime.SetMarkerSize(0.3);
     gcput_walltime.SetMarkerColor(ROOT.kBlue);
@@ -670,11 +668,19 @@ def main(argv):
     c1 = TCanvas( 'c1', 'Example with Formula', 0, 0, 1800, 600 )
     c1.Divide(2,1,.002,.002)
     c1.cd(1)
+    c1.cd(1).SetRightMargin(0.02)
+    c1.cd(1).SetTopMargin(0.03)
     hwalltime.Draw()
     c1.cd(2)
+    c1.cd(2).SetRightMargin(0.02)
+    c1.cd(2).SetTopMargin(0.03)
     gcput_walltime.GetXaxis().SetLimits(0,5);
     gcput_walltime.SetMinimum(0);
     gcput_walltime.SetMaximum(30);
+    gcput_walltime.GetXaxis().SetTitleOffset(0.900);
+    gcput_walltime.GetXaxis().SetTitle("wall time (hrs)");
+    gcput_walltime.GetYaxis().SetTitleOffset(0.900);
+    gcput_walltime.GetYaxis().SetTitle("cpu time (hrs)");
     gcput_walltime.Draw("AP")
     
     flinear = []
@@ -684,9 +690,11 @@ def main(argv):
         f = TF1(fname,"[0]*x",0,5)
         flinear.append(f)
         flinear[i].SetParameter(0,i+1.)
+        print 'line_colors[', i, '] = ', line_colors[i]
         flinear[i].SetLineColor(line_colors[i])
         flinear[i].SetLineStyle(3)
-        flinear[i].Draw("same")
+        flinear[i].SetNpx(1000)
+        flinear[i].DrawClone("same")
 
     c1.Update()
     figureDir = 'figures/' + workflow_name_text
