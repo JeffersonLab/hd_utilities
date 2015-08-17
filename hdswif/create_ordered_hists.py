@@ -102,11 +102,14 @@ def main(argv):
         prep_wait_sec_text = '-999'
         idle_wait_sec_text = '-999'
 
-        for dispatch_ts in attempt.iter('dispatch_ts'):
+        dispatch_ts = attempt.find('dispatch_ts')
+        if dispatch_ts != None:
             dispatch_ts_text = str(dispatch_ts.text)
-        for prep_wait_sec in attempt.iter('prep_wait_sec'):
+        prep_wait_sec = attempt.find('prep_wait_sec')
+        if prep_wait_sec != None:
             prep_wait_sec_text = str(prep_wait_sec.text)
-        for idle_wait_sec in attempt.iter('idle_wait_sec'):
+        idle_wait_sec = attempt.find('idle_wait_sec')
+        if idle_wait_sec != None:
             idle_wait_sec_text = str(idle_wait_sec.text)
         # print 'dispatch_ts_text = ', dispatch_ts_text, ' prep_wait_sec_text = ', prep_wait_sec_text, ' idle_wait_sec_text = ', idle_wait_sec_text
 
