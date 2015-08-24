@@ -26,7 +26,7 @@ def get_data(options):
         query = "SELECT distinct r.run_num from run_info r, version_info v, fdc_hits c WHERE c.runid=r.run_num and v.version_id=c.version_id and run_num>0 and start_time>0 and revision=%s and run_period=%s %s ORDER BY r.run_num"
         curs.execute(query, (str(revision), str(options[5]), str(options[4])))
     else:
-        query = "SELECT distinct r.run_num from run_info r, version_info v, cdc_hits c WHERE c.runid=r.run_num and v.version_id=c.version_id and run_num>=%s and run_num<=%s and start_time>0 and revision=%s and run_period=%s %s ORDER BY r.run_num"
+        query = "SELECT distinct r.run_num from run_info r, version_info v, fdc_hits c WHERE c.runid=r.run_num and v.version_id=c.version_id and run_num>=%s and run_num<=%s and start_time>0 and revision=%s and run_period=%s %s ORDER BY r.run_num"
         curs.execute(query, (str(options[0]), str(options[1]), str(revision), str(options[5]), str(options[4])))
     rows=curs.fetchall()
 
@@ -244,9 +244,9 @@ def print_option_selector(options):
     plotNames.append(["HistMacro_TOFReconstruction_p1","TOF Match 1"])
     plotNames.append(["HistMacro_TOFReconstruction_p2","TOF Match 2"])
     plotNames.append(["HistMacro_p2pi_pmiss","&pi;<sup>+</sup>&pi;<sup>-</sup> Missing Proton"])
-    plotNames.append(["HistMacro_p2pi_pmiss","&pi;<sup>+</sup>&pi;<sup>-</sup> Reconstructed Proton"])
-    plotNames.append(["HistMacro_p3pi_pmiss_2FCAL","&pi;<sup>+</sup>&pi;<sup>-</sup>&pi;<sup>0</sup> (2FCAL)"])
-    plotNames.append(["HistMacro_p3pi_pmiss_FCAL-BCAL","&pi;<sup>+</sup>&pi;<sup>-</sup>&pi;<sup>0</sup> (F/BCAL)"])
+    plotNames.append(["HistMacro_p2pi_preco","&pi;<sup>+</sup>&pi;<sup>-</sup> Reconstructed Proton"])
+    plotNames.append(["HistMacro_p3pi_preco_2FCAL","&pi;<sup>+</sup>&pi;<sup>-</sup>&pi;<sup>0</sup> (2FCAL)"])
+    plotNames.append(["HistMacro_p3pi_preco_FCAL-BCAL","&pi;<sup>+</sup>&pi;<sup>-</sup>&pi;<sup>0</sup> (F/BCAL)"])
 
     print "Select Run Period:"
     periods = get_periods(options)
@@ -309,7 +309,7 @@ def get_options():
     run_number = []
 
     plotName = "CDC_occupancy"
-    verName = "ver09"
+    verName = "ver11"
     periodName = "RunPeriod-2015-03"
     query = ""
 
