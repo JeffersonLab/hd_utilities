@@ -21,11 +21,6 @@ genr8 -r1501 -M${NEVENTS} -Ab1_pi.ascii < b1_pi.input
 
 echo "Converting generated events to HDDM ..."
 genr8_2_hddm -V"${VERTEX}" b1_pi.ascii 
-echo "ls before mv"
-ls -l
-mv output.hddm b1_pi.hddm
-echo "ls after mv"
-ls -l
 
 echo "Creating control.in file ..."
 cat - << EOF > control.in
