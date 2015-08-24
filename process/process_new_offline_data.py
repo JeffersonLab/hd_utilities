@@ -210,7 +210,8 @@ class ProcessMonDataConfig:
                     runnum = int(tokens[2])
                 except ValueError:
                     logging.error("skipping file " + fname + " ...")
-                rundirs_on_disk.append(tokens[2])
+                if tokens[2] not in rundirs_on_disk:
+                    rundirs_on_disk.append(tokens[2])
                 
         else:
             # The monitoring ROOT files are stored in one directory per run
@@ -224,7 +225,7 @@ class ProcessMonDataConfig:
                     logging.error("skipping directory " + dirname + " ...")
                 rundirs_on_disk.append(dirname)
 
-        return rundirs_on_disk
+        return sorted(rundirs_on_disk)
 
     def BuildROOTFileList(self,rundir):
         """
@@ -244,12 +245,19 @@ class ProcessMonDataConfig:
             rootfilespath = join(self.INPUT_DIRECTORY,self.ROOTFILE_DIR)
         else:
             rootfilespath = join(self.INPUT_DIRECTORY,self.REVISION,self.ROOTFILE_DIR)  # base directory where the ROOT files are stored
-        # get all files ending in ".root" for the given run
-        root_files = [ join(rootfilespath,rundir,f) for f in listdir(join(rootfilespath,rundir)) 
-                       if (isfile(join(rootfilespath,rundir,f))and(f[-5:]=='.root')) ]
+
         if self.REVISION == "mc":
             # for MC monitoring files, since they are all in one directory, only keep files that have the correct run
-            root_files = [ f for f in root_files if rundir==f[8:14] ]
+            #root_files = [ f for f in root_files if rundir==f[8:14] ]
+            #print "checking rundir %s"%(rundir)
+            root_files = [ join(rootfilespath,f) for f in listdir(rootfilespath) 
+                           if (isfile(join(rootfilespath,f))and(f[-5:]=='.root')and(rundir==f[8:13])) ]
+            #for  f in listdir(rootfilespath):
+            #    print "%s  %s  %s"%(join(rootfilespath,f),f[-5:],f[8:14])
+        else:
+            # get all files ending in ".root" for the given run
+            root_files = [ join(rootfilespath,rundir,f) for f in listdir(join(rootfilespath,rundir)) 
+                           if (isfile(join(rootfilespath,rundir,f))and(f[-5:]=='.root')) ]
 
         if self.VERBOSE>2:
             print "Looking for ROOT files in "+join(rootfilespath,rundir)
@@ -380,7 +388,10 @@ def ProcessOfflineData(args):
     # CLEANUP
     ## save some information about what has been processed so far
     rootfiles = []
-    misc_dir = join(config.INPUT_DIRECTORY,config.REVISION,"misc",rundir)
+    if config.REVISION == "mc":
+        misc_dir = join(config.INPUT_DIRECTORY,"misc",rundir)
+    else:
+        misc_dir = join(config.INPUT_DIRECTORY,config.REVISION,"misc",rundir)
     with open(join(misc_dir,"rootfiles.txt"),"w") as outf:
         for (fname,filenum) in monitoring_files.items():
             rootfiles.append(fname)
@@ -478,7 +489,7 @@ def main():
 
         ## make sure we have a directory to store some meta-information
         if config.REVISION == "mc":
-            misc_dir = join(config.INPUT_DIRECTORY,"misc",rundir)
+            misc_dir = join(config.INPUT_DIRECTORY,"misc","%06d"%(int(rundir)))
         else:
             misc_dir = join(config.INPUT_DIRECTORY,config.REVISION,"misc",rundir)
         rootfiles_already_processed = []
