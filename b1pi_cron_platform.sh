@@ -4,7 +4,7 @@ export TODAYS_DATE=$date_token
 export BUILD_DIR=/u/scratch/gluex/nightly/$TODAYS_DATE
 echo DEBUG MODE
 export SCRIPTS=/group/halld/Software/scripts
-export BMS_OSNAME=`$SCRIPTS/build_scripts/osrelease.pl`
+export BMS_OSNAME=`$SCRIPTS/osrelease.pl`
 export RUN_DIR=/u/scratch/$USER/b1pi/$TODAYS_DATE/$BMS_OSNAME
 
 # Setup environment based on sim-recon build we're using 
