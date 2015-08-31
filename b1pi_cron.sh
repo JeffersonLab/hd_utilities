@@ -15,7 +15,7 @@ do
     # the following ssh executes the command associated with the
     # /home/gluex/.ssh/b1pi_cron.pub key in
     # /home/gluex/.ssh/authorized_keys. That command should be
-    # /group/halld/Software/scripts/b1pi_macros/b1pi_one.csh
+    # /group/halld/Software/scripts/b1pi_macros/b1pi_cron_platform.csh
     env -u SSH_AUTH_SOCK ssh -i ~/.ssh/b1pi_cron $host > $logfile 2>&1
     mv -v $logfile $RUN_DIR/
 done

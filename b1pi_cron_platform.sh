@@ -1,14 +1,13 @@
 #!/bin/bash
 date_token=`cat /u/scratch/$USER/b1pi_date.txt`
 export TODAYS_DATE=$date_token
-export BUILD_DIR=/u/scratch/gluex/nightly/$TODAYS_DATE
-echo DEBUG MODE
+export BMS_OSNAME=`/group/halld/Software/build_scripts/osrelease.pl`
+export BUILD_DIR=/u/scratch/gluex/nightly/$TODAYS_DATE/$BMS_OSNAME
 export SCRIPTS=/group/halld/Software/scripts
-export BMS_OSNAME=`$SCRIPTS/osrelease.pl`
 export RUN_DIR=/u/scratch/$USER/b1pi/$TODAYS_DATE/$BMS_OSNAME
 
 # Setup environment based on sim-recon build we're using 
-source ${BUILD_DIR}/$BMS_OSNAME/sim-recon/setenv.sh
+source ${BUILD_DIR}/sim-recon/$BMS_OSNAME/setenv.sh
 export JANA_CALIB_CONTEXT="variation=mc"
 
 # do the test
