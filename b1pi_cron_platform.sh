@@ -8,7 +8,7 @@ export BMS_OSNAME=`$SCRIPTS/osrelease.pl`
 export RUN_DIR=/u/scratch/$USER/b1pi/$TODAYS_DATE/$BMS_OSNAME
 
 # Setup environment based on sim-recon build we're using 
-source ${BUILD_DIR}/sim-recon/$BMS_OSNAME/setenv.sh
+source ${BUILD_DIR}/$BMS_OSNAME/sim-recon/setenv.sh
 export JANA_CALIB_CONTEXT="variation=mc"
 
 # do the test
