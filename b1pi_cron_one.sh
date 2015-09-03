@@ -14,7 +14,7 @@ export JANA_CALIB_CONTEXT="variation=mc"
 rm -rfv $RUN_DIR
 mkdir -pv $RUN_DIR
 cd $RUN_DIR
-./b1pi_test.sh -n 100 -t 4
+$B1PI_TEST_DIR/b1pi_test.sh -n 50000
 export PLOTDIR=/group/halld/www/halldweb/html/b1pi/$TODAYS_DATE/$BMS_OSNAME
 mkdir -pv $PLOTDIR
 cp -v *.pdf *.gif *.html $PLOTDIR

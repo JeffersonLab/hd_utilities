@@ -72,7 +72,7 @@ fi
 if [ -z "$VERTEX" ]
     then
     echo "info: vertex parameters not defined, using default values $vertex"
-    $VERTEX=$vertex
+    VERTEX=$vertex
 fi
 
 echo NEVENTS = $NEVENTS
