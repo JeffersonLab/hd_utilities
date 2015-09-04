@@ -21,11 +21,14 @@ Example:
                                             # GlueX software tree
   export B1PI_TEST_DIR /home/username/b1pi_test # define the location of the
                                                 # b1pi_test files
-  b1pi_test.sh -n 10000 -f /home/username/my_version.xml # do the test for 10 k
-                                                         # events using versions
-                                                         # in my_version.xml
+  my_b1pi_test.sh -n 10000 -f /home/username/my_version.xml # do the test for
+                                                            # 10 k events using
+                                                            # versions in
+                                                            # my_version.xml
 EOF
 }
+
+b1pi_test_options=""
 
 while getopts "h?v:f:n:t:d:" opt; do
     case "$opt" in
@@ -33,7 +36,7 @@ while getopts "h?v:f:n:t:d:" opt; do
         show_help
         exit 0
         ;;
-    f)  output_file=$OPTARG
+    f)  version_file=$OPTARG
         ;;
     n)  NEVENTS=$OPTARG
 	;;
@@ -42,6 +45,7 @@ while getopts "h?v:f:n:t:d:" opt; do
     t)  NTHREADS=$OPTARG
 	;;
     d)  B1PI_TEST_DIR=$OPTARG
+        b1pi_test_options="$b1pi_test_options -d $B1PI_TEST_DIR"
     esac
 done
 
@@ -56,61 +60,44 @@ if [ ! -d "$B1PI_TEST_DIR" ]
     exit 1
 fi
 
-if [ -z "$NEVENTS" ]
+if [ ! -z "$NEVENTS" ]
     then
-    echo "info: number of events not defined, using default value $nevents"
-    NEVENTS=$nevents
+    b1pi_test_options="$b1pi_test_options -n $NEVENTS"
 fi
 
-if [ -z "$NTHREADS" ]
+if [ ! -z "$NTHREADS" ]
     then
-    echo "info: number of threads not defined, using default value $nthreads"
-    NTHREADS=$nthreads
+    b1pi_test_options="$b1pi_test_options -t $NTHREADS"
 fi
 
-if [ -z "$VERTEX" ]
+if [ ! -z "$VERTEX" ]
     then
-    echo "info: vertex parameters not defined, using default values $vertex"
-    VERTEX=$vertex
+    b1pi_test_options="$b1pi_test_options -v $VERTEX"
 fi
 
-echo NEVENTS = $NEVENTS
-echo VERTEX = $VERTEX
-echo NTHREADS = $NTHREADS
-echo B1PI_TEST_DIR = $B1PI_TEST_DIR
+if [ -z "$version_file" ]
+    then
+    if [ ! -d "$HALLD_HOME" ]
+	then
+	echo "error in my_b1pi_test.sh: no version.xml specified and HALLD_HOME not defined"
+	exit 1
+    fi
+else
+    if [ ! -d "$BUILD_SCRIPTS" ]
+	then
+	echo "error in my_b1pi_test.sh: BUILD_SCRIPTS not found"
+	echo "    using BUILD_SCRIPTS = \"$BUILD_SCRIPTS\""
+	exit 2
+    fi
+    source $BUILD_SCRIPTS/gluex_env_version.sh $version_file    
+fi
 
-echo "Copying script files and macros ..."
-cp -pv $B1PI_TEST_DIR/* .
-cp -pv $B1PI_TEST_DIR/macros/* .
+if [ ! -d "$HALLD_HOME" ]
+    then
+    echo "error in my_b1pi_test.sh: environment setting failed, HALLD_HOME not defined"
+    exit 3
+fi
 
-echo "Running genr8 ..."
-genr8 -r1501 -M${NEVENTS} -Ab1_pi.ascii < b1_pi.input
-
-echo "Converting generated events to HDDM ..."
-genr8_2_hddm -V"${VERTEX}" b1_pi.ascii 
-
-echo "Creating control.in file ..."
-cat - << EOF > control.in
-
-INFILE 'b1_pi.hddm'
-TRIG ${NEVENTS}
-OUTFILE 'hdgeant.hddm'
-RNDM 123
-HADR 1
-
-EOF
-
-echo "Running hdgeant ..."
-hdgeant
-
-echo "Running mcsmear ..."
-mcsmear -PJANA:BATCH_MODE=1 hdgeant.hddm
-
-echo "Running hd_root with danarest ..."
-hd_root -PJANA:BATCH_MODE=1 --nthreads=$NTHREADS -PPLUGINS=danarest hdgeant_smeared.hddm
-
-echo "Running hd_root with b1pi_hists & monitoring_hists ..."
-hd_root -PJANA:BATCH_MODE=1 --nthreads=$NTHREADS -PPLUGINS=b1pi_hists,monitoring_hists dana_rest.hddm
-
-echo "Create plots"
-root -b -q mk_pics.C
+command="$B1PI_TEST_DIR/b1pi_test.sh $b1pi_test_options"
+echo "info from my_b1pi_test.sh: running test, command = \"$command\""
+$command
