@@ -77,9 +77,10 @@ fi
 
 if [ -z "$version_file" ]
     then
-    if [ ! -d "$HALLD_HOME" ]
+    echo "info from my_b1pi_test.sh: no version.xml specified, will rely on existing GlueX environment"
+    if ! which genr8
 	then
-	echo "error in my_b1pi_test.sh: no version.xml specified and HALLD_HOME not defined"
+	echo "error in my_b1pi_test.sh: genr8 not in path"
 	exit 1
     fi
 else
@@ -92,9 +93,9 @@ else
     source $BUILD_SCRIPTS/gluex_env_version.sh $version_file    
 fi
 
-if [ ! -d "$HALLD_HOME" ]
+if ! which genr8
     then
-    echo "error in my_b1pi_test.sh: environment setting failed, HALLD_HOME not defined"
+    echo "error in my_b1pi_test.sh: environment setting failed, genr8 not in path"
     exit 3
 fi
 
