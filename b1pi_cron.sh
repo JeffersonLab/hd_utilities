@@ -1,5 +1,5 @@
 #!/bin/sh
-hosts="jlabl1 ifarm1101 jlabl3 ifarm1401"
+hosts="jlabl1 ifarm1101 jlabl3 ifarm1401 lorentz"
 date_token=`date +%F`
 date_file=/u/scratch/$USER/b1pi_date.txt
 rm -fv $date_file
@@ -21,6 +21,12 @@ do
     ; \
     mv -v $logfile $RUN_DIR/ \
     ) &
+done
+nprocs=999
+while [ $nprocs -ne 0 ]
+    do
+    nprocs=`ps aux | grep /home/gluex/.ssh/b1pi_cron | grep -v grep | wc -l`
+    sleep 300
 done
 /group/halld/Software/scripts/b1pi_test/b1pi_message.sh
 exit
