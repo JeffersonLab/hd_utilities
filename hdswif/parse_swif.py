@@ -64,6 +64,8 @@ ROOT.gROOT.SetBatch(True)
 
 import create_ordered_hists
 
+import results_by_resources
+
 def main(argv):
 
     # XML file to parse
@@ -104,7 +106,7 @@ def main(argv):
     current_time = summary.find('current_ts').text
 
     # output file
-    outfile = open("summary_" + filename_base + ".html","w")
+    outfile = open("summary_" + filename_base + ".html","w+")
     outfile.write('<html>\n')
     outfile.write('  <head>\n')
     outfile.write('  <link rel="stylesheet" type="text/css" href="mystyle.css">\n')
@@ -230,8 +232,15 @@ def main(argv):
     outfile.write('    </tr>\n')
     
     outfile.write('  </table>\n')
-    outfile.write('  <hr>\n')
+    outfile.close()
     
+    # Call results_by_resources
+    results_by_resources.main([filename])
+
+    # Reopen
+    outfile = open("summary_" + filename_base + ".html","a+")
+    outfile.write('  <hr>\n')
+
     #--------------------------------------------------------------------
     # Make histogram of number of attempts
     # This can be done by looking at the <num_attempts>
@@ -330,13 +339,13 @@ def main(argv):
     # Range of time histogram
     TOTALTIME = int(float(MAXTIME - MIN_DISPATCH_TS_POSIX) / 3600.) + 1.0
     print 'TOTALTIME = ', TOTALTIME, ' hrs'
-    htimeSinceLaunch_submitted = TH1F("htimeSinceLaunch_submitted", ";submit time since launch (hrs)", TOTALTIME * 10, 0,TOTALTIME)
-    htimeSinceLaunch_dependency = TH1F("htimeSinceLaunch_dependency", ";dependency time since launch (hrs)", TOTALTIME * 10, 0,TOTALTIME)
-    htimeSinceLaunch_pending = TH1F("htimeSinceLaunch_pending", ";pending time since launch (hrs)", TOTALTIME * 10, 0,TOTALTIME)
-    htimeSinceLaunch_stagingIn = TH1F("htimeSinceLaunch_stagingIn", ";staging in time since launch (hrs)", TOTALTIME * 10, 0,TOTALTIME)
-    htimeSinceLaunch_active = TH1F("htimeSinceLaunch_active", ";active since launch (hrs)", TOTALTIME * 10, 0,TOTALTIME)
-    htimeSinceLaunch_stagingOut = TH1F("htimeSinceLaunch_stagingOut", ";staging out time since launch (hrs)", TOTALTIME * 10, 0,TOTALTIME)
-    htimeSinceLaunch_complete = TH1F("htimeSinceLaunch_complete", ";complete time since launch (hrs)", TOTALTIME * 10, 0,TOTALTIME)
+    htimeSinceLaunch_submitted = TH1F("htimeSinceLaunch_submitted", ";submit time since launch (hrs)", int(TOTALTIME * 10), 0,TOTALTIME)
+    htimeSinceLaunch_dependency = TH1F("htimeSinceLaunch_dependency", ";dependency time since launch (hrs)", int(TOTALTIME * 10), 0,TOTALTIME)
+    htimeSinceLaunch_pending = TH1F("htimeSinceLaunch_pending", ";pending time since launch (hrs)", int(TOTALTIME * 10), 0,TOTALTIME)
+    htimeSinceLaunch_stagingIn = TH1F("htimeSinceLaunch_stagingIn", ";staging in time since launch (hrs)", int(TOTALTIME * 10), 0,TOTALTIME)
+    htimeSinceLaunch_active = TH1F("htimeSinceLaunch_active", ";active since launch (hrs)", int(TOTALTIME * 10), 0,TOTALTIME)
+    htimeSinceLaunch_stagingOut = TH1F("htimeSinceLaunch_stagingOut", ";staging out time since launch (hrs)", int(TOTALTIME * 10), 0,TOTALTIME)
+    htimeSinceLaunch_complete = TH1F("htimeSinceLaunch_complete", ";complete time since launch (hrs)", int(TOTALTIME * 10), 0,TOTALTIME)
 
     # Histograms for duration of dependency, pending and active
     hDurationDependency = TH1F("hDurationDependency",";time spent in dependency (hrs)",240,0,24)
@@ -346,7 +355,7 @@ def main(argv):
     hmaxrss = TH1F("hmaxrss", ";maxrss (GB)", 200, 0,max_ram_requested)
     hauger_mem = TH1F("hauger_mem", ";mem (GB)", 200, 0,max_ram_requested + 1)
     hauger_vmem = TH1F("hauger_vmem", ";vmem (GB)", 200, 0,max_ram_requested + 1)
-    hwalltime = TH1F("hwalltime", ";wall time (hrs)", 200, 0,5)
+    hwalltime = TH1F("hwalltime", ";wall time (hrs)", 200, 0,8)
     gcput_walltime = TGraph()
     gcput_walltime.SetName("gcput_walltime")
     gcput_walltime.SetTitle("");
@@ -674,9 +683,9 @@ def main(argv):
     c1.cd(2)
     c1.cd(2).SetRightMargin(0.02)
     c1.cd(2).SetTopMargin(0.03)
-    gcput_walltime.GetXaxis().SetLimits(0,5);
+    gcput_walltime.GetXaxis().SetLimits(0,8);
     gcput_walltime.SetMinimum(0);
-    gcput_walltime.SetMaximum(30);
+    gcput_walltime.SetMaximum(48);
     gcput_walltime.GetXaxis().SetTitleOffset(0.900);
     gcput_walltime.GetXaxis().SetTitle("wall time (hrs)");
     gcput_walltime.GetYaxis().SetTitleOffset(0.900);
@@ -687,10 +696,10 @@ def main(argv):
     line_colors = (ROOT.kBlack, ROOT.kRed, ROOT.kYellow+2, ROOT.kGreen+2, ROOT.kBlue, ROOT.kMagenta)
     for i in range(0,6):
         fname  = 'flinear' + '_' + str(i)
-        f = TF1(fname,"[0]*x",0,5)
+        f = TF1(fname,"[0]*x",0,8)
         flinear.append(f)
         flinear[i].SetParameter(0,i+1.)
-        print 'line_colors[', i, '] = ', line_colors[i]
+        # print 'line_colors[', i, '] = ', line_colors[i]
         flinear[i].SetLineColor(line_colors[i])
         flinear[i].SetLineStyle(3)
         flinear[i].SetNpx(1000)
@@ -762,6 +771,8 @@ def main(argv):
     outfile.write('      <th style="border: 0px; height:10px; width:50px;">Attempt</th>\n')
     outfile.write('      <th style="border: 0px; height:10px; width:200px;">Problem</th>\n')
     outfile.write('      <th style="border: 0px; height:10px; width:200px;">Resolution</th>\n')
+    outfile.write('      <th style="border: 0px; height:10px; width:200px;">SWIF Job ID</th>\n')
+    outfile.write('      <th style="border: 0px; height:10px; width:200px;">Auger Job ID</th>\n')
     outfile.write('    </tr>\n')
     
     for job in workflow_status.iter('job'):
@@ -779,6 +790,14 @@ def main(argv):
             hadProblem = False
             problem_name    = ""
             resolution_name = ""
+
+            job_id_name = ""
+            for job_id in attempt.iter('job_id'):
+                job_id_name = job_id.text
+
+            auger_id_name = ""
+            for auger_id in attempt.iter('auger_id'):
+                auger_id_name = auger_id.text
     
             for problem in attempt.findall('problem'):
                 problem_name = problem.text
@@ -798,6 +817,10 @@ def main(argv):
                     output_text = ('      <td>' + problem_name + '</td>\n')
                     outfile.write(output_text)
                     output_text = ('      <td>' + resolution_name + '</td>\n')
+                    outfile.write(output_text)
+                    output_text = ('      <td>' + job_id_name + '</td>\n')
+                    outfile.write(output_text)
+                    output_text = ('      <td>' + auger_id_name + '</td>\n')
                     outfile.write(output_text)
                     outfile.write('    </tr>\n')
     outfile.write('    </table>\n')

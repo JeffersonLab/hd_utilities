@@ -49,6 +49,12 @@ def runnjobs(workflow, n):
 def status(workflow):
     os.system("swif status " + workflow)
 
+def freeze(workflow):
+    os.system("swif freeze " + workflow)
+
+def unfreeze(workflow):
+    os.system("swif unfreeze " + workflow)
+
 def fullstatus(workflow, format):
     os.system("swif status " + workflow + " -runs -summary -display " + format)
 
@@ -90,6 +96,7 @@ def find_files(RUNPERIOD, FORMATTED_RUN, FORMATTED_FILE):
     # Fill list with files found
     for line in file_handler:
         line = line.rstrip() # remove newline
+
         _file_list.insert(len(_file_list),line)
         if(VERBOSE == True):
             print str(len(_file_list)) + " "  + line
@@ -134,7 +141,7 @@ def add_job(WORKFLOW, config_dict, mssfile):
 
         add_command = str("swif add-job -workflow " + WORKFLOW + " -project " + config_dict['PROJECT'] + " \\\n") \
             + str(" -track " + config_dict['TRACK'] + " -cores " + str(config_dict['NCORES']) + " -disk " + str(config_dict['DISK']) + "g \\\n") \
-            + str(" -ram " + str(config_dict['RAM']) + "g -time " + str(config_dict['TIMELIMIT']) + "m -os " + config_dict['OS'] + " \\\n") \
+            + str(" -ram " + str(config_dict['RAM']) + "g -time " + str(config_dict['TIMELIMIT']) + "h -os " + config_dict['OS'] + " \\\n") \
             + str(" -input " + basename + " " + mssfile + " \\\n") \
             + str(" -tag user_run " + thisrun + " -tag user_file " + thisfile + " \\\n") \
             + str(" -name offmon" + "_" + thisrun + "_" + thisfile + " \\\n") \
@@ -160,9 +167,9 @@ def main(argv):
 
     # Read in command line args
     parser = OptionParser(usage = str("\n"
-                                      + "----------------------------------\n"
                                       + "hdswif.py [option] [workflow]\n"
-                                      + "[option] = {create, list, run (n), status, add, resubmit, summary, cancel, delete}\n"
+                                      + "[option] = {create, list, run (n), status, freeze, unfreeze, \n"
+                                      + "            add, resubmit, summary, cancel, delete}\n"
                                       + "----------------------------------\n"
                                       + "Options for add:\n"
                                       + "-c [config] -r (run) -f (file)\n"
@@ -172,19 +179,20 @@ def main(argv):
                                       + "Options for resubmit:\n"
                                       + "[problem] (additional resources)\n"
                                       + "[problem] = TIMEOUT, RLIMIT\n"
-                                      + "resources in units of hrs for TIMEOUT, GB for RLIMIT\n"
+                                      + "Additional resources in units of hrs for TIMEOUT, GB for RLIMIT\n"
+                                      + "Default is to add 2 hrs for TIMEOUT, 2GB for RLIMIT\n"
                                       + "----------------------------------\n"
                                       + "options in [ ] are required, options in ( ) are optional for running\n"
                                       + "(use -V 1 for verbose mode)"))
     parser.add_option("-r","--run", dest="run",
-                      help="run")
+                      help="specify run(s) to run over")
     parser.add_option("-f","--file", dest="file",
-                      help="file")
+                      help="specify file(s) to run over")
 
     parser.add_option("-c","--config", dest="config",
-                      help="config")
+                      help="specify config file")
     parser.add_option("-V","--verbose",dest="verbose",
-                      help="verbose")
+                      help="verbose output")
     
     (options, args) = parser.parse_args(argv)
 
@@ -333,9 +341,9 @@ def main(argv):
         'OUTPUT_TOPDIR'  : '/volatile/halld/home/gxproj5/hdswif_test/RunPeriod-[RUNPERIOD]/ver[VERSION]', # # Needs to be full path
         'NCORES'         : 6,
         'DISK'           : 40,
-        'RAM'            : 5,
+        'RAM'            : 6,
         'TIMELIMIT'      : 8,
-        'SCRIPTFILE'     : '/home/gxproj5/halld/hdswif/user_script.sh',           # Needs to be full path
+        'SCRIPTFILE'     : '/home/gxproj5/halld/hdswif/script.sh',                # Needs to be full path
         'ENVFILE'        : '/home/gxproj5/halld/hdswif/setup_jlab-2015-03.csh',   # Needs to be full path
         }
 
