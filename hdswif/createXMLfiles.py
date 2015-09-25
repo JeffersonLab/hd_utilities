@@ -145,8 +145,8 @@ def main(argv):
     # 11. ncores requested
     # 12. timelimit
     # ----------------------------------------------------------------
-    RUNPERIOD_HYPHEN = RUNPERIOD.replace('-', '_')
-    softfilename = '/group/halld/data_monitoring/run_conditions/soft_comm_' + RUNPERIOD_HYPHEN + '_ver' + VERSION + '.xml'
+    RUNPERIOD_UNDERSCORE = RUNPERIOD.replace('-', '_')
+    softfilename = '/group/halld/data_monitoring/run_conditions/soft_comm_' + RUNPERIOD_UNDERSCORE + '_ver' + VERSION + '.xml'
     # print 'softfilename = ', softfilename
 
     if os.path.isfile(softfilename):
