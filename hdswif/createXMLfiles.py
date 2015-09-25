@@ -2,6 +2,7 @@ import sys, os
 import subprocess
 from optparse import OptionParser
 from os import mkdir
+import datetime
 
 import read_config
 
@@ -62,6 +63,19 @@ def main(argv):
     # ----------------------------------------------------------------
     janafilename = '/group/halld/data_monitoring/run_conditions/jana_rawdata_comm' + RUNPERIOD + '_ver' + VERSION + '.conf'
     # print 'janafilename = ', janafilename
+
+    if os.path.isfile(janafilename):
+        print 'File ', janafilename, ' already exists'
+            
+        while(1):
+            answer = raw_input('Overwrite? (y/n)   ')
+            if answer == 'n':
+                print 'workflow has been created, but jana config file has not'
+                exit()
+                break
+            elif answer == 'y':
+                break
+
     janaoutfile = open(janafilename,'w')
 
     # 1. Get PLUGINS
@@ -134,6 +148,19 @@ def main(argv):
     RUNPERIOD_HYPHEN = RUNPERIOD.replace('-', '_')
     softfilename = '/group/halld/data_monitoring/run_conditions/soft_comm_' + RUNPERIOD_HYPHEN + '_ver' + VERSION + '.xml'
     # print 'softfilename = ', softfilename
+
+    if os.path.isfile(softfilename):
+        print 'File ', softfilename, ' already exists'
+            
+        while(1):
+            answer = raw_input('Overwrite? (y/n)   ')
+            if answer == 'n':
+                print 'workflow has been created, but software xml file has not'
+                exit()
+                break
+            elif answer == 'y':
+                break
+
     softoutfile = open(softfilename,'w\n')
 
     # Get jana version
@@ -270,6 +297,9 @@ def main(argv):
 
     os.chdir(original_dir) # go back to original directory
 
+    # Get date for creation of file
+    date = datetime.datetime.now()
+
     softoutfile.write('<gversions>\n')
     softoutfile.write('  <package name="jana" version="' + jana_ver + '"/>\n')
     softoutfile.write('  <package name="sim-recon" version="' + simrecon_ver + '" hash="' + simrecon_hash + '"/>\n')
@@ -284,6 +314,7 @@ def main(argv):
     softoutfile.write('  <variable name = "DiskSpace" value="' + DISK + '"/>\n')
     softoutfile.write('  <variable name = "ncores" value="' + NCORES + '"/>\n')
     softoutfile.write('  <variable name = "timelimit" value="' + TIMELIMIT + '"/>\n')
+    softoutfile.write('  <variable name = "date" value="' + str(date) + '"/>\n')
     softoutfile.write('</gversions>\n')
 
     print 'Created software config file ' + softfilename + ' ...'
