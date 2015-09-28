@@ -8,19 +8,30 @@ from optparse import OptionParser
 import tempfile
 import uuid
 
+
+def CleanTempFiles(filelist):
+    for fname in filelist:
+        os.system("rm %s"%fname)
+
 def run_hadd(args):
     haddargs  = args[0]
     targetfile  = args[1]
     sourcefiles = args[2]
+    clear_files_when_done = args[3]
     if sourcefiles is None or len(sourcefiles) < 0:
         raise RuntimeError("run_hadd: No files passed to add!")
     os.system("hadd %s %s %s"%(haddargs,targetfile, " ".join(sourcefiles)))
+    if clear_files_when_done:
+        CleanTempFiles(sourcefiles)
     return targetfile 
 
 class phadd:
-    def __init__(self, in_targetfile, in_sourcefiles, in_args="", in_nthreads=6, in_chunksize=20):
+    def __init__(self, in_targetfile, in_sourcefiles, in_args="", in_nthreads=6, in_chunksize=20, in_stagefiles=False):
         self.nthreads = 0
         self.p = None
+        self.stage_files = in_stagefiles
+        #self.tempdir = tempfile.gettempdir()
+        self.tempdir = "/scratch/gxproj5"
         self.Init(in_targetfile, in_sourcefiles, in_args, in_nthreads, in_chunksize)
 
     def __del__(self):
@@ -28,6 +39,13 @@ class phadd:
         self.p.terminate()
         self.p.join()
 
+    def CopyToTempDir(filelist):
+        newfilelist = []
+        for fname in filelist:
+            newfilename = os.path.join(self.tempdir,"phadd_tmp_%s.root"%str(uuid.uuid4()))
+            os.system("cp %s %s"%(fname,newfilename))
+            newfilelist += [ newfilename ]
+        return newfilelist
 
     def Init(self, in_targetfile, in_sourcefiles, in_args="", in_nthreads=6, in_chunksize=20):
         self.targetfile = in_targetfile   # final file name to save result in
@@ -64,18 +82,31 @@ class phadd:
             os.system("cp %s %s"%(self.sourcefiles[0],self.targetfile))
         elif len(self.sourcefiles) <= self.chunksize:
             # if we have fewer files than our chunk size, then we can just do one round of adding files
-            os.system("hadd %s %s %s"%(self.haddargs,self.targetfile," ".join(self.sourcefiles)))
+            if self.stage_files:
+                staged_sourcefiles = self.CopyToTempDir(self.sourcefiles)
+                os.system("hadd %s %s %s"%(self.haddargs,self.targetfile," ".join(staged_sourcefiles)))
+                CleanTempFiles(staged_sourcefiles)
+            else:
+                os.system("hadd %s %s %s"%(self.haddargs,self.targetfile," ".join(self.sourcefiles)))
         else:
             # do two rounds of merging - first split up the files
             njobs = len(self.sourcefiles)/self.chunksize + 1
             jobs = []
             for x in xrange(njobs):
                 #sumfilename = os.path.join(tempfile.gettempdir(),"phadd_tmp_%s.root"%next(tempfile._get_candidate_names()))
-                sumfilename = os.path.join(tempfile.gettempdir(),"phadd_tmp_%s.root"%str(uuid.uuid4()))
-                if x == njobs-1:
-                    jobs += [ [self.haddargs, sumfilename, self.sourcefiles[x*self.chunksize:] ] ]
+                sumfilename = os.path.join(self.tempdir,"phadd_tmp_%s.root"%str(uuid.uuid4()))
+                if x == njobs-1: 
+                    if self.stage_files:
+                        job_sourcefiles = staged_sourcefiles = self.CopyToTempDir(self.sourcefiles[x*self.chunksize:])
+                    else:
+                        job_sourcefiles = self.sourcefiles[x*self.chunksize:]
+                    jobs += [ [self.haddargs, sumfilename, job_sourcefiles, self.stage_files ] ]
                 else:
-                    jobs += [ [self.haddargs, sumfilename, self.sourcefiles[x*self.chunksize:(x+1)*self.chunksize] ] ]
+                    if self.stage_files:
+                        job_sourcefiles = staged_sourcefiles = self.CopyToTempDir(self.sourcefiles[x*self.chunksize:(x+1)*self.chunksize])
+                    else:
+                        job_sourcefiles = self.sourcefiles[x*self.chunksize:(x+1)*self.chunksize]
+                    jobs += [ [self.haddargs, sumfilename, job_sourcefiles, self.stage_files ] ]
             # run over them
             tempsumfiles = self.p.map(run_hadd,jobs)
             # add the results up
