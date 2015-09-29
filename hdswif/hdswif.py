@@ -78,6 +78,13 @@ def resubmit(workflow, problem, num):
         os.system("swif modify-jobs " + workflow + " -ram add " + str(num) + "gb -problems AUGER-OVER_RLIMIT")
     elif problem == 'TIMEOUT':
         os.system("swif modify-jobs " + workflow + " -time add " + str(num) + "h -problems AUGER-TIMEOUT")
+    elif problem == 'SYSTEM':
+        # Resubmit all jobs with the following:
+        # AUGER-FAILED, AUGER-INPUT-FAIL, AUGER-OUTPUT-FAIL, SWIF-SYSTEM-ERROR
+        os.system("swif modify-jobs " + workflow + " -problems AUGER-FAILED")
+        os.system("swif modify-jobs " + workflow + " -problems AUGER-INPUT-FAIL")
+        os.system("swif modify-jobs " + workflow + " -problems AUGER-OUTPUT-FAIL")
+        os.system("swif modify-jobs " + workflow + " -problems SWIF-SYSTEM-ERROR")
     else:
         print 'Unknown problem ', problem, ', cannot resolve.'
         print 'Check SWIF help menu for more options'
@@ -110,6 +117,11 @@ def find_files(RUNPERIOD, FORMATTED_RUN, FORMATTED_FILE):
     # Fill list with files found
     for line in file_handler:
         line = line.rstrip() # remove newline
+
+#        # Hack to skip 1000's files
+        if re.search('_1[0-9][0-9][0-9]',line) != None:
+            print 'skipping ', line
+            continue
 
         _file_list.insert(len(_file_list),line)
         if(VERBOSE == True):
@@ -192,9 +204,10 @@ def main(argv):
                                       + "----------------------------------\n"
                                       + "Options for resubmit:\n"
                                       + "[problem] (additional resources)\n"
-                                      + "[problem] = TIMEOUT, RLIMIT\n"
+                                      + "[problem] = TIMEOUT, RLIMIT, SYSTEM\n"
                                       + "Additional resources in units of hrs for TIMEOUT, GB for RLIMIT\n"
                                       + "Default is to add 2 hrs for TIMEOUT, 2GB for RLIMIT\n"
+                                      + "System error jobs are resubmitted with the same resources\n"
                                       + "----------------------------------\n"
                                       + "options in [ ] are required, options in ( ) are optional for running\n"
                                       + "(use -V 1 for verbose mode)"))
@@ -309,8 +322,9 @@ def main(argv):
         if(len(args) == 3):
             # Assume args[1] is workflow,
             # args[2] is problem
-            # Currently supports RLIMIT, TIMEOUT
-            # Default is to add 2GB of RAM
+            # Currently supports RLIMIT, TIMEOUT, SYSTEM
+            # Default is to add 2GB of RAM for RLIMIT,
+            # 2 hrs for TIMEOUT, and nothing for SYSTEM
             resubmit(args[1],args[2],2)
             exit()
         elif(len(args) == 4):

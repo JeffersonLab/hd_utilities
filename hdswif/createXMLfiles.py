@@ -61,7 +61,9 @@ def main(argv):
     # NTHREADS is in the config file (NCORES), while the other
     # variables are defined within the SCRIPTFILE
     # ----------------------------------------------------------------
-    janafilename = '/group/halld/data_monitoring/run_conditions/jana_rawdata_comm' + RUNPERIOD + '_ver' + VERSION + '.conf'
+    RUNPERIOD_UNDERSCORE = RUNPERIOD.replace('-', '_')
+
+    janafilename = '/group/halld/data_monitoring/run_conditions/jana_rawdata_comm_' + RUNPERIOD_UNDERSCORE + '_ver' + VERSION + '.conf'
     # print 'janafilename = ', janafilename
 
     if os.path.isfile(janafilename):
@@ -145,7 +147,6 @@ def main(argv):
     # 11. ncores requested
     # 12. timelimit
     # ----------------------------------------------------------------
-    RUNPERIOD_UNDERSCORE = RUNPERIOD.replace('-', '_')
     softfilename = '/group/halld/data_monitoring/run_conditions/soft_comm_' + RUNPERIOD_UNDERSCORE + '_ver' + VERSION + '.xml'
     # print 'softfilename = ', softfilename
 

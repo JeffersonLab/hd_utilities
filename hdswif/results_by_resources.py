@@ -74,7 +74,7 @@ def main(argv):
     outfile.write('  <table style="border: 0px; table-layout: fixed;">\n')
     outfile.write('    <tr style="background: #99CCFF;">\n')
     outfile.write('      <th colspan = "2" style="border: 0px; height:10px; width:300px; bgcolor = #ff0000;">Resources</th>\n')
-    outfile.write('      <th colspan = "6" style="border: 0px; height:10px; width:500px; bgcolor = #00ff00;">Results</th>\n')
+    outfile.write('      <th colspan = "7" style="border: 0px; height:10px; width:500px; bgcolor = #00ff00;">Results</th>\n')
     outfile.write('      <th rowspan="2"><b>TOTAL</b></th>\n')
     outfile.write('    </tr>\n')
     outfile.write('    <tr style="background: #99CCFF;">\n')
@@ -85,6 +85,7 @@ def main(argv):
     outfile.write('      <th style="border: 0px; height:10px; width:100px;">TIMEOUT</th>\n')
     outfile.write('      <th style="border: 0px; height:10px; width:100px;">OVER_RLIMIT</th>\n')
     outfile.write('      <th style="border: 0px; height:10px; width:100px;">UNDISPATCHED</th>\n')
+    outfile.write('      <th style="border: 0px; height:10px; width:100px;">ACTIVE</th>\n')
     outfile.write('      <th style="border: 0px; height:10px; width:100px;">CANCELLED</th>\n')
     outfile.write('    </tr>\n')
 
@@ -105,17 +106,38 @@ def main(argv):
         ram = ''
         time = ''
         result = ''
+        job_attempt_id = ''
+        problem_name = ''
 
+        for job_attempt_id in attempt.iter('job_attempt_id'):
+            id = job_attempt_id.text
+        for problem in attempt.iter('problem'):
+            problem_name = problem.text
+        for auger_current_state in attempt.iter('auger_current_state'):
+            current_state = auger_current_state.text
         for ram_bytes in attempt.iter('ram_bytes'):
             ram = ram_bytes.text
         for time_secs in attempt.iter('time_secs'):
             time = time_secs.text
         for auger_result in attempt.iter('auger_result'):
             result = auger_result.text
-        # Sometimes result is empty if the job has not run yet
         if result is '':
-            result = 'UNDISPATCHED'
+            # There are several possibilities for not having a result:
+            # 1. SWIF-SYSTEM-ERROR -- This will show up in problem
+            # 2. ACTIVE            -- This will show up in current_state
+            # 3. UNDISPATCHED
+
+            # SWIF-SYSTEM-ERROR
+            if problem_name == 'SWIF-SYSTEM-ERROR':
+                result = 'FAILED'
+            # ACTIVE
+            elif current_state == 'ACTIVE':
+                result = 'ACTIVE'
+            # Sometimes result is empty if the job has not run yet
+            else:
+                result = 'UNDISPATCHED'
         
+            print 'job_attempt_id = ' + id + ' problem is ' + problem_name + ' current_state = ' + current_state + ' result is ' + result
 
         # Create key for dictionary from ram and time
         resources = ram + '_' + time
@@ -131,7 +153,8 @@ def main(argv):
                                   'TIMEOUT'      : 0,
                                   'OVER_RLIMIT'  : 0,
                                   'UNDISPATCHED' : 0,
-                                  'CANCELLED' : 0
+                                  'ACTIVE'       : 0,
+                                  'CANCELLED'    : 0
                                   }
 
             resources_results_dict[resources] = empty_results_dict
@@ -145,6 +168,7 @@ def main(argv):
     nTotal_TIMEOUT      = 0
     nTotal_OVER_RLIMIT  = 0
     nTotal_UNDISPATCHED = 0
+    nTotal_ACTIVE       = 0
     nTotal_CANCELLED    = 0
     nTotal_ALL          = 0
 
@@ -169,7 +193,8 @@ def main(argv):
         nTIMEOUT      = 0
         nOVER_RLIMIT  = 0
         nUNDISPATCHED = 0
-        nCANCELLED = 0
+        nACTIVE       = 0
+        nCANCELLED    = 0
 
         for result_key, result_value in value.items():
             # print 'result_key = ', result_key, ' result_value = ', result_value
@@ -183,6 +208,8 @@ def main(argv):
                 nOVER_RLIMIT = result_value
             elif result_key == 'UNDISPATCHED':
                 nUNDISPATCHED = result_value
+            elif result_key == 'ACTIVE':
+                nACTIVE = result_value
             elif result_key == 'CANCELLED':
                 nCANCELLED = result_value
             else:
@@ -190,7 +217,7 @@ def main(argv):
                 exit()
 
         # Total number of jobs for this resource
-        nTotal_thisResource = nSUCCESS + nFAILED + nTIMEOUT + nOVER_RLIMIT + nUNDISPATCHED + nCANCELLED
+        nTotal_thisResource = nSUCCESS + nFAILED + nTIMEOUT + nOVER_RLIMIT + nUNDISPATCHED + nACTIVE + nCANCELLED
 
         # Add job numbers to totals for each type of result
         nTotal_SUCCESS      += nSUCCESS
@@ -198,6 +225,7 @@ def main(argv):
         nTotal_TIMEOUT      += nTIMEOUT
         nTotal_OVER_RLIMIT  += nOVER_RLIMIT
         nTotal_UNDISPATCHED += nUNDISPATCHED
+        nTotal_ACTIVE       += nACTIVE
         nTotal_CANCELLED    += nCANCELLED
         nTotal_ALL          += nTotal_thisResource
 
@@ -210,6 +238,8 @@ def main(argv):
         output_text = '      <td>' + str(nOVER_RLIMIT) + '</td>\n'
         outfile.write(output_text)
         output_text = '      <td>' + str(nUNDISPATCHED) + '</td>\n'
+        outfile.write(output_text)
+        output_text = '      <td>' + str(nACTIVE) + '</td>\n'
         outfile.write(output_text)
         output_text = '      <td>' + str(nCANCELLED) + '</td>\n'
         outfile.write(output_text)
@@ -227,6 +257,7 @@ def main(argv):
     outfile.write('      <td><b>' + str(nTotal_TIMEOUT)      + '</b></td>\n')
     outfile.write('      <td><b>' + str(nTotal_OVER_RLIMIT)  + '</b></td>\n')
     outfile.write('      <td><b>' + str(nTotal_UNDISPATCHED) + '</b></td>\n')
+    outfile.write('      <td><b>' + str(nTotal_ACTIVE)       + '</b></td>\n')
     outfile.write('      <td><b>' + str(nTotal_CANCELLED)    + '</b></td>\n')
     outfile.write('      <td><b>' + str(nTotal_ALL)          + '</b></td>\n')
     outfile.write('    </tr>\n')
