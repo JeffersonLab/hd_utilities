@@ -18,5 +18,4 @@ $B1PI_TEST_DIR/b1pi_test.sh -n 150000
 export PLOTDIR=/group/halld/www/halldweb/html/b1pi/$TODAYS_DATE/$BMS_OSNAME
 mkdir -pv $PLOTDIR
 cp -v *.pdf *.gif *.html $PLOTDIR
-cp -v /u/scratch/gluex/b1pi*.log $PLOTDIR/../
 exit
