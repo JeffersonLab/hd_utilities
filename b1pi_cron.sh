@@ -5,7 +5,9 @@ date_file=/u/scratch/$USER/b1pi_date.txt
 rm -fv $date_file
 echo $date_token > $date_file
 RUN_DIR=/u/scratch/$USER/b1pi/$date_token
-mkdir -p $RUN_DIR
+mkdir -pv $RUN_DIR
+webdir=/group/halld/www/halldweb/html/b1pi/$date_token
+mkdir -pv $webdir
 for host in $hosts
 do
     echo host = $host
@@ -19,7 +21,7 @@ do
     ( \
     env -u SSH_AUTH_SOCK ssh -i ~/.ssh/b1pi_cron $host > $logfile 2>&1 \
     ; \
-    mv -v $logfile $RUN_DIR/ \
+    mv -v $logfile $webdir \
     ) &
 done
 nprocs=999
