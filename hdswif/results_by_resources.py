@@ -137,7 +137,7 @@ def main(argv):
             else:
                 result = 'UNDISPATCHED'
         
-            print 'job_attempt_id = ' + id + ' problem is ' + problem_name + ' current_state = ' + current_state + ' result is ' + result
+            # print 'job_attempt_id = ' + id + ' problem is ' + problem_name + ' current_state = ' + current_state + ' result is ' + result
 
         # Create key for dictionary from ram and time
         resources = ram + '_' + time

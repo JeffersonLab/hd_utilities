@@ -63,8 +63,8 @@ gStyle.SetOptStat(False)
 ROOT.gROOT.SetBatch(True)
 
 import create_ordered_hists
-
 import results_by_resources
+import create_stacked_times
 
 def main(argv):
 
@@ -349,8 +349,9 @@ def main(argv):
 
     # Histograms for duration of dependency, pending and active
     hDurationDependency = TH1F("hDurationDependency",";time spent in dependency (hrs)",240,0,24)
-    hDurationPending = TH1F("hDurationPending",";time spent in pending (hrs)",240,0,6)
+    hDurationPending = TH1F("hDurationPending",";time spent in pending (hrs)",240,0,8)
     hDurationActive = TH1F("hDurationActive",";time spent in active (hrs)",240,0,8)
+    hDurationActive_data = TH1F("hDurationActive_data",";time spent in active (hrs)",240,0,8)
     
     hmaxrss = TH1F("hmaxrss", ";maxrss (GB)", 200, 0,max_ram_requested)
     hauger_mem = TH1F("hauger_mem", ";mem (GB)", 200, 0,max_ram_requested + 1)
@@ -495,6 +496,9 @@ def main(argv):
     
             # Fill hist of duration for active
             hDurationActive.Fill(float(ts_stagingOut_posix - ts_active_posix) / 3600.)
+
+            if int(run_num) == 2931 or int(run_num) == 3180 or int(run_num) == 3185:
+                hDurationActive_data.Fill(float(ts_stagingOut_posix - ts_active_posix) / 3600.)
 
         # Get ts_complete
         auger_ts_complete = ""
@@ -654,11 +658,32 @@ def main(argv):
     c1 = TCanvas( 'c1', 'Example with Formula', 0, 0, 2400, 600 )
     c1.Divide(3,1,.002,.002)
     c1.cd(1)
+    c1.cd(1).SetBottomMargin(0.15)
+    c1.cd(1).SetRightMargin(0.02)
+    hDurationDependency.GetXaxis().SetTitleSize(0.08);
+    hDurationDependency.GetXaxis().SetLabelSize(0.06);
+    hDurationDependency.GetXaxis().SetTitleOffset(0.750);
+    hDurationDependency.GetYaxis().SetLabelSize(0.06);
     hDurationDependency.Draw()
     c1.cd(2)
+    c1.cd(2).SetBottomMargin(0.15)
+    c1.cd(2).SetRightMargin(0.02)
+    c1.cd(2).SetLogy(1)
+    hDurationPending.GetXaxis().SetTitleSize(0.08);
+    hDurationPending.GetXaxis().SetLabelSize(0.06);
+    hDurationPending.GetXaxis().SetTitleOffset(0.750);
+    hDurationPending.GetYaxis().SetLabelSize(0.06);
     hDurationPending.Draw()
     c1.cd(3)
+    c1.cd(3).SetBottomMargin(0.15)
+    c1.cd(3).SetRightMargin(0.02)
+    hDurationActive.GetXaxis().SetTitleSize(0.08);
+    hDurationActive.GetXaxis().SetLabelSize(0.06);
+    hDurationActive.GetXaxis().SetTitleOffset(0.750);
+    hDurationActive.GetYaxis().SetLabelSize(0.06);
     hDurationActive.Draw()
+    hDurationActive_data.SetLineColor(ROOT.kRed)
+    hDurationActive_data.Draw("same")
     
     c1.Update()
     figureDir = 'figures/' + workflow_name_text
@@ -669,6 +694,24 @@ def main(argv):
     outfile.write('    <h2>Duration of Each Stage</h2>\n')
     outfile.write('    <a href = "' + figureDir + '/duration.png">\n')
     outfile.write('      <img src = "' + figureDir + '/duration.png" width = "100%">\n')
+    outfile.write('    </a>\n')
+    outfile.write('    <hr>\n')
+
+    #--------------------------------------------------------------------
+    # Create stacked histograms of job times ordered by
+    # - Auger job ID
+    # - total job time
+    create_stacked_times.main([filename])
+
+    outfile.write('    <h2>Total Job Time in Order of Auger ID</h2>\n')
+    outfile.write('    <a href = "' + figureDir + '/hstack_times_auger_id.png">\n')
+    outfile.write('      <img src = "' + figureDir + '/hstack_times_auger_id.png" width = "70%">\n')
+    outfile.write('    </a>\n')
+    outfile.write('    <hr>\n')
+
+    outfile.write('    <h2>Total Job Time in Order of Total Time</h2>\n')
+    outfile.write('    <a href = "' + figureDir + '/hstack_times_totaltime.png">\n')
+    outfile.write('      <img src = "' + figureDir + '/hstack_times_totaltime.png" width = "70%">\n')
     outfile.write('    </a>\n')
     outfile.write('    <hr>\n')
 
@@ -770,9 +813,11 @@ def main(argv):
     outfile.write('      <th style="border: 0px; height:10px; width:50px;">RAM (GB)</th>\n')
     outfile.write('      <th style="border: 0px; height:10px; width:50px;">Attempt</th>\n')
     outfile.write('      <th style="border: 0px; height:10px; width:200px;">Problem</th>\n')
-    outfile.write('      <th style="border: 0px; height:10px; width:200px;">Resolution</th>\n')
-    outfile.write('      <th style="border: 0px; height:10px; width:200px;">SWIF Job ID</th>\n')
-    outfile.write('      <th style="border: 0px; height:10px; width:200px;">Auger Job ID</th>\n')
+    outfile.write('      <th style="border: 0px; height:10px; width:140px;">Resolution</th>\n')
+    outfile.write('      <th style="border: 0px; height:10px; width:160px;">SWIF Job ID</th>\n')
+    outfile.write('      <th style="border: 0px; height:10px; width:160px;">Auger Job ID</th>\n')
+    outfile.write('      <th style="border: 0px; height:10px; width:200px;">Submit Time</th>\n')
+    outfile.write('      <th style="border: 0px; height:10px; width:200px;">Complete Time</th>\n')
     outfile.write('    </tr>\n')
     
     for job in workflow_status.iter('job'):
@@ -798,6 +843,12 @@ def main(argv):
             auger_id_name = ""
             for auger_id in attempt.iter('auger_id'):
                 auger_id_name = auger_id.text
+
+            for auger_ts_submitted in attempt.iter('auger_ts_submitted'):
+                auger_ts_submitted_name = auger_ts_submitted.text
+
+            for auger_ts_complete in attempt.iter('auger_ts_complete'):
+                auger_ts_complete_name = auger_ts_complete.text
     
             for problem in attempt.findall('problem'):
                 problem_name = problem.text
@@ -821,6 +872,10 @@ def main(argv):
                     output_text = ('      <td>' + job_id_name + '</td>\n')
                     outfile.write(output_text)
                     output_text = ('      <td>' + auger_id_name + '</td>\n')
+                    outfile.write(output_text)
+                    output_text = ('      <td>' + auger_ts_submitted_name + '</td>\n')
+                    outfile.write(output_text)
+                    output_text = ('      <td>' + auger_ts_complete_name + '</td>\n')
                     outfile.write(output_text)
                     outfile.write('    </tr>\n')
     outfile.write('    </table>\n')

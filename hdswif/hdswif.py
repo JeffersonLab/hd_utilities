@@ -118,11 +118,6 @@ def find_files(RUNPERIOD, FORMATTED_RUN, FORMATTED_FILE):
     for line in file_handler:
         line = line.rstrip() # remove newline
 
-#        # Hack to skip 1000's files
-        if re.search('_1[0-9][0-9][0-9]',line) != None:
-            print 'skipping ', line
-            continue
-
         _file_list.insert(len(_file_list),line)
         if(VERBOSE == True):
             print str(len(_file_list)) + " "  + line
