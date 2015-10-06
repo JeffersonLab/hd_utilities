@@ -9,7 +9,7 @@
 #                                                                    #
 # Example:                                                           #
 #                                                                    #
-# resource_dict['4000000000_480'] = {                                #
+# dict_resources_results['4000000000_480'] = {                       #
 # 'SUCCESS'     : 150,                                               #
 # 'FAILED'      :  10,                                               #
 # 'TIMEOUT'     :   5,                                               #
@@ -69,6 +69,8 @@ def main(argv):
 
     outfile = open("summary_" + filename_base + ".html","a+") # append
     outfile.write('  <h2>Status by Resources</h2>\n')
+    outfile.write('  <h3>Counts are for each attempt of running a job, if an attempt fails and the job is resubmitted</h3>\n')
+    outfile.write('  <h3> the same job will appear in other places as other attempts.</h3>\n')
 
     # Header for results for different resources
     outfile.write('  <table style="border: 0px; table-layout: fixed;">\n')
@@ -94,19 +96,21 @@ def main(argv):
     # root element is <workflow_status>
     workflow_status = tree.getroot()
 
-    #--------------------------------------------------------------------
     # Create dictionary of resources and results
-    resources_results_dict = {}
+    dict_resources_results = {}
+
+    # Create list of resources so that we can sort them
+    list_resources = []
 
     #--------------------------------------------------------------------
     # Iterate over attempts and if the resources are already in
     # the dictionary increment the counts; if not, create a new entry.
 
     for attempt in workflow_status.iter('attempt'):
-        ram = ''
-        time = ''
+        ram  = 0
+        time = 0
         result = ''
-        job_attempt_id = ''
+        id = ''
         problem_name = ''
 
         for job_attempt_id in attempt.iter('job_attempt_id'):
@@ -116,9 +120,9 @@ def main(argv):
         for auger_current_state in attempt.iter('auger_current_state'):
             current_state = auger_current_state.text
         for ram_bytes in attempt.iter('ram_bytes'):
-            ram = ram_bytes.text
+            ram = int(ram_bytes.text)
         for time_secs in attempt.iter('time_secs'):
-            time = time_secs.text
+            time = int(time_secs.text)
         for auger_result in attempt.iter('auger_result'):
             result = auger_result.text
         if result is '':
@@ -140,14 +144,18 @@ def main(argv):
             # print 'job_attempt_id = ' + id + ' problem is ' + problem_name + ' current_state = ' + current_state + ' result is ' + result
 
         # Create key for dictionary from ram and time
-        resources = ram + '_' + time
+        # Add leading 0's so that we can sort them later
+        resources = str('{:015.2f}'.format(ram)) + '_' + str('{:015.2f}'.format(time))
         # print 'resources = ', resources, ' result = ', result
 
         # If key does not exist, create entry and set
         # value to empty dictionary
-        if not resources_results_dict.has_key(resources):
+        if not dict_resources_results.has_key(resources):
 
-            # Create dictionary that will be values of resources_results_dict
+            # Append to list of resources
+            list_resources.append(resources)
+
+            # Create dictionary that will be values of dict_resources_results
             empty_results_dict = {'SUCCESS'      : 0,
                                   'FAILED'       : 0,
                                   'TIMEOUT'      : 0,
@@ -157,10 +165,10 @@ def main(argv):
                                   'CANCELLED'    : 0
                                   }
 
-            resources_results_dict[resources] = empty_results_dict
+            dict_resources_results[resources] = empty_results_dict
 
         # Increment for current result
-        resources_results_dict[resources][result] += 1
+        dict_resources_results[resources][result] += 1
     
     # totals for each type of result
     nTotal_SUCCESS      = 0
@@ -172,11 +180,16 @@ def main(argv):
     nTotal_CANCELLED    = 0
     nTotal_ALL          = 0
 
+    # sort list of resources
+    list_resources.sort()
+
     # Print all values of dictionary
-    for key, value in resources_results_dict.items():
+    for key in list_resources:
+        value = dict_resources_results[key]
         underscore_pos = key.find('_')
-        ram_GB  = '{:5.2f}'.format(float(key[:underscore_pos]) / 1000 / 1000 / 1000)
-        time_hr = '{:5.2f}'.format(float(key[underscore_pos+1:]) / 3600)
+        # keys are formatted with leading 0's, remove then here
+        ram_GB  = float(str('{:015.2f}'.format(float(key[:underscore_pos])).lstrip('0'))) / 1000 / 1000 / 1000
+        time_hr = float(str('{:015.2f}'.format(float(key[underscore_pos+1:])).lstrip('0'))) / 3600
         # print 'ram_GB = ', ram_GB, ' time_hr = ', time_hr
         # print 'key = ', key, ' value = ', value
         output_text = '    <tr>\n'

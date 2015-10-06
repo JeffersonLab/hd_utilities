@@ -156,10 +156,12 @@ def main(argv):
     outfile.write('  <h2>Status</h2>\n')
     outfile.write('  <h3>Info retrieved: ' + current_time + '</h3>\n')
     if not job_limit is '':
-        outfile.write('  <h3>Job Limit: ' + str(job_limit) + '</h3>\n')
-        outfile.write('  <h3>Total attempts: ' + str(nAttempts) + '</h3>\n')
+        outfile.write('  <h3>Job Limit: ' + str(job_limit) + '  Total attempts: ' + str(nAttempts) + '</h3>\n')
         outfile.write('  <table style="border: 0px; table-layout: fixed;">\n')
 
+        outfile.write('  <h2>Status from SWIF Summary</h2>\n')
+        outfile.write('  <h3>Numbers are for individual registered jobs.</h3>\n')
+    
     # Header for dispatched, undispatched, total
         outfile.write('    <tr style="background: #99CCFF;">\n')
         outfile.write('      <th style="border: 0px; height:10px; width:100px;">Undispatched</th>\n')
@@ -287,7 +289,7 @@ def main(argv):
     
     #--------------------------------------------------------------------
     # Find max ram_bytes
-    max_ram_requested = 1
+    max_ram_requested = 0
     min_ram_requested = 100
     
     for job in workflow_status.iter('job'):
@@ -353,7 +355,7 @@ def main(argv):
     hDurationActive = TH1F("hDurationActive",";time spent in active (hrs)",240,0,8)
     hDurationActive_data = TH1F("hDurationActive_data",";time spent in active (hrs)",240,0,8)
     
-    hmaxrss = TH1F("hmaxrss", ";maxrss (GB)", 200, 0,max_ram_requested)
+    hmaxrss = TH1F("hmaxrss", ";maxrss (GB)", 200, 0,max_ram_requested + 1)
     hauger_mem = TH1F("hauger_mem", ";mem (GB)", 200, 0,max_ram_requested + 1)
     hauger_vmem = TH1F("hauger_vmem", ";vmem (GB)", 200, 0,max_ram_requested + 1)
     hwalltime = TH1F("hwalltime", ";wall time (hrs)", 200, 0,8)
@@ -850,6 +852,11 @@ def main(argv):
             for auger_ts_complete in attempt.iter('auger_ts_complete'):
                 auger_ts_complete_name = auger_ts_complete.text
     
+            # Get requested RAM
+            ram_bytes_name = ""
+            for ram_bytes in attempt.iter('ram_bytes'):
+                ram_bytes_name = int(int(ram_bytes.text) / 1000 / 1000/ 1000)
+
             for problem in attempt.findall('problem'):
                 problem_name = problem.text
                 hadProblem = True
