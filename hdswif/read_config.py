@@ -22,8 +22,6 @@ def main(argv):
         print 'read_config.py [config file] (verbosity)'
         exit()
 
-    USERCONFIGFILE = args[0]
-
     elif len(args) == 2:
         if int(args[1]) == 1:
             VERBOSE = True
@@ -31,6 +29,7 @@ def main(argv):
         print 'read_config.py [config file] (verbosity)'
         exit()
         
+    USERCONFIGFILE = args[0]
 
     # Below is default configuration, is updated
     # with user-specified config file
