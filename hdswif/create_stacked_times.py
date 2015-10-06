@@ -260,7 +260,7 @@ def main(argv):
         bin += 1
 
     # Create stacked hist and add in all hists
-    hstack_times_auger_id = THStack("hstack_times_auger_id",";job # ordered by Auger ID; hours")
+    hstack_times_auger_id = THStack("hstack_times_auger_id",";job # ordered by Auger ID; total time (hrs)")
     hstack_times_auger_id.Add(hsubmitted)
     hstack_times_auger_id.Add(hdependency)
     hstack_times_auger_id.Add(hpending)
@@ -398,7 +398,7 @@ def main(argv):
         bin += 1
 
     # Create stacked hist and add in all hists
-    hstack_times_totaltime = THStack("hstack_times_totaltime",";job # ordered by total time (hrs) ; hours")
+    hstack_times_totaltime = THStack("hstack_times_totaltime",";job # ordered by total time; total time (hrs)")
     hstack_times_totaltime.Add(hsubmitted_totaltime)
     hstack_times_totaltime.Add(hdependency_totaltime)
     hstack_times_totaltime.Add(hpending_totaltime)

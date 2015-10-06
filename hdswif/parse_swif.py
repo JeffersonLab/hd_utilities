@@ -85,23 +85,23 @@ def main(argv):
     # Get summary information
     summary = workflow_status.find('summary')
     workflow_name_text  = summary.find('workflow_name').text
-    suspended_text      = summary.find('suspended').text
-    job_limit           = 0 if (summary.find('job_limit') is None) else summary.find('job_limit').text
-    nTotal              = summary.find('jobs').text
-    nUndispatched       = summary.find('undispatched').text
-    nDispatched         = summary.find('dispatched').text
-    nProblems           = summary.find('problems').text
-    nSucceeded          = summary.find('succeeded').text
-    nFailed             = summary.find('failed').text
-    nCanceled           = summary.find('canceled').text
-    nAttempts           = 0 if (summary.find('attempts') is None) else summary.find('attempts').text
+    suspended_text      = summary.find('suspended').text    if (summary.find('suspended')    is not None) else 'No'
+    job_limit           = summary.find('job_limit').text    if (summary.find('job_limit')    is not None) else 0
+    nTotal              = summary.find('jobs').text         if (summary.find('jobs')         is not None) else 0
+    nUndispatched       = summary.find('undispatched').text if (summary.find('undispatched') is not None) else 0
+    nDispatched         = summary.find('dispatched').text   if (summary.find('dispatched')   is not None) else 0
+    nProblems           = summary.find('problems').text     if (summary.find('problems')     is not None) else 0
+    nSucceeded          = summary.find('succeeded').text    if (summary.find('succeeded')    is not None) else 0
+    nFailed             = summary.find('failed').text       if (summary.find('failed')       is not None) else 0
+    nCanceled           = summary.find('canceled').text     if (summary.find('canceled')     is not None) else 0
+    nAttempts           = summary.find('attempts').text     if (summary.find('attempts')     is not None) else 0
 
-    nDependency = 0 if (summary.find('auger_depend') is None) else summary.find('auger_depend').text
-    nPending    = 0 if (summary.find('auger_pending') is None) else summary.find('auger_pending').text
-    nStagingIn  = 0 if (summary.find('auger_staging_in') is None) else summary.find('auger_staging_in').text
-    nActive     = 0 if (summary.find('auger_active') is None) else summary.find('auger_active').text
-    nStagingOut = 0 if (summary.find('auger_staging_out') is None) else summary.find('auger_staging_out').text
-    nFinishing  = 0 if (summary.find('auger_finishing') is None) else summary.find('auger_finishing').text
+    nDependency = summary.find('auger_depend').text       if (summary.find('auger_depend')      is not None) else 0
+    nPending    = summary.find('auger_pending').text      if (summary.find('auger_pending')     is not None) else 0
+    nStagingIn  = summary.find('auger_staging_in').text   if (summary.find('auger_staging_in')  is not None) else 0
+    nActive     = summary.find('auger_active').text       if (summary.find('auger_active')      is not None) else 0
+    nStagingOut = summary.find('auger_staging_out').text  if (summary.find('auger_staging_out') is not None) else 0
+    nFinishing  = summary.find('auger_finishing').text    if (summary.find('auger_finishing')   is not None) else 0
     
     current_time = summary.find('current_ts').text
 
@@ -497,7 +497,7 @@ def main(argv):
             # Fill hist of duration for active
             hDurationActive.Fill(float(ts_stagingOut_posix - ts_active_posix) / 3600.)
 
-            if int(run_num) == 2931 or int(run_num) == 3180 or int(run_num) == 3185:
+            if int(run_num) == 3180 or int(run_num) == 3185:
                 hDurationActive_data.Fill(float(ts_stagingOut_posix - ts_active_posix) / 3600.)
 
         # Get ts_complete

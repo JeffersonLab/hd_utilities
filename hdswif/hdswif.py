@@ -165,7 +165,7 @@ def add_job(WORKFLOW, config_dict, mssfile):
             + str(" -ram " + str(config_dict['RAM']) + "g -time " + str(config_dict['TIMELIMIT']) + "h -os " + config_dict['OS'] + " \\\n") \
             + str(" -input " + basename + " " + mssfile + " \\\n") \
             + str(" -tag user_run " + thisrun + " -tag user_file " + thisfile + " \\\n") \
-            + str(" -name offmon" + "_" + thisrun + "_" + thisfile + " \\\n") \
+            + str(" -name " + str(config_dict['JOBNAMEBASE']) + "_" + thisrun + "_" + thisfile + " \\\n") \
             + str(" -stdout " + config_dict['OUTPUT_TOPDIR'] + "/log/" + thisrun + "/stdout_" + thisrun + "_" + thisfile + ".out \\\n") \
             + str(" -stderr " + config_dict['OUTPUT_TOPDIR'] + "/log/" + thisrun + "/stderr_" + thisrun + "_" + thisfile + ".err \\\n") \
             + str(config_dict['SCRIPTFILE'] + " " + SCRIPT_ARGS)
