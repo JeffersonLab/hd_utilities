@@ -19,6 +19,8 @@ def main(argv):
     
     if len(args) < 2:
         print 'createXMLfiles [workflow] [config file] (verbosity)'
+        print '  If username contains "gxproj" file is output to /group/halld/data_monitoring/run_conditions/'
+        print '  Otherwise output goes to current directory'
         exit()
 
     WORKFLOW       = args[0]
@@ -26,7 +28,12 @@ def main(argv):
     if len(args) > 2 and int(args[2]) == 1:
         VERBOSE = 1
 
-    config_dict = read_config.main([WORKFLOW, USERCONFIGFILE,str(VERBOSE)])
+    OUTPUTDIR = '.'
+    USER = os.environ['USER']
+    if USER.find('gxproj') != -1:
+        OUTPUTDIR = '/group/halld/data_monitoring/run_conditions/'
+
+    config_dict = read_config.main([USERCONFIGFILE,str(VERBOSE)])
 
     RUNPERIOD     = config_dict['RUNPERIOD']
     OUTPUT_TOPDIR = config_dict['OUTPUT_TOPDIR']
@@ -63,7 +70,7 @@ def main(argv):
     # ----------------------------------------------------------------
     RUNPERIOD_UNDERSCORE = RUNPERIOD.replace('-', '_')
 
-    janafilename = '/group/halld/data_monitoring/run_conditions/jana_rawdata_comm_' + RUNPERIOD_UNDERSCORE + '_ver' + VERSION + '.conf'
+    janafilename = OUTPUTDIR + '/jana_rawdata_comm_' + RUNPERIOD_UNDERSCORE + '_ver' + VERSION + '.conf'
     # print 'janafilename = ', janafilename
 
     if os.path.isfile(janafilename):
@@ -147,7 +154,7 @@ def main(argv):
     # 11. ncores requested
     # 12. timelimit
     # ----------------------------------------------------------------
-    softfilename = '/group/halld/data_monitoring/run_conditions/soft_comm_' + RUNPERIOD_UNDERSCORE + '_ver' + VERSION + '.xml'
+    softfilename = OUTPUTDIR + 'soft_comm_' + RUNPERIOD_UNDERSCORE + '_ver' + VERSION + '.xml'
     # print 'softfilename = ', softfilename
 
     if os.path.isfile(softfilename):

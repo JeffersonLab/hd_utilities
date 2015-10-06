@@ -11,7 +11,6 @@ from os import mkdir
 def main(argv):
 
     # Default arguments
-    WORKFLOW       = ''
     USERCONFIGFILE = ''
     VERBOSE        = 0
 
@@ -20,13 +19,18 @@ def main(argv):
     (options, args) = parser.parse_args(argv)
 
     if len(args) < 2:
-        print 'read_config.py [workflow] [config file] (verbosity)'
+        print 'read_config.py [config file] (verbosity)'
         exit()
 
-    WORKFLOW       = args[0]
-    USERCONFIGFILE = args[1]
-    if len(args) > 2 and int(args[2]) == 1:
-        VERBOSE = True
+    USERCONFIGFILE = args[0]
+
+    elif len(args) == 2:
+        if int(args[1]) == 1:
+            VERBOSE = True
+    else:
+        print 'read_config.py [config file] (verbosity)'
+        exit()
+        
 
     # Below is default configuration, is updated
     # with user-specified config file
@@ -130,7 +134,7 @@ def main(argv):
         print 'config_dict is: ', config_dict.items()
 
     # config_dict has now been updated if config file was specified
-    print "+++   configuration for workflow:   " + WORKFLOW + "   +++"
+    print "+++         configuration             +++"
     print "---   Job configuration parameters:   ---"
     print "PROJECT           = " + config_dict['PROJECT']
     print "TRACK             = " + config_dict['TRACK']
