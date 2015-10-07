@@ -323,10 +323,10 @@ def main(argv):
             resubmit(args[1],args[2],2)
             exit()
         elif(len(args) == 4):
-            if(is_number(args[2]) == True):
+            if(is_number(args[3]) == True):
                 # Assume args[1] is problem
                 # Currently supports RLIMIT, TIMEOUT
-                resubmit(args[1], args[2], float(args[3]))
+                resubmit(args[1], args[2], int(args[3]))
                 exit()
             else:
                 print "hdswif.py resubmit [workflow] [problem] [resource to add]"

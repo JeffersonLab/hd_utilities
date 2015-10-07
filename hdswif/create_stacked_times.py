@@ -75,14 +75,14 @@ def main(argv):
     nTotal = 0
     for attempt in workflow_status.iter('attempt'):
         # defaults
-        auger_id_text                  = 'None'
-        auger_ts_submitted_text        = 'None'
-        auger_ts_dependency_text       = 'None'
-        auger_ts_pending_text          = 'None'
-        auger_ts_staging_in_text       = 'None'
-        auger_ts_active_text           = 'None'
-        auger_ts_staging_out_text      = 'None'
-        auger_ts_complete_text         = 'None'
+        auger_id_text                  = None
+        auger_ts_submitted_text        = None
+        auger_ts_dependency_text       = None
+        auger_ts_pending_text          = None
+        auger_ts_staging_in_text       = None
+        auger_ts_active_text           = None
+        auger_ts_staging_out_text      = None
+        auger_ts_complete_text         = None
 
         submitted_time   = 0
         dependency_time  = 0
@@ -163,25 +163,28 @@ def main(argv):
             print 'complete_time = ' + str(complete_time)
 
         # Append the auger_id to the list
-        list_auger_ids.append(int(auger_id_text))
+        if auger_id_text != None:
+            list_auger_ids.append(int(auger_id_text))
 
-        # Update the dictionary of auger_ids and dictionary of times
-        dict_times = {'submitted'   : submitted_time,
-                      'dependency'  : dependency_time,
-                      'pending'     : pending_time,
-                      'staging_in'  : staging_in_time,
-                      'active'      : active_time,
-                      'staging_out' : staging_out_time,
-                      'complete'    : complete_time }
-        new_pair = {int(auger_id_text) : dict_times}
-        dict_auger_id_times.update(new_pair)
+            # Update the dictionary of auger_ids and dictionary of times
+            dict_times = {'submitted'   : submitted_time,
+                          'dependency'  : dependency_time,
+                          'pending'     : pending_time,
+                          'staging_in'  : staging_in_time,
+                          'active'      : active_time,
+                          'staging_out' : staging_out_time,
+                          'complete'    : complete_time }
+            new_pair = {int(auger_id_text) : dict_times}
+            dict_auger_id_times.update(new_pair)
 
-        # Append the total time to the list
-        list_totaltime.append(float(complete_time - submitted_time))
         
-        # Update the dictionary of totaltimes and dictionary of times
-        new_pair = {float(complete_time - submitted_time) : dict_times}
-        dict_totaltime_times.update(new_pair)
+        if complete_time != 0 and submitted_time != 0:
+            # Append the total time to the list
+            list_totaltime.append(float(complete_time - submitted_time))
+
+            # Update the dictionary of totaltimes and dictionary of times
+            new_pair = {float(complete_time - submitted_time) : dict_times}
+            dict_totaltime_times.update(new_pair)
 
         nTotal += 1
 

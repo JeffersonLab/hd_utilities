@@ -116,6 +116,7 @@ def main(argv):
     outfile.write('  <body>\n')
     outfile.write('  <h1>' + workflow_name_text + '</h1>\n')
     outfile.write('  <hr>\n')
+    outfile.write('  <h3 style="color:red; text-align:right; font-size:1em;">Click on each figure to show pdf version</h3>\n')
 
     #--------------------------------------------------------------------
     # Iterate over auger_state and find how many jobs succeeded.
@@ -281,7 +282,7 @@ def main(argv):
     c1.SetLogy(0)
     c1.Close()
     
-    outfile.write('    <h2>Number of Attempts</h2>\n')
+    outfile.write('    <h2>Number of Attempts For Each Job</h2>\n')
     outfile.write('    <a href = "' + figureDir + '/hnum_attempts.png">\n')
     outfile.write('      <img src = "' + figureDir + '/hnum_attempts.png" width = "70%">\n')
     outfile.write('    </a>\n')
@@ -353,7 +354,6 @@ def main(argv):
     hDurationDependency = TH1F("hDurationDependency",";time spent in dependency (hrs)",240,0,24)
     hDurationPending = TH1F("hDurationPending",";time spent in pending (hrs)",240,0,8)
     hDurationActive = TH1F("hDurationActive",";time spent in active (hrs)",240,0,8)
-    hDurationActive_data = TH1F("hDurationActive_data",";time spent in active (hrs)",240,0,8)
     
     hmaxrss = TH1F("hmaxrss", ";maxrss (GB)", 200, 0,max_ram_requested + 1)
     hauger_mem = TH1F("hauger_mem", ";mem (GB)", 200, 0,max_ram_requested + 1)
@@ -498,9 +498,6 @@ def main(argv):
     
             # Fill hist of duration for active
             hDurationActive.Fill(float(ts_stagingOut_posix - ts_active_posix) / 3600.)
-
-            if int(run_num) == 3180 or int(run_num) == 3185:
-                hDurationActive_data.Fill(float(ts_stagingOut_posix - ts_active_posix) / 3600.)
 
         # Get ts_complete
         auger_ts_complete = ""
@@ -684,8 +681,6 @@ def main(argv):
     hDurationActive.GetXaxis().SetTitleOffset(0.750);
     hDurationActive.GetYaxis().SetLabelSize(0.06);
     hDurationActive.Draw()
-    hDurationActive_data.SetLineColor(ROOT.kRed)
-    hDurationActive_data.Draw("same")
     
     c1.Update()
     figureDir = 'figures/' + workflow_name_text
@@ -831,6 +826,7 @@ def main(argv):
         attempts = job.find('attempts')
         total_attempts = len(list(attempts.iter('attempt')))
         nattempts = 0
+
         for attempt in attempts.iter('attempt'):
             nattempts += 1
             # Iterate over all problems in a single job
@@ -846,9 +842,11 @@ def main(argv):
             for auger_id in attempt.iter('auger_id'):
                 auger_id_name = auger_id.text
 
+            auger_ts_submitted_name = ''
             for auger_ts_submitted in attempt.iter('auger_ts_submitted'):
                 auger_ts_submitted_name = auger_ts_submitted.text
 
+            auger_ts_complete_name = ''
             for auger_ts_complete in attempt.iter('auger_ts_complete'):
                 auger_ts_complete_name = auger_ts_complete.text
     

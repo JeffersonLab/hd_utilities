@@ -112,6 +112,7 @@ def main(argv):
         result = ''
         id = ''
         problem_name = ''
+        current_state = ''
 
         for job_attempt_id in attempt.iter('job_attempt_id'):
             id = job_attempt_id.text
@@ -169,7 +170,7 @@ def main(argv):
 
         # Increment for current result
         dict_resources_results[resources][result] += 1
-    
+
     # totals for each type of result
     nTotal_SUCCESS      = 0
     nTotal_FAILED       = 0

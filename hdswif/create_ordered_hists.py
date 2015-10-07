@@ -190,6 +190,7 @@ def main(argv):
         # Loop within sorted pending times and fill hists
         for i in range(len(array_for_pendingTime)):
             hPendingList[timeIndex].SetBinContent(1 + nJobs + i,float(array_for_pendingTime[i]) / 3600.)
+            # print 'bin = ' + str(1 + nJobs + i) + ' pending time = ' + str(float(array_for_pendingTime[i]))
         # ---------------------------------------------------------
 
         nJobs += len(array_for_dependencyTime)
@@ -233,7 +234,10 @@ def main(argv):
     #--------------------------------------------------------------------
     # Draw histograms of pending times
     c1 = TCanvas( 'c1', 'Example with Formula', 0, 0, 1600, 800 )
+    # c1.SetLogy(1)
     for i in range(len(hPendingList)):
+        # For log scale
+        # hPendingList[i].SetMinimum(1.e-4);
         hPendingList[i].SetMaximum(MAX_PENDING);
         if i== 0:
             hPendingList[i].Draw()
