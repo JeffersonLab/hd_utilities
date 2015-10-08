@@ -353,7 +353,7 @@ def main(argv):
         VERBOSE_INT = 1
     else:
         VERBOSE_INT = 0
-    config_dict = read_config.main([WORKFLOW, USERCONFIGFILE, str(VERBOSE_INT)])
+    config_dict = read_config.main([USERCONFIGFILE, str(VERBOSE_INT)])
 
     # Format run and file numbers
     if(is_number(RUN) == True):

@@ -18,18 +18,17 @@ def main(argv):
     parser = OptionParser(usage = "\n read_config.py [config file] (verbosity)")
     (options, args) = parser.parse_args(argv)
 
-    if len(args) < 2:
+    if len(args) < 1:
         print 'read_config.py [config file] (verbosity)'
         exit()
-
     elif len(args) == 2:
+        USERCONFIGFILE = args[0]
         if int(args[1]) == 1:
             VERBOSE = True
     else:
         print 'read_config.py [config file] (verbosity)'
         exit()
         
-    USERCONFIGFILE = args[0]
 
     # Below is default configuration, is updated
     # with user-specified config file
