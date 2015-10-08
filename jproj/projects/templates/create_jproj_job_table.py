@@ -149,29 +149,33 @@ def main(argv):
     njobs = 0
 
     # Get <name>, then <attempts> and info within
+    # To get all attempts, iterate over job -> attempts -> attempt
     for job in workflow_status.iter('job'):
-        auger_id_text = ''
-        run_num_text  = ''
-        file_num_text = ''
+        for attempts in job.iter('attempts'):
+            for attempt in attempts.iter('attempt'):
 
-        for user_run in job.iter('user_run'):
-            run_num_text = str(user_run.text)
-        for user_file in job.iter('user_file'):
-            file_num_text = str(user_file.text)
+                auger_id_text = ''
+                run_num_text  = ''
+                file_num_text = ''
 
-        for auger_id in job.iter('auger_id'):
-            # print "auger_id.tag = " + str(auger_id.tag) + " auger_id.text = " + str(auger_id.text)
-            auger_id_text = str(auger_id.text)
-            # print name_text + "   " + run_num + "   " + file_num + "   " + auger_id_text
+                for user_run in job.iter('user_run'):
+                    run_num_text = str(user_run.text)
+                for user_file in job.iter('user_file'):
+                    file_num_text = str(user_file.text)
 
-        if auger_id_text != '' and run_num_text != '' and file_num_text != '':
-            njobs += 1
-            db_cmd = 'INSERT INTO ' + table_name + 'Job SET run=' + run_num_text + ", file=" + file_num_text + ", jobId = " + auger_id_text
-            # print db_cmd
-            db_conn.cursor().execute(db_cmd)
-        else:
-            print "This shouldn't happen..."
-            print 'auger_id = ', auger_id_text, ' , run_num_text = ', run_num_text, ' , file_num_text = ', file_num_text
+                for auger_id in job.iter('auger_id'):
+                    # print "auger_id.tag = " + str(auger_id.tag) + " auger_id.text = " + str(auger_id.text)
+                    auger_id_text = str(auger_id.text)
+                    # print name_text + "   " + run_num + "   " + file_num + "   " + auger_id_text
+
+                if auger_id_text != '' and run_num_text != '' and file_num_text != '':
+                    njobs += 1
+                    db_cmd = 'INSERT INTO ' + table_name + 'Job SET run=' + run_num_text + ", file=" + file_num_text + ", jobId = " + auger_id_text
+                    # print db_cmd
+                    db_conn.cursor().execute(db_cmd)
+                else:
+                    print "This shouldn't happen..."
+                    print 'auger_id = ', auger_id_text, ' , run_num_text = ', run_num_text, ' , file_num_text = ', file_num_text
 
     print 'Filled table ' + tablename + ' with ' + str(njobs) + ' entries.'
 
