@@ -371,7 +371,7 @@ def main(argv):
         # Find job
         for name in job.iter('name'):
             name_text = str(name.text)
-            match = re.match(r"offmon_(\d\d\d\d\d\d)_(\d\d\d)",name_text)
+            match = re.match(r'offmon_(\d\d\d\d\d\d)_(\d\d\d)',name_text)
             run_num  = match.group(1)
             file_num = match.group(2)
     
