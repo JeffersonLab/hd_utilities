@@ -1,5 +1,8 @@
 #!/bin/tcsh
 
+# Publish results of offline monitoring html files from hdswif
+./publish_offmon_results.py RUNPERIOD VERSION
+
 # Update tables for jobs
 cd ../
 ./status.sh

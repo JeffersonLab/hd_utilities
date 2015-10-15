@@ -96,11 +96,12 @@ mkdir -p $OUTDIR/analysis
 #--------------------------------------------------------------------------------#
 #---                Copy files that don't need modification                   ---#
 ### launch analysis scripts
-cp templates/create_jproj_job_table.py          ${OUTDIR}/analysis
+cp templates/create_jproj_job_table.py       ${OUTDIR}/analysis
 cp templates/Makefile                        ${OUTDIR}/analysis
 cp templates/format_jobs_data.cc             ${OUTDIR}/analysis
 cp templates/analyze.C                       ${OUTDIR}/analysis
 cp templates/mystyle.css                     ${OUTDIR}/analysis
+cp templates/publish_offmon_results.py       ${OUTDIR}/analysis
 #---                                                                          ---#
 #--------------------------------------------------------------------------------#
 
@@ -134,7 +135,7 @@ chmod 775 ${OUTDIR}/analysis/create_jobs_data_from_db.csh
 rm -f ${OUTDIR}/analysis/template_create_jobs_data_from_db.csh
 
 cp templates/template_run_analysis.sh ${OUTDIR}/analysis
-cat ${OUTDIR}/analysis/template_run_analysis.sh | sed "s/PROJECT/${PROJECT}/" > ${OUTDIR}/analysis/run_analysis.sh
+cat ${OUTDIR}/analysis/template_run_analysis.sh | sed "s/PROJECT/${PROJECT}/" | sed "s/RUNPERIOD/${RUNPERIOD}/" | sed "s/VERSION/${VERSION}/" > ${OUTDIR}/analysis/run_analysis.sh
 chmod 775 ${OUTDIR}/analysis/run_analysis.sh
 rm -f ${OUTDIR}/analysis/template_run_analysis.sh
 
