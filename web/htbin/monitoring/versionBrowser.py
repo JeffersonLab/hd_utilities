@@ -19,15 +19,8 @@ curs=conn.cursor()
 # return a list of records from the database
 def get_data(options):
     
-    revision_str = str(options[3])
-    revision_str = revision_str.replace("ver","")
-    revision = int(float(revision_str))
-    if options[0] == None:
-        query = "SELECT distinct r.run_num from run_info r, version_info v, fdc_hits c WHERE c.runid=r.run_num and v.version_id=c.version_id and run_num>0 and start_time>0 and revision=%s and run_period=%s %s ORDER BY r.run_num"
-        curs.execute(query, (str(revision), str(options[5]), str(options[4])))
-    else:
-        query = "SELECT distinct r.run_num from run_info r, version_info v, fdc_hits c WHERE c.runid=r.run_num and v.version_id=c.version_id and run_num>=%s and run_num<=%s and start_time>0 and revision=%s and run_period=%s %s ORDER BY r.run_num"
-        curs.execute(query, (str(options[0]), str(options[1]), str(revision), str(options[5]), str(options[4])))
+    query = "SELECT distinct revision, production_time from run_info r, version_info v, fdc_hits c WHERE c.runid=r.run_num and v.version_id=c.version_id and start_time>0 and run_num=%s and run_period=%s ORDER BY revision desc"
+    curs.execute(query, (str(options[0]), str(options[2])))
     rows=curs.fetchall()
 
     return rows
@@ -54,38 +47,28 @@ def get_periods(options):
 
     return rows
 
-def show_plots(records, plotName, verName, periodName):
+def show_plots(records, runName, plotName, periodName):
     #print "<table border=\"1\">"
     #print "<tr>"
 
-    if verName == "ver00":
-        plotName = plotName.replace("__CDC_cdc","_rootspy__rootspy_CDC_cdc")
-        plotName = plotName.replace("__FDC","_rootspy__rootspy_FDC")
-        plotName = plotName.replace("__fcal","_rootspy__rootspy_fcal")
-        plotName = plotName.replace("__tof","_rootspy__rootspy_tof")
-        plotName = plotName.replace("__st_st","_rootspy__rootspy_st_st")
-        plotName = plotName.replace("__tagm_tagm","_rootspy__rootspy_tagm_tagm")
-        plotName = plotName.replace("__TAGH","_rootspy__rootspy_TAGH")
-        plotName = plotName.replace("__Independent","_rootspy__rootspy_Independent")
-
     loc_i = 0
-    temp_runs = []
+    temp_vers = []
 
-    for run in records:
-        temp_runs.append(run[0])
+    for ver in records:
+        temp_vers.append(ver)
 
         if (loc_i+1) % 3 == 0:
             print "<table border=\"1\">"
             print "<tr>"
-            for temp_run in temp_runs:
+            for temp_ver in temp_vers:
                 print "<td style='text-align:center; font-size:1.5em' >"
-                print "<b><a href=\"/cgi-bin/data_monitoring/monitoring/runBrowser.py?run_number=%s&ver=%s&period=%s\"  target=\"_blank\"> Run %s </b>" % (temp_run, verName, periodName, temp_run)
+                print "<b><a href=\"/cgi-bin/data_monitoring/monitoring/runBrowser.py?run_number=%s&ver=%s&period=%s\"  target=\"_blank\"> Ver %s (%s)</b>" % (runName, temp_ver[0], periodName, temp_ver[0], temp_ver[1])
                 print "</td>"
             print "</tr>"
             print "<tr>"
-            for temp_run in temp_runs:
+            for temp_ver in temp_vers:
                 print "<td>"
-                web_link = "https://halldweb.jlab.org/work/halld/data_monitoring/%s/%s/Run%06d/%s.png" % (periodName, verName, temp_run, plotName)
+                web_link = "https://halldweb.jlab.org/work/halld/data_monitoring/%s/ver%02d/Run%06d/%s.png" % (periodName, int(temp_ver[0]), runName, plotName)
                 print "<img width=400px src=\"%s\" onclick=\"window.open('%s', '_blank')\" >" % (web_link, web_link)
                 print "</td>"
             print "</tr>"
@@ -93,22 +76,22 @@ def show_plots(records, plotName, verName, periodName):
             print "<br>"
             print ""
 
-            temp_runs = []
+            temp_vers = []
 
         loc_i = loc_i+1
 
     # show remaining plots which didn't make a full row of 3
     print "<table border=\"1\">"
     print "<tr>"
-    for temp_run in temp_runs:
+    for temp_ver in temp_vers:
         print "<td style='text-align:center; font-size:1.5em' >"
-        print "<b><a href=\"/cgi-bin/data_monitoring/monitoring/runBrowser.py?run_number=%s&ver=%s&period=%s\"  target=\"_blank\"> Run %s </b>" % (temp_run, verName, periodName, temp_run)
+        print "<b><a href=\"/cgi-bin/data_monitoring/monitoring/runBrowser.py?run_number=%s&ver=%s&period=%s\"  target=\"_blank\"> Ver %s (%s)</b>" % (runName, temp_ver[0], periodName, temp_ver[0], temp_ver[1])
         print "</td>"
     print "</tr>"
     print "<tr>"
-    for temp_run in temp_runs:
+    for temp_ver in temp_vers:
         print "<td>"
-        web_link = "https://halldweb.jlab.org/work/halld/data_monitoring/%s/%s/Run%06d/%s.png" % (periodName, verName, temp_run, plotName)
+        web_link = "https://halldweb.jlab.org/work/halld/data_monitoring/%s/ver%s/Run%06d/%s.png" % (periodName, int(temp_ver[0]), runName, plotName)
         print "<img width=400px src=\"%s\" onclick=\"window.open('%s', '_blank')\" >" % (web_link, web_link)
         print "</td>"
     print "</tr>"
@@ -151,7 +134,7 @@ def printHTMLHead(title):
     """
 
 def print_option_selector(options):
-    print """<form action="/cgi-bin/data_monitoring/monitoring/plotBrowser.py" method="POST">"""
+    print """<form action="/cgi-bin/data_monitoring/monitoring/versionBrowser.py" method="POST">"""
 
     plotNames = [["CDC_occupancy","CDC Occupancy"]]
     plotNames.append(["__CDC_cdc_raw_intpp","CDC Raw Integral"])
@@ -255,51 +238,25 @@ def print_option_selector(options):
         if period[0] == "RunPeriod-2015-01":
             continue;
         print "<option value=\"%s\" " % (period[0])
-        if period[0] == options[5]:
+        if period[0] == options[2]:
             print "selected"
         print "> %s</option>" % (period[0])
-    print "</select>"
-
-    print "and Recon. Version:"
-    versions = get_versions(options)
-    print "<select id=\"ver\" name=\"ver\">" 
-    for version in versions:
-        revision = ("ver%02d" % version[0])
-        print "<option value=\"%s\" " % (revision)
-        if revision == options[3]:
-            print "selected"
-        print "> %s</option>" % (revision)
-    print "</select>"
-    print "<br>"
+    print "</select><br>"
 
     print "Select plot to display:"
     print "<select name=\"plot\">"
     for plotName in plotNames:
         print "<option value=\"%s\" " % (plotName[0])
-        if options != None and plotName[0] == options[2]:
+        if options != None and plotName[0] == options[1]:
             print "selected"
         print ">%s</option>" % (plotName[1])
     print "</select>"
-    print """ and run number range to query:"""
+    print """ and run number:"""
     if options == None:
-        print "<input type=\"text\" name=\"run_number1\" />"
-        print "<input type=\"text\" name=\"run_number2\" />"
+        print "<input type=\"text\" name=\"run_number\" />"
     else:
-        print "<input type=\"text\" value=\"%s\" name=\"run_number1\" />" % (options[0])
-        print "<input type=\"text\" value=\"%s\" name=\"run_number2\" />" % (options[1])
+        print "<input type=\"text\" value=\"%s\" name=\"run_number\" />" % (options[0])
     print "<input type=\"submit\" value=\"Display\" />"
-
-    print "<br>"
-    print """Add additional MYSQL query requirements as string:"""
-    if options == None:
-        print "<input type=\"text\" name=\"query\" size=\"40\" />"
-    else:
-        print "<input type=\"text\" name=\"query\" size=\"40\" value=\"%s\" />" % (options[4])
-    print "eg. and beam_current>20 and solenoid_current>1190"
-
-    print "<br>"
-    print "<b> Note: </b> Click on figure to open larger image in new tab, or click on Run # to open runBrowser page for that Run."
-    print "</form>"
 
 
 #return the option passed to the script
@@ -308,43 +265,27 @@ def get_options():
     run_number_str = []
     run_number = []
 
-    plotName = "CDC_occupancy"
+    plotName = "HistMacro_BCALReconstruction_p3"
     verName = "ver15"
     periodName = "RunPeriod-2015-03"
-    query = ""
 
     if "plot" in form:
         plotName = str(form["plot"].value)
-    if "ver" in form:
-        verName = str(form["ver"].value)
     if "period" in form:
         periodName = str(form["period"].value)
-    if "query" in form:
-        query = str(form["query"].value)
-    if "run_number1" in form:
-        run_number_str.append(form["run_number1"].value)
-    if "run_number2" in form:
-        run_number_str.append(form["run_number2"].value)
-    if len(run_number_str) == 2 and run_number_str[0].isalnum() and run_number_str[1].isalnum():
-        if int(run_number_str[1]) > int(run_number_str[0]):
-            for run in run_number_str:
-                run_number.append(int(run))
-            run_number.append(plotName)
-            run_number.append(verName)
-            run_number.append(query)
-            run_number.append(periodName)
-            return run_number
-        else:
-            return None
+    if "run_number" in form:
+        run_number_str.append(form["run_number"].value)
+    if len(run_number_str) == 1 and run_number_str[0].isalnum() :
+        run_number.append(int(run_number_str[0]))
+        run_number.append(plotName)
+        run_number.append(periodName)
+        return run_number
     else:
         if periodName == "RunPeriod-2014-10":
             run_number.append(1)
         else:
-            run_number.append(2600)
-        run_number.append(9999)
+            run_number.append(2931)
         run_number.append(plotName)
-        run_number.append(verName)
-        run_number.append(query)
         run_number.append(periodName)
         return run_number
 
@@ -363,13 +304,13 @@ def main():
     print "<html>"
     # print the head section including the table
     # used by the javascript for the chart
-    printHTMLHead("Offline Data Monitoring: Plot Browser")
+    printHTMLHead("Offline Data Monitoring: Version Browser")
 
     print "</head>"
 
     # print the page body
     print "<body style=\"overflow-y: hidden\" >"
-    print "<h1>Offline Data Monitoring: Plot Browser</h1>"
+    print "<h1>Offline Data Monitoring: Version Browser</h1>"
 
     # print option selector form
     print_option_selector(options)
@@ -387,7 +328,7 @@ def main():
     records=get_data(options)
 
     # display histograms
-    show_plots(records, options[2], options[3], options[5])
+    show_plots(records, options[0], options[1], options[2])
 
     print "</div>"
     print "</body>"
