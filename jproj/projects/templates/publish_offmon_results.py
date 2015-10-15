@@ -31,7 +31,7 @@ def main(argv):
                           
     (options, args) = parser.parse_args(argv)
     
-    if len(args) != 3:
+    if len(args) != 2:
         print "Usage:"
         print "publish_offmon_results.py [run period] [version]\n"
         print "example: example: publish_offmon_results.py 2015_03 15 /home/gxproj5/halld/hdswif/ \n"
@@ -39,22 +39,22 @@ def main(argv):
 
     RUNPERIOD = args[0]
     VERSION   = args[1]
-    XMLDIR    = '/home' + os.environ['USER'] + '/halld/hdswif/'
+    XMLDIR    = '/home/' + os.environ['USER'] + '/halld/hdswif/'
     if not os.path.isdir:
         print 'publish_offmon_results.py:'
         print 'Directory ' + XMLDIR + ' does not exist...'
         print 'aborting...'
         exit()
 
-    set HTMLFILE = XMLDIR + '/summary_swif_output_' + DATASETNAME + '.html'
+    OUTDIRBASE  = '/group/halld/www/halldweb/html/data_monitoring/launch_analysis/'
+    DATASETNAME = 'offline_monitoring_RunPeriod' + RUNPERIOD + '_ver' + VERSION + '_hd_rawdata'
+
+    HTMLFILE = XMLDIR + '/summary_swif_output_' + DATASETNAME + '.html'
     if not os.path.isfile(HTMLFILE):
         print 'publish_offmon_results.py:'
         print 'File ' + HTMLFILE + ' does not exist...'
         print 'aborting...'
         exit()
-
-    OUTDIRBASE  = '/group/halld/www/halldweb/html/data_monitoring/launch_analysis/'
-    DATASETNAME = 'offline_monitoring_RunPeriod' + RUNPERIOD + '_ver' + VERSION + '_hd_rawdata'
 
     # Copy html output file
     os.system('mkdir -p ' + OUTDIRBASE + DATASETNAME + '/')
