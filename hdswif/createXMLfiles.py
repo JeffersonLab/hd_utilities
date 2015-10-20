@@ -3,29 +3,28 @@ import subprocess
 from optparse import OptionParser
 from os import mkdir
 import datetime
+import re
 
 import read_config
 
 def main(argv):
 
     # Default parameters
-    WORKFLOW       = ''
     USERCONFIGFILE = ''
     VERBOSE        = 0
 
     # Get input parameters
-    parser = OptionParser(usage = "\n createXMLfiles.py [workflow] [config file] (verbosity)")
+    parser = OptionParser(usage = "\n createXMLfiles.py [config file] (verbosity)")
     (options, args) = parser.parse_args(argv)
     
-    if len(args) < 2:
-        print 'createXMLfiles [workflow] [config file] (verbosity)'
+    if len(args) < 1:
+        print 'createXMLfiles [config file] (verbosity)'
         print '  If username contains "gxproj" file is output to /group/halld/data_monitoring/run_conditions/'
         print '  Otherwise output goes to current directory'
         exit()
 
-    WORKFLOW       = args[0]
-    USERCONFIGFILE = args[1]
-    if len(args) > 2 and int(args[2]) == 1:
+    USERCONFIGFILE = args[0]
+    if len(args) > 1 and int(args[1]) == 1:
         VERBOSE = 1
 
     OUTPUTDIR = '.'
@@ -180,14 +179,7 @@ def main(argv):
 
         # Get jana version
         janapath = os.environ['JANA_HOME']
-        # print 'janapath = ' + janapath
-        command = 'echo ' + janapath + " | sed 's/.*jana_//'     | sed 's:/.*::' > ___tmp_jana_ver.txt"
-        os.system(command)
-        tmp_jana_ver_file_handler = open("___tmp_jana_ver.txt",'r')
-        for line in tmp_jana_ver_file_handler:
-            jana_ver = line.rstrip() # remove newline
-        # print 'jana_ver = ', jana_ver
-        os.system('rm -f ___tmp_jana_ver.txt')
+        jana_ver = re.sub(r'.*jana_' '|' '/L.*', '', janapath)
 
         if jana_ver == '':
             print 'JANA VERSION not found, aborting'
@@ -195,14 +187,7 @@ def main(argv):
 
         # Get ccdb version
         ccdbpath = os.environ['CCDB_HOME']
-        # print 'ccdbpath = ' + ccdbpath
-        command = 'echo ' + ccdbpath + " | sed 's/.*ccdb_//' > ___tmp_ccdb_ver.txt"
-        os.system(command)
-        tmp_ccdb_ver_file_handler = open("___tmp_ccdb_ver.txt",'r')
-        for line in tmp_ccdb_ver_file_handler:
-            ccdb_ver = line.rstrip() # remove newline
-            # print 'ccdb_ver = ', ccdb_ver
-        os.system('rm -f ___tmp_ccdb_ver.txt')
+        ccdb_ver = re.sub(r'.*ccdb_','',ccdbpath)
 
         if ccdb_ver == '':
             print 'CCDB VERSION not found, aborting'
@@ -215,26 +200,18 @@ def main(argv):
             exit()
         # ROOTSYS may be alias that includes something like 'prod',
         # so use readlink and see what it is
-        os.system('readlink -f ' + rootpath + ' > ___tmp_root_ver.txt')
-        tmp_root_ver_file_handler = open("___tmp_root_ver.txt",'r')
-        for line in tmp_root_ver_file_handler:
-            rootfullpath = line.rstrip() # remove newline
-            # print 'rootfullpath = ', rootfullpath
-        os.system('rm -f ___tmp_root_ver.txt')
-
+        rootfullpath = subprocess.check_output(['readlink', '-f', rootpath]).rstrip()
+        
         if rootfullpath == '':
             print 'ROOT VERSION not found, aborting'
             exit()
 
         # Get xercesc version
         xercescpath = os.environ['XERCESCROOT']
-        command = 'readlink -f ' + xercescpath + " | sed 's/.*xerces-c-//' | sed 's:\.Linux.*::' > ___tmp_xercesc_ver.txt"
-        os.system(command)
-        tmp_xercesc_ver_file_handler = open("___tmp_xercesc_ver.txt",'r')
-        for line in tmp_xercesc_ver_file_handler:
-            xercesc_ver = line.rstrip() # remove newline
-            # print 'xercesc_ver = ', xercesc_ver
-        os.system('rm -f ___tmp_xercesc_ver.txt')
+        # XERCESCROOT may be alias that includes something like 'prod',
+        # so use readlink and see what it is
+        xercesc_fullpath = subprocess.check_output(['readlink', '-f', xercescpath]).rstrip()
+        xercesc_ver = re.sub('.*xerces-c-', '', xercesc_fullpath)
 
         if xercesc_ver == '':
             print 'XERCESC VERSION not found, aborting'
@@ -253,12 +230,8 @@ def main(argv):
             exit()
         # EVIOROOT may be alias that includes something like 'prod',
         # so use readlink and see what it is
-        os.system('readlink -f ' + eviopath + " | sed 's/.*evio-//'     | sed 's:/.*::' > ___tmp_evio_ver.txt")
-        tmp_evio_ver_file_handler = open("___tmp_evio_ver.txt",'r')
-        for line in tmp_evio_ver_file_handler:
-            evio_ver = line.rstrip() # remove newline
-            # print 'evio_ver = ', evio_ver
-        os.system('rm -f ___tmp_evio_ver.txt')
+        evio_fullpath = subprocess.check_output(['readlink', '-f', eviopath]).rstrip()
+        evio_ver = re.sub('.*evio-' '|' '/Linux.*','', evio_fullpath)
 
         if evio_ver == '':
             print 'EVIO VERSION not found, aborting'
@@ -272,20 +245,10 @@ def main(argv):
         original_dir = os.getcwd()
         os.chdir(simreconpath)
         # Get version number
-        os.system('git rev-list HEAD --count > ' + original_dir + '/___tmp_simrecon_ver.txt')
-        tmp_simrecon_ver_file_handler = open(str(original_dir + "/___tmp_simrecon_ver.txt"),'r')
-        for line in tmp_simrecon_ver_file_handler:
-            simrecon_ver = line.rstrip() # remove newline
-            # print 'simrecon_ver = ', simrecon_ver
-        os.system('rm -f ' + original_dir + '/___tmp_simrecon_ver.txt')
-        # Get hash
-        os.system("git log | head -n 1 | gawk '{print $2}' > " + original_dir + "/___tmp_simrecon_hash.txt")
-        tmp_simrecon_hash_file_handler = open(original_dir + "/___tmp_simrecon_hash.txt",'r')
-        for line in tmp_simrecon_hash_file_handler:
-            simrecon_hash = line.rstrip() # remove newline
-            # print 'simrecon_hash = ', simrecon_hash
-        os.system('rm -f ' + original_dir + '/___tmp_simrecon_hash.txt')
+        simrecon_ver = subprocess.check_output(['git', 'rev-list', 'HEAD', '--count']).rstrip()
 
+        # Get hash
+        simrecon_hash = str(subprocess.check_output(['git', 'log', '-1'])).split()[1]
         os.chdir(original_dir) # go back to original directory
 
         # Get hdds version and hash
@@ -296,20 +259,10 @@ def main(argv):
         original_dir = os.getcwd()
         os.chdir(hddspath)
         # Get version number
-        os.system('git rev-list HEAD --count > ' + original_dir + '/___tmp_hdds_ver.txt')
-        tmp_hdds_ver_file_handler = open(str(original_dir + "/___tmp_hdds_ver.txt"),'r')
-        for line in tmp_hdds_ver_file_handler:
-            hdds_ver = line.rstrip() # remove newline
-            # print 'hdds_ver = ', hdds_ver
-        os.system('rm -f ' + original_dir + '/___tmp_hdds_ver.txt')
-        # Get hash
-        os.system("git log | head -n 1 | gawk '{print $2}' > " + original_dir + "/___tmp_hdds_hash.txt")
-        tmp_hdds_hash_file_handler = open(original_dir + "/___tmp_hdds_hash.txt",'r')
-        for line in tmp_hdds_hash_file_handler:
-            hdds_hash = line.rstrip() # remove newline
-            # print 'hdds_hash = ', hdds_hash
-        os.system('rm -f ' + original_dir + '/___tmp_hdds_hash.txt')
+        hdds_ver = subprocess.check_output(['git', 'rev-list', 'HEAD', '--count']).rstrip()
 
+        # Get hash
+        hdds_hash = str(subprocess.check_output(['git', 'log', '-1'])).split()[1]
         os.chdir(original_dir) # go back to original directory
 
         # Get date for creation of file
@@ -353,7 +306,7 @@ def main(argv):
                 simreconpath = os.environ['HALLD_HOME']
                 os.chdir(simreconpath)
                 today = datetime.datetime.today().strftime("%Y-%m-%d")
-                comment = '"Used for the offline monitoring ' + RUNPERIOD + ' ver' + VERSION + ' started on ' + today + '"'
+                comment = '"Used for offline monitoring ' + RUNPERIOD + ' ver' + VERSION + ' started on ' + today + '"'
                 os.system('git tag -a ' + sim_recon_tag + ' -m ' + comment)
                 os.system('git push origin ' + sim_recon_tag)
                 print 'Created tag ' + sim_recon_tag
@@ -371,7 +324,7 @@ def main(argv):
                 simreconpath = os.environ['HDDS_HOME']
                 os.chdir(simreconpath)
                 today = datetime.datetime.today().strftime("%Y-%m-%d")
-                comment = '"Used for the offline monitoring ' + RUNPERIOD + ' ver' + VERSION + ' started on ' + today + '"'
+                comment = '"Used for offline monitoring ' + RUNPERIOD + ' ver' + VERSION + ' started on ' + today + '"'
                 os.system('git tag -a ' + hdds_tag + ' -m ' + comment)
                 os.system('git push origin ' + hdds_tag)
                 print 'Created tag ' + hdds_tag
