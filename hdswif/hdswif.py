@@ -27,6 +27,7 @@ import subprocess
 import parse_swif
 import read_config
 import createXMLfiles
+import output_job_details
 
 VERBOSE = False
 
@@ -43,7 +44,7 @@ def create(workflow,USERCONFIGFILE):
             VERBOSE_INT = 1
         else:
             VERBOSE_INT = 0
-        createXMLfiles.main([workflow, USERCONFIGFILE, str(VERBOSE_INT)])
+        createXMLfiles.main([USERCONFIGFILE, str(VERBOSE_INT)])
 
 def cancel(workflow):
     os.system("swif cancel " + workflow)
@@ -190,7 +191,7 @@ def main(argv):
     parser = OptionParser(usage = str("\n"
                                       + "hdswif.py [option] [workflow]\n"
                                       + "[option] = {create, list, run (n), status, freeze, unfreeze, \n"
-                                      + "            add, resubmit, summary, cancel, delete}\n"
+                                      + "            add, resubmit, summary, cancel, delete, details}\n"
                                       + "----------------------------------\n"
                                       + "Options for add:\n"
                                       + "-c [config] -r (run) -f (file)\n"
@@ -203,6 +204,9 @@ def main(argv):
                                       + "Additional resources in units of hrs for TIMEOUT, GB for RLIMIT\n"
                                       + "Default is to add 2 hrs for TIMEOUT, 2GB for RLIMIT\n"
                                       + "System error jobs are resubmitted with the same resources\n"
+                                      + "----------------------------------\n"
+                                      + "Options for details:\n"
+                                      + "-r [run] -f [file] \n"
                                       + "----------------------------------\n"
                                       + "options in [ ] are required, options in ( ) are optional for running\n"
                                       + "(use -V 1 for verbose mode)"))
@@ -338,6 +342,19 @@ def main(argv):
             print "[problem] = TIMEOUT, RLIMIT"
             print "[resource to add] is in units of hrs for TIMEOUT, GB for RLIMIT"
             exit()
+
+    # Check registerd job details using the run and file number
+    elif(args[0] == "details"):
+
+        # If run and file have not been set, warn and exit
+        if(RUN == 'all' or FILE == 'all'):
+            print 'Usage:'
+            print 'hdswif.py details [workflow] -r [run] -f [file]'
+            print 'Run and file MUST be specified'
+            exit()
+
+        output_job_details.main([WORKFLOW,RUN,FILE])
+        exit()
 
     # We should only have add left at this stage
     else:
