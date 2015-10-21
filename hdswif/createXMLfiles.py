@@ -92,52 +92,39 @@ def main(argv):
 
         # 1. Get PLUGINS
         PLUGINS = ''
-        command = "grep 'set PLUGINS_VALUE = ' " + SCRIPTFILE + " | gawk '{print $4}' > ___tmp_plugins.txt"
-        os.system(command)
-        tmp_plugins_file_handler = open("___tmp_plugins.txt",'r')
-        for line in tmp_plugins_file_handler:
-            PLUGINS_VALUE = line.rstrip() # remove newline
+        PLUGINS = subprocess.check_output(['grep', 'set PLUGINS_VALUE', SCRIPTFILE]).rstrip().split()[3]
 
         if PLUGINS == '':
             PLUGINS = "\"\""
         
-        # print 'PLUGINS_VALUE = ', PLUGINS_VALUE
-        os.system('rm -f ___tmp_plugins.txt')
-        janaoutfile.write('-PPLUGINS=' + PLUGINS_VALUE + '\n')
+        janaoutfile.write('-PPLUGINS=' + PLUGINS + '\n')
 
         # 2. Get NTHREADS
         janaoutfile.write('-PNTHREADS=' + NCORES + '\n')
 
         # 3. Get THREAD_TIMEOUT
         THREAD_TIMEOUT = ''
-        command = "grep 'set THREAD_TIMEOUT_VALUE = ' " + SCRIPTFILE + " | gawk '{print $4}' > ___tmp_thread_timeout.txt"
-        os.system(command)
-        tmp_thread_timeout_file_handler = open("___tmp_thread_timeout.txt",'r')
-        for line in tmp_thread_timeout_file_handler:
-            THREAD_TIMEOUT_VALUE = line.rstrip() # remove newline
+        THREAD_TIMEOUT = subprocess.check_output(['grep', 'set THREAD_TIMEOUT_VALUE', SCRIPTFILE]).rstrip().split()[3]
     
         if THREAD_TIMEOUT == '':
             THREAD_TIMEOUT = "\"\""
         
-        # print 'THREAD_TIMEOUT_VALUE = ', THREAD_TIMEOUT_VALUE
-        os.system('rm -f ___tmp_thread_timeout.txt')
-        janaoutfile.write('-PTHREAD_TIMEOUT=' + THREAD_TIMEOUT_VALUE + '\n')
+        janaoutfile.write('-PTHREAD_TIMEOUT=' + THREAD_TIMEOUT + '\n')
 
         # 4. Get CALIB_CONTEXT
-        CALIB_CONTEXT_VALUE = ''
-        command = "grep 'set CALIB_CONTEXT_VALUE = ' " + SCRIPTFILE + " | gawk '{print $4}' > ___tmp_calib_context.txt"
-        os.system(command)
-        tmp_calib_context_file_handler = open("___tmp_calib_context.txt",'r')
-        for line in tmp_calib_context_file_handler:
-            CALIB_CONTEXT_VALUE = line.rstrip() # remove newline
-            print 'CALIB_CONTEXT_VALUE = ', CALIB_CONTEXT_VALUE
+        CALIB_CONTEXT = ''
+        try:
+            CALIB_CONTEXT = subprocess.check_output(['grep', 'set CALIB_CONTEXT_VALUE', SCRIPTFILE])
+        except subprocess.CalledProcessError as e:
+            print e.output
 
-        if CALIB_CONTEXT_VALUE == '':
-            CALIB_CONTEXT_VALUE = '\"\"'
+        if CALIB_CONTEXT:
+            CALIB_CONTEXT = CALIB_CONTEXT.rstrip().split()[3]
 
-        # print 'CALIB_CONTEXT_VALUE = ', CALIB_CONTEXT_VALUE
-        os.system('rm -f ___tmp_calib_context.txt')
-        janaoutfile.write('-PCALIB_CONTEXT=' + CALIB_CONTEXT_VALUE + '\n')
+        if CALIB_CONTEXT == '':
+            CALIB_CONTEXT = '\"\"'
+
+        janaoutfile.write('-PCALIB_CONTEXT=' + CALIB_CONTEXT + '\n')
 
         print 'Created jana config file     ' + janafilename + ' ...'
 
