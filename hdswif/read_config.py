@@ -28,7 +28,12 @@ def main(argv):
     else:
         print 'read_config.py [config file] (verbosity)'
         exit()
-        
+
+    if USERCONFIGFILE == '':
+        print 'config file must be specified!'
+        print 'Usage:'
+        print 'read_config.py [config file] (verbosity)'
+        exit()
 
     # Below is default configuration, is updated
     # with user-specified config file
