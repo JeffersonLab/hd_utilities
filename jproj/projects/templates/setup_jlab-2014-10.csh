@@ -87,8 +87,8 @@ source /group/halld/Software/scripts/build_scripts/gluex_env.csh
 # setenv LD_LIBRARY_PATH $EVIOROOT/lib:$LD_LIBRARY_PATH
 
 # make sure to set the correct calibtime
-setenv JANA_CALIB_URL  sqlite:///${MY_TOP}/ccdb.sqlite # mysql://ccdb_user@hallddb.jlab.org/ccdb
-setenv CCDB_CONNECTION sqlite:///${MY_TOP}/ccdb.sqlite # mysql://ccdb_user@hallddb.jlab.org/ccdb
+setenv JANA_CALIB_URL  sqlite:////home/gxproj5/ccdb.sqlite # mysql://ccdb_user@hallddb.jlab.org/ccdb
+setenv CCDB_CONNECTION sqlite:////home/gxproj5/ccdb.sqlite # mysql://ccdb_user@hallddb.jlab.org/ccdb
 # /group/halld/www/halldweb/html/dist/ccdb.sqlite
 # setenv JANA_CALIB_CONTEXT "calibtime=2015-02-11T00:00"
 setenv JANA_RESOURCE_DIR /group/halld/www/halldweb/html/resources
