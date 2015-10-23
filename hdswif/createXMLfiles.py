@@ -301,15 +301,15 @@ def main(argv):
                 break
 
         hdds_tag = 'offmon-' + RUNPERIOD_UNDERSCORE + '-ver' + VERSION
-        print 'Create tag ' + hdds_tag + ' for sim-recon?'
+        print 'Create tag ' + hdds_tag + ' for hdds?'
         while(1):
             answer = raw_input('Create? (y/n)   ')
             if answer == 'n':
                 break
             elif answer == 'y':
                 original_dir = os.getcwd()
-                simreconpath = os.environ['HDDS_HOME']
-                os.chdir(simreconpath)
+                hddspath = os.environ['HDDS_HOME']
+                os.chdir(hddspath)
                 today = datetime.datetime.today().strftime("%Y-%m-%d")
                 comment = '"Used for offline monitoring ' + RUNPERIOD + ' ver' + VERSION + ' started on ' + today + '"'
                 os.system('git tag -a ' + hdds_tag + ' -m ' + comment)
