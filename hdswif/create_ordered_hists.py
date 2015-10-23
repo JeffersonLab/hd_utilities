@@ -54,25 +54,15 @@ def main(argv):
     summary = workflow_status.find('summary')
     workflow_name_text  = summary.find('workflow_name').text
 
-    # Create array of unique dispatch times
-    # This is kind of hacky, but we extract all 'dispatch_ts' elements
-    # in the xml output file, then use sort -u to extract the unique ones.
-    # The gawk command will then extract the date part.
-    # The separator "X" is set so that the space between the
-    # date and time is not used as a separator.
-    command = "grep 'dispatch_ts' " + filename + " | sort -u | gawk 'BEGIN { FS =" + ' "X" }; { $1 = substr($1, 22,21)} 1' + "' > ___tmp.txt"
-    # print 'command = ', command
+    # Create set that contains submit times
+    submit_times = set()
+    for dispatch_ts in workflow_status.iter('dispatch_ts'):
+        submit_times.add(dispatch_ts.text)
 
-    os.system(command)
-    # Read in output file
-    infile = open ('___tmp.txt','r')
-    # Create array of unique submit times
-    submit_times = []
-    for line in infile:
-        line = line.rstrip() # remove newline
-        submit_times.append(line)
-    os.system("rm -f ___tmp.txt")
-
+    # Convert to list (sortable)
+    submit_times = list(submit_times)
+    submit_times.sort()
+    
     # Print out unique times
     # for i in range(len(submit_times)):
     #     print 'submit_times[', i, '] = ', submit_times[i]
