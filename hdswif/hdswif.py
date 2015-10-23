@@ -23,6 +23,7 @@ import os.path
 import sys
 import re
 import subprocess
+import glob
 
 import parse_swif
 import read_config
@@ -110,21 +111,10 @@ def find_files(RUNPERIOD, FORMATTED_RUN, FORMATTED_FILE):
     # If option "all" is used for either run or file,
     # find will be run with *.
     topdir = "/mss/halld/RunPeriod-" + RUNPERIOD + "/rawdata/Run*" + FORMATTED_RUN + "*"
-    os.system("find " + topdir + " -name 'hd_rawdata_*" + FORMATTED_RUN + "*_*" + FORMATTED_FILE + "*.evio' > ___files.txt")
-    file_handler = open("___files.txt",'r')
-    count = 0
-    _file_list = [] # create empty list
 
-    # Fill list with files found
-    for line in file_handler:
-        line = line.rstrip() # remove newline
-
-        _file_list.insert(len(_file_list),line)
-        if(VERBOSE == True):
-            print str(len(_file_list)) + " "  + line
-        count += 1
-    os.system("rm -f ___files.txt")
-    return _file_list
+    pathstring = topdir + '/hd_rawdata_*' + FORMATTED_RUN + '*_*' + FORMATTED_FILE + '*.evio'
+    print 'pathstring = ' + pathstring
+    return glob.glob(pathstring)
 
 def add_job(WORKFLOW, config_dict, mssfile):
 
