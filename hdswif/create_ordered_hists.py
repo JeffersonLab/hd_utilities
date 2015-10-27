@@ -207,6 +207,9 @@ def main(argv):
     # Draw histograms of dependency times
     c1 = TCanvas( 'c1', 'Example with Formula', 0, 0, 1600, 800 )
     for i in range(len(hDependencyList)):
+        # This masks the jobs which do not have a prep_wait_sec yet
+        # and have a value of -999 / 3600
+        hDependencyList[i].SetMinimum(0);
         hDependencyList[i].SetMaximum(MAX_DEPENDENCY);
         if i== 0:
             hDependencyList[i].Draw()
@@ -228,6 +231,10 @@ def main(argv):
     for i in range(len(hPendingList)):
         # For log scale
         # hPendingList[i].SetMinimum(1.e-4);
+
+        # This masks the jobs which do not have a prep_wait_sec yet
+        # and have a value of -999 / 3600
+        hPendingList[i].SetMinimum(0);
         hPendingList[i].SetMaximum(MAX_PENDING);
         if i== 0:
             hPendingList[i].Draw()
