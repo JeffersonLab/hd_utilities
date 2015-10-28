@@ -18,9 +18,11 @@ def main(argv):
     parser = OptionParser(usage = "\n read_config.py [config file] (verbosity)")
     (options, args) = parser.parse_args(argv)
 
-    if len(args) < 1:
+    if len(args) == 0:
         print 'read_config.py [config file] (verbosity)'
         exit()
+    elif len(args) == 1:
+        USERCONFIGFILE = args[0]
     elif len(args) == 2:
         USERCONFIGFILE = args[0]
         if int(args[1]) == 1:
@@ -35,23 +37,35 @@ def main(argv):
         print 'read_config.py [config file] (verbosity)'
         exit()
 
-    # Below is default configuration, is updated
-    # with user-specified config file
-    config_dict = {
-        'PROJECT'        : 'gluex',
-        'TRACK'          : 'reconstruction',
-        'OS'             : 'centos65',
-        'JOBNAMEBASE'    : 'offmon_',
-        'RUNPERIOD'      : '2015-03',
-        'VERSION'        : '99',                  # Used to specify output top directory
-        'OUTPUT_TOPDIR'  : '/volatile/halld/home/gxproj5/hdswif_test/RunPeriod-[RUNPERIOD]/ver[VERSION]', # # Needs to be full path
-        'NCORES'         : 6,
-        'DISK'           : 40,
-        'RAM'            : 6,
-        'TIMELIMIT'      : 8,
-        'SCRIPTFILE'     : '/home/gxproj5/halld/hdswif/script.sh',                # Needs to be full path
-        'ENVFILE'        : '/home/gxproj5/halld/hdswif/setup_jlab-2015-03.csh',   # Needs to be full path
-        }
+    # Below are the allowed keys for the config file
+    config_keys = ['PROJECT', 'TRACK', 'OS', 'JOBNAMEBASE', 'RUNPERIOD',
+                   'VERSION', 'OUTPUT_TOPDIR', 'NCORES', 'DISK', 'RAM',
+                   'TIMELIMIT', 'SCRIPTFILE', 'ENVFILE', 'ERRORLIMIT']
+
+    # Create dict for whether value was updated by
+    # user config file
+    updated_dict = {}
+    for key in config_keys:
+        new_pair = {key : False}
+        updated_dict.update(new_pair)
+
+    config_dict = {}
+
+    # Set default values
+    config_dict.update({'PROJECT'        : 'gluex'})
+    config_dict.update({'TRACK'          : 'reconstruction'})
+    config_dict.update({'OS'             : 'centos65'})
+    config_dict.update({'JOBNAMEBASE'    : 'offmon_'})
+    config_dict.update({'RUNPERIOD'      : '2015-03'})
+    config_dict.update({'VERSION'        : '99'})                                                  # Used to specify output top directory
+    config_dict.update({'OUTPUT_TOPDIR'  : '/volatile/halld/home/gxproj5/hdswif_test/RunPeriod-[RUNPERIOD]/ver[VERSION]'}) # # Needs to be full path
+    config_dict.update({'NCORES'         : 6})
+    config_dict.update({'DISK'           : 40})
+    config_dict.update({'RAM'            : 6})
+    config_dict.update({'TIMELIMIT'      : 8})
+    config_dict.update({'SCRIPTFILE'     : '/home/gxproj5/halld/hdswif/script.sh'})                # Needs to be full path
+    config_dict.update({'ENVFILE'        : '/home/gxproj5/halld/hdswif/setup_jlab-2015-03.csh'})   # Needs to be full path
+    config_dict.update({'ERRORLIMIT'     : 10})
 
     user_dict = {}
     # Check if config file exists
@@ -73,10 +87,19 @@ def main(argv):
         # Do not update if line begins with #
         if line.split()[0][0] == '#':
             continue
+        
+        # Check that key is valid
+        key   = str(line.split()[0])
+        value = line.split()[1]
+        if key not in config_keys:
+            print 'Key value ' + key + ' with value ' + value + ' is not a valid config parameter!'
+            print 'aborting...'
+            exit()
 
         # Add new key/value pair into user_dict
-        user_dict[str(line.split()[0])] = line.split()[1]
-        
+        user_dict[key]    = value
+        updated_dict[key] = True        
+
     #  Update all of the values in config_dict
     # with those specified by the user
     config_dict.update(user_dict)
@@ -139,20 +162,13 @@ def main(argv):
     # config_dict has now been updated if config file was specified
     print "+++         configuration             +++"
     print "---   Job configuration parameters:   ---"
-    print "PROJECT           = " + config_dict['PROJECT']
-    print "TRACK             = " + config_dict['TRACK']
-    print "OS                = " + config_dict['OS']
-    print "NCORES            = " + str(config_dict['NCORES'])
-    print "DISK              = " + str(config_dict['DISK'])
-    print "RAM               = " + str(config_dict['RAM'])
-    print "TIMELIMIT         = " + str(config_dict['TIMELIMIT'])
-    print "JOBNAMEBASE       = " + str(config_dict['JOBNAMEBASE'])
-    print "RUNPERIOD         = " + config_dict['RUNPERIOD']
-    print "VERSION           = " + config_dict['VERSION']
-    print "OUTPUT_TOPDIR     = " + config_dict['OUTPUT_TOPDIR']
-    print "SCRIPTFILE        = " + config_dict['SCRIPTFILE']
-    print "ENVFILE           = " + config_dict['ENVFILE']
-    print ""
+    for key, value in config_dict.items():
+
+        # Add a * at beginning of line if value is still default
+        beginning = '   '
+        if updated_dict[key] == False:
+            beginning = '*  '
+        print beginning + '{:20s} {:30s}'.format(key, str(value))
     print "-----------------------------------------"
 
     answer = ''
