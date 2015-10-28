@@ -98,7 +98,7 @@ def resubmit(workflow, problem, num):
         print 'Check SWIF help menu for more options'
         return
 
-    os.system("swif run " + workflow + " -errorlimit none")
+    run(workflow)
 
 def is_number(string):
     try:
@@ -330,12 +330,12 @@ def main(argv):
                 exit()
             else:
                 print "hdswif.py resubmit [workflow] [problem] [resource to add]"
-                print "[problem] = TIMEOUT, RLIMIT"
+                print "[problem] = TIMEOUT, RLIMIT, SYSTEM"
                 print "[resource to add] is in units of hrs for TIMEOUT, GB for RLIMIT"
                 exit()
         else:
             print "hdswif.py resubmit [workflow] [problem] [resource to add]"
-            print "[problem] = TIMEOUT, RLIMIT"
+            print "[problem] = TIMEOUT, RLIMIT, SYSTEM"
             print "[resource to add] is in units of hrs for TIMEOUT, GB for RLIMIT"
             exit()
 
