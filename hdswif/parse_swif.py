@@ -371,145 +371,147 @@ def main(argv):
         # Find job
         for name in job.iter('name'):
             name_text = str(name.text)
-            match = re.match(r'offmon_(\d\d\d\d\d\d)_(\d\d\d)',name_text)
+            match = re.match(r'offmon.*_(\d\d\d\d\d\d)_(\d\d\d)',name_text)
             run_num  = match.group(1)
             file_num = match.group(2)
-    
-        # Find auger_id
-        for auger_id in job.iter('auger_id'):
-            auger_id_text = str(auger_id.text)
-    
-        # Find rtime
-        rtime_text = ""
-        for rtime in job.iter('rtime'):
-            rtime_text = str(rtime.text)
-    
-        # Find stime
-        stime_text = ""
-        for stime in job.iter('stime'):
-            stime_text = str(stime.text)
-    
-        # Find utime
-        utime_text = ""
-        for utime in job.iter('utime'):
-            utime_text = str(utime.text)
-    
-        # Find maxrss
-        maxrss_text = ""
-        for maxrss in job.iter('maxrss'):
-            maxrss_text = str(maxrss.text)
-            hmaxrss.Fill(float(maxrss_text) / 1000. / 1000.)
-    
-        # Find auger_cpu_sec
-        auger_cpu_sec_text = ""
-        for auger_cpu_sec in job.iter('auger_cpu_sec'):
-            auger_cpu_sec_text = str(auger_cpu_sec.text)
-    
-        # Find auger_mem_kb
-        auger_mem_kb_text = ""
-        for auger_mem_kb in job.iter('auger_mem_kb'):
-            auger_mem_kb_text = str(auger_mem_kb.text)
-            hauger_mem.Fill(float(auger_mem_kb_text) / 1000. / 1000.)
 
-        # Find auger_vmem_kb
-        auger_vmem_kb_text = ""
-        for auger_vmem_kb in job.iter('auger_vmem_kb'):
-            auger_vmem_kb_text = str(auger_vmem_kb.text)
-            hauger_vmem.Fill(float(auger_vmem_kb_text) / 1000. / 1000.)
+        for attempt in job.iter('attempt'):
     
-        # Find auger_wall_sec
-        auger_wall_sec_text = ""
-        for auger_wall_sec in job.iter('auger_wall_sec'):
-            auger_wall_sec_text = str(auger_wall_sec.text)
-            hwalltime.Fill(float(auger_wall_sec_text) / 3600.)
-            gcput_walltime.SetPoint(gcput_walltime.GetN(),float(auger_wall_sec_text) / 3600.,float(auger_cpu_sec_text) / 3600.)
+            # Find auger_id
+            for auger_id in attempt.iter('auger_id'):
+                auger_id_text = str(auger_id.text)
+        
+            # Find rtime
+            rtime_text = ""
+            for rtime in attempt.iter('rtime'):
+                rtime_text = str(rtime.text)
+        
+            # Find stime
+            stime_text = ""
+            for stime in attempt.iter('stime'):
+                stime_text = str(stime.text)
+        
+            # Find utime
+            utime_text = ""
+            for utime in attempt.iter('utime'):
+                utime_text = str(utime.text)
+        
+            # Find maxrss
+            maxrss_text = ""
+            for maxrss in attempt.iter('maxrss'):
+                maxrss_text = str(maxrss.text)
+                hmaxrss.Fill(float(maxrss_text) / 1000. / 1000.)
+        
+            # Find auger_cpu_sec
+            auger_cpu_sec_text = ""
+            for auger_cpu_sec in attempt.iter('auger_cpu_sec'):
+                auger_cpu_sec_text = str(auger_cpu_sec.text)
+        
+            # Find auger_mem_kb
+            auger_mem_kb_text = ""
+            for auger_mem_kb in attempt.iter('auger_mem_kb'):
+                auger_mem_kb_text = str(auger_mem_kb.text)
+                hauger_mem.Fill(float(auger_mem_kb_text) / 1000. / 1000.)
 
-        # Get ts_submitted
-        auger_ts_submitted = ""
-        ts_submitted_posix = 0
-        for auger_ts_submitted in job.iter('auger_ts_submitted'):
-            # rpartition will strip off the final '.0' if it exists, then
-            # return the 3-tuple before the separator, the separator, and after the separator
-            auger_ts_submitted_text = str(auger_ts_submitted.text).rpartition(".0")[0]
-            ts_submitted_posix = calendar.timegm(datetime.strptime(auger_ts_submitted_text, '%Y-%m-%d %H:%M:%S').timetuple())
-            # Fill hist of submit time since launch
-            htimeSinceLaunch_submitted.Fill(float(ts_submitted_posix - MIN_DISPATCH_TS_POSIX) / 3600.)
-    
-        # Get ts_dependency
-        auger_ts_dependency = ""
-        ts_dependency_posix = 0
-        for auger_ts_dependency in job.iter('auger_ts_dependency'):
-            # rpartition will strip off the final '.0' if it exists, then
-            # return the 3-tuple before the separator, the separator, and after the separator
-            auger_ts_dependency_text = str(auger_ts_dependency.text).rpartition(".0")[0]
-            ts_dependency_posix = calendar.timegm(datetime.strptime(auger_ts_dependency_text, '%Y-%m-%d %H:%M:%S').timetuple())
-            # Fill hist of dependency time since launch
-            htimeSinceLaunch_dependency.Fill(float(ts_dependency_posix - MIN_DISPATCH_TS_POSIX) / 3600.)
+            # Find auger_vmem_kb
+            auger_vmem_kb_text = ""
+            for auger_vmem_kb in attempt.iter('auger_vmem_kb'):
+                auger_vmem_kb_text = str(auger_vmem_kb.text)
+                hauger_vmem.Fill(float(auger_vmem_kb_text) / 1000. / 1000.)
+        
+            # Find auger_wall_sec
+            auger_wall_sec_text = ""
+            for auger_wall_sec in attempt.iter('auger_wall_sec'):
+                auger_wall_sec_text = str(auger_wall_sec.text)
+                hwalltime.Fill(float(auger_wall_sec_text) / 3600.)
+                gcput_walltime.SetPoint(gcput_walltime.GetN(),float(auger_wall_sec_text) / 3600.,float(auger_cpu_sec_text) / 3600.)
+            
+            # Get ts_submitted
+            auger_ts_submitted = ""
+            ts_submitted_posix = 0
+            for auger_ts_submitted in attempt.iter('auger_ts_submitted'):
+                # rpartition will strip off the final '.0' if it exists, then
+                # return the 3-tuple before the separator, the separator, and after the separator
+                auger_ts_submitted_text = str(auger_ts_submitted.text).rpartition(".0")[0]
+                ts_submitted_posix = calendar.timegm(datetime.strptime(auger_ts_submitted_text, '%Y-%m-%d %H:%M:%S').timetuple())
+                # Fill hist of submit time since launch
+                htimeSinceLaunch_submitted.Fill(float(ts_submitted_posix - MIN_DISPATCH_TS_POSIX) / 3600.)
+        
+            # Get ts_dependency
+            auger_ts_dependency = ""
+            ts_dependency_posix = 0
+            for auger_ts_dependency in attempt.iter('auger_ts_dependency'):
+                # rpartition will strip off the final '.0' if it exists, then
+                # return the 3-tuple before the separator, the separator, and after the separator
+                auger_ts_dependency_text = str(auger_ts_dependency.text).rpartition(".0")[0]
+                ts_dependency_posix = calendar.timegm(datetime.strptime(auger_ts_dependency_text, '%Y-%m-%d %H:%M:%S').timetuple())
+                # Fill hist of dependency time since launch
+                htimeSinceLaunch_dependency.Fill(float(ts_dependency_posix - MIN_DISPATCH_TS_POSIX) / 3600.)
 
-        # Get ts_pending
-        auger_ts_pending = ""
-        ts_pending_posix = 0
-        for auger_ts_pending in job.iter('auger_ts_pending'):
-            # rpartition will strip off the final '.0' if it exists, then
-            # return the 3-tuple before the separator, the separator, and after the separator
-            auger_ts_pending_text = str(auger_ts_pending.text).rpartition(".0")[0]
-            ts_pending_posix = calendar.timegm(datetime.strptime(auger_ts_pending_text, '%Y-%m-%d %H:%M:%S').timetuple())
-            # Fill hist of pending time since launch
-            htimeSinceLaunch_pending.Fill(float(ts_pending_posix - MIN_DISPATCH_TS_POSIX) / 3600.)
-    
-            # Fill hist of duration for dependency
-            hDurationDependency.Fill(float(ts_pending_posix - ts_dependency_posix) / 3600.)
-    
-        # Get ts_stagingIn
-        auger_ts_stagingIn = ""
-        ts_stagingIn_posix = 0
-        for auger_ts_stagingIn in job.iter('auger_ts_staging_in'):
-            # rpartition will strip off the final '.0' if it exists, then
-            # return the 3-tuple before the separator, the separator, and after the separator
-            auger_ts_stagingIn_text = str(auger_ts_stagingIn.text).rpartition(".0")[0]
-            ts_stagingIn_posix = calendar.timegm(datetime.strptime(auger_ts_stagingIn_text, '%Y-%m-%d %H:%M:%S').timetuple())
-            # Fill hist of staging in time since launch
-            htimeSinceLaunch_stagingIn.Fill(float(ts_stagingIn_posix - MIN_DISPATCH_TS_POSIX) / 3600.)
+            # Get ts_pending
+            auger_ts_pending = ""
+            ts_pending_posix = 0
+            for auger_ts_pending in attempt.iter('auger_ts_pending'):
+                # rpartition will strip off the final '.0' if it exists, then
+                # return the 3-tuple before the separator, the separator, and after the separator
+                auger_ts_pending_text = str(auger_ts_pending.text).rpartition(".0")[0]
+                ts_pending_posix = calendar.timegm(datetime.strptime(auger_ts_pending_text, '%Y-%m-%d %H:%M:%S').timetuple())
+                # Fill hist of pending time since launch
+                htimeSinceLaunch_pending.Fill(float(ts_pending_posix - MIN_DISPATCH_TS_POSIX) / 3600.)
+        
+                # Fill hist of duration for dependency
+                hDurationDependency.Fill(float(ts_pending_posix - ts_dependency_posix) / 3600.)
+        
+            # Get ts_stagingIn
+            auger_ts_stagingIn = ""
+            ts_stagingIn_posix = 0
+            for auger_ts_stagingIn in attempt.iter('auger_ts_staging_in'):
+                # rpartition will strip off the final '.0' if it exists, then
+                # return the 3-tuple before the separator, the separator, and after the separator
+                auger_ts_stagingIn_text = str(auger_ts_stagingIn.text).rpartition(".0")[0]
+                ts_stagingIn_posix = calendar.timegm(datetime.strptime(auger_ts_stagingIn_text, '%Y-%m-%d %H:%M:%S').timetuple())
+                # Fill hist of staging in time since launch
+                htimeSinceLaunch_stagingIn.Fill(float(ts_stagingIn_posix - MIN_DISPATCH_TS_POSIX) / 3600.)
 
-            # Fill hist of duration for pending
-            hDurationPending.Fill(float(ts_stagingIn_posix - ts_pending_posix) / 3600.)
-    
-        # Get ts_active
-        auger_ts_active = ""
-        ts_active_posix = 0
-        for auger_ts_active in job.iter('auger_ts_active'):
-            # rpartition will strip off the final '.0' if it exists, then
-            # return the 3-tuple before the separator, the separator, and after the separator
-            auger_ts_active_text = str(auger_ts_active.text).rpartition(".0")[0]
-            ts_active_posix = calendar.timegm(datetime.strptime(auger_ts_active_text, '%Y-%m-%d %H:%M:%S').timetuple())
-            # Fill hist of active time since launch
-            htimeSinceLaunch_active.Fill(float(ts_active_posix - MIN_DISPATCH_TS_POSIX) / 3600.)
-    
-        # Get ts_stagingOut
-        auger_ts_stagingOut = ""
-        ts_stagingOut_posix = 0
-        for auger_ts_stagingOut in job.iter('auger_ts_staging_out'):
-            # rpartition will strip off the final '.0' if it exists, then
-            # return the 3-tuple before the separator, the separator, and after the separator
-            auger_ts_stagingOut_text = str(auger_ts_stagingOut.text).rpartition(".0")[0]
-            ts_stagingOut_posix = calendar.timegm(datetime.strptime(auger_ts_stagingOut_text, '%Y-%m-%d %H:%M:%S').timetuple())
-            # Fill hist of staging out time since launch
-            htimeSinceLaunch_stagingOut.Fill(float(ts_stagingOut_posix - MIN_DISPATCH_TS_POSIX) / 3600.)
-    
-            # Fill hist of duration for active
-            hDurationActive.Fill(float(ts_stagingOut_posix - ts_active_posix) / 3600.)
+                # Fill hist of duration for pending
+                hDurationPending.Fill(float(ts_stagingIn_posix - ts_pending_posix) / 3600.)
+        
+            # Get ts_active
+            auger_ts_active = ""
+            ts_active_posix = 0
+            for auger_ts_active in attempt.iter('auger_ts_active'):
+                # rpartition will strip off the final '.0' if it exists, then
+                # return the 3-tuple before the separator, the separator, and after the separator
+                auger_ts_active_text = str(auger_ts_active.text).rpartition(".0")[0]
+                ts_active_posix = calendar.timegm(datetime.strptime(auger_ts_active_text, '%Y-%m-%d %H:%M:%S').timetuple())
+                # Fill hist of active time since launch
+                htimeSinceLaunch_active.Fill(float(ts_active_posix - MIN_DISPATCH_TS_POSIX) / 3600.)
+        
+            # Get ts_stagingOut
+            auger_ts_stagingOut = ""
+            ts_stagingOut_posix = 0
+            for auger_ts_stagingOut in attempt.iter('auger_ts_staging_out'):
+                # rpartition will strip off the final '.0' if it exists, then
+                # return the 3-tuple before the separator, the separator, and after the separator
+                auger_ts_stagingOut_text = str(auger_ts_stagingOut.text).rpartition(".0")[0]
+                ts_stagingOut_posix = calendar.timegm(datetime.strptime(auger_ts_stagingOut_text, '%Y-%m-%d %H:%M:%S').timetuple())
+                # Fill hist of staging out time since launch
+                htimeSinceLaunch_stagingOut.Fill(float(ts_stagingOut_posix - MIN_DISPATCH_TS_POSIX) / 3600.)
+        
+                # Fill hist of duration for active
+                hDurationActive.Fill(float(ts_stagingOut_posix - ts_active_posix) / 3600.)
 
-        # Get ts_complete
-        auger_ts_complete = ""
-        ts_complete_posix = 0
-        for auger_ts_complete in job.iter('auger_ts_complete'):
-            # rpartition will strip off the final '.0' if it exists, then
-            # return the 3-tuple before the separator, the separator, and after the separator
-            auger_ts_complete_text = str(auger_ts_complete.text).rpartition(".0")[0]
-            ts_complete_posix = calendar.timegm(datetime.strptime(auger_ts_complete_text, '%Y-%m-%d %H:%M:%S').timetuple())
-            # Fill hist of complete time since launch
-            htimeSinceLaunch_complete.Fill(float(ts_complete_posix - MIN_DISPATCH_TS_POSIX) / 3600.)
-    
+            # Get ts_complete
+            auger_ts_complete = ""
+            ts_complete_posix = 0
+            for auger_ts_complete in attempt.iter('auger_ts_complete'):
+                # rpartition will strip off the final '.0' if it exists, then
+                # return the 3-tuple before the separator, the separator, and after the separator
+                auger_ts_complete_text = str(auger_ts_complete.text).rpartition(".0")[0]
+                ts_complete_posix = calendar.timegm(datetime.strptime(auger_ts_complete_text, '%Y-%m-%d %H:%M:%S').timetuple())
+                # Fill hist of complete time since launch
+                htimeSinceLaunch_complete.Fill(float(ts_complete_posix - MIN_DISPATCH_TS_POSIX) / 3600.)
+        
     # Create histograms of cumulative jobs at each stage since launch
     hCumulativeTimeSinceLaunch_submitted = htimeSinceLaunch_submitted.Clone("hCumulativeTimeSinceLaunch_submitted")
     hCumulativeTimeSinceLaunch_submitted.Clear()
@@ -664,6 +666,12 @@ def main(argv):
     hDurationDependency.GetXaxis().SetTitleOffset(0.750);
     hDurationDependency.GetYaxis().SetLabelSize(0.06);
     hDurationDependency.Draw()
+    overflow = int(hDurationDependency.GetBinContent(hDurationDependency.GetNbinsX()+1))
+    text = "overflow: " + str(overflow)
+    latex.SetTextColor(ROOT.kRed)
+    latex.DrawLatex(0.50,0.85,text)
+    latex.SetTextColor(ROOT.kBlack)
+
     c1.cd(2)
     c1.cd(2).SetBottomMargin(0.15)
     c1.cd(2).SetRightMargin(0.02)
@@ -673,6 +681,12 @@ def main(argv):
     hDurationPending.GetXaxis().SetTitleOffset(0.750);
     hDurationPending.GetYaxis().SetLabelSize(0.06);
     hDurationPending.Draw()
+    overflow = int(hDurationPending.GetBinContent(hDurationPending.GetNbinsX()+1))
+    text = "overflow: " + str(overflow)
+    latex.SetTextColor(ROOT.kRed)
+    latex.DrawLatex(0.50,0.85,text)
+    latex.SetTextColor(ROOT.kBlack)
+
     c1.cd(3)
     c1.cd(3).SetBottomMargin(0.15)
     c1.cd(3).SetRightMargin(0.02)
@@ -681,6 +695,11 @@ def main(argv):
     hDurationActive.GetXaxis().SetTitleOffset(0.750);
     hDurationActive.GetYaxis().SetLabelSize(0.06);
     hDurationActive.Draw()
+    overflow = int(hDurationActive.GetBinContent(hDurationActive.GetNbinsX()+1))
+    text = "overflow: " + str(overflow)
+    latex.SetTextColor(ROOT.kRed)
+    latex.DrawLatex(0.50,0.85,text)
+    latex.SetTextColor(ROOT.kBlack)
     
     c1.Update()
     figureDir = 'figures/' + workflow_name_text
