@@ -58,6 +58,7 @@ class ProcessMonDataConfig:
         self.MAKE_DB_SUMMARY = True
         self.MAKE_SUMMED_ROOTFILE = True
         #self.MAKE_RUN_CONDITIONS = False
+        self.COPY_REST_FILES = False
 
         # ignore checks if we've previously processed all monitoring ROOT files
         self.FORCE_PROCESSING = False   
@@ -88,6 +89,7 @@ class ProcessMonDataConfig:
         # fix directories used in MC production
         if self.REVISION == "mc":
             self.ROOTFILE_DIR = "hd_root"
+            self.COPY_REST_FILES = False    # sanity check
 
         # set up output logging
         if options.logfile:
@@ -109,7 +111,8 @@ class ProcessMonDataConfig:
             self.MAKE_SUMMED_ROOTFILE = False
         if(options.force):
             self.FORCE_PROCESSING = True
-
+        if(options.save_rest):
+            self.COPY_REST_FILES = True
 
         # should we process only one run?
         if(options.run_number):
@@ -385,6 +388,24 @@ def ProcessOfflineData(args):
     ##    print "  saving conditions..."
     #    process_run_conditions.main(cmdargs.split())
 
+    # STEP 5
+    # save REST files
+    if config.COPY_REST_FILES:
+        rest_dir = join(config.INPUT_DIRECTORY,config.REVISION,"REST",rundir)
+        rest_files = [ f for f in listdir(rest_dir) if f[-5:] == ".hddm" ]
+        # need to chop up the output directory to get to where we are supposed to put the REST files
+        outdir_parts = config.OUTPUT_DIRECTORY.split('/')
+        rest_outdir = join("/",reduce(join,outdir_parts[:-1]),"REST",outdir_parts[-1])
+        saved_rest_files = [ f for f in listdir(rest_outdir) if f[-5:] == ".hddm" ]
+        for f in rest_files:
+            # only copy the file if we haven't saved it, or if the file size is larger than the saved version
+            if f in saved_rest_files and os.path.getsize(join(rest_dir,f)) <= os.path.getsize(join(rest_outdir,f)):
+                continue
+            # copy the file
+            os.system("cp %s %s"%(join(rest_dir,f),rest_outdir))
+                
+
+
     # CLEANUP
     ## save some information about what has been processed so far
     rootfiles = []
@@ -447,6 +468,8 @@ def main():
                       help="Number of threads to use")
     parser.add_option("-A","--parallel", dest="parallel", action="store_true",
                       help="Enable parallel processing.")
+    parser.add_option("-S","--save_rest", dest="save_rest", action="store_true",
+                      help="Save REST files to conventional location.")
     
     (options, args) = parser.parse_args(sys.argv)
 
