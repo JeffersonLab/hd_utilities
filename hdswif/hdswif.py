@@ -83,16 +83,10 @@ def resubmit(workflow, problem, num):
         print 'TIMEOUT:'
         os.system("swif modify-jobs " + workflow + " -time add " + str(num) + "h -problems AUGER-TIMEOUT")
     elif problem == 'SYSTEM':
-        # Resubmit all jobs with the following:
-        # AUGER-FAILED, AUGER-INPUT-FAIL, AUGER-OUTPUT-FAIL, SWIF-SYSTEM-ERROR
-        print 'AUGER-FAILED:'
-        os.system("swif retry-jobs " + workflow + " -problems AUGER-FAILED")
-        print 'AUGER-INPUT-FAIL:'
-        os.system("swif retry-jobs " + workflow + " -problems AUGER-INPUT-FAIL")
-        print 'AUGER-OUTPUT-FAIL:'
-        os.system("swif retry-jobs " + workflow + " -problems AUGER-OUTPUT-FAIL")
-        print 'SWIF-SYSTEM-ERROR:'
-        os.system("swif retry-jobs " + workflow + " -problems SWIF-SYSTEM-ERROR")
+        # Resubmit all system failure jobs
+        for problemtype in ['AUGER-SUBMIT', 'AUGER-FAILED', 'AUGER-INPUT-FAIL', 'AUGER-OUTPUT-FAIL', 'SWIF-SYSTEM-ERROR']:
+            print problemtype + ':'
+            os.system("swif retry-jobs " + workflow + " -problems " + problemtype)
     else:
         print 'Unknown problem ', problem, ', cannot resolve.'
         print 'Check SWIF help menu for more options'
