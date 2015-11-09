@@ -117,23 +117,13 @@ def main(argv):
     outfile.write('  <h1>' + workflow_name_text + '</h1>\n')
     outfile.write('  <hr>\n')
     outfile.write('  <h3 style="color:red; text-align:right; font-size:1em;">Click on each figure to show pdf version</h3>\n')
-
-    #--------------------------------------------------------------------
-    # Iterate over auger_state and find how many jobs succeeded.
-    # The iterator can find any grandchild element independent
-    # of how nested the element is.
-    nSuccess = 0
-    for auger_state in workflow_status.iter('auger_final_state'):
-        if(auger_state.text == "SUCCESS"):
-            nSuccess+= 1
-
             
     #--------------------------------------------------------------------
     # Print stats to screen
     print "------------------------------------------------------------"
     print "Undispatched        : " + str(nUndispatched)
     print "Currently dispatched: " + str(nDispatched)
-    print "Number of succeeded : " + str(nSuccess)
+    print "Number of succeeded : " + str(nSucceeded)
     print "Number of failed    : " + str(nFailed)
     print "Number of problems  : " + str(nProblems)
     print "Number of canceled  : " + str(nCanceled)
@@ -161,7 +151,7 @@ def main(argv):
         outfile.write('  <table style="border: 0px; table-layout: fixed;">\n')
 
         outfile.write('  <h2>Status from SWIF Summary</h2>\n')
-        outfile.write('  <h3>Numbers are for individual registered jobs.</h3>\n')
+        outfile.write('  <h3>Numbers are for individual registered jobs, final status.</h3>\n')
     
     # Header for dispatched, undispatched, total
         outfile.write('    <tr style="background: #99CCFF;">\n')
