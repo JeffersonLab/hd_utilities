@@ -103,17 +103,17 @@ def is_number(string):
 
 def find_files(RUNPERIOD, FORMATTED_RUN, FORMATTED_FILE):
     # NOTE:
-    # Since we search for files with names
-    # Run-[run]/hd_rawdata_[run]_[file].evio
-    # we do automatically take out any files that
-    # were placed in the wrong directory.
+    # If the run number in the directory name (Run00XXXX)
+    # does not agree with what is in the file name (hd_rawdata_00XXXX_YYY.evio)
+    # then this will be taken care of in add_jobs.
+    # Here we will just grab all evio files
     #
     # If option "all" is used for either run or file,
     # find will be run with *.
     topdir = "/mss/halld/RunPeriod-" + RUNPERIOD + "/rawdata/Run*" + FORMATTED_RUN + "*"
 
     pathstring = topdir + '/hd_rawdata_*' + FORMATTED_RUN + '*_*' + FORMATTED_FILE + '*.evio'
-    print 'pathstring = ' + pathstring
+    # print 'pathstring = ' + pathstring
     return glob.glob(pathstring)
 
 def add_job(WORKFLOW, config_dict, mssfile):
@@ -124,16 +124,23 @@ def add_job(WORKFLOW, config_dict, mssfile):
     # Get back FORMATTED_RUN, FORMATTED_FILE from mssfile (full path to evio file)
     # set name for regexp run_file
     match = ""
-    thisrun = 0
+    rundir   = 0
+    thisrun  = 0
     thisfile = 0
     try:
-        match = re.search(r"(\d\d\d\d\d\d)_(\d\d\d)",mssfile) # _\d\d\d
-        thisrun  = match.group(1)
-        thisfile = match.group(2)
+        match = re.search(r"Run(\d\d\d\d\d\d)/hd_rawdata_(\d\d\d\d\d\d)_(\d\d\d)",mssfile) # _\d\d\d
+        rundir   = match.group(1)
+        thisrun  = match.group(2)
+        thisfile = match.group(3)
     except AttributeError:
         "could not find regexp for " + mssfile
 
-    if(thisrun == 0 or thisfile == 0):
+    # Check that run # in directory and file name agree
+    if rundir != thisrun:
+        print 'skipping file ' + mssfile + ' (run number in directory and file name do not agree)'
+        return
+
+    if(rundir == 0 or thisrun == 0 or thisfile == 0):
         print "couldn't find run and file number in " + mssfile
 
     else:
