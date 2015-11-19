@@ -334,6 +334,8 @@ def ProcessOfflineData(args):
     rundir = "%06d"%run
     summed_rootfile = join(config.OUTPUT_DIRECTORY,"rootfiles","hd_root_" + rundir + ".root")  # figure out the output filename
     if config.MAKE_SUMMED_ROOTFILE:
+        if config.VERBOSE>1:
+            print "  summing ROOT files..."
         # make sure the output cirectory exists
         if not isdir(join(config.OUTPUT_DIRECTORY,"rootfiles")):
             os.system("mkdir -m"+config.NEWDIR_MODE+" -p " + join(config.OUTPUT_DIRECTORY,"rootfiles"))
@@ -391,19 +393,34 @@ def ProcessOfflineData(args):
     # STEP 5
     # save REST files
     if config.COPY_REST_FILES:
+        if config.VERBOSE>1:
+            print "  saving REST files..."
         rest_dir = join(config.INPUT_DIRECTORY,config.REVISION,"REST",rundir)
-        rest_files = [ f for f in listdir(rest_dir) if f[-5:] == ".hddm" ]
+        rest_files = [ join(rest_dir,f) for f in listdir(rest_dir) if f[-5:] == ".hddm" ]
+        # generate one REST file per run 
+        merged_rest_dir = join(config.INPUT_DIRECTORY,config.REVISION,"REST","fullruns")
+        if not os.path.exists(merged_rest_dir):
+            os.system("mkdir -p " + merged_rest_dir)
+        merged_rest_filename = "%s/dana_rest_%s.hddm"%(merged_rest_dir,rundir)
+        os.system("hddm_merge_files -r -I -C -o%s %s"%(merged_rest_filename," ".join(sorted(rest_files))))
+        """
+        #### temporarily disable the saving of rest files
         # need to chop up the output directory to get to where we are supposed to put the REST files
         outdir_parts = config.OUTPUT_DIRECTORY.split('/')
         rest_outdir = join("/",reduce(join,outdir_parts[:-1]),"REST",outdir_parts[-1])
+        if not os.path.exists(rest_outdir):
+            os.system("mkdir -p " + rest_outdir)        
         saved_rest_files = [ f for f in listdir(rest_outdir) if f[-5:] == ".hddm" ]
         for f in rest_files:
             # only copy the file if we haven't saved it, or if the file size is larger than the saved version
             if f in saved_rest_files and os.path.getsize(join(rest_dir,f)) <= os.path.getsize(join(rest_outdir,f)):
                 continue
             # copy the file
-            os.system("cp %s %s"%(join(rest_dir,f),rest_outdir))
-                
+            CP_ARGS = "-R"
+            if config.VERBOSE>1:   
+                CP_ARGS += " -v"
+            os.system("cp %s %s %s"%(CP_ARGS,join(rest_dir,f),rest_outdir))
+       """     
 
 
     # CLEANUP
