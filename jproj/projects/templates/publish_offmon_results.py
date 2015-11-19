@@ -40,7 +40,7 @@ def main(argv):
     RUNPERIOD = args[0]
     VERSION   = args[1]
     XMLDIR    = '/home/' + os.environ['USER'] + '/halld/hdswif/'
-    if not os.path.isdir:
+    if not os.path.isdir(XMLDIR):
         print 'publish_offmon_results.py:'
         print 'Directory ' + XMLDIR + ' does not exist...'
         print 'aborting...'
