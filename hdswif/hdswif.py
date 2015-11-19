@@ -265,6 +265,12 @@ def main(argv):
             runnjobs(WORKFLOW, args[2])
         return
 
+    # If we want to freeze workflow, freeze it and exit
+    elif(args[0] == "freeze"):
+        if(len(args) == 2):
+            freeze(WORKFLOW)
+        return
+
     # If we want to check status of workflow, check it and exit
     elif(args[0] == "status"):
         if(len(args) == 2):
