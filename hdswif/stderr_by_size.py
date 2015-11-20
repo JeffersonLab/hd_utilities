@@ -68,7 +68,7 @@ def main(argv):
         exit()
 
     # Copy stderr files to directory based on size
-    OUTPUT_BASEDIR = '/volatile/halld/offline_monitoring/RunPeriod-' + RUNPERIOD + '/ver' + VERSION + '/log/stderr'
+    OUTPUT_BASEDIR = '/volatile/halld/offline_monitoring/RunPeriod-' + RUNPERIOD + '/ver' + VERSION + '/log/bysize'
     if not os.path.exists(OUTPUT_BASEDIR):
         os.makedirs(OUTPUT_BASEDIR)
 
