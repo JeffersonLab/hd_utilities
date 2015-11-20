@@ -88,12 +88,13 @@ def main(argv):
         filesize = os.path.getsize(stderrfile)
         # print file + ' : ' + str(filesize)
 
+        OUTPUT_DIR = OUTPUT_BASEDIR + '/' + str(filesize)
+
         if filesize not in list_stderrsize:
             dict_stderrsize_numfiles[filesize] = 1
             list_stderrsize.append(filesize)
 
             # create directory
-            OUTPUT_DIR = OUTPUT_BASEDIR + '/' + str(filesize)
             if not os.path.exists(OUTPUT_DIR):
                 os.makedirs(OUTPUT_DIR)
 
