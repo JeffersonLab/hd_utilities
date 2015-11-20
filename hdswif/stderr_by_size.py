@@ -2,9 +2,8 @@
 #                                                                    #
 # 2015/11/19 Kei Moriya                                              #
 #                                                                    #
-# Sort stderr files by size into directories.                        #
-# Takes ~5 min to run over ~4300 files                               #
-# Total stderr size for 2015-03 ver18 was 143 MB                     #
+# Sort stderr files by size and make symlinks of stderr and stdout   #
+# files in directories.                                              #
 #                                                                    #
 #--------------------------------------------------------------------#
 
@@ -102,7 +101,9 @@ def main(argv):
             dict_stderrsize_numfiles[filesize] += 1
 
         # Copy stderr file to directory based on size
-        shutil.copyfile(stderrfile,OUTPUT_DIR + '/' + os.path.basename(stderrfile))
+        os.symlink(stderrfile,OUTPUT_DIR + '/' + os.path.basename(stderrfile))
+        stdoutfile = stderrfile.replace('err','out',2)
+        os.symlink(stdoutfile,OUTPUT_DIR + '/' + os.path.basename(stdoutfile))
 
         nfiles += 1
 
