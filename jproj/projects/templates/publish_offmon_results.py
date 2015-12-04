@@ -46,7 +46,7 @@ def main(argv):
         print 'aborting...'
         exit()
 
-    OUTDIRBASE  = '/group/halld/www/halldweb/html/data_monitoring/launch_analysis/'
+    OUTDIRBASE  = '/group/halld/www/halldweb/html/data_monitoring/launch_analysis/' + RUNPERIOD + '/launches/'
     DATASETNAME = 'offline_monitoring_RunPeriod' + RUNPERIOD + '_ver' + VERSION + '_hd_rawdata'
 
     HTMLFILE = XMLDIR + '/summary_swif_output_' + DATASETNAME + '.html'
