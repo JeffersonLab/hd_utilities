@@ -22,8 +22,9 @@ from optparse import OptionParser
 import os.path
 import sys
 import re
-import subprocess
+from subprocess import Popen, PIPE
 import glob
+import time
 
 import parse_swif
 import read_config
@@ -32,13 +33,32 @@ import output_job_details
 
 VERBOSE = False
 
+def trycommand(command,sleeptime = 10):
+# Try an os command and if the exit code is non-zero
+# return an error
+    rc = -999
+    while rc != 0:
+        p = Popen(command.split(), stdout=PIPE)
+        output = p.communicate()[0]
+        print output
+        rc = p.returncode
+        
+        # This condition is necessary since we don't
+        # want to sleep if the command succeeded
+        if rc != 0:
+            # sleep for 10 seconds between
+            print 'sleeping for ' + str(sleeptime) + ' sec...'
+            time.sleep(sleeptime)
+
 def create(workflow,USERCONFIGFILE):
 # If a config file has NOT been specified, just
 # create the workflow and exit.
 # If a config file IS specified, create xml output
 # based on the config file
+    trycommand("swif create " + workflow)
+
     if USERCONFIGFILE == '':
-        os.system("swif create " + workflow)
+        pass
     else:
         os.system("swif create " + workflow)
         if VERBOSE == True:
@@ -48,45 +68,45 @@ def create(workflow,USERCONFIGFILE):
         createXMLfiles.main([USERCONFIGFILE, str(VERBOSE_INT)])
 
 def cancel(workflow):
-    os.system("swif cancel " + workflow)
+    trycommand("swif cancel " + workflow)
 
 def delete(workflow):
-    os.system("swif cancel " + workflow + " -delete")
+    trycommand("swif cancel " + workflow + " -delete")
 
 def list():
-    os.system("swif list")
+    trycommand("swif list")
 
 def run(workflow):
-    os.system("swif run " + workflow + " -errorlimit none")
+    trycommand("swif run " + workflow + " -errorlimit none")
 
 def runnjobs(workflow, n):
-    os.system("swif run " + workflow + " -joblimit " + n + " -errorlimit none")
+    trycommand("swif run " + workflow + " -joblimit " + n + " -errorlimit none")
 
 def status(workflow):
-    os.system("swif status " + workflow)
+    trycommand("swif status " + workflow)
 
 def freeze(workflow):
-    os.system("swif freeze " + workflow)
+    trycommand("swif freeze " + workflow)
 
 def unfreeze(workflow):
-    os.system("swif unfreeze " + workflow)
+    trycommand("swif unfreeze " + workflow)
 
 def fullstatus(workflow, format):
-    os.system("swif status " + workflow + " -runs -summary -display " + format)
+    trycommand("swif status " + workflow + " -runs -summary -display " + format)
 
 def resubmit(workflow, problem, num):
 
     if problem == 'RLIMIT':
         print 'RLIMIT:'
-        os.system("swif modify-jobs " + workflow + " -ram add " + str(num) + "gb -problems AUGER-OVER_RLIMIT")
+        trycommand("swif modify-jobs " + workflow + " -ram add " + str(num) + "gb -problems AUGER-OVER_RLIMIT")
     elif problem == 'TIMEOUT':
         print 'TIMEOUT:'
-        os.system("swif modify-jobs " + workflow + " -time add " + str(num) + "h -problems AUGER-TIMEOUT")
+        trycommand("swif modify-jobs " + workflow + " -time add " + str(num) + "h -problems AUGER-TIMEOUT")
     elif problem == 'SYSTEM':
         # Resubmit all system failure jobs
         for problemtype in ['AUGER-SUBMIT', 'AUGER-FAILED', 'AUGER-INPUT-FAIL', 'AUGER-OUTPUT-FAIL', 'SWIF-SYSTEM-ERROR']:
             print problemtype + ':'
-            os.system("swif retry-jobs " + workflow + " -problems " + problemtype)
+            trycommand("swif retry-jobs " + workflow + " -problems " + problemtype)
     else:
         print 'Unknown problem ', problem, ', cannot resolve.'
         print 'Check SWIF help menu for more options'
@@ -158,21 +178,21 @@ def add_job(WORKFLOW, config_dict, mssfile):
         if(VERBOSE == True):
             print "SCRIPT_ARGS = " + SCRIPT_ARGS
 
-        add_command = str("swif add-job -workflow " + WORKFLOW + " -project " + config_dict['PROJECT'] + " \\\n") \
-            + str(" -track " + config_dict['TRACK'] + " -cores " + str(config_dict['NCORES']) + " -disk " + str(config_dict['DISK']) + "g \\\n") \
-            + str(" -ram " + str(config_dict['RAM']) + "g -time " + str(config_dict['TIMELIMIT']) + "h -os " + config_dict['OS'] + " \\\n") \
-            + str(" -input " + basename + " " + mssfile + " \\\n") \
-            + str(" -tag user_run " + thisrun + " -tag user_file " + thisfile + " \\\n") \
-            + str(" -name " + str(config_dict['JOBNAMEBASE']) + "_" + thisrun + "_" + thisfile + " \\\n") \
-            + str(" -stdout " + config_dict['OUTPUT_TOPDIR'] + "/log/" + thisrun + "/stdout_" + thisrun + "_" + thisfile + ".out \\\n") \
-            + str(" -stderr " + config_dict['OUTPUT_TOPDIR'] + "/log/" + thisrun + "/stderr_" + thisrun + "_" + thisfile + ".err \\\n") \
-            + str(config_dict['SCRIPTFILE'] + " " + SCRIPT_ARGS)
+        add_command = "swif add-job -workflow " + WORKFLOW + " -project " + config_dict['PROJECT'] \
+            + " -track " + config_dict['TRACK'] + " -cores " + str(config_dict['NCORES']) + " -disk " + str(config_dict['DISK']) + "g" \
+            + " -ram " + str(config_dict['RAM']) + "g -time " + str(config_dict['TIMELIMIT']) + "h -os " + config_dict['OS'] \
+            + " -input " + basename + " " + mssfile \
+            + " -tag user_run " + thisrun + " -tag user_file " + thisfile \
+            + " -name " + str(config_dict['JOBNAMEBASE']) + "_" + thisrun + "_" + thisfile \
+            + " -stdout " + config_dict['OUTPUT_TOPDIR'] + "/log/" + thisrun + "/stdout_" + thisrun + "_" + thisfile + ".out" \
+            + " -stderr " + config_dict['OUTPUT_TOPDIR'] + "/log/" + thisrun + "/stderr_" + thisrun + "_" + thisfile + ".err" \
+            + " " + config_dict['SCRIPTFILE'] + " " + SCRIPT_ARGS
         
         if(VERBOSE == True):
             print "job add command is \n" + str(add_command)
             
         # Execute swif add for this job
-        os.system(add_command)
+        trycommand(add_command)
     
 def main(argv):
     global VERBOSE
@@ -312,7 +332,7 @@ def main(argv):
         # Create the xml file to parse
         if recreate == True:
             print 'Creating XML output file........'
-            os.system("swif status " + WORKFLOW + " -runs -summary -display xml > " + filename)
+            trycommand("swif status " + WORKFLOW + " -runs -summary -display xml > " + filename)
             print 'Created summary file ', filename, '..............'
 
         # Call parse_swif
