@@ -1,0 +1,106 @@
+
++-----------------------------------------------------------------------------------+
+|                                                                                   |
+| Explanation of xml output from swif.                                              |
+| The outermost elements is <status>, and                                           |
+| the <job> element is used for each job.                                           |
+|                                                                                   |
+| Within each <job>, there are elements                                             |
+| - <id>                                                                            |
+| - <name>                                                                          |
+| - <attempts>                                                                      |
+|                                                                                   |
+| If the job has not been dispatched, <attempts>                                    |
+| will be an empty element.                                                         |
+|                                                                                   |
+| If the job has been dispatched, it will contain 39                                |
+| elements, described below.                                                        |
+|                                                                                   |
++-----------------------------------------------------------------------------------+
+
+---   Job ID related (2)   ---
+job_attempt_id			Batch farm attempt
+job_id				Unique swif ID
+
+---   Specified by user (7)   ---
+cpu_cores			
+disk_bytes
+ram_bytes
+time_secs
+project
+track
+os
+
+---   Information from getrusage (12)    ---
+dispatch_ts			Dispatched time
+rtime				run time
+stime				system CPU time used
+utime				user CPU time used (higher for multithread jobs)
+maxrss				maximum resident set size
+minflt				page reclaims (soft page faults)
+majflt				page faults (hard page faults)
+nivcsw				involuntary context switches
+nvcsw				voluntary context switches
+inblock				The number of times the file system had to perform input. 
+oublock				The number of times the file system had to perform output. 
+exitcode			From Auger
+
+idle_wait_sec			Time spent waiting after dependencies are met
+prep_wait_sec			Time waiting for dependencies
+
+---   Auger Information (16)   ---
+auger_id			Auger job ID
+auger_final_state		Auger final state
+auger_cpu_sec			CPU time reported by Auger
+auger_mem_kb			max mem usage by Auger
+auger_vmem_kb			max vmem usage by Auger
+auger_wall_sec			walltime reported by Auger
+auger_node			farm hostname
+auger_current_state		state (DONE, etc)
+auger_exit_code			exit code
+auger_result			SUCCESS etc
+auger_ts_submitted		submission time
+auger_ts_pending		pending time
+auger_ts_staging_in		staging in time
+auger_ts_active			active time
+auger_ts_staging_out		staging out time
+auger_ts_complete		complete time
+
+----------------------   Explanations   ----------------------------------
+
+- Page Fault -
+A page fault (sometimes called #PF or PF) is a type of interrupt,
+called trap, raised by the hardware when a running program
+accesses a memory page that is mapped into the virtual address space,
+but not loaded in physical memory.
+
+Contrary to what the name "page fault" might suggest, page faults are
+not always errors and are common and necessary to increase the amount of memory
+available to programs in any operating system that utilizes virtual memory
+
+- Minor Page Fault -
+If the page is loaded in memory at the time the fault is generated,
+but is not marked in the memory management unit as being loaded in memory,
+then it is called a minor or soft page fault.
+
+- Major Page Fault -
+This is the mechanism used by an operating system to increase the amount of
+program memory available on demand. The operating system delays loading
+parts of the program from disk until the program attempts to use it
+and the page fault is generated. If the page is not loaded in memory
+at the time of the fault, then it is called a major or hard page fault.
+
+- Memory Page -
+A page, memory page, or virtual page is a fixed-length contiguous block of
+virtual memory, described by a single entry in the page table. It is the
+smallest unit of data for memory management in a virtual memory operating system.
+
+- Context Switching -
+The kernel switches among threads in an effort to share the CPU effectively;
+this activity is called context switching.
+
+A voluntary context switch occurs when a thread blocks because it requires
+a resource that is unavailable.
+
+An involuntary context switch takes place when a thread executes for the duration
+of its time slice or when the system identifies a higher-priority thread to run. 
