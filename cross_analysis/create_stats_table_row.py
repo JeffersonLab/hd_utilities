@@ -43,7 +43,7 @@ def main(argv):
     RUNPERIOD   = RUNPERIOD.replace('-','_')
     RUNPERIOD_HYPHEN = RUNPERIOD.replace('_', '-')
     VERSION   = args[1]
-    XMLDIR    = '/home/' + os.environ['USER'] + '/halld/hdswif/'
+    XMLDIR    = '/home/' + os.environ['USER'] + '/halld/hdswif/xml/'
 
     # Variables of interest
     ntotal       = 0 # total number of run/files recorded in table; each run/file is unique
@@ -52,6 +52,7 @@ def main(argv):
     ntimeout     = 0 # number of jobs that had timeout occur at some stage
     nsystem      = 0 # number of jobs that had system issue occur at some stage
     nsegfault    = 0 # number of jobs that had segfault
+    ncancelled   = 0 # number of jobs that got cancelled (jobs that did not have success or segfault in final state)
 
     # Create MySQL connection
     db_conn = MySQLdb.connect(host='hallddb', user='farmer', passwd='', db='farming')
@@ -71,6 +72,9 @@ def main(argv):
 
         if final_state == 'SUCCESS':
             nsuccess += 1
+        else:
+            print 'run = ' + str(run_num) + ' file = ' + str(file_num) + ' final_state = ' + final_state + ', problems = ' + problems
+            ncancelled += 1
         if re.search('AUGER-OVER_RLIMIT', problems):
             nover_rlimit += 1
         if re.search('AUGER-TIMEOUT', problems):
@@ -98,28 +102,31 @@ def main(argv):
     print 'ntimeout      = ' + str(ntimeout)
     print 'nsystem       = ' + str(nsystem)
     print 'nsegfault     = ' + str(nsegfault)
+    print 'ncancelled    = ' + str(ncancelled)
 
     # Create html table row from these
     outfilename = 'stats_swif_' + RUNPERIOD + '_' + 'ver' + str(VERSION) + '.html'
     outfile = open(outfilename,'w')
 
-    outfile.write('  <tr>\n')
-    outfile.write('    <td style=" padding:15px; height:50px; width:150px; border:1px solid black;">VER' \
+    outfile.write('    <tr>\n')
+    outfile.write('      <td style=" padding:15px; height:50px; width:150px; border:1px solid black;">VER' \
                       + str(VERSION) + '</td>\n')
-    outfile.write('    <td style=" padding:15px; height:50px; width:150px; border:1px solid black;">' \
+    outfile.write('      <td style=" padding:15px; height:50px; width:150px; border:1px solid black;">' \
                       + str(ntotal) + ' (' + "{:05.2f}".format(ntotal/ntotal * 100.) + ')</td>\n')
-    outfile.write('    <td style=" padding:15px; height:50px; width:150px; border:1px solid black;">' \
+    outfile.write('      <td style=" padding:15px; height:50px; width:150px; border:1px solid black;">' \
                       + str(nsuccess) + ' (' + "{:05.2f}".format(100. * nsuccess/ntotal) + ')</td>\n')
-    outfile.write('    <td style=" padding:15px; height:50px; width:150px; border:1px solid black;">' \
+    outfile.write('      <td style=" padding:15px; height:50px; width:150px; border:1px solid black;">' \
                       + str(nsegfault) + ' (' + "{:05.2f}".format(100. * nsegfault/ntotal) + ')</td>\n')
-    outfile.write('    <td style=" padding:15px; height:50px; width:150px; border:1px solid black;">' \
+    outfile.write('      <td style=" padding:15px; height:50px; width:150px; border:1px solid black;">' \
+                      + str(ncancelled) + ' (' + "{:05.2f}".format(100. * ncancelled/ntotal) + ')</td>\n')
+    outfile.write('      <td style=" padding:15px; height:50px; width:150px; border:1px solid black;">' \
                       + str(nover_rlimit) + ' (' + "{:05.2f}".format(100. * nover_rlimit/ntotal) + ')</td>\n')
-    outfile.write('    <td style=" padding:15px; height:50px; width:150px; border:1px solid black;">' \
+    outfile.write('      <td style=" padding:15px; height:50px; width:150px; border:1px solid black;">' \
                       + str(ntimeout) + ' (' + "{:05.2f}".format(100. * ntimeout/ntotal) + ')</td>\n')
-    outfile.write('    <td style=" padding:15px; height:50px; width:150px; border:1px solid black;">' \
+    outfile.write('      <td style=" padding:15px; height:50px; width:150px; border:1px solid black;">' \
                       + str(nsystem) + ' (' + "{:05.2f}".format(100. * nsystem/ntotal) + ')</td>\n')
     # add hook to end so new results can be added in
-    outfile.write('  </tr> <!--' + RUNPERIOD + '_' + 'ver' + str(VERSION) + '--> \n')
+    outfile.write('    </tr> <!--' + RUNPERIOD + '_' + 'ver' + str(VERSION) + '--> \n')
     outfile.close()
 
     # Add the newest row into the html table using the hook
