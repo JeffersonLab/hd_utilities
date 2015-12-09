@@ -105,7 +105,10 @@ def main(argv):
     print 'ncancelled    = ' + str(ncancelled)
 
     # Create html table row from these
-    outfilename = 'stats_swif_' + RUNPERIOD + '_' + 'ver' + str(VERSION) + '.html'
+    outdir = 'stats_table_rows'
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+    outfilename = outdir + '/stats_swif_' + RUNPERIOD + '_' + 'ver' + str(VERSION) + '.html'
     outfile = open(outfilename,'w')
 
     outfile.write('    <tr>\n')
