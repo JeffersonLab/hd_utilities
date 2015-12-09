@@ -56,7 +56,7 @@ else:
 os.environ["PYTHONPATH"]      = PYTHONPATH
 sys.path.append(str(ROOTSYS + '/lib/'))
 
-from ROOT import gROOT, gStyle, TCanvas, TH1F, TGraph, TH2F, TF1, TLine, TLatex
+from ROOT import gROOT, gStyle, TCanvas, TH1F, TGraph, TH2F, TF1, TLine, TLatex, TLegend
 TLine.DrawClone._creates = False # This will allow use of DrawClone
 import ROOT
 gStyle.SetOptStat(False)
@@ -73,8 +73,10 @@ def main(argv):
     (options, args) = parser.parse_args(argv)
 
     filename = args[0]
-
-    filename_base = filename.rsplit('.xml')[0]
+    basename = os.path.basename(filename)
+    print 'basename = ' + basename
+    filename_base = basename.rsplit('.xml')[0]
+    print 'filename_base = ' + filename_base
 
     # Read in xml file and create tree, root
     tree = ET.parse(filename)
@@ -106,7 +108,11 @@ def main(argv):
     current_time = summary.find('current_ts').text
 
     # output file
-    outfile = open("summary_" + filename_base + ".html","w+")
+    if not os.path.exists('./html'):
+        os.makedirs('./html')
+
+    print 'outfile name = ' + "html/summary_" + filename_base + ".html"
+    outfile = open("html/summary_" + filename_base + ".html","w+")
     outfile.write('<html>\n')
     outfile.write('  <head>\n')
     outfile.write('  <link rel="stylesheet" type="text/css" href="mystyle.css">\n')
@@ -116,7 +122,7 @@ def main(argv):
     outfile.write('  <body>\n')
     outfile.write('  <h1>' + workflow_name_text + '</h1>\n')
     outfile.write('  <hr>\n')
-    outfile.write('  <h3 style="color:red; text-align:right; font-size:1em;">Click on each figure to show pdf version</h3>\n')
+    outfile.write('  <h3 style="color:red; text-align:right; font-size:1em;">Click on each figure to show larger version</h3>\n')
             
     #--------------------------------------------------------------------
     # Print stats to screen
@@ -231,7 +237,7 @@ def main(argv):
     results_by_resources.main([filename])
 
     # Reopen
-    outfile = open("summary_" + filename_base + ".html","a+")
+    outfile = open("html/summary_" + filename_base + ".html","a+")
     outfile.write('  <hr>\n')
 
     #--------------------------------------------------------------------
@@ -257,16 +263,19 @@ def main(argv):
     hnum_attempts.SetBarOffset(0.50 - hnum_attempts.GetBarWidth()/2.)
     hnum_attempts.Draw("bar,textsame")
     
-    # Total # of jobs is length of workflow_status
-    # since this includes all <job> tags, minus 1 for
-    # the <summary> tag
-    text = "total jobs: " + str(len(workflow_status) - 1)
+    # Total # of jobs is given by jobs tag within summary
+    njobs = 0
+    for summary in workflow_status.iter('summary'):
+        for jobs in summary.iter('jobs'):
+            njobs = jobs.text
+    
+    text = "total jobs: " + str(njobs)
     latex.DrawLatex(0.50,0.80,text)
     
     text = "total attempts: " + str(nAttempts)
     latex.DrawLatex(0.50,0.70,text)
     c1.Update()
-    figureDir = 'figures/' + workflow_name_text
+    figureDir = 'html/figures/' + workflow_name_text
     if not os.path.exists(figureDir): os.makedirs(figureDir)
     c1.SaveAs(figureDir + '/hnum_attempts.png')
     c1.SetLogy(0)
@@ -597,8 +606,21 @@ def main(argv):
     text = 'time to complete: ' + str(format((MAXTIME - MIN_DISPATCH_TS_POSIX)/3600., '.2f')) + ' hrs'
     latex.DrawLatex(0.40,0.20,text)
     
+    legend = TLegend(0.20,0.60,0.90,0.85)
+    legend.SetBorderSize(0)
+    legend.SetFillStyle(0)
+    legend.SetNColumns(3)
+    legend.AddEntry(hCumulativeTimeSinceLaunch_submitted,'submitted','L')
+    legend.AddEntry(hCumulativeTimeSinceLaunch_dependency,'dependency','L')
+    legend.AddEntry(hCumulativeTimeSinceLaunch_pending,'pending','L')
+    legend.AddEntry(hCumulativeTimeSinceLaunch_stagingIn,'staging in','L')
+    legend.AddEntry(hCumulativeTimeSinceLaunch_active,'active','L')
+    legend.AddEntry(hCumulativeTimeSinceLaunch_stagingOut,'staging out','L')
+    legend.AddEntry(hCumulativeTimeSinceLaunch_complete,'complete','L')
+    legend.Draw("same")
+
     c1.Update()
-    figureDir = 'figures/' + workflow_name_text
+    figureDir = 'html/figures/' + workflow_name_text
     if not os.path.exists(figureDir): os.makedirs(figureDir)
     c1.SaveAs(figureDir + '/cumulativeNumsSinceLaunch.png')
     c1.Close()
@@ -692,7 +714,7 @@ def main(argv):
     latex.SetTextColor(ROOT.kBlack)
     
     c1.Update()
-    figureDir = 'figures/' + workflow_name_text
+    figureDir = 'html/figures/' + workflow_name_text
     if not os.path.exists(figureDir): os.makedirs(figureDir)
     c1.SaveAs(figureDir + '/duration.png')
     c1.Close()
@@ -755,7 +777,7 @@ def main(argv):
         flinear[i].DrawClone("same")
 
     c1.Update()
-    figureDir = 'figures/' + workflow_name_text
+    figureDir = 'html/figures/' + workflow_name_text
     if not os.path.exists(figureDir): os.makedirs(figureDir)
     c1.SaveAs(figureDir + '/walltime.png')
     c1.Close()
@@ -796,7 +818,7 @@ def main(argv):
     latex.SetTextColor(ROOT.kBlack)
     
     c1.Update()
-    figureDir = 'figures/' + workflow_name_text
+    figureDir = 'html/figures/' + workflow_name_text
     if not os.path.exists(figureDir): os.makedirs(figureDir)
     c1.SaveAs(figureDir + '/hauger_mem.png')
     c1.Close()
@@ -892,6 +914,10 @@ def main(argv):
                     output_text = ('      <td>' + auger_ts_complete_name + '</td>\n')
                     outfile.write(output_text)
                     outfile.write('    </tr>\n')
+
+                    # if problem_name == 'SWIF-USER-NON-ZERO':
+                    #     print 'run = ' + run_name + ' file = ' + file_name + ' attempt ' + str(nattempts) + ' / ' + str(total_attempts) + ' complete time : ' + auger_ts_complete_name
+
     outfile.write('    </table>\n')
     outfile.write('    <hr>\n')
 

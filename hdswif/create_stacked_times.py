@@ -320,7 +320,7 @@ def main(argv):
 
     legend.Draw('same')
 
-    figureDir = 'figures/' + workflow_name_text
+    figureDir = 'html/figures/' + workflow_name_text
     if not os.path.exists(figureDir): os.makedirs(figureDir)
     c1.SaveAs(figureDir + '/hstack_times_auger_id.png')
     c1.Close()
@@ -449,7 +449,7 @@ def main(argv):
 
     legend.Draw('same')
 
-    figureDir = 'figures/' + workflow_name_text
+    figureDir = 'html/figures/' + workflow_name_text
     if not os.path.exists(figureDir): os.makedirs(figureDir)
     c1.SaveAs(figureDir + '/hstack_times_totaltime.png')
     c1.Close()

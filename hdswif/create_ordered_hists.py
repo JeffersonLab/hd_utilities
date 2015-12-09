@@ -219,7 +219,7 @@ def main(argv):
     text = "total submissions: " + str(NSUBMITTIMES)
     latex.DrawLatex(0.40,0.80,text)
 
-    figureDir = 'figures/' + workflow_name_text
+    figureDir = 'html/figures/' + workflow_name_text
     if not os.path.exists(figureDir): os.makedirs(figureDir)
     c1.SaveAs(figureDir + '/hDependency.png')
     c1.Close()
@@ -244,7 +244,7 @@ def main(argv):
     text = "total submissions: " + str(NSUBMITTIMES)
     latex.DrawLatex(0.40,0.80,text)
 
-    figureDir = 'figures/' + workflow_name_text
+    figureDir = 'html/figures/' + workflow_name_text
     if not os.path.exists(figureDir): os.makedirs(figureDir)
     c1.SaveAs(figureDir + '/hPending.png')
     c1.Close()

@@ -309,7 +309,10 @@ def main(argv):
 
     # If we want to create a summary of the workflow, call summary
     elif(args[0] == "summary"):
-        filename = str('swif_output_' + WORKFLOW + '.xml')
+        # create xml output dir
+        if not os.path.exists('./xml'):
+            os.makedirs('./xml')
+        filename = './xml/swif_output_' + WORKFLOW + '.xml'
         if VERBOSE == True:
             print 'output file name is ', filename
 
@@ -332,7 +335,7 @@ def main(argv):
         # Create the xml file to parse
         if recreate == True:
             print 'Creating XML output file........'
-            trycommand("swif status " + WORKFLOW + " -runs -summary -display xml > " + filename)
+            os.system("swif status " + WORKFLOW + " -runs -summary -display xml > " + filename)
             print 'Created summary file ', filename, '..............'
 
         # Call parse_swif

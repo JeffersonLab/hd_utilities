@@ -64,10 +64,10 @@ def main(argv):
     (options, args) = parser.parse_args(argv)
 
     filename = args[0]
+    basename = os.path.basename(filename)
+    filename_base = basename.rsplit('.xml')[0]
 
-    filename_base = filename.rsplit('.xml')[0]
-
-    outfile = open("summary_" + filename_base + ".html","a+") # append
+    outfile = open("html/summary_" + filename_base + ".html","a+") # append
     outfile.write('  <h2>Status by Resources</h2>\n')
     outfile.write('  <h3>Counts are for each attempt of running a job, if an attempt fails and the job is resubmitted</h3>\n')
     outfile.write('  <h3> the same job will appear in other places as other attempts.</h3>\n')
