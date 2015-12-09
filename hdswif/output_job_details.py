@@ -5,7 +5,7 @@ import subprocess
 
 def is_number(string):
     try:
-        float(string)
+        int(string)
         return True
     except ValueError:
         return False
@@ -22,7 +22,7 @@ def main(argv):
     (options, args) = parser.parse_args(argv)
     
     if len(args) != 3:
-        print 'output_job_details.py [run] [file]'
+        print 'output_job_details.py [workflow] [run] [file]'
         exit()
 
     WORKFLOW = args[0]
@@ -54,27 +54,11 @@ def main(argv):
         exit()
 
     # Get the XML output for this workflow
-    filename = str('swif_output_' + WORKFLOW + '.xml')
-
-    recreate = True
-    if os.path.isfile(filename):
-        print 'File ', filename, ' already exists'
-
-        while(1):
-            answer = raw_input('Overwrite? (y/n)   ')
-            if answer == 'n':
-                print 'Not recreating summary file for [', WORKFLOW, ']'
-                recreate = False
-                break
-            elif answer == 'y':
-                recreate = True
-                break
-
-    # Create the xml file to parse
-    if recreate == True:
-        print 'Creating XML output file........'
-        os.system("swif status " + WORKFLOW + " -runs -summary -display xml > " + filename)
-        print 'Created summary file ', filename, '..............'
+    # It would be nice if we could do this without writing out
+    # the XML file to disk
+    filename = str('___tmp_' + WORKFLOW + '.xml')
+    print 'Creating XML output file........'
+    os.system("swif status " + WORKFLOW + " -runs -summary -display xml > " + filename)
 
     tree = ET.parse(filename)
     workflow_status = tree.getroot()
@@ -96,7 +80,7 @@ def main(argv):
         if run_text == FORMATTED_RUN and file_text == FORMATTED_FILE:
             nFound += 1
             print '--- Found match #' + str(nFound) + ' ---'
-            url = 'http://farmpbs:6080/job/' + id_text + '/spec'
+            url = 'http://farmpbs:6080/job/' + id_text + '/spec' # use "status" for full job info
             # Don't output progress meter with --silent
             output = subprocess.check_output(['curl', '--silent', url]).rstrip()
             print output
@@ -107,6 +91,8 @@ def main(argv):
         print '========================================'
         print 'Total of ' + str(nFound) + ' jobs found that matched'
     
+    # Delete XML file
+    os.system("rm -f " + filename)
 
 ## main function 
 if __name__ == "__main__":
