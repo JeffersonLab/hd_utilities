@@ -108,6 +108,7 @@ def main(argv):
     ntotal = {}
     nsuccess = {}
     nsegfault = {}
+    ncancelled = {}
     nover_rlimit = {}
     ntimeout = {}
     nsystem = {}
@@ -116,6 +117,7 @@ def main(argv):
         ntotal[ver] = 0
         nsegfault[ver] = 0
         nsuccess[ver] = 0
+        ncancelled[ver] = 0
         nover_rlimit[ver] = 0
         ntimeout[ver] = 0
         nsystem[ver] = 0
@@ -177,10 +179,11 @@ def main(argv):
                     outfile.write('      <th style="border: 1px solid black; height:15px; width:150px;">Total (%)</th>\n')
                     outfile.write('      <th style="border: 1px solid black; height:15px; width:150px;">Success (%)</th>\n')
                     outfile.write('      <th style="border: 1px solid black; height:15px; width:150px;">Segfault (%)</th>\n')
+                    outfile.write('      <th style="border: 1px solid black; height:15px; width:150px;">Cancelled (%)</th>\n')
+                    outfile.write('      <th style="border: 1px solid black; height:15px; width:150px;">NULL (%)</th>\n')
                     outfile.write('      <th style="border: 1px solid black; height:15px; width:150px;">Over Limit (%)</th>\n')
                     outfile.write('      <th style="border: 1px solid black; height:15px; width:150px;">Timeout (%)</th>\n')
                     outfile.write('      <th style="border: 1px solid black; height:15px; width:150px;">System Error (%)</th>\n')
-                    outfile.write('      <th style="border: 1px solid black; height:15px; width:150px;">NULL (%)</th>\n')
                     outfile.write('    </tr>\n')
 
                     # Fill in summary table for previous hundreds
@@ -203,6 +206,16 @@ def main(argv):
                         outfile.write('      <td style=" padding:15px; height:50px; width:150px; border:1px solid black;">' \
                                           + "{:>4d}".format(nsegfault[ver]) + ' (' + "{:5.2f}".format(value) + ')</td>\n')
 
+                        # ncancelled
+                        value = 0 if ntotal[ver] == 0 else 100. * ncancelled[ver] / ntotal[ver]
+                        outfile.write('      <td style=" padding:15px; height:50px; width:150px; border:1px solid black;">' \
+                                          + "{:>4d}".format(ncancelled[ver]) + ' (' + "{:5.2f}".format(value) + ')</td>\n')
+
+                        # nnull
+                        value = 0 if ntotal[ver] == 0 else 100. * nnull[ver] / ntotal[ver]
+                        outfile.write('      <td style=" padding:15px; height:50px; width:150px; border:1px solid black;">' \
+                                          + "{:>4d}".format(nnull[ver]) + ' (' + "{:5.2f}".format(value) + ')</td>\n')
+
                         # nover_rlimit
                         value = 0 if ntotal[ver] == 0 else 100. * nover_rlimit[ver] / ntotal[ver]
                         outfile.write('      <td style=" padding:15px; height:50px; width:150px; border:1px solid black;">' \
@@ -218,11 +231,6 @@ def main(argv):
                         outfile.write('      <td style=" padding:15px; height:50px; width:150px; border:1px solid black;">' \
                                           + "{:>4d}".format(nsystem[ver]) + ' (' + "{:5.2f}".format(value) + ')</td>\n')
 
-                        # nnull
-                        value = 0 if ntotal[ver] == 0 else 100. * nnull[ver] / ntotal[ver]
-                        outfile.write('      <td style=" padding:15px; height:50px; width:150px; border:1px solid black;">' \
-                                          + "{:>4d}".format(nnull[ver]) + ' (' + "{:5.2f}".format(value) + ')</td>\n')
-
                         outfile.write('    </tr>\n')
                     # end of looping over ver in range(MINVERSION,MAXVERSION+1)
                     outfile.write('  </table>\n')
@@ -237,6 +245,7 @@ def main(argv):
                         ntotal[ver] = 0
                         nsegfault[ver] = 0
                         nsuccess[ver] = 0
+                        ncancelled[ver] = 0
                         nover_rlimit[ver] = 0
                         ntimeout[ver] = 0
                         nsystem[ver] = 0
@@ -247,7 +256,7 @@ def main(argv):
                 # We are still at the beginning of a new hundreds
 
                 # Create new hundreds html file
-                dirname = 'rap_sheet_' + RUNPERIOD
+                dirname = 'swif_rap_sheet_' + RUNPERIOD
                 if not os.path.exists(dirname):
                     os.makedirs(dirname)
 
@@ -261,7 +270,92 @@ def main(argv):
                 outfile.write('</head>\n')
                 outfile.write('<body>\n')
                 outfile.write('<h2>results for ' + str(int(run_num) // 100 * 100) + ' runs</h2>\n')
+
+                # Example output
+                outfile.write('  <h3>legend</h3>\n')
+                outfile.write('  <table style="border: 1px solid black; table-layout: fixed;">\n')
+                outfile.write('    <tr>\n')
+                outfile.write('      <th style="border: 1px solid black; height:15px; width:100px;">state</th>\n')
+                outfile.write('      <th style="border: 1px solid black; height:15px; width:450px;">explanation</th>\n')
+                outfile.write('      <th style="border: 1px solid black; height:15px; width:100px;">state</th>\n')
+                outfile.write('      <th style="border: 1px solid black; height:15px; width:450px;">explanation</th>\n')
+                outfile.write('    </tr>\n')
+
+                # SUCCESS
+                outfile.write('    <tr>\n')
+                outfile.write('      <td style=" padding:15px; height:20px; width:100px; border:1px solid black; background-color:' \
+                                  + '#66FF99' + '; color:' + 'black' + ';">' + 'SUCCESS' + '</td>\n')
+                outfile.write('      <td>' + 'SUCCESS, no problems' + '</td>\n')
+
+                # SUCCESS with TIMEOUT only
+                outfile.write('      <td style=" padding:15px; height:20px; width:100px; border:1px solid black; background-color:' \
+                                  + 'orange' + '; color:' + 'black' + ';">' + 'SUCCESS' + '</td>\n')
+                outfile.write('      <td>' + 'final state is SUCCESS, problems were TIMEOUT only ' + '</td>\n')
+                outfile.write('    </tr>\n')
+
+                # SUCCESS with OVER_RLIMIT only
+                outfile.write('    <tr>\n')
+                outfile.write('      <td style=" padding:15px; height:20px; width:100px; border:1px solid black; background-color:' \
+                                  + 'yellow' + '; color:' + 'black' + ';">' + 'SUCCESS' + '</td>\n')
+                outfile.write('      <td>' + 'final state is SUCCESS, problems were OVER_RLIMIT only ' + '</td>\n')
+
+                # SUCCESS with SYSTEM only
+                outfile.write('      <td style=" padding:15px; height:20px; width:100px; border:1px solid black; background-color:' \
+                                  + 'gray' + '; color:' + 'black' + ';">' + 'SUCCESS' + '</td>\n')
+                outfile.write('      <td>' + 'final state is SUCCESS, problems were SYSTEM only ' + '</td>\n')
+                outfile.write('    </tr>\n')
+
+                # SUCCESS with multiple problems
+                outfile.write('    <tr>\n')
+                outfile.write('      <td style=" padding:15px; height:20px; width:100px; border:1px solid black; background-color:' \
+                                  + 'purple' + '; color:' + 'black' + ';">' + 'SUCCESS' + '</td>\n')
+                outfile.write('      <td>' + 'final state is SUCCESS, multiple types of problems' + '</td>\n')
+
+                # SEGFAULT
+                outfile.write('      <td style=" padding:15px; height:20px; width:100px; border:1px solid black; background-color:' \
+                                  + 'red' + '; color:' + 'black' + ';">' + 'SEGFAULT' + '</td>\n')
+                outfile.write('      <td>' + 'final state is SEGFAULT' + '</td>\n')
+                outfile.write('    </tr>\n')
+
+                # NULL
+                outfile.write('    <tr>\n')
+                outfile.write('      <td style=" padding:15px; height:20px; width:100px; border:1px solid black; background-color:' \
+                                  + 'gray' + '; color:' + 'white' + ';">' + 'NULL' + '</td>\n')
+                outfile.write('      <td>' + 'NULL (this run/file was not registered)' + '</td>\n')
+
+                # CANCELLED
+                outfile.write('      <td style=" padding:15px; height:20px; width:100px; border:1px solid black; background-color:' \
+                                  + 'gray' + '; color:' + 'white' + ';">' + 'CANCELLED' + '</td>\n')
+                outfile.write('      <td>' + 'CANCELLED (all other final states)' + '</td>\n')
+                outfile.write('    </tr>\n')
+
+                # OVER_RLIMIT
+                outfile.write('    <tr>\n')
+                outfile.write('      <td style=" padding:15px; height:20px; width:100px; border:1px solid black; background-color:' \
+                                  + 'yellow' + '; color:' + 'red' + ';">' + 'OVER_RLIMIT' + '</td>\n')
+                outfile.write('      <td>' + 'final state was OVER_RLIMIT and no other problems' + '</td>\n')
+
+                # TIMEOUT
+                outfile.write('      <td style=" padding:15px; height:20px; width:100px; border:1px solid black; background-color:' \
+                                  + 'orange' + '; color:' + 'white' + ';">' + 'TIMEOUT' + '</td>\n')
+                outfile.write('      <td>' + 'final state was TIMEOUT and no other problems' + '</td>\n')
+                outfile.write('    </tr>\n')
+
+                # SYSTEM
+                outfile.write('    <tr>\n')
+                outfile.write('      <td style=" padding:15px; height:20px; width:100px; border:1px solid black; background-color:' \
+                                  + '#E5E4E2' + '; color:' + 'red' + ';">' + 'SYSTEM' + '</td>\n')
+                outfile.write('      <td>' + 'final state was SYSTEM and no other problems' + '</td>\n')
+
+                # multiple problems
+                outfile.write('      <td style=" padding:15px; height:20px; width:100px; border:1px solid black; background-color:' \
+                                  + 'purple' + '; color:' + 'black' + ';">' + 'TIMEOUT/OVER_RLIMIT/SYSTEM' + '</td>\n')
+                outfile.write('      <td>' + 'multiple problems and final state is not SUCCESS' + '</td>\n')
+                outfile.write('    </tr>\n')
+                outfile.write('  </table>\n')
+                outfile.write('<br><br><br>\n')
                 
+                # Start of table
                 outfile.write('  <table style="border: 1px solid black; table-layout: fixed;">\n')
                 outfile.write('    <tr>\n')
                 outfile.write('      <th style="border: 1px solid black; height:15px; width:100px;">run</th>\n')
@@ -346,6 +440,14 @@ def main(argv):
                 bgcolor   = '#66FF99'
                 nsuccess[ver] += 1
 
+            # ANYTHING ELSE IS CANCELLED
+            # Depending on the problem  this will be modified later
+            else :
+                text      = 'CANCELLED'
+                textcolor = 'yellow'
+                bgcolor   = 'black'
+                ncancelled[ver] += 1
+
             # --- 2. count number for each problem
             if loc_problems.find('AUGER-OVER_RLIMIT') > 0:
                 nover_rlimit[ver] += 1
@@ -362,8 +464,21 @@ def main(argv):
 
             # --- 3. Modify text if only one problem
             if nprobs == 1:
+                # If final state was success, just change bgcolor
                 if loc_final_state == 'SUCCESS':
-                    pass
+                    if 'AUGER-OVER_RLIMIT' in loc_problems:
+                        bgcolor   = 'yellow'
+                    if 'AUGER-TIMEOUT' in loc_problems:
+                        bgcolor   = 'orange'
+                    if any(re.match(regex_strs, loc_problems) for \
+                               regex_strs in ['AUGER-SUBMIT', \
+                                                  'AUGER-FAILED', \
+                                                  'AUGER-INPUT-FAIL', \
+                                                  'AUGER-OUTPUT-FAIL', \
+                                                  'SWIF-SYSTEM-ERROR', \
+                                                  'SWIF-MISSING-OUTPUT']):
+                        bgcolor   = '#E5E4E2'
+                # If final state was the problem, show
                 else:
                     if 'AUGER-OVER_RLIMIT' in loc_problems:
                         text      = 'OVER_RLIMIT'
@@ -381,13 +496,15 @@ def main(argv):
                                                   'SWIF-SYSTEM-ERROR', \
                                                   'SWIF-MISSING-OUTPUT']):
                         text      = 'SYSTEM'
-                        bgcolor   = 'black'
+                        bgcolor   = '#E5E4E2'
                         textcolor = 'red'
 
             # --- 4. If there were multiple problems change the text color
             # and show all problems
             if nprobs > 1:
                 text      = ''
+                bgcolor = 'purple'
+                # If the final state was success, change bgcolor
                 if loc_final_state == 'SUCCESS':
                     text = 'SUCCESS'
                 else:
@@ -403,13 +520,6 @@ def main(argv):
                                                   'SWIF-SYSTEM-ERROR', \
                                                   'SWIF-MISSING-OUTPUT']):
                         text += 'SYSTEM'
-                textcolor = 'purple'
-                if loc_final_state == 'OVER_RLIMIT':
-                    bgcolor   = 'aaaaaa'
-                if loc_final_state == 'TIMEOUT':
-                    bgcolor   = 'bbbbbb'
-                if loc_final_state == 'SYSTEM':
-                    bgcolor   = 'cccccc'
         
             if text == '' or textcolor == '' or bgcolor == '':
                 print 'unknown result for final_state = ' + loc_final_state + ' problems = ' + loc_problems
@@ -443,6 +553,7 @@ def main(argv):
             print 'nsuccess['     + str(ver) + ' ] = ' + str(nsuccess[ver])
             print 'nsegfault['    + str(ver) + ' ] = ' + str(nsegfault[ver])
             print 'nnull['        + str(ver) + ' ] = ' + str(nnull[ver])
+            print 'ncancelled['     + str(ver) + ' ] = ' + str(ncancelled[ver])
             print 'nover_rlimit[' + str(ver) + ' ] = ' + str(nover_rlimit[ver])
             print 'ntimeout['     + str(ver) + ' ] = ' + str(ntimeout[ver])
             print 'nsystem['      + str(ver) + ' ] = ' + str(nsystem[ver])
@@ -455,10 +566,11 @@ def main(argv):
     outfile.write('      <th style="border: 1px solid black; height:15px; width:150px;">Total (%)</th>\n')
     outfile.write('      <th style="border: 1px solid black; height:15px; width:150px;">Success (%)</th>\n')
     outfile.write('      <th style="border: 1px solid black; height:15px; width:150px;">Segfault (%)</th>\n')
+    outfile.write('      <th style="border: 1px solid black; height:15px; width:150px;">Cancelled (%)</th>\n')
+    outfile.write('      <th style="border: 1px solid black; height:15px; width:150px;">NULL (%)</th>\n')
     outfile.write('      <th style="border: 1px solid black; height:15px; width:150px;">Over Limit (%)</th>\n')
     outfile.write('      <th style="border: 1px solid black; height:15px; width:150px;">Timeout (%)</th>\n')
     outfile.write('      <th style="border: 1px solid black; height:15px; width:150px;">System Error (%)</th>\n')
-    outfile.write('      <th style="border: 1px solid black; height:15px; width:150px;">NULL (%)</th>\n')
     outfile.write('    </tr>\n')
     
     # Fill in summary table for final hundreds
@@ -484,6 +596,16 @@ def main(argv):
         outfile.write('      <td style=" padding:15px; height:50px; width:150px; border:1px solid black;">' \
           + "{:>4d}".format(nsegfault[ver]) + ' (' + "{:5.2f}".format(value) + ')</td>\n')
 
+        # ncancelled
+        value = 0 if ntotal[ver] == 0 else 100. * ncancelled[ver] / ntotal[ver]
+        outfile.write('      <td style=" padding:15px; height:50px; width:150px; border:1px solid black;">' \
+          + "{:>4d}".format(ncancelled[ver]) + ' (' + "{:5.2f}".format(value) + ')</td>\n')
+
+        # nnull
+        value = 0 if ntotal[ver] == 0 else 100. * nnull[ver] / ntotal[ver]
+        outfile.write('      <td style=" padding:15px; height:50px; width:150px; border:1px solid black;">' \
+                          + "{:>4d}".format(nnull[ver]) + ' (' + "{:5.2f}".format(value) + ')</td>\n')
+
         # nover_rlimit
         value = 0 if ntotal[ver] == 0 else 100. * nover_rlimit[ver] / ntotal[ver]
         outfile.write('      <td style=" padding:15px; height:50px; width:150px; border:1px solid black;">' \
@@ -499,10 +621,6 @@ def main(argv):
         outfile.write('      <td style=" padding:15px; height:50px; width:150px; border:1px solid black;">' \
           + "{:>4d}".format(nsystem[ver]) + ' (' + "{:5.2f}".format(value) + ')</td>\n')
 
-        # nnull
-        value = 0 if ntotal[ver] == 0 else 100. * nnull[ver] / ntotal[ver]
-        outfile.write('      <td style=" padding:15px; height:50px; width:150px; border:1px solid black;">' \
-                          + "{:>4d}".format(nnull[ver]) + ' (' + "{:5.2f}".format(value) + ')</td>\n')
         outfile.write('    </tr>\n')
 
     outfile.write('</table>\n')
