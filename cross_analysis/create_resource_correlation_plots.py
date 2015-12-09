@@ -244,7 +244,8 @@ def main(argv):
     htmlfile.write('<body>\n')
 
     htmlfile.write('<h2>Comparison of ver' + format(VERSION,2) + ' and older</h2>\n')
-    htmlfile.write('<table style="width:100%">\n')
+    tablewidth = (VERSION - MINVERSION) * 20
+    htmlfile.write('<table style="width:' + str(tablewidth) + '%">\n')
     # cpu_sec
     htmlfile.write('  <tr>\n')
     htmlfile.write('    <td colspan="' + str(VERSION - MINVERSION) + '"> CPU time (min) </td>\n')
@@ -378,7 +379,6 @@ def main(argv):
     htmlfile.write('</html>\n')
     htmlfile.close()
 
-    # Draw graphs
     line = TLine(0,0,0,0)
 
     latex = TLatex()
