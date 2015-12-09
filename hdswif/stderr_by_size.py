@@ -62,8 +62,7 @@ def main(argv):
 
     BASEDIR    = '/volatile/halld/offline_monitoring/RunPeriod-' + RUNPERIOD + '/ver' + VERSION + '/log/'
     if not os.path.isdir(BASEDIR):
-        print 'publish_offmon_results.py:'
-        print 'Directory ' + XMLDIR + ' does not exist...'
+        print 'Directory ' + BASEDIR + ' does not exist...'
         print 'aborting...'
         exit()
 
@@ -71,6 +70,16 @@ def main(argv):
     OUTPUT_BASEDIR = '/volatile/halld/offline_monitoring/RunPeriod-' + RUNPERIOD + '/ver' + VERSION + '/log/bysize'
     if not os.path.exists(OUTPUT_BASEDIR):
         os.makedirs(OUTPUT_BASEDIR)
+    else:
+        while (1):
+            answer = raw_input('Delete and remake ' + OUTPUT_BASEDIR + ' ? (y/n)')
+            if answer == 'n':
+                print 'Quitting stderr_by_size.py'
+                exit()
+            elif answer == 'y':
+                shutil.rmtree(OUTPUT_BASEDIR)
+                os.makedirs(OUTPUT_BASEDIR)
+
 
     # Dictionary for size of stderr file and number of files
     dict_stderrsize_numfiles = {}
@@ -106,6 +115,8 @@ def main(argv):
         os.symlink(stdoutfile,OUTPUT_DIR + '/' + os.path.basename(stdoutfile))
 
         nfiles += 1
+
+    print 'processed ' + str(nfiles) + ' files'
 
     outfile = open("stderrsize_numfiles_" + RUNPERIOD + "_" + "ver" + VERSION + ".txt","w+")
 
