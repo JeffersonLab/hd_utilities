@@ -43,12 +43,12 @@ class CheckNewRuns:
         self.ONLINE_ROOT_DIR = self.BASE_ONLINEMON_DIR + '/root'
         self.ONLINE_CONDITION_DIR = self.BASE_ONLINEMON_DIR + '/conditions'
 
-        self.MIN_RUN_NUMBER = 3386
+        self.MIN_RUN_NUMBER = 3939
         #self.MIN_RUN_NUMBER = 3421
-        self.MAX_RUN_NUMBER = 100000
-        self.VERSION_NUMBER  =  27   ## hardcode default
+        self.MAX_RUN_NUMBER = 1000000
+        self.VERSION_NUMBER  =  54   ## hardcode default - need to change this
         self.MONITORING_OUTPUT_DIR = "/work/halld/data_monitoring"
-        self.RUN_PERIOD = "RunPeriod-2015-06"
+        self.RUN_PERIOD = "RunPeriod-2015-12"
 
         self.MAKE_PLOTS = True
         self.MAKE_DB_SUMMARY = True
