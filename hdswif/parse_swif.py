@@ -275,15 +275,16 @@ def main(argv):
     text = "total attempts: " + str(nAttempts)
     latex.DrawLatex(0.50,0.70,text)
     c1.Update()
-    figureDir = 'html/figures/' + workflow_name_text
-    if not os.path.exists(figureDir): os.makedirs(figureDir)
-    c1.SaveAs(figureDir + '/hnum_attempts.png')
+    local_figureDir = 'html/figures/' + workflow_name_text
+    web_figureDir = 'figures/' + workflow_name_text
+    if not os.path.exists(local_figureDir): os.makedirs(local_figureDir)
+    c1.SaveAs(local_figureDir + '/hnum_attempts.png')
     c1.SetLogy(0)
     c1.Close()
     
     outfile.write('    <h2>Number of Attempts For Each Job</h2>\n')
-    outfile.write('    <a href = "' + figureDir + '/hnum_attempts.png">\n')
-    outfile.write('      <img src = "' + figureDir + '/hnum_attempts.png" width = "70%">\n')
+    outfile.write('    <a href = "' + web_figureDir + '/hnum_attempts.png">\n')
+    outfile.write('      <img src = "' + web_figureDir + '/hnum_attempts.png" width = "70%">\n')
     outfile.write('    </a>\n')
     outfile.write('    <hr>\n')
     
@@ -620,14 +621,12 @@ def main(argv):
     legend.Draw("same")
 
     c1.Update()
-    figureDir = 'html/figures/' + workflow_name_text
-    if not os.path.exists(figureDir): os.makedirs(figureDir)
-    c1.SaveAs(figureDir + '/cumulativeNumsSinceLaunch.png')
+    c1.SaveAs(local_figureDir + '/cumulativeNumsSinceLaunch.png')
     c1.Close()
     
     outfile.write('    <h2>Number of jobs reaching each stage since launch</h2>\n')
-    outfile.write('    <a href = "' + figureDir + '/cumulativeNumsSinceLaunch.png">\n')
-    outfile.write('      <img src = "' + figureDir + '/cumulativeNumsSinceLaunch.png" width = "70%">\n')
+    outfile.write('    <a href = "' + web_figureDir + '/cumulativeNumsSinceLaunch.png">\n')
+    outfile.write('      <img src = "' + web_figureDir + '/cumulativeNumsSinceLaunch.png" width = "70%">\n')
     outfile.write('    </a>\n')
     outfile.write('    <hr>\n')
     
@@ -639,14 +638,14 @@ def main(argv):
     create_ordered_hists.main([filename])
 
     outfile.write('    <h2>Time Spent in Dependency</h2>\n')
-    outfile.write('    <a href = "' + figureDir + '/hDependency.png">\n')
-    outfile.write('      <img src = "' + figureDir + '/hDependency.png" width = "70%">\n')
+    outfile.write('    <a href = "' + web_figureDir + '/hDependency.png">\n')
+    outfile.write('      <img src = "' + web_figureDir + '/hDependency.png" width = "70%">\n')
     outfile.write('    </a>\n')
     outfile.write('    <hr>\n')
 
     outfile.write('    <h2>Time Spent in Pending</h2>\n')
-    outfile.write('    <a href = "' + figureDir + '/hPending.png">\n')
-    outfile.write('      <img src = "' + figureDir + '/hPending.png" width = "70%">\n')
+    outfile.write('    <a href = "' + web_figureDir + '/hPending.png">\n')
+    outfile.write('      <img src = "' + web_figureDir + '/hPending.png" width = "70%">\n')
     outfile.write('    </a>\n')
     outfile.write('    <hr>\n')
 
@@ -655,14 +654,12 @@ def main(argv):
 ###     c1 = TCanvas( 'c1', 'Example with Formula', 0, 0, 1200, 600 )
 ###     hmaxrss.Draw()
 ###     c1.Update()
-###     figureDir = 'figures/' + workflow_name_text
-###     if not os.path.exists(figureDir): os.makedirs(figureDir)
-###     c1.SaveAs(figureDir + '/hmaxrss.png')
+###     c1.SaveAs(local_figureDir + '/hmaxrss.png')
 ###     c1.Close()
 ###     
 ###     outfile.write('    <h2>MAX RSS reported by SWIF</h2>\n')
-###     outfile.write('    <a href = "' + figureDir + '/hmaxrss.png">\n')
-###     outfile.write('      <img src = "' + figureDir + '/hmaxrss.png" width = "70%">\n')
+###     outfile.write('    <a href = "' + web_figureDir + '/hmaxrss.png">\n')
+###     outfile.write('      <img src = "' + web_figureDir + '/hmaxrss.png" width = "70%">\n')
 ###     outfile.write('    </a>\n')
 ###     outfile.write('    <hr>\n')
     
@@ -714,14 +711,12 @@ def main(argv):
     latex.SetTextColor(ROOT.kBlack)
     
     c1.Update()
-    figureDir = 'html/figures/' + workflow_name_text
-    if not os.path.exists(figureDir): os.makedirs(figureDir)
-    c1.SaveAs(figureDir + '/duration.png')
+    c1.SaveAs(local_figureDir + '/duration.png')
     c1.Close()
     
     outfile.write('    <h2>Duration of Each Stage</h2>\n')
-    outfile.write('    <a href = "' + figureDir + '/duration.png">\n')
-    outfile.write('      <img src = "' + figureDir + '/duration.png" width = "100%">\n')
+    outfile.write('    <a href = "' + web_figureDir + '/duration.png">\n')
+    outfile.write('      <img src = "' + web_figureDir + '/duration.png" width = "100%">\n')
     outfile.write('    </a>\n')
     outfile.write('    <hr>\n')
 
@@ -732,14 +727,14 @@ def main(argv):
     create_stacked_times.main([filename])
 
     outfile.write('    <h2>Total Job Time in Order of Auger ID</h2>\n')
-    outfile.write('    <a href = "' + figureDir + '/hstack_times_auger_id.png">\n')
-    outfile.write('      <img src = "' + figureDir + '/hstack_times_auger_id.png" width = "70%">\n')
+    outfile.write('    <a href = "' + web_figureDir + '/hstack_times_auger_id.png">\n')
+    outfile.write('      <img src = "' + web_figureDir + '/hstack_times_auger_id.png" width = "70%">\n')
     outfile.write('    </a>\n')
     outfile.write('    <hr>\n')
 
     outfile.write('    <h2>Total Job Time in Order of Total Time</h2>\n')
-    outfile.write('    <a href = "' + figureDir + '/hstack_times_totaltime.png">\n')
-    outfile.write('      <img src = "' + figureDir + '/hstack_times_totaltime.png" width = "70%">\n')
+    outfile.write('    <a href = "' + web_figureDir + '/hstack_times_totaltime.png">\n')
+    outfile.write('      <img src = "' + web_figureDir + '/hstack_times_totaltime.png" width = "70%">\n')
     outfile.write('    </a>\n')
     outfile.write('    <hr>\n')
 
@@ -777,14 +772,12 @@ def main(argv):
         flinear[i].DrawClone("same")
 
     c1.Update()
-    figureDir = 'html/figures/' + workflow_name_text
-    if not os.path.exists(figureDir): os.makedirs(figureDir)
-    c1.SaveAs(figureDir + '/walltime.png')
+    c1.SaveAs(local_figureDir + '/walltime.png')
     c1.Close()
     
     outfile.write('    <h2>Wall Time, CPU Time vs Wall Time</h2>\n')
-    outfile.write('    <a href = "' + figureDir + '/walltime.png">\n')
-    outfile.write('      <img src = "' + figureDir + '/walltime.png" width = "80%">\n')
+    outfile.write('    <a href = "' + web_figureDir + '/walltime.png">\n')
+    outfile.write('      <img src = "' + web_figureDir + '/walltime.png" width = "80%">\n')
     outfile.write('    </a>\n')
     outfile.write('    <hr>\n')
 
@@ -818,14 +811,12 @@ def main(argv):
     latex.SetTextColor(ROOT.kBlack)
     
     c1.Update()
-    figureDir = 'html/figures/' + workflow_name_text
-    if not os.path.exists(figureDir): os.makedirs(figureDir)
-    c1.SaveAs(figureDir + '/hauger_mem.png')
+    c1.SaveAs(local_figureDir + '/hauger_mem.png')
     c1.Close()
     
     outfile.write('    <h2>MAX Memory reported by AUGER</h2>\n')
-    outfile.write('    <a href = "' + figureDir + '/hauger_mem.png">\n')
-    outfile.write('      <img src = "' + figureDir + '/hauger_mem.png" width = "70%">\n')
+    outfile.write('    <a href = "' + web_figureDir + '/hauger_mem.png">\n')
+    outfile.write('      <img src = "' + web_figureDir + '/hauger_mem.png" width = "70%">\n')
     outfile.write('    </a>\n')
     outfile.write('    <hr>\n')
 
