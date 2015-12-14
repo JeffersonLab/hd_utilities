@@ -1,3 +1,0 @@
-INSERT INTO PROJECT_aux ( jobId)
-SELECT jobId 
-FROM `PROJECTJob`

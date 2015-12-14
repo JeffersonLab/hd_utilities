@@ -1,8 +1,0 @@
-data_type           = recon
-run_period          = RunPeriod-RUNPERIOD
-revision            = VERSION
-software_version    = /group/halld/data_monitoring/run_conditions/soft_comm_RUN_PERIOD_HYPHEN_verVERSION.xml
-jana_config         = /group/halld/data_monitoring/run_conditions/jana_rawdata_comm_RUN_PERIOD_HYPHEN_verVERSION.conf
-ccdb_context        = calibtime=YEAR-MONTH-DAY
-production_time     = YEAR-MONTH-DAY
-dataVersionString   = recon_RunPeriod-RUNPERIOD_YEARMONTHDAY_verVERSION
