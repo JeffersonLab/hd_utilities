@@ -402,6 +402,8 @@ def ProcessOfflineData(args):
         if not os.path.exists(merged_rest_dir):
             os.system("mkdir -p " + merged_rest_dir)
         merged_rest_filename = "%s/dana_rest_%s.hddm"%(merged_rest_dir,rundir)
+        if os.path.isfile(merged_rest_filename):
+            os.system("rm -f %s"%merged_rest_filename)
         os.system("hddm_merge_files -r -I -C -o%s %s"%(merged_rest_filename," ".join(sorted(rest_files))))
         """
         #### temporarily disable the saving of rest files
