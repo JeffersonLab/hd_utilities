@@ -9,6 +9,9 @@
 # Correlations are made for only files included in the launch        #
 # of interest.                                                       #
 #                                                                    #
+# If the cross analysis table for an intermediate ver has not        #
+# been created that ver will be skipped.                             #
+#                                                                    #
 #--------------------------------------------------------------------#
 
 from sets import Set
@@ -91,6 +94,26 @@ def main(argv):
     VERSION = int(args[2])
     assert MINVERSION < VERSION
 
+    # List of all valid launch vers
+    launchlist = []
+    # Only run over launches that had table created in DB
+    # Create MySQL connection
+    db_conn = MySQLdb.connect(host='hallddb', user='farmer', passwd='', db='farming')
+    cursor = db_conn.cursor()
+    for ver in range(MINVERSION,VERSION):
+        tablename = 'cross_analysis_table_' + RUNPERIOD + '_ver' + str(ver)
+        cursor.execute("SHOW TABLES LIKE '" + tablename + "'")
+        results = cursor.fetchall()
+
+        if len(results) == 0:
+            print 'table ' + tablename + ' does NOT exist, skipping...'
+        else:
+            # print 'table ' + tablename + ' exists'
+            launchlist.append(ver)
+
+    print 'Launch vers to compare: ' + str(launchlist)
+    
+
     # Dictionary between ver to be filled and TGraph
     dict_cpu_sec = {}
     dict_wall_sec = {}
@@ -102,7 +125,7 @@ def main(argv):
     # This one is a TH1F
     dict_nevents_diff = {}
 
-    for ver in range(MINVERSION,VERSION):
+    for ver in launchlist:
         dict_cpu_sec[ver] = TGraph()
         dict_wall_sec[ver] = TGraph()
         dict_mem_kb[ver] = TGraph()
@@ -158,10 +181,12 @@ def main(argv):
         input_copy_sec = {}
         plugin_sec = {}
 
-        # Start iterating from VERSION since we always
-        # plot the resources for ver VERSION on the x-axis
+        # Iterate over VERSION and launchlist.
+        # Start with VERSION so that the condition for
+        # filling the correlation plots gets satsified
+        # for each of the vers in launchlist
         noValue = -999
-        for ver in range(VERSION,MINVERSION-1,-1):
+        for ver in [VERSION] + launchlist:
             cpu_sec[ver] = noValue
             wall_sec[ver] = noValue
             mem_kb[ver] = noValue
@@ -251,7 +276,7 @@ def main(argv):
     htmlfile.write('    <td colspan="' + str(VERSION - MINVERSION) + '"> CPU time (min) </td>\n')
     htmlfile.write('  </tr>\n')
     htmlfile.write('  <tr>\n')
-    for ver in range(MINVERSION,VERSION):
+    for ver in launchlist:
         htmlfile.write('    <!-- 01___cpu_sec ver' + format(ver,2) + '-->\n')
         htmlfile.write('    <td style="width:20%">\n')
         htmlfile.write('      <a href="./figures/SWIF/ver' + format(VERSION,2) + '/01___cpu_sec_ver' \
@@ -267,7 +292,7 @@ def main(argv):
     htmlfile.write('    <td colspan="' + str(VERSION - MINVERSION) + '"> wall time (min) </td>\n')
     htmlfile.write('  </tr>\n')
     htmlfile.write('  <tr>\n')
-    for ver in range(MINVERSION,VERSION):
+    for ver in launchlist:
         htmlfile.write('    <!-- 02___wall_sec ver' + format(ver,2) + '-->\n')
         htmlfile.write('    <td style="width:20%">\n')
         htmlfile.write('      <a href="./figures/SWIF/ver' + format(VERSION,2) + '/02___wall_sec_ver' \
@@ -283,7 +308,7 @@ def main(argv):
     htmlfile.write('    <td colspan="' + str(VERSION - MINVERSION) + '"> Memory (GB) </td>\n')
     htmlfile.write('  </tr>\n')
     htmlfile.write('  <tr>\n')
-    for ver in range(MINVERSION,VERSION):
+    for ver in launchlist:
         htmlfile.write('    <!-- 03___mem_kb ver' + format(ver,2) + '-->\n')
         htmlfile.write('    <td style="width:20%">\n')
         htmlfile.write('      <a href="./figures/SWIF/ver' + format(VERSION,2) + '/03___mem_kb_ver' \
@@ -299,7 +324,7 @@ def main(argv):
     htmlfile.write('    <td colspan="' + str(VERSION - MINVERSION) + '"> Virtual memory (GB) </td>\n')
     htmlfile.write('  </tr>\n')
     htmlfile.write('  <tr>\n')
-    for ver in range(MINVERSION,VERSION):
+    for ver in launchlist:
         htmlfile.write('    <!-- 04___vmem_kb ver' + format(ver,2) + '-->\n')
         htmlfile.write('    <td style="width:20%">\n')
         htmlfile.write('      <a href="./figures/SWIF/ver' + format(VERSION,2) + '/04___vmem_kb_ver' \
@@ -315,7 +340,7 @@ def main(argv):
     htmlfile.write('    <td colspan="' + str(VERSION - MINVERSION) + '"> #events </td>\n')
     htmlfile.write('  </tr>\n')
     htmlfile.write('  <tr>\n')
-    for ver in range(MINVERSION,VERSION):
+    for ver in launchlist:
         htmlfile.write('    <!-- 05___nevents ver' + format(ver,2) + '-->\n')
         htmlfile.write('    <td style="width:20%">\n')
         htmlfile.write('      <a href="./figures/SWIF/ver' + format(VERSION,2) + '/05___nevents_ver' \
@@ -331,7 +356,7 @@ def main(argv):
     htmlfile.write('    <td colspan="' + str(VERSION - MINVERSION) + '"> &Delta; events </td>\n')
     htmlfile.write('  </tr>\n')
     htmlfile.write('  <tr>\n')
-    for ver in range(MINVERSION,VERSION):
+    for ver in launchlist:
         htmlfile.write('    <!-- 06___nevents_diff ver' + format(ver,2) + '-->\n')
         htmlfile.write('    <td style="width:20%">\n')
         htmlfile.write('      <a href="./figures/SWIF/ver' + format(VERSION,2) + '/06___nevents_diff_ver' \
@@ -347,7 +372,7 @@ def main(argv):
     htmlfile.write('    <td colspan="' + str(VERSION - MINVERSION) + '"> input copy time (min) </td>\n')
     htmlfile.write('  </tr>\n')
     htmlfile.write('  <tr>\n')
-    for ver in range(MINVERSION,VERSION):
+    for ver in launchlist:
         htmlfile.write('    <!-- 07___input_copy_sec ver' + format(ver,2) + '-->\n')
         htmlfile.write('    <td style="width:20%">\n')
         htmlfile.write('      <a href="./figures/SWIF/ver' + format(VERSION,2) + '/07___input_copy_sec_ver' \
@@ -363,7 +388,7 @@ def main(argv):
     htmlfile.write('    <td colspan="' + str(VERSION - MINVERSION) + '"> plugin time (min) </td>\n')
     htmlfile.write('  </tr>\n')
     htmlfile.write('  <tr>\n')
-    for ver in range(MINVERSION,VERSION):
+    for ver in launchlist:
         htmlfile.write('    <!-- 08___plugin_time ver' + format(ver,2) + '-->\n')
         htmlfile.write('    <td style="width:20%">\n')
         htmlfile.write('      <a href="./figures/SWIF/ver' + format(VERSION,2) + '/08___plugin_time_ver' \
@@ -391,7 +416,7 @@ def main(argv):
     if not os.path.exists(figureDir):
         os.makedirs(figureDir)
 
-    for ver in range(MINVERSION,VERSION):
+    for ver in launchlist:
         #--------------------------------------------------------------------
         #                                cpu_sec
         #--------------------------------------------------------------------
