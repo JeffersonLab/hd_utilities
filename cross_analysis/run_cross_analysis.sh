@@ -69,6 +69,7 @@ time python create_stats_table_row.py $RUNPERIOD $VERSION
 
 # 4. Create table for results of each file against version
 # For this to work we need to have the DB in step 2. to have been created.
+# Launches that do not have corresponding tables from step 2. will be skipped.
 echo "4. Create table for results of each file against version"
 time python create_stats_for_each_file.py $RUNPERIOD $MINVERSION $VERSION
 

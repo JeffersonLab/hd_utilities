@@ -66,6 +66,23 @@ def main(argv):
     pathstring = "/mss/halld/RunPeriod-" + RUNPERIOD_HYPHEN + "/rawdata/Run*/hd_rawdata_*.evio"
     file_list = glob.glob(pathstring)
 
+    # List of all valid launch vers
+    launchlist = []
+    # Check which launches between MINVERSION and MAXVERSION have a DB table,
+    # if not, skip that launch
+    for ver in range(MINVERSION,MAXVERSION+1):
+        tablename = 'cross_analysis_table_' + RUNPERIOD + '_ver' + str(ver)
+        cursor.execute("SHOW TABLES LIKE '" + tablename + "'")
+        results = cursor.fetchall()
+
+        if len(results) == 0:
+            print 'table ' + tablename + ' does NOT exist, skipping...'
+        else:
+            print 'table ' + tablename + ' exists'
+            launchlist.append(ver)
+
+    print 'Launch vers to run over: ' + str(launchlist)
+
     # List of all [run]_[file]
     allfiles = []
 
@@ -113,7 +130,7 @@ def main(argv):
     ntimeout = {}
     nsystem = {}
     nnull = {}
-    for ver in range(MINVERSION, MAXVERSION+1):
+    for ver in launchlist:
         ntotal[ver] = 0
         nsegfault[ver] = 0
         nsuccess[ver] = 0
@@ -140,10 +157,10 @@ def main(argv):
 
         # Grab results from DB for each version for this file,
         # fill into list of final_states and problems for this file
-        dict_final_states = {ver : 'NULL' for ver in range(MINVERSION,MAXVERSION+1)}
-        dict_problems     = {ver : 'NULL' for ver in range(MINVERSION,MAXVERSION+1)}
+        dict_final_states = {ver : 'NULL' for ver in launchlist}
+        dict_problems     = {ver : 'NULL' for ver in launchlist}
 
-        for ver in range(MINVERSION,MAXVERSION+1):
+        for ver in launchlist:
             tablename = 'cross_analysis_table_' + RUNPERIOD + '_ver' + str(ver)
             cursor.execute('SELECT final_state, problems FROM ' + tablename + ' WHERE run = ' + str(run_num) + ' AND file = ' + str(file_num))
             results = cursor.fetchall()
@@ -187,7 +204,7 @@ def main(argv):
                     outfile.write('    </tr>\n')
 
                     # Fill in summary table for previous hundreds
-                    for ver in range(MINVERSION,MAXVERSION+1):
+                    for ver in launchlist:
                         # launch ver
                         outfile.write('      <td style=" padding:15px; height:50px; width:150px; border:1px solid black;">VER' \
                                           + "{:0>2d}".format(ver) + '</td>\n')
@@ -232,7 +249,7 @@ def main(argv):
                                           + "{:>4d}".format(nsystem[ver]) + ' (' + "{:5.2f}".format(value) + ')</td>\n')
 
                         outfile.write('    </tr>\n')
-                    # end of looping over ver in range(MINVERSION,MAXVERSION+1)
+                    # end of looping over ver in launchlist
                     outfile.write('  </table>\n')
 
                     # Finish summary table for previous hundreds
@@ -241,7 +258,7 @@ def main(argv):
                     outfile.close()
 
                     # Reset counters for each hundreds of runs
-                    for ver in range(MINVERSION, MAXVERSION+1):
+                    for ver in launchlist:
                         ntotal[ver] = 0
                         nsegfault[ver] = 0
                         nsuccess[ver] = 0
@@ -361,7 +378,7 @@ def main(argv):
                 outfile.write('      <th style="border: 1px solid black; height:15px; width:100px;">run</th>\n')
                 outfile.write('      <th style="border: 1px solid black; height:15px; width:100px;">file</th>\n')
                 
-                for ver in range(MINVERSION,MAXVERSION+1):
+                for ver in launchlist:
                     outfile.write('      <th style="border: 1px solid black; height:15px; width:100px;">VER' + "{:02d}".format(ver) + '</th>\n')
 
                 outfile.write('    </tr>\n')
@@ -387,7 +404,7 @@ def main(argv):
         outfile.write('      <td style=" padding:15px; height:50px; width:100px; border:1px solid black;">' \
                           + "{:03d}".format(int(file_num)) + '</td>\n')
 
-        for ver in range(MINVERSION,MAXVERSION+1):
+        for ver in launchlist:
             if VERBOSE:
                 print 'ver = ' + str(ver) + ' dict_final_states[' + str(ver) + '] = ' + dict_final_states[ver]
 
@@ -548,7 +565,7 @@ def main(argv):
     outfile.write('\n')
         
     if VERBOSE:
-        for ver in range(MINVERSION,MAXVERSION+1):
+        for ver in launchlist:
             print 'ntotal['       + str(ver) + ' ] = ' + str(ntotal[ver])
             print 'nsuccess['     + str(ver) + ' ] = ' + str(nsuccess[ver])
             print 'nsegfault['    + str(ver) + ' ] = ' + str(nsegfault[ver])
@@ -574,7 +591,7 @@ def main(argv):
     outfile.write('    </tr>\n')
     
     # Fill in summary table for final hundreds
-    for ver in range(MINVERSION,MAXVERSION+1):
+    for ver in launchlist:
         outfile = open(outfilename,'a')
 
         outfile.write('    <tr>\n')
