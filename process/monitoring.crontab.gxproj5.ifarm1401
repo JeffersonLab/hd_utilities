@@ -4,4 +4,4 @@ MAILTO=sdobbs
 HOME=/home/gxproj5
 LOGDIR=/home/gxproj5/halld/monitoring/log
 
-40 */2 * * * /home/gxproj5/halld/monitoring/process/check_monitoring_data.csh
+40 * * * * /home/gxproj5/monitoring/process/check_monitoring_data.csh
