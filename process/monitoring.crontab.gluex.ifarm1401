@@ -4,7 +4,7 @@ MAILTO=sdobbs
 HOME=/home/gluex
 LOGDIR=/home/gluex/halld/monitoring/log
 
-*/15 */12 * * * /home/gluex/halld/monitoring/process/check_new_runs.csh
+*/15 * * * * /home/gluex/halld/monitoring/process/check_new_runs.csh
 #*/15 * * * * /home/gluex/halld/monitoring/process/check_new_runs.csh
 15 */6 * * * /home/gluex/halld/monitoring/process/update_runinfo.csh
 
