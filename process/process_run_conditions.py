@@ -12,6 +12,7 @@ from math import fabs
 import struct
 from datetime import datetime
 #import numpy as np
+import calendar
 
 from datamon_db import datamon_db
 
@@ -44,6 +45,7 @@ def EVIO_SWAP32(x):
 ######################################
 # CCDB
 
+"""
 import ccdb.path_utils
 import ccdb.cmd.themes
 from ccdb import get_ccdb_home_path
@@ -73,7 +75,7 @@ def InitCCDB():
     context.register_utilities()                        # Initialization. Register all commands (ls, rm, mktbl etc...)
 
     return context
-
+"""
 ######################################
 
 
@@ -119,7 +121,14 @@ def parse_condition_file(fname):
             if tokens[1] == "=":
                 # deal with special cases
                 if tokens[0] == "TIME":
-                    run_conditions[ tokens[0] ] = " ".join(tokens[2:])
+                    #run_conditions[ tokens[0] ] = " ".join(tokens[2:])
+                    # reformat time to be consistent
+                    date_tokens = tokens[2:]
+                    year = int(date_tokens[4])
+                    month = list(calendar.month_abbr).index(date_tokens[1])
+                    day = int(date_tokens[2])
+                    time = date_tokens[3]
+                    run_conditions[ tokens[0] ] = "%d-%d-%d %s"%(year,month,day,time)
                 else:
                     run_conditions[ tokens[0] ] = tokens[2]
         infile.close()
@@ -285,7 +294,7 @@ def ParseEVIOFiles(filelist):
 
 def load_target_types(ccdb_context, run_number):
     mapping = {}
-
+    """
     # make temp file to store CCDB info in
     f = NamedTemporaryFile()
     ccdb_context.process_command_line("dump /TARGET/target_type_list:"+str(run_number)+" > "+f.name)
@@ -302,7 +311,7 @@ def load_target_types(ccdb_context, run_number):
             vals = lines[x].split()
             #index = int(vals[0])
             mapping[ int(vals[0]) ] = " ".join(vals[1:])
-
+    """
     return mapping
 
 
@@ -362,6 +371,7 @@ def main(argv):
             run_properties['start_time'] = file_properties['start_time']
             run_properties['end_time'] = file_properties['end_time']
 
+    """
     # pull out target information from the CCDB
     # load CCDB connection
     ccdb_context = InitCCDB()
@@ -388,6 +398,7 @@ def main(argv):
         else:
             print "Invalid target index from CCDB = " + str(target_index)
         fconst.close()
+    """
 
     if VERBOSE:
         print "RUN PROPERTIES FOR RUN " + str(run_number)
