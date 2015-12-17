@@ -3,7 +3,11 @@
 set LOCKFILE=lock.online
 
 # Load standard environment for ROOT
-source /home/gluex/setup_jlab.csh
+#source /home/gluex/setup_jlab.csh
+pushd .
+cd
+source /home/gluex/build.csh
+popd
 
 #set MONITORING_HOME=/home/gxproj1/halld/monitoring/process
 set MONITORING_HOME=/home/gluex/halld/monitoring/process
@@ -22,6 +26,7 @@ endif
 if ( ! -e $LOCKFILE ) then
     touch $LOCKFILE
     ./check_new_runs.py --logfile=$MONITORING_LOGDIR/check_new_runs.`date +%F_%T`.log
+    #./check_new_runs.py --force
     rm $LOCKFILE
 else 
     echo "process is locked by another job, exiting..."

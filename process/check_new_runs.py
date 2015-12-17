@@ -52,6 +52,7 @@ class CheckNewRuns:
 
         self.MAKE_PLOTS = True
         self.MAKE_DB_SUMMARY = True
+        #self.MAKE_RUN_CONDITIONS = False
         self.MAKE_RUN_CONDITIONS = True
 
         self.NEWDIR_MODE = "775"
@@ -106,7 +107,7 @@ class CheckNewRuns:
         # kludge for now, since the online ROOT files have stopped since run 1764, get a new run if a new condition file shows up
         #condition_files_on_disk = [ f for f in listdir(ONLINE_CONDITION_DIR) if (isfile(join(ONLINE_CONDITION_DIR,f))and(f[-4:]=='.dat')) ]
         #run_numbers_on_disk = [ (int(fname[15:20]),fname) for fname in condition_files_on_disk if (int(fname[15:20])>=MIN_RUN_NUMBER) ]
-        run_numbers_on_disk.sort(key=lambda runinfo: int(runinfo[0]))
+        #run_numbers_on_disk.sort(key=lambda runinfo: int(runinfo[0]))
 
         # do the heavy work
         for (run,fname) in run_numbers_on_disk:
@@ -150,11 +151,11 @@ class CheckNewRuns:
 
                     summarizer.ProcessRun()
         
-                    #if self.MAKE_RUN_CONDITIONS:
-                    #    # update the run metadata
-                    #    cmdargs = str(run)
-                    #    print "  saving conditions..."
-                    #    process_run_conditions.main(cmdargs.split())
+                    if self.MAKE_RUN_CONDITIONS:
+                        # update the run metadata
+                        cmdargs = str(run)
+                        print "  saving conditions..."
+                        process_run_conditions.main(cmdargs.split())
 
                 ## we successfully processed the run!  make a note of that
                 oldrun_list.append(run)
