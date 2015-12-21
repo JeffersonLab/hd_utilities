@@ -22,7 +22,7 @@ def get_data(options):
     revision_str = str(options[1])
     revision_str = revision_str.replace("ver","")
     revision = int(float(revision_str))
-    query = "SELECT distinct r.run_num, r.start_time, r.num_events from run_info r, version_info v, cdc_hits c WHERE c.runid=r.run_num and v.version_id=c.version_id and run_num>0 and revision=%s and run_period=%s ORDER BY r.run_num"
+    query = "SELECT distinct r.run_num, r.start_time, r.num_events from run_info r, version_info v, bcal_hits b WHERE b.runid=r.run_num and v.version_id=b.version_id and run_num>0 and revision=%s and run_period=%s ORDER BY r.run_num"
     curs.execute(query, (revision, str(options[2])))    
     rows=curs.fetchall()
 
@@ -34,7 +34,7 @@ def get_data_singlerun(options):
     revision_str = str(options[1])
     revision_str = revision_str.replace("ver","")
     revision = int(float(revision_str))
-    query = "SELECT distinct r.run_num, r.start_time, r.num_events, r.beam_current, r.radiator_type, r.solenoid_current, r.trigger_config_file from run_info r, version_info v, cdc_hits c WHERE c.runid=r.run_num and v.version_id=c.version_id and run_num>0 and revision=%s and r.run_num=%s ORDER BY r.run_num"
+    query = "SELECT distinct r.run_num, r.start_time, r.num_events, r.beam_current, r.radiator_type, r.solenoid_current, r.trigger_config_file from run_info r, version_info v, bcal_hits b WHERE b.runid=r.run_num and v.version_id=b.version_id and run_num>0 and revision=%s and r.run_num=%s ORDER BY r.run_num"
     curs.execute(query, (revision, options[0]))
     rows=curs.fetchall()
 
@@ -64,7 +64,7 @@ def get_dates(options):
     revision_str = str(options[1])
     revision_str = revision_str.replace("ver","")
     revision = int(float(revision_str)) 
-    query = "SELECT DISTINCT DATE(r.start_time) FROM run_info r, version_info v, cdc_hits c WHERE c.runid=r.run_num and v.version_id=c.version_id and run_num>0 and start_time>'2014-11-01' and revision=%s  and run_period=%s GROUP BY start_time"
+    query = "SELECT DISTINCT DATE(r.start_time) FROM run_info r, version_info v, bcal_hits b WHERE b.runid=r.run_num and v.version_id=b.version_id and run_num>0 and start_time>'2014-11-01' and revision=%s  and run_period=%s GROUP BY start_time"
     curs.execute(query, (revision, str(options[2])))
     rows=curs.fetchall()
 
@@ -270,7 +270,7 @@ def get_options():
     run_number_str = []
     run_number = []
     
-    verName = "ver15"
+    verName = "ver22"
     periodName = "RunPeriod-2015-03"
 
     if "ver" in form:
@@ -392,7 +392,7 @@ def main():
 
         ana_charts3 = [["HistMacro_p2pi_pmiss","&pi;<sup>+</sup>&pi;<sup>-</sup>"],["HistMacro_p3pi_pmiss_2FCAL","&pi;<sup>+</sup>&pi;<sup>-</sup>&pi;<sup>0</sup>(2FCAL)"],["HistMacro_p3pi_pmiss_FCAL-BCAL","&pi;<sup>+</sup>&pi;<sup>-</sup>&pi;<sup>0</sup>(F/BCAL)"]]    
     # Spring 2015 run
-    elif options[2] == 'RunPeriod-2015-03' or options[2] == 'detcom_02' or options[2] == 'RunPeriod-2015-06':
+    elif options[2] == 'RunPeriod-2015-03' or options[2] == 'detcom_02' or options[2] == 'RunPeriod-2015-06' or options[2] == 'RunPeriod-2015-12':
         cdc_charts = [["__CDC_cdc_raw_intpp","RawInt"],["__CDC_cdc_raw_t","Time"],["CDC_occupancy","Occupancy"],["__CDC_cdc_ped","Pedestal"],["__CDC_cdc_raw_intpp_vs_n","RawIntVsN"],["__CDC_cdc_raw_t_vs_n","RawTimeVsN"],["__CDC_cdc_ped_vs_n","PedVsN"],["__CDC_cdc_windata_ped_vs_n","WinDataPedVsN"]]
         fdc_charts = [["__FDC_fdcos","FdcStripOcc"],["__FDC_fdcow","FdcWireOcc"]]
         if revision < 4:
@@ -473,21 +473,21 @@ def main():
     print_row(options, tagh_charts)
     print "</table>"
 
-    if revision > 3 and options[2] == 'RunPeriod-2015-03':
+    if revision > 3 and options[2] == 'RunPeriod-2015-03' or options[2] == 'RunPeriod-2015-06':
 	print """<table style="width:200px; font-size:0.8em">
 	   <tr>"""
 	print "<td>PS:</td>"
 	print_row(options, ps_charts)
     	print "</table>"
 
-    if revision > 4 and options[2] == 'RunPeriod-2015-03':
+    if revision > 4 and options[2] == 'RunPeriod-2015-03' or options[2] == 'RunPeriod-2015-06':
 	print """<table style="width:200px; font-size:0.8em">
 	   <tr>"""
 	print "<td>RF:</td>"
 	print_row(options, rf_charts)
     	print "</table>"
 
-    if (revision > 5 and options[2] == 'RunPeriod-2015-03') or (revision > 15 and options[2] == 'RunPeriod-2014-10'):
+    if (revision > 5 and options[2] == 'RunPeriod-2015-03') or (revision > 15 and options[2] == 'RunPeriod-2014-10') or options[2] == 'RunPeriod-2015-06':
 	print """<table style="font-size:0.8em">
 	   <tr>"""
 	print "<td>HLDetectorTiming:</td>"

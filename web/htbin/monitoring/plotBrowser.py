@@ -309,7 +309,7 @@ def get_options():
     run_number = []
 
     plotName = "CDC_occupancy"
-    verName = "ver15"
+    verName = "ver22"
     periodName = "RunPeriod-2015-03"
     query = ""
 
@@ -339,8 +339,12 @@ def get_options():
     else:
         if periodName == "RunPeriod-2014-10":
             run_number.append(1)
-        else:
+        elif periodName == "RunPeriod-2015-03":
             run_number.append(2600)
+	elif periodName == "RunPeriod-2015-06":
+	    run_number.append(3400)
+	else:
+	    run_number.append(4000)
         run_number.append(9999)
         run_number.append(plotName)
         run_number.append(verName)

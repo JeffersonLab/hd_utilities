@@ -91,7 +91,7 @@ def show_plots(records, runName, plotName, periodName):
     print "<tr>"
     for temp_ver in temp_vers:
         print "<td>"
-        web_link = "https://halldweb.jlab.org/work/halld/data_monitoring/%s/ver%s/Run%06d/%s.png" % (periodName, int(temp_ver[0]), runName, plotName)
+        web_link = "https://halldweb.jlab.org/work/halld/data_monitoring/%s/ver%02d/Run%06d/%s.png" % (periodName, int(temp_ver[0]), runName, plotName)
         print "<img width=400px src=\"%s\" onclick=\"window.open('%s', '_blank')\" >" % (web_link, web_link)
         print "</td>"
     print "</tr>"
@@ -266,7 +266,7 @@ def get_options():
     run_number = []
 
     plotName = "HistMacro_BCALReconstruction_p3"
-    verName = "ver15"
+    verName = "ver22"
     periodName = "RunPeriod-2015-03"
 
     if "plot" in form:
@@ -283,8 +283,12 @@ def get_options():
     else:
         if periodName == "RunPeriod-2014-10":
             run_number.append(1)
+        elif periodName == "RunPeriod-2015-03":
+            run_number.append(2600)
+        elif periodName == "RunPeriod-2015-06":
+            run_number.append(3400)
         else:
-            run_number.append(2931)
+            run_number.append(4000)
         run_number.append(plotName)
         run_number.append(periodName)
         return run_number

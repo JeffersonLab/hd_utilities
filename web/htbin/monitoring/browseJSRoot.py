@@ -18,7 +18,6 @@ openROOT_code="""
    <head>
       <title>Read a ROOT file</title>
       <meta http-equiv="X-UA-Compatible" content="IE=Edge; text/html">
-      <link rel="shortcut icon" href="img/RootIcon.ico">
       <script type="text/javascript" src="https://halldweb.jlab.org/data_monitoring/js/scripts/JSRootCore.js"></script>
    </head>
    <body onload="JSROOT.BuildSimpleGUI()">
