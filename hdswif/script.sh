@@ -56,16 +56,16 @@ date
 set START = `date +%s`
 #hd_root $INPUTFILE -PPLUGINS=CDC_online -PNTHREADS=$NTHREADS -PTHREAD_TIMEOUT=300 -PPRINT_PLUGIN_PATHS=1 -PEVIO:ENABLE_DISENTANGLING=0
 hd_root $INPUTFILE -PPLUGINS=$PLUGINS_VALUE -PNTHREADS=$NTHREADS -PTHREAD_TIMEOUT=$THREAD_TIMEOUT_VALUE
-set RETURN_CODE = $status
-echo Return Code = $RETURN_CODE
+#set RETURN_CODE = $status
+#echo Return Code = $RETURN_CODE
 echo "ending plugins ............."
 date
 set END = `date +%s`
 set TIMEDIFF = `expr $END - $START`
 echo "TIMEDIFF: $TIMEDIFF"
-if ($RETURN_CODE != 0) then
-	exit $RETURN_CODE
-endif
+#if ($RETURN_CODE != 0) then
+#	exit $RETURN_CODE
+#endif
 
 # save ROOT output file
 mkdir -p -m 775 ${OUTDIR}/ROOT/${RUN_NUMBER}/
