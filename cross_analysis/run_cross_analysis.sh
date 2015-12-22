@@ -22,7 +22,7 @@
 set RUNPERIOD = ""
 set VERSION   = ""
 set RUNPERIOD = $1
-set RUNPERIOD = `echo RUNPERIOD | sed 's:-:_:'`
+set RUNPERIOD = `echo $RUNPERIOD | sed 's:-:_:'`
 set VERSION   = $2
 if ( $RUNPERIOD == "" || $VERSION == "" ) then
   echo "run_cross_analysis.sh usage:"
