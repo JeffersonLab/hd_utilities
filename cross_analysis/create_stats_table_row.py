@@ -43,7 +43,7 @@ def main(argv):
     RUNPERIOD   = RUNPERIOD.replace('-','_')
     RUNPERIOD_HYPHEN = RUNPERIOD.replace('_', '-')
     VERSION   = args[1]
-    XMLDIR    = '/home/' + os.environ['USER'] + '/halld/hdswif/xml/'
+    XMLDIR    = '/home/' + os.environ['USER'] + '/monitoring/hdswif/xml/'
 
     # Variables of interest
     ntotal       = 0 # total number of run/files recorded in table; each run/file is unique

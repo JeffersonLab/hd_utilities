@@ -40,14 +40,14 @@ def main(argv):
 
     RUNPERIOD = args[0]
     VERSION   = args[1]
-    XMLDIR    = '/home/' + os.environ['USER'] + '/halld/hdswif/xml/'
+    XMLDIR    = '/home/' + os.environ['USER'] + '/monitoring/hdswif/xml/'
     if not os.path.isdir(XMLDIR):
         print 'publish_offmon_results.py:'
         print 'XML file directory ' + XMLDIR + ' does not exist...'
         print 'aborting...'
         exit()
 
-    HTMLDIR    = '/home/' + os.environ['USER'] + '/halld/hdswif/html/'
+    HTMLDIR    = '/home/' + os.environ['USER'] + '/monitoring/hdswif/html/'
     if not os.path.isdir(HTMLDIR):
         print 'publish_offmon_results.py:'
         print 'html file directory ' + HTMLDIR + ' does not exist...'

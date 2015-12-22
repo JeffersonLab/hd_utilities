@@ -60,7 +60,7 @@ def main(argv):
     RUNPERIOD   = RUNPERIOD.replace('-','_')
     RUNPERIOD_HYPHEN = RUNPERIOD.replace('_', '-')
     VERSION   = args[1]
-    XMLDIR    = '/home/' + os.environ['USER'] + '/halld/hdswif/xml/'
+    XMLDIR    = '/home/' + os.environ['USER'] + '/monitoring/hdswif/xml/'
 
     # Create MySQL connection
     db_conn = MySQLdb.connect(host='hallddb', user='farmer', passwd='', db='farming')
