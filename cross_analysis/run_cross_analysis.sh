@@ -41,8 +41,6 @@ if (  $CMPMINVERSION < 15 ) then
 endif
 echo "MINVERSION = $MINVERSION"
 
-exit
-
 # 1. Create table for this run period and version
 echo "1. Create table for this run period and version"
 time create_cross_analysis_table.sh $RUNPERIOD $VERSION
