@@ -35,7 +35,7 @@ def main(argv):
     if len(args) != 2:
         print "Usage:"
         print "publish_offmon_results.py [run period] [version]\n"
-        print "example: example: publish_offmon_results.py 2015_03 15 /home/gxproj5/halld/hdswif/ \n"
+        print "example: example: publish_offmon_results.py 2015_03 15 /home/gxproj5/monitoring/hdswif/ \n"
         exit()
 
     RUNPERIOD = args[0]
@@ -77,6 +77,7 @@ def main(argv):
     os.system('mkdir -p ' + OUTDIRBASE + DATASETNAME + '/')
     os.system('mkdir -p ' + OUTDIRBASE + DATASETNAME + '/figures/')
     os.system('cp -v ' + HTMLFILE + ' ' + OUTDIRBASE + DATASETNAME + '/')
+    os.system('cp -v ' + HTMLDIR + '../mystyle.css ' + HTMLDIR + '/mystyle.css')
     os.system('cp -v ' + HTMLDIR + '/mystyle.css ' + OUTDIRBASE + DATASETNAME + '/')
     os.system('cp -rv ' + HTMLDIR + '/figures/' + DATASETNAME + ' ' + OUTDIRBASE + DATASETNAME + '/figures/')
 
