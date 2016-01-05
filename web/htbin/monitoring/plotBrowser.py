@@ -309,8 +309,8 @@ def get_options():
     run_number = []
 
     plotName = "CDC_occupancy"
-    verName = "ver22"
-    periodName = "RunPeriod-2015-03"
+    verName = "ver01"
+    periodName = "RunPeriod-2015-12"
     query = ""
 
     if "plot" in form:
