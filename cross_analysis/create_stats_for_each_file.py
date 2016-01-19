@@ -71,7 +71,8 @@ def main(argv):
     # Check which launches between MINVERSION and MAXVERSION have a DB table,
     # if not, skip that launch
     for ver in range(MINVERSION,MAXVERSION+1):
-        tablename = 'cross_analysis_table_' + RUNPERIOD + '_ver' + str(ver)
+        formatted_vernum = "%02d" % ver
+        tablename = 'cross_analysis_table_' + RUNPERIOD + '_ver' + formatted_vernum
         cursor.execute("SHOW TABLES LIKE '" + tablename + "'")
         results = cursor.fetchall()
 
@@ -161,7 +162,8 @@ def main(argv):
         dict_problems     = {ver : 'NULL' for ver in launchlist}
 
         for ver in launchlist:
-            tablename = 'cross_analysis_table_' + RUNPERIOD + '_ver' + str(ver)
+            formatted_vernum = "%02d" % ver
+            tablename = 'cross_analysis_table_' + RUNPERIOD + '_ver' + formatted_vernum
             cursor.execute('SELECT final_state, problems FROM ' + tablename + ' WHERE run = ' + str(run_num) + ' AND file = ' + str(file_num))
             results = cursor.fetchall()
 
@@ -405,8 +407,9 @@ def main(argv):
                           + "{:03d}".format(int(file_num)) + '</td>\n')
 
         for ver in launchlist:
+            formatted_vernum = "%02d" % ver
             if VERBOSE:
-                print 'ver = ' + str(ver) + ' dict_final_states[' + str(ver) + '] = ' + dict_final_states[ver]
+                print 'ver = ' + formatted_vernum + ' dict_final_states[' + formatted_vernum + '] = ' + dict_final_states[ver]
 
             loc_final_state = dict_final_states[ver]
             loc_problems    = dict_problems[ver]

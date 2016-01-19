@@ -21,24 +21,22 @@
 # 0. Set current run period, version
 set RUNPERIOD = ""
 set VERSION   = ""
+set MINVERSION = ""
+
 set RUNPERIOD = $1
 set RUNPERIOD = `echo $RUNPERIOD | sed 's:-:_:'`
 set VERSION   = $2
-if ( $RUNPERIOD == "" || $VERSION == "" ) then
+set MINVERSION = $3
+
+if ( $RUNPERIOD == "" || $VERSION == "" || $MINVERSION == "") then
   echo "run_cross_analysis.sh usage:"
-  echo "run_cross_analysis.sh [RUN PERIOD] [VERSION]"
+  echo "run_cross_analysis.sh [RUN PERIOD] [VERSION] [MINVERSION]"
   echo "exiting..."
   exit
 endif
 
-# Set minimum to be ver15 (can go back as far as SWIF has been used)
-set MINVERSION = 15
-
 # For correlations, default is to go back 5 launches.
-@ CMPMINVERSION = $VERSION - 5
-if (  $CMPMINVERSION < 15 ) then
-  set CMPMINVERSION = 15
-endif
+set CMPMINVERSION = $MINVERSION
 echo "MINVERSION = $MINVERSION"
 
 # 1. Create table for this run period and version

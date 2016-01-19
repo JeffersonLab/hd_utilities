@@ -101,7 +101,8 @@ def main(argv):
     db_conn = MySQLdb.connect(host='hallddb', user='farmer', passwd='', db='farming')
     cursor = db_conn.cursor()
     for ver in range(MINVERSION,VERSION):
-        tablename = 'cross_analysis_table_' + RUNPERIOD + '_ver' + str(ver)
+        formatted_vernum = "%02d" % ver
+        tablename = 'cross_analysis_table_' + RUNPERIOD + '_ver' + formatted_vernum
         cursor.execute("SHOW TABLES LIKE '" + tablename + "'")
         results = cursor.fetchall()
 
@@ -141,7 +142,8 @@ def main(argv):
     cursor = db_conn.cursor()
 
     # Get all runs and files for the launch of interest (ver VERSION)
-    tablename = 'cross_analysis_table_' + RUNPERIOD + '_ver' + str(VERSION)
+    formatted_mainvernum = "%02d" % VERSION
+    tablename = 'cross_analysis_table_' + RUNPERIOD + '_ver' + formatted_mainvernum
     cursor.execute('SELECT run, file FROM ' + tablename)
     results = cursor.fetchall()
 
@@ -195,7 +197,8 @@ def main(argv):
             input_copy_sec[ver] = noValue
             plugin_sec[ver] = noValue
 
-            tablename = 'cross_analysis_table_' + RUNPERIOD + '_ver' + str(ver)
+            formatted_vernum = "%02d" % ver
+            tablename = 'cross_analysis_table_' + RUNPERIOD + '_ver' + formatted_vernum
             cursor.execute('SELECT cpu_sec, wall_sec, mem_kb, vmem_kb, nevents, input_copy_sec, plugin_sec FROM ' \
                                + tablename + ' WHERE run = ' + str(run_num) + ' AND file = ' + str(file_num))
             results = cursor.fetchall()
@@ -831,7 +834,7 @@ def main(argv):
     old_hook = ''
     for line in alllines:
         nlines += 1
-        if re.search('<!--2015_03_ver[0-9][0-9] resource_use-->',line):
+        if re.search('<!--20[1-3][0-9]_[0-1][0-9]_ver[0-9][0-9] resource_use-->',line):
            pos = nlines
            old_hook = line
            break
