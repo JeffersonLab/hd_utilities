@@ -851,7 +851,7 @@ def main(argv):
     # lines for link
     linklines = []
     linklines.append('  <li style="color:blue;">\n')
-    linklines.append('    <h3><a href = "resource_use/resource_use_2015_03_ver' + format(VERSION,2) + '.html">' \
+    linklines.append('    <h3><a href = "resource_use/resource_use_' + RUNPERIOD + '_ver' + format(VERSION,2) + '.html">' \
                          + 'ver' + format(VERSION,2) + '</a></h3> <!--' + RUNPERIOD + '_ver' \
                          + format(VERSION,2) + ' resource_use-->\n')
     
