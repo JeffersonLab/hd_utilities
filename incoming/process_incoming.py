@@ -18,7 +18,7 @@ from collections import defaultdict
 
 #################################################### GLOBAL VARIABLES ####################################################
 
-VERBOSE = 0
+VERBOSE = 1
 RAW_DATA_BASE_DIR = "/mss/halld/"
 #RAW_DATA_BASE_DIR = "/cache/halld/"
 
@@ -57,7 +57,7 @@ def build_file_dictionary(RUN_PERIOD):
 		file_string = file_name[18:-5] #skip "hd_rawdata_run#_" and ".evio" on the end 
 		file_dictionary[run_string].add(file_string)
 		num_files += 1
-		if VERBOSE > 0:
+		if VERBOSE > 1:
 			print "File found, run, file = " + run_string + " " + file_string
 
 	if VERBOSE > 0:
@@ -66,7 +66,7 @@ def build_file_dictionary(RUN_PERIOD):
 
 def build_job_dictionary(WORKFLOW):
 	command = "swif status -workflow " + WORKFLOW + " -jobs"
-	if VERBOSE > 0:
+	if VERBOSE > 1:
 		print command
 	process = Popen(command.split(), stdout=PIPE)
 	status_output = process.communicate()[0] # is stdout. [1] is stderr
@@ -90,7 +90,7 @@ def build_job_dictionary(WORKFLOW):
 			# Register the job
 			job_dictionary[run_string].add(file_string)
 			num_jobs += 1
-			if VERBOSE > 0:
+			if VERBOSE > 1:
 				print "Job found, run, file = " + run_string + " " + file_string
 		elif (line_length > 8) and (line[:8] == "user_run"): 
 			run_string = line[11:]
@@ -153,11 +153,11 @@ def main(argv):
 		num_jobs_submitted = len(job_dictionary[run_string])
 		num_files = len(file_dictionary[run_string])
 		if(num_jobs_submitted >= NUM_FILES_PER_RUN):
-			if VERBOSE > 0:
+			if VERBOSE > 1:
 				print "Max jobs (" + str(NUM_FILES_PER_RUN) + ") submitted for run " + run_string
 			continue # This run is done
 		if(num_jobs_submitted == num_files):
-			if VERBOSE > 0:
+			if VERBOSE > 1:
 				print "All jobs (" + str(num_files) + ") submitted for run " + run_string
 			continue # This run is done
 
@@ -172,7 +172,7 @@ def main(argv):
 			modified_time = os.path.getmtime(file_path) # time that the file was last modified, in seconds since the epoch
 			current_time = time.time() # in seconds since the epoch
 			delta_t = (current_time - modified_time)/60.0
-			if VERBOSE > 0:
+			if VERBOSE > 1:
 				print "Current time (s), mod time (s), delta_t (min) = " + str(current_time) + ", " + str(modified_time) + ", " + str(delta_t)
 			if(delta_t < 5.0):
 				continue # file (stub) is not at least five minutes old: file may not be fully resident on tape yet: don't submit job
@@ -183,7 +183,7 @@ def main(argv):
 
 	# RUN WORKFLOW (IN CASE NOT RUNNING ALREADY)
 	command = "python " + os.path.expanduser("~/monitoring/hdswif/hdswif.py") + " run " + WORKFLOW
-	if VERBOSE > 0:
+	if VERBOSE > 1:
 		print command
 	try_command(command)
 
