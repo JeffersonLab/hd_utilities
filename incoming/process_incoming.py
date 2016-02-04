@@ -55,6 +55,8 @@ def build_file_dictionary(RUN_PERIOD):
 		run_string = file_name[11:17] #skip "hd_rawdata_" 
 		file_string = file_name[18:-5] #skip "hd_rawdata_run#_" and ".evio" on the end 
 		file_dictionary[run_string].add(file_string)
+		if VERBOSE > 0:
+			print "File found, run, file = " + run_string + " " + file_string
 
 	return file_dictionary
 
@@ -75,6 +77,8 @@ def build_job_dictionary(WORKFLOW):
 				start_loop_flag = 0 # Don't register yet: Just started
 			else: # Register the job
 				job_dictionary[run_string].add(file_string)
+				if VERBOSE > 0:
+					print "Job found, run, file = " + run_string + " " + file_string
 		elif (line_length > 8) and (line[:8] == "user_run"): 
 			run_string = line[11:]
 		elif (line_length > 9) and (line[:9] == "user_file"): 
@@ -135,8 +139,12 @@ def main(argv):
 		num_jobs_submitted = len(job_dictionary[run_string])
 		num_files = len(file_dictionary[run_string])
 		if(num_jobs_submitted >= NUM_FILES_PER_RUN):
+			if VERBOSE > 0:
+				print "Max jobs (" + NUM_FILES_PER_RUN + ") submitted for run " + run_string
 			continue # This run is done
 		if(num_jobs_submitted == num_files):
+			if VERBOSE > 0:
+				print "All jobs (" + num_files + ") submitted for run " + run_string
 			continue # This run is done
 
 		# Submit jobs, IF the file (file = mss stub) timestamp hasn't been modified in at least 5 minutes
@@ -149,7 +157,10 @@ def main(argv):
 			file_path = RAW_DATA_BASE_DIR + "/RunPeriod-" + RUN_PERIOD_WITH_DASH + "/rawdata/Run" + run_string + "/hd_rawdata_" + run_string + "_" + file_string + ".evio"
 			modified_time = os.path.getmtime(file_path) # time that the file was last modified, in seconds since the epoch
 			current_time = time.time() # in seconds since the epoch
-			if((current_time - modified_time)/60.0 < 5.0):
+			delta_t = (current_time - modified_time)/60.0
+			if VERBOSE > 0:
+				print "Current time (s), mod time (s), delta_t (min) = " + current_time + ", " + modified_time + ", " + delta_t
+			if(delta_t < 5.0):
 				continue # file (stub) is not at least five minutes old: file may not be fully resident on tape yet: don't submit job
 
 			# Add job
