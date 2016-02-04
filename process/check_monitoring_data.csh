@@ -2,12 +2,14 @@
 # Set environmental variables for cron job
 set LOCKFILE=lock.offline
 
-set VERSION=23
-set INPUTDIR=/volatile/halld/offline_monitoring/RunPeriod-2015-03
-set OUTPUTDIR=/work/halld/data_monitoring/RunPeriod-2015-03/ver$VERSION
+set VERSION=25
+set RUNPERIOD=RunPeriod-2015-03
+set INPUTDIR=/volatile/halld/offline_monitoring/$RUNPERIOD
+set OUTPUTDIR=/work/halld/data_monitoring/$RUNPERIOD/ver$VERSION
+set ARGS=" -S -v $RUNPERIOD,$VERSION "
+#set ARGS=" -R 3185 -S -v $RUNPERIOD,$VERSION "
 #set ARGS=" --force -d -s -S -v RunPeriod-2015-03,$VERSION "
 #set ARGS=" -v RunPeriod-2015-03,$VERSION "
-set ARGS=" -S -v RunPeriod-2015-03,$VERSION "
 #set ARGS=" --force -S -v RunPeriod-2015-03,$VERSION "
 #set ARGS=" -v RunPeriod-2015-03,10 "
 
