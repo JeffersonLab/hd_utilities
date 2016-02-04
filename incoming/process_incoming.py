@@ -79,13 +79,10 @@ def build_job_dictionary(WORKFLOW):
 	run_string = "-1"
 	file_string = "-1"
 	num_jobs = 0
-	for line in status_output:
+	for line in status_output.splitlines():
 		if VERBOSE > 9:
 			print line
 		line_length = len(line)
-		print line[:2]
-		print line[:8]
-		print line[:9]
 		if (line_length > 2) and (line[:2] == "id"): 
 			if start_loop_flag:
 				start_loop_flag = False # Don't register yet: Just started
