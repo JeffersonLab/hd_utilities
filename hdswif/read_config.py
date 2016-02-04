@@ -171,13 +171,13 @@ def main(argv):
         print beginning + '{:20s} {:30s}'.format(key, str(value))
     print "-----------------------------------------"
 
-    answer = ''
-    while answer != 'y' or answer != 'n':
-        answer = raw_input('OK? (y/n)')
-        if answer == 'y':
-            break
-        if answer == 'n':
-            exit()
+#    answer = ''
+#    while answer != 'y' or answer != 'n':
+#        answer = raw_input('OK? (y/n)')
+#        if answer == 'y':
+#            break
+#        if answer == 'n':
+#            exit()
 
     return config_dict
 
