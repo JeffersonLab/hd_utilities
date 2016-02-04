@@ -1,0 +1,7 @@
+# Run command every 5 min
+# http://www.thegeekstuff.com/2009/06/15-practical-crontab-examples/
+#-----------------------------------------------------------------------------
+# Min    Hour    Day    Month    Weekday    Command
+#-----------------------------------------------------------------------------
+ */10      *      *       *         *       ~/monitoring/incoming/process_incoming.py 2016-02 ~/monitoring/incoming/input.config 20
+
