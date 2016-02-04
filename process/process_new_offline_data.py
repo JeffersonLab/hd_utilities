@@ -489,6 +489,8 @@ def main():
                       help="Enable parallel processing.")
     parser.add_option("-S","--save_rest", dest="save_rest", action="store_true",
                       help="Save REST files to conventional location.")
+    #parser.add_option("-M","--save_rest", dest="save_rest", action="store_true",
+    #                  help="Save REST files to conventional location.")
     
     (options, args) = parser.parse_args(sys.argv)
 
@@ -583,8 +585,12 @@ def main():
         # process in parallel
         p = multiprocessing.Pool(config.NTHREAD)
         p.map(ProcessOfflineData, runs_to_process)
-
-    
+        
+    # save tarballs of log files and PNGs
+    logdir = join(self.INPUT_DIRECTORY,self.REVISION,"log")
+    if isdir(logdir):
+        os.system("tar czf log.tar.gz %s"%logdir)
+    os.system("tar czf web_figures.tar.gz %s/Run*"%config.OUTPUT_DIRECTORY)
 
 ## main function 
 if __name__ == "__main__":
