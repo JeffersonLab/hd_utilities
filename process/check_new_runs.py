@@ -43,15 +43,17 @@ class CheckNewRuns:
         self.ONLINE_ROOT_DIR = self.BASE_ONLINEMON_DIR + '/root'
         self.ONLINE_CONDITION_DIR = self.BASE_ONLINEMON_DIR + '/conditions'
 
-        self.MIN_RUN_NUMBER = 3939
-        #self.MIN_RUN_NUMBER = 3421
+        self.MIN_RUN_NUMBER = 10000
+        #self.MAX_RUN_NUMBER = 9000
         self.MAX_RUN_NUMBER = 1000000
-        self.VERSION_NUMBER  =  54   ## hardcode default - need to change this
+        self.VERSION_NUMBER  =  62   ## hardcode default - need to change this
         self.MONITORING_OUTPUT_DIR = "/work/halld/data_monitoring"
-        self.RUN_PERIOD = "RunPeriod-2015-12"
+        self.RUN_PERIOD = "RunPeriod-2016-02"
 
         self.MAKE_PLOTS = True
         self.MAKE_DB_SUMMARY = True
+        #self.MAKE_PLOTS = False
+        #self.MAKE_DB_SUMMARY = False
         #self.MAKE_RUN_CONDITIONS = False
         self.MAKE_RUN_CONDITIONS = True
 
@@ -101,13 +103,14 @@ class CheckNewRuns:
         # load the list of ROOT files, making sure that they have the right suffix
         # also, allow for a run range to optionally process only a subset of the runs that exist
         # this is mainly for going back to process files that were created previously
-        files_on_disk = [ f for f in listdir(self.ONLINE_ROOT_DIR) if (isfile(join(self.ONLINE_ROOT_DIR,f))and(f[-5:]=='.root')) ]
-        run_numbers_on_disk = [ (int(fname[13:18]),fname) for fname in files_on_disk if (int(fname[13:18])>=self.MIN_RUN_NUMBER and int(fname[13:18])<=self.MAX_RUN_NUMBER) ]
+        #files_on_disk = [ f for f in listdir(self.ONLINE_ROOT_DIR) if (isfile(join(self.ONLINE_ROOT_DIR,f))and(f[-5:]=='.root')) ]
+        #run_numbers_on_disk = [ (int(fname[13:18]),fname) for fname in files_on_disk if (int(fname[13:18])>=self.MIN_RUN_NUMBER and int(fname[13:18])<=self.MAX_RUN_NUMBER) ]
+        #run_numbers_on_disk.sort(key=lambda runinfo: int(runinfo[0]))
 
         # kludge for now, since the online ROOT files have stopped since run 1764, get a new run if a new condition file shows up
-        #condition_files_on_disk = [ f for f in listdir(ONLINE_CONDITION_DIR) if (isfile(join(ONLINE_CONDITION_DIR,f))and(f[-4:]=='.dat')) ]
-        #run_numbers_on_disk = [ (int(fname[15:20]),fname) for fname in condition_files_on_disk if (int(fname[15:20])>=MIN_RUN_NUMBER) ]
-        #run_numbers_on_disk.sort(key=lambda runinfo: int(runinfo[0]))
+        condition_files_on_disk = [ f for f in listdir(self.ONLINE_CONDITION_DIR) if (isfile(join(self.ONLINE_CONDITION_DIR,f))and(f[-4:]=='.dat')) ]
+        run_numbers_on_disk = [ (int(fname[15:20]),fname) for fname in condition_files_on_disk if (int(fname[15:20])>=self.MIN_RUN_NUMBER and int(fname[15:20])<=self.MAX_RUN_NUMBER) ]
+        run_numbers_on_disk.sort(key=lambda runinfo: int(runinfo[0]))
 
         # do the heavy work
         for (run,fname) in run_numbers_on_disk:
@@ -122,7 +125,11 @@ class CheckNewRuns:
                 ## TODO: create version info?
 
                 # this is the online monitoring ROOT file
-                rootfile_name = join(self.ONLINE_ROOT_DIR,fname)
+                #rootfile_name = join(self.ONLINE_ROOT_DIR,fname)
+                rootfile_name = join(self.ONLINE_ROOT_DIR,"hdmon_online%06d.root"%run)
+
+                if not isfile(rootfile_name):
+                    continue
         
                 if self.MAKE_PLOTS:
                     if self.VERBOSE>1:
@@ -151,11 +158,11 @@ class CheckNewRuns:
 
                     summarizer.ProcessRun()
         
-                    if self.MAKE_RUN_CONDITIONS:
-                        # update the run metadata
-                        cmdargs = str(run)
-                        print "  saving conditions..."
-                        process_run_conditions.main(cmdargs.split())
+                if self.MAKE_RUN_CONDITIONS:
+                    # update the run metadata
+                    cmdargs = str(run)
+                    print "  saving conditions..."
+                    process_run_conditions.main(cmdargs.split())
 
                 ## we successfully processed the run!  make a note of that
                 oldrun_list.append(run)
