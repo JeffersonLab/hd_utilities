@@ -130,25 +130,10 @@ def main(argv):
 
         print 'Created jana config file     ' + janafilename + ' ...'
 
-    # ----------------------------------------------------------------
-    # Create software config file
-    # This file contains
-    # 1. jana version
-    # 2. sim-recon version and hash
-    # 3. hdds version and hash
-    # 4. evio version
-    # 5. cernlib version
-    # 6. xerces-c version
-    # 7. root version
-    # 8. ccdb version
-    # 9. RAM requested
-    # 10. diskspace requested
-    # 11. ncores requested
-    # 12. timelimit
-    # ----------------------------------------------------------------
-    softfilename = OUTPUTDIR + 'soft_comm_' + RUNPERIOD_UNDERSCORE + '_ver' + VERSION + '.xml'
-    # print 'softfilename = ', softfilename
 
+
+
+    softfilename = OUTPUTDIR + 'soft_comm_' + RUNPERIOD_UNDERSCORE + '_ver' + VERSION + '.xml'
     create_softfile = True
 
     if os.path.isfile(softfilename):
@@ -165,116 +150,10 @@ def main(argv):
 
     if create_softfile == True:
         softoutfile = open(softfilename,'w\n')
-
-        # Get jana version
-        janapath = os.environ['JANA_HOME']
-        jana_ver = re.sub(r'.*jana_' '|' '/L.*', '', janapath)
-
-        if jana_ver == '':
-            print 'JANA VERSION not found, aborting'
-            exit()
-
-        # Get ccdb version
-        ccdbpath = os.environ['CCDB_HOME']
-        ccdb_ver = re.sub(r'.*ccdb_','',ccdbpath)
-
-        if ccdb_ver == '':
-            print 'CCDB VERSION not found, aborting'
-            exit()
-
-        # Get root version
-        rootpath = os.environ['ROOTSYS']
-        if rootpath == '':
-            print 'ROOT VERSION not found, aborting'
-            exit()
-        # ROOTSYS may be alias that includes something like 'prod',
-        # so use readlink and see what it is
-        rootfullpath = subprocess.check_output(['readlink', '-f', rootpath]).rstrip()
-        
-        if rootfullpath == '':
-            print 'ROOT VERSION not found, aborting'
-            exit()
-
-        # Get xercesc version
-        xercescpath = os.environ['XERCESCROOT']
-        # XERCESCROOT may be alias that includes something like 'prod',
-        # so use readlink and see what it is
-        xercesc_fullpath = subprocess.check_output(['readlink', '-f', xercescpath]).rstrip()
-        xercesc_ver = re.sub('.*xerces-c-', '', xercesc_fullpath)
-
-        if xercesc_ver == '':
-            print 'XERCESC VERSION not found, aborting'
-            exit()
-
-        # Get cern level
-        cernlib_ver = os.environ['CERN_LEVEL']
-        if cernlib_ver == '':
-            print 'CERN_LEVEL not found, aborting'
-            exit()
-
-        # Get evio version
-        eviopath = os.environ['EVIOROOT']
-        if eviopath == '':
-            print 'EVIO VERSION not found, aborting'
-            exit()
-        # EVIOROOT may be alias that includes something like 'prod',
-        # so use readlink and see what it is
-        evio_fullpath = subprocess.check_output(['readlink', '-f', eviopath]).rstrip()
-        evio_ver = re.sub('.*evio-' '|' '/Linux.*','', evio_fullpath)
-
-        if evio_ver == '':
-            print 'EVIO VERSION not found, aborting'
-            exit()
-
-        # Get sim-recon version and hash
-        simreconpath = os.environ['HALLD_HOME']
-        if simreconpath == '':
-            print 'HALLD_HOME not found, aborting'
-            exit()
-        original_dir = os.getcwd()
-        os.chdir(simreconpath)
-        # Get version number
-        simrecon_ver = subprocess.check_output(['git', 'rev-list', 'HEAD', '--count']).rstrip()
-
-        # Get hash
-        simrecon_hash = str(subprocess.check_output(['git', 'log', '-1'])).split()[1]
-        os.chdir(original_dir) # go back to original directory
-
-        # Get hdds version and hash
-        hddspath = os.environ['HDDS_HOME']
-        if hddspath == '':
-            print 'HALLD_HOME not found, aborting'
-            exit()
-        original_dir = os.getcwd()
-        os.chdir(hddspath)
-        # Get version number
-        hdds_ver = subprocess.check_output(['git', 'rev-list', 'HEAD', '--count']).rstrip()
-
-        # Get hash
-        hdds_hash = str(subprocess.check_output(['git', 'log', '-1'])).split()[1]
-        os.chdir(original_dir) # go back to original directory
-
-        # Get date for creation of file
-        date = datetime.datetime.now()
-
-        softoutfile.write('<gversions>\n')
-        softoutfile.write('  <package name="jana" version="' + jana_ver + '"/>\n')
-        softoutfile.write('  <package name="sim-recon" version="' + simrecon_ver + '" hash="' + simrecon_hash + '"/>\n')
-        softoutfile.write('  <package name="hdds" version="' + hdds_ver + '" hash="' + hdds_hash + '"/>\n')
-        softoutfile.write('  <package name="evio" version="' + evio_ver + '"/>\n')
-        softoutfile.write('  <package name="cernlib" version="' + cernlib_ver + '" word_length="64-bit"/>\n')
-        softoutfile.write('  <package name="xerces-c" version="' + xercesc_ver + '"/>\n')
-        softoutfile.write('  <package name="root" version="' + rootfullpath + '"/>\n')
-        softoutfile.write('  <package name="ccdb" version="' + ccdb_ver + '"/>\n')
-        softoutfile.write('  \n')
-        softoutfile.write('  <variable name = "mem_requested" value="' + RAM + '"/>\n')
-        softoutfile.write('  <variable name = "DiskSpace" value="' + DISK + '"/>\n')
-        softoutfile.write('  <variable name = "ncores" value="' + NCORES + '"/>\n')
-        softoutfile.write('  <variable name = "timelimit" value="' + TIMELIMIT + '"/>\n')
-        softoutfile.write('  <variable name = "date" value="' + str(date) + '"/>\n')
-        softoutfile.write('</gversions>\n')
-
-        print 'Created software config file ' + softfilename + ' ...'
+        xmlfile = os.environ['GLUEX_VERSION_XML']
+        command = "cp " + xmlfile + " " + softfilename
+        process = Popen(command.split(), stdout=PIPE)
+		  output = process.communicate()[0] # is stdout. [1] is stderr
 
     # Create tags for git repositories if user is gxproj
     create_tags = False
