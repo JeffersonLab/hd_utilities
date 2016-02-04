@@ -132,7 +132,8 @@ def find_files(RUNPERIOD, FORMATTED_RUN, FORMATTED_FILE):
     topdir = "/mss/halld/RunPeriod-" + RUNPERIOD + "/rawdata/Run*" + FORMATTED_RUN + "*"
 
     pathstring = topdir + '/hd_rawdata_*' + FORMATTED_RUN + '*_*' + FORMATTED_FILE + '*.evio'
-    # print 'pathstring = ' + pathstring
+    if VERBOSE:
+        print 'find pathstring = ' + pathstring
     return glob.glob(pathstring)
 
 def add_job(WORKFLOW, config_dict, mssfile):
