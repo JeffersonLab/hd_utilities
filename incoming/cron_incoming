@@ -3,4 +3,4 @@
 #-----------------------------------------------------------------------------
 # Min    Hour    Day    Month    Weekday    Command
 #-----------------------------------------------------------------------------
- *      *      *       *         *      /bin/tcsh -c ~/monitoring/incoming/cron_exec.csh >& /dev/null
+ */10      *      *       *         *       /bin/tcsh -c ~/monitoring/incoming/cron_exec.csh >& /dev/null
