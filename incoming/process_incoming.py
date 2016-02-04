@@ -128,7 +128,7 @@ def main(argv):
 	# GET ARGUMENTS
 	INPUT_RUN_PERIOD = args[0] #e.g. 2016-02 OR 2016_02 (both will work)
 	CONFIG_PATH = args[1]
-	NUM_FILES_PER_RUN = args[2]
+	NUM_FILES_PER_RUN = int(args[2])
 
 	# BUILD WORKFLOW NAME
 	RUN_PERIOD_WITH_DASH = INPUT_RUN_PERIOD.replace("_", "-")
