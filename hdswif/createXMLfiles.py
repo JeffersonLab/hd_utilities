@@ -4,6 +4,7 @@ from optparse import OptionParser
 from os import mkdir
 import datetime
 import re
+from subprocess import Popen, PIPE
 
 import read_config
 
@@ -149,7 +150,6 @@ def main(argv):
                 break
 
     if create_softfile == True:
-        softoutfile = open(softfilename,'w\n')
         xmlfile = os.environ['GLUEX_VERSION_XML']
         command = "cp " + xmlfile + " " + softfilename
         process = Popen(command.split(), stdout=PIPE)
