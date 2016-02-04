@@ -66,8 +66,12 @@ def build_file_dictionary(RUN_PERIOD):
 
 def build_job_dictionary(WORKFLOW):
 	command = "swif status -workflow " + WORKFLOW + " -jobs"
+	if VERBOSE > 0:
+		print command
 	process = Popen(command.split(), stdout=PIPE)
 	status_output = process.communicate()[0] # is stdout. [1] is stderr
+	if VERBOSE > 0:
+		print status_output
 
 	# Build a dictionary of all the jobs in the workflow:
 	start_loop_flag = 1
