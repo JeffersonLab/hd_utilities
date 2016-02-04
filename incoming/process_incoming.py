@@ -87,7 +87,7 @@ def build_job_dictionary(WORKFLOW):
 	return job_dictionary
 
 def add_job(WORKFLOW, CONFIG_PATH, RUN_STRING, FILE_STRING):
-	command = "python " + os.path.expanduser("~/monitoring/hdswif/hdswif.py") + " add " + WORKFLOW + " -c " + CONFIG_PATH + " -r " + str(int(RUN_STRING)) + " -f '" + FILE_STRING + "'"
+	command = "python " + os.path.expanduser("~/monitoring/hdswif/hdswif.py") + " add " + WORKFLOW + " -c " + CONFIG_PATH + " -r " + str(int(RUN_STRING)) + " -f " + FILE_STRING
 	if VERBOSE > 0:
 		print command
 	process = Popen(command.split(), stdout=PIPE)
