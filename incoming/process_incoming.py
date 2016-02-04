@@ -50,14 +50,18 @@ def build_file_dictionary(RUN_PERIOD):
 
 	# Build a dictionary of all the files on tape:
 	file_dictionary = defaultdict(set) # Run string, list of file strings
+	num_files = 0
 	for file_path in file_list:
 		file_name = file_path[(file_path.rfind("/") + 1):] #hd_rawdata_<run_string>_<file_string>.evio"
 		run_string = file_name[11:17] #skip "hd_rawdata_" 
 		file_string = file_name[18:-5] #skip "hd_rawdata_run#_" and ".evio" on the end 
 		file_dictionary[run_string].add(file_string)
+		num_files += 1
 		if VERBOSE > 0:
 			print "File found, run, file = " + run_string + " " + file_string
 
+	if VERBOSE > 0:
+		print "Num files = " + str(num_files)
 	return file_dictionary
 
 def build_job_dictionary(WORKFLOW):
@@ -70,6 +74,7 @@ def build_job_dictionary(WORKFLOW):
 	job_dictionary = defaultdict(set) # Run string, list of file strings
 	run_string = "-1"
 	file_string = "-1"
+	num_jobs = 0
 	for line in status_output:
 		line_length = len(line)
 		if (line_length > 2) and (line[:2] == "id"): 
@@ -77,6 +82,7 @@ def build_job_dictionary(WORKFLOW):
 				start_loop_flag = 0 # Don't register yet: Just started
 			else: # Register the job
 				job_dictionary[run_string].add(file_string)
+				num_jobs += 1
 				if VERBOSE > 0:
 					print "Job found, run, file = " + run_string + " " + file_string
 		elif (line_length > 8) and (line[:8] == "user_run"): 
@@ -88,6 +94,8 @@ def build_job_dictionary(WORKFLOW):
 	if(run_string != "-1"):
 		job_dictionary[run_string].add(file_string)
 
+	if VERBOSE > 0:
+		print "Num jobs = " + str(num_jobs)
 	return job_dictionary
 
 def add_job(WORKFLOW, CONFIG_PATH, RUN_STRING, FILE_STRING):
@@ -159,7 +167,7 @@ def main(argv):
 			current_time = time.time() # in seconds since the epoch
 			delta_t = (current_time - modified_time)/60.0
 			if VERBOSE > 0:
-				print "Current time (s), mod time (s), delta_t (min) = " + current_time + ", " + modified_time + ", " + delta_t
+				print "Current time (s), mod time (s), delta_t (min) = " + str(current_time) + ", " + str(modified_time) + ", " + str(delta_t)
 			if(delta_t < 5.0):
 				continue # file (stub) is not at least five minutes old: file may not be fully resident on tape yet: don't submit job
 
