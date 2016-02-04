@@ -159,17 +159,17 @@ def main(argv):
     if VERBOSE == True:
         print 'config_dict is: ', config_dict.items()
 
-    # config_dict has now been updated if config file was specified
-    print "+++         configuration             +++"
-    print "---   Job configuration parameters:   ---"
-    for key, value in config_dict.items():
+        # config_dict has now been updated if config file was specified
+        print "+++         configuration             +++"
+        print "---   Job configuration parameters:   ---"
+        for key, value in config_dict.items():
 
-        # Add a * at beginning of line if value is still default
-        beginning = '   '
-        if updated_dict[key] == False:
-            beginning = '*  '
-        print beginning + '{:20s} {:30s}'.format(key, str(value))
-    print "-----------------------------------------"
+            # Add a * at beginning of line if value is still default
+            beginning = '   '
+            if updated_dict[key] == False:
+                beginning = '*  '
+            print beginning + '{:20s} {:30s}'.format(key, str(value))
+        print "-----------------------------------------"
 
 #    answer = ''
 #    while answer != 'y' or answer != 'n':
