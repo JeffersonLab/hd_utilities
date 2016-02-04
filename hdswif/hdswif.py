@@ -60,7 +60,6 @@ def create(workflow,USERCONFIGFILE):
     if USERCONFIGFILE == '':
         pass
     else:
-        os.system("swif create " + workflow)
         if VERBOSE == True:
             VERBOSE_INT = 1
         else:
