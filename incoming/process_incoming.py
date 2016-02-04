@@ -70,25 +70,31 @@ def build_job_dictionary(WORKFLOW):
 		print command
 	process = Popen(command.split(), stdout=PIPE)
 	status_output = process.communicate()[0] # is stdout. [1] is stderr
-	if VERBOSE > 0:
+	if VERBOSE > 99:
 		print status_output
 
 	# Build a dictionary of all the jobs in the workflow:
-	start_loop_flag = 1
+	start_loop_flag = True
 	job_dictionary = defaultdict(set) # Run string, list of file strings
 	run_string = "-1"
 	file_string = "-1"
 	num_jobs = 0
 	for line in status_output:
+		if VERBOSE > 9:
+			print line
 		line_length = len(line)
+		print line[:2]
+		print line[:8]
+		print line[:9]
 		if (line_length > 2) and (line[:2] == "id"): 
-			if start_loop_flag == 1:
-				start_loop_flag = 0 # Don't register yet: Just started
-			else: # Register the job
-				job_dictionary[run_string].add(file_string)
-				num_jobs += 1
-				if VERBOSE > 0:
-					print "Job found, run, file = " + run_string + " " + file_string
+			if start_loop_flag:
+				start_loop_flag = False # Don't register yet: Just started
+				continue
+			# Register the job
+			job_dictionary[run_string].add(file_string)
+			num_jobs += 1
+			if VERBOSE > 0:
+				print "Job found, run, file = " + run_string + " " + file_string
 		elif (line_length > 8) and (line[:8] == "user_run"): 
 			run_string = line[11:]
 		elif (line_length > 9) and (line[:9] == "user_file"): 
@@ -132,15 +138,14 @@ def main(argv):
 	RUN_PERIOD_WITH_UNDERSCORE = INPUT_RUN_PERIOD.replace("-", "_")
 	WORKFLOW = "offline_monitoring_RunPeriod" + RUN_PERIOD_WITH_UNDERSCORE + "_ver01_hd_rawdata"
 
-	# SEARCH FOR NEW FILES
-	# GET WORKFLOW STATUS
-	# For the workflow, get the full status output from SWIF about what jobs are in the workflow
-	# Loop through all of these jobs, and for every run, record which file #'s have jobs submitted for them
-	job_dictionary = build_job_dictionary(WORKFLOW)
-
 	# SEARCH FOR TAPE FILES
 	# Loop over the tape directories, finding all of the input files, and determining their run & file #'s
 	file_dictionary = build_file_dictionary(RUN_PERIOD_WITH_DASH)
+
+	# SEARCH FOR JOBS
+	# For the workflow, get the full status output from SWIF about what jobs are in the workflow
+	# Loop through all of these jobs, and for every run, record which file #'s have jobs submitted for them
+	job_dictionary = build_job_dictionary(WORKFLOW)
 
 	# ADD JOBS
 	# For every run # on tape, see how many jobs are in the workflow. If > NUM_FILES_PER_RUN, continue to the next run
