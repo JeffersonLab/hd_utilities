@@ -12,6 +12,7 @@ setenv RUN_NUMBER $3
 setenv FILE_NUMBER $4
 setenv OUTDIR $5
 setenv NTHREADS $6
+setenv PLUGINS $7
 
 echo "starting........ "
 date
@@ -22,6 +23,7 @@ echo "RUN_NUMBER   = $RUN_NUMBER"
 echo "FILE_NUMBER  = $FILE_NUMBER"
 echo "OUTDIR       = $OUTDIR"
 echo "NTHREADS     = $NTHREADS"
+echo "PLUGINS      = $PLUGINS"
 
 source $ENVIRONMENT
 
@@ -47,7 +49,6 @@ mv tmp.evio $INPUTFILE
 
 ls -l
 
-set PLUGINS_VALUE = "TAGH_online,TAGM_online,BCAL_online,CDC_online,CDC_expert,FCAL_online,FDC_online,ST_online_lowlevel,ST_online_tracking,TOF_online,PS_online,PSC_online,PSPair_online,TPOL_online,TOF_TDC_shift,monitoring_hists,danarest,BCAL_Eff,p2pi_hists,p3pi_hists,HLDetectorTiming,BCAL_inv_mass,trackeff_missing,TRIG_online,CDC_drift,RF_online,BCAL_attenlength_gainratio,BCAL_TDC_Timing"
 set THREAD_TIMEOUT_VALUE = 300
 set CALIB_CONTEXT_VALUE = ""
 
@@ -55,7 +56,7 @@ echo "starting plugins............"
 date
 set START = `date +%s`
 #hd_root $INPUTFILE -PPLUGINS=CDC_online -PNTHREADS=$NTHREADS -PTHREAD_TIMEOUT=300 -PPRINT_PLUGIN_PATHS=1 -PEVIO:ENABLE_DISENTANGLING=0
-hd_root $INPUTFILE -PPLUGINS=$PLUGINS_VALUE -PNTHREADS=$NTHREADS -PTHREAD_TIMEOUT=$THREAD_TIMEOUT_VALUE
+hd_root $INPUTFILE -PPLUGINS=$PLUGINS -PNTHREADS=$NTHREADS -PTHREAD_TIMEOUT=$THREAD_TIMEOUT_VALUE
 #set RETURN_CODE = $status
 #echo Return Code = $RETURN_CODE
 echo "ending plugins ............."

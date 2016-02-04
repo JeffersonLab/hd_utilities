@@ -173,8 +173,11 @@ def add_job(WORKFLOW, config_dict, mssfile):
             print "basename = " + basename
 
         # Create SCRIPT_ARGS
+        num_threads = str(config_dict['NCORES'])
+        if(num_threads == "24"):
+            num_threads = "Ncores"
         SCRIPT_ARGS = str(config_dict['ENVFILE'] + " " + basename + " " + thisrun + " " + thisfile + " " +
-                          config_dict['OUTPUT_TOPDIR'] + " " + str(config_dict['NCORES']))
+                          config_dict['OUTPUT_TOPDIR'] + " " + num_threads + " " + config_dict['PLUGINS'])
         if(VERBOSE == True):
             print "SCRIPT_ARGS = " + SCRIPT_ARGS
 

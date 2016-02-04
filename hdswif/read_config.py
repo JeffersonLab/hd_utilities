@@ -40,7 +40,7 @@ def main(argv):
     # Below are the allowed keys for the config file
     config_keys = ['PROJECT', 'TRACK', 'OS', 'JOBNAMEBASE', 'RUNPERIOD',
                    'VERSION', 'OUTPUT_TOPDIR', 'NCORES', 'DISK', 'RAM',
-                   'TIMELIMIT', 'SCRIPTFILE', 'ENVFILE']
+                   'TIMELIMIT', 'PLUGINS', 'SCRIPTFILE', 'ENVFILE']
 
     # Create dict for whether value was updated by
     # user config file
@@ -63,6 +63,7 @@ def main(argv):
     config_dict.update({'DISK'           : 40})
     config_dict.update({'RAM'            : 6})
     config_dict.update({'TIMELIMIT'      : 8})
+    config_dict.update({'PLUGINS'        : 'monitoring_hists'})
     config_dict.update({'SCRIPTFILE'     : '/home/gxproj5/halld/hdswif/script.sh'})                # Needs to be full path
     config_dict.update({'ENVFILE'        : '/home/gxproj5/halld/hdswif/setup_jlab-2015-03.csh'})   # Needs to be full path
 
