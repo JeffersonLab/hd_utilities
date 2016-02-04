@@ -18,6 +18,7 @@ from collections import defaultdict
 
 #################################################### GLOBAL VARIABLES ####################################################
 
+VERBOSE = 1
 RAW_DATA_BASE_DIR = "/mss/halld/"
 #RAW_DATA_BASE_DIR = "/cache/halld/"
 
@@ -86,15 +87,18 @@ def build_job_dictionary(WORKFLOW):
 	return job_dictionary
 
 def add_job(WORKFLOW, CONFIG_PATH, RUN_STRING, FILE_STRING):
-	command = "hdswif.py add " + WORKFLOW + " -c " + CONFIG_PATH + " -r " + str(int(RUN_STRING)) + " -f '" + FILE_STRING + "'"
-	print command
-#	process = Popen(command.split(), stdout=PIPE)
-#	output = process.communicate()[0] # is stdout. [1] is stderr
+	command = "python " + os.path.expanduser("~/monitoring/hdswif/hdswif.py") + " add " + WORKFLOW + " -c " + CONFIG_PATH + " -r " + str(int(RUN_STRING)) + " -f '" + FILE_STRING + "'"
+	if VERBOSE > 0:
+		print command
+	process = Popen(command.split(), stdout=PIPE)
+	output = process.communicate()[0] # is stdout. [1] is stderr
+	if VERBOSE > 0:
+		print output
 
 ########################################################## MAIN ##########################################################
 
 def main(argv):
-	parser_usage = "process.py <run_period> <config_path> <num_files_per_run>"
+	parser_usage = "process_incoming.py <run_period> <config_path> <num_files_per_run>"
 	parser = OptionParser(usage = parser_usage)
 	(options, args) = parser.parse_args(argv)
 
@@ -153,8 +157,9 @@ def main(argv):
 			num_jobs_submitted += 1
 
 	# RUN WORKFLOW (IN CASE NOT RUNNING ALREADY)
-	command = "hdswif.py run " + WORKFLOW
-	print command
+	command = "python " + os.path.expanduser("~/monitoring/hdswif/hdswif.py") + " run " + WORKFLOW
+	if VERBOSE > 0:
+		print command
 #	try_command(command)
 
 if __name__ == "__main__":
