@@ -58,7 +58,8 @@ def build_file_dictionary(RUN_PERIOD):
 
 def build_job_dictionary(WORKFLOW):
 	command = "swif status -workflow " + WORKFLOW + " -jobs"
-	status_output = try_command(command)
+	process = Popen(command.split(), stdout=PIPE)
+	status_output = process.communicate()[0] # is stdout. [1] is stderr
 
 	# Build a dictionary of all the jobs in the workflow:
 	start_loop_flag = 1
@@ -78,7 +79,8 @@ def build_job_dictionary(WORKFLOW):
 			file_string = line[12:]
 
 	# Register the last job
-	job_dictionary[run_string].append(file_string)
+	if(run_string != -1):
+		job_dictionary[run_string].append(file_string)
 
 	return job_dictionary
 
