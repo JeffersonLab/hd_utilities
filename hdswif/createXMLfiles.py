@@ -153,7 +153,7 @@ def main(argv):
         xmlfile = os.environ['GLUEX_VERSION_XML']
         command = "cp " + xmlfile + " " + softfilename
         process = Popen(command.split(), stdout=PIPE)
-		  output = process.communicate()[0] # is stdout. [1] is stderr
+        output = process.communicate()[0] # is stdout. [1] is stderr
 
     # Create tags for git repositories if user is gxproj
     create_tags = False
