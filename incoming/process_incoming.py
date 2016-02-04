@@ -121,7 +121,7 @@ def main(argv):
 	parser = OptionParser(usage = parser_usage)
 	(options, args) = parser.parse_args(argv)
 
-	if(len(args) != 3):
+	if(len(args) != 4):
 		parser.print_help()
 		return
 
