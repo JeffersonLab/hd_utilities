@@ -18,7 +18,7 @@ from collections import defaultdict
 
 #################################################### GLOBAL VARIABLES ####################################################
 
-VERBOSE = 1
+VERBOSE = 0
 RAW_DATA_BASE_DIR = "/mss/halld/"
 #RAW_DATA_BASE_DIR = "/cache/halld/"
 
@@ -185,7 +185,7 @@ def main(argv):
 	command = "python " + os.path.expanduser("~/monitoring/hdswif/hdswif.py") + " run " + WORKFLOW
 	if VERBOSE > 0:
 		print command
-#	try_command(command)
+	try_command(command)
 
 if __name__ == "__main__":
 	main(sys.argv[1:])
