@@ -154,11 +154,11 @@ def main(argv):
 		num_files = len(file_dictionary[run_string])
 		if(num_jobs_submitted >= NUM_FILES_PER_RUN):
 			if VERBOSE > 0:
-				print "Max jobs (" + NUM_FILES_PER_RUN + ") submitted for run " + run_string
+				print "Max jobs (" + str(NUM_FILES_PER_RUN) + ") submitted for run " + run_string
 			continue # This run is done
 		if(num_jobs_submitted == num_files):
 			if VERBOSE > 0:
-				print "All jobs (" + num_files + ") submitted for run " + run_string
+				print "All jobs (" + str(num_files) + ") submitted for run " + run_string
 			continue # This run is done
 
 		# Submit jobs, IF the file (file = mss stub) timestamp hasn't been modified in at least 5 minutes
