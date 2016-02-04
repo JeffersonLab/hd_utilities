@@ -3,5 +3,4 @@
 #-----------------------------------------------------------------------------
 # Min    Hour    Day    Month    Weekday    Command
 #-----------------------------------------------------------------------------
- */10      *      *       *         *       source ~/env_monitoring_incoming && python ~/monitoring/incoming/process_incoming.py 2016-02 ~/monitoring/incoming/input.config 20 >& ~/incoming_log.txt
-
+ *      *      *       *         *      /bin/tcsh -c ~/monitoring/incoming/cron_exec.csh >& /dev/null
