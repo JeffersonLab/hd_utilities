@@ -3,5 +3,5 @@
 #-----------------------------------------------------------------------------
 # Min    Hour    Day    Month    Weekday    Command
 #-----------------------------------------------------------------------------
- */10      *      *       *         *       python ~/env_monitoring_incoming ~/monitoring/incoming/process_incoming.py 2016-02 ~/monitoring/incoming/input.config 20 >& ~/incoming_log.txt
+ */10      *      *       *         *       source ~/env_monitoring_incoming && python ~/monitoring/incoming/process_incoming.py 2016-02 ~/monitoring/incoming/input.config 20 >& ~/incoming_log.txt
 
