@@ -14,6 +14,7 @@ import glob
 import datetime
 from optparse import OptionParser
 from subprocess import Popen, PIPE
+from collections import defaultdict
 
 #################################################### GLOBAL VARIABLES ####################################################
 
@@ -47,7 +48,7 @@ def build_file_dictionary(RUN_PERIOD):
 	file_list = glob.glob(file_path)
 
 	# Build a dictionary of all the files on tape:
-	file_dictionary = dict() # Run string, list of file strings
+	file_dictionary = defaultdict(list) # Run string, list of file strings
 	for file_path in file_list:
 		file_name = file_path[(file_path.rfind("/") + 1):] #hd_rawdata_<run_string>_<file_string>.evio"
 		run_string = file_name[11:17] #skip "hd_rawdata_" 
@@ -63,7 +64,7 @@ def build_job_dictionary(WORKFLOW):
 
 	# Build a dictionary of all the jobs in the workflow:
 	start_loop_flag = 1
-	job_dictionary = dict() # Run string, list of file strings
+	job_dictionary = defaultdict(list) # Run string, list of file strings
 	run_string = "-1"
 	file_string = "-1"
 	for line in status_output:
@@ -79,7 +80,7 @@ def build_job_dictionary(WORKFLOW):
 			file_string = line[12:]
 
 	# Register the last job
-	if(run_string != -1):
+	if(run_string != "-1"):
 		job_dictionary[run_string].append(file_string)
 
 	return job_dictionary
