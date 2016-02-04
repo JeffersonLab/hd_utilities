@@ -11,7 +11,7 @@
 import sys
 import os
 import glob
-import datetime
+import time
 from optparse import OptionParser
 from subprocess import Popen, PIPE
 from collections import defaultdict
@@ -48,12 +48,12 @@ def build_file_dictionary(RUN_PERIOD):
 	file_list = glob.glob(file_path)
 
 	# Build a dictionary of all the files on tape:
-	file_dictionary = defaultdict(list) # Run string, list of file strings
+	file_dictionary = defaultdict(set) # Run string, list of file strings
 	for file_path in file_list:
 		file_name = file_path[(file_path.rfind("/") + 1):] #hd_rawdata_<run_string>_<file_string>.evio"
 		run_string = file_name[11:17] #skip "hd_rawdata_" 
 		file_string = file_name[18:-5] #skip "hd_rawdata_run#_" and ".evio" on the end 
-		file_dictionary[run_string].append(file_string)
+		file_dictionary[run_string].add(file_string)
 
 	return file_dictionary
 
@@ -64,7 +64,7 @@ def build_job_dictionary(WORKFLOW):
 
 	# Build a dictionary of all the jobs in the workflow:
 	start_loop_flag = 1
-	job_dictionary = defaultdict(list) # Run string, list of file strings
+	job_dictionary = defaultdict(set) # Run string, list of file strings
 	run_string = "-1"
 	file_string = "-1"
 	for line in status_output:
@@ -73,7 +73,7 @@ def build_job_dictionary(WORKFLOW):
 			if start_loop_flag == 1:
 				start_loop_flag = 0 # Don't register yet: Just started
 			else: # Register the job
-				job_dictionary[run_string].append(file_string)
+				job_dictionary[run_string].add(file_string)
 		elif (line_length > 8) and (line[:8] == "user_run"): 
 			run_string = line[11:]
 		elif (line_length > 9) and (line[:9] == "user_file"): 
@@ -81,7 +81,7 @@ def build_job_dictionary(WORKFLOW):
 
 	# Register the last job
 	if(run_string != "-1"):
-		job_dictionary[run_string].append(file_string)
+		job_dictionary[run_string].add(file_string)
 
 	return job_dictionary
 
@@ -136,7 +136,7 @@ def main(argv):
 			continue # This run is done
 
 		# Submit jobs, IF the file (file = mss stub) timestamp hasn't been modified in at least 5 minutes
-		files_not_submitted = sorted(file_dictionary[run_string] - job_dictionary[run_string])
+		files_not_submitted = sorted(list(file_dictionary[run_string] - job_dictionary[run_string]))
 		for file_string in files_not_submitted:
 			if(num_jobs_submitted >= NUM_FILES_PER_RUN):
 				break
