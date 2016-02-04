@@ -44,6 +44,7 @@ def main(argv):
     RAM           = config_dict['RAM']
     TIMELIMIT     = config_dict['TIMELIMIT']
     SCRIPTFILE    = config_dict['SCRIPTFILE']
+    PLUGINS       = config_dict['PLUGINS']
 
     if VERBOSE:
         print 'RUNPERIOD     = ', RUNPERIOD
@@ -56,6 +57,7 @@ def main(argv):
         print 'RAM           = ', RAM
         print 'TIMELIMIT     = ', TIMELIMIT
         print 'SCRIPTFILE    = ', SCRIPTFILE
+        print 'PLUGINS       = ', PLUGINS
 
     # ----------------------------------------------------------------
     # Create jana config file
@@ -91,16 +93,16 @@ def main(argv):
         janaoutfile = open(janafilename,'w')
 
         # 1. Get PLUGINS
-        PLUGINS = ''
-        PLUGINS = subprocess.check_output(['grep', 'set PLUGINS_VALUE', SCRIPTFILE]).rstrip().split()[3]
-
         if PLUGINS == '':
             PLUGINS = "\"\""
         
         janaoutfile.write('-PPLUGINS=' + PLUGINS + '\n')
 
         # 2. Get NTHREADS
-        janaoutfile.write('-PNTHREADS=' + NCORES + '\n')
+        num_threads = str(NCORES)
+        if(num_threads == "24"):
+            num_threads = "Ncores"
+        janaoutfile.write('-PNTHREADS=' + num_threads + '\n')
 
         # 3. Get THREAD_TIMEOUT
         THREAD_TIMEOUT = ''
