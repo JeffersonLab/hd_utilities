@@ -117,7 +117,7 @@ def add_job(WORKFLOW, CONFIG_PATH, RUN_STRING, FILE_STRING):
 ########################################################## MAIN ##########################################################
 
 def main(argv):
-	parser_usage = "process_incoming.py <run_period> <config_path> <num_files_per_run>"
+	parser_usage = "process_incoming.py <env_path> <run_period> <config_path> <num_files_per_run>"
 	parser = OptionParser(usage = parser_usage)
 	(options, args) = parser.parse_args(argv)
 
@@ -126,9 +126,19 @@ def main(argv):
 		return
 
 	# GET ARGUMENTS
-	INPUT_RUN_PERIOD = args[0] #e.g. 2016-02 OR 2016_02 (both will work)
-	CONFIG_PATH = args[1]
-	NUM_FILES_PER_RUN = args[2]
+	ENVIRONMENT_PATH = args[0]
+	INPUT_RUN_PERIOD = args[1] #e.g. 2016-02 OR 2016_02 (both will work)
+	CONFIG_PATH = args[2]
+	NUM_FILES_PER_RUN = args[3]
+
+	# SOURCE THE ENVIRONMENT
+	command = "source " + ENVIRONMENT_PATH
+	if VERBOSE > 2:
+		print command
+	process = Popen(command.split(), stdout=PIPE)
+	env_output = process.communicate()[0] # is stdout. [1] is stderr
+	if VERBOSE > 2:
+		print env_output
 
 	# BUILD WORKFLOW NAME
 	RUN_PERIOD_WITH_DASH = INPUT_RUN_PERIOD.replace("_", "-")
