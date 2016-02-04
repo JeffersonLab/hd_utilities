@@ -8,6 +8,7 @@
 #
 ##########################################################################################################################
 
+import sys
 import os
 import glob
 import datetime
@@ -42,8 +43,8 @@ def try_command(command, sleeptime = 10):
 ################################################### BUILD DICTIONARIES ###################################################
 
 def build_file_dictionary(RUN_PERIOD):
-    file_path = RAW_DATA_BASE_DIR + "/RunPeriod-" + RUN_PERIOD + "/rawdata/Run*/hd_rawdata_*_*.evio"
-    file_list = glob.glob(file_path)
+	file_path = RAW_DATA_BASE_DIR + "/RunPeriod-" + RUN_PERIOD + "/rawdata/Run*/hd_rawdata_*_*.evio"
+	file_list = glob.glob(file_path)
 
 	# Build a dictionary of all the files on tape:
 	file_dictionary = dict() # Run string, list of file strings
@@ -56,7 +57,7 @@ def build_file_dictionary(RUN_PERIOD):
 	return file_dictionary
 
 def build_job_dictionary(WORKFLOW):
-	command = "swif status -workflow" + WORKFLOW + "-jobs"
+	command = "swif status -workflow " + WORKFLOW + " -jobs"
 	status_output = try_command(command)
 
 	# Build a dictionary of all the jobs in the workflow:
@@ -71,9 +72,9 @@ def build_job_dictionary(WORKFLOW):
 				start_loop_flag = 0 # Don't register yet: Just started
 			else: # Register the job
 				job_dictionary[run_string].append(file_string)
-		else if (line_length > 8) and (line[:8] == "user_run"): 
+		elif (line_length > 8) and (line[:8] == "user_run"): 
 			run_string = line[11:]
-		else if (line_length > 9) and (line[:9] == "user_file"): 
+		elif (line_length > 9) and (line[:9] == "user_file"): 
 			file_string = line[12:]
 
 	# Register the last job
@@ -81,19 +82,20 @@ def build_job_dictionary(WORKFLOW):
 
 	return job_dictionary
 
-def add_job(WORKFLOW, CONFIG_PATH, RUN_STRING, FILE_STRING)
+def add_job(WORKFLOW, CONFIG_PATH, RUN_STRING, FILE_STRING):
 	command = "hdswif.py add " + WORKFLOW + " -c " + CONFIG_PATH + " -r " + str(int(RUN_STRING)) + " -f '" + FILE_STRING + "'"
-	process = Popen(command.split(), stdout=PIPE)
-	output = process.communicate()[0] # is stdout. [1] is stderr
+	print command
+#	process = Popen(command.split(), stdout=PIPE)
+#	output = process.communicate()[0] # is stdout. [1] is stderr
 
 ########################################################## MAIN ##########################################################
 
 def main(argv):
-	parser_usage = "process.py <run_period>"
+	parser_usage = "process.py <run_period> <config_path> <num_files_per_run>"
 	parser = OptionParser(usage = parser_usage)
 	(options, args) = parser.parse_args(argv)
 
-	if(len(args) != 8):
+	if(len(args) != 3):
 		parser.print_help()
 		return
 
@@ -133,14 +135,14 @@ def main(argv):
 		# Submit jobs, IF the file (file = mss stub) timestamp hasn't been modified in at least 5 minutes
 		files_not_submitted = sorted(file_dictionary[run_string] - job_dictionary[run_string])
 		for file_string in files_not_submitted:
-			if(num_jobs_submitted >= NUM_FILES_PER_RUN)
+			if(num_jobs_submitted >= NUM_FILES_PER_RUN):
 				break
 
 			# Check the timestamp
 			file_path = RAW_DATA_BASE_DIR + "/RunPeriod-" + RUN_PERIOD_WITH_DASH + "/rawdata/Run" + run_string + "/hd_rawdata_" + run_string + "_" + file_string + ".evio"
 			modified_time = os.path.getmtime(file_path) # time that the file was last modified, in seconds since the epoch
 			current_time = time.time() # in seconds since the epoch
-			if((current_time - modified_time)/60.0 < 5.0)
+			if((current_time - modified_time)/60.0 < 5.0):
 				continue # file (stub) is not at least five minutes old: file may not be fully resident on tape yet: don't submit job
 
 			# Add job
@@ -149,7 +151,8 @@ def main(argv):
 
 	# RUN WORKFLOW (IN CASE NOT RUNNING ALREADY)
 	command = "hdswif.py run " + WORKFLOW
-	try_command(command)
+	print command
+#	try_command(command)
 
 if __name__ == "__main__":
 	main(sys.argv[1:])
