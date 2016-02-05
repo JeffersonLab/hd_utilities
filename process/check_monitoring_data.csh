@@ -31,9 +31,9 @@ if (! -d $MONITORING_LOGDIR ) then
 endif
 
 # delete logs that are older than 30 days
-#if (-d $MONITORING_LOGDIR && $MONITORING_LOGDIR != "/log" ) then
-#    find $MONITORING_LOGDIR -mtime +30 -exec rm '{}' \;
-#endif
+if (-d $MONITORING_LOGDIR && $MONITORING_LOGDIR != "/log" ) then
+    find $MONITORING_LOGDIR -mtime +30 -exec rm '{}' \;
+endif
 
 # run the script
 cd $MONITORING_HOME
