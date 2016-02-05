@@ -2,11 +2,11 @@
 # Set environmental variables for cron job
 set LOCKFILE=lock.offline
 
-set VERSION=25
-set RUNPERIOD=RunPeriod-2015-03
-set INPUTDIR=/volatile/halld/offline_monitoring/$RUNPERIOD
+set VERSION=01
+set RUNPERIOD=RunPeriod-2016-02
+set INPUTDIR=/cache/halld/offline_monitoring/$RUNPERIOD
 set OUTPUTDIR=/work/halld/data_monitoring/$RUNPERIOD/ver$VERSION
-set ARGS=" -S -v $RUNPERIOD,$VERSION "
+set ARGS=" -M -v $RUNPERIOD,$VERSION "
 #set ARGS=" -R 3185 -S -v $RUNPERIOD,$VERSION "
 #set ARGS=" --force -d -s -S -v RunPeriod-2015-03,$VERSION "
 #set ARGS=" -v RunPeriod-2015-03,$VERSION "
@@ -15,9 +15,9 @@ set ARGS=" -S -v $RUNPERIOD,$VERSION "
 
 # Load standard environment for ROOT
 #source /home/gxproj5/halld/hdswif/setup_jlab-2015-03.csh
-source /home/gxproj5/env_monitoring_launch
+source /home/gxproj1/env_monitoring_incoming
 
-set MONITORING_HOME=/home/gxproj5/monitoring/process
+set MONITORING_HOME=/home/gxproj1/monitoring/process
 source $MONITORING_HOME/monitoring_env.csh
 set MONITORING_LIBDIR=$MONITORING_HOME/lib
 set MONITORING_LOGDIR=$MONITORING_HOME/log

@@ -75,6 +75,7 @@ class ProcessMonDataConfig:
         self.MIN_RUN = -1              # range of runs to process
         self.MAX_RUN = 1000000          
         self.RUN_NUMBER = None         # optionally process just one run
+        self.MERGE_INCREMENT = False
 
 
     def ProcessCommandline(self,args,options,db):
@@ -113,6 +114,8 @@ class ProcessMonDataConfig:
             self.FORCE_PROCESSING = True
         if(options.save_rest):
             self.COPY_REST_FILES = True
+        if(options.merge_increment):
+            self.MERGE_INCREMENT = True
 
         # should we process only one run?
         if(options.run_number):
@@ -350,6 +353,17 @@ def ProcessOfflineData(args):
         hadder.Add()
         del hadder
 
+        # this option motivated by new plans for file management when working off of the write-through cache
+        # instead of keeping individual ROOT files semi-permanently, for some jobs we merge ROOT files as they
+        # come in and keep a copy of the final merged file in the original directory
+        if self.MERGE_INCREMENT:
+            rootfile_dir = join(monitoring_files.keys()[0].split('/')[:-1])
+            # delete old files
+            for filename in monitoring_files.keys():
+                ##os.system("rm "+filename)   
+                os.system("mv %s %s.old"%(filename,filename))   # DEBUG
+            os.system("cp %s %s"%(summed_rootfile,rootfile_dir))
+
     # sanity check - does the summed file exist?
     if not isfile(summed_rootfile):
         logging.error("Summed ROOT file doesn't exist for run %d , exiting ..."%run)
@@ -489,8 +503,8 @@ def main():
                       help="Enable parallel processing.")
     parser.add_option("-S","--save_rest", dest="save_rest", action="store_true",
                       help="Save REST files to conventional location.")
-    #parser.add_option("-M","--save_rest", dest="save_rest", action="store_true",
-    #                  help="Save REST files to conventional location.")
+    parser.add_option("-M","--merge-incrementally", dest="merge_increment", action="store_true",
+                      help="Merge ROOT files incrementally and delete old ones.")
     
     (options, args) = parser.parse_args(sys.argv)
 
@@ -587,10 +601,11 @@ def main():
         p.map(ProcessOfflineData, runs_to_process)
         
     # save tarballs of log files and PNGs
-    logdir = join(self.INPUT_DIRECTORY,self.REVISION,"log")
-    if isdir(logdir):
-        os.system("tar czf log.tar.gz %s"%logdir)
-    os.system("tar czf web_figures.tar.gz %s/Run*"%config.OUTPUT_DIRECTORY)
+    if len(runs_to_process)>0:
+        logdir = join(self.INPUT_DIRECTORY,self.REVISION,"log")
+        if isdir(logdir):
+            os.system("tar czf log.tar.gz %s"%logdir)
+        os.system("tar czf web_figures.tar.gz %s/Run*"%config.OUTPUT_DIRECTORY)
 
 ## main function 
 if __name__ == "__main__":
