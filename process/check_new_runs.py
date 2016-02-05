@@ -95,7 +95,8 @@ class CheckNewRuns:
         # read in list of runs we've already processed
         #run_list = self.LoadProcessedRunList(self.PROCESSED_RUN_LIST_FILE)
         try:
-            oldrun_list = pickle.load( open(self.PROCESSED_RUN_LIST_FILE,"r") )
+            with open(self.PROCESSED_RUN_LIST_FILE,"r") as inf:
+                oldrun_list = pickle.load( inf )
         except IOError:
             oldrun_list = []
 
@@ -166,7 +167,8 @@ class CheckNewRuns:
 
                 ## we successfully processed the run!  make a note of that
                 oldrun_list.append(run)
-                pickle.dump( oldrun_list, open(self.PROCESSED_RUN_LIST_FILE,"w") )
+                with open(self.PROCESSED_RUN_LIST_FILE,"w") as outf:
+                    pickle.dump( oldrun_list, outf )
 
 
 
