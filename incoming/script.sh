@@ -29,6 +29,8 @@ source $ENVIRONMENT
 
 echo pwd = $PWD
 printenv
+echo "PERL INCLUDES:"
+perl -e "print qq(@INC)"
 
 ls -l
 
@@ -70,13 +72,17 @@ echo "TIMEDIFF: $TIMEDIFF"
 
 # save ROOT output file
 mkdir -p -m 775 ${OUTDIR}/ROOT/${RUN_NUMBER}/
-cp -v hd_root.root ${OUTDIR}/ROOT/${RUN_NUMBER}/hd_root_${RUN_NUMBER}_${FILE_NUMBER}.root
-chmod 664 ${OUTDIR}/ROOT/${RUN_NUMBER}/hd_root_${RUN_NUMBER}_${FILE_NUMBER}.root
+if (-e hd_root.root) then
+	cp -v hd_root.root ${OUTDIR}/ROOT/${RUN_NUMBER}/hd_root_${RUN_NUMBER}_${FILE_NUMBER}.root
+	chmod 664 ${OUTDIR}/ROOT/${RUN_NUMBER}/hd_root_${RUN_NUMBER}_${FILE_NUMBER}.root
+endif
 
 # save REST output file
 mkdir -p -m 775 ${OUTDIR}/REST/${RUN_NUMBER}/
-cp -v dana_rest.hddm ${OUTDIR}/REST/${RUN_NUMBER}/dana_rest_${RUN_NUMBER}_${FILE_NUMBER}.hddm
-chmod 664 ${OUTDIR}/REST/${RUN_NUMBER}/dana_rest_${RUN_NUMBER}_${FILE_NUMBER}.hddm
+if (-e dana_rest.hddm) then
+	cp -v dana_rest.hddm ${OUTDIR}/REST/${RUN_NUMBER}/dana_rest_${RUN_NUMBER}_${FILE_NUMBER}.hddm
+	chmod 664 ${OUTDIR}/REST/${RUN_NUMBER}/dana_rest_${RUN_NUMBER}_${FILE_NUMBER}.hddm
+endif
 
 # create directory for log files
 mkdir -p -m 775 ${OUTDIR}/log/${RUN_NUMBER}/
