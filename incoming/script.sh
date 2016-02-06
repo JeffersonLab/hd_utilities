@@ -59,18 +59,19 @@ date
 set START = `date +%s`
 #hd_root $INPUTFILE -PPLUGINS=CDC_online -PNTHREADS=$NTHREADS -PTHREAD_TIMEOUT=300 -PPRINT_PLUGIN_PATHS=1 -PEVIO:ENABLE_DISENTANGLING=0
 hd_root $INPUTFILE -PPLUGINS=$PLUGINS -PNTHREADS=$NTHREADS -PTHREAD_TIMEOUT=$THREAD_TIMEOUT_VALUE
-#set RETURN_CODE = $status
-#echo Return Code = $RETURN_CODE
+set RETURN_CODE = $?
+echo Return Code = $RETURN_CODE
 echo "ending plugins ............."
 date
 set END = `date +%s`
 set TIMEDIFF = `expr $END - $START`
 echo "TIMEDIFF: $TIMEDIFF"
-#if ($RETURN_CODE != 0) then
-#	exit $RETURN_CODE
-#endif
+if ($RETURN_CODE != 0) then
+	exit $RETURN_CODE
+endif
 
 # save ROOT output file
+echo "Saving ROOT file"
 mkdir -p -m 775 ${OUTDIR}/ROOT/${RUN_NUMBER}/
 if (-e hd_root.root) then
 	cp -v hd_root.root ${OUTDIR}/ROOT/${RUN_NUMBER}/hd_root_${RUN_NUMBER}_${FILE_NUMBER}.root
@@ -78,6 +79,7 @@ if (-e hd_root.root) then
 endif
 
 # save REST output file
+echo "Saving REST file"
 mkdir -p -m 775 ${OUTDIR}/REST/${RUN_NUMBER}/
 if (-e dana_rest.hddm) then
 	cp -v dana_rest.hddm ${OUTDIR}/REST/${RUN_NUMBER}/dana_rest_${RUN_NUMBER}_${FILE_NUMBER}.hddm
