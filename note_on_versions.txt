@@ -1,0 +1,49 @@
+In https://halldsvn.jlab.org/repos/trunk/home/marki/gluex/docs/comp_mod:
+
+computing_model.xls
+computing_requirements_estimates_v2.xlsx
+computing_requirements_estimates.xlsx
+L3_resource_estimate.xlsx
+manpower_survey.gnumeric
+Offline Computing from BIA 17 May 11 PMK.xlsx
+
+In https://halldsvn.jlab.org/repos/trunk/home/marki/gluex/docs/software_review_3:
+
+12_GeV_Software_and_Computing_Review_Committee_Charge_Final.docx
+12GeV_Software_Review_2015_Final2.docx
+12GeV_Software_Review_2015_Final.docx
+20150128_GLUEX_computing_model_DRAFT.xlsx
+2015-02-01-weeklyruns_updated.pdf
+20150204 GLUEX computing model DRAFT.xlsx
+abu_fall_2015.png
+compare_spreadsheets
+computing_model_DL_v2.xls
+computing_model_DL.xls
+computing_model_sr3_v2.xls
+computing_model_sr3_v3.xls
+computing_model_sr3_v4.xls
+computing_model_sr3.xls
+computing_model.xls
+create.sh
+event_tally_board.png
+Hall D Offline Software Ito annotated.pdf
+Hall D Offline Software Ito.pdf
+Hall D Offline Software Ito.pptx
+Hall D Offline Software Ito v2.pdf
+Hall D Offline Software Ito v2.pptx
+institutions.sql
+person.pl
+plot_browser.png
+run_browser.png
+software_overview_halld_MMI.pdf
+Software Review Talk from Mark.pptx
+Software Review Talk from Mark v2.pptx
+Software Review Talk from Mark v3.pdf
+Software Review Talk from Mark v3.pptx
+Software Review Talk from Mark v4 annotated.pdf
+Software Review Talk from Mark v4.pdf
+Software Review Talk from Mark v4.pptx
+software_workers.txt
+soft_work.sql
+time_series.png
+worker_table.txt
