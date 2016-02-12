@@ -29,7 +29,7 @@ source $ENVIRONMENT
 
 echo pwd = $PWD
 printenv
-echo "PERL INCLUDES:"
+echo "PERL INCLUDES: "
 perl -e "print qq(@INC)"
 
 ls -l
