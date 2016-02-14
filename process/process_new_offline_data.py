@@ -356,7 +356,7 @@ def ProcessOfflineData(args):
         # this option motivated by new plans for file management when working off of the write-through cache
         # instead of keeping individual ROOT files semi-permanently, for some jobs we merge ROOT files as they
         # come in and keep a copy of the final merged file in the original directory
-        if self.MERGE_INCREMENT:
+        if config.MERGE_INCREMENT:
             rootfile_dir = join(monitoring_files.keys()[0].split('/')[:-1])
             # delete old files
             for filename in monitoring_files.keys():
