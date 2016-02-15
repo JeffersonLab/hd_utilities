@@ -6,6 +6,8 @@ import cgi
 import cgitb
 cgitb.enable()
 
+import datetime
+
 dbhost = "hallddb.jlab.org"
 dbuser = 'datmon'
 dbpass = ''
@@ -58,13 +60,22 @@ def get_periods(options):
 
     return rows
 
+# get period for given run_number from the DB
+def get_periods_run_number(options):
+
+    query = "SELECT DISTINCT run_period from version_info v, run_info r, bcal_hits b WHERE b.runid=r.run_num and v.version_id=b.version_id and r.run_num=%s ORDER BY run_period DESC"
+    curs.execute(query, (str(options[0])))
+    rows=curs.fetchall()
+
+    return rows
+
 # get dates to list on runBrowser page
 def get_dates(options):
    
     revision_str = str(options[1])
     revision_str = revision_str.replace("ver","")
     revision = int(float(revision_str)) 
-    query = "SELECT DISTINCT DATE(r.start_time) FROM run_info r, version_info v, bcal_hits b WHERE b.runid=r.run_num and v.version_id=b.version_id and run_num>0 and start_time>'2014-11-01' and revision=%s  and run_period=%s GROUP BY start_time"
+    query = "SELECT DISTINCT DATE(r.start_time) FROM run_info r, version_info v, bcal_hits b WHERE b.runid=r.run_num and v.version_id=b.version_id and run_num>0 and start_time>'2014-11-01' and revision=%s and run_period=%s GROUP BY start_time"
     curs.execute(query, (revision, str(options[2])))
     rows=curs.fetchall()
 
@@ -217,25 +228,31 @@ def print_run_selector(records, options):
     dates = get_dates(options)
     for date in dates:
         if date[0] == None: 
-            continue;        
+            continue;
 
         # format date (must be a better way)
         fulldate = str(date[0]) 
         month = fulldate[5:7]
         day = fulldate[8:10]
-        namedate = "%s %s" % (months[int(month)-1], day)
-        
+        namedate = "%s %s" % (months[int(month)-1], day)      
+ 
         # get run range
         minRun = 9e9
         maxRun = 0
         for row in records:
-            rundate = str(row[1])[:10]
+            if row[1] == None or row[1] == '0':
+                continue
+            rundate_obj = datetime.datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S")
+            #print rundate_obj
+            rundate = rundate_obj.strftime("%Y-%m-%d")
+            #print rundate
+	    
             if rundate == fulldate:
                 if row[0] < minRun:
                     minRun = row[0]
                 if row[0] > maxRun:
                     maxRun = row[0]
-                    
+                
         if minRun != 9e9 and maxRun != 0:
             print "<li>"
             print "<b>%s</b> (Run %s-%s)" % (namedate, minRun, maxRun)
@@ -243,7 +260,10 @@ def print_run_selector(records, options):
             
             # print runs for given date
             for row in records:
-                rundate = str(row[1])[:10]
+                if row[1] == None or row[1] == '0':
+                    continue
+                rundate_obj = datetime.datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S")
+                rundate = rundate_obj.strftime("%Y-%m-%d")
                 if rundate == fulldate:
                     print "<li>"
                     print "<a href=\"/cgi-bin/data_monitoring/monitoring/runBrowser.py?run_number=%s&ver=%s&period=%s\"> %s (%s events) </a>  " % (row[0], options[1], options[2], row[0], row[2])
@@ -272,7 +292,7 @@ def get_options():
     run_number = []
     
     verName = "ver01"
-    periodName = "RunPeriod-2015-12"
+    periodName = "RunPeriod-2016-02"
 
     if "ver" in form:
         verName = str(form["ver"].value)
@@ -313,14 +333,25 @@ def main():
     # print the page body
     print "<body style=\"overflow-y: hidden\" >"
 
+    #set period and version if only run_number is given
+    if options[0] != None: 
+        # set period first
+        period=get_periods_run_number(options)
+        options[2]=period[0][0]
+        # set version
+        versions=get_versions(options)
+        revision = ("ver%02d" % versions[0][0])
+        options[1]=revision
+
     # print version selector
     print """<div id="nav" class="link-list">"""
     print_version_selector(options)
-
+    
     # print run selector form
-    if options[1] != None:
-        records=get_data(options)
-        print_run_selector(records, options)
+    records=get_data(options)
+    #if records == None: 
+    #    records.append([10267, "", 10])
+    print_run_selector(records, options)
     print "</div class=\"link-list\">"
 
     # print main page with plots if run number selected
@@ -432,7 +463,7 @@ def main():
         else:
             ana_charts3 = [["HistMacro_p2pi_pmiss","&pi;<sup>+</sup>&pi;<sup>-</sup>1"],["HistMacro_p2pi_preco1","&pi;<sup>+</sup>&pi;<sup>-</sup>2"],["HistMacro_p3pi_preco_2FCAL","&pi;<sup>+</sup>&pi;<sup>-</sup>&pi;<sup>0</sup>(2FCAL)"],["HistMacro_p3pi_preco_FCAL-BCAL","&pi;<sup>+</sup>&pi;<sup>-</sup>&pi;<sup>0</sup>(F/BCAL)"]]
     # Fall 2015 run
-    elif options[2] == 'RunPeriod-2015-12':
+    elif options[2] == 'RunPeriod-2015-12' or options[2] == 'RunPeriod-2016-02':
         cdc_charts = [["__CDC_cdc_raw_intpp","RawInt"],["__CDC_cdc_raw_t","Time"],["CDC_occupancy","Occupancy"],["__CDC_cdc_ped","Pedestal"],["__CDC_cdc_raw_intpp_vs_n","RawIntVsN"],["__CDC_cdc_raw_t_vs_n","RawTimeVsN"],["__CDC_cdc_ped_vs_n","PedVsN"],["__CDC_cdc_windata_ped_vs_n","WinDataPedVsN"]]
         fdc_charts = [["__FDC_fdcos","FdcStripOcc"],["__FDC_fdcow","FdcWireOcc"]]
         bcal_charts = [["bcal_summary","DigiSummary"],["bcal_times","DigiTime"],["bcal_occupancy","DigiOccupancy"],["bcal_cluster","Cluster"],["bcal_shower","Shower"],["bcal_hist_eff","Effic"],["bcal_inv_mass","BCALInvMass"],["bcal_fcal_inv_mass","B/FCALInvMass"],["trig_fcalbcal","Trigger"]]
@@ -491,21 +522,21 @@ def main():
     print_row(options, tagh_charts)
     print "</table>"
 
-    if revision > 3 and options[2] == 'RunPeriod-2015-03' or options[2] == 'RunPeriod-2015-06' or options[2] == 'RunPeriod-2015-12':
+    if revision > 3 and options[2] == 'RunPeriod-2015-03' or options[2] == 'RunPeriod-2015-06' or options[2] == 'RunPeriod-2015-12' or options[2] == 'RunPeriod-2016-02':
 	print """<table style="width:200px; font-size:0.8em">
 	   <tr>"""
 	print "<td>PS:</td>"
 	print_row(options, ps_charts)
     	print "</table>"
 
-    if revision > 4 and options[2] == 'RunPeriod-2015-03' or options[2] == 'RunPeriod-2015-06' or options[2] == 'RunPeriod-2015-12':
+    if revision > 4 and options[2] == 'RunPeriod-2015-03' or options[2] == 'RunPeriod-2015-06' or options[2] == 'RunPeriod-2015-12' or options[2] == 'RunPeriod-2016-02':
 	print """<table style="width:200px; font-size:0.8em">
 	   <tr>"""
 	print "<td>RF:</td>"
 	print_row(options, rf_charts)
     	print "</table>"
 
-    if (revision > 5 and options[2] == 'RunPeriod-2015-03') or (revision > 15 and options[2] == 'RunPeriod-2014-10') or options[2] == 'RunPeriod-2015-06' or options[2] == 'RunPeriod-2015-12':
+    if (revision > 5 and options[2] == 'RunPeriod-2015-03') or (revision > 15 and options[2] == 'RunPeriod-2014-10') or options[2] == 'RunPeriod-2015-06' or options[2] == 'RunPeriod-2015-12' or options[2] == 'RunPeriod-2016-02':
 	print """<table style="font-size:0.8em">
 	   <tr>"""
 	print "<td>HLDetectorTiming:</td>"
