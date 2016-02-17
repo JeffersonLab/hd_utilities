@@ -18,7 +18,7 @@ from collections import defaultdict
 
 #################################################### GLOBAL VARIABLES ####################################################
 
-VERBOSE = 1
+VERBOSE = 2
 RAW_DATA_BASE_DIR = "/mss/halld/"
 #RAW_DATA_BASE_DIR = "/cache/halld/"
 
@@ -91,11 +91,11 @@ def build_job_dictionary(WORKFLOW):
 			job_dictionary[run_string].add(file_string)
 			num_jobs += 1
 			if VERBOSE > 1:
-				print "Job found, run, file = " + run_string + " " + file_string
+				print "Job found, run, file = " + run_string + " " + file_string + " size: " + str(len(job_dictionary[run_string]))
 		elif (line_length > 8) and (line[:8] == "user_run"): 
-			run_string = line[11:]
+			run_string = line.split()[2]
 		elif (line_length > 9) and (line[:9] == "user_file"): 
-			file_string = line[12:]
+			file_string = line.split()[2]
 
 	# Register the last job
 	if(run_string != "-1"):
@@ -143,7 +143,7 @@ def main(argv):
 	# For the workflow, get the full status output from SWIF about what jobs are in the workflow
 	# Loop through all of these jobs, and for every run, record which file #'s have jobs submitted for them
 	job_dictionary = build_job_dictionary(WORKFLOW)
-
+	print "job dict size = " + str(len(job_dictionary))
 	# ADD JOBS
 	# For every run # on tape, see how many jobs are in the workflow. If > NUM_FILES_PER_RUN, continue to the next run
 	# If num files on tape same as in workflow, entire job was submitted: continue
@@ -151,7 +151,11 @@ def main(argv):
 	# Add the job (with -create, so not needed)
 	for run_string in file_dictionary:
 		num_jobs_submitted = len(job_dictionary[run_string])
+		for file_string in job_dictionary[run_string]:
+			print file_string
 		num_files = len(file_dictionary[run_string])
+		if VERBOSE > 1:
+			print "run string: " + run_string + ", num files = " + str(num_files) + ", num jobs submitted previously: " + str(num_jobs_submitted) + ", max per run = " + str(NUM_FILES_PER_RUN)
 		if(num_jobs_submitted >= NUM_FILES_PER_RUN):
 			if VERBOSE > 1:
 				print "Max jobs (" + str(NUM_FILES_PER_RUN) + ") submitted for run " + run_string
