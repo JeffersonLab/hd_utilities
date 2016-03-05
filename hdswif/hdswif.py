@@ -25,6 +25,7 @@ import re
 from subprocess import Popen, PIPE
 import glob
 import time
+import rcdb
 
 import parse_swif
 import read_config
@@ -419,23 +420,35 @@ def main(argv):
     if(VERBOSE == True):
         print "FORMATTED_RUN = " + FORMATTED_RUN + " FORMATTED_FILE = " + FORMATTED_FILE
 
+    # Get the list of production runs
+    runs = []
+    if(RUN == "all"):
+        db = rcdb.RCDBProvider("mysql://rcdb@hallddb/rcdb")
+        runs = db.select_runs("@is_production", 10000, 20000) #YIKES: MAX-RUN HARD-CODED!!!
+    else:
+        runs += [ db.get_run(int(RUN)) ]
+
     #------------------------------------------+
     #    Find raw evio files to submit         |
     #------------------------------------------+
-    file_list = []
-    file_list = find_files(config_dict['RUNPERIOD'], FORMATTED_RUN, FORMATTED_FILE)
-    if(VERBOSE == True):
-        for file in file_list:
-            print file
-        print "size of file_list is " + str(len(file_list))
+    for run in runs:
+       FORMATTED_RUN = "{:0>6d}".format(int(run.number))
+       print "production run: " + FORMATTED_RUN
 
-    #------------------------------------------+
-    #         Add job to workflow              |
-    #------------------------------------------+
+       file_list = []
+       file_list = find_files(config_dict['RUNPERIOD'], FORMATTED_RUN, FORMATTED_FILE)
+       if(VERBOSE == True):
+           for file in file_list:
+              print file
+           print "size of file_list is " + str(len(file_list))
 
-    # Loop over files found for given run and file
-    for mssfile in file_list:
-        add_job(WORKFLOW, config_dict, mssfile)
+       #------------------------------------------+
+       #         Add job to workflow              |
+       #------------------------------------------+
+
+       # Loop over files found for given run and file
+       for mssfile in file_list:
+           add_job(WORKFLOW, config_dict, mssfile)
 
 if __name__ == "__main__":
    main(sys.argv[1:])
