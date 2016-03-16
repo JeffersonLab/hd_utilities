@@ -62,7 +62,7 @@ def get_periods(options):
 
     return rows
 
-def show_plots(records, plotName, verName, periodName):
+def show_plots(records, plotName, verName, periodName, rcdb_query):
     #print "<table border=\"1\">"
     #print "<tr>"
 
@@ -79,16 +79,22 @@ def show_plots(records, plotName, verName, periodName):
     loc_i = 0
     temp_runs = []
 
+    if periodName == 'RunPeriod-2016-02':
+        rcdb_runs = db.select_runs(rcdb_query)
+        rcdb_run_numbers = [ run.number for run in rcdb_runs ]
+
     for run in records:
 
         # filter out non-production runs
-        if periodName == 'RunPeriod-2016-02':
-            if db.get_condition(run[0], "beam_current") and db.get_condition(run[0], "event_count") and db.get_condition(run[0], "daq_run"):
-                beam_current = db.get_condition(run[0], "beam_current").value
-                event_count = db.get_condition(run[0], "event_count").value
-                daq_run = db.get_condition(run[0], "daq_run").value
-                if beam_current < 2 or (daq_run not in ['PHYSICS', 'EXPERT']) or event_count < 500000:
-                    continue
+        if periodName == 'RunPeriod-2016-02' and run[0] not in rcdb_run_numbers:
+            continue
+
+            #if db.get_condition(run[0], "beam_current") and db.get_condition(run[0], "event_count") and db.get_condition(run[0], "daq_run"):
+            #    beam_current = db.get_condition(run[0], "beam_current").value
+            #    event_count = db.get_condition(run[0], "event_count").value
+            #    daq_run = db.get_condition(run[0], "daq_run").value
+            #    if beam_current < 2 or (daq_run not in ['PHYSICS', 'EXPERT']) or event_count < 500000:
+            #        continue
         
         temp_runs.append(run[0])
 
@@ -316,6 +322,14 @@ def print_option_selector(options):
     print "eg. and beam_current>20 and solenoid_current>1190"
 
     print "<br>"
+    print """Add additional RCDB query requirements as string:"""
+    if options == None:
+        print "<input type=\"text\" name=\"query\" size=\"40\" />"
+    else:
+        print "<input type=\"text\" name=\"rcdb_query\" size=\"40\" value=\"%s\" />" % (options[6])
+    print "eg. @is_production"
+
+    print "<br>"
     print "<b> Note: </b> Click on figure to open larger image in new tab, or click on Run # to open runBrowser page for that Run."
     print "</form>"
 
@@ -330,6 +344,7 @@ def get_options():
     verName = "ver01"
     periodName = "RunPeriod-2016-02"
     query = ""
+    rcdb_query = "@is_production"
 
     if "plot" in form:
         plotName = str(form["plot"].value)
@@ -339,6 +354,8 @@ def get_options():
         periodName = str(form["period"].value)
     if "query" in form:
         query = str(form["query"].value)
+    if "rcdb_query" in form:
+        rcdb_query = str(form["rcdb_query"].value)
     if "run_number1" in form:
         run_number_str.append(form["run_number1"].value)
     if "run_number2" in form:
@@ -351,6 +368,7 @@ def get_options():
             run_number.append(verName)
             run_number.append(query)
             run_number.append(periodName)
+            run_number.append(rcdb_query)
             return run_number
         else:
             return None
@@ -374,6 +392,7 @@ def get_options():
         run_number.append(verName)
         run_number.append(query)
         run_number.append(periodName)
+        run_number.append(rcdb_query)
         return run_number
 
 
@@ -415,7 +434,7 @@ def main():
     records=get_data(options)
 
     # display histograms
-    show_plots(records, options[2], options[3], options[5])
+    show_plots(records, options[2], options[3], options[5], options[6])
 
     print "</div>"
     print "</body>"
