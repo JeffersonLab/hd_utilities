@@ -6,6 +6,14 @@ import cgi
 import cgitb
 cgitb.enable()
 
+import os
+os.environ["RCDB_HOME"] = "/group/halld/www/halldweb/html/rcdb_home"
+import sys
+sys.path.append("/group/halld/www/halldweb/html/rcdb_home/python")
+import rcdb
+
+db = rcdb.RCDBProvider("mysql://rcdb@hallddb/rcdb")
+
 dbhost = "hallddb.jlab.org"
 dbuser = 'datmon'
 dbpass = ''
@@ -72,6 +80,16 @@ def show_plots(records, plotName, verName, periodName):
     temp_runs = []
 
     for run in records:
+
+        # filter out non-production runs
+        if periodName == 'RunPeriod-2016-02':
+            if db.get_condition(run[0], "beam_current") and db.get_condition(run[0], "event_count") and db.get_condition(run[0], "daq_run"):
+                beam_current = db.get_condition(run[0], "beam_current").value
+                event_count = db.get_condition(run[0], "event_count").value
+                daq_run = db.get_condition(run[0], "daq_run").value
+                if beam_current < 2 or (daq_run not in ['PHYSICS', 'EXPERT']) or event_count < 500000:
+                    continue
+        
         temp_runs.append(run[0])
 
         if (loc_i+1) % 3 == 0:
@@ -310,7 +328,7 @@ def get_options():
 
     plotName = "CDC_occupancy"
     verName = "ver01"
-    periodName = "RunPeriod-2015-12"
+    periodName = "RunPeriod-2016-02"
     query = ""
 
     if "plot" in form:
@@ -339,13 +357,19 @@ def get_options():
     else:
         if periodName == "RunPeriod-2014-10":
             run_number.append(1)
+            run_number.append(9000)
         elif periodName == "RunPeriod-2015-03":
             run_number.append(2600)
+            run_number.append(9000)
 	elif periodName == "RunPeriod-2015-06":
 	    run_number.append(3400)
+            run_number.append(9000)
+        elif periodName == "RunPeriod-2015-12":
+            run_number.append(4000)
+            run_number.append(9000)
 	else:
-	    run_number.append(4000)
-        run_number.append(9999)
+	    run_number.append(10000)
+            run_number.append(19999)
         run_number.append(plotName)
         run_number.append(verName)
         run_number.append(query)

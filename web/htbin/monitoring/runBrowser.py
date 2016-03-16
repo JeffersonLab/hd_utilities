@@ -1,12 +1,19 @@
 #!/usr/bin/python
 
 import MySQLdb
-import sys
 import cgi
 import cgitb
 cgitb.enable()
 
 import datetime
+
+import os
+os.environ["RCDB_HOME"] = "/group/halld/www/halldweb/html/rcdb_home"
+import sys
+sys.path.append("/group/halld/www/halldweb/html/rcdb_home/python")
+import rcdb
+
+db = rcdb.RCDBProvider("mysql://rcdb@hallddb/rcdb")
 
 dbhost = "hallddb.jlab.org"
 dbuser = 'datmon'
@@ -264,10 +271,17 @@ def print_run_selector(records, options):
                     continue
                 rundate_obj = datetime.datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S")
                 rundate = rundate_obj.strftime("%Y-%m-%d")
+
+                numevents = row[2]
+
                 if rundate == fulldate:
+                    if options[2] == 'RunPeriod-2016-02':
+                        if db.get_condition(row[0], "event_count"):
+                            numevents = db.get_condition(row[0], "event_count").value
                     print "<li>"
-                    print "<a href=\"/cgi-bin/data_monitoring/monitoring/runBrowser.py?run_number=%s&ver=%s&period=%s\"> %s (%s events) </a>  " % (row[0], options[1], options[2], row[0], row[2])
+                    print "<a href=\"/cgi-bin/data_monitoring/monitoring/runBrowser.py?run_number=%s&ver=%s&period=%s\"> %s (%s events) </a>  " % (row[0], options[1], options[2], row[0], numevents)
                     print ("<a href=\"/cgi-bin/data_monitoring/monitoring/browseJSRoot.py?run_number=%s&ver=%s&period=%s\" target=\"_blank\"><button type=\"button\"> ROOT </button></a>" % (row[0], options[1], options[2]))
+                    print ("<a href=\"https://halldweb.jlab.org/rcdb/runs/info/%s\" target=\"_blank\"><button type=\"button\"> RCDB </button></a>" % (row[0]))
                     print "</li>"
                     
             print "</ul>"
@@ -334,7 +348,7 @@ def main():
     print "<body style=\"overflow-y: hidden\" >"
 
     #set period and version if only run_number is given
-    if options[0] != None: 
+    if options[0] != None:
         # set period first
         period=get_periods_run_number(options)
         options[2]=period[0][0]
