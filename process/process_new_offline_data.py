@@ -357,12 +357,13 @@ def ProcessOfflineData(args):
         # instead of keeping individual ROOT files semi-permanently, for some jobs we merge ROOT files as they
         # come in and keep a copy of the final merged file in the original directory
         if config.MERGE_INCREMENT:
-            rootfile_dir = join(monitoring_files.keys()[0].split('/')[:-1])
+            rootfile_dir = "/".join(monitoring_files.keys()[0].split('/')[:-1])
+            print "ROOTFILE_DIR = "%rootfile_dir
             # delete old files
             for filename in monitoring_files.keys():
                 ##os.system("rm "+filename)   
-                os.system("mv %s %s.old"%(filename,filename))   # DEBUG
-            os.system("cp %s %s"%(summed_rootfile,rootfile_dir))
+                os.system("mv %s %s.old"%(filename,filename))   # THIS IS HERE FOR DEBUGGING PURPOSES
+            os.system("cp -v %s %s"%(summed_rootfile,rootfile_dir))
 
     # sanity check - does the summed file exist?
     if not isfile(summed_rootfile):
