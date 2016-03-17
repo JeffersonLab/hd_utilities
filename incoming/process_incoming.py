@@ -82,8 +82,10 @@ def build_job_dictionary(WORKFLOW):
 	for line in status_output.splitlines():
 		if VERBOSE > 9:
 			print line
-		line_length = len(line)
-		if (line_length > 2) and (line[:2] == "id"): 
+		if(len(line.split()) < 3):
+			continue
+		field = line.split()[0]
+		if (field == "id"): 
 			if start_loop_flag:
 				start_loop_flag = False # Don't register yet: Just started
 				continue
@@ -92,9 +94,9 @@ def build_job_dictionary(WORKFLOW):
 			num_jobs += 1
 			if VERBOSE > 1:
 				print "Job found, run, file = " + run_string + " " + file_string + " size: " + str(len(job_dictionary[run_string]))
-		elif (line_length > 8) and (line[:8] == "user_run"): 
+		elif (field == "user_run"): 
 			run_string = line.split()[2]
-		elif (line_length > 9) and (line[:9] == "user_file"): 
+		elif (field == "user_file"): 
 			file_string = line.split()[2]
 
 	# Register the last job
@@ -160,7 +162,7 @@ def main(argv):
 			if VERBOSE > 1:
 				print "Max jobs (" + str(NUM_FILES_PER_RUN) + ") submitted for run " + run_string
 			continue # This run is done
-		if(num_jobs_submitted == num_files):
+		if(num_jobs_submitted >= num_files):
 			if VERBOSE > 1:
 				print "All jobs (" + str(num_files) + ") submitted for run " + run_string
 			continue # This run is done
