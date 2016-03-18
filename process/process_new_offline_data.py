@@ -358,7 +358,6 @@ def ProcessOfflineData(args):
         # come in and keep a copy of the final merged file in the original directory
         if config.MERGE_INCREMENT:
             rootfile_dir = "/".join(monitoring_files.keys()[0].split('/')[:-1])
-            print "ROOTFILE_DIR = "%rootfile_dir
             # delete old files
             for filename in monitoring_files.keys():
                 ##os.system("rm "+filename)   
@@ -603,7 +602,7 @@ def main():
         
     # save tarballs of log files and PNGs
     if len(runs_to_process)>0:
-        logdir = join(self.INPUT_DIRECTORY,self.REVISION,"log")
+        logdir = join(config.INPUT_DIRECTORY,config.REVISION,"log")
         if isdir(logdir):
             os.system("tar czf log.tar.gz %s"%logdir)
         os.system("tar czf web_figures.tar.gz %s/Run*"%config.OUTPUT_DIRECTORY)
