@@ -1,11 +1,18 @@
 #!/usr/bin/python
 
+import MySQLdb
+import sys
 import cgi
 import cgitb
 cgitb.enable()
 
+import os
+os.environ["RCDB_HOME"] = "/group/halld/www/halldweb/html/rcdb_home"
 import sys
-import MySQLdb
+sys.path.append("/group/halld/www/halldweb/html/rcdb_home/python")
+import rcdb
+
+db = rcdb.RCDBProvider("mysql://rcdb@hallddb/rcdb")
 
 dbhost = "hallddb.jlab.org"
 dbuser = 'datmon'
@@ -80,9 +87,11 @@ def get_data(options, view, name):
     revision = int(float(revision_str))
     if options == None or options[0] == None:
         #curs.execute("select runid, version_id, %s WHERE num_det_events>0 and runid>0 GROUP BY runid" % (view))
-        curs.execute("SELECT run_num, revision, %s.version_id=version_info.version_id JOIN run_info on run_info.run_num=%s.runid WHERE (num_det_events>0 or num_det_events=-1) and num_events>0 and run_num>0 and revision=%d %s GROUP BY run_num, revision" % (view, name, revision, options[3]))
+        query = "SELECT run_num, revision, %s.version_id=version_info.version_id JOIN run_info on run_info.run_num=%s.runid WHERE (num_det_events>0 or num_det_events=-1) and run_num>0 and revision=%%s and run_period=%%s %%s GROUP BY run_num, revision" % (view, name)
+        curs.execute(query, (str(revision), str(options[3]), str(options[4])))
     else:
-        curs.execute("SELECT run_num, revision, %s.version_id=version_info.version_id JOIN run_info on run_info.run_num=%s.runid WHERE (num_det_events>0 or num_det_events=-1) and num_events>0 and run_num>=%d and run_num<=%d and revision=%d %s GROUP BY run_num, revision" % (view, name, options[0], options[1], revision, options[3]))
+        query = "SELECT run_num, revision, %s.version_id=version_info.version_id JOIN run_info on run_info.run_num=%s.runid WHERE (num_det_events>0 or num_det_events=-1) and run_num>=%%s and run_num<=%%s and revision=%%s and run_period=%%s %%s GROUP BY run_num, revision" % (view, name)
+        curs.execute(query, (options[0], options[1], str(revision), str(options[3]), str(options[4])))
 
     rows=curs.fetchall()
 
@@ -98,9 +107,11 @@ def get_data_calib(options, view, name):
     revision_str = revision_str.replace("ver","")
     revision = int(float(revision_str))
     if options == None or options[0] == None:
-        curs.execute("SELECT run_num, revision, %s.version_id=version_info.version_id JOIN run_info on run_info.run_num=%s.runid WHERE num_files>0 and run_num>0 and revision=%d %s GROUP BY run_num, revision" % (view, name, revision, options[3]))
+        query = "SELECT run_num, revision, %s.version_id=version_info.version_id JOIN run_info on run_info.run_num=%s.runid WHERE num_files>0 and run_num>0 and revision=%%s and run_period=%%s %%s GROUP BY run_num, revision" % (view, name)
+        curs.execute(query, (str(revision), str(options[3]), str(options[4])))
     else:
-        curs.execute("SELECT run_num, revision, %s.version_id=version_info.version_id JOIN run_info on run_info.run_num=%s.runid WHERE num_files>0 and run_num>=%d and run_num<=%d and revision=%d %s GROUP BY run_num, revision" % (view, name, options[0], options[1], revision, options[3]))
+        query = "SELECT run_num, revision, %s.version_id=version_info.version_id JOIN run_info on run_info.run_num=%s.runid WHERE num_files>0 and run_num>=%%s and run_num<=%%s and revision=%%s and run_period=%%s %%s GROUP BY run_num, revision" % (view, name)
+        curs.execute(query, (options[0], options[1], str(revision), str(options[3]), str(options[4])))
 
     rows=curs.fetchall()
 
@@ -110,7 +121,21 @@ def get_data_calib(options, view, name):
 # get list of versions from the DB
 def get_versions(options):
 
-    curs.execute("SELECT revision, dataVersionString from version_info where revision>0 ORDER BY revision DESC")
+    if options == None:
+        query = "SELECT revision, dataVersionString, run_period from version_info ORDER BY revision DESC"
+        curs.execute(query)
+    else:
+        query = "SELECT revision, dataVersionString, run_period from version_info where run_period=%s ORDER BY revision DESC"
+        curs.execute(query, (str(options[4])))
+    rows=curs.fetchall()
+
+    return rows
+
+# get list of periods from the DB
+def get_periods(options):
+
+    query = "SELECT DISTINCT run_period from version_info ORDER BY run_period DESC"
+    curs.execute(query)
     rows=curs.fetchall()
 
     return rows
@@ -119,22 +144,37 @@ def get_versions(options):
 def get_num_events(options, view):
 
     if options == None or options[0] == None:
-        curs.execute("select run_num, runid, %s WHERE run_num>0 and num_events>0 %s ORDER BY run_num" % (view, options[3]))
+        #curs.execute("select run_num, runid, %s WHERE run_num>0 and %s ORDER BY run_num" % (view, options[3]))
+        return db.select_runs(options[5]).get_values(["beam_current", "event_count"],True)
     else:
-        curs.execute("select run_num, runid, %s WHERE run_num>=%d and run_num<=%d and num_events>0 %s ORDER BY run_num" % (view, options[0], options[1], options[3]))
+        #curs.execute("select run_num, runid, %s WHERE run_num>=%d and run_num<=%d %s ORDER BY run_num" % (view, options[0], options[1], options[3]))
+        return db.select_runs(options[5], options[0], options[1]).get_values(["beam_current", "event_count"],True)
 
-    rows=curs.fetchall()
+    #rows=curs.fetchall()
+    #return rows
 
-    return rows
+def get_rcdb_run_numbers(options):
+    
+    rcdb_runs = db.select_runs(options[5])
+    rcdb_run_numbers = [ run.number for run in rcdb_runs ]
 
+    return rcdb_run_numbers
 
 # convert rows from database into a javascript table
-def create_table(rows, pngFilename, options):
+def create_table(rows, pngFilename, options, rcdb_run_numbers):
     chart_table=""
     run_number=""
 
     # set proper format for arbitrary row
     for row in rows: 
+
+        # remove runs not in RCDB query
+        row_run_number = ("%d" % (row[0]))
+        row_value = row[1]
+        if int(float(row_run_number)) not in rcdb_run_numbers or row_value is None:
+            continue
+        
+
         chart_table+="["
 
         i=0
@@ -145,10 +185,10 @@ def create_table(rows, pngFilename, options):
             if i == 1:
                 i=i+1
                 continue
-            if i > 1 : 
+            if i > 1: 
                 chart_table+=(", ") # separate with commas
                 chart_table+=("%s" % (column))
-                chart_table+=(", '<img width=300px src=\"https://halldweb.jlab.org/work/halld/data_monitoring/RunPeriod-2014-10/%s/Run%06d/%s.png\">'" % (options[2],int(float(run_number)),pngFilename))
+                chart_table+=(", '<img width=300px src=\"https://halldweb.jlab.org/work/halld/data_monitoring/%s/%s/Run%06d/%s.png\">'" % (options[4],options[2],int(float(run_number)),pngFilename))
 	    i=i+1
         chart_table+=("],\n")
 
@@ -275,40 +315,55 @@ def print_chart_selector_script():
 
 def print_option_selector(options, options2):
     print """<form action="/cgi-bin/data_monitoring/monitoring/timeSeries.py" method="POST">"""
+    print "Select Run Period:"
+    periods = get_periods(options)
+    print "<select id=\"period\" name=\"period\" onChange=\"changePeriod()\">"
+    for period in periods:
+        if period[0] == "RunPeriod-2015-01":
+            continue;
+        print "<option value=\"%s\" " % (period[0])
+        if period[0] == options[4]:
+            print "selected"
+        print "> %s</option>" % (period[0])
+    print "</select>"
+
+    print "and Recon. Version:"
+    versions = get_versions(options)
+    print "<select id=\"ver\" name=\"ver\">"
+    for version in versions:
+        revision = ("ver%02d" % version[0])
+        print "<option value=\"%s\" " % (revision)
+        if revision == options[2]:
+            print "selected"
+        print "> %s</option>" % (revision)
+    print "</select>"
+
     print """Select run number range to query:"""
-    if options == None or options[0] == None:
+    if options == None:
         print "<input type=\"text\" name=\"run_number1\" />"
         print "<input type=\"text\" name=\"run_number2\" />"
     else:
         print "<input type=\"text\" value=\"%s\" name=\"run_number1\" />" % (options[0])
         print "<input type=\"text\" value=\"%s\" name=\"run_number2\" />" % (options[1])
+    print "<input type=\"submit\" value=\"Display\" />"
 
-    versions = []
-    for version in options2:
-        revision = ("ver%02d" % version[0])
-        label = version[1]
-        versions.append([revision,label])
-
-    print "and Recon. Version:"
-    print "<select name=\"ver\">"
-    for version in versions:
-        print "<option value=\"%s\" " % (version[0])
-        if options != None and version[0] == options[2]:
-            print "selected"
-        print "> %s</option>" % (version[1])
-    print "</select>"
-    
     print "<br>"
     print """Add additional MYSQL query requirements as string:"""
     if options == None:
-        print "<input type=\"text\" name=\"query\" size=\"60\" />"
+        print "<input type=\"text\" name=\"query\" size=\"40\" />"
     else:
-        print "<input type=\"text\" name=\"query\" size=\"60\" value=\"%s\" />" % (options[3])
+        print "<input type=\"text\" name=\"query\" size=\"40\" value=\"%s\" />" % (options[3])
     print "eg. and beam_current>20 and solenoid_current>1190"
 
-    print "<input type=\"submit\" value=\"Query\" />"
-    print "</form>"
+    print "<br>"
+    print """Add additional RCDB query requirements as string:"""
+    if options == None:
+        print "<input type=\"text\" name=\"query\" size=\"40\" />"
+    else:
+        print "<input type=\"text\" name=\"rcdb_query\" size=\"40\" value=\"%s\" />" % (options[5])
+    print "eg. @is_production"
 
+    print "<br>"
 
 def print_chart_selector():
 
@@ -373,13 +428,19 @@ def get_options():
     run_number_str = []
     run_number = []
 
-    verName = "ver16"
+    verName = "ver01"
+    periodName = "RunPeriod-2016-02"
     query = ""
+    rcdb_query = "@is_production"
 
     if "ver" in form:
         verName = str(form["ver"].value)
+    if "period" in form:
+        periodName = str(form["period"].value)
     if "query" in form:
         query = str(form["query"].value)
+    if "rcdb_query" in form:
+        rcdb_query = str(form["rcdb_query"].value)
     if "run_number1" in form:
         run_number_str.append(form["run_number1"].value)
     if "run_number2" in form:
@@ -390,14 +451,18 @@ def get_options():
                 run_number.append(int(run))
             run_number.append(verName)
             run_number.append(query)
+            run_number.append(periodName)
+            run_number.append(rcdb_query)
             return run_number
         else:
             return None
     else:
-        run_number.append(None)
-        run_number.append(None)
+        run_number.append(10000)
+        run_number.append(19999)
         run_number.append(verName)
         run_number.append(query)
+        run_number.append(periodName)
+        run_number.append(rcdb_query)
         return run_number
 
 
@@ -422,6 +487,8 @@ def main():
 
     form_num = 2
     
+    rcdb_run_numbers = get_rcdb_run_numbers(options)
+
     # loop over possible charts and produce javascripts to display
     for chart in charts:
 
@@ -435,7 +502,7 @@ def main():
 
         if len(records) != 0:
             # convert the data into a table
-            table=create_table(records,chart[1],options)
+            table=create_table(records, chart[1], options, rcdb_run_numbers)
         else:
             continue
             #print "No data found"
