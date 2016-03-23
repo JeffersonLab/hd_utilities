@@ -76,7 +76,7 @@ def delete(workflow):
 def list():
     trycommand("swif list")
 
-def run(workflow):
+def runall(workflow):
     trycommand("swif run " + workflow + " -errorlimit none")
 
 def runnjobs(workflow, n):
@@ -174,11 +174,8 @@ def add_job(WORKFLOW, config_dict, mssfile):
             print "basename = " + basename
 
         # Create SCRIPT_ARGS
-        num_threads = str(config_dict['NCORES'])
-        if(num_threads == "24"):
-            num_threads = "Ncores"
         SCRIPT_ARGS = str(config_dict['ENVFILE'] + " " + basename + " " + thisrun + " " + thisfile + " " +
-                          config_dict['OUTPUT_TOPDIR'] + " " + num_threads + " " + config_dict['PLUGINS'])
+                          config_dict['OUTPUT_TOPDIR'] + " " + str(config_dict['NTHREADS']) + " " + config_dict['PLUGINS'])
         if(VERBOSE == True):
             print "SCRIPT_ARGS = " + SCRIPT_ARGS
 
@@ -186,7 +183,7 @@ def add_job(WORKFLOW, config_dict, mssfile):
             + " -track " + config_dict['TRACK'] + " -cores " + str(config_dict['NCORES']) + " -disk " + str(config_dict['DISK']) + "g" \
             + " -ram " + str(config_dict['RAM']) + "g -time " + str(config_dict['TIMELIMIT']) + "h -os " + config_dict['OS'] \
             + " -input " + basename + " " + mssfile \
-            + " -tag user_run " + thisrun + " -tag user_file " + thisfile \
+            + " -tag user_run " + thisrun + " -tag user_file " + thisfile + " -tag user_threads " + str(config_dict['NTHREADS']) \
             + " -name " + str(config_dict['JOBNAMEBASE']) + "_" + thisrun + "_" + thisfile \
             + " -stdout " + config_dict['OUTPUT_TOPDIR'] + "/log/" + thisrun + "/stdout_" + thisrun + "_" + thisfile + ".out" \
             + " -stderr " + config_dict['OUTPUT_TOPDIR'] + "/log/" + thisrun + "/stderr_" + thisrun + "_" + thisfile + ".err" \
@@ -284,7 +281,7 @@ def main(argv):
     # If we want to run workflow, run it and exit
     elif(args[0] == "run"):
         if(len(args) == 2):
-            run(WORKFLOW)
+            runall(WORKFLOW)
         if(len(args) == 3):
             runnjobs(WORKFLOW, args[2])
         return
@@ -422,8 +419,8 @@ def main(argv):
 
     # Get the list of production runs
     runs = []
+    db = rcdb.RCDBProvider("mysql://rcdb@hallddb/rcdb")
     if(RUN == "all"):
-        db = rcdb.RCDBProvider("mysql://rcdb@hallddb/rcdb")
         runs = db.select_runs("@is_production", 10000, 20000) #YIKES: MAX-RUN HARD-CODED!!!
     else:
         runs += [ db.get_run(int(RUN)) ]
