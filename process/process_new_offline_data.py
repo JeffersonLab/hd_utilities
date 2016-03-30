@@ -565,7 +565,7 @@ def main():
 
         ## figure out which files for this run are currently on disk
         rootfile_map = config.BuildROOTFileList(rundir)
-        if len(rootfile_map)==0:
+        if not config.FORCE_PROCESSING and len(rootfile_map)==0:
             continue
 
         ## figure out which files are new from the last run
