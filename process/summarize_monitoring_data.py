@@ -742,7 +742,7 @@ class summarize_monitoring_data:
         avg_hits_per_sector = []
         number_of_events = -1   
 
-        num_events = self.root_file.Get("IsEvent")
+        num_events = self.root_file.Get("Independent/IsEvent")
         if(num_events != None):
             number_of_events = num_events.GetBinContent(2)
 
@@ -773,7 +773,7 @@ class summarize_monitoring_data:
             num_piminus   += numpart*num_particles.GetBinContent(10,bin)
             num_kplus     += numpart*num_particles.GetBinContent(8,bin)
             num_neutral  += numpart*num_particles.GetBinContent(3,bin)
-            analysis_data += [num_partplus,num_partminus,num_proton,num_piplus,num_piminus,num_kplus]
+        analysis_data.extend([num_partplus,num_partminus,num_proton,num_piplus,num_piminus,num_kplus])
 
         # Calculate number of GOOD reconstructed particles (q+,q-,p,pi+,pi-,K+)
         num_good_partplus = 0
@@ -792,10 +792,10 @@ class summarize_monitoring_data:
             num_good_piminus   += numpart*num_good_particles.GetBinContent(10,bin)
             num_good_kplus     += numpart*num_good_particles.GetBinContent(8,bin)
             num_good_neutral  += numpart*num_good_particles.GetBinContent(3,bin)
-        analysis_data += [num_good_partplus,num_good_partminus,num_good_proton,num_good_piplus,num_good_piminus,num_good_kplus]
+        analysis_data.extend([num_good_partplus,num_good_partminus,num_good_proton,num_good_piplus,num_good_piminus,num_good_kplus])
 
         # add in neutral particles
-        analysis_data += [num_neutral,num_good_neutral]
+        analysis_data.extend([num_neutral,num_good_neutral])
 
         # Calculate number of various other reconstructed quantities    
         analysis_data.append( self.SumHistContents(self.root_file, self.ROOTDIR_PREFIX+"Independent/Hist_NumReconstructedObjects/NumFCALShowers") )
