@@ -76,6 +76,7 @@ class ProcessMonDataConfig:
         self.MAX_RUN = 1000000          
         self.RUN_NUMBER = None         # optionally process just one run
         self.MERGE_INCREMENT = False
+        self.EOR_PROCESSING = True
 
 
     def ProcessCommandline(self,args,options,db):
@@ -168,6 +169,9 @@ class ProcessMonDataConfig:
 
         if options.nthreads:
             self.NTHREADS = options.nthreads
+
+        if options.noendofjob_processing:
+            self.EOR_PROCESSING = False
 
 
     def BuildEnvironment(self):
@@ -505,6 +509,8 @@ def main():
                       help="Save REST files to conventional location.")
     parser.add_option("-M","--merge-incrementally", dest="merge_increment", action="store_true",
                       help="Merge ROOT files incrementally and delete old ones.")
+    parser.add_option("-E","--no-end-of-job-processing", dest="noendofjob_processing", action="store_true",
+                      help="Disable end of run processing.")
     
     (options, args) = parser.parse_args(sys.argv)
 
@@ -601,7 +607,7 @@ def main():
         p.map(ProcessOfflineData, runs_to_process)
         
     # save tarballs of log files and PNGs
-    if len(runs_to_process)>0:
+    if config.EOR_PROCESSING and len(runs_to_process)>0:
         logdir = join(config.INPUT_DIRECTORY,config.REVISION,"log")
         if isdir(logdir):
             os.system("tar czf log.tar.gz %s"%logdir)
