@@ -71,7 +71,7 @@ def build_job_dictionary(WORKFLOW):
 	process = Popen(command.split(), stdout=PIPE)
 	status_output = process.communicate()[0] # is stdout. [1] is stderr
 	return_code = process.returncode
-	if returin_code != 0:
+	if return_code != 0:
 		print "swif status bad return code, exiting"
 		sys.exit()
 
