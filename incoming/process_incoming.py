@@ -18,7 +18,7 @@ from collections import defaultdict
 
 #################################################### GLOBAL VARIABLES ####################################################
 
-VERBOSE = 2
+VERBOSE = 6
 RAW_DATA_BASE_DIR = "/mss/halld/"
 #RAW_DATA_BASE_DIR = "/cache/halld/"
 
@@ -70,6 +70,11 @@ def build_job_dictionary(WORKFLOW):
 		print command
 	process = Popen(command.split(), stdout=PIPE)
 	status_output = process.communicate()[0] # is stdout. [1] is stderr
+	return_code = process.returncode
+	if returin_code != 0:
+		print "swif status bad return code, exiting"
+		sys.exit()
+
 	if VERBOSE > 99:
 		print status_output
 
@@ -170,6 +175,8 @@ def main(argv):
 		# Submit jobs, IF the file (file = mss stub) timestamp hasn't been modified in at least 5 minutes
 		files_not_submitted = sorted(list(file_dictionary[run_string] - job_dictionary[run_string]))
 		for file_string in files_not_submitted:
+			if VERBOSE > 5:
+				print "file string = " + file_string
 			if(num_jobs_submitted >= NUM_FILES_PER_RUN):
 				break
 
