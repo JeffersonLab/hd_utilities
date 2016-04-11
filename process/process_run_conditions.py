@@ -13,6 +13,7 @@ import struct
 from datetime import datetime
 #import numpy as np
 import calendar
+import rcdb
 
 from datamon_db import datamon_db
 
@@ -399,6 +400,11 @@ def main(argv):
             print "Invalid target index from CCDB = " + str(target_index)
         fconst.close()
     """
+
+    # if we don't have a start time, grab it from the RCDB
+    if 'start_time' not in run_properties:
+        db = rcdb.RCDBProvider("mysql://rcdb@hallddb/rcdb")
+        run_properties['start_time'] = db.get_run(run_number).start_time
 
     if VERBOSE:
         print "RUN PROPERTIES FOR RUN " + str(run_number)
