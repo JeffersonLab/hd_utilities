@@ -185,6 +185,8 @@ def print_option_selector(options):
     plotNames.append(["__CDC_cdc_raw_t_vs_n","CDC Raw Time vs straw"])
     plotNames.append(["__CDC_cdc_ped_vs_n","CDC Ped vs straw"])
     plotNames.append(["__CDC_cdc_windata_ped_vs_n","CDC WinData Ped vs straw"])
+    plotNames.append(["__FDC_fdcos","FDC strip"])
+    plotNames.append(["__FDC_fdcow","FDC wire"])
     plotNames.append(["bcal_summary","BCAL Summary"])
     plotNames.append(["bcal_times","BCAL Timing"])
     plotNames.append(["bcal_occupancy","BCAL Occupancy"])
@@ -292,7 +294,16 @@ def print_option_selector(options):
         print "<option value=\"%s\" " % (revision)
         if revision == options[3]:
             print "selected"
-        print "> %s</option>" % (revision)
+	version_name = ""
+	if version[0] == 0:
+	    version_name = "RootSpy"
+	elif version[0] == 1:
+	    version_name = "Incoming Data"
+	else:
+	    version_name = "Launch "
+	    version_date = version[1].split("_")
+	    version_name += version_date[2]
+        print "> %s %s</option>" % (revision, version_name)
     print "</select>"
     print "<br>"
 
@@ -422,7 +433,7 @@ def main():
     print_option_selector(options)
     print "<hr>"
 
-    print """<div style="height: 83%; overflow-y: scroll;">"""
+    print """<div style="height: 75%; overflow-y: scroll;">"""
 
     if options[0] == None:
 	print "</div>"

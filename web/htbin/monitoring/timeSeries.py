@@ -335,7 +335,16 @@ def print_option_selector(options, options2):
         print "<option value=\"%s\" " % (revision)
         if revision == options[2]:
             print "selected"
-        print "> %s</option>" % (revision)
+	version_name = ""
+        if version[0] == 0:
+            version_name = "RootSpy"
+        elif version[0] == 1:
+            version_name = "Incoming Data"
+        else:
+            version_name = "Launch "
+            version_date = version[1].split("_")
+            version_name += version_date[2]
+        print "> %s %s</option>" % (revision, version_name)
     print "</select>"
 
     print """Select run number range to query:"""

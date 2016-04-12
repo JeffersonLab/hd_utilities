@@ -144,6 +144,8 @@ def print_option_selector(options):
     plotNames.append(["__CDC_cdc_raw_t_vs_n","CDC Raw Time vs straw"])
     plotNames.append(["__CDC_cdc_ped_vs_n","CDC Ped vs straw"])
     plotNames.append(["__CDC_cdc_windata_ped_vs_n","CDC WinData Ped vs straw"])
+    plotNames.append(["__FDC_fdcos","FDC strip"])
+    plotNames.append(["__FDC_fdcow","FDC wire"])
     plotNames.append(["bcal_summary","BCAL Summary"])
     plotNames.append(["bcal_times","BCAL Timing"])
     plotNames.append(["bcal_occupancy","BCAL Occupancy"])
@@ -266,8 +268,8 @@ def get_options():
     run_number = []
 
     plotName = "HistMacro_BCALReconstruction_p3"
-    verName = "ver22"
-    periodName = "RunPeriod-2015-03"
+    verName = "ver01"
+    periodName = "RunPeriod-2016-02"
 
     if "plot" in form:
         plotName = str(form["plot"].value)
@@ -288,7 +290,7 @@ def get_options():
         elif periodName == "RunPeriod-2015-06":
             run_number.append(3400)
         else:
-            run_number.append(4000)
+            run_number.append(10391)
         run_number.append(plotName)
         run_number.append(periodName)
         return run_number

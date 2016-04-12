@@ -82,7 +82,7 @@ def get_dates(options):
     revision_str = str(options[1])
     revision_str = revision_str.replace("ver","")
     revision = int(float(revision_str)) 
-    query = "SELECT DISTINCT DATE(r.start_time) FROM run_info r, version_info v, bcal_hits b WHERE b.runid=r.run_num and v.version_id=b.version_id and run_num>0 and start_time>'2014-11-01' and revision=%s and run_period=%s GROUP BY start_time"
+    query = "SELECT DISTINCT DATE(r.start_time) FROM run_info r, version_info v, bcal_hits b WHERE b.runid=r.run_num and v.version_id=b.version_id and run_num>0 and start_time>'2014-11-01' and revision=%s and run_period=%s ORDER BY DATE(start_time)"
     curs.execute(query, (revision, str(options[2])))
     rows=curs.fetchall()
 
@@ -221,7 +221,16 @@ def print_version_selector(options):
         print "<option value=\"%s\" " % (revision)
         if options != None and revision == options[1]:
             print "selected"
-        print "> %s</option>" % (revision)
+	version_name = ""
+        if version[0] == 0:
+            version_name = "RootSpy"
+        elif version[0] == 1:
+            version_name = "Incoming Data"
+        else:
+            version_name = "Launch "
+            version_date = version[1].split("_")
+            version_name += version_date[2]
+        print "> %s %s</option>" % (revision, version_name)
     
     print "</select>"
     print "<input type=\"submit\" value=\"Display\" />"
@@ -233,6 +242,7 @@ def print_run_selector(records, options):
     months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
     print "<ul id=\"runList\">"
     dates = get_dates(options)
+    #print dates
     for date in dates:
         if date[0] == None: 
             continue;
@@ -353,9 +363,10 @@ def main():
         period=get_periods_run_number(options)
         options[2]=period[0][0]
         # set version
-        versions=get_versions(options)
-        revision = ("ver%02d" % versions[0][0])
-        options[1]=revision
+        if options[1] == None:
+            versions=get_versions(options)
+            revision = ("ver%02d" % versions[0][0])
+            options[1]=revision
 
     # print version selector
     print """<div id="nav" class="link-list">"""
