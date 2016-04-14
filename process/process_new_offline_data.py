@@ -20,6 +20,7 @@ from optparse import OptionParser
 import multiprocessing
 import logging
 import pickle
+import rcdb
 
 from ROOT import gROOT,gSystem
 
@@ -279,10 +280,13 @@ class ProcessMonDataConfig:
             # extract the file number - ROOT file should be of the form hd_root_RRRRRR_FFF.root
             fname_fields = fname[:-5].split("_")
             # sanity checks
-            if(len(fname_fields) < 4):
+            if( (fname_fields[0]!="hd") or (fname_fields[1]!="root") ):
                 logging.error("invalid filename = " + fname + ", skipping ...")
                 continue
-            if( (fname_fields[0]!="hd") or (fname_fields[1]!="root") ):
+            # skip over summed monitoring files without printing error messages
+            if( (len(fname_fields) == 3) and (fname_fields[2][-5:]=='.root') ):
+                continue
+            if(len(fname_fields) < 4):
                 logging.error("invalid filename = " + fname + ", skipping ...")
                 continue
             try:
@@ -523,6 +527,14 @@ def main():
     db = datamon_db()
     config.ProcessCommandline(args,options,db)
 
+    # try to connect to RCDB
+    rcdb_conn = None
+    try:
+        rcdb_conn = rcdb.RCDBProvider("mysql://rcdb@hallddb/rcdb")
+    except:
+        e = sys.exc_info()[0]
+        print "Could not connect to RCDB: " + str(e)
+
     # Set up directories and any other prep work that needs to be done
     config.BuildEnvironment()
 
@@ -550,6 +562,10 @@ def main():
         ## add blank run to DB if it doesn't exist
         if(db.GetRunID(runnum) < 0):
             db.CreateRun(runnum)
+            # add run start time, needed for monitoring web pages
+            run_properties = {}
+            run_properties['start_time'] = rcdb_conn.get_run(run_number).start_time
+            db.UpdateRunInfo(runnum, run_properties)
 
         ## make sure we have a directory to store some meta-information
         if config.REVISION == "mc":
@@ -588,9 +604,6 @@ def main():
 
     ## loop DONE 
 
-    #print "TOTAL SIZE OF RUNS_TO_PROCESS = " + str(total_size(runs_to_process))
-    #sys.exit(0)
-
     ## Start processing all the runs!
     if config.VERBOSE>0:
         logging.info("%d runs to process..."%(len(runs_to_process)))
@@ -610,8 +623,9 @@ def main():
     if config.EOR_PROCESSING and len(runs_to_process)>0:
         logdir = join(config.INPUT_DIRECTORY,config.REVISION,"log")
         if isdir(logdir):
-            os.system("tar czf log.tar.gz %s"%logdir)
-        os.system("tar czf web_figures.tar.gz %s/Run*"%config.OUTPUT_DIRECTORY)
+            os.system("tar czf %s/%s/log.tar.gz %s"%(config.INPUT_DIRECTORY,config.REVISION,logdir))
+        os.system("tar czf %s/%s/web_figures.tar.gz %s/Run*"%(config.INPUT_DIRECTORY,config.REVISION,config.OUTPUT_DIRECTORY))
+
 
 ## main function 
 if __name__ == "__main__":
