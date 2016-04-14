@@ -506,82 +506,88 @@ def main():
         ana_charts3 = [["HistMacro_p2pi_pmiss","&pi;<sup>+</sup>&pi;<sup>-</sup>1"],["HistMacro_p2pi_preco1","&pi;<sup>+</sup>&pi;<sup>-</sup>2"],["HistMacro_p3pi_preco_2FCAL","&pi;<sup>+</sup>&pi;<sup>-</sup>&pi;<sup>0</sup>(2FCAL)"],["HistMacro_p3pi_preco_FCAL-BCAL","&pi;<sup>+</sup>&pi;<sup>-</sup>&pi;<sup>0</sup>(F/BCAL)"]]
 
     # set names to "rootspy" if these are online histograms 
-    if revision == 0:
-        for chart in cdc_charts:
-            chart[0] = chart[0].replace("__CDC_cdc","_rootspy__rootspy_CDC_cdc")
-        for chart in fdc_charts:
-            chart[0] = chart[0].replace("__FDC","_rootspy__rootspy_FDC")
-        for chart in fcal_charts:
-            chart[0] = chart[0].replace("__fcal","_rootspy__rootspy_fcal")
-        for chart in tof_charts:
-            chart[0] = chart[0].replace("__tof","_rootspy__rootspy_tof")
-        for chart in st_charts:
-            chart[0] = chart[0].replace("__st_st","_rootspy__rootspy_st_st")
-        for chart in tagm_charts:
-            chart[0] = chart[0].replace("__tagm_tagm","_rootspy__rootspy_tagm_tagm")
-        for chart in tagh_charts:
-            chart[0] = chart[0].replace("__TAGH","_rootspy__rootspy_TAGH")
-        for chart in ana_charts1:
-            chart[0] = chart[0].replace("__Independent","_rootspy__rootspy_Independent")
+    #if revision == 0:
+        #for chart in cdc_charts:
+        #    chart[0] = chart[0].replace("__CDC_cdc","_rootspy__rootspy_CDC_cdc")
+        #for chart in fdc_charts:
+        #    chart[0] = chart[0].replace("__FDC","_rootspy__rootspy_FDC")
+        #for chart in fcal_charts:
+        #    chart[0] = chart[0].replace("__fcal","_rootspy__rootspy_fcal")
+        #for chart in tof_charts:
+        #    chart[0] = chart[0].replace("__tof","_rootspy__rootspy_tof")
+        #for chart in st_charts:
+        #    chart[0] = chart[0].replace("__st_st","_rootspy__rootspy_st_st")
+        #for chart in tagm_charts:
+        #    chart[0] = chart[0].replace("__tagm_tagm","_rootspy__rootspy_tagm_tagm")
+        #for chart in tagh_charts:
+        #    chart[0] = chart[0].replace("__TAGH","_rootspy__rootspy_TAGH")
+        #for chart in ana_charts1:
+        #    chart[0] = chart[0].replace("__Independent","_rootspy__rootspy_Independent")
 
     # display all possible charts in table for selection
     print """Mouse over <font style="background-color: #A9E2F3">light blue</font> entries in table to view histograms, and <b>click</b>  on an entry to freeze/unfreeze a specific historgram. <br>"""
     print """<table style="width:200px; font-size:0.8em">
       <tr>"""
 
-    print "<td>CDC: </td>"
-    print_row(options, cdc_charts)
-    print "<td>FDC: </td>"
-    print_row(options, fdc_charts)
-    print "<td>BCAL: </td>" 
-    print_row(options, bcal_charts)
-    print "<td>FCAL: </td>" 
-    print_row(options, fcal_charts)
-    print "<td>TOF: </td>" 
-    print_row(options, tof_charts)
-    print "<td>SC/ST: </td>" 
-    print_row(options, st_charts)
-    print "<td>TAGM:</td>"
-    print_row(options, tagm_charts)
-    print "<td>TAGH:</td>"
-    print_row(options, tagh_charts)
-    print "</table>"
+    if revision == 0:
+        occupancy_charts = [["CDC_occupancy","CDC"],["FCAL_occupancy","FCAL"],["BCAL_occupancy","BCAL"],["PS_occupancy","PS"],["RF_TPOL_occupancy","RF & TPOL"],["ST_occupancy","ST"],["TAGGER_occupancy","TAGGER"],["TOF_occupancy","TOF"]]
+        print "<td>Online Occupancies: </td>"
+        print_row(options, occupancy_charts)
 
-    if revision > 3 and options[2] == 'RunPeriod-2015-03' or options[2] == 'RunPeriod-2015-06' or options[2] == 'RunPeriod-2015-12' or options[2] == 'RunPeriod-2016-02':
-	print """<table style="width:200px; font-size:0.8em">
+    else:
+        print "<td>CDC: </td>"
+        print_row(options, cdc_charts)
+        print "<td>FDC: </td>"
+        print_row(options, fdc_charts)
+        print "<td>BCAL: </td>" 
+        print_row(options, bcal_charts)
+        print "<td>FCAL: </td>" 
+        print_row(options, fcal_charts)
+        print "<td>TOF: </td>" 
+        print_row(options, tof_charts)
+        print "<td>SC/ST: </td>" 
+        print_row(options, st_charts)
+        print "<td>TAGM:</td>"
+        print_row(options, tagm_charts)
+        print "<td>TAGH:</td>"
+        print_row(options, tagh_charts)
+        print "</table>"
+        
+        if revision > 3 and options[2] == 'RunPeriod-2015-03' or options[2] == 'RunPeriod-2015-06' or options[2] == 'RunPeriod-2015-12' or options[2] == 'RunPeriod-2016-02':
+            print """<table style="width:200px; font-size:0.8em">
 	   <tr>"""
-	print "<td>PS:</td>"
-	print_row(options, ps_charts)
-    	print "</table>"
-
-    if revision > 4 and options[2] == 'RunPeriod-2015-03' or options[2] == 'RunPeriod-2015-06' or options[2] == 'RunPeriod-2015-12' or options[2] == 'RunPeriod-2016-02':
-	print """<table style="width:200px; font-size:0.8em">
+            print "<td>PS:</td>"
+            print_row(options, ps_charts)
+            print "</table>"
+            
+        if revision > 4 and options[2] == 'RunPeriod-2015-03' or options[2] == 'RunPeriod-2015-06' or options[2] == 'RunPeriod-2015-12' or options[2] == 'RunPeriod-2016-02':
+            print """<table style="width:200px; font-size:0.8em">
 	   <tr>"""
-	print "<td>RF:</td>"
-	print_row(options, rf_charts)
-    	print "</table>"
-
-    if (revision > 5 and options[2] == 'RunPeriod-2015-03') or (revision > 15 and options[2] == 'RunPeriod-2014-10') or options[2] == 'RunPeriod-2015-06' or options[2] == 'RunPeriod-2015-12' or options[2] == 'RunPeriod-2016-02':
-	print """<table style="font-size:0.8em">
+            print "<td>RF:</td>"
+            print_row(options, rf_charts)
+            print "</table>"
+            
+        if (revision > 5 and options[2] == 'RunPeriod-2015-03') or (revision > 15 and options[2] == 'RunPeriod-2014-10') or options[2] == 'RunPeriod-2015-06' or options[2] == 'RunPeriod-2015-12' or options[2] == 'RunPeriod-2016-02':
+            print """<table style="font-size:0.8em">
 	   <tr>"""
-	print "<td>HLDetectorTiming:</td>"
-	print_row(options, hldetectortiming_charts)
-    	print "</table>"
-
-    print """<table style="width:200px; font-size:0.8em">
-      <tr>"""
-    print "<td>RECO:  </td>" 
-    print_row(options, ana_charts1)
-    print "<td></td>"
-    print_row(options, ana_charts2)
-    print "</table>"
+            print "<td>HLDetectorTiming:</td>"
+            print_row(options, hldetectortiming_charts)
+            print "</table>"
+            
+            print """<table style="width:200px; font-size:0.8em">
+       <tr>"""
+            print "<td>RECO:  </td>" 
+            print_row(options, ana_charts1)
+            print "<td></td>"
+            print_row(options, ana_charts2)
+            print "</table>"
     
-    print """<table style="width=200px; font-size:0.8em">
+            print """<table style="width=200px; font-size:0.8em">
       <tr>"""
-    print "<td>ANA:</td>" 
-    print_row(options, ana_charts3)
-    print "</table>" 
-
+            print "<td>ANA:</td>" 
+            print_row(options, ana_charts3)
+             
+    print "</table>"
     record_singlerun=get_data_singlerun(options)
     #print "<br> Run %s" % (options[0]) # record_singlerun[3])
     for row in record_singlerun:
