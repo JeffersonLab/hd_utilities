@@ -39,6 +39,7 @@ def main(argv):
     RUNPERIOD     = config_dict['RUNPERIOD']
     VERSION       = config_dict['VERSION']
 
+    NTHREADS      = config_dict['NTHREADS']
     NCORES        = config_dict['NCORES']
     DISK          = config_dict['DISK']
     RAM           = config_dict['RAM']
@@ -53,6 +54,7 @@ def main(argv):
         print 'VERSION       = ', VERSION
 
         print 'NCORES        = ', NCORES
+        print 'NTHREADS      = ', NTHREADS
         print 'DISK          = ', DISK
         print 'RAM           = ', RAM
         print 'TIMELIMIT     = ', TIMELIMIT
@@ -99,10 +101,7 @@ def main(argv):
         janaoutfile.write('-PPLUGINS=' + PLUGINS + '\n')
 
         # 2. Get NTHREADS
-        num_threads = str(NCORES)
-        if(num_threads == "24"):
-            num_threads = "Ncores"
-        janaoutfile.write('-PNTHREADS=' + num_threads + '\n')
+        janaoutfile.write('-PNTHREADS=' + NTHREADS + '\n')
 
         # 3. Get THREAD_TIMEOUT
         THREAD_TIMEOUT = ''

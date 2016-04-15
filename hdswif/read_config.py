@@ -39,7 +39,7 @@ def main(argv):
 
     # Below are the allowed keys for the config file
     config_keys = ['PROJECT', 'TRACK', 'OS', 'JOBNAMEBASE', 'RUNPERIOD',
-                   'VERSION', 'OUTPUT_TOPDIR', 'NCORES', 'DISK', 'RAM',
+                   'VERSION', 'OUTPUT_TOPDIR', 'NCORES', 'NTHREADS', 'DISK', 'RAM',
                    'TIMELIMIT', 'PLUGINS', 'SCRIPTFILE', 'ENVFILE']
 
     # Create dict for whether value was updated by
@@ -60,6 +60,7 @@ def main(argv):
     config_dict.update({'VERSION'        : '99'})                                                  # Used to specify output top directory
     config_dict.update({'OUTPUT_TOPDIR'  : '/volatile/halld/home/gxproj5/hdswif_test/RunPeriod-[RUNPERIOD]/ver[VERSION]'}) # # Needs to be full path
     config_dict.update({'NCORES'         : 6})
+    config_dict.update({'NTHREADS'       : 6})
     config_dict.update({'DISK'           : 40})
     config_dict.update({'RAM'            : 6})
     config_dict.update({'TIMELIMIT'      : 8})

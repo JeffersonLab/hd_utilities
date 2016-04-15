@@ -112,7 +112,7 @@ def resubmit(workflow, problem, num):
         print 'Check SWIF help menu for more options'
         return
 
-    run(workflow)
+    runall(workflow)
 
 def is_number(string):
     try:

@@ -60,7 +60,7 @@ echo "starting plugins............"
 date
 set START = `date +%s`
 #hd_root $INPUTFILE -PPLUGINS=CDC_online -PNTHREADS=$NTHREADS -PTHREAD_TIMEOUT=300 -PPRINT_PLUGIN_PATHS=1 -PEVIO:ENABLE_DISENTANGLING=0
-hd_root $INPUTFILE -PPLUGINS=$PLUGINS -PNTHREADS=$NTHREADS -PTHREAD_TIMEOUT=$THREAD_TIMEOUT_VALUE -PTHREAD_STALL_WARN_TIMEOUT=30
+hd_root $INPUTFILE -PPLUGINS=$PLUGINS -PNTHREADS=$NTHREADS -PTHREAD_TIMEOUT=$THREAD_TIMEOUT_VALUE -PTHREAD_STALL_WARN_TIMEOUT=30 -PTAGMHit:PEAK_CUT=48 -PTAGMHit:USE_ADC=1
 set RETURN_CODE = $?
 echo Return Code = $RETURN_CODE
 echo "ending plugins ............."
@@ -88,8 +88,27 @@ if (-e dana_rest.hddm) then
 	chmod 664 ${OUTDIR}/REST/${RUN_NUMBER}/dana_rest_${RUN_NUMBER}_${FILE_NUMBER}.hddm
 endif
 
+# saving idxa files
+echo "Saving IDXA files"
+mkdir -p -m 775 ${OUTDIR}/IDXA/${RUN_NUMBER}/
+foreach IDXA_FILE (`ls | grep idxa`)
+	chmod 664 $IDXA_FILE
+	set LENGTH = `echo $IDXA_FILE | awk '{print index($0,".")}'`
+	@ LENGTH = ${LENGTH} - 1
+	set BASE_NAME = `echo $IDXA_FILE | awk -v size="$LENGTH" '{print substr($0,1,size)}'`
+	echo "BASE_NAME: " $BASE_NAME
+	echo cp -v $IDXA_FILE ${OUTDIR}/IDXA/${RUN_NUMBER}/${BASE_NAME}_${RUN_NUMBER}_${FILE_NUMBER}.idxa
+end
+
 # create directory for log files
 mkdir -p -m 775 ${OUTDIR}/log/${RUN_NUMBER}/
+if (-e jana.dot) then
+	dot -Tps2 jana.dot -o jana.ps
+	ps2pdf jana.ps
+        cp -v  jana.pdf ${OUTDIR}/log/${RUN_NUMBER}/janadot_${RUN_NUMBER}_${FILE_NUMBER}.pdf
+        chmod 664 ${OUTDIR}/log/${RUN_NUMBER}/janadot_${RUN_NUMBER}_${FILE_NUMBER}.pdf
+endif
+
 
 echo "ending job ............."
 date

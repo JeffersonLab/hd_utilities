@@ -751,7 +751,7 @@ def main(argv):
     c1.cd(2).SetTopMargin(0.03)
     gcput_walltime.GetXaxis().SetLimits(0,8);
     gcput_walltime.SetMinimum(0);
-    gcput_walltime.SetMaximum(48);
+    gcput_walltime.SetMaximum(120);
     gcput_walltime.GetXaxis().SetTitleOffset(0.900);
     gcput_walltime.GetXaxis().SetTitle("wall time (hrs)");
     gcput_walltime.GetYaxis().SetTitleOffset(0.900);
@@ -764,7 +764,7 @@ def main(argv):
         fname  = 'flinear' + '_' + str(i)
         f = TF1(fname,"[0]*x",0,8)
         flinear.append(f)
-        flinear[i].SetParameter(0,i+1.)
+        flinear[i].SetParameter(0,6*(i+1))
         # print 'line_colors[', i, '] = ', line_colors[i]
         flinear[i].SetLineColor(line_colors[i])
         flinear[i].SetLineStyle(3)
