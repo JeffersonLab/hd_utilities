@@ -80,7 +80,10 @@
 /work/halld2/home/gxproj1/builds//sim-recon/monitoring_incoming/src/plugins/monitoring/occupancy_online/BCAL_occupancy.C
 /work/halld2/home/gxproj1/builds//sim-recon/monitoring_incoming/src/plugins/monitoring/occupancy_online/FCAL_occupancy.C
 /work/halld2/home/gxproj1/builds//sim-recon/monitoring_incoming/src/plugins/monitoring/occupancy_online/CDC_occupancy.C
-#/work/halld2/home/gxproj1/builds//sim-recon/monitoring_incoming/src/plugins/monitoring/occupancy_online/FDC_occupancy.C
+/work/halld2/home/gxproj1/builds//sim-recon/monitoring_incoming/src/plugins/monitoring/occupancy_online/FDC_P1_occupancy.C
+/work/halld2/home/gxproj1/builds//sim-recon/monitoring_incoming/src/plugins/monitoring/occupancy_online/FDC_P2_occupancy.C
+/work/halld2/home/gxproj1/builds//sim-recon/monitoring_incoming/src/plugins/monitoring/occupancy_online/FDC_P3_occupancy.C
+/work/halld2/home/gxproj1/builds//sim-recon/monitoring_incoming/src/plugins/monitoring/occupancy_online/FDC_P4_occupancy.C
 /work/halld2/home/gxproj1/builds//sim-recon/monitoring_incoming/src/plugins/monitoring/occupancy_online/PS_occupancy.C
 /work/halld2/home/gxproj1/builds//sim-recon/monitoring_incoming/src/plugins/monitoring/occupancy_online/RF_TPOL_occupancy.C
 /work/halld2/home/gxproj1/builds//sim-recon/monitoring_incoming/src/plugins/monitoring/occupancy_online/ST_occupancy.C
