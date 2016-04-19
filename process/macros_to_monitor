@@ -9,6 +9,11 @@
 /work/halld2/home/gxproj1/builds//sim-recon/monitoring_incoming/src/plugins/monitoring/BCAL_inv_mass/bcal_fcal_inv_mass.C
 # CDC
 /work/halld2/home/gxproj1/builds//sim-recon/monitoring_incoming/src/plugins/monitoring/CDC_online/CDC_occupancy.C
+# FDC
+/work/halld2/home/gxproj1/builds//sim-recon/monitoring_incoming/src/plugins/monitoring/FDC_online/FDC_P1_pseudo_occupancy.C
+/work/halld2/home/gxproj1/builds//sim-recon/monitoring_incoming/src/plugins/monitoring/FDC_online/FDC_P2_pseudo_occupancy.C
+/work/halld2/home/gxproj1/builds//sim-recon/monitoring_incoming/src/plugins/monitoring/FDC_online/FDC_P3_pseudo_occupancy.C
+/work/halld2/home/gxproj1/builds//sim-recon/monitoring_incoming/src/plugins/monitoring/FDC_online/FDC_P4_pseudo_occupancy.C
 # FCAL
 /work/halld2/home/gxproj1/builds//sim-recon/monitoring_incoming/src/plugins/monitoring/FCAL_online/fcal_cluster_et.C
 /work/halld2/home/gxproj1/builds//sim-recon/monitoring_incoming/src/plugins/monitoring/FCAL_online/fcal_cluster_space.C
