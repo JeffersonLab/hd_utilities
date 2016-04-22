@@ -1,7 +1,6 @@
 RUN_ARG = $(shell echo $(RUN_START)+25\*\($*-1\) | bc)
 
-all: checklist_run checklist_shift.ps G1_checklist.ps E1_checklist.ps \
-	EG1_checklist.ps
+all: checklist_run
 
 checklist_run: checklist_run_1.ps checklist_run_2.ps checklist_run_3.ps \
 	checklist_run_4.ps
