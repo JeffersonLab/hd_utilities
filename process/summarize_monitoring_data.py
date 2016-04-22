@@ -220,15 +220,32 @@ class summarize_monitoring_data:
         ## calculate calibration info
         calib_vals = []
 
-        # first, check timing
+        # first, check relative FCAL -SC timing
         htime = self.root_file.Get(self.ROOTDIR_PREFIX+"HLDetectorTiming/TRACKING/FCAL - SC Target Time")
         if( htime == None ):
-            logging.error("Couldn't find FCAL timing histogram")
+            logging.error("Couldn't find FCAL - SC timing histogram")
             calib_vals += [0., 0.]
         else:
             max = htime.GetBinCenter( htime.GetMaximumBin() )
-            # fit within 6 ns of peak
-            r = htime.Fit("gaus","SQ", "", -6+max, 6+max)
+            # fit within 3 ns of peak
+            r = htime.Fit("gaus","SQ", "", -3+max, 3+max)
+            if int(r) == 0:
+                timing_mean = r.Parameter(1)
+                timing_sigma = r.Parameter(2)
+                calib_vals += [ timing_mean, timing_sigma ]
+            else:
+                calib_vals += [0., 0.]
+                
+        # now check the absolute pi- timing
+        htime2d = self.root_file.Get(self.ROOTDIR_PREFIX+"Independent/Hist_DetectorPID/FCAL/DeltaTVsP_Pi-")
+        if( htime2d == None ):
+            logging.error("Couldn't find FCAL pi- timing histogram")
+            calib_vals += [0., 0.]
+        else:
+            htime = htime2d.ProjectionY()
+            max = htime.GetBinCenter( htime.GetMaximumBin() )
+            # fit within 2 ns of peak
+            r = htime.Fit("gaus","SQ", "", -2+max, 2+max)
             if int(r) == 0:
                 timing_mean = r.Parameter(1)
                 timing_sigma = r.Parameter(2)
@@ -369,15 +386,15 @@ class summarize_monitoring_data:
         ## calculate calibration info
         calib_vals = []
 
-        # first, check timing
+        # first, check relative BCAL - SC timing
         htime = self.root_file.Get(self.ROOTDIR_PREFIX+"HLDetectorTiming/TRACKING/BCAL - SC Target Time")
         if( htime == None ):
             logging.error("Couldn't find BCAL timing histogram")
             calib_vals += [0., 0.]
         else:
             max = htime.GetBinCenter( htime.GetMaximumBin() )
-            # fit within 4 ns of peak
-            r = htime.Fit("gaus","SQ", "", -4+max, 4+max)
+            # fit within 2 ns of peak
+            r = htime.Fit("gaus","SQ", "", -2+max, 2+max)
             if int(r) == 0:
                 timing_mean = r.Parameter(1)
                 timing_sigma = r.Parameter(2)
@@ -405,6 +422,103 @@ class summarize_monitoring_data:
         else:
             bcal_enhanced_eff.Divide(bcal_layer,bcal_enhanced_layertot,1,1,"B")
             calib_vals += [ bcal_enhanced_eff.GetBinContent(2), bcal_enhanced_eff.GetBinContent(3), bcal_enhanced_eff.GetBinContent(4), bcal_enhanced_eff.GetBinContent(5) ]
+
+        # now check the absolute pi- timing
+        htime2d = self.root_file.Get(self.ROOTDIR_PREFIX+"Independent/Hist_DetectorPID/BCAL/DeltaTVsP_Pi-")
+        if( htime2d == None ):
+            logging.error("Couldn't find BCAL pi- timing histogram")
+            calib_vals += [0., 0.]
+        else:
+            htime = htime2d.ProjectionY()
+            max = htime.GetBinCenter( htime.GetMaximumBin() )
+            # fit within 1 ns of peak
+            r = htime.Fit("gaus","SQ", "", -1+max, 1+max)
+            if int(r) == 0:
+                timing_mean = r.Parameter(1)
+                timing_sigma = r.Parameter(2)
+                calib_vals += [ timing_mean, timing_sigma ]
+            else:
+                calib_vals += [0., 0.]
+
+        # pi0 resolutions
+        pi0_fit_low = 0.07;
+        pi0_fit_high = 0.20;
+        pi0_polnumber = 3
+
+        hbcal_pi0_500mev = self.root_file.Get(self.ROOTDIR_PREFIX+"/bcal_inv_mass/bcal_diphoton_mass_500")
+        if hbcal_pi0_500mev == None:
+            logging.error("Could not find BCAL pi0 500 MeV cut histogram")
+            calib_vals += [0., 0.]
+        else:
+            max_500 = hbcal_pi0_500mev.GetMaximum()
+            fitfunc_500 = TF1("fitfunc_500","gaus(0)+pol%i(3)"%(pi0_polnumber),pi0_fit_low,pi0_fit_high)        
+            fitfunc_500.SetParameters(max_500/5, 0.135, 0.01)
+            fitfunc_500.SetParLimits(0,0.,max_500+max_500/10.);
+            fitfunc_500.SetParLimits(1,0.02,0.30);
+            fitfunc_500.SetParLimits(2,0.001,0.050);
+            r = hbcal_pi0_500mev.Fit(fitfunc_500,"RQ");
+            if int(r) == 0:
+                pi0_mean = r.Parameter(1)
+                pi0_sigma = r.Parameter(2)
+                calib_vals += [ pi0_mean, pi0_sigma ]
+            else:
+                calib_vals += [0., 0.]
+        hbcal_pi0_900mev = self.root_file.Get(self.ROOTDIR_PREFIX+"/bcal_inv_mass/bcal_diphoton_mass_900")
+        if hbcal_pi0_900mev == None:
+            logging.error("Could not find BCAL pi0 900 MeV cut histogram")
+            calib_vals += [0., 0.]
+        else:
+            max_900 = hbcal_pi0_900mev.GetMaximum()
+            fitfunc_900 = TF1("fitfunc_900","gaus(0)+pol%i(3)"%(pi0_polnumber),pi0_fit_low,pi0_fit_high)        
+            fitfunc_900.SetParameters(max_900/5, 0.135, 0.01)
+            fitfunc_900.SetParLimits(0,0.,max_900+max_900/10.);
+            fitfunc_900.SetParLimits(1,0.02,0.30);
+            fitfunc_900.SetParLimits(2,0.001,0.050);
+            r = hbcal_pi0_900mev.Fit(fitfunc_900,"RQ");
+            if int(r) == 0:
+                pi0_mean = r.Parameter(1)
+                pi0_sigma = r.Parameter(2)
+                calib_vals += [ pi0_mean, pi0_sigma ]
+            else:
+                calib_vals += [0., 0.]
+
+        hbcal_fcal_pi0_500mev = self.root_file.Get(self.ROOTDIR_PREFIX+"/bcal_inv_mass/bcal_fcal_diphoton_mass_500")
+        if hbcal_fcal_pi0_500mev == None:
+            logging.error("Could not find BCAL/FCAL pi0 500 MeV cut histogram")
+            calib_vals += [0., 0.]
+        else:
+            max_500 = hbcal_fcal_pi0_500mev.GetMaximum()
+            fitfunc_500 = TF1("fitfunc_fcal_500","gaus(0)+pol%i(3)"%(pi0_polnumber),pi0_fit_low,pi0_fit_high)        
+            fitfunc_500.SetParameters(max_500/5, 0.135, 0.01)
+            fitfunc_500.SetParLimits(0,0.,max_500+max_500/10.);
+            fitfunc_500.SetParLimits(1,0.02,0.30);
+            fitfunc_500.SetParLimits(2,0.001,0.050);
+            r = hbcal_fcal_pi0_500mev.Fit(fitfunc_500,"RQ");
+            if int(r) == 0:
+                pi0_mean = r.Parameter(1)
+                pi0_sigma = r.Parameter(2)
+                calib_vals += [ pi0_mean, pi0_sigma ]
+            else:
+                calib_vals += [0., 0.]
+        hbcal_fcal_pi0_900mev = self.root_file.Get(self.ROOTDIR_PREFIX+"/bcal_inv_mass/bcal_diphoton_mass_900")
+        if hbcal_fcal_pi0_900mev == None:
+            logging.error("Could not find BCAL pi0 900 MeV cut histogram")
+            calib_vals += [0., 0.]
+        else:
+            max_900 = hbcal_fcal_pi0_900mev.GetMaximum()
+            fitfunc_900 = TF1("fitfunc_fcal_900","gaus(0)+pol%i(3)"%(pi0_polnumber),pi0_fit_low,pi0_fit_high)        
+            fitfunc_900.SetParameters(max_900/5, 0.135, 0.01)
+            fitfunc_900.SetParLimits(0,0.,max_900+max_900/10.);
+            fitfunc_900.SetParLimits(1,0.02,0.30);
+            fitfunc_900.SetParLimits(2,0.001,0.050);
+            r = hbcal_fcal_pi0_900mev.Fit(fitfunc_900,"RQ");
+            if int(r) == 0:
+                pi0_mean = r.Parameter(1)
+                pi0_sigma = r.Parameter(2)
+                calib_vals += [ pi0_mean, pi0_sigma ]
+            else:
+                calib_vals += [0., 0.]
+
 
         # fill DB
         self.mondb.AddBCALCalib(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, calib_vals)
@@ -456,26 +570,71 @@ class summarize_monitoring_data:
         ## insert into DB
         self.mondb.AddTOFHits(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, number_of_events, plane1_up+plane1_down+plane2_up+plane2_down)
 
+
     # keep timing calibrations
-    def ProcessTOFCalib(self):
+    def ProcessSCCalib(self):
         ## calculate calibration info
         calib_vals = []
 
-        # first, check timing
-        htime = self.root_file.Get(self.ROOTDIR_PREFIX+"HLDetectorTiming/TRACKING/TOF - SC Target Time")
-        if( htime == None ):
-            logging.error("Couldn't find TOF timing histogram")
+        # check the absolute pi- timing
+        htime2d = self.root_file.Get(self.ROOTDIR_PREFIX+"Independent/Hist_DetectorPID/SC/DeltaTVsP_Pi-")
+        if( htime2d == None ):
+            logging.error("Couldn't find SC pi- timing histogram")
             calib_vals += [0., 0.]
         else:
+            htime = htime2d.ProjectionY()
             max = htime.GetBinCenter( htime.GetMaximumBin() )
-            # fit within 4 ns of peak
-            r = htime.Fit("gaus","SQ", "", -6+max, 6+max)
+            # fit within 2 ns of peak
+            r = htime.Fit("gaus","SQ", "", -0.5+max, 0.5+max)
             if int(r) == 0:
                 timing_mean = r.Parameter(1)
                 timing_sigma = r.Parameter(2)
                 calib_vals += [ timing_mean, timing_sigma ]
             else:
                 calib_vals += [0., 0.]
+
+        # fill DB
+        self.mondb.AddSCCalib(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, calib_vals)
+
+
+    # keep timing calibrations
+    def ProcessTOFCalib(self):
+        ## calculate calibration info
+        calib_vals = []
+
+        # first, check the relative TOF - SC timing
+        htime = self.root_file.Get(self.ROOTDIR_PREFIX+"HLDetectorTiming/TRACKING/TOF - SC Target Time")
+        if( htime == None ):
+            logging.error("Couldn't find TOF timing histogram")
+            calib_vals += [0., 0.]
+        else:
+            max = htime.GetBinCenter( htime.GetMaximumBin() )
+            # fit within 1 ns of peak
+            r = htime.Fit("gaus","SQ", "", -1+max, 1+max)
+            if int(r) == 0:
+                timing_mean = r.Parameter(1)
+                timing_sigma = r.Parameter(2)
+                calib_vals += [ timing_mean, timing_sigma ]
+            else:
+                calib_vals += [0., 0.]
+
+        # now check the absolute pi- timing
+        htime2d = self.root_file.Get(self.ROOTDIR_PREFIX+"Independent/Hist_DetectorPID/TOF/DeltaTVsP_Pi-")
+        if( htime2d == None ):
+            logging.error("Couldn't find TOF pi- timing histogram")
+            calib_vals += [0., 0.]
+        else:
+            htime = htime2d.ProjectionY()
+            max = htime.GetBinCenter( htime.GetMaximumBin() )
+            # fit within 2 ns of peak
+            r = htime.Fit("gaus","SQ", "", -0.25+max, 0.25+max)
+            if int(r) == 0:
+                timing_mean = r.Parameter(1)
+                timing_sigma = r.Parameter(2)
+                calib_vals += [ timing_mean, timing_sigma ]
+            else:
+                calib_vals += [0., 0.]
+                
 
         # fill DB
         self.mondb.AddTOFCalib(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, calib_vals)
@@ -894,6 +1053,7 @@ class summarize_monitoring_data:
         # keep summary info on calibrations
         self.ProcessFCALCalib()
         self.ProcessBCALCalib()
+        self.ProcessSCCalib()
         self.ProcessTOFCalib()
         self.ProcessTAGHCalib()
         self.ProcessTAGMCalib()
