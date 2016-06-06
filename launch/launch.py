@@ -13,6 +13,7 @@ from optparse import OptionParser
 import os.path
 import rcdb
 import sys
+import time
 import glob
 import re
 from subprocess import Popen, PIPE
