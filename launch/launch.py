@@ -261,11 +261,12 @@ def main(argv):
 
 	# FIND & ADD JOBS
 	for RUN in range(MINRUN, MAXRUN + 1):
-		if(RCDB_QUERY != "") and (RUN not in good_runs):
-			continue
-
-		# Format run and file numbers
+		# Format run number
 		FORMATTED_RUN = "%06d" % RUN
+
+		# See if is good run
+		if(RCDB_QUERY != "") and (FORMATTED_RUN not in good_runs):
+			continue
 
 		# Find files for run number
 		INDATA_DIR = INDATA_TOPDIR + "/*" + FORMATTED_RUN + "*/"
