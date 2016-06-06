@@ -43,12 +43,12 @@ Extract_SkimName()
 	# extract the skim name: awk & grep use different location #'ing, so must convert
 	local LENGTH=$[$LAST_INDEX - $SECOND_TO_LAST_INDEX - 1]
 	local START=$[$SECOND_TO_LAST_INDEX + 2]
-	local SKIM_NAME=`echo $INPUT_FILE | awk -v size="$LENGTH" -v start="$START" '{print substr($0,start,size)}'`
-	echo "SKIM_NAME:" $SKIM_NAME
+	local LOCAL_SKIM_NAME=`echo $INPUT_FILE | awk -v size="$LENGTH" -v start="$START" '{print substr($0,start,size)}'`
+	echo "SKIM_NAME:" $LOCAL_SKIM_NAME
 	
 	#return the result "by reference"
 	local __result=$2
-	eval $__result="'$SKIM_NAME'"
+	eval $__result="'$LOCAL_SKIM_NAME'"
 }
 
 Extract_BaseName()
@@ -57,12 +57,12 @@ Extract_BaseName()
 	local INPUT_FILE=$1
 	local LENGTH=`echo $INPUT_FILE | awk '{print index($0,".")}'`
 	let LENGTH-=1
-	local BASE_NAME=`echo $INPUT_FILE | awk -v size="$LENGTH" '{print substr($0,1,size)}'`
-	echo "BASE_NAME: " $BASE_NAME
+	local LOCAL_BASE_NAME=`echo $INPUT_FILE | awk -v size="$LENGTH" '{print substr($0,1,size)}'`
+	echo "BASE_NAME: " $LOCAL_BASE_NAME
 
 	#return the result "by reference"
 	local __result=$2
-	eval $__result="'$BASE_NAME'"
+	eval $__result="'$LOCAL_BASE_NAME'"
 }
 
 ####################################################### SAVE OUTPUT FILES #######################################################
