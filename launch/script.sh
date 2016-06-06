@@ -171,7 +171,7 @@ Save_EVIOSkims()
 {
 	# SAVE EVIO SKIMS
 	echo "Saving EVIO skim files (if any)"
-	for EVIO_FILE in `find . -type -f -name "*.evio"`; do
+	for EVIO_FILE in `ls *.evio`; do
 		Extract_SkimName $EVIO_FILE SKIM_NAME
 
 		# setup output dir
@@ -196,7 +196,7 @@ Save_HDDMSkims()
 {
 	# SAVE HDDM SKIMS #assumes REST file already backed up and removed!
 	echo "Saving HDDM skim files (if any)"
-	for HDDM_FILE in `find . -type -f -name "*.hddm"`; do
+	for HDDM_FILE in `ls *.hddm`; do
 		Extract_SkimName $HDDM_FILE SKIM_NAME
 
 		# setup output dir
@@ -221,7 +221,7 @@ Save_ROOTFiles()
 {
 	# SAVE OTHER ROOT FILES
 	echo "Saving other ROOT files (if any)"
-	for ROOT_FILE in `find . -type -f -name "*.root"`; do
+	for ROOT_FILE in `ls *.root`; do
 		Extract_BaseName $ROOT_FILE BASE_NAME
 
 		# setup output dir
@@ -246,7 +246,7 @@ Save_IDXA()
 {
 	# SAVE IDXA FILES
 	echo "Saving IDXA files (if any)"
-	for IDXA_FILE in `find . -type -f -name "*.idxa"`; do
+	for IDXA_FILE in `ls *.idxa`; do
 		Extract_BaseName $IDXA_FILE BASE_NAME
 
 		# setup output dir
