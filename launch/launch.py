@@ -58,6 +58,9 @@ def read_config(CONFIG_FILENAME):
 		while(value[0] == "\"") and (value[-1:] != "\""):
 			value += " " + line.split()[read_index]
 			read_index += 1
+		# now, strip leading and tail quotation marks (if present)
+		if read_index > 2:
+			value = value[1:-1]
 		config_dict[key] = value
 		if(VERBOSE == True):
 			print "Job Config key, value = " + key + " " + value
