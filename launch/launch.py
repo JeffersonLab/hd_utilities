@@ -7,8 +7,6 @@
 # https://scicomp.jlab.org/docs/swif
 # https://scicomp.jlab.org/docs/swif-cli
 
-# consider parse_swif & output_job_details scripts
-
 from optparse import OptionParser
 import os.path
 import rcdb
