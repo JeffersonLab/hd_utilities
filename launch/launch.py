@@ -249,6 +249,8 @@ def main(argv):
 	# GET THE LIST OF GOOD RUNS
 	db = rcdb.RCDBProvider("mysql://rcdb@hallddb/rcdb")
 	good_runs = []
+	if(VERBOSE == True):
+		print "RCDB_QUERY = " + RCDB_QUERY
 	if(RCDB_QUERY != ""):
 		good_runs = db.select_runs(RCDB_QUERY, MINRUN, MAXRUN)
 	if(VERBOSE == True):
