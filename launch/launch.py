@@ -53,6 +53,11 @@ def read_config(CONFIG_FILENAME):
 		# Add new key/value pair into config_dict
 		key = str(line.split()[0])
 		value = line.split()[1]
+		# if is string in quotes (e.g. RCDB query) continue reading until end-quote
+		read_index = 2
+		while(value[0] == "\"") and (value[-1:] != "\""):
+			value += " " + line.split()[read_index]
+			read_index += 1
 		config_dict[key] = value
 
 	# Some of the keys may depend on other configuration parameters, so update the values
