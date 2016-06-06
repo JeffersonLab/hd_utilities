@@ -274,7 +274,7 @@ def main(argv):
 		INDATA_DIR = INDATA_TOPDIR + "/*" + FORMATTED_RUN + "*/"
 		file_list = find_files(INDATA_DIR, FORMATTED_RUN, INPUT_FILE_NUM)
 		if(VERBOSE == True):
-			print str(len(file_list)) + " files found for run " + RUN
+			print str(len(file_list)) + " files found for run " + str(RUN)
 
 		# Add jobs to workflow
 		for FILEPATH in file_list:
