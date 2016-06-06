@@ -217,7 +217,7 @@ def main(argv):
 	parser_usage = "launch.py job_configfile minrun maxrun\n\n"
 	parser_usage += "optional: -f file_num: file_num must be 3 digits, with leading 0's if necessary)\n"
 	parser_usage += "          but, it can be a search string for glob (e.g. first 5 files: -f '00[0-4]' (MUST include quotes!))\n\n"
-	parser_usage += "optional: -v: verbose output\n\n"
+	parser_usage += "optional: -v True: verbose output\n\n"
 	parser = OptionParser(usage = parser_usage)
 
 	# PARSER OPTIONS
@@ -248,7 +248,9 @@ def main(argv):
 
 	# GET THE LIST OF GOOD RUNS
 	db = rcdb.RCDBProvider("mysql://rcdb@hallddb/rcdb")
-	good_runs = db.select_runs(RCDB_QUERY, MINRUN, MAXRUN) if(RCDB_QUERY != "") else []
+	good_runs = []
+	if(RCDB_QUERY != "")
+		good_runs = db.select_runs(RCDB_QUERY, MINRUN, MAXRUN)
 	if(VERBOSE == True):
 		print len(good_runs) + " good runs in range: " + MINRUN + " - " + MAXRUN
 
