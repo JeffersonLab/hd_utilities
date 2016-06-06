@@ -170,7 +170,7 @@ Save_JANADot()
 Save_EVIOSkims()
 {
 	# SAVE EVIO SKIMS
-	echo "Saving EVIO skim files (if any)"
+	echo "\nSaving EVIO skim files (if any)"
 	for EVIO_FILE in `ls *.evio`; do
 		Extract_SkimName $EVIO_FILE SKIM_NAME
 
@@ -196,7 +196,7 @@ Save_HDDMSkims()
 {
         N_Hddm_Skims=`ls *.hddm 2>/dev/null | wc -l`
         if [ $N_Hddm_Skims -eq 0 ] ; then
-            echo "No HDDM skim files produced"
+            echo "No HDDM skim files produced\n"
         else
 	# SAVE HDDM SKIMS #assumes REST file already backed up and removed!
 	    echo "Saving HDDM skim files"
