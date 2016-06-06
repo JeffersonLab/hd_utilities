@@ -165,13 +165,18 @@ def find_num_threads(JANA_CONFIG_FILENAME):
 def add_job(WORKFLOW, FILEPATH, config_dict):
 
 	# EXTRACT PATH, RUNNO, & FILE #: ASSUME THE FORM */*_RUNNO_FILENO.*
-	match = re.search(r"(.*)/(.*)_(\d\d\d\d\d\d)_(\d\d\d)", FILENAME)
+	match = re.search(r"(.*)/(.*)_(\d\d\d\d\d\d)_(\d\d\d).(.*)", FILEPATH)
 	if (match == ""):
-		print "WARNING: FILE " + INDATA_DIR + "/" + FILENAME + " DOESN'T MATCH EXPECTED NAME FORMAT. SKIPPING."
+		print "WARNING: FILE " + FILEPATH + " DOESN'T MATCH EXPECTED NAME FORMAT. SKIPPING."
 		return
 	INDATA_DIR = match.group(1)
+	PREFIX = match.group(2)
 	RUNNO = match.group(3)
 	FILENO = match.group(4)
+	EXTENSION = match.group(5)
+	FILENAME = PREFIX + "_" + RUNNO + "_" + FILENO + "." + EXTENSION
+	if(VERBOSE == True):
+		print "FILEPATH, COMPONENTS: " + FILEPATH + " " + INDATA_DIR + " " + PREFIX + " " + RUNNO + " " + FILENO + " " + EXTENSION + " " + FILENAME
 
 	# PREPARE NAMES
 	STUBNAME = RUNNO + "_" + FILENO
