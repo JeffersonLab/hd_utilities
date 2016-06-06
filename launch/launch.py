@@ -59,6 +59,8 @@ def read_config(CONFIG_FILENAME):
 			value += " " + line.split()[read_index]
 			read_index += 1
 		config_dict[key] = value
+		if(VERBOSE == True):
+			print "Job Config key, value = " + key + " " + value
 
 	# Some of the keys may depend on other configuration parameters, so update the values
 	# containing [key] within the values corresponding to those keys.
@@ -247,6 +249,8 @@ def main(argv):
 	# GET THE LIST OF GOOD RUNS
 	db = rcdb.RCDBProvider("mysql://rcdb@hallddb/rcdb")
 	good_runs = db.select_runs(RCDB_QUERY, MINRUN, MAXRUN) if(RCDB_QUERY != "") else []
+	if(VERBOSE == True):
+		print len(good_runs) + " good runs in range: " + MINRUN + " - " + MAXRUN
 
 	# FIND & ADD JOBS
 	for RUN in range(MINRUN, MAXRUN + 1):
