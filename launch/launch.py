@@ -164,9 +164,6 @@ def find_num_threads(JANA_CONFIG_FILENAME):
 
 def add_job(WORKFLOW, FILEPATH, config_dict):
 
-	# BUILD INPUTDATA_TYPE
-	INPUTDATA_TYPE = "mss" if(INDATA_DIR[:5] == "/mss/") else "file"
-
 	# EXTRACT PATH, RUNNO, & FILE #: ASSUME THE FORM */*_RUNNO_FILENO.*
 	match = re.search(r"(.*)/(.*)_(\d\d\d\d\d\d)_(\d\d\d)", FILENAME)
 	if (match == ""):
@@ -181,6 +178,7 @@ def add_job(WORKFLOW, FILEPATH, config_dict):
 	JOBNAME = WORKFLOW + "_" + STUBNAME
 
 	#SETUP OTHER VARIABLES:
+	INPUTDATA_TYPE = "mss" if(INDATA_DIR[:5] == "/mss/") else "file"
 	CACHE_PIN_DAYS = config_dict["CACHE_PIN_DAYS"] if ("CACHE_PIN_DAYS" in config_dict) else "0"
 	JANA_CONFIG = config_dict["JANA_CONFIG"]
 	NUM_THREADS = find_num_threads(JANA_CONFIG)
