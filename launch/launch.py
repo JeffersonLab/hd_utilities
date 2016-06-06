@@ -252,7 +252,7 @@ def main(argv):
 	if(RCDB_QUERY != ""):
 		good_runs = db.select_runs(RCDB_QUERY, MINRUN, MAXRUN)
 	if(VERBOSE == True):
-		print len(good_runs) + " good runs in range: " + MINRUN + " - " + MAXRUN
+		print str(len(good_runs)) + " good runs in range: " + str(MINRUN) + " - " + str(MAXRUN)
 
 	# FIND & ADD JOBS
 	for RUN in range(MINRUN, MAXRUN + 1):
