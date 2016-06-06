@@ -231,7 +231,7 @@ def main(argv):
 	INPUT_FILE_NUM = options.file if(options.file) else "*" #must be three digits, with leading 0's if necessary
 
 	# READ CONFIG
-	config_dict = read_config.main(JOB_CONFIG_FILE)
+	config_dict = read_config(JOB_CONFIG_FILE)
 	validate_config(config_dict)
 
 	# SET CONTROL VARIABLES
