@@ -165,7 +165,7 @@ def add_job(WORKFLOW, FILEPATH, config_dict):
 	INPUTDATA_TYPE = "mss" if(INDATA_DIR[:5] == "/mss/") else "file"
 
 	# EXTRACT PATH, RUNNO, & FILE #: ASSUME THE FORM */*_RUNNO_FILENO.*
-	match = re.search(r"(.*)/(.*)_(\d\d\d\d\d\d)_(\d\d\d)", FILENAME) # _\d\d\d
+	match = re.search(r"(.*)/(.*)_(\d\d\d\d\d\d)_(\d\d\d)", FILENAME)
 	if (match == ""):
 		print "WARNING: FILE " + INDATA_DIR + "/" + FILENAME + " DOESN'T MATCH EXPECTED NAME FORMAT. SKIPPING."
 		return
@@ -249,7 +249,7 @@ def main(argv):
 	# GET THE LIST OF GOOD RUNS
 	db = rcdb.RCDBProvider("mysql://rcdb@hallddb/rcdb")
 	good_runs = []
-	if(RCDB_QUERY != "")
+	if(RCDB_QUERY != ""):
 		good_runs = db.select_runs(RCDB_QUERY, MINRUN, MAXRUN)
 	if(VERBOSE == True):
 		print len(good_runs) + " good runs in range: " + MINRUN + " - " + MAXRUN
