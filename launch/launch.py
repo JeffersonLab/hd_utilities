@@ -14,6 +14,7 @@ import os.path
 import rcdb
 import sys
 import glob
+import re
 from subprocess import Popen, PIPE
 
 VERBOSE = False
