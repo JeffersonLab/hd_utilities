@@ -119,7 +119,7 @@ Save_Histograms()
 		# force save to tape & pin
 		if [ "$TAPEDIR" != "" ]; then
 			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			echo jput $OUTPUT_FILE $TAPEDIR_THIS/
+			jput $OUTPUT_FILE $TAPEDIR_THIS/
 		fi
 	fi
 }
@@ -143,7 +143,7 @@ Save_REST()
 		# force save to tape & pin
 		if [ "$TAPEDIR" != "" ]; then
 			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			echo jput $OUTPUT_FILE $TAPEDIR_THIS/
+			jput $OUTPUT_FILE $TAPEDIR_THIS/
 		fi
 	fi
 }
@@ -170,7 +170,13 @@ Save_JANADot()
 Save_EVIOSkims()
 {
 	# SAVE EVIO SKIMS
-	echo "\nSaving EVIO skim files (if any)"
+        local NUM_FILES=`ls *.evio 2>/dev/null | wc -l`
+        if [ $NUM_FILES -eq 0 ] ; then
+                echo "No EVIO skim files produced"
+                return
+        fi
+
+	echo "Saving EVIO skim files"
 	for EVIO_FILE in `ls *.evio`; do
 		Extract_SkimName $EVIO_FILE SKIM_NAME
 
@@ -187,20 +193,22 @@ Save_EVIOSkims()
 		# force save to tape & pin
 		if [ "$TAPEDIR" != "" ]; then
 			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			echo jput $OUTPUT_FILE $TAPEDIR_THIS/
+			jput $OUTPUT_FILE $TAPEDIR_THIS/
 		fi
 	done
 }
 
 Save_HDDMSkims()
 {
-        N_Hddm_Skims=`ls *.hddm 2>/dev/null | wc -l`
-        if [ $N_Hddm_Skims -eq 0 ] ; then
-            echo "No HDDM skim files produced\n"
-        else
+	local NUM_FILES=`ls *.hddm 2>/dev/null | wc -l`
+	if [ $NUM_FILES -eq 0 ] ; then
+		echo "No HDDM skim files produced"
+		return
+	fi
+
 	# SAVE HDDM SKIMS #assumes REST file already backed up and removed!
-	    echo "Saving HDDM skim files"
-	    for HDDM_FILE in `ls *.hddm`; do
+	echo "Saving HDDM skim files"
+	for HDDM_FILE in `ls *.hddm`; do
 		Extract_SkimName $HDDM_FILE SKIM_NAME
 
 		# setup output dir
@@ -216,16 +224,21 @@ Save_HDDMSkims()
 		# force save to tape & pin
 		if [ "$TAPEDIR" != "" ]; then
 			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			echo jput $OUTPUT_FILE $TAPEDIR_THIS/
+			jput $OUTPUT_FILE $TAPEDIR_THIS/
 		fi
-	    done
-	fi
+	done
 }
 
 Save_ROOTFiles()
 {
 	# SAVE OTHER ROOT FILES
-	echo "Saving other ROOT files (if any)"
+        local NUM_FILES=`ls *.root 2>/dev/null | wc -l`
+        if [ $NUM_FILES -eq 0 ] ; then
+                echo "No additional ROOT files produced"
+                return
+        fi
+
+	echo "Saving other ROOT files"
 	for ROOT_FILE in `ls *.root`; do
 		Extract_BaseName $ROOT_FILE BASE_NAME
 
@@ -242,7 +255,7 @@ Save_ROOTFiles()
 		# force save to tape & pin
 		if [ "$TAPEDIR" != "" ]; then
 			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			echo jput $OUTPUT_FILE $TAPEDIR_THIS/
+			jput $OUTPUT_FILE $TAPEDIR_THIS/
 		fi
 	done
 }
@@ -250,7 +263,13 @@ Save_ROOTFiles()
 Save_IDXA()
 {
 	# SAVE IDXA FILES
-	echo "Saving IDXA files (if any)"
+        local NUM_FILES=`ls *.idxa 2>/dev/null | wc -l`
+        if [ $NUM_FILES -eq 0 ] ; then
+                echo "No IDXA files produced"
+                return
+        fi
+
+	echo "Saving IDXA files"
 	for IDXA_FILE in `ls *.idxa`; do
 		Extract_BaseName $IDXA_FILE BASE_NAME
 
