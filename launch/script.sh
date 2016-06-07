@@ -119,7 +119,7 @@ Save_Histograms()
 		# force save to tape & pin
 		if [ "$TAPEDIR" != "" ]; then
 			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			jput $OUTPUT_FILE $TAPEDIR_THIS/
+			echo jput $OUTPUT_FILE $TAPEDIR_THIS/
 		fi
 	fi
 }
@@ -143,7 +143,7 @@ Save_REST()
 		# force save to tape & pin
 		if [ "$TAPEDIR" != "" ]; then
 			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			jput $OUTPUT_FILE $TAPEDIR_THIS/
+			echo jput $OUTPUT_FILE $TAPEDIR_THIS/
 		fi
 	fi
 }
@@ -193,7 +193,7 @@ Save_EVIOSkims()
 		# force save to tape & pin
 		if [ "$TAPEDIR" != "" ]; then
 			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			jput $OUTPUT_FILE $TAPEDIR_THIS/
+			echo jput $OUTPUT_FILE $TAPEDIR_THIS/
 		fi
 	done
 }
@@ -224,7 +224,7 @@ Save_HDDMSkims()
 		# force save to tape & pin
 		if [ "$TAPEDIR" != "" ]; then
 			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			jput $OUTPUT_FILE $TAPEDIR_THIS/
+			echo jput $OUTPUT_FILE $TAPEDIR_THIS/
 		fi
 	done
 }
@@ -255,7 +255,7 @@ Save_ROOTFiles()
 		# force save to tape & pin
 		if [ "$TAPEDIR" != "" ]; then
 			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			jput $OUTPUT_FILE $TAPEDIR_THIS/
+			echo jput $OUTPUT_FILE $TAPEDIR_THIS/
 		fi
 	done
 }
