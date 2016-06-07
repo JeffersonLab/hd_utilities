@@ -77,7 +77,7 @@ Save_OutputFiles()
 	rm -f $INPUTFILE
 
 	# BUILD TAPEDIR, IF $OUTDIR_LARGE STARTS WITH "/cache/"  
-	# If so, output files are pinned & jput.  If not, then they aren't. 
+	# If so, output files are pinned & jcache put.  If not, then they aren't. 
 	local TAPEDIR=""
 	local OUTDIR_LARGE_BASE=`echo $OUTDIR_LARGE | awk '{print substr($0,1,7)}'`
 	# first strip /cache/, then insert /mss/
@@ -108,7 +108,6 @@ Save_Histograms()
 
 		# setup output dirs
 		local OUTDIR_THIS=${OUTDIR_LARGE}/hists/${RUN_NUMBER}/
-		local TAPEDIR_THIS=${TAPEDIR}/hists/${RUN_NUMBER}/
 		mkdir -p -m 775 ${OUTDIR_THIS}
 
 		# save it
@@ -119,7 +118,7 @@ Save_Histograms()
 		# force save to tape & pin
 		if [ "$TAPEDIR" != "" ]; then
 			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			echo jput $OUTPUT_FILE $TAPEDIR_THIS/
+			jcache put $OUTPUT_FILE
 		fi
 	fi
 }
@@ -132,7 +131,6 @@ Save_REST()
 
 		# setup output dirs
 		local OUTDIR_THIS=${OUTDIR_LARGE}/REST/${RUN_NUMBER}/
-		local TAPEDIR_THIS=${TAPEDIR}/REST/${RUN_NUMBER}/
 		mkdir -p -m 775 $OUTDIR_THIS
 
 		# save it
@@ -143,7 +141,7 @@ Save_REST()
 		# force save to tape & pin
 		if [ "$TAPEDIR" != "" ]; then
 			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			echo jput $OUTPUT_FILE $TAPEDIR_THIS/
+			jcache put $OUTPUT_FILE
 		fi
 	fi
 }
@@ -182,7 +180,6 @@ Save_EVIOSkims()
 
 		# setup output dir
 		local OUTDIR_THIS=${OUTDIR_LARGE}/${SKIM_NAME}/${RUN_NUMBER}/
-		local TAPEDIR_THIS=${TAPEDIR}/${SKIM_NAME}/${RUN_NUMBER}/
 		mkdir -p -m 775 $OUTDIR_THIS
 
 		# save it
@@ -193,7 +190,7 @@ Save_EVIOSkims()
 		# force save to tape & pin
 		if [ "$TAPEDIR" != "" ]; then
 			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			echo jput $OUTPUT_FILE $TAPEDIR_THIS/
+			jcache put $OUTPUT_FILE
 		fi
 	done
 }
@@ -213,7 +210,6 @@ Save_HDDMSkims()
 
 		# setup output dir
 		local OUTDIR_THIS=${OUTDIR_LARGE}/${SKIM_NAME}/${RUN_NUMBER}/
-		local TAPEDIR_THIS=${TAPEDIR}/${SKIM_NAME}/${RUN_NUMBER}/
 		mkdir -p -m 775 $OUTDIR_THIS
 
 		# save it
@@ -224,7 +220,7 @@ Save_HDDMSkims()
 		# force save to tape & pin
 		if [ "$TAPEDIR" != "" ]; then
 			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			echo jput $OUTPUT_FILE $TAPEDIR_THIS/
+			jcache put $OUTPUT_FILE
 		fi
 	done
 }
@@ -244,7 +240,6 @@ Save_ROOTFiles()
 
 		# setup output dir
 		local OUTDIR_THIS=${OUTDIR_LARGE}/${BASE_NAME}/${RUN_NUMBER}/
-		local TAPEDIR_THIS=${TAPEDIR}/${BASE_NAME}/${RUN_NUMBER}/
 		mkdir -p -m 775 $OUTDIR_THIS
 
 		# save it
@@ -255,7 +250,7 @@ Save_ROOTFiles()
 		# force save to tape & pin
 		if [ "$TAPEDIR" != "" ]; then
 			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			echo jput $OUTPUT_FILE $TAPEDIR_THIS/
+			jcache put $OUTPUT_FILE
 		fi
 	done
 }
