@@ -91,3 +91,7 @@
 /work/halld2/home/gxproj1/builds//sim-recon/monitoring_incoming/src/plugins/monitoring/occupancy_online/ST_occupancy.C
 /work/halld2/home/gxproj1/builds//sim-recon/monitoring_incoming/src/plugins/monitoring/occupancy_online/TAGGER_occupancy.C
 /work/halld2/home/gxproj1/builds//sim-recon/monitoring_incoming/src/plugins/monitoring/occupancy_online/TOF_occupancy.C
+# TRIGGER
+/work/halld2/home/gxproj1/builds//sim-recon/monitoring_incoming/src/plugins/monitoring/L1_online/l1_ancilary.C
+/work/halld2/home/gxproj1/builds//sim-recon/monitoring_incoming/src/plugins/monitoring/L1_online/l1_fcal_bcal.C
+/work/halld2/home/gxproj1/builds//sim-recon/monitoring_incoming/src/plugins/monitoring/L1_online/l1_rate.C 
