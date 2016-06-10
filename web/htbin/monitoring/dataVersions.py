@@ -108,18 +108,28 @@ def printTableHeader():
     print "  <th>JANA Config</th>"
     print " </tr>"
 
-def printDataTable(data):
+def printDataTable(run_period,data):
+    basehtmldir = "https://halldweb.jlab.org/data_monitoring/run_conditions/"
     for field in data:
         #print "%s ver%d"%(field[1],field[3])
 
+        #print str(field[4])
         print " <tr>"
         print "  <td>%s</td>"%field[1]
         print "  <td>ver%02d</td>"%field[3]
         print "  <td>%s</td>"%field[6]
         print "  <td>%s</td>"%field[7]
         print "  <td>%s</td>"%field[8]
-        print "  <td>%s</td>"%field[4]
-        print "  <td>%s</td>"%field[5]
+        if field[4]=="<None>":
+            field[4] == ""
+            print "  <td>%s</td>"%field[4]
+        else:
+            print "  <td><a href=%s/%s/%s>%s</a></td>"%(basehtmldir,run_period,field[4],field[4])
+        if field[5]=="<None>":
+            field[5] == ""
+            print "  <td>%s</td>"%field[5]
+        else:
+            print "  <td><a href=%s/%s/%s>%s</a></td>"%(basehtmldir,run_period,field[5],field[5])
         print " </tr>"
 
 
@@ -128,7 +138,7 @@ def printVersionData(run_period):
 
     printTableHeader()
     data = getVersionData(run_period)
-    printDataTable(data)
+    printDataTable(run_period,data)
 
     print "</table>"
 
