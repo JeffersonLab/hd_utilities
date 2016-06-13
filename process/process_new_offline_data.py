@@ -64,11 +64,13 @@ class ProcessMonDataConfig:
         # ignore checks if we've previously processed all monitoring ROOT files
         self.FORCE_PROCESSING = False   
         # control level of output
-        self.VERBOSE = 2
+        self.VERBOSE = 4
 
         self.REVISION = None           # data period revision (see DB)
         self.INPUT_DIRECTORY = None    # base directory where output of monitoring jobs is stored
-        self.ROOTFILE_DIR = "ROOT"     # monitoring ROOT files are stored in INPUT_DIRECTORY/REVISION/ROOTFILE_DIR
+        self.INPUT_SMALLFILE_DIRECTORY = None    # base directory where small output files (e.g. log files) are stored
+        #self.ROOTFILE_DIR = "ROOT" # OLD     # monitoring ROOT files are stored in INPUT_DIRECTORY/REVISION/ROOTFILE_DIR
+        self.ROOTFILE_DIR = "hists"     # monitoring ROOT files are stored in INPUT_DIRECTORY/REVISION/ROOTFILE_DIR
         self.OUTPUT_DIRECTORY = None   # base directory to store output files
 
         self.NEWDIR_MODE = "775"       # permissions used for calls to mkdir
@@ -79,6 +81,8 @@ class ProcessMonDataConfig:
         self.MERGE_INCREMENT = False
         self.EOR_PROCESSING = True
 
+        self.EVIO_SKIMS_TO_MERGE = []
+        self.ROOT_TREES_TO_MERGE = []
 
     def ProcessCommandline(self,args,options,db):
         """
@@ -87,7 +91,8 @@ class ProcessMonDataConfig:
         # these three arguments are required to be set for every invocation
         self.REVISION = args[1]
         self.INPUT_DIRECTORY = args[2]
-        self.OUTPUT_DIRECTORY = args[3]
+        self.INPUT_SMALLFILE_DIRECTORY = args[3]
+        self.OUTPUT_DIRECTORY = args[4]
 
         # fix directories used in MC production
         if self.REVISION == "mc":
@@ -173,6 +178,11 @@ class ProcessMonDataConfig:
 
         if options.noendofjob_processing:
             self.EOR_PROCESSING = False
+
+        if options.root_trees_to_merge:
+            self.ROOT_TREES_TO_MERGE = options.root_trees_to_merge.split(",")
+        if options.evio_skims_to_merge:
+            self.EVIO_SKIMS_TO_MERGE = options.evio_skims_to_merge.split(",")
 
 
     def BuildEnvironment(self):
@@ -287,7 +297,7 @@ class ProcessMonDataConfig:
             if( (len(fname_fields) == 3) and (fname_fields[2][-5:]=='.root') ):
                 continue
             if(len(fname_fields) < 4):
-                logging.error("invalid filename = " + fname + ", skipping ...")
+                #logging.error("invalid filename = " + fname + ", skipping ...")  # should be summed files, 
                 continue
             try:
                 file_runnum = int(fname_fields[2])
@@ -357,7 +367,10 @@ def ProcessOfflineData(args):
         #print "MAKE SUMMED FILE = " + summed_rootfile
         #print "SUM THESE FILES = " + str(monitoring_files.keys())
         #os.system("hadd -v 0 " +  " ".join([summed_rootfile] + monitoring_files.keys() ))
-        hadder = phadd.phadd(summed_rootfile, sorted(monitoring_files.keys()), " -v 0 ", 6, 10)
+        if config.MERGE_INCREMENT:
+            hadder = phadd.phadd(summed_rootfile, sorted(monitoring_files.keys()) + ["hd_root_" + rundir + ".root"], " -v 0 ", 6, 10)
+        else:
+            hadder = phadd.phadd(summed_rootfile, sorted(monitoring_files.keys()), " -v 0 ", 6, 10)
         hadder.Add()
         del hadder
 
@@ -413,7 +426,35 @@ def ProcessOfflineData(args):
     #    process_run_conditions.main(cmdargs.split())
 
     # STEP 5
+    # MERGE OTHER FILES
+    # merge trees
+    if len(config.ROOT_TREES_TO_MERGE) > 0:
+        for tree in config.ROOT_TREES_TO_MERGE:
+            if config.VERBOSE>2:
+                print "  merging %s ..."%tree
+            tree_dir = join(config.INPUT_DIRECTORY,config.REVISION,tree,"%06d"%run)
+            merged_skim_file = "%s_%06d.root"%(tree,run)
+            os.system("rm -f %s/%s"%(tree_dir,merged_skim_file))
+            os.system("hadd -k -v 0 %s/%s %s/*.root"%(tree_dir,merged_skim_file,tree_dir))
+            #os.system("jcache put %s/%s"%(tree_dir,merged_skim_file))
+            #os.system("jcache unpin %s/*.root"%(tree_dir))
+    # merge evio files
+    """
+    if len(config.EVIO_SKIMS_TO_MERGE) > 0:
+        for skim in config.EVIO_SKIMS_TO_MERGE:
+            if config.VERBOSE>2:
+                print "  merging %s ..."%skim
+            tree_dir = join(config.INPUT_DIRECTORY,config.REVISION,skim,"%06d"%run)
+            merged_skim_file = "hd_rawdata_%06d.%s.evio"%(skim,run)
+            os.system("rm -f %s/%s"%(tree_dir,merged_skim_file))
+            os.system("")  # SOME COMMAND
+            os.system("jcache put %s/%s"%(tree_dir,merged_skim_file))
+            os.system("jcache unpin %s/*.root"%(tree_dir))
+    """
+
+    # STEP 5 (old)
     # save REST files
+    """
     if config.COPY_REST_FILES:
         if config.VERBOSE>1:
             print "  saving REST files..."
@@ -427,41 +468,23 @@ def ProcessOfflineData(args):
         if os.path.isfile(merged_rest_filename):
             os.system("rm -f %s"%merged_rest_filename)
         os.system("hddm_merge_files -r -I -C -o%s %s"%(merged_rest_filename," ".join(sorted(rest_files))))
-        """
-        #### temporarily disable the saving of rest files
-        # need to chop up the output directory to get to where we are supposed to put the REST files
-        outdir_parts = config.OUTPUT_DIRECTORY.split('/')
-        rest_outdir = join("/",reduce(join,outdir_parts[:-1]),"REST",outdir_parts[-1])
-        if not os.path.exists(rest_outdir):
-            os.system("mkdir -p " + rest_outdir)        
-        saved_rest_files = [ f for f in listdir(rest_outdir) if f[-5:] == ".hddm" ]
-        for f in rest_files:
-            # only copy the file if we haven't saved it, or if the file size is larger than the saved version
-            if f in saved_rest_files and os.path.getsize(join(rest_dir,f)) <= os.path.getsize(join(rest_outdir,f)):
-                continue
-            # copy the file
-            CP_ARGS = "-R"
-            if config.VERBOSE>1:   
-                CP_ARGS += " -v"
-            os.system("cp %s %s %s"%(CP_ARGS,join(rest_dir,f),rest_outdir))
-       """     
-
+    """
 
     # CLEANUP
     ## save some information about what has been processed so far
-    rootfiles = []
-    if config.REVISION == "mc":
-        misc_dir = join(config.INPUT_DIRECTORY,"misc",rundir)
-    else:
-        misc_dir = join(config.INPUT_DIRECTORY,config.REVISION,"misc",rundir)
-    with open(join(misc_dir,"rootfiles.txt"),"w") as outf:
-        for (fname,filenum) in monitoring_files.items():
-            rootfiles.append(fname)
-            print>>outf,fname
-    try:
-        pickle.dump( rootfiles, open(join(misc_dir,"processed_files.dat"),"w") )
-    except Exception, e:
-        logging.error("Couldn't save list of processed files: %s"%str(e))
+    #rootfiles = []
+    #if config.REVISION == "mc":
+    #    misc_dir = join(config.INPUT_DIRECTORY,"misc",rundir)
+    #else:
+    #    misc_dir = join(config.INPUT_DIRECTORY,config.REVISION,"misc",rundir)
+    #with open(join(misc_dir,"rootfiles.txt"),"w") as outf:
+    #    for (fname,filenum) in monitoring_files.items():
+    #        rootfiles.append(fname)
+    #        print>>outf,fname
+    #try:
+    #    pickle.dump( rootfiles, open(join(misc_dir,"processed_files.dat"),"w") )
+    #except Exception, e:
+    #    logging.error("Couldn't save list of processed files: %s"%str(e))
 
     # cleanup memory
     if config.MAKE_DB_SUMMARY:
@@ -485,10 +508,6 @@ def main():
                       help="Don't make PNG files for web display")
     parser.add_option("-d","--disable_summary", dest="disable_db_summary", action="store_true",
                       help="Don't calculate summary information and store it in the DB")
-    #parser.add_option("-c","--disable_conditions", dest="disable_run_conditions", action="store_true",
-    #                  help="Don't process and store run conditions information")
-    #parser.add_option("-C","--process_conditions", dest="process_run_conditions", action="store_true",
-    #                  help="Process and store run conditions information")
     parser.add_option("-s","--disable_hadd", dest="disable_hadd", action="store_true",
                       help="Don't sum ouptut histograms into one combined file.")
     parser.add_option("-f","--force", dest="force", action="store_true",
@@ -515,6 +534,10 @@ def main():
                       help="Merge ROOT files incrementally and delete old ones.")
     parser.add_option("-E","--no-end-of-job-processing", dest="noendofjob_processing", action="store_true",
                       help="Disable end of run processing.")
+    parser.add_option("--merge-trees", dest="root_trees_to_merge",
+                      help="Merge these ROOT trees.")
+    parser.add_option("--merge-skims", dest="evio_skims_to_merge",
+                      help="Merge these EVIO skims.")
     
     (options, args) = parser.parse_args(sys.argv)
 
@@ -547,6 +570,9 @@ def main():
     runs_to_process = []
     for rundir in rundirs_on_disk:
         runnum = int(rundir)    
+        if runnum != 11366:
+            continue
+
         # handle any options about which runs to process
         # specifying a particular run to process beats specifying a range
         if config.RUN_NUMBER is not None:
@@ -568,22 +594,23 @@ def main():
             db.UpdateRunInfo(runnum, run_properties)
 
         ## make sure we have a directory to store some meta-information
-        if config.REVISION == "mc":
-            misc_dir = join(config.INPUT_DIRECTORY,"misc","%06d"%(int(rundir)))
-        else:
-            misc_dir = join(config.INPUT_DIRECTORY,config.REVISION,"misc",rundir)
-        rootfiles_already_processed = []
-        if not os.path.exists(misc_dir):
-            os.system("mkdir -p " + misc_dir)
-        if not os.path.isdir(misc_dir):
-            logging.error("file %s exists and is not a directory, skipping this run ..."%misc_dir)
-            continue
-        else:
-            # check to see if we've already processed some of the ROOT files
-            if isfile(join(misc_dir,"processed_files.dat")):
-                rootfiles_already_processed = pickle.load( open(join(misc_dir,"processed_files.dat"),"r") )
-            #except Exception, e:
-            #    logging.error("Couldn't load list of processed files: %s"%str(e))
+        rootfiles_already_processed = []  # let's not do this anymore
+        #if config.REVISION == "mc":
+        #    misc_dir = join(config.INPUT_DIRECTORY,"misc","%06d"%(int(rundir)))
+        #else:
+        #    misc_dir = join(config.INPUT_DIRECTORY,config.REVISION,"misc",rundir)
+        #rootfiles_already_processed = []
+        #if not os.path.exists(misc_dir):
+        #    os.system("mkdir -p " + misc_dir)
+        #if not os.path.isdir(misc_dir):
+        #    logging.error("file %s exists and is not a directory, skipping this run ..."%misc_dir)
+        #    continue
+        #else:
+        #    # check to see if we've already processed some of the ROOT files
+        #    if isfile(join(misc_dir,"processed_files.dat")):
+        #        rootfiles_already_processed = pickle.load( open(join(misc_dir,"processed_files.dat"),"r") )
+        #    #except Exception, e:
+        #    #    logging.error("Couldn't load list of processed files: %s"%str(e))
 
         ## figure out which files for this run are currently on disk
         rootfile_map = config.BuildROOTFileList(rundir)
@@ -618,13 +645,21 @@ def main():
         # process in parallel
         p = multiprocessing.Pool(config.NTHREAD)
         p.map(ProcessOfflineData, runs_to_process)
-        
+
     # save tarballs of log files and PNGs
     if config.EOR_PROCESSING and len(runs_to_process)>0:
-        logdir = join(config.INPUT_DIRECTORY,config.REVISION,"log")
+        # save log files
+        logdir = join(config.INPUT_SMALLFILE_DIRECTORY,config.REVISION,"log")
         if isdir(logdir):
-            os.system("tar czf %s/%s/log.tar.gz %s"%(config.INPUT_DIRECTORY,config.REVISION,logdir))
-        os.system("tar czf %s/%s/web_figures.tar.gz %s/Run*"%(config.INPUT_DIRECTORY,config.REVISION,config.OUTPUT_DIRECTORY))
+            os.system("tar cf %s/%s/log.tar %s"%(config.INPUT_DIRECTORY,config.REVISION,logdir))  # overwrite any existing file
+        #os.system("jcache put %s/%s/log.tar"%(config.INPUT_DIRECTORY,config.REVISION))  # save to tape
+        # save IDXA files (for EventStore)
+        idxadir = join(config.INPUT_SMALLFILE_DIRECTORY,config.REVISION,"IDXA")
+        if isdir(idxadir):
+            os.system("tar cf %s/%s/IDXA.tar %s"%(config.INPUT_DIRECTORY,config.REVISION,idxadir))  # overwrite any existing file
+        #os.system("jcache put %s/%s/IDXA.tar"%(config.INPUT_DIRECTORY,config.REVISION))  # save to tape
+        # save web figures
+        os.system("tar cf %s/%s/web_figures.tar %s/Run*"%(config.INPUT_DIRECTORY,config.REVISION,config.OUTPUT_DIRECTORY))  # overwrite any existing file
 
 
 ## main function 
