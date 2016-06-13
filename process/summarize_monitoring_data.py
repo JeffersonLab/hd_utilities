@@ -66,19 +66,19 @@ class summarize_monitoring_data:
     ##
     def ProcessCDCHits(self):
         # Store fixed geometry
-        nstraws = array('i', [0,42,42,54,54,66,66,80,80,93,93,106,106,123,123,135,135,146,146,158,158,170,170,182,182,197,197,209,209])
+        nstraws = array('i', [0,42,42,54,54,66,66,80,80,93,93,106,106,123,123,135,135,146,146,158,158,170,170,182,182,197,197,209,209])        
         avg_hits_per_superlayer = []
         number_of_events = -1   
     
-        cdc_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"CDC/cdc_num_events")
+        cdc_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"occupancy/cdc_num_events")
         if(cdc_num_events != None):
             number_of_events = cdc_num_events.GetBinContent(1)
 
-        cdc_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"CDC/cdc_o")
-        # sanity checks
-        if(cdc_occupancy == None):
-            logging.error("couldn't find CDC occupancy histogram!")
-            return   
+        #cdc_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"occupancy/cdc_o")
+        ## sanity checks
+        #if(cdc_occupancy == None):
+        #    logging.error("couldn't find CDC occupancy histogram!")
+        #    return   
 
         # calculate average number of hits in each superlayer
         for superlayer in range(len(nstraws)/4):
@@ -87,6 +87,11 @@ class summarize_monitoring_data:
             for sublayer in range(4):
                 ring = 4*superlayer+sublayer+1
                 nstraw += nstraws[ring]
+                cdc_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"occupancy/cdc_occ_ring_%02d"%ring)
+                # sanity checks
+                if(cdc_occupancy == None):
+                    logging.error("couldn't find CDC occupancy histogram for ring %d!"%ring)
+                    continue
                 for straw in range(1,nstraws[ring]+1):
                     nhits += cdc_occupancy.GetBinContent(straw,ring)
             avg_hits_per_superlayer.append( nhits / nstraw )
@@ -102,11 +107,11 @@ class summarize_monitoring_data:
         avg_hits_per_sector = []
         number_of_events = -1   
 
-        st_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"st_lowlevel/st_num_events")
+        st_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"occupancy/st_num_events")
         if(st_num_events != None):
             number_of_events = st_num_events.GetBinContent(1)
 
-        sc_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"st_lowlevel/h1_adc_sec")
+        sc_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"occupancy/st_adc_occ")
         # sanity checks
         if(sc_occupancy == None):
             logging.error("couldn't find Start Counter occupancy histogram!")
@@ -129,33 +134,41 @@ class summarize_monitoring_data:
         fdc_avg_hits_per_channel = []
         number_of_events = -1 
 
-        fdc_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"FDC/fdc_num_events")
+        fdc_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"occupancy/fdc_num_events")
         if(fdc_num_events != None):
             number_of_events = fdc_num_events.GetBinContent(1)
+
+        # get occupancy histograms
+        fdc_strip_occ = self.root_file.Get(self.ROOTDIR_PREFIX+"occupancy/fdc_cathode_occ")
+        fdc_wire_occ = self.root_file.Get(self.ROOTDIR_PREFIX+"occupancy/fdc_wire_occ")
 
         plane = 0
         for package in range(1,5):
             for chamber in range(1,7):
                 # each chamber has 3 planes: cathode strip/wire/cathode strip
                 nhits = 0
-                hname = "FDC/Package_%d/fdc_pack%d_chamber%d_upstream_cathode_occ" % (package,package,chamber)
-                fdc_strip_occ = self.root_file.Get(self.ROOTDIR_PREFIX+hname)
+                #hname = "FDC/Package_%d/fdc_pack%d_chamber%d_upstream_cathode_occ" % (package,package,chamber)
+                #fdc_strip_occ = self.root_file.Get(self.ROOTDIR_PREFIX+hname)
                 if(fdc_strip_occ != None):
-                    nhits = fdc_strip_occ.Integral()
+                    for strip in range(1,fdc_strip_occ.GetNbinsY()):
+                        nhits += fdc_strip_occ.GetBinContent((package-1)*12 + chamber*2-1,strip)
                 fdc_avg_hits_per_channel.append( nhits/NUM_FDC_STRIPS )
 
                 nhits = 0
-                hname = "FDC/Package_%d/fdc_pack%d_chamber%d_wire_occ" % (package,package,chamber)
-                fdc_wire_occ = self.root_file.Get(self.ROOTDIR_PREFIX+hname)
+                #hname = "FDC/Package_%d/fdc_pack%d_chamber%d_wire_occ" % (package,package,chamber)
+                #fdc_wire_occ = self.root_file.Get(self.ROOTDIR_PREFIX+hname)
                 if(fdc_wire_occ != None):
-                    nhits = fdc_wire_occ.Integral()
+                    for wire in range(1,fdc_wire_occ.GetNbinsY()):
+                        nhits += fdc_wire_occ.GetBinContent((package-1)*6 + chamber,wire)
+                    #nhits = fdc_wire_occ.Integral()
                 fdc_avg_hits_per_channel.append( nhits/NUM_FDC_WIRES )
 
                 nhits = 0
-                hname = "FDC/Package_%d/fdc_pack%d_chamber%d_downstream_cathode_occ" % (package,package,chamber)
-                fdc_strip_occ = self.root_file.Get(self.ROOTDIR_PREFIX+hname)
+                #hname = "FDC/Package_%d/fdc_pack%d_chamber%d_downstream_cathode_occ" % (package,package,chamber)
+                #fdc_strip_occ = self.root_file.Get(self.ROOTDIR_PREFIX+hname)
                 if(fdc_strip_occ != None):
-                    nhits = fdc_strip_occ.Integral()
+                    for strip in range(1,fdc_strip_occ.GetNbinsY()):
+                        nhits += fdc_strip_occ.GetBinContent((package-1)*12 + chamber*2,strip)
                 fdc_avg_hits_per_channel.append( nhits/NUM_FDC_STRIPS )
 
         ## insert into DB
@@ -172,11 +185,11 @@ class summarize_monitoring_data:
         hits_per_channel = []
         number_of_events = -1 
 
-        fcal_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"fcal/fcal_num_events")
+        fcal_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"occupancy/fcal_num_events")
         if(fcal_num_events != None):
             number_of_events = fcal_num_events.GetBinContent(1)
 
-        fcal_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"fcal/digOcc2D")
+        fcal_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"occupancy/fcal_occ")
         # sanity checks
         if(fcal_occupancy == None):
             logging.error("couldn't find FCAL occupancy histogram!")
@@ -268,11 +281,11 @@ class summarize_monitoring_data:
         avg_hit_energy_per_quadrant = []
         number_of_events = -1 
 
-        bcal_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"bcal/bcal_num_events")
+        bcal_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"occupancy/bcal_num_events")
         if(bcal_num_events != None):
             number_of_events = bcal_num_events.GetBinContent(1)
 
-        bcal_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"bcal/bcal_fadc_occ")
+        bcal_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"occupancy/bcal_adc_occ")
         # sanity checks
         if(bcal_occupancy == None):
             logging.error("couldn't find BCAL occupancy histogram!")
@@ -327,7 +340,8 @@ class summarize_monitoring_data:
         self.mondb.AddBCALHits(self.RUN_NUMBER, self.FILE_NUMBER, self.VERSION_NUMBER, number_of_events, avg_hits_per_quadrant)
 
         ## monitor BCAL energies, if available
-        bcal_energies = self.root_file.Get(self.ROOTDIR_PREFIX+"bcal/bcal_fadc_occ")
+        #bcal_energies = self.root_file.Get(self.ROOTDIR_PREFIX+"bcal/bcal_fadc_occ")  ## FIX
+        bcal_energies = None
         # sanity checks
         if(bcal_energies == None):
             logging.error("couldn't find BCAL energies-per-channel histogram, skipping...")
@@ -456,7 +470,7 @@ class summarize_monitoring_data:
             fitfunc_500.SetParLimits(0,0.,max_500+max_500/10.);
             fitfunc_500.SetParLimits(1,0.02,0.30);
             fitfunc_500.SetParLimits(2,0.001,0.050);
-            r = hbcal_pi0_500mev.Fit(fitfunc_500,"RQ");
+            r = hbcal_pi0_500mev.Fit(fitfunc_500,"SRQ");
             if int(r) == 0:
                 pi0_mean = r.Parameter(1)
                 pi0_sigma = r.Parameter(2)
@@ -474,7 +488,7 @@ class summarize_monitoring_data:
             fitfunc_900.SetParLimits(0,0.,max_900+max_900/10.);
             fitfunc_900.SetParLimits(1,0.02,0.30);
             fitfunc_900.SetParLimits(2,0.001,0.050);
-            r = hbcal_pi0_900mev.Fit(fitfunc_900,"RQ");
+            r = hbcal_pi0_900mev.Fit(fitfunc_900,"SRQ");
             if int(r) == 0:
                 pi0_mean = r.Parameter(1)
                 pi0_sigma = r.Parameter(2)
@@ -493,7 +507,7 @@ class summarize_monitoring_data:
             fitfunc_500.SetParLimits(0,0.,max_500+max_500/10.);
             fitfunc_500.SetParLimits(1,0.02,0.30);
             fitfunc_500.SetParLimits(2,0.001,0.050);
-            r = hbcal_fcal_pi0_500mev.Fit(fitfunc_500,"RQ");
+            r = hbcal_fcal_pi0_500mev.Fit(fitfunc_500,"SRQ");
             if int(r) == 0:
                 pi0_mean = r.Parameter(1)
                 pi0_sigma = r.Parameter(2)
@@ -511,7 +525,7 @@ class summarize_monitoring_data:
             fitfunc_900.SetParLimits(0,0.,max_900+max_900/10.);
             fitfunc_900.SetParLimits(1,0.02,0.30);
             fitfunc_900.SetParLimits(2,0.001,0.050);
-            r = hbcal_fcal_pi0_900mev.Fit(fitfunc_900,"RQ");
+            r = hbcal_fcal_pi0_900mev.Fit(fitfunc_900,"SRQ");
             if int(r) == 0:
                 pi0_mean = r.Parameter(1)
                 pi0_sigma = r.Parameter(2)
@@ -531,16 +545,18 @@ class summarize_monitoring_data:
         avg_hits_per_sector = []
         number_of_events = -1 
 
-        tof_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"tof/tof_num_events")
+        tof_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"occupancy/tof_num_events")
         if(tof_num_events != None):
             number_of_events = tof_num_events.GetBinContent(1)
 
         # the TOF occupancy is split into two histos for the two planes
-        tof1_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"tof/tofo1")
-        tof2_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"tof/tofo2")
+        tof_S_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"occupancy/tof_adc_S_occ")
+        tof_N_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"occupancy/tof_adc_N_occ")
+        tof_U_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"occupancy/tof_adc_U_occ")
+        tof_D_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"occupancy/tof_adc_D_occ")
         # sanity checks
-        if( (tof1_occupancy == None) or (tof2_occupancy == None)):
-            logging.error("couldn't find TOF occupancy histogram!")
+        if( (tof_N_occupancy == None) or (tof_S_occupancy == None) or (tof_U_occupancy == None) or (tof_D_occupancy == None)):
+            logging.error("couldn't find TOF occupancy histogram(s)!")
             return   
 
         # plane 1
@@ -550,8 +566,8 @@ class summarize_monitoring_data:
             nhitsup = 0 
             nhitsdown = 0 
             for bar in range(11):
-                nhitsup += tof1_occupancy.GetBinContent(4*group+bar+2, 1)
-                nhitsdown += tof1_occupancy.GetBinContent(4*group+bar+2, 2)
+                nhitsup += tof_S_occupancy.GetBinContent(4*group+bar+2, 1)
+                nhitsdown += tof_N_occupancy.GetBinContent(4*group+bar+2, 2)
             plane1_up.append(nhitsup/11)
             plane1_down.append(nhitsdown/11)
 
@@ -562,8 +578,8 @@ class summarize_monitoring_data:
             nhitsup = 0 
             nhitsdown = 0 
             for bar in range(11):
-                nhitsup += tof2_occupancy.GetBinContent(1, 4*group+bar+2)
-                nhitsdown += tof2_occupancy.GetBinContent(2, 4*group+bar+2)
+                nhitsup += tof_U_occupancy.GetBinContent(1, 4*group+bar+2)
+                nhitsdown += tof_D_occupancy.GetBinContent(2, 4*group+bar+2)
             plane2_up.append(nhitsup/11)
             plane2_down.append(nhitsdown/11)
 
@@ -649,12 +665,12 @@ class summarize_monitoring_data:
         avg_hits_per_sector = []
         number_of_events = -1 
 
-        tagh_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"TAGH/tagh_num_events")
+        tagh_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"occupancy/tagh_num_events")
         if(tagh_num_events != None):
             number_of_events = tagh_num_events.GetBinContent(1)
 
         # get the occupancy
-        tagh_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"TAGH/Hit/Hit_Occupancy")
+        tagh_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"occupancy/tagh_adc_occ")
         # sanity checks
         if( tagh_occupancy == None ): 
             logging.error("couldn't find TAGH occupancy histogram!")
@@ -717,12 +733,12 @@ class summarize_monitoring_data:
         avg_hits_per_sector = []
         number_of_events = -1 
 
-        tagm_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"tagm/tagm_num_events")
+        tagm_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"occupancy/tagm_num_events")
         if(tagm_num_events != None):
             number_of_events = tagm_num_events.GetBinContent(1)
 
         # get the occupancy
-        tagm_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"tagm/tagm_adc_seen")
+        tagm_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"occupancy/tagm_adc_occ")
         # sanity checks
         if( tagm_occupancy == None ): 
             logging.error("couldn't find TAGM occupancy histogram!")
@@ -783,13 +799,13 @@ class summarize_monitoring_data:
         avg_hits_per_sector = []
         number_of_events = -1 
 
-        psc_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"PSC/psc_num_events")
+        psc_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"occupancy/psc_num_events")
         if(psc_num_events != None):
             number_of_events = psc_num_events.GetBinContent(1)
 
         # get the occupancy
-        psc_leftarm_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"PSC/Hit/LeftArm/Hit_Occupancy_LeftArm")
-        psc_rightarm_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"PSC/Hit/RightArm/Hit_Occupancy_RightArm")
+        psc_leftarm_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"occupancy/ps_left_occ")
+        psc_rightarm_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"occupancy/ps_right_occ")
         # sanity checks
         if( psc_leftarm_occupancy == None ): 
             logging.error("couldn't find PSC left arm occupancy histogram!")
@@ -851,13 +867,13 @@ class summarize_monitoring_data:
         avg_hits_per_sector = []
         number_of_events = -1 
 
-        ps_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"PS/ps_num_events")
+        ps_num_events = self.root_file.Get(self.ROOTDIR_PREFIX+"occupancy/ps_num_events")
         if(ps_num_events != None):
             number_of_events = ps_num_events.GetBinContent(1)
 
         # get the occupancy
-        ps_leftarm_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"PS/Hit/LeftArm/Hit_Occupancy_LeftArm")
-        ps_rightarm_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"PS/Hit/RightArm/Hit_Occupancy_RightArm")
+        ps_leftarm_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"occupancy/ps_left_occ")
+        ps_rightarm_occupancy = self.root_file.Get(self.ROOTDIR_PREFIX+"occupancy/ps_right_occ")
         # sanity checks
         if( ps_leftarm_occupancy == None ): 
             logging.error("couldn't find PS left arm occupancy histogram!")
