@@ -108,7 +108,7 @@ Save_Histograms()
 
 		# setup output dirs
 		local OUTDIR_THIS=${OUTDIR_LARGE}/hists/${RUN_NUMBER}/
-		mkdir -p -m 775 ${OUTDIR_THIS}
+		mkdir -p -m 755 ${OUTDIR_THIS}
 
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/hd_root_${RUN_NUMBER}_${FILE_NUMBER}.root
@@ -131,7 +131,7 @@ Save_REST()
 
 		# setup output dirs
 		local OUTDIR_THIS=${OUTDIR_LARGE}/REST/${RUN_NUMBER}/
-		mkdir -p -m 775 $OUTDIR_THIS
+		mkdir -p -m 755 $OUTDIR_THIS
 
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/dana_rest_${RUN_NUMBER}_${FILE_NUMBER}.hddm
@@ -156,7 +156,7 @@ Save_JANADot()
 
 		# setup output dir
 		local OUTDIR_THIS=${OUTDIR_SMALL}/log/${RUN_NUMBER}/
-		mkdir -p -m 775 $OUTDIR_THIS
+		mkdir -p -m 755 $OUTDIR_THIS
 
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/janadot_${RUN_NUMBER}_${FILE_NUMBER}.pdf
@@ -180,7 +180,7 @@ Save_EVIOSkims()
 
 		# setup output dir
 		local OUTDIR_THIS=${OUTDIR_LARGE}/${SKIM_NAME}/${RUN_NUMBER}/
-		mkdir -p -m 775 $OUTDIR_THIS
+		mkdir -p -m 755 $OUTDIR_THIS
 
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/${EVIO_FILE}
@@ -210,7 +210,7 @@ Save_HDDMSkims()
 
 		# setup output dir
 		local OUTDIR_THIS=${OUTDIR_LARGE}/${SKIM_NAME}/${RUN_NUMBER}/
-		mkdir -p -m 775 $OUTDIR_THIS
+		mkdir -p -m 755 $OUTDIR_THIS
 
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/${HDDM_FILE}
@@ -240,7 +240,7 @@ Save_ROOTFiles()
 
 		# setup output dir
 		local OUTDIR_THIS=${OUTDIR_LARGE}/${BASE_NAME}/${RUN_NUMBER}/
-		mkdir -p -m 775 $OUTDIR_THIS
+		mkdir -p -m 755 $OUTDIR_THIS
 
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/${BASE_NAME}_${RUN_NUMBER}_${FILE_NUMBER}.root
@@ -270,7 +270,7 @@ Save_IDXA()
 
 		# setup output dir
 		local OUTDIR_THIS=${OUTDIR_SMALL}/IDXA/${RUN_NUMBER}/
-		mkdir -p -m 775 $OUTDIR_THIS
+		mkdir -p -m 755 $OUTDIR_THIS
 
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/${BASE_NAME}_${RUN_NUMBER}_${FILE_NUMBER}.idxa
