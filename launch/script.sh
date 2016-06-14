@@ -113,7 +113,7 @@ Save_Histograms()
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/hd_root_${RUN_NUMBER}_${FILE_NUMBER}.root
 		mv -v hd_root.root $OUTPUT_FILE
-		chmod 664 $OUTPUT_FILE
+		chmod 644 $OUTPUT_FILE
 
 		# force save to tape & pin
 		if [ "$TAPEDIR" != "" ]; then
@@ -136,7 +136,7 @@ Save_REST()
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/dana_rest_${RUN_NUMBER}_${FILE_NUMBER}.hddm
 		mv -v dana_rest.hddm $OUTPUT_FILE
-		chmod 664 $OUTPUT_FILE
+		chmod 644 $OUTPUT_FILE
 
 		# force save to tape & pin
 		if [ "$TAPEDIR" != "" ]; then
@@ -161,7 +161,7 @@ Save_JANADot()
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/janadot_${RUN_NUMBER}_${FILE_NUMBER}.pdf
 		mv -v jana.pdf $OUTPUT_FILE
-		chmod 664 $OUTPUT_FILE
+		chmod 644 $OUTPUT_FILE
 	fi
 }
 
@@ -185,7 +185,7 @@ Save_EVIOSkims()
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/${EVIO_FILE}
 		mv -v $EVIO_FILE $OUTPUT_FILE
-		chmod 664 $OUTPUT_FILE
+		chmod 644 $OUTPUT_FILE
 
 		# force save to tape & pin
 		if [ "$TAPEDIR" != "" ]; then
@@ -215,7 +215,7 @@ Save_HDDMSkims()
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/${HDDM_FILE}
 		mv -v $HDDM_FILE $OUTPUT_FILE
-		chmod 664 $OUTPUT_FILE
+		chmod 644 $OUTPUT_FILE
 
 		# force save to tape & pin
 		if [ "$TAPEDIR" != "" ]; then
@@ -245,7 +245,7 @@ Save_ROOTFiles()
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/${BASE_NAME}_${RUN_NUMBER}_${FILE_NUMBER}.root
 		mv -v $ROOT_FILE $OUTPUT_FILE
-		chmod 664 $OUTPUT_FILE
+		chmod 644 $OUTPUT_FILE
 
 		# force save to tape & pin
 		if [ "$TAPEDIR" != "" ]; then
@@ -275,7 +275,7 @@ Save_IDXA()
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/${BASE_NAME}_${RUN_NUMBER}_${FILE_NUMBER}.idxa
 		mv -v $IDXA_FILE $OUTPUT_FILE
-		chmod 664 $OUTPUT_FILE
+		chmod 644 $OUTPUT_FILE
 	done
 }
 
