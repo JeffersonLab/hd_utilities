@@ -23,12 +23,8 @@ openROOT_code="""
    <body onload="JSROOT.BuildSimpleGUI()">
 """
 
-revision_str = str(version)
-revision_str = revision_str.replace("ver","")
-revision = int(float(revision_str))
-
 openROOT_code2=""
-if version == "ver00":
+if version == "rawdata_ver00":
 	openROOT_code2+=("<div id=\"simpleGUI\" files=\"https://halldweb.jlab.org/work/halld/online_monitoring/root/hdmon_online%06d.root\"> loading scripts... </div>" % (int(float(run_number))))
 else:
 	openROOT_code2+=("<div id=\"simpleGUI\" files=\"https://halldweb.jlab.org/work/halld/data_monitoring/%s/%s/rootfiles/hd_root_%06d.root\"> loading scripts... </div>" % (period, version, int(float(run_number))))
@@ -36,4 +32,5 @@ else:
 openROOT_code2+="</body> \n </html>"
 
 print openROOT_code
+print "test"
 print openROOT_code2

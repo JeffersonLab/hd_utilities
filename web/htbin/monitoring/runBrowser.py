@@ -172,14 +172,14 @@ def printHTMLHead(title):
       <script type="text/javascript">
         var freeze = false;
 
-        function showPlot(run, ver, name, period)
+        function showPlot(ver, name, period)
 	{
 	  var imgsrc = "https://halldweb.jlab.org/work/halld/data_monitoring/"
           imgsrc += period;
           imgsrc += "/";
           imgsrc += ver;
           imgsrc += "/Run";
-	  imgsrc += run;
+	  imgsrc += $(this.run_number).val()
 	  imgsrc += "/";
 	  imgsrc += name;
 	  imgsrc += ".png";
@@ -201,6 +201,15 @@ def printHTMLHead(title):
         function changePeriod()
 	{
            $("#ver").load("/data_monitoring/textdata/" + $(this.period).val() + ".txt");
+        }
+        
+      </script>
+
+      <script>
+        function changeRun(run)
+	{
+           document.getElementById('run_number').value = "0"
+           document.getElementById('run_number').value += run
         }
         
       </script>
@@ -250,7 +259,6 @@ def print_version_selector(options):
     
     print "</select>"
     print "<input type=\"submit\" value=\"Display\" />"
-    print "</form>"
     print "Link displays plots or <button type=\"button\"> ROOT </button> opens file"
     print "<br><br>"  
 
@@ -328,7 +336,7 @@ def print_run_selector(records, options):
                         if db.get_condition(row[0], "event_count"):
                             numevents = db.get_condition(row[0], "event_count").value
                     print "<li>"
-                    print "<a href=\"/cgi-bin/data_monitoring/monitoring/runBrowser.py?run_number=%s&ver=%s&period=%s\"> %s (%s events) </a>  " % (row[0], options[1], options[2], row[0], numevents)
+                    print ("<label><input type=\"radio\" id=\"run_number\" name=\"run_number\" value=\"%s\" onclick=\"changeRun(%s)\"> %s (%s eve)</label>" % (row[0], row[0], row[0], numevents))
                     print ("<a href=\"/cgi-bin/data_monitoring/monitoring/browseJSRoot.py?run_number=%s&ver=%s&period=%s\" target=\"_blank\"><button type=\"button\"> ROOT </button></a>" % (row[0], options[1], options[2]))
                     print ("<a href=\"https://halldweb.jlab.org/rcdb/runs/info/%s\" target=\"_blank\"><button type=\"button\"> RCDB </button></a>" % (row[0]))
                     print "</li>"
@@ -344,7 +352,7 @@ def print_run_selector(records, options):
 #print row of table to display histograms
 def print_row(options, charts):
     for chart in charts:
-        print "<td style='text-align:center' bgcolor='#A9E2F3' onclick=\"freezeIt(); showPlot(\'%06d\', \'%s\', \'%s\', \'%s\');\" onmouseover=\"showPlot(\'%06d\', \'%s\', \'%s\', \'%s\'); this.style.backgroundColor='#F78181';\" onmouseout=\"this.style.backgroundColor='#A9E2F3';\">%s</td>" % (options[0], options[1], chart[0], options[2], options[0], options[1], chart[0], options[2], chart[1])
+        print "<td style='text-align:center' bgcolor='#A9E2F3' onclick=\"freezeIt(); showPlot(\'%s\', \'%s\', \'%s\');\" onmouseover=\"showPlot(\'%s\', \'%s\', \'%s\'); this.style.backgroundColor='#F78181';\" onmouseout=\"this.style.backgroundColor='#A9E2F3';\">%s</td>" % (options[1], chart[0], options[2], options[1], chart[0], options[2], chart[1])
     print "</tr>" 
 
 
@@ -416,17 +424,18 @@ def main():
     #if records == None: 
     #    records.append([10267, "", 10])
     print_run_selector(records, options)
+    print "</form>"
     print "</div class=\"link-list\">"
 
     # print main page with plots if run number selected
     print """<div id="main">"""
 
-    if options[0] == None:
-	print "Select run number link to show histograms or click <button type=\"button\"> ROOT </button> to open ROOT file in browser."
-        print "</div>"
-        print "</body>"
-        print "</html>"
-	sys.exit() 
+    #if options[0] == None:
+    #print "Select run number link to show histograms or click <button type=\"button\"> ROOT </button> to open ROOT file in browser."
+    #print "</div>"
+    #print "</body>"
+    #print "</html>"
+    #sys.exit() 
 
     # get revision number 
     revision_str = str(options[1])
