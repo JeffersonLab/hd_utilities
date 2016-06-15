@@ -266,6 +266,9 @@ def print_run_selector(records, options):
     months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
     print "<ul id=\"runList\">"
     dates = get_dates(options)
+    rcdb_runs = db.select_runs("@status_approved and @is_production")
+    rcdb_run_numbers = [ run.number for run in rcdb_runs ]
+
     #print dates
     for date in dates:
         if date[0] == None: 
@@ -282,6 +285,9 @@ def print_run_selector(records, options):
         maxRun = 0
         for row in records:
             if row[1] == None or row[1] == '0':
+                continue
+
+            if "recon" in options[1] and row[0] not in rcdb_run_numbers:
                 continue
 
 	    rundate_obj = None
