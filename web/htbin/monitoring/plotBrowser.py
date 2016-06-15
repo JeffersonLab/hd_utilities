@@ -6,6 +6,8 @@ import cgi
 import cgitb
 cgitb.enable()
 
+import re
+
 import os
 os.environ["RCDB_HOME"] = "/group/halld/www/halldweb/html/rcdb_home"
 import sys
@@ -28,8 +30,7 @@ curs=conn.cursor()
 def get_data(options):
     
     revision_str = str(options[3])
-    revision_str = revision_str.replace("ver","")
-    revision = int(float(revision_str))
+    revision = int(re.search(r'\d+', revision_str).group())
     if options[0] == None:
         query = "SELECT distinct r.run_num from run_info r, version_info v, fdc_hits c WHERE c.runid=r.run_num and v.version_id=c.version_id and run_num>0 and start_time>0 and revision=%s and run_period=%s %s ORDER BY r.run_num"
         curs.execute(query, (str(revision), str(options[5]), str(options[4])))
@@ -44,10 +45,10 @@ def get_data(options):
 def get_versions(options):
 
     if options == None:
-        query = "SELECT revision, dataVersionString, run_period from version_info ORDER BY revision DESC"
+        query = "SELECT revision, data_type, production_time, run_period from version_info ORDER BY version_id DESC"
         curs.execute(query)
     else:
-        query = "SELECT revision, dataVersionString, run_period from version_info where run_period=%s ORDER BY revision DESC"
+        query = "SELECT revision, data_type, production_time, run_period from version_info where run_period=%s ORDER BY version_id DESC"
         curs.execute(query, (str(options[5]))) 
     rows=curs.fetchall()
 
@@ -65,16 +66,6 @@ def get_periods(options):
 def show_plots(records, plotName, verName, periodName, rcdb_query):
     #print "<table border=\"1\">"
     #print "<tr>"
-
-    #if verName == "ver00":
-    #    plotName = plotName.replace("__CDC_cdc","_rootspy__rootspy_CDC_cdc")
-    #    plotName = plotName.replace("__FDC","_rootspy__rootspy_FDC")
-    #    plotName = plotName.replace("__fcal","_rootspy__rootspy_fcal")
-    #    plotName = plotName.replace("__tof","_rootspy__rootspy_tof")
-    #    plotName = plotName.replace("__st_st","_rootspy__rootspy_st_st")
-    #    plotName = plotName.replace("__tagm_tagm","_rootspy__rootspy_tagm_tagm")
-    #    plotName = plotName.replace("__TAGH","_rootspy__rootspy_TAGH")
-    #    plotName = plotName.replace("__Independent","_rootspy__rootspy_Independent")
 
     loc_i = 0
     temp_runs = []
@@ -179,13 +170,14 @@ def print_option_selector(options):
 
     plotNames = [["CDC_occupancy","CDC Occupancy"]]
     if options[3] == "ver00":
-        plotNames.append(["FCAL_Occupancy","FCAL Occupancy"])
-        plotNames.append(["BCAL_Occupancy","BCAL Occupancy"])
-        plotNames.append(["PS_Occupancy","PS Occupancy"])
-        plotNames.append(["RF_TPOL_Occupancy","RF & TPOL Occupancy"])
-        plotNames.append(["ST_Occupancy","ST Occupancy"])
-        plotNames.append(["TAGGER_Occupancy","TAGGER Occupancy"])
-        plotNames.append(["TOF_Occupancy","TOF Occupancy"])
+        plotNames.append(["FDC_occupancy","FDC Occupancy"])
+	plotNames.append(["FCAL_occupancy","FCAL Occupancy"])
+        plotNames.append(["BCAL_occupancy","BCAL Occupancy"])
+        plotNames.append(["PS_occupancy","PS Occupancy"])
+        plotNames.append(["RF_TPOL_occupancy","RF & TPOL Occupancy"])
+        plotNames.append(["ST_occupancy","ST Occupancy"])
+        plotNames.append(["TAGGER_occupancy","TAGGER Occupancy"])
+        plotNames.append(["TOF_occupancy","TOF Occupancy"])
     else:
         plotNames.append(["__CDC_cdc_raw_intpp","CDC Raw Integral"])
         plotNames.append(["__CDC_cdc_raw_t","CDC Raw Time"])
@@ -194,9 +186,11 @@ def print_option_selector(options):
         plotNames.append(["__CDC_cdc_raw_t_vs_n","CDC Raw Time vs straw"])
         plotNames.append(["__CDC_cdc_ped_vs_n","CDC Ped vs straw"])
         plotNames.append(["__CDC_cdc_windata_ped_vs_n","CDC WinData Ped vs straw"])
-        plotNames.append(["__FDC_fdcos","FDC strip"])
-        plotNames.append(["__FDC_fdcow","FDC wire"])
-        plotNames.append(["bcal_summary","BCAL Summary"])
+	plotNames.append(["FDC_P1_pseudo_occupancy","FDC Package 1 Pseudo"])
+        plotNames.append(["FDC_P2_pseudo_occupancy","FDC Package 2 Pseudo"])
+	plotNames.append(["FDC_P3_pseudo_occupancy","FDC Package 3 Pseudo"])
+	plotNames.append(["FDC_P4_pseudo_occupancy","FDC Package 4 Pseudo"])
+	plotNames.append(["bcal_summary","BCAL Summary"])
         plotNames.append(["bcal_times","BCAL Timing"])
         plotNames.append(["bcal_occupancy","BCAL Occupancy"])
         plotNames.append(["bcal_cluster","BCAL Cluster"])
@@ -299,21 +293,30 @@ def print_option_selector(options):
 
     print "and Recon. Version:"
     versions = get_versions(options)
-    print "<select id=\"ver\" name=\"ver\">" 
+    print "<select id=\"ver\" name=\"ver\">"
     for version in versions:
         revision = ("ver%02d" % version[0])
-        print "<option value=\"%s\" " % (revision)
-        if revision == options[3]:
+        data_type = version[1]
+        production_time = version[2]
+        full_version_name = "%s_%s" % (data_type, revision)
+        print "<option value=\"%s\" " % full_version_name
+        if options != None and full_version_name == options[1]:
             print "selected"
 	version_name = ""
-	if version[0] == 0:
-	    version_name = "RootSpy"
-	elif version[0] == 1:
-	    version_name = "Incoming Data"
-	else:
-	    version_name = "Launch "
-	    version_date = version[1].split("_")
-	    version_name += version_date[2]
+        if version[0] == 0 and data_type == "rawdata":
+            version_name = "RootSpy"
+        elif data_type == "mon":
+            if version[0] == 1:
+                version_name = "Incoming Data"
+            else:
+                version_name = "Monitoring Launch "
+                version_name += production_time
+        elif data_type == "recon":
+            version_name = "Recon Launch "
+            version_name += production_time
+        elif data_type == "mc":
+            version_name = "MC Production "
+            version_name += production_time
         print "> %s %s</option>" % (revision, version_name)
     print "</select>"
     print "<br>"
@@ -363,7 +366,7 @@ def get_options():
     run_number = []
 
     plotName = "CDC_occupancy"
-    verName = "ver01"
+    verName = "recon_ver01"
     periodName = "RunPeriod-2016-02"
     query = ""
     rcdb_query = "@is_production"

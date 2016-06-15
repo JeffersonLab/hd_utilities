@@ -19,7 +19,7 @@ curs=conn.cursor()
 # return a list of records from the database
 def get_data(options):
     
-    query = "SELECT distinct revision, production_time from run_info r, version_info v, fdc_hits c WHERE c.runid=r.run_num and v.version_id=c.version_id and start_time>0 and run_num=%s and run_period=%s ORDER BY revision desc"
+    query = "SELECT distinct revision, data_type, production_time from run_info r, version_info v, fdc_hits c WHERE c.runid=r.run_num and v.version_id=c.version_id and start_time>0 and run_num=%s and run_period=%s ORDER BY v.version_id desc"
     curs.execute(query, (str(options[0]), str(options[2])))
     rows=curs.fetchall()
 
@@ -29,11 +29,11 @@ def get_data(options):
 def get_versions(options):
 
     if options == None:
-        query = "SELECT revision, dataVersionString, run_period from version_info ORDER BY revision DESC"
+        query = "SELECT revision, data_type, production_time, run_period from version_info ORDER BY version_id DESC"
         curs.execute(query)
     else:
-        query = "SELECT revision, dataVersionString, run_period from version_info where run_period=%s ORDER BY revision DESC"
-        curs.execute(query, (str(options[5]))) 
+        query = "SELECT revision, data_type, production_time, run_period from version_info where run_period=%s ORDER BY version_id DESC"
+        curs.execute(query, (str(options[2]))) 
     rows=curs.fetchall()
 
     return rows
@@ -61,14 +61,18 @@ def show_plots(records, runName, plotName, periodName):
             print "<table border=\"1\">"
             print "<tr>"
             for temp_ver in temp_vers:
+                revision = ("ver%02d" % temp_ver[0])
+                full_version_name = "%s_%s" % (temp_ver[1], revision)
                 print "<td style='text-align:center; font-size:1.5em' >"
-                print "<b><a href=\"/cgi-bin/data_monitoring/monitoring/runBrowser.py?run_number=%s&ver=%s&period=%s\"  target=\"_blank\"> Ver %s (%s)</b>" % (runName, temp_ver[0], periodName, temp_ver[0], temp_ver[1])
+                print "<b><a href=\"/cgi-bin/data_monitoring/monitoring/runBrowser.py?run_number=%s&ver=%s&period=%s\"  target=\"_blank\"> %s (%s)</b>" % (runName, full_version_name, periodName, full_version_name, temp_ver[2])
                 print "</td>"
             print "</tr>"
             print "<tr>"
             for temp_ver in temp_vers:
                 print "<td>"
-                web_link = "https://halldweb.jlab.org/work/halld/data_monitoring/%s/ver%02d/Run%06d/%s.png" % (periodName, int(temp_ver[0]), runName, plotName)
+                revision = ("ver%02d" % temp_ver[0])
+                full_version_name = "%s_%s" % (temp_ver[1], revision)
+                web_link = "https://halldweb.jlab.org/work/halld/data_monitoring/%s/%s/Run%06d/%s.png" % (periodName, full_version_name, runName, plotName)
                 print "<img width=400px src=\"%s\" onclick=\"window.open('%s', '_blank')\" >" % (web_link, web_link)
                 print "</td>"
             print "</tr>"
@@ -84,14 +88,18 @@ def show_plots(records, runName, plotName, periodName):
     print "<table border=\"1\">"
     print "<tr>"
     for temp_ver in temp_vers:
+        revision = ("ver%02d" % temp_ver[0])
+        full_version_name = "%s_%s" % (temp_ver[1], revision)
         print "<td style='text-align:center; font-size:1.5em' >"
-        print "<b><a href=\"/cgi-bin/data_monitoring/monitoring/runBrowser.py?run_number=%s&ver=%s&period=%s\"  target=\"_blank\"> Ver %s (%s)</b>" % (runName, temp_ver[0], periodName, temp_ver[0], temp_ver[1])
+        print "<b><a href=\"/cgi-bin/data_monitoring/monitoring/runBrowser.py?run_number=%s&ver=%s&period=%s\"  target=\"_blank\"> %s (%s)</b>" % (runName, full_version_name, periodName, full_version_name, temp_ver[2])
         print "</td>"
     print "</tr>"
     print "<tr>"
     for temp_ver in temp_vers:
         print "<td>"
-        web_link = "https://halldweb.jlab.org/work/halld/data_monitoring/%s/ver%02d/Run%06d/%s.png" % (periodName, int(temp_ver[0]), runName, plotName)
+        revision = ("ver%02d" % temp_ver[0])
+        full_version_name = "%s_%s" % (temp_ver[1], revision)
+        web_link = "https://halldweb.jlab.org/work/halld/data_monitoring/%s/%s/Run%06d/%s.png" % (periodName, full_version_name, runName, plotName)
         print "<img width=400px src=\"%s\" onclick=\"window.open('%s', '_blank')\" >" % (web_link, web_link)
         print "</td>"
     print "</tr>"
@@ -268,7 +276,6 @@ def get_options():
     run_number = []
 
     plotName = "HistMacro_BCALReconstruction_p3"
-    verName = "ver01"
     periodName = "RunPeriod-2016-02"
 
     if "plot" in form:
@@ -331,7 +338,7 @@ def main():
 	sys.exit() 
 
     # print run selector form
-    records=get_data(options)
+    records=get_versions(options)
 
     # display histograms
     show_plots(records, options[0], options[1], options[2])

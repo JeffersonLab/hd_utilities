@@ -6,6 +6,7 @@ import cgitb
 cgitb.enable()
 
 import datetime
+import re
 
 import os
 os.environ["RCDB_HOME"] = "/group/halld/www/halldweb/html/rcdb_home"
@@ -29,9 +30,11 @@ curs=conn.cursor()
 def get_data(options):
     
     revision_str = str(options[1])
-    revision_str = revision_str.replace("ver","")
-    revision = int(float(revision_str))
+    revision = int(re.search(r'\d+', revision_str).group())
     query = "SELECT distinct r.run_num, r.start_time, r.num_events from run_info r, version_info v, bcal_hits b WHERE b.runid=r.run_num and v.version_id=b.version_id and run_num>0 and revision=%s and run_period=%s ORDER BY r.run_num"
+    #if revision_str == "ver00":
+    #print "ver00 query"
+    #query = "SELECT distinct r.run_num, r.start_time, r.num_events from run_info r, version_info v WHERE run_num>0 and revision=%s and run_period=%s ORDER BY r.run_num"
     curs.execute(query, (revision, str(options[2])))    
     rows=curs.fetchall()
 
@@ -41,9 +44,12 @@ def get_data(options):
 def get_data_singlerun(options):
 
     revision_str = str(options[1])
-    revision_str = revision_str.replace("ver","")
-    revision = int(float(revision_str))
+    revision = int(re.search(r'\d+', revision_str).group())
+    #revision_str = revision_str.replace("ver","")
+    #revision = int(float(revision_str))
     query = "SELECT distinct r.run_num, r.start_time, r.num_events, r.beam_current, r.radiator_type, r.solenoid_current, r.trigger_config_file from run_info r, version_info v, bcal_hits b WHERE b.runid=r.run_num and v.version_id=b.version_id and run_num>0 and revision=%s and r.run_num=%s ORDER BY r.run_num"
+    #if revision == 0:
+	#query = "SELECT distinct r.run_num, r.start_time, r.num_events, r.beam_current, r.radiator_type, r.solenoid_current, r.trigger_config_file from run_info r, version_info v WHERE run_num>0 and revision=%s and r.run_num=%s ORDER BY r.run_num"
     curs.execute(query, (revision, options[0]))
     rows=curs.fetchall()
 
@@ -52,7 +58,7 @@ def get_data_singlerun(options):
 # get list of versions from the DB
 def get_versions(options):
 
-    query = "SELECT revision, dataVersionString, run_period from version_info where run_period=%s ORDER BY revision DESC"
+    query = "SELECT revision, data_type, production_time, run_period from version_info where run_period=%s ORDER BY version_id DESC"
     curs.execute(query, (str(options[2])))
     rows=curs.fetchall()
 
@@ -80,9 +86,10 @@ def get_periods_run_number(options):
 def get_dates(options):
    
     revision_str = str(options[1])
-    revision_str = revision_str.replace("ver","")
-    revision = int(float(revision_str)) 
-    query = "SELECT DISTINCT DATE(r.start_time) FROM run_info r, version_info v, bcal_hits b WHERE b.runid=r.run_num and v.version_id=b.version_id and run_num>0 and start_time>'2014-11-01' and revision=%s and run_period=%s ORDER BY DATE(start_time)"
+    revision = int(re.search(r'\d+', revision_str).group())
+    #revision_str = revision_str.replace("ver","")
+    #revision = int(float(revision_str)) 
+    query = "SELECT DISTINCT DATE(r.start_time) FROM run_info r, version_info v WHERE run_num>0 and start_time>'2014-11-01' and revision=%s and run_period=%s ORDER BY DATE(start_time)"
     curs.execute(query, (revision, str(options[2])))
     rows=curs.fetchall()
 
@@ -218,18 +225,27 @@ def print_version_selector(options):
     print "<select id=\"ver\" name=\"ver\">" 
     for version in versions:
         revision = ("ver%02d" % version[0])
-        print "<option value=\"%s\" " % (revision)
-        if options != None and revision == options[1]:
+        data_type = version[1]
+        production_time = version[2]
+        full_version_name = "%s_%s" % (data_type, revision)
+        print "<option value=\"%s\" " % full_version_name
+        if options != None and full_version_name == options[1]:
             print "selected"
 	version_name = ""
-        if version[0] == 0:
+        if version[0] == 0 and data_type == "rawdata":
             version_name = "RootSpy"
-        elif version[0] == 1:
-            version_name = "Incoming Data"
-        else:
-            version_name = "Launch "
-            version_date = version[1].split("_")
-            version_name += version_date[2]
+        elif data_type == "mon":
+            if version[0] == 1:
+                version_name = "Incoming Data"
+            else:
+                version_name = "Monitoring Launch "
+                version_name += production_time
+        elif data_type == "recon":
+            version_name = "Recon Launch "
+            version_name += production_time
+        elif data_type == "mc":
+            version_name = "MC Production "
+            version_name += production_time
         print "> %s %s</option>" % (revision, version_name)
     
     print "</select>"
@@ -259,10 +275,21 @@ def print_run_selector(records, options):
         for row in records:
             if row[1] == None or row[1] == '0':
                 continue
-            rundate_obj = datetime.datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S")
+
+	    rundate_obj = None
+	    try:
+            	rundate_obj = datetime.datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S")
+	    except ValueError:
+		pass
+	    if rundate_obj == None:
+		continue
             #print rundate_obj
-            rundate = rundate_obj.strftime("%Y-%m-%d")
-            #print rundate
+
+	    try:
+            	rundate = rundate_obj.strftime("%Y-%m-%d")
+            except ValueError:
+		pass
+	    #print rundate
 	    
             if rundate == fulldate:
                 if row[0] < minRun:
@@ -279,8 +306,20 @@ def print_run_selector(records, options):
             for row in records:
                 if row[1] == None or row[1] == '0':
                     continue
-                rundate_obj = datetime.datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S")
-                rundate = rundate_obj.strftime("%Y-%m-%d")
+		rundate_obj = None
+                try:
+    	            rundate_obj = datetime.datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S")
+                except ValueError:
+            	    pass
+                if rundate_obj == None:
+                    continue
+                #print rundate_obj
+
+                try:
+                    rundate = rundate_obj.strftime("%Y-%m-%d")
+                except ValueError:
+                    pass
+                #print rundate
 
                 numevents = row[2]
 
@@ -315,7 +354,7 @@ def get_options():
     run_number_str = []
     run_number = []
     
-    verName = "ver01"
+    verName = "recon_ver01"
     periodName = "RunPeriod-2016-02"
 
     if "ver" in form:
@@ -365,7 +404,7 @@ def main():
         # set version
         if options[1] == None:
             versions=get_versions(options)
-            revision = ("ver%02d" % versions[0][0])
+            revision = ("%s_ver%d" % (versions[0][1], versions[0][0]))
             options[1]=revision
 
     # print version selector
@@ -391,8 +430,9 @@ def main():
 
     # get revision number 
     revision_str = str(options[1])
-    revision_str = revision_str.replace("ver","")
-    revision = int(float(revision_str))
+    revision = int(re.search(r'\d+', revision_str).group())
+    #revision_str = revision_str.replace("ver","")
+    #revision = int(float(revision_str))
 
     # Fall 2014 run
     if options[2] == 'RunPeriod-2014-10':
@@ -490,7 +530,7 @@ def main():
     # Fall 2015 run
     elif options[2] == 'RunPeriod-2015-12' or options[2] == 'RunPeriod-2016-02':
         cdc_charts = [["__CDC_cdc_raw_intpp","RawInt"],["__CDC_cdc_raw_t","Time"],["CDC_occupancy","Occupancy"],["__CDC_cdc_ped","Pedestal"],["__CDC_cdc_raw_intpp_vs_n","RawIntVsN"],["__CDC_cdc_raw_t_vs_n","RawTimeVsN"],["__CDC_cdc_ped_vs_n","PedVsN"],["__CDC_cdc_windata_ped_vs_n","WinDataPedVsN"]]
-        fdc_charts = [["__FDC_fdcos","FdcStripOcc"],["__FDC_fdcow","FdcWireOcc"]]
+        fdc_charts = [["FDC_P1_pseudo_occupancy", "FDC P1"],["FDC_P2_pseudo_occupancy", "FDC P2"],["FDC_P3_pseudo_occupancy", "FDC P3"],["FDC_P4_pseudo_occupancy", "FDC P4"]]
         bcal_charts = [["bcal_summary","DigiSummary"],["bcal_times","DigiTime"],["bcal_occupancy","DigiOccupancy"],["bcal_cluster","Cluster"],["bcal_shower","Shower"],["bcal_hist_eff","Effic"],["bcal_inv_mass","BCALInvMass"],["bcal_fcal_inv_mass","B/FCALInvMass"],["trig_fcalbcal","Trigger"]]
    
         fcal_charts = [["__fcal_digHitE","DigiPulseInt"],["__fcal_digOcc2D","DigiOccupancy"],["__fcal_digT","DigiTime"],["fcal_hit_energy","HitSummary"],["fcal_hit_timing","HitTime"],["fcal_cluster_et","ClusterEnergyTime"],["fcal_cluster_space","ClusterSpace"]]
@@ -530,7 +570,7 @@ def main():
       <tr>"""
 
     if revision == 0:
-        occupancy_charts = [["CDC_occupancy","CDC"],["FCAL_occupancy","FCAL"],["BCAL_occupancy","BCAL"],["PS_occupancy","PS"],["RF_TPOL_occupancy","RF & TPOL"],["ST_occupancy","ST"],["TAGGER_occupancy","TAGGER"],["TOF_occupancy","TOF"]]
+        occupancy_charts = [["CDC_occupancy","CDC"],["FDC_occupancy","FDC"],["FCAL_occupancy","FCAL"],["BCAL_occupancy","BCAL"],["PS_occupancy","PS"],["RF_TPOL_occupancy","RF & TPOL"],["ST_occupancy","ST"],["TAGGER_occupancy","TAGGER"],["TOF_occupancy","TOF"]]
         print "<td>Online Occupancies: </td>"
         print_row(options, occupancy_charts)
 
