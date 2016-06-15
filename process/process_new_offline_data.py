@@ -436,8 +436,8 @@ def ProcessOfflineData(args):
             merged_skim_file = "%s_%06d.root"%(tree,run)
             os.system("rm -f %s/%s"%(tree_dir,merged_skim_file))
             os.system("hadd -k -v 0 %s/%s %s/*.root"%(tree_dir,merged_skim_file,tree_dir))
-            #os.system("jcache put %s/%s"%(tree_dir,merged_skim_file))
-            #os.system("jcache unpin %s/*.root"%(tree_dir))
+            os.system("jcache put %s/%s"%(tree_dir,merged_skim_file))
+            os.system("jcache unpin %s/*.root"%(tree_dir))
     # merge evio files
     """
     if len(config.EVIO_SKIMS_TO_MERGE) > 0:
@@ -570,8 +570,6 @@ def main():
     runs_to_process = []
     for rundir in rundirs_on_disk:
         runnum = int(rundir)    
-        if runnum != 11366:
-            continue
 
         # handle any options about which runs to process
         # specifying a particular run to process beats specifying a range
@@ -652,12 +650,12 @@ def main():
         logdir = join(config.INPUT_SMALLFILE_DIRECTORY,config.REVISION,"log")
         if isdir(logdir):
             os.system("tar cf %s/%s/log.tar %s"%(config.INPUT_DIRECTORY,config.REVISION,logdir))  # overwrite any existing file
-        #os.system("jcache put %s/%s/log.tar"%(config.INPUT_DIRECTORY,config.REVISION))  # save to tape
+        os.system("jcache put %s/%s/log.tar"%(config.INPUT_DIRECTORY,config.REVISION))  # save to tape
         # save IDXA files (for EventStore)
         idxadir = join(config.INPUT_SMALLFILE_DIRECTORY,config.REVISION,"IDXA")
         if isdir(idxadir):
             os.system("tar cf %s/%s/IDXA.tar %s"%(config.INPUT_DIRECTORY,config.REVISION,idxadir))  # overwrite any existing file
-        #os.system("jcache put %s/%s/IDXA.tar"%(config.INPUT_DIRECTORY,config.REVISION))  # save to tape
+        os.system("jcache put %s/%s/IDXA.tar"%(config.INPUT_DIRECTORY,config.REVISION))  # save to tape
         # save web figures
         os.system("tar cf %s/%s/web_figures.tar %s/Run*"%(config.INPUT_DIRECTORY,config.REVISION,config.OUTPUT_DIRECTORY))  # overwrite any existing file
 
