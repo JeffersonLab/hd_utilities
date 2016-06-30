@@ -7,7 +7,7 @@ export B1PI_TEST_DIR=/group/halld/Software/scripts/b1pi_test
 export RUN_DIR=/u/scratch/$USER/b1pi/$TODAYS_DATE/$BMS_OSNAME
 
 # Setup environment based on sim-recon build we're using 
-source ${BUILD_DIR}/sim-recon/$BMS_OSNAME/setenv.sh
+source /group/halld/Software/build_scripts/gluex_env_nightly.sh $date_token
 export JANA_CALIB_CONTEXT="variation=mc"
 
 # do the test
