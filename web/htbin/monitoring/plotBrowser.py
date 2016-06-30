@@ -100,7 +100,7 @@ def show_plots(records, plotName, verName, periodName, rcdb_query):
             print "<tr>"
             for temp_run in temp_runs:
                 print "<td>"
-                web_link = "https://halldweb.jlab.org/work/halld/data_monitoring/%s/%s/Run%06d/%s.png" % (periodName, verName, temp_run, plotName)
+                web_link = "https://halldweb.jlab.org/work/halld2/data_monitoring/%s/%s/Run%06d/%s.png" % (periodName, verName, temp_run, plotName)
                 print "<img width=400px src=\"%s\" onclick=\"window.open('%s', '_blank')\" >" % (web_link, web_link)
                 print "</td>"
             print "</tr>"
@@ -123,7 +123,7 @@ def show_plots(records, plotName, verName, periodName, rcdb_query):
     print "<tr>"
     for temp_run in temp_runs:
         print "<td>"
-        web_link = "https://halldweb.jlab.org/work/halld/data_monitoring/%s/%s/Run%06d/%s.png" % (periodName, verName, temp_run, plotName)
+        web_link = "https://halldweb.jlab.org/work/halld2/data_monitoring/%s/%s/Run%06d/%s.png" % (periodName, verName, temp_run, plotName)
         print "<img width=400px src=\"%s\" onclick=\"window.open('%s', '_blank')\" >" % (web_link, web_link)
         print "</td>"
     print "</tr>"
@@ -225,6 +225,9 @@ def print_option_selector(options):
         plotNames.append(["__TAGH_DigiHit_DigiHit_RawIntegral","TAGH Digi Raw Integral"])
         plotNames.append(["TAGH_hit","TAGH Hit Summary"])
         plotNames.append(["trig_fcalbcal","Trigger Energy Balance FCAL vs BCAL"])
+        plotNames.append(["l1_rate","L1 Rate"])
+        plotNames.append(["l1_fcal_bcal","L1 FCAL vs BCAL Energy"])
+        plotNames.append(["l1_ancilary","L1 Ancillary Triggers"])
         plotNames.append(["PSC_hit","PSC Hit Summary 1"])
         plotNames.append(["PSC_hit2","PSC Hit Summary 2"])
         plotNames.append(["PSC_hit3","PSC Hit Summary 3"])
@@ -369,7 +372,7 @@ def get_options():
     verName = "recon_ver01"
     periodName = "RunPeriod-2016-02"
     query = ""
-    rcdb_query = "@is_production"
+    rcdb_query = "@is_production and @status_approved"
 
     if "plot" in form:
         plotName = str(form["plot"].value)

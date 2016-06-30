@@ -174,7 +174,7 @@ def printHTMLHead(title):
 
         function showPlot(ver, name, period)
 	{
-	  var imgsrc = "https://halldweb.jlab.org/work/halld/data_monitoring/"
+	  var imgsrc = "https://halldweb.jlab.org/work/halld2/data_monitoring/"
           imgsrc += period;
           imgsrc += "/";
           imgsrc += ver;
@@ -320,6 +320,9 @@ def print_run_selector(records, options):
             for row in records:
                 if row[1] == None or row[1] == '0':
                     continue
+		if "recon" in options[1] and row[0] not in rcdb_run_numbers:
+                    continue
+
 		rundate_obj = None
                 try:
     	            rundate_obj = datetime.datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S")
@@ -555,6 +558,7 @@ def main():
         tagh_charts = [["__TAGH_DigiHit_DigiHit_RawIntegral","DigiRawInt"],["__TAGH_DigiHit_DigiHit_tdcTime","DigiTDCTime"],["__TAGH_DigiHit_DigiHit_PedestalVsSlotID","DigiPedVsSlot"],["TAGH_hit","HitSummary"],["TAGH_hit2","HitSummary2"]]
         ps_charts = [["PSC_hit","PSC1"],["PSC_hit2","PSC2"],["PSC_hit3","PSC3"],["PS_hit","PS1"],["PS_hit2","PS2"],["__PSPair_PSC_PS_PS_E","PS_E"],["PS_PSC_coinc","PairCoinc"],["PS_eff","PairEff"],["PS_TAG_energy","PairTagEnergy"]] #,["TAG_eff","TagEff"],["TAG_2D_eff","Tag2DEff"]]
         rf_charts = [["HistMacro_RF_p1","RF1"],["HistMacro_RF_p2","RF2"],["HistMacro_RF_p3","RF3"]]
+        l1_charts = [["l1_rate","L1Rate"],["l1_fcal_bcal","L1FCALBCAL"],["l1_ancilary","L1Ancillary"]]
         hldetectortiming_charts = [["HistMacro_TaggerTiming","Tagger Timing"],["HistMacro_TaggerRFAlignment","Tagger-RF"],["HistMacro_TaggerSCAlignment","Tagger-SC"],["HistMacro_CalorimeterTiming","FCAL/BCAL"],["HistMacro_PIDSystemTiming","SC/TOF"],["HistMacro_TrackMatchedTiming","Track Matched Timing"]]
         ana_charts1 = [["HistMacro_EventInfo","EventInfo"],["HistMacro_NumLowLevelObjects_p1","LLObjects1"],["HistMacro_NumLowLevelObjects_p2","LLObjects2"],["HistMacro_NumHighLevelObjects","HLObjects"],["__Independent_Hist_TrackMultiplicity_NumGoodReconstructedParticles","TrackMult"],["HistMacro_Tracking_p1","Tracking1"],["HistMacro_Tracking_p2","Tracking2"],["HistMacro_Tracking_p3","Tracking3"],["HistMacro_Matching_BCAL","MatchBCAL"],["HistMacro_Matching_FCAL","MatchFCAL"],["HistMacro_Matching_SC","MatchSC/ST"],["HistMacro_Matching_TOF","MatchTOF"]]
         ana_charts2 = [["HistMacro_FCALReconstruction_p1","FCAL1"],["HistMacro_FCALReconstruction_p2","FCAL2"],["HistMacro_FCALReconstruction_p3","FCAL3"],["HistMacro_BCALReconstruction_p1","BCAL1"],["HistMacro_BCALReconstruction_p2","BCAL2"],["HistMacro_BCALReconstruction_p3","BCAL3"],["HistMacro_SCReconstruction_p1","SC/ST1"],["HistMacro_SCReconstruction_p2","SC/ST2"],["HistMacro_TOFReconstruction_p1","TOF1"],["HistMacro_TOFReconstruction_p2","TOF2"],["HistMacro_Kinematics_p1","Kinematics1"],["HistMacro_Kinematics_p2","Kinematics2"]]
@@ -606,6 +610,8 @@ def main():
         print_row(options, tagm_charts)
         print "<td>TAGH:</td>"
         print_row(options, tagh_charts)
+        print "<td>L1:</td>"
+        print_row(options, l1_charts)
         print "</table>"
         
         if revision > 3 and options[2] == 'RunPeriod-2015-03' or options[2] == 'RunPeriod-2015-06' or options[2] == 'RunPeriod-2015-12' or options[2] == 'RunPeriod-2016-02':

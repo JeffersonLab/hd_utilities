@@ -72,7 +72,7 @@ def show_plots(records, runName, plotName, periodName):
                 print "<td>"
                 revision = ("ver%02d" % temp_ver[0])
                 full_version_name = "%s_%s" % (temp_ver[1], revision)
-                web_link = "https://halldweb.jlab.org/work/halld/data_monitoring/%s/%s/Run%06d/%s.png" % (periodName, full_version_name, runName, plotName)
+                web_link = "https://halldweb.jlab.org/work/halld2/data_monitoring/%s/%s/Run%06d/%s.png" % (periodName, full_version_name, runName, plotName)
                 print "<img width=400px src=\"%s\" onclick=\"window.open('%s', '_blank')\" >" % (web_link, web_link)
                 print "</td>"
             print "</tr>"
@@ -99,7 +99,7 @@ def show_plots(records, runName, plotName, periodName):
         print "<td>"
         revision = ("ver%02d" % temp_ver[0])
         full_version_name = "%s_%s" % (temp_ver[1], revision)
-        web_link = "https://halldweb.jlab.org/work/halld/data_monitoring/%s/%s/Run%06d/%s.png" % (periodName, full_version_name, runName, plotName)
+        web_link = "https://halldweb.jlab.org/work/halld2/data_monitoring/%s/%s/Run%06d/%s.png" % (periodName, full_version_name, runName, plotName)
         print "<img width=400px src=\"%s\" onclick=\"window.open('%s', '_blank')\" >" % (web_link, web_link)
         print "</td>"
     print "</tr>"
