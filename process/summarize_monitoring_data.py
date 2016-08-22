@@ -19,7 +19,7 @@ from datamon_db import datamon_db
 class summarize_monitoring_data:
     def __init__(self):
         # initialize defaults
-        self.VERBOSE = 0
+        self.VERBOSE = 1
         self.OUTPUT_DIRECTORY = "."
 
         self.RUN_NUMBER = -1
@@ -65,6 +65,8 @@ class summarize_monitoring_data:
     ## For the CDC, we store the avg number of hits per straw in each superlayer (4 rings)
     ##
     def ProcessCDCHits(self):
+        if self.VERBOSE>0:
+            logging.warning("In ProcessCDCHits() ...")
         # Store fixed geometry
         nstraws = array('i', [0,42,42,54,54,66,66,80,80,93,93,106,106,123,123,135,135,146,146,158,158,170,170,182,182,197,197,209,209])        
         avg_hits_per_superlayer = []
@@ -104,6 +106,8 @@ class summarize_monitoring_data:
     ## For the Start Counter, we store the avg number of hits per paddle
     ##
     def ProcessSCHits(self):
+        if self.VERBOSE>0:
+            logging.warning("In ProcessSCHits() ...")
         avg_hits_per_sector = []
         number_of_events = -1   
 
@@ -128,6 +132,8 @@ class summarize_monitoring_data:
     ## (note that we might want to correct for the half-length cathode strips)
     ##
     def ProcessFDCHits(self):
+        if self.VERBOSE>0:
+            logging.warning("In ProcessFDCHits() ...")
         NUM_FDC_STRIPS = 192
         NUM_FDC_WIRES = 96
         avg_hits_per_plane = []
@@ -182,6 +188,8 @@ class summarize_monitoring_data:
     ##   4 symmetric around edge:      ( 0,29)  (58,29)  (29, 0)  (29,58)
     ##
     def ProcessFCALHits(self):
+        if self.VERBOSE>0:
+            logging.warning("In ProcessFCALHits() ...")
         hits_per_channel = []
         number_of_events = -1 
 
@@ -230,6 +238,8 @@ class summarize_monitoring_data:
 
     # For FCAL calibrations, store timing information
     def ProcessFCALCalib(self):
+        if self.VERBOSE>0:
+            logging.warning("In ProcessFCALCalib() ...")
         ## calculate calibration info
         calib_vals = []
 
@@ -277,6 +287,8 @@ class summarize_monitoring_data:
     ## Note: Need to add histograms to get energies out of 
     ##
     def ProcessBCALHits(self):
+        if self.VERBOSE>0:
+            logging.warning("In ProcessBCALHits() ...")
         avg_hits_per_quadrant = []
         avg_hit_energy_per_quadrant = []
         number_of_events = -1 
@@ -397,6 +409,8 @@ class summarize_monitoring_data:
 
     # For BCAL, save timing and efficiency information
     def ProcessBCALCalib(self):
+        if self.VERBOSE>0:
+            logging.warning("In ProcessBCALCalib() ...")
         ## calculate calibration info
         calib_vals = []
 
@@ -542,6 +556,8 @@ class summarize_monitoring_data:
     ## For the TOF, we store the avg number of hits per some arbitrary grouping
     ##
     def ProcessTOFHits(self):
+        if self.VERBOSE>0:
+            logging.warning("In ProcessTOFHits() ...")
         avg_hits_per_sector = []
         number_of_events = -1 
 
@@ -589,6 +605,8 @@ class summarize_monitoring_data:
 
     # keep timing calibrations
     def ProcessSCCalib(self):
+        if self.VERBOSE>0:
+            logging.warning("In ProcessSCCalib() ...")
         ## calculate calibration info
         calib_vals = []
 
@@ -662,6 +680,8 @@ class summarize_monitoring_data:
     ##   8-10, 50-52, 110-112, 170-172, 210-212
     ##
     def ProcessTAGHHits(self):
+        if self.VERBOSE>0:
+            logging.warning("In ProcessTAGHHits() ...")
         avg_hits_per_sector = []
         number_of_events = -1 
 
@@ -688,6 +708,8 @@ class summarize_monitoring_data:
 
     # store timing calibrations, based on PS/Tagger intercalibration
     def ProcessTAGHCalib(self):
+        if self.VERBOSE>0:
+            logging.warning("In ProcessTAGHCalib() ...")
         # OLD calibrations
         ## calculate calibration info
         #h = f.Get("HLDetectorTiming/TRACKING/TAGH - SC Target Time")
@@ -730,6 +752,8 @@ class summarize_monitoring_data:
     ##   6-8, 24-26, 78-80, 96-98
     ##
     def ProcessTAGMHits(self):
+        if self.VERBOSE>0:
+            logging.warning("In ProcessTAGMHits() ...")
         avg_hits_per_sector = []
         number_of_events = -1 
 
@@ -763,6 +787,8 @@ class summarize_monitoring_data:
 
     # store timing calibrations, based on PS/Tagger intercalibration
     def ProcessTAGMCalib(self):
+        if self.VERBOSE>0:
+            logging.warning("In ProcessTAGMCalib() ...")
         ## calculate calibration info
         #h = f.Get("HLDetectorTiming/TRACKING/TAGM - SC Target Time")
         #hy = h.ProjectionY()
@@ -796,6 +822,8 @@ class summarize_monitoring_data:
     ## and some calibration information
     ##
     def ProcessPSCHits(self):
+        if self.VERBOSE>0:
+            logging.warning("In ProcessPSCHits() ...")
         avg_hits_per_sector = []
         number_of_events = -1 
 
@@ -825,6 +853,8 @@ class summarize_monitoring_data:
 
     # store timing calibrations, based on PS/Tagger intercalibration
     def ProcessPSCCalib(self):
+        if self.VERBOSE>0:
+            logging.warning("In ProcessPSCCalib() ...")
         ## calculate calibration info
         timing_mean = 0.
         timing_sigma = 0.
@@ -864,6 +894,8 @@ class summarize_monitoring_data:
     ## and some calibration information
     ##
     def ProcessPSHits(self):
+        if self.VERBOSE>0:
+            logging.warning("In ProcessPSHits() ...")
         avg_hits_per_sector = []
         number_of_events = -1 
 
@@ -914,6 +946,8 @@ class summarize_monitoring_data:
     ## Save various count rates for reconstruction-level quantities
     ##
     def ProcessAnalysisInfo(self):
+        if self.VERBOSE>0:
+            logging.warning("In ProcessAnalysisInfo() ...")
         avg_hits_per_sector = []
         number_of_events = -1   
 

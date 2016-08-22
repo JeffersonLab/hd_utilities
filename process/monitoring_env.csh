@@ -13,7 +13,7 @@ setenv LD_LIBRARY_PATH /apps/python/PRO/lib:$LD_LIBRARY_PATH
 
 # load RCDB
 #source /work/halld2/home/gxproj1/builds/rcdb/environment.csh
-setenv RCDB_HOME /work/halld2/home/gxproj1/builds/rcdb/monitoring_incoming
+setenv RCDB_HOME /work/halld2/home/gxproj5/builds/rcdb/monitoring_launch
 
 if (! $?LD_LIBRARY_PATH) then
     setenv LD_LIBRARY_PATH $RCDB_HOME/cpp/lib

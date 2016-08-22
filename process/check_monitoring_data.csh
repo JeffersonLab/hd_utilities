@@ -2,11 +2,15 @@
 # Set environmental variables for cron job
 set LOCKFILE=lock.offline
 
-set VERSION=01
+set DATATYPE=mon
+set VERSION=06
 set RUNPERIOD=RunPeriod-2016-02
 set INPUTDIR=/cache/halld/offline_monitoring/$RUNPERIOD
-set OUTPUTDIR=/work/halld/data_monitoring/$RUNPERIOD/ver$VERSION
-set ARGS=" -M -v $RUNPERIOD,$VERSION "
+set INPUT_SMALLFILE_DIR=/cache/halld/offline_monitoring/$RUNPERIOD
+#set OUTPUTDIR=/work/halld/data_monitoring/$RUNPERIOD/ver$VERSION
+set OUTPUTDIR=/work/halld2/data_monitoring/${RUNPERIOD}/${DATATYPE}_ver${VERSION}
+set ROOTOUTPUTDIR=/work/halld/data_monitoring/${RUNPERIOD}/${DATATYPE}_ver${VERSION}/rootfiles
+set ARGS=" --force -T $ROOTOUTPUTDIR -v $RUNPERIOD,$VERSION  "
 #set ARGS=" -R 3185 -S -v $RUNPERIOD,$VERSION "
 #set ARGS=" --force -d -s -S -v RunPeriod-2015-03,$VERSION "
 #set ARGS=" -v RunPeriod-2015-03,$VERSION "
@@ -15,9 +19,9 @@ set ARGS=" -M -v $RUNPERIOD,$VERSION "
 
 # Load standard environment for ROOT
 #source /home/gxproj5/halld/hdswif/setup_jlab-2015-03.csh
-source /home/gxproj1/env_monitoring_incoming
+source /home/gxproj5/env_monitoring_launch.csh
 
-set MONITORING_HOME=/home/gxproj1/monitoring/process
+set MONITORING_HOME=/home/gxproj5/monitoring/process
 source $MONITORING_HOME/monitoring_env.csh
 set MONITORING_LIBDIR=$MONITORING_HOME/lib
 set MONITORING_LOGDIR=$MONITORING_HOME/log
@@ -32,7 +36,7 @@ endif
 
 # delete logs that are older than 30 days
 if (-d $MONITORING_LOGDIR && $MONITORING_LOGDIR != "/log" ) then
-    find $MONITORING_LOGDIR -mtime +30 -exec rm '{}' \;
+    find $MONITORING_LOGDIR/ -mtime +30 -exec rm '{}' \;
 endif
 
 # run the script
@@ -40,8 +44,8 @@ cd $MONITORING_HOME
 
 if ( ! -e $LOCKFILE ) then
     touch $LOCKFILE
-    ./process_new_offline_data.py $ARGS ver$VERSION $INPUTDIR $OUTPUTDIR --logfile=$MONITORING_LOGDIR/check_monitoring_data.`date +%F_%T`.log
-    #./process_new_offline_data.py $ARGS ver$VERSION $INPUTDIR $OUTPUTDIR
+    ./process_new_offline_data.py $ARGS ver$VERSION $INPUTDIR $INPUT_SMALLFILE_DIR $OUTPUTDIR --logfile=$MONITORING_LOGDIR/check_monitoring_data.`date +%F_%T`.log
+    #./process_new_offline_data.py $ARGS ver$VERSION $INPUTDIR $INPUT_SMALLFILE_DIR $OUTPUTDIR
     rm $LOCKFILE
 else 
     echo "process is locked by another job, exiting..."

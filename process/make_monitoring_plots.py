@@ -74,7 +74,7 @@ class make_monitoring_plots:
         h.Draw("COLZ")
 
     def ClearPad(self, pad):
-        gROOT.SetStyle("Plain")   # reset style
+        #gROOT.SetStyle("Plain")   # reset style
         self.c1.Clear()
         self.c1.SetLogx(0)
         self.c1.SetLogy(0)

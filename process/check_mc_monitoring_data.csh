@@ -2,21 +2,24 @@
 # Set environmental variables for cron job
 set LOCKFILE=lock.mc
 
-set VERSION=mc
-set INPUTDIR=/volatile/halld/detcom_02
-set OUTPUTDIR=/work/halld/data_monitoring/detcom_02
-set ARGS=" -v RunPeriod-2014-10,18  --force "
-#set ARGS=" -v RunPeriod-2014-10,18 "
-#set ARGS=" -v RunPeriod-2014-10,17 -b 2438 -e 2440 --force "
-#set ARGS=" -v RunPeriod-2014-10,17 -R 2438 --force"
-#set ARGS=""
+set DATATYPE=mc
+set VERSION=01
+set RUNPERIOD=RunPeriod-2016-02
+#set INPUTDIR=/cache/halld/$RUNPERIOD/$DATATYPE
+set INPUTDIR=/cache/halld/gluex_simulations/sim1/
+set INPUT_SMALLFILE_DIR=/work/halld2/mc/$RUNPERIOD  # ignore for now in MC
+#set INPUTDIR=/cache/halld/$RUNPERIOD/$DATATYPE/$VERSION
+set OUTPUTDIR=/work/halld2/data_monitoring/${RUNPERIOD}/${DATATYPE}_ver${VERSION}
+set ROOTOUTPUTDIR=/work/halld2/data_monitoring/${RUNPERIOD}/${DATATYPE}_ver${VERSION}/rootfiles
+
+# version for sim1.0
+set ARGS=" -V 70  --force -E "
+
 
 # Load standard environment for ROOT
-#source /home/gxproj1/setup_jlab.csh
-source /home/gxproj1/halld/jproj/projects/offline_monitoring_RunPeriod2014_10_ver18_hd_rawdata/setup_jlab-2014-10.csh  ## FIX
+source $HOME/env_monitoring_launch.csh
 
-#set MONITORING_HOME=/home/gxproj1/halld/jproj/projects/offline_monitoring_RunPeriod2014_10_ver13_hd_rawdata
-set MONITORING_HOME=/home/gluex/halld/monitoring/process
+set MONITORING_HOME=$HOME/monitoring/process
 source $MONITORING_HOME/monitoring_env.csh
 set MONITORING_LIBDIR=$MONITORING_HOME/lib
 set MONITORING_LOGDIR=$MONITORING_HOME/log
@@ -39,8 +42,8 @@ cd $MONITORING_HOME
 
 if ( ! -e $LOCKFILE ) then
     touch $LOCKFILE
-    #./process_new_offline_data.py $ARGS $VERSION $INPUTDIR $OUTPUTDIR --logfile=$MONITORING_LOGDIR/check_monitoring_data.`date +%F_%T`.log
-    ./process_new_offline_data.py $ARGS $VERSION $INPUTDIR $OUTPUTDIR 
+    #./process_new_offline_data.py $ARGS $VERSION $INPUTDIR $INPUT_SMALLFILE_DIR $OUTPUTDIR --logfile=$MONITORING_LOGDIR/check_monitoring_data.`date +%F_%T`.log
+    ./process_new_offline_data.py $ARGS $DATATYPE $INPUTDIR $INPUT_SMALLFILE_DIR $OUTPUTDIR 
     rm $LOCKFILE
 else 
     echo "process is locked by another job, exiting..."

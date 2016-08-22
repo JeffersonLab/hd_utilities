@@ -64,7 +64,7 @@ class ProcessMonDataConfig:
         # ignore checks if we've previously processed all monitoring ROOT files
         self.FORCE_PROCESSING = False   
         # control level of output
-        self.VERBOSE = 4
+        self.VERBOSE = 2
 
         self.REVISION = None           # data period revision (see DB)
         self.INPUT_DIRECTORY = None    # base directory where output of monitoring jobs is stored
@@ -72,6 +72,7 @@ class ProcessMonDataConfig:
         #self.ROOTFILE_DIR = "ROOT" # OLD     # monitoring ROOT files are stored in INPUT_DIRECTORY/REVISION/ROOTFILE_DIR
         self.ROOTFILE_DIR = "hists"     # monitoring ROOT files are stored in INPUT_DIRECTORY/REVISION/ROOTFILE_DIR
         self.OUTPUT_DIRECTORY = None   # base directory to store output files
+        self.MERGED_ROOTFILE_OUTPUT_DIRECTORY = None  # optional directory to save merged files in
 
         self.NEWDIR_MODE = "775"       # permissions used for calls to mkdir
 
@@ -179,6 +180,9 @@ class ProcessMonDataConfig:
         if options.noendofjob_processing:
             self.EOR_PROCESSING = False
 
+        if options.root_output_dir:
+            self.MERGED_ROOTFILE_OUTPUT_DIRECTORY = options.root_output_dir
+
         if options.root_trees_to_merge:
             self.ROOT_TREES_TO_MERGE = options.root_trees_to_merge.split(",")
         if options.evio_skims_to_merge:
@@ -268,11 +272,15 @@ class ProcessMonDataConfig:
             rootfilespath = join(self.INPUT_DIRECTORY,self.REVISION,self.ROOTFILE_DIR)  # base directory where the ROOT files are stored
 
         if self.REVISION == "mc":
+            #print "rootfilespath = " + rootfilespath
+            #print "rundir = " + rundir
+            #exit(0)
+            
             # for MC monitoring files, since they are all in one directory, only keep files that have the correct run
             #root_files = [ f for f in root_files if rundir==f[8:14] ]
             #print "checking rundir %s"%(rundir)
             root_files = [ join(rootfilespath,f) for f in listdir(rootfilespath) 
-                           if (isfile(join(rootfilespath,f))and(f[-5:]=='.root')and(rundir==f[8:13])) ]
+                           if (isfile(join(rootfilespath,f))and(f[-5:]=='.root')and(rundir==f[8:14])) ]
             #for  f in listdir(rootfilespath):
             #    print "%s  %s  %s"%(join(rootfilespath,f),f[-5:],f[8:14])
         else:
@@ -302,6 +310,9 @@ class ProcessMonDataConfig:
             try:
                 file_runnum = int(fname_fields[2])
                 filenum = int(fname_fields[3])
+                # HACK - only save 100 files for now (MC)
+                if filenum > 100:
+                    continue
             except ValueError:
                 logging.error("invalid filename = " + fname + ", skipping ...")
                 continue
@@ -338,10 +349,14 @@ def ProcessOfflineData(args):
     # individual files, so run it for each file in any case
     # The MySQL indexes will prevent us from overwriting data in the DB
     # We might want to remove this?
-    if config.MAKE_DB_SUMMARY:
-        summarizer = summarize_monitoring_data.summarize_monitoring_data()
-        summarizer.RUN_NUMBER = run
-        summarizer.VERSION_NUMBER = config.VERSION_NUMBER
+    # don't do this for MC.  also handle this better
+    summarizer = summarize_monitoring_data.summarize_monitoring_data()
+    summarizer.RUN_NUMBER = run
+    summarizer.VERSION_NUMBER = config.VERSION_NUMBER
+    if config.MAKE_DB_SUMMARY and (config.REVISION != "mc"):
+        #summarizer = summarize_monitoring_data.summarize_monitoring_data()
+        #summarizer.RUN_NUMBER = run
+        #summarizer.VERSION_NUMBER = config.VERSION_NUMBER
         for (fname,filenum) in sorted(monitoring_files.items()):
             if config.VERBOSE>1:
                 print "  summarizing run %d file %d ..."%(run,filenum)
@@ -353,13 +368,18 @@ def ProcessOfflineData(args):
     # STEP 2
     # sum all the files and place them in a web-viewable location
     rundir = "%06d"%run
-    summed_rootfile = join(config.OUTPUT_DIRECTORY,"rootfiles","hd_root_" + rundir + ".root")  # figure out the output filename
+    if config.MERGED_ROOTFILE_OUTPUT_DIRECTORY is None:
+        summed_root_dir = join(config.OUTPUT_DIRECTORY,"rootfiles")
+    else:
+        summed_root_dir = config.MERGED_ROOTFILE_OUTPUT_DIRECTORY
+        
+    summed_rootfile = join(summed_root_dir,"hd_root_" + rundir + ".root")  # figure out the output filename
     if config.MAKE_SUMMED_ROOTFILE:
         if config.VERBOSE>1:
             print "  summing ROOT files..."
         # make sure the output cirectory exists
-        if not isdir(join(config.OUTPUT_DIRECTORY,"rootfiles")):
-            os.system("mkdir -m"+config.NEWDIR_MODE+" -p " + join(config.OUTPUT_DIRECTORY,"rootfiles"))
+        if not isdir(summed_root_dir):
+            os.system("mkdir -m"+config.NEWDIR_MODE+" -p " + summed_root_dir)
         if isfile(summed_rootfile):
             os.system("rm -f " + summed_rootfile)  # hadd requires us to 
         # note hadd -k skips corrupt or missing files - we want to do our best but not fail here
@@ -370,7 +390,8 @@ def ProcessOfflineData(args):
         if config.MERGE_INCREMENT:
             hadder = phadd.phadd(summed_rootfile, sorted(monitoring_files.keys()) + ["hd_root_" + rundir + ".root"], " -v 0 ", 6, 10)
         else:
-            hadder = phadd.phadd(summed_rootfile, sorted(monitoring_files.keys()), " -v 0 ", 6, 10)
+            hadder = phadd.phadd(summed_rootfile, sorted(monitoring_files.keys()), " -k ", 6, 10)
+            #hadder = phadd.phadd(summed_rootfile, sorted(monitoring_files.keys()), " -v 0 ", 6, 10)
         hadder.Add()
         del hadder
 
@@ -380,9 +401,9 @@ def ProcessOfflineData(args):
         if config.MERGE_INCREMENT:
             rootfile_dir = "/".join(monitoring_files.keys()[0].split('/')[:-1])
             # delete old files
-            for filename in monitoring_files.keys():
-                ##os.system("rm "+filename)   
-                os.system("mv %s %s.old"%(filename,filename))   # THIS IS HERE FOR DEBUGGING PURPOSES
+            #for filename in monitoring_files.keys():
+            #    #os.system("rm "+filename)   
+            #    #os.system("mv %s %s.old"%(filename,filename))   # THIS IS HERE FOR DEBUGGING PURPOSES
             os.system("cp -v %s %s"%(summed_rootfile,rootfile_dir))
 
     # sanity check - does the summed file exist?
@@ -538,6 +559,8 @@ def main():
                       help="Merge these ROOT trees.")
     parser.add_option("--merge-skims", dest="evio_skims_to_merge",
                       help="Merge these EVIO skims.")
+    parser.add_option("-T","--merged-root-output-dir", dest="root_output_dir",
+                      help="Directory to save merged ROOT files")
     
     (options, args) = parser.parse_args(sys.argv)
 
