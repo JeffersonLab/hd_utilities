@@ -14,7 +14,7 @@ from datetime import datetime
 from datamon_db import datamon_db
 
 VALID_COMMANDS = [ "add", "update" ] 
-VALID_DATA_TYPES = [ "rawdata", "recon", "root" ]
+VALID_DATA_TYPES = [ "rawdata", "recon", "root", "mc" ]
 
 
 # set default values

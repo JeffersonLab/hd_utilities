@@ -434,7 +434,10 @@ def ProcessOfflineData(args):
 
         plotter = make_monitoring_plots.make_monitoring_plots()
         plotter.histlist_filename = "histograms_to_monitor"
-        plotter.macrolist_filename = "macros_to_monitor"
+        if config.REVISION == "mc":
+            plotter.macrolist_filename = "mc_macros_to_monitor"
+        else:
+            plotter.macrolist_filename = "macros_to_monitor"
         plotter.output_directory = monitoring_data_dir
         plotter.rootfile_name = summed_rootfile
             

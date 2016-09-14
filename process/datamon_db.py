@@ -49,11 +49,11 @@ class datamon_db:
 
 
     def print_mysql_error(self, e):
-        if self.verbose:     # disable error printing by default, for now
-            try:
-                logging.error("MySQL Error [%d]: %s" % (e.args[0], e.args[1]))
-            except IndexError:
-                logging.error("MySQL Error: %s" % str(e))
+        #if self.verbose:     # disable error printing by default, for now
+        try:
+            logging.error("MySQL Error [%d]: %s" % (e.args[0], e.args[1]))
+        except IndexError:
+            logging.error("MySQL Error: %s" % str(e))
 
     def CloseDB(self):
         self.db_conn.commit()

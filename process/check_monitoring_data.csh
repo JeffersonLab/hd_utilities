@@ -2,7 +2,7 @@
 # Set environmental variables for cron job
 set LOCKFILE=lock.offline
 
-set DATATYPE=mon
+set DATATYPE=monn
 set VERSION=06
 set RUNPERIOD=RunPeriod-2016-02
 set INPUTDIR=/cache/halld/offline_monitoring/$RUNPERIOD
@@ -10,7 +10,8 @@ set INPUT_SMALLFILE_DIR=/cache/halld/offline_monitoring/$RUNPERIOD
 #set OUTPUTDIR=/work/halld/data_monitoring/$RUNPERIOD/ver$VERSION
 set OUTPUTDIR=/work/halld2/data_monitoring/${RUNPERIOD}/${DATATYPE}_ver${VERSION}
 set ROOTOUTPUTDIR=/work/halld/data_monitoring/${RUNPERIOD}/${DATATYPE}_ver${VERSION}/rootfiles
-set ARGS=" --force -T $ROOTOUTPUTDIR -v $RUNPERIOD,$VERSION  "
+set ARGS=" -s -T $ROOTOUTPUTDIR -v $RUNPERIOD,$VERSION  "
+#set ARGS=" -s -b 10700 -T $ROOTOUTPUTDIR -v $RUNPERIOD,$VERSION  "
 #set ARGS=" -R 3185 -S -v $RUNPERIOD,$VERSION "
 #set ARGS=" --force -d -s -S -v RunPeriod-2015-03,$VERSION "
 #set ARGS=" -v RunPeriod-2015-03,$VERSION "

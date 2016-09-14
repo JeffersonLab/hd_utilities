@@ -3,17 +3,18 @@
 set LOCKFILE=lock.mc
 
 set DATATYPE=mc
-set VERSION=01
+set VERSION=02
 set RUNPERIOD=RunPeriod-2016-02
 #set INPUTDIR=/cache/halld/$RUNPERIOD/$DATATYPE
-set INPUTDIR=/cache/halld/gluex_simulations/sim1/
+#set INPUTDIR=/cache/halld/gluex_simulations/sim1/
+set INPUTDIR=/work/halld/gluex_simulations/sim1_1
 set INPUT_SMALLFILE_DIR=/work/halld2/mc/$RUNPERIOD  # ignore for now in MC
 #set INPUTDIR=/cache/halld/$RUNPERIOD/$DATATYPE/$VERSION
 set OUTPUTDIR=/work/halld2/data_monitoring/${RUNPERIOD}/${DATATYPE}_ver${VERSION}
-set ROOTOUTPUTDIR=/work/halld2/data_monitoring/${RUNPERIOD}/${DATATYPE}_ver${VERSION}/rootfiles
+set ROOTOUTPUTDIR=/work/halld/data_monitoring/${RUNPERIOD}/${DATATYPE}_ver${VERSION}/rootfiles
 
-# version for sim1.0
-set ARGS=" -V 70  --force -E "
+# version for sim1.1
+set ARGS=" -V 77  --force -E "
 
 
 # Load standard environment for ROOT
