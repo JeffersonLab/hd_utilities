@@ -22,25 +22,23 @@ VERBOSE = 6
 RAW_DATA_BASE_DIR = "/mss/halld/"
 #RAW_DATA_BASE_DIR = "/cache/halld/"
 
-######################################################## UTILITIES #######################################################
+####################################################### TRY COMMAND ######################################################
 
-def try_command(command, sleeptime = 10):
-	# Try an os command and if the exit code is non-zero return an error
+def try_command(command, sleeptime = 5):
+	# Try an os command and if the exit code is non-zero then return an error
 	return_code = -999
 	while return_code != 0:
 		process = Popen(command.split(), stdout=PIPE)
 		output = process.communicate()[0] # is stdout. [1] is stderr
-		#print output
-
+		print output
 		return_code = process.returncode
-		if return_code == 0:
-			break
 
-		# sleep for N seconds between
+		if return_code == 0:
+			break #successful: leave
+
+		# sleep for a few seconds between tries
 		print 'sleeping for ' + str(sleeptime) + ' sec...'
 		time.sleep(sleeptime)
-
-	return output
 
 ################################################### BUILD DICTIONARIES ###################################################
 
@@ -113,7 +111,7 @@ def build_job_dictionary(WORKFLOW):
 	return job_dictionary
 
 def add_job(WORKFLOW, CONFIG_PATH, RUN_STRING, FILE_STRING):
-	command = "python " + os.path.expanduser("~/monitoring/hdswif/hdswif.py") + " add " + WORKFLOW + " -c " + CONFIG_PATH + " -r " + str(int(RUN_STRING)) + " -f " + FILE_STRING
+	command = "python " + os.path.expanduser("~/monitoring/launch/launch.py") + str(int(RUN_STRING)) + " " + str(int(RUN_STRING)) + " -f " + FILE_STRING
 	if VERBOSE > 0:
 		print command
 	process = Popen(command.split(), stdout=PIPE)
@@ -133,18 +131,16 @@ def main(argv):
 		return
 
 	# GET ARGUMENTS
-	INPUT_RUN_PERIOD = args[0] #e.g. 2016-02 OR 2016_02 (both will work)
+	RUN_PERIOD = args[0] #e.g. 2016-02
 	CONFIG_PATH = args[1]
 	NUM_FILES_PER_RUN = int(args[2])
 
 	# BUILD WORKFLOW NAME
-	RUN_PERIOD_WITH_DASH = INPUT_RUN_PERIOD.replace("_", "-")
-	RUN_PERIOD_WITH_UNDERSCORE = INPUT_RUN_PERIOD.replace("-", "_")
-	WORKFLOW = "offline_monitoring_RunPeriod" + RUN_PERIOD_WITH_UNDERSCORE + "_ver01_hd_rawdata"
+	WORKFLOW = "offmon_" + RUN_PERIOD + "_ver01"
 
 	# SEARCH FOR TAPE FILES
 	# Loop over the tape directories, finding all of the input files, and determining their run & file #'s
-	file_dictionary = build_file_dictionary(RUN_PERIOD_WITH_DASH)
+	file_dictionary = build_file_dictionary(RUN_PERIOD)
 
 	# SEARCH FOR JOBS
 	# For the workflow, get the full status output from SWIF about what jobs are in the workflow
@@ -181,7 +177,7 @@ def main(argv):
 				break
 
 			# Check the timestamp
-			file_path = RAW_DATA_BASE_DIR + "/RunPeriod-" + RUN_PERIOD_WITH_DASH + "/rawdata/Run" + run_string + "/hd_rawdata_" + run_string + "_" + file_string + ".evio"
+			file_path = RAW_DATA_BASE_DIR + "/RunPeriod-" + RUN_PERIOD + "/rawdata/Run" + run_string + "/hd_rawdata_" + run_string + "_" + file_string + ".evio"
 			modified_time = os.path.getmtime(file_path) # time that the file was last modified, in seconds since the epoch
 			current_time = time.time() # in seconds since the epoch
 			delta_t = (current_time - modified_time)/60.0

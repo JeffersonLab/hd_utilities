@@ -284,11 +284,19 @@ Save_IDXA()
 	done
 }
 
+########################################################### CCDB SQLITE #########################################################
+
+Create_SQLite()
+{
+	$CCDB_HOME/scripts/mysql2sqlite/mysql2sqlite.sh -hhallddb.jlab.org -uccdb_user ccdb | sqlite3 ccdb.sqlite
+}
+
 ########################################################## MAIN FUNCTION ########################################################
 
 Run_Script()
 {
 	Setup_Script
+	Create_SQLite
 
 	# RUN JANA
 	hd_root $INPUTFILE --config=$CONFIG_FILE
