@@ -111,7 +111,7 @@ def build_job_dictionary(WORKFLOW):
 	return job_dictionary
 
 def add_job(WORKFLOW, CONFIG_PATH, RUN_STRING, FILE_STRING):
-	command = "python " + os.path.expanduser("~/monitoring/launch/launch.py") + str(int(RUN_STRING)) + " " + str(int(RUN_STRING)) + " -f " + FILE_STRING
+	command = "python " + os.path.expanduser("~/monitoring/launch/launch.py") + " " + CONFIG_PATH + " " + str(int(RUN_STRING)) + " " + str(int(RUN_STRING)) + " -f " + FILE_STRING
 	if VERBOSE > 0:
 		print command
 	process = Popen(command.split(), stdout=PIPE)
