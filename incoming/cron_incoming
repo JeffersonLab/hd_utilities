@@ -3,5 +3,5 @@
 #-----------------------------------------------------------------------------
 # Min    Hour    Day    Month    Weekday    Command
 #-----------------------------------------------------------------------------
- */15      *      *       *         *       /bin/tcsh -c ~/monitoring/incoming/cron_exec.csh
- */30      *      *       *         *       /bin/tcsh -c ~/monitoring/process/check_monitoring_data.csh
+# */15      *      *       *         *       /bin/tcsh -c ~/monitoring/incoming/cron_exec.csh
+*/30      *      *       *         *       /bin/tcsh -c ~/monitoring/process/check_monitoring_data.csh
