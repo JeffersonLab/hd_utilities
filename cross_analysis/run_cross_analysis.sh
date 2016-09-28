@@ -1,4 +1,4 @@
-#!/bin/tcsh -e
+#!/bin/bash
 
 ################################################################
 #
@@ -19,24 +19,24 @@
 ################################################################
 
 # 0. Set current run period, version
-set RUNPERIOD = ""
-set VERSION   = ""
-set MINVERSION = ""
+export RUNPERIOD=""
+export VERSION=""
+export MINVERSION=""
 
-set RUNPERIOD = $1
-set RUNPERIOD = `echo $RUNPERIOD | sed 's:-:_:'`
-set VERSION   = $2
-set MINVERSION = $3
+export RUNPERIOD=$1
+export RUNPERIOD=`echo $RUNPERIOD | sed 's:-:_:'`
+export VERSION=$2
+export MINVERSION=$3
 
-if ( $RUNPERIOD == "" || $VERSION == "" || $MINVERSION == "") then
+if [ $RUNPERIOD = "" -o $VERSION = "" -o $MINVERSION = "" ] ; then 
   echo "run_cross_analysis.sh usage:"
   echo "run_cross_analysis.sh [RUN PERIOD] [VERSION] [MINVERSION]"
   echo "exiting..."
   exit
-endif
+fi
 
 # For correlations, default is to go back 5 launches.
-set CMPMINVERSION = $MINVERSION
+export CMPMINVERSION=$MINVERSION
 echo "MINVERSION = $MINVERSION"
 
 # 1. Create table for this run period and version
@@ -71,7 +71,7 @@ time python create_stats_for_each_file.py $RUNPERIOD $MINVERSION $VERSION
 
 # 5. Copy files to web-accessible location
 echo "5. Copy files to web-accessible location"
-cp -rv swif_rap_sheet_${RUNPERIOD}/*.html /group/halld/www/halldweb/html/data_monitoring/launch_analysis/${RUNPERIOD}/swif_rap_sheet_${RUNPERIOD}/
+#cp -rv swif_rap_sheet_${RUNPERIOD}/*.html /group/halld/www/halldweb/html/data_monitoring/launch_analysis/${RUNPERIOD}/swif_rap_sheet_${RUNPERIOD}/
 
 # 6. Create plots that cross-correlate resource usage
 echo "6. Create plots that cross-correlate resource usage"

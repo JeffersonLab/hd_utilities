@@ -69,7 +69,8 @@ def main(argv):
     tablename = 'cross_analysis_table_' + RUNPERIOD + '_ver' + str(VERSION)
 
     # Read in xml file and create tree, root
-    xmlfilename = XMLDIR + '/swif_output_offline_monitoring_RunPeriod' + RUNPERIOD + '_ver' + str(VERSION) + '_hd_rawdata.xml'
+    #xmlfilename = XMLDIR + '/swif_output_offline_monitoring_RunPeriod' + RUNPERIOD + '_ver' + str(VERSION) + '_hd_rawdata.xml'
+    xmlfilename = XMLDIR + '/swif_output_recon_' + RUNPERIOD + '_ver' + str(VERSION) + '_batch01.xml'
 
     if not os.path.isfile(xmlfilename):
         print 'XML output file ' + xmlfilename + ' does not exist'
@@ -92,9 +93,9 @@ def main(argv):
         file_num = ''
 
         # Get run and file
-        for user_run in job.iter('user_run'):
+        for user_run in job.iter('run_number'):
             run_num = str(user_run.text)
-        for user_file in job.iter('user_file'):
+        for user_file in job.iter('file_number'):
             file_num = str(user_file.text)
 
         run_file = run_num + '_' + file_num
@@ -138,8 +139,10 @@ def main(argv):
                 problems.append(problem.text)
             
         # Get info from (final) stdout file for this job
-        stdoutname = '/volatile/halld/offline_monitoring/RunPeriod-' + RUNPERIOD_HYPHEN + '/ver' + str(VERSION) + \
-            '/log/' + str(run_num) + '/stdout_' + str(run_num) + '_' + str(file_num) + '.out'
+        #stdoutname = '/cache/halld/offline_monitoring/RunPeriod-' + RUNPERIOD_HYPHEN + '/ver' + str(VERSION) + \
+        #    '/log/' + str(run_num) + '/stdout_' + str(run_num) + '_' + str(file_num) + '.out'
+        stdoutname = '/work/halld2/recon/RunPeriod-' + RUNPERIOD_HYPHEN + '/ver' + str(VERSION) + \
+            '/log/' + str(run_num) + '/stdout.' + str(run_num) + '_' + str(file_num) + '.out'
 
         # Reply on Unix tools to extract
         # - nevents

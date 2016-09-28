@@ -294,9 +294,9 @@ def main(argv):
     min_ram_requested = 100
     
     for job in workflow_status.iter('job'):
-        for user_run in job.iter('user_run'):
+        for user_run in job.iter('run_number'):
             run_name = user_run.text
-        for user_file in job.iter('user_file'):
+        for user_file in job.iter('file_number'):
             file_name = user_file.text
         attempts = job.find('attempts')
     
@@ -351,13 +351,18 @@ def main(argv):
     htimeSinceLaunch_complete = TH1F("htimeSinceLaunch_complete", ";complete time since launch (hrs)", int(TOTALTIME * 10), 0,TOTALTIME)
 
     # Histograms for duration of dependency, pending and active
-    hDurationDependency = TH1F("hDurationDependency",";time spent in dependency (hrs)",240,0,24)
-    hDurationPending = TH1F("hDurationPending",";time spent in pending (hrs)",240,0,8)
-    hDurationActive = TH1F("hDurationActive",";time spent in active (hrs)",240,0,8)
+    hDurationDependency = TH1F("hDurationDependency",";time spent in dependency (hrs)",280,0,140)
+    hDurationPending = TH1F("hDurationPending",";time spent in pending (hrs)",400,0,40)
+    hDurationActive = TH1F("hDurationActive",";time spent in active (hrs)",160,0,16)
+
+    # Histogram how many jobs are running in parallel
+    hJobsActive = TH1F("hJobsActive","; number of jobs active;", 300, 0, 600);
     
     hmaxrss = TH1F("hmaxrss", ";maxrss (GB)", 200, 0,max_ram_requested + 1)
     hauger_mem = TH1F("hauger_mem", ";mem (GB)", 200, 0,max_ram_requested + 1)
     hauger_vmem = TH1F("hauger_vmem", ";vmem (GB)", 200, 0,max_ram_requested + 1)
+    hauger_mem_vs_runnb = TH2F("hauger_mem_vs_runnb", ";mem (GB);runnb", 200, 0,max_ram_requested + 1, 500, 10350, 11700)
+
     hwalltime = TH1F("hwalltime", ";wall time (hrs)", 200, 0,8)
     gcput_walltime = TGraph()
     gcput_walltime.SetName("gcput_walltime")
@@ -367,16 +372,19 @@ def main(argv):
     gcput_walltime.SetMarkerColor(ROOT.kBlue);
     
     # Get <name>, then <attempts> and info within
-    for job in workflow_status:
+    for job in workflow_status.iter('job'):
         # Find job
         for name in job.iter('name'):
             name_text = str(name.text)
-            match = re.match(r'offmon.*_(\d\d\d\d\d\d)_(\d\d\d)',name_text)
+            #match = re.match(r'sim.*_(\d\d\d\d\d\d)_(\d\d\d\d)',name_text)
+            #match = re.match(r'recon.*_(\d\d\d\d\d\d)_(\d\d\d)',name_text)
+            #match = re.match(r'offmon.*_(\d\d\d\d\d\d)_(\d\d\d)',name_text)
+            match = re.match(r'analysis.*_(\d\d\d\d\d\d)_(\d\d\d)',name_text)
             run_num  = match.group(1)
             file_num = match.group(2)
-
+            
         for attempt in job.iter('attempt'):
-    
+
             # Find auger_id
             for auger_id in attempt.iter('auger_id'):
                 auger_id_text = str(auger_id.text)
@@ -412,6 +420,8 @@ def main(argv):
             for auger_mem_kb in attempt.iter('auger_mem_kb'):
                 auger_mem_kb_text = str(auger_mem_kb.text)
                 hauger_mem.Fill(float(auger_mem_kb_text) / 1000. / 1000.)
+                #print float(auger_mem_kb_text) / 1000. / 1000
+                hauger_mem_vs_runnb.Fill(float(auger_mem_kb_text) / 1000. / 1000., float(run_num))
 
             # Find auger_vmem_kb
             auger_vmem_kb_text = ""
@@ -562,7 +572,7 @@ def main(argv):
         for j in range(0,i+1):
             total += htimeSinceLaunch_active.GetBinContent(j)
         hCumulativeTimeSinceLaunch_active.SetBinContent(i,total)
-    
+            
     # stagingOut
     for i in range(0,hCumulativeTimeSinceLaunch_stagingOut.GetNbinsX()+2):
         total = 0
@@ -585,21 +595,34 @@ def main(argv):
     colors = (ROOT.kBlack, ROOT.kRed, ROOT.kYellow+2, ROOT.kGreen+2, ROOT.kBlue, ROOT.kMagenta, ROOT.kGray+1)
     
     c1 = TCanvas( 'c1', 'Example with Formula', 0, 0, 1200, 600 )
+    hCumulativeTimeSinceLaunch_complete.SetLineColor(colors[6])
+    hCumulativeTimeSinceLaunch_complete.Draw()
     hCumulativeTimeSinceLaunch_submitted.SetLineColor(colors[0])
     hCumulativeTimeSinceLaunch_submitted.SetMinimum(0)
-    hCumulativeTimeSinceLaunch_submitted.Draw()
+    hCumulativeTimeSinceLaunch_submitted.Add(-1*hCumulativeTimeSinceLaunch_dependency)
+    hCumulativeTimeSinceLaunch_submitted.Draw("same")
     hCumulativeTimeSinceLaunch_dependency.SetLineColor(colors[1])
+    hCumulativeTimeSinceLaunch_dependency.Add(-1*hCumulativeTimeSinceLaunch_pending)
     hCumulativeTimeSinceLaunch_dependency.Draw("same")
     hCumulativeTimeSinceLaunch_pending.SetLineColor(colors[2])
+    hCumulativeTimeSinceLaunch_pending.Add(-1*hCumulativeTimeSinceLaunch_stagingIn)
     hCumulativeTimeSinceLaunch_pending.Draw("same")
     hCumulativeTimeSinceLaunch_stagingIn.SetLineColor(colors[3])
+    hCumulativeTimeSinceLaunch_stagingIn.Add(-1*hCumulativeTimeSinceLaunch_active)
     hCumulativeTimeSinceLaunch_stagingIn.Draw("same")
     hCumulativeTimeSinceLaunch_active.SetLineColor(colors[4])
+    hCumulativeTimeSinceLaunch_active.Add(-1*hCumulativeTimeSinceLaunch_stagingOut)
     hCumulativeTimeSinceLaunch_active.Draw("same")
     hCumulativeTimeSinceLaunch_stagingOut.SetLineColor(colors[5])
+    hCumulativeTimeSinceLaunch_stagingOut.Add(-1*hCumulativeTimeSinceLaunch_complete)
     hCumulativeTimeSinceLaunch_stagingOut.Draw("same")
-    hCumulativeTimeSinceLaunch_complete.SetLineColor(colors[6])
+
     hCumulativeTimeSinceLaunch_complete.Draw("same")
+    
+    # how many jobs are active at each moment
+    for i in range(0,hCumulativeTimeSinceLaunch_active.GetNbinsX()+2):
+        hJobsActive.Fill(hCumulativeTimeSinceLaunch_active.GetBinContent(i))
+
 
     text = "launch: " + LAUNCH_TIME
     latex.DrawLatex(0.40,0.25,text)
@@ -622,9 +645,11 @@ def main(argv):
 
     c1.Update()
     c1.SaveAs(local_figureDir + '/cumulativeNumsSinceLaunch.png')
+    c1.SaveAs(local_figureDir + '/cumulativeNumsSinceLaunch.root')
+    #c1.SaveAs(local_figureDir + '/cumulativeNumsSinceLaunch.pdf')
     c1.Close()
     
-    outfile.write('    <h2>Number of jobs reaching each stage since launch</h2>\n')
+    outfile.write('    <h2>Number of jobs in each stage since launch</h2>\n')
     outfile.write('    <a href = "' + web_figureDir + '/cumulativeNumsSinceLaunch.png">\n')
     outfile.write('      <img src = "' + web_figureDir + '/cumulativeNumsSinceLaunch.png" width = "70%">\n')
     outfile.write('    </a>\n')
@@ -662,6 +687,27 @@ def main(argv):
 ###     outfile.write('      <img src = "' + web_figureDir + '/hmaxrss.png" width = "70%">\n')
 ###     outfile.write('    </a>\n')
 ###     outfile.write('    <hr>\n')
+
+    #--------------------------------------------------------------------
+    # Draw number of jobs histogram
+    c1 = TCanvas( 'c1', 'Number of Jobs Active', 0, 0, 800, 600 )
+    c1.SetBottomMargin(0.15)
+    c1.SetRightMargin(0.02)
+    hJobsActive.GetXaxis().SetTitleSize(0.08);
+    hJobsActive.GetXaxis().SetLabelSize(0.06);
+    hJobsActive.GetXaxis().SetTitleOffset(0.750);
+    hJobsActive.GetYaxis().SetLabelSize(0.06);
+    hJobsActive.Draw()
+    c1.Update()
+    c1.SaveAs(local_figureDir + '/hJobsActive.png')
+    c1.SaveAs(local_figureDir + '/hJobsActive.root')
+    c1.Close()
+
+    outfile.write('    <h2>Number of Jobs Active</h2>\n')
+    outfile.write('    <a href = "' + web_figureDir + '/hJobsActive.png">\n')
+    outfile.write('      <img src = "' + web_figureDir + '/hJobsActive.png" width = "33%">\n')
+    outfile.write('    </a>\n')
+    outfile.write('    <hr>\n')
     
     #--------------------------------------------------------------------
     # Draw duration of dependency, pending, active
@@ -712,6 +758,7 @@ def main(argv):
     
     c1.Update()
     c1.SaveAs(local_figureDir + '/duration.png')
+    c1.SaveAs(local_figureDir + '/duration.root')
     c1.Close()
     
     outfile.write('    <h2>Duration of Each Stage</h2>\n')
@@ -726,17 +773,17 @@ def main(argv):
     # - total job time
     create_stacked_times.main([filename])
 
-    outfile.write('    <h2>Total Job Time in Order of Auger ID</h2>\n')
-    outfile.write('    <a href = "' + web_figureDir + '/hstack_times_auger_id.png">\n')
-    outfile.write('      <img src = "' + web_figureDir + '/hstack_times_auger_id.png" width = "70%">\n')
-    outfile.write('    </a>\n')
-    outfile.write('    <hr>\n')
+    # outfile.write('    <h2>Total Job Time in Order of Auger ID</h2>\n')
+    # outfile.write('    <a href = "' + web_figureDir + '/hstack_times_auger_id.png">\n')
+    # outfile.write('      <img src = "' + web_figureDir + '/hstack_times_auger_id.png" width = "70%">\n')
+    # outfile.write('    </a>\n')
+    # outfile.write('    <hr>\n')
 
-    outfile.write('    <h2>Total Job Time in Order of Total Time</h2>\n')
-    outfile.write('    <a href = "' + web_figureDir + '/hstack_times_totaltime.png">\n')
-    outfile.write('      <img src = "' + web_figureDir + '/hstack_times_totaltime.png" width = "70%">\n')
-    outfile.write('    </a>\n')
-    outfile.write('    <hr>\n')
+    # outfile.write('    <h2>Total Job Time in Order of Total Time</h2>\n')
+    # outfile.write('    <a href = "' + web_figureDir + '/hstack_times_totaltime.png">\n')
+    # outfile.write('      <img src = "' + web_figureDir + '/hstack_times_totaltime.png" width = "70%">\n')
+    # outfile.write('    </a>\n')
+    # outfile.write('    <hr>\n')
 
     #--------------------------------------------------------------------
     # Draw wall time, cpu time vs wall time
@@ -783,11 +830,11 @@ def main(argv):
 
     #--------------------------------------------------------------------
     # Draw auger_mem histogram
-    c1 = TCanvas( 'c1', 'Example with Formula', 0, 0, 1800, 600 )
-    c1.Divide(2,1,.002,.002)
+    c1 = TCanvas( 'c1', 'Example with Formula', 0, 0, 2400, 600 )
+    c1.Divide(3,1,.002,.002)
     c1.cd(1)
     hauger_mem.Draw()
-
+    
     line_auger_mem = TLine(min_ram_requested,0,min_ram_requested,hauger_mem.GetMaximum() * 1.05)
     line_auger_mem.SetLineColor(ROOT.kRed)
     line_auger_mem.SetLineStyle(2)
@@ -796,7 +843,7 @@ def main(argv):
 
     text = "min. RAM requested: " + str(min_ram_requested) + " GB"
     latex.SetTextColor(ROOT.kRed)
-    latex.DrawLatex(0.50,0.85,text)
+    latex.DrawLatex(0.35,0.85,text)
     latex.SetTextColor(ROOT.kBlack)
     
     c1.cd(2)
@@ -807,16 +854,20 @@ def main(argv):
 
     text = "min. RAM requested: " + str(min_ram_requested) + " GB"
     latex.SetTextColor(ROOT.kRed)
-    latex.DrawLatex(0.50,0.85,text)
+    latex.DrawLatex(0.35,0.85,text)
     latex.SetTextColor(ROOT.kBlack)
+
+    c1.cd(3)
+    hauger_mem_vs_runnb.Draw()
     
     c1.Update()
     c1.SaveAs(local_figureDir + '/hauger_mem.png')
+    c1.SaveAs(local_figureDir + '/hauger_mem.root')
     c1.Close()
     
     outfile.write('    <h2>MAX Memory reported by AUGER</h2>\n')
     outfile.write('    <a href = "' + web_figureDir + '/hauger_mem.png">\n')
-    outfile.write('      <img src = "' + web_figureDir + '/hauger_mem.png" width = "70%">\n')
+    outfile.write('      <img src = "' + web_figureDir + '/hauger_mem.png" width = "100%">\n')
     outfile.write('    </a>\n')
     outfile.write('    <hr>\n')
 
@@ -840,9 +891,10 @@ def main(argv):
     outfile.write('    </tr>\n')
     
     for job in workflow_status.iter('job'):
-        for user_run in job.iter('user_run'):
+        for user_run in job.iter('run_number'):
             run_name = user_run.text
-        for user_file in job.iter('user_file'):
+
+        for user_file in job.iter('file_number'):
             file_name = user_file.text
 
         attempts = job.find('attempts')
@@ -916,10 +968,11 @@ def main(argv):
     # Close output file
     outfile.write('  </body>\n')
     outfile.write('</html>\n')
+    outfile.close()
 
 #------------------------------         end of main function          ---------------------------------#
     
 ## main function 
 if __name__ == "__main__":
     main(sys.argv[1:])
-    
+

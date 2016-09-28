@@ -92,7 +92,7 @@ def main(argv):
     RUNPERIOD_HYPHEN = RUNPERIOD.replace('_', '-')
     MINVERSION = int(args[1])
     VERSION = int(args[2])
-    assert MINVERSION < VERSION
+    #assert MINVERSION < VERSION
 
     # List of all valid launch vers
     launchlist = []

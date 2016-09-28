@@ -76,7 +76,8 @@ Save_OutputFiles()
 	# REMOVE INPUT FILE: so that it's easier to determine which remaining files are skims
 	rm -f $INPUTFILE
 
-	# BUILD TAPEDIR, IF $OUTDIR_LARGE STARTS WITH "/cache/"  
+	# BUILD TAPEDIR, IF $OUTDIR_LARGE STARTS WITH "/cache/"
+	# AND CACHE_PIN_DAYS WAS GIVEN AND GREATER THAN 0  && [ "$CACHE_PIN_DAYS" -gt "0" ]
 	# If so, output files are pinned & jcache put.  If not, then they aren't. 
 	local TAPEDIR=""
 	local OUTDIR_LARGE_BASE=`echo $OUTDIR_LARGE | awk '{print substr($0,1,7)}'`
@@ -117,7 +118,9 @@ Save_Histograms()
 
 		# force save to tape & pin
 		if [ "$TAPEDIR" != "" ]; then
+			echo jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
 			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
+			echo jcache put $OUTPUT_FILE
 			jcache put $OUTPUT_FILE
 		fi
 	fi
@@ -140,7 +143,9 @@ Save_REST()
 
 		# force save to tape & pin
 		if [ "$TAPEDIR" != "" ]; then
+		        echo jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
 			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
+			echo jcache put $OUTPUT_FILE
 			jcache put $OUTPUT_FILE
 		fi
 	fi
@@ -312,6 +317,7 @@ FILE_NUMBER=$7
 CACHE_PIN_DAYS=$8
 
 # PRINT INPUTS
+echo "HOSTNAME          = $HOSTNAME"
 echo "ENVIRONMENT       = $ENVIRONMENT"
 echo "INPUTFILE         = $INPUTFILE"
 echo "CONFIG_FILE       = $CONFIG_FILE"

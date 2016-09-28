@@ -164,6 +164,7 @@ def find_num_threads(JANA_CONFIG_FILENAME):
 def add_job(WORKFLOW, FILEPATH, config_dict):
 
 	# EXTRACT PATH, RUNNO, & FILE #: ASSUME THE FORM */*_RUNNO_FILENO.*
+	# added forth digit for sim1.1
 	match = re.search(r"(.*)/(.*)_(\d\d\d\d\d\d)_(\d\d\d).(.*)", FILEPATH)
 	if (match == ""):
 		print "WARNING: FILE " + FILEPATH + " DOESN'T MATCH EXPECTED NAME FORMAT. SKIPPING."
@@ -274,6 +275,8 @@ def main(argv):
 
 		# Find files for run number
 		INDATA_DIR = INDATA_TOPDIR + "/*" + FORMATTED_RUN + "*/"
+		# For sim1.1
+		#INDATA_DIR = INDATA_TOPDIR + "/"
 		file_list = find_files(INDATA_DIR, FORMATTED_RUN, INPUT_FILE_NUM)
 		if(VERBOSE == True):
 			print str(len(file_list)) + " files found for run " + str(RUN)
