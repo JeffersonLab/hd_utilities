@@ -1,7 +1,8 @@
-# Run command every 10 minutes
+SHELL=/bin/bash
+
 # http://www.thegeekstuff.com/2009/06/15-practical-crontab-examples/
 #-----------------------------------------------------------------------------
 # Min    Hour    Day    Month    Weekday    Command
 #-----------------------------------------------------------------------------
-# */15      *      *       *         *       /bin/tcsh -c ~/monitoring/incoming/cron_exec.csh
+*/15      *      *       *         *       ~/monitoring/incoming/cron_exec.sh
 */30      *      *       *         *       /bin/tcsh -c ~/monitoring/process/check_monitoring_data.csh
