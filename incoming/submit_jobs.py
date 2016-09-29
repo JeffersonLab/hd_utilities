@@ -63,7 +63,7 @@ def build_file_dictionary(RUN_PERIOD):
 	return file_dictionary
 
 def build_job_dictionary(WORKFLOW):
-	command = "swif status -workflow " + WORKFLOW + " -jobs"
+	command = "/site/bin/swif status -workflow " + WORKFLOW + " -jobs"
 	if VERBOSE > 1:
 		print command
 	process = Popen(command.split(), stdout=PIPE)
@@ -191,7 +191,7 @@ def main(argv):
 			num_jobs_submitted += 1
 
 	# RUN WORKFLOW (IN CASE NOT RUNNING ALREADY)
-	command = "python " + os.path.expanduser("~/monitoring/hdswif/hdswif.py") + " run " + WORKFLOW
+	command = "/site/bin/swif run -workflow " + WORKFLOW
 	if VERBOSE > 1:
 		print command
 	try_command(command)
