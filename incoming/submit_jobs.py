@@ -63,7 +63,7 @@ def build_file_dictionary(RUN_PERIOD):
 	return file_dictionary
 
 def build_job_dictionary(WORKFLOW):
-	command = "/site/bin/swif status -workflow " + WORKFLOW + " -jobs"
+	command = "swif status -workflow " + WORKFLOW + " -jobs"
 	if VERBOSE > 1:
 		print command
 	process = Popen(command.split(), stdout=PIPE)
@@ -97,9 +97,9 @@ def build_job_dictionary(WORKFLOW):
 			num_jobs += 1
 			if VERBOSE > 1:
 				print "Job found, run, file = " + run_string + " " + file_string + " size: " + str(len(job_dictionary[run_string]))
-		elif (field == "user_run"): 
+		elif (field == "run_number"): 
 			run_string = line.split()[2]
-		elif (field == "user_file"): 
+		elif (field == "file_number"): 
 			file_string = line.split()[2]
 
 	# Register the last job
@@ -191,7 +191,7 @@ def main(argv):
 			num_jobs_submitted += 1
 
 	# RUN WORKFLOW (IN CASE NOT RUNNING ALREADY)
-	command = "/site/bin/swif run -workflow " + WORKFLOW
+	command = "swif run -workflow " + WORKFLOW
 	if VERBOSE > 1:
 		print command
 	try_command(command)
