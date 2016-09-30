@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export MONITORING_HOME=/group/halld/Software/scripts/monitoring/
+
 # SET /apps/bin AT FRONT OF PATH (to use working version of git)
 export PATH=/apps/bin:$PATH
 

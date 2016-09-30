@@ -14,6 +14,7 @@ Setup_Script()
 	printenv
 	echo "PERL INCLUDES: "
 	perl -e "print qq(@INC)"
+	echo ""
 
 	# COPY INPUT FILE TO WORKING DIRECTORY
 	# This step is necessary since the cache files will be created as soft links in the current directory, and we want to avoid large I/O processes.
@@ -25,44 +26,6 @@ Setup_Script()
 	mv tmp_file $INPUTFILE
 	echo "LOCAL FILES AFTER INPUT COPY"
 	ls -l
-}
-
-####################################################### UTILITY FUNCTIONS #######################################################
-
-Extract_SkimName()
-{
-	# to extract the skim name, first extract the locations of the last two periods in the file name
-	local LAST_INDEX=0
-	local SECOND_TO_LAST_INDEX=0
-	local INPUT_FILE=$1
-	for INDEX in `echo $INPUT_FILE | grep -bo '\.' | awk 'BEGIN {FS=":"}{print $1}'`; do
-		SECOND_TO_LAST_INDEX=$LAST_INDEX
-		LAST_INDEX=$INDEX
-	done
-
-	# extract the skim name: awk & grep use different location #'ing, so must convert
-	local LENGTH=$[$LAST_INDEX - $SECOND_TO_LAST_INDEX - 1]
-	local START=$[$SECOND_TO_LAST_INDEX + 2]
-	local LOCAL_SKIM_NAME=`echo $INPUT_FILE | awk -v size="$LENGTH" -v start="$START" '{print substr($0,start,size)}'`
-	echo "SKIM_NAME:" $LOCAL_SKIM_NAME
-	
-	#return the result "by reference"
-	local __result=$2
-	eval $__result="'$LOCAL_SKIM_NAME'"
-}
-
-Extract_BaseName()
-{
-	# base name is everything before the last period
-	local INPUT_FILE=$1
-	local LENGTH=`echo $INPUT_FILE | awk '{print index($0,".")}'`
-	let LENGTH-=1
-	local LOCAL_BASE_NAME=`echo $INPUT_FILE | awk -v size="$LENGTH" '{print substr($0,1,size)}'`
-	echo "BASE_NAME: " $LOCAL_BASE_NAME
-
-	#return the result "by reference"
-	local __result=$2
-	eval $__result="'$LOCAL_BASE_NAME'"
 }
 
 ####################################################### SAVE OUTPUT FILES #######################################################
@@ -91,10 +54,6 @@ Save_OutputFiles()
 	Save_Histograms
 	Save_REST
 	Save_JANADot
-	Save_EVIOSkims
-	Save_HDDMSkims
-	Save_ROOTFiles
-	Save_IDXA
 
 	# SEE WHAT FILES ARE LEFT
 	echo "FILES REMAINING AFTER SAVING:"
@@ -170,120 +129,6 @@ Save_JANADot()
 	fi
 }
 
-Save_EVIOSkims()
-{
-	# SAVE EVIO SKIMS
-        local NUM_FILES=`ls *.evio 2>/dev/null | wc -l`
-        if [ $NUM_FILES -eq 0 ] ; then
-                echo "No EVIO skim files produced"
-                return
-        fi
-
-	echo "Saving EVIO skim files"
-	for EVIO_FILE in `ls *.evio`; do
-		Extract_SkimName $EVIO_FILE SKIM_NAME
-
-		# setup output dir
-		local OUTDIR_THIS=${OUTDIR_LARGE}/${SKIM_NAME}/${RUN_NUMBER}/
-		mkdir -p -m 755 $OUTDIR_THIS
-
-		# save it
-		local OUTPUT_FILE=${OUTDIR_THIS}/${EVIO_FILE}
-		mv -v $EVIO_FILE $OUTPUT_FILE
-		chmod 644 $OUTPUT_FILE
-
-		# force save to tape & pin
-		if [ "$TAPEDIR" != "" ]; then
-			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			jcache put $OUTPUT_FILE
-		fi
-	done
-}
-
-Save_HDDMSkims()
-{
-	local NUM_FILES=`ls *.hddm 2>/dev/null | wc -l`
-	if [ $NUM_FILES -eq 0 ] ; then
-		echo "No HDDM skim files produced"
-		return
-	fi
-
-	# SAVE HDDM SKIMS #assumes REST file already backed up and removed!
-	echo "Saving HDDM skim files"
-	for HDDM_FILE in `ls *.hddm`; do
-		Extract_SkimName $HDDM_FILE SKIM_NAME
-
-		# setup output dir
-		local OUTDIR_THIS=${OUTDIR_LARGE}/${SKIM_NAME}/${RUN_NUMBER}/
-		mkdir -p -m 755 $OUTDIR_THIS
-
-		# save it
-		local OUTPUT_FILE=${OUTDIR_THIS}/${HDDM_FILE}
-		mv -v $HDDM_FILE $OUTPUT_FILE
-		chmod 644 $OUTPUT_FILE
-
-		# force save to tape & pin
-		if [ "$TAPEDIR" != "" ]; then
-			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			jcache put $OUTPUT_FILE
-		fi
-	done
-}
-
-Save_ROOTFiles()
-{
-	# SAVE OTHER ROOT FILES
-        local NUM_FILES=`ls *.root 2>/dev/null | wc -l`
-        if [ $NUM_FILES -eq 0 ] ; then
-                echo "No additional ROOT files produced"
-                return
-        fi
-
-	echo "Saving other ROOT files"
-	for ROOT_FILE in `ls *.root`; do
-		Extract_BaseName $ROOT_FILE BASE_NAME
-
-		# setup output dir
-		local OUTDIR_THIS=${OUTDIR_LARGE}/${BASE_NAME}/${RUN_NUMBER}/
-		mkdir -p -m 755 $OUTDIR_THIS
-
-		# save it
-		local OUTPUT_FILE=${OUTDIR_THIS}/${BASE_NAME}_${RUN_NUMBER}_${FILE_NUMBER}.root
-		mv -v $ROOT_FILE $OUTPUT_FILE
-		chmod 644 $OUTPUT_FILE
-
-		# force save to tape & pin
-		if [ "$TAPEDIR" != "" ]; then
-			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			jcache put $OUTPUT_FILE
-		fi
-	done
-}
-
-Save_IDXA()
-{
-	# SAVE IDXA FILES
-        local NUM_FILES=`ls *.idxa 2>/dev/null | wc -l`
-        if [ $NUM_FILES -eq 0 ] ; then
-                echo "No IDXA files produced"
-                return
-        fi
-
-	echo "Saving IDXA files"
-	for IDXA_FILE in `ls *.idxa`; do
-		Extract_BaseName $IDXA_FILE BASE_NAME
-
-		# setup output dir
-		local OUTDIR_THIS=${OUTDIR_SMALL}/IDXA/${RUN_NUMBER}/
-		mkdir -p -m 755 $OUTDIR_THIS
-
-		# save it
-		local OUTPUT_FILE=${OUTDIR_THIS}/${BASE_NAME}_${RUN_NUMBER}_${FILE_NUMBER}.idxa
-		mv -v $IDXA_FILE $OUTPUT_FILE
-		chmod 644 $OUTPUT_FILE
-	done
-}
-
 ########################################################## SAVE TO WEB ##########################################################
 
 # SAVE TO WEB:
@@ -297,7 +142,13 @@ SaveTo_Web()
 Make_Plots()
 {
 	cp $MONITORING_HOME/recontest/Make_Plots.C .
-	root -b -q hd_root.root 'Make_Plots.C("$HALLD_HOME/src/plugins/Analysis/p2pi_hists/HistMacro_p2pi.C", "p2pi.png")'
+	root -b -q hd_root.root 'Make_Plots.C("$HALLD_HOME/src/plugins/Analysis/monitoring_hists/HistMacro_NumHighLevelObjects.C", "HistMacro_NumHighLevelObjects.png")'
+	root -b -q hd_root.root 'Make_Plots.C("$HALLD_HOME/src/plugins/Analysis/monitoring_hists/HistMacro_EventInfo.C", "HistMacro_EventInfo.png")'
+	root -b -q hd_root.root 'Make_Plots.C("$HALLD_HOME/src/plugins/monitoring/highlevel_online/HistMacro_Kinematics.C", "HistMacro_Kinematics.png")'
+	root -b -q hd_root.root 'Make_Plots.C("$HALLD_HOME/src/plugins/Analysis/p2pi_hists/HistMacro_p2pi.C", "HistMacro_p2pi.png")'
+	root -b -q hd_root.root 'Make_Plots.C("$HALLD_HOME/src/plugins/Analysis/p3pi_hists/HistMacro_p3pi.C", "HistMacro_p3pi.png")'
+	cp *.png /work/halld2/data_monitoring/RunPeriod-2016-02/recon_tests/${DATE}/
+	cp hd_root.root /work/halld/data_monitoring/RunPeriod-2016-02/recon_tests/hd_root_${DATE}.root
 }
 
 ########################################################### CCDB SQLITE #########################################################
@@ -325,6 +176,7 @@ Run_Script()
 	fi
 
 	# SAVE OUTPUTS
+	Make_Plots
 	Save_OutputFiles
 }
 
