@@ -16,7 +16,7 @@ export JANA_CALIB_CONTEXT="variation=mc"
 rm -rfv $RUN_DIR
 mkdir -pv $RUN_DIR
 cd $RUN_DIR
-$B1PI_TEST_DIR/b1pi_test.sh -n 1500
+$B1PI_TEST_DIR/b1pi_test.sh -n 150000
 echo \#count events
 echo \#count b1_pi.hddm `hddm_counter.pl b1_pi.hddm physicsEvent`
 echo \#count hdgeant.hddm `hddm_counter.pl hdgeant.hddm physicsEvent`
