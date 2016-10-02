@@ -9,11 +9,12 @@ grep -lq " release 6." /etc/redhat-release
 if ( ! $status ) then
     set GCC_HOME=/apps/gcc/4.9.2
     setenv PATH ${GCC_HOME}/bin:${PATH}
-    setenv LD_LIBRARY_PATH ${GCC_HOME}/lib64:${GCC_HOME}/lib
+    if (! $?LD_LIBRARY_PATH) setenv LD_LIBRARY_PATH ''
+    setenv LD_LIBRARY_PATH ${GCC_HOME}/lib64:${GCC_HOME}/lib:$LD_LIBRARY_PATH
 endif
-echo GCC_HOME = $GCC_HOME
 # perl on the cue
 setenv PATH /apps/perl/bin:$PATH
 # python on the cue
 setenv PATH /apps/python/PRO/bin:$PATH
+if (! $?LD_LIBRARY_PATH) setenv LD_LIBRARY_PATH ''
 setenv LD_LIBRARY_PATH /apps/python/PRO/lib:$LD_LIBRARY_PATH

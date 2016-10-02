@@ -11,10 +11,12 @@ if [ $? -eq 0 ]
     then
     GCC_HOME=/apps/gcc/4.9.2
     export PATH=${GCC_HOME}/bin:${PATH}
-    export LD_LIBRARY_PATH=${GCC_HOME}/lib64:${GCC_HOME}/lib
+    if [ -z "$LD_LIBRARY_PATH" ]; then export LD_LIBRARY_PATH=''; fi
+    export LD_LIBRARY_PATH=${GCC_HOME}/lib64:${GCC_HOME}/lib:$LD_LIBRARY_PATH
 fi
 # perl on the cue
 export PATH=/apps/perl/bin:$PATH
 # python on the cue
 export PATH=/apps/python/PRO/bin:$PATH
+if [ -z "$LD_LIBRARY_PATH" ]; then export LD_LIBRARY_PATH=''; fi
 export LD_LIBRARY_PATH=/apps/python/PRO/lib:$LD_LIBRARY_PATH
