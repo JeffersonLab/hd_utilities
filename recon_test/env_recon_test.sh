@@ -29,6 +29,7 @@ export BMS_OSNAME=`${BUILD_SCRIPTS}/osrelease.pl`
 export EDITOR=vim
 
 # SET SOFTWARE VERSIONS/PATHS (e.g. $ROOTSYS, $CCDB_HOME, etc.)
+export GLUEX_TOP=/group/halld/Software/builds/$BMS_OSNAME/
 export DATE=`date +%Y-%m-%d`
 export GLUEX_VERSION_XML=/u/scratch/gluex/nightly/${DATE}/${BMS_OSNAME}/version_${DATE}.xml
 eval `$BUILD_SCRIPTS/version.pl -s bash $GLUEX_VERSION_XML`
