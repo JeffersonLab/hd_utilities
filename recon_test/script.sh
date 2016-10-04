@@ -144,7 +144,7 @@ SaveTo_Web()
 
 Make_Plots()
 {
-	cp $MONITORING_HOME/recontest/Make_Plots.C .
+	cp $MONITORING_HOME/recon_test/Make_Plots.C .
 	root -b -q hd_root.root 'Make_Plots.C("$HALLD_HOME/src/plugins/Analysis/monitoring_hists/HistMacro_NumHighLevelObjects.C", "HistMacro_NumHighLevelObjects.png")'
 	root -b -q hd_root.root 'Make_Plots.C("$HALLD_HOME/src/plugins/Analysis/monitoring_hists/HistMacro_EventInfo.C", "HistMacro_EventInfo.png")'
 	root -b -q hd_root.root 'Make_Plots.C("$HALLD_HOME/src/plugins/monitoring/highlevel_online/HistMacro_Kinematics.C", "HistMacro_Kinematics.png")'
@@ -194,7 +194,7 @@ RUN_NUMBER=$6
 FILE_NUMBER=$7
 CACHE_PIN_DAYS=$8
 WEBDIR_SMALL=$9
-WEBDIR_LARGE=$10
+WEBDIR_LARGE=${10}
 
 # PRINT INPUTS
 echo "HOSTNAME          = $HOSTNAME"
