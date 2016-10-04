@@ -70,6 +70,9 @@ Save_Histograms()
 		local OUTDIR_THIS=${OUTDIR_LARGE}/hists/${RUN_NUMBER}/
 		mkdir -p -m 755 ${OUTDIR_THIS}
 
+		# save it to web dir
+		cp hd_root.root ${WEBDIR_LARGE}/hd_root_${RUN_NUMBER}_${FILE_NUMBER}.root
+
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/hd_root_${RUN_NUMBER}_${FILE_NUMBER}.root
 		mv -v hd_root.root $OUTPUT_FILE
@@ -147,8 +150,7 @@ Make_Plots()
 	root -b -q hd_root.root 'Make_Plots.C("$HALLD_HOME/src/plugins/monitoring/highlevel_online/HistMacro_Kinematics.C", "HistMacro_Kinematics.png")'
 	root -b -q hd_root.root 'Make_Plots.C("$HALLD_HOME/src/plugins/Analysis/p2pi_hists/HistMacro_p2pi.C", "HistMacro_p2pi.png")'
 	root -b -q hd_root.root 'Make_Plots.C("$HALLD_HOME/src/plugins/Analysis/p3pi_hists/HistMacro_p3pi.C", "HistMacro_p3pi.png")'
-	cp *.png /work/halld2/data_monitoring/RunPeriod-2016-02/recon_tests/${DATE}/
-	cp hd_root.root /work/halld/data_monitoring/RunPeriod-2016-02/recon_tests/hd_root_${DATE}.root
+	cp *.png ${WEBDIR_SMALL}/
 }
 
 ########################################################### CCDB SQLITE #########################################################
@@ -191,6 +193,8 @@ OUTDIR_SMALL=$5
 RUN_NUMBER=$6
 FILE_NUMBER=$7
 CACHE_PIN_DAYS=$8
+WEBDIR_SMALL=$9
+WEBDIR_LARGE=$10
 
 # PRINT INPUTS
 echo "HOSTNAME          = $HOSTNAME"
@@ -202,6 +206,8 @@ echo "OUTDIR_SMALL      = $OUTDIR_SMALL"
 echo "RUN_NUMBER        = $RUN_NUMBER"
 echo "FILE_NUMBER       = $FILE_NUMBER"
 echo "CACHE_PIN_DAYS    = $CACHE_PIN_DAYS"
+echo "WEBDIR_SMALL      = $WEBDIR_SMALL"
+echo "WEBDIR_LARGE      = $WEBDIR_LARGE"
 
 # RUN
 Run_Script

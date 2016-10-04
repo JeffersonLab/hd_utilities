@@ -14,7 +14,7 @@ Setup_Config()
 {
 	RUN_PERIOD=$1
 	cp $MONITORING_HOME/recon_test/jobs_recon_test.config .
-	sed -i -e 's/YYYY-MM-DD/'$DATE'/g' jobs_recon_test.config #MUST BE FIRST!!
+	sed -i -e 's/YYYY-MM-DD/'$DATE'/g' jobs_recon_test.config       #MUST BE FIRST!!
 	sed -i -e 's/YYYY-MM/'$RUN_PERIOD'/g' jobs_recon_test.config
 }
 

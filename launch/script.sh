@@ -14,6 +14,7 @@ Setup_Script()
 	printenv
 	echo "PERL INCLUDES: "
 	perl -e "print qq(@INC)"
+	echo ""
 
 	# COPY INPUT FILE TO WORKING DIRECTORY
 	# This step is necessary since the cache files will be created as soft links in the current directory, and we want to avoid large I/O processes.

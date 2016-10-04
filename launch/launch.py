@@ -14,6 +14,7 @@ import sys
 import time
 import glob
 import re
+import time
 from subprocess import Popen, PIPE
 
 VERBOSE = False
@@ -180,9 +181,10 @@ def add_job(WORKFLOW, FILEPATH, config_dict):
 
 	# PREPARE NAMES
 	STUBNAME = RUNNO + "_" + FILENO
-	JOBNAME = WORKFLOW + "_" + STUBNAME
+	DATE = time.strftime("%Y-%m-%d")
+	JOBNAME = WORKFLOW + "_" + STUBNAME + "_" + DATE
 
-	#SETUP OTHER VARIABLES:
+	# SETUP OTHER VARIABLES:
 	INPUTDATA_TYPE = "mss" if(INDATA_DIR[:5] == "/mss/") else "file"
 	CACHE_PIN_DAYS = config_dict["CACHE_PIN_DAYS"] if ("CACHE_PIN_DAYS" in config_dict) else "0"
 	JANA_CONFIG = config_dict["JANA_CONFIG"]
@@ -207,6 +209,11 @@ def add_job(WORKFLOW, FILEPATH, config_dict):
 	add_command += " " + config_dict["SCRIPTFILE"] + " " + config_dict["ENVFILE"] + " " + FILENAME + " " + JANA_CONFIG
 	# command arguments continued
 	add_command += " " + config_dict["OUTDIR_LARGE"] + " " + config_dict["OUTDIR_SMALL"] + " " + RUNNO + " " + FILENO + " " + CACHE_PIN_DAYS
+	# optional command arguments
+	if('WEBDIR_SMALL' in config_dict):
+		add_command += " " + config_dict["WEBDIR_SMALL"]
+	if('WEBDIR_LARGE' in config_dict):
+		add_command += " " + config_dict["WEBDIR_LARGE"]
 
 	if(VERBOSE == True):
 		print "job add command is \n" + str(add_command)
