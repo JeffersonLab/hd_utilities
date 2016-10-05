@@ -144,15 +144,15 @@ Make_Plots()
 	root -b -q hd_root.root 'Make_Plots.C("$HALLD_HOME/src/plugins/Analysis/p3pi_hists/HistMacro_p3pi.C", "HistMacro_p3pi.png")'
 
 	# setup output dir
-	local OUTDIR_THIS=${WEBDIR_SMALL}/png/${RUN_NUMBER}/
+	local OUTDIR_THIS=${WEBDIR_SMALL}/${RUN_NUMBER}/
 	mkdir -p -m 755 $OUTDIR_THIS
 
 	# save it
-	cp *.png ${WEBDIR_SMALL}
-	chmod 644 ${WEBDIR_SMALL}/*.png
+	cp *.png ${OUTDIR_THIS}
+	chmod 644 ${OUTDIR_THIS}/*.png
 
 	# copy html
-	cp $MONITORING_HOME/recon_test/index.html ${WEBDIR_SMALL}
+	cp $MONITORING_HOME/recon_test/index.html ${OUTDIR_THIS}
 }
 
 ########################################################### SEND EMAIL ##########################################################
@@ -160,7 +160,7 @@ Make_Plots()
 Send_Email()
 {
 	cd /group/halld/Software/scripts/simple_email_list/lists/recon_test/
-	echo ${WEBDIR_SMALL} >> message.txt
+	echo https://halldweb.jlab.org/recon_test/$DATE/ >> message.txt
 	/group/halld/Software/scripts/simple_email_list/scripts/simple_email_list.pl
 }
 
