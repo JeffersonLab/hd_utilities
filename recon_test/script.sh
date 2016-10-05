@@ -132,14 +132,6 @@ Save_JANADot()
 	fi
 }
 
-########################################################## SAVE TO WEB ##########################################################
-
-# SAVE TO WEB:
-SaveTo_Web()
-{
-	/work/halld/data_monitoring/RunPeriod-2016-02/recontest/DATE/
-}
-
 ########################################################### MAKE PLOTS ##########################################################
 
 Make_Plots()
@@ -150,7 +142,26 @@ Make_Plots()
 	root -b -q hd_root.root 'Make_Plots.C("$HALLD_HOME/src/plugins/monitoring/highlevel_online/HistMacro_Kinematics.C", "HistMacro_Kinematics.png")'
 	root -b -q hd_root.root 'Make_Plots.C("$HALLD_HOME/src/plugins/Analysis/p2pi_hists/HistMacro_p2pi.C", "HistMacro_p2pi.png")'
 	root -b -q hd_root.root 'Make_Plots.C("$HALLD_HOME/src/plugins/Analysis/p3pi_hists/HistMacro_p3pi.C", "HistMacro_p3pi.png")'
-	cp *.png ${WEBDIR_SMALL}/
+
+	# setup output dir
+	local OUTDIR_THIS=${WEBDIR_SMALL}/png/${RUN_NUMBER}/
+	mkdir -p -m 755 $OUTDIR_THIS
+
+	# save it
+	cp *.png ${WEBDIR_SMALL}
+	chmod 644 ${WEBDIR_SMALL}/*.png
+
+	# copy html
+	cp $MONITORING_HOME/recon_test/index.html ${WEBDIR_SMALL}
+}
+
+########################################################### SEND EMAIL ##########################################################
+
+Send_Email()
+{
+	cd /group/halld/Software/scripts/simple_email_list/lists/recon_test/
+	echo ${WEBDIR_SMALL} >> message.txt
+	/group/halld/Software/scripts/simple_email_list/scripts/simple_email_list.pl
 }
 
 ########################################################### CCDB SQLITE #########################################################
