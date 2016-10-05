@@ -191,6 +191,7 @@ Run_Script()
 	# SAVE OUTPUTS
 	Make_Plots
 	Save_OutputFiles
+	Send_Email
 }
 
 ######################################################### EXECUTE SCRIPT ########################################################
