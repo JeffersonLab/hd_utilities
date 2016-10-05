@@ -71,6 +71,7 @@ Save_Histograms()
 		mkdir -p -m 755 ${OUTDIR_THIS}
 
 		# save it to web dir
+		mkdir -p -m 755 ${WEBDIR_LARGE}
 		cp hd_root.root ${WEBDIR_LARGE}/hd_root_${RUN_NUMBER}_${FILE_NUMBER}.root
 
 		# save it
