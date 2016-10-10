@@ -156,15 +156,6 @@ Make_Plots()
 	cp $MONITORING_HOME/recon_test/index.html ${OUTDIR_THIS}
 }
 
-########################################################### SEND EMAIL ##########################################################
-
-Send_Email()
-{
-	cd /group/halld/Software/scripts/simple_email_list/lists/recon_test/
-	echo https://halldweb.jlab.org/recon_test/$DATE/ >> message.txt
-	/group/halld/Software/scripts/simple_email_list/scripts/simple_email_list.pl
-}
-
 ########################################################### CCDB SQLITE #########################################################
 
 Create_SQLite()
@@ -192,7 +183,6 @@ Run_Script()
 	# SAVE OUTPUTS
 	Make_Plots
 	Save_OutputFiles
-	Send_Email
 }
 
 ######################################################### EXECUTE SCRIPT ########################################################
