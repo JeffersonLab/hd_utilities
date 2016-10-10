@@ -33,6 +33,7 @@ Submit_Job()
 
 ######################################################### CHECK WORKFLOW ########################################################
 
+# RETURN CODES: 0 (ok), 1 (not finished or can't reach swif), 2 (failed jobs)
 Check_Workflow()
 {
 	local WORKFLOW_NAME=$1
@@ -41,11 +42,12 @@ Check_Workflow()
 	local RETURN_CODE=$?
 	echo "SWIF Return Code = " $RETURN_CODE
 	if [ $RETURN_CODE -ne 0 ]; then
-		return $RETURN_CODE
+		return 1
 	fi
 
 	local num_jobs_index=-1
 	local num_succeeded_index=-1
+	local num_problems_index=-1
 	local word_count=0
 
 	for word in $STATUS_OUTPUT; do
@@ -53,16 +55,23 @@ Check_Workflow()
 		if [ "$word" = "jobs" ]; then
 			num_jobs_index=$(($word_count + 2))
 		fi
+		if [ "$word" = "problems" ]; then
+			num_problems_index=$(($word_count + 2))
+		fi
 		if [ "$word" = "succeeded" ]; then
 			num_succeeded_index=$(($word_count + 2))
 		fi
 	done
 	#echo $num_jobs_index $num_succeeded_index
 
-
+	local num_problems=`echo $STATUS_OUTPUT | cut -d " " -f $num_problems_index`
 	local num_jobs=`echo $STATUS_OUTPUT | cut -d " " -f $num_jobs_index`
 	local num_succeeded=`echo $STATUS_OUTPUT | cut -d " " -f $num_succeeded_index`
 	#echo $num_jobs $num_succeeded
+
+	if [ "$num_problems" != "0" ]; then
+		return 2
+	fi
 
 	if [ "$num_jobs" = "$num_succeeded" ]; then
 		return 0
@@ -82,8 +91,17 @@ Check_Workflow_Loop()
 		Check_Workflow $WORKFLOW_NAME
 		local RETURN_CODE=$?
 		echo "Sleep try_count: "$try_count", RETURN_CODE = "$RETURN_CODE
+
+		# CHECK FOR SUCCESS
 		if [ "$RETURN_CODE" -eq "0" ]; then
 			return 0
+		fi
+
+		# CHECK FOR FAILED JOBS
+		if [ "$RETURN_CODE" -eq "2" ]; then
+			swif modify-jobs -workflow $WORKFLOW_NAME -ram add 2gb -problems AUGER-OVER_RLIMIT 
+			swif modify-jobs -workflow $WORKFLOW_NAME -time add 4h -problems AUGER-TIMEOUT 
+			swif retry-jobs -workflow $WORKFLOW_NAME -problems SWIF-SYSTEM-ERROR SWIF-USER-NON-ZERO AUGER-INPUT-FAIL AUGER-OUTPUT-FAIL AUGER-FAILED
 		fi
 		sleep $sleep_length  
 	done
