@@ -62,17 +62,18 @@ Check_Workflow()
 			num_succeeded_index=$(($word_count + 2))
 		fi
 	done
-	#echo $num_jobs_index $num_succeeded_index
+	#echo $num_jobs_index $num_succeeded_index $num_problems_index
 
-	local num_problems=`echo $STATUS_OUTPUT | cut -d " " -f $num_problems_index`
+	if [ "$num_problems_index" != "-1" ]; then
+		local num_problems=`echo $STATUS_OUTPUT | cut -d " " -f $num_problems_index`
+		if [ "$num_problems" != "0" ]; then
+			return 2
+		fi
+	fi
+
 	local num_jobs=`echo $STATUS_OUTPUT | cut -d " " -f $num_jobs_index`
 	local num_succeeded=`echo $STATUS_OUTPUT | cut -d " " -f $num_succeeded_index`
 	#echo $num_jobs $num_succeeded
-
-	if [ "$num_problems" != "0" ]; then
-		return 2
-	fi
-
 	if [ "$num_jobs" = "$num_succeeded" ]; then
 		return 0
 	fi
