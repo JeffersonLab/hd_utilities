@@ -14,6 +14,10 @@ import sys
 sys.path.append("/group/halld/www/halldweb/html/rcdb_home/python")
 import rcdb
 
+#from os import listdir
+import glob
+#from os.path import isfile, join
+
 db = rcdb.RCDBProvider("mysql://rcdb@hallddb/rcdb")
 
 dbhost = "hallddb.jlab.org"
@@ -168,120 +172,25 @@ def printHTMLHead(title):
 def print_option_selector(options):
     print """<form action="/cgi-bin/data_monitoring/monitoring/plotBrowser.py" method="POST">"""
 
-    plotNames = [["CDC_occupancy","CDC Occupancy"]]
-    if options[3] == "ver00":
-        plotNames.append(["FDC_occupancy","FDC Occupancy"])
-	plotNames.append(["FCAL_occupancy","FCAL Occupancy"])
-        plotNames.append(["BCAL_occupancy","BCAL Occupancy"])
-        plotNames.append(["PS_occupancy","PS Occupancy"])
-        plotNames.append(["RF_TPOL_occupancy","RF & TPOL Occupancy"])
-        plotNames.append(["ST_occupancy","ST Occupancy"])
-        plotNames.append(["TAGGER_occupancy","TAGGER Occupancy"])
-        plotNames.append(["TOF_occupancy","TOF Occupancy"])
-    else:
-        plotNames.append(["__CDC_cdc_raw_intpp","CDC Raw Integral"])
-        plotNames.append(["__CDC_cdc_raw_t","CDC Raw Time"])
-        plotNames.append(["__CDC_cdc_ped","CDC Ped"])
-        plotNames.append(["__CDC_cdc_raw_intpp_vs_n","CDC Raw Integral vs straw"])
-        plotNames.append(["__CDC_cdc_raw_t_vs_n","CDC Raw Time vs straw"])
-        plotNames.append(["__CDC_cdc_ped_vs_n","CDC Ped vs straw"])
-        plotNames.append(["__CDC_cdc_windata_ped_vs_n","CDC WinData Ped vs straw"])
-	plotNames.append(["FDC_P1_pseudo_occupancy","FDC Package 1 Pseudo"])
-        plotNames.append(["FDC_P2_pseudo_occupancy","FDC Package 2 Pseudo"])
-	plotNames.append(["FDC_P3_pseudo_occupancy","FDC Package 3 Pseudo"])
-	plotNames.append(["FDC_P4_pseudo_occupancy","FDC Package 4 Pseudo"])
-	plotNames.append(["bcal_summary","BCAL Summary"])
-        plotNames.append(["bcal_times","BCAL Timing"])
-        plotNames.append(["bcal_occupancy","BCAL Occupancy"])
-        plotNames.append(["bcal_cluster","BCAL Cluster"])
-        plotNames.append(["bcal_shower","BCAL Shower"])
-        plotNames.append(["bcal_hist_eff","BCAL Efficiency"])
-        plotNames.append(["bcal_inv_mass","BCAL 2-photon mass"])
-        plotNames.append(["bcal_fcal_inv_mass","BCAL-FCAL 2-photon mass"])
-        plotNames.append(["__fcal_digHitE","FCAL Digi Pulse Integral"])
-        plotNames.append(["__fcal_digOcc2D","FCAL Digi Occupancy"])
-        plotNames.append(["__fcal_digT","FCAL Digi Time"])
-        plotNames.append(["fcal_hit_energy","FCAL Hit Summary"])
-        plotNames.append(["fcal_hit_timing","FCAL Hit Time"])
-        plotNames.append(["fcal_cluster_et","FCAL Cluster Energy-Time"])
-        plotNames.append(["fcal_cluster_space","FCAL Cluster Space"])
-        plotNames.append(["__tof_tofe","TOF Energy"])
-        plotNames.append(["__tof_toft","TOF Time"])
-        plotNames.append(["__tof_tofo1","TOF Occupancy Plane1"])
-        plotNames.append(["__tof_tofo2","TOF Occupancy Plane2"])
-        plotNames.append(["__st_st_pi_dhit","SC/ST Digi Pulse Integral"])
-        plotNames.append(["__st_st_pt_dhit","SC/ST Digi Time"])
-        plotNames.append(["__st_st_sec_adc_dhit","SC/ST Digi Occupancy"])
-        plotNames.append(["__tagm_tagm_adc_pint","TAGM Digi Pulse Integral"])
-        plotNames.append(["__tagm_tagm_adc_mult","TAGM Digi Multiplicity"])
-        plotNames.append(["__tagm_tagm_hit_seen","TAGM Hit Occupancy"])
-        plotNames.append(["__tagm_tagm_hit_time","TAGM Hit Time"])
-        plotNames.append(["__TAGH_DigiHit_PulseIntegral","TAGH Digi Pulse Integral (ver < 12)"])
-        plotNames.append(["__TAGH_DigiHit_tdcTime","TAGH Digi TDC Time (ver < 12)"])
-        plotNames.append(["__TAGH_DigiHit_PedestalVsSlotID","TAGH Digi Pedestal vs Slot (ver < 12)"])
-        plotNames.append(["__TAGH_DigiHit_DigiHit_PulseIntegral","TAGH Digi Pulse Integral (ver == 12)"])
-        plotNames.append(["__TAGH_DigiHit_DigiHit_tdcTime","TAGH Digi TDC Time"])
-        plotNames.append(["__TAGH_DigiHit_DigiHit_PedestalVsSlotID","TAGH Digi Pedestal vs Slot"])
-        plotNames.append(["__TAGH_DigiHit_DigiHit_RawIntegral","TAGH Digi Raw Integral"])
-        plotNames.append(["TAGH_hit","TAGH Hit Summary"])
-        plotNames.append(["trig_fcalbcal","Trigger Energy Balance FCAL vs BCAL"])
-        plotNames.append(["l1_rate","L1 Rate"])
-        plotNames.append(["l1_fcal_bcal","L1 FCAL vs BCAL Energy"])
-        plotNames.append(["l1_ancilary","L1 Ancillary Triggers"])
-        plotNames.append(["PSC_hit","PSC Hit Summary 1"])
-        plotNames.append(["PSC_hit2","PSC Hit Summary 2"])
-        plotNames.append(["PSC_hit3","PSC Hit Summary 3"])
-        plotNames.append(["PS_hit","PS Hit Summary 1"])
-        plotNames.append(["PS_hit2","PS Hit Summary 2"])
-        plotNames.append(["__PSPair_PSC_PS_PS_E","PS Pair Energy"])
-        plotNames.append(["PS_PSC_coinc","PS/PSC Pair Coincidences"])
-        plotNames.append(["PS_eff","PS(fine) Efficiency"])
-        plotNames.append(["PS_TAG_energy","PS/Tagger Energy Correlation"])
-    #plotNames.append(["TAG_eff","Tagging Efficiency"])
-    #plotNames.append(["TAG_2D_eff","Tagging Efficiency 2D"])
-        plotNames.append(["HistMacro_RF_p1","RF Summary 1"])
-        plotNames.append(["HistMacro_RF_p2","RF Summary 2"])
-        plotNames.append(["HistMacro_RF_p3","RF Summary 3"])
-        plotNames.append(["HistMacro_TaggerTiming","HLDetectorTiming Tagger Timing"])
-        plotNames.append(["HistMacro_TaggerRFAlignment","HLDetectorTiming Tagger-RF"])
-        plotNames.append(["HistMacro_TaggerSCAlignment","HLDetectorTiming Tagger-SC"])
-        plotNames.append(["HistMacro_CalorimeterTiming","HLDetectorTiming FCAL/BCAL"])
-        plotNames.append(["HistMacro_PIDSystemTiming","HLDetectorTiming SC/TOF"])
-        plotNames.append(["HistMacro_TrackMatchedTiming","HLDetectorTiming Track Matched Timing"])
-        plotNames.append(["HistMacro_EventInfo","Event Info"])
-        plotNames.append(["HistMacro_NumLowLevelObjects_p1","Low Level Objects 1"])
-        plotNames.append(["HistMacro_NumLowLevelObjects_p2","Low Level Objects 2"])
-        plotNames.append(["HistMacro_NumHighLevelObjects","High Level Objects"])
-        plotNames.append(["__Independent_Hist_TrackMultiplicity_NumGoodReconstructedParticles","Track Multiplicity"])
-        plotNames.append(["HistMacro_Tracking_p1","Track Summary 1"])
-        plotNames.append(["HistMacro_Tracking_p2","Track Summary 2"])
-        plotNames.append(["HistMacro_Tracking_p3","Track Summary 3"])	
-        plotNames.append(["HistMacro_Matching_p1","Matching Summary 1 (ver < 12)"])
-        plotNames.append(["HistMacro_Matching_p2","Matching Summary 2 (ver < 12)"])
-        plotNames.append(["HistMacro_Matching_BCAL","Matching Summary BCAL"])
-        plotNames.append(["HistMacro_Matching_FCAL","Matching Summary FCAL"])
-        plotNames.append(["HistMacro_Matching_SC","Matching Summary SC/ST"])
-        plotNames.append(["HistMacro_Matching_TOF","Matching Summary TOF"])
-        plotNames.append(["HistMacro_Kinematics_p1","Reco Kinematics 1"])
-        plotNames.append(["HistMacro_Kinematics_p2","Reco Kinematics 2"])
-        plotNames.append(["HistMacro_FCALReconstruction_p1","FCAL Shower Energy-Time"])
-        plotNames.append(["HistMacro_FCALReconstruction_p2","FCAL Shower Match"])
-        plotNames.append(["HistMacro_FCALReconstruction_p3","FCAL &beta; and E/p"])
-        plotNames.append(["HistMacro_BCALReconstruction_p1","BCAL Shower Energy-Time"])
-        plotNames.append(["HistMacro_BCALReconstruction_p2","BCAL Shower Match"])
-        plotNames.append(["HistMacro_BCALReconstruction_p3","BCAL &beta; and E/p"])
-        plotNames.append(["HistMacro_SCReconstruction_p1","SC/ST Match 1"])
-        plotNames.append(["HistMacro_SCReconstruction_p2","SC/ST Match 2"])
-        plotNames.append(["HistMacro_SCReconstruction_p3","SC/ST Match 3"])
-        plotNames.append(["HistMacro_TOFReconstruction_p1","TOF Match 1"])
-        plotNames.append(["HistMacro_TOFReconstruction_p2","TOF Match 2"])
-        plotNames.append(["HistMacro_p2pi_pmiss","&pi;<sup>+</sup>&pi;<sup>-</sup> Missing Proton"])
-        plotNames.append(["HistMacro_p2pi_preco","&pi;<sup>+</sup>&pi;<sup>-</sup> Reconstructed Proton"])
-        plotNames.append(["HistMacro_p3pi_preco_2FCAL","&pi;<sup>+</sup>&pi;<sup>-</sup>&pi;<sup>0</sup> (2FCAL)"])
-        plotNames.append(["HistMacro_p3pi_preco_FCAL-BCAL","&pi;<sup>+</sup>&pi;<sup>-</sup>&pi;<sup>0</sup> (F/BCAL)"])
-
     
 
+ #   mypath = "/work/halld2/data_monitoring/RunPeriod-2016-02/recon_ver02/Run011366/"
+    plotNames = [["CDC_occupancy","CDC Occupancy"]]
+    plotNames.pop(0)
+    #os.chdir(mypath)
+    #for file in glob.glob("*.png"):
+    #    name = file[:-4]
+    
+    with open('./figure_titles','r') as f:
+        for line in f:
+            filename = line.split(',', 2)[0][:-4]
+            dispname = line.split(',', 2)[1]
+            #print filename
+            #print "   "
+            #print dispname
+            #print "<br>"
+            plotNames.append([filename[0:],dispname[0:]])
+            
     print "Select Run Period:"
     periods = get_periods(options)
     print "<select id=\"period\" name=\"period\" onChange=\"changePeriod()\">" 

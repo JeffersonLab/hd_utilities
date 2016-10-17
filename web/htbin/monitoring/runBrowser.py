@@ -230,6 +230,8 @@ def print_version_selector(options):
         print "> %s</option>" % (period[0])
     print "</select>"
 
+    recon_versions = []
+
     versions = get_versions(options)
     print "<select id=\"ver\" name=\"ver\">" 
     for version in versions:
@@ -237,9 +239,13 @@ def print_version_selector(options):
         data_type = version[1]
         production_time = version[2]
         full_version_name = "%s_%s" % (data_type, revision)
-        print "<option value=\"%s\" " % full_version_name
+        if version[0] not in recon_versions or data_type != "recon":
+            print "<option value=\"%s\" " % full_version_name
         if options != None and full_version_name == options[1]:
-            print "selected"
+            if data_type != "recon":
+                print "selected"
+            elif version[0] not in recon_versions:
+                print "selected"
 	version_name = ""
         if version[0] == 0 and data_type == "rawdata":
             version_name = "RootSpy"
@@ -250,8 +256,12 @@ def print_version_selector(options):
                 version_name = "Monitoring Launch "
                 version_name += production_time
         elif data_type == "recon":
+            if version[0] in recon_versions:
+                print "> %s %s</option>" % (revision, version_name)
+                continue
             version_name = "Recon Launch "
             version_name += production_time
+            recon_versions.append(version[0])
         elif data_type == "mc":
             version_name = "MC Production "
             version_name += production_time
@@ -268,6 +278,12 @@ def print_run_selector(records, options):
     dates = get_dates(options)
     rcdb_runs = db.select_runs("@status_approved and @is_production")
     rcdb_run_numbers = [ run.number for run in rcdb_runs ]
+
+    if "mc_ver01" in options:
+        print ("<label><input type=\"radio\" id=\"run_number\" name=\"run_number\" value=\"%s\" onclick=\"changeRun(%s)\"> %s</label>" % (10000, 10000, 10000))
+        #print ("<a href=\"/cgi-bin/data_monitoring/monitoring/browseJSRoot.py?run_number=%s&ver=%s&period=%s\" target=\"_blank\"><button type=\"button\"> ROOT </button></a>" % (row[0], options[1], options[2]))
+        #print ("<a href=\"https://halldweb.jlab.org/rcdb/runs/info/%s\" target=\"_blank\"><button type=\"button\"> RCDB </button></a>" % (row[0]))
+        return
 
     #print dates
     for date in dates:
@@ -452,6 +468,8 @@ def main():
     #revision_str = revision_str.replace("ver","")
     #revision = int(float(revision_str))
 
+    isRecon = "recon" in revision_str
+
     # Fall 2014 run
     if options[2] == 'RunPeriod-2014-10':
         if revision < 3: 
@@ -588,12 +606,12 @@ def main():
     print """<table style="width:200px; font-size:0.8em">
       <tr>"""
 
-    if revision == 0:
-        occupancy_charts = [["CDC_occupancy","CDC"],["FDC_occupancy","FDC"],["FCAL_occupancy","FCAL"],["BCAL_occupancy","BCAL"],["PS_occupancy","PS"],["RF_TPOL_occupancy","RF & TPOL"],["ST_occupancy","ST"],["TAGGER_occupancy","TAGGER"],["TOF_occupancy","TOF"]]
-        print "<td>Online Occupancies: </td>"
-        print_row(options, occupancy_charts)
+    #if revision == 0:
+    occupancy_charts = [["CDC_occupancy","CDC"],["FDC_occupancy","FDC"],["FCAL_occupancy","FCAL"],["BCAL_occupancy","BCAL"],["PS_occupancy","PS"],["RF_TPOL_occupancy","RF & TPOL"],["ST_occupancy","ST"],["TAGGER_occupancy","TAGGER"],["TOF_occupancy","TOF"]]
+    print "<td>Online Occupancies: </td>"
+    print_row(options, occupancy_charts)
 
-    else:
+    if not isRecon:
         print "<td>CDC: </td>"
         print_row(options, cdc_charts)
         print "<td>FDC: </td>"
@@ -610,17 +628,8 @@ def main():
         print_row(options, tagm_charts)
         print "<td>TAGH:</td>"
         print_row(options, tagh_charts)
-        print "<td>L1:</td>"
-        print_row(options, l1_charts)
         print "</table>"
         
-        if revision > 3 and options[2] == 'RunPeriod-2015-03' or options[2] == 'RunPeriod-2015-06' or options[2] == 'RunPeriod-2015-12' or options[2] == 'RunPeriod-2016-02':
-            print """<table style="width:200px; font-size:0.8em">
-	   <tr>"""
-            print "<td>PS:</td>"
-            print_row(options, ps_charts)
-            print "</table>"
-            
         if revision > 4 and options[2] == 'RunPeriod-2015-03' or options[2] == 'RunPeriod-2015-06' or options[2] == 'RunPeriod-2015-12' or options[2] == 'RunPeriod-2016-02':
             print """<table style="width:200px; font-size:0.8em">
 	   <tr>"""
@@ -634,21 +643,32 @@ def main():
             print "<td>HLDetectorTiming:</td>"
             print_row(options, hldetectortiming_charts)
             print "</table>"
-            
-            print """<table style="width:200px; font-size:0.8em">
+        
+    if revision > 3 and options[2] == 'RunPeriod-2015-03' or options[2] == 'RunPeriod-2015-06' or options[2] == 'RunPeriod-2015-12' or options[2] == 'RunPeriod-2016-02':
+        print """<table style="width:200px; font-size:0.8em">
+	   <tr>"""
+        print "<td>PS:</td>"
+        print_row(options, ps_charts)
+        print "<td>L1:</td>"
+        print_row(options, l1_charts)
+        print "</table>"
+        
+    print """<table style="width:200px; font-size:0.8em">
        <tr>"""
-            print "<td>RECO:  </td>" 
-            print_row(options, ana_charts1)
-            print "<td></td>"
-            print_row(options, ana_charts2)
-            print "</table>"
+    print "<td>RECO:  </td>" 
+    print_row(options, ana_charts1)
+    print "<td></td>"
+    print_row(options, ana_charts2)
+    print "</table>"
     
-            print """<table style="width=200px; font-size:0.8em">
+    if not isRecon:
+        print """<table style="width=200px; font-size:0.8em">
       <tr>"""
-            print "<td>ANA:</td>" 
-            print_row(options, ana_charts3)
+        print "<td>ANA:</td>" 
+        print_row(options, ana_charts3)
              
     print "</table>"
+
     record_singlerun=get_data_singlerun(options)
     #print "<br> Run %s" % (options[0]) # record_singlerun[3])
     for row in record_singlerun:

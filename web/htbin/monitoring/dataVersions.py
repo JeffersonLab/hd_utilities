@@ -17,7 +17,8 @@ conn=MySQLdb.connect(host=dbhost, user=dbuser, db=dbname)
 curs=conn.cursor()
 
 runPeriodList = [ 'RunPeriod-2014-10', 'RunPeriod-2015-01', 'RunPeriod-2015-03',
-                  'RunPeriod-2015-06', 'RunPeriod-2015-12', 'RunPeriod-2016-02' ]
+                  'RunPeriod-2015-06', 'RunPeriod-2015-12', 'RunPeriod-2016-02',
+                  'RunPeriod-2016-10' ]
 
 # print the HTTP header
 def printHTTPheader():
