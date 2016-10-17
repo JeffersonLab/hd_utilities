@@ -13,6 +13,7 @@ os.environ["RCDB_HOME"] = "/group/halld/www/halldweb/html/rcdb_home"
 import sys
 sys.path.append("/group/halld/www/halldweb/html/rcdb_home/python")
 import rcdb
+import glob
 
 db = rcdb.RCDBProvider("mysql://rcdb@hallddb/rcdb")
 
@@ -196,22 +197,28 @@ def printHTMLHead(title):
         }
       </script>
 
+      <script>
+      function changeText(id,text)
+      {
+       document.getElementById(id).innerHTML = text;
+      }
+      </script>
       
       <script>
         function changePeriod()
 	{
            $("#ver").load("/data_monitoring/textdata/" + $(this.period).val() + ".txt");
         }
-        
       </script>
 
       <script>
-        function changeRun(run)
+        function changeRun(run, runNumber)
 	{
            document.getElementById('run_number').value = "0"
            document.getElementById('run_number').value += run
+           myVar = "Run "+runNumber+":"
+           changeText("RunLine",myVar)
         }
-        
       </script>
 """
     #window.alert(document.getElementById("period").value);
@@ -272,7 +279,7 @@ def print_version_selector(options):
     print "Link displays plots or <button type=\"button\"> ROOT </button> opens file"
     print "<br><br>"  
 
-def print_run_selector(records, options):
+def print_run_selector(records, options, row):
     months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
     print "<ul id=\"runList\">"
     dates = get_dates(options)
@@ -280,7 +287,8 @@ def print_run_selector(records, options):
     rcdb_run_numbers = [ run.number for run in rcdb_runs ]
 
     if "mc_ver01" in options:
-        print ("<label><input type=\"radio\" id=\"run_number\" name=\"run_number\" value=\"%s\" onclick=\"changeRun(%s)\"> %s</label>" % (10000, 10000, 10000))
+        newText="MC"
+        print ("<label><input type=\"radio\" id=\"run_number\" name=\"run_number\" value=\"%s\" onclick=\"changeRun(%s,%s);\"> %s</label>" % (10000, 10000, "MC_run", 10000))
         #print ("<a href=\"/cgi-bin/data_monitoring/monitoring/browseJSRoot.py?run_number=%s&ver=%s&period=%s\" target=\"_blank\"><button type=\"button\"> ROOT </button></a>" % (row[0], options[1], options[2]))
         #print ("<a href=\"https://halldweb.jlab.org/rcdb/runs/info/%s\" target=\"_blank\"><button type=\"button\"> RCDB </button></a>" % (row[0]))
         return
@@ -361,7 +369,8 @@ def print_run_selector(records, options):
                         if db.get_condition(row[0], "event_count"):
                             numevents = db.get_condition(row[0], "event_count").value
                     print "<li>"
-                    print ("<label><input type=\"radio\" id=\"run_number\" name=\"run_number\" value=\"%s\" onclick=\"changeRun(%s)\"> %s (%s eve)</label>" % (row[0], row[0], row[0], numevents))
+                    #print records
+                    print ("<label><input type=\"radio\" id=\"run_number\" name=\"run_number\" value=\"%s\" onclick=\"changeRun(%s,%s)\"> %s (%s eve)</label>" % (row[0], row[0], row[0], row[0], numevents))
                     print ("<a href=\"/cgi-bin/data_monitoring/monitoring/browseJSRoot.py?run_number=%s&ver=%s&period=%s\" target=\"_blank\"><button type=\"button\"> ROOT </button></a>" % (row[0], options[1], options[2]))
                     print ("<a href=\"https://halldweb.jlab.org/rcdb/runs/info/%s\" target=\"_blank\"><button type=\"button\"> RCDB </button></a>" % (row[0]))
                     print "</li>"
@@ -405,13 +414,30 @@ def get_options():
         run_number.append(None)
         run_number.append(verName)
         run_number.append(periodName)
-        return run_number
+    
+    return run_number
+
+
+def get_path(options):
+    runpth="./"
+    if options[0] != None:
+        runpth = "/work/halld2/data_monitoring/"
+        runpth += options[2]
+        runpth += "/"
+        runpth += options[1]
+        runpth += "/Run"
+        length = len(str(options[0]))
+        for i in range(6-length):
+            runpth += "0"
+        runpth += str(options[0])
+        runpth += "/"
+    return runpth
 
 
 # main function
 # This is where the program starts
 def main():
-
+    
     # get options that may have been passed to this script
     options=get_options()
 
@@ -429,7 +455,14 @@ def main():
     # print the page body
     print "<body style=\"overflow-y: hidden\" >"
 
-    #set period and version if only run_number is given
+    #print "<b id=test>Test Text"
+    #print "</b>"
+    #print "<br>"
+    #myvar = "test"
+    #print "<input type=\"radio\" name=\"group1\" value=\"blah\" onclick=changeText(\"test\",\"%s\")> My button" % (myvar)
+    #print "<br>"
+    
+   #set period and version if only run_number is given
     if options[0] != None:
         # set period first
         period=get_periods_run_number(options)
@@ -440,6 +473,8 @@ def main():
             revision = ("%s_ver%d" % (versions[0][1], versions[0][0]))
             options[1]=revision
 
+
+    
     # print version selector
     print """<div id="nav" class="link-list">"""
     print_version_selector(options)
@@ -448,7 +483,7 @@ def main():
     records=get_data(options)
     #if records == None: 
     #    records.append([10267, "", 10])
-    print_run_selector(records, options)
+    print_run_selector(records, options, records)
     print "</form>"
     print "</div class=\"link-list\">"
 
@@ -469,119 +504,167 @@ def main():
     #revision = int(float(revision_str))
 
     isRecon = "recon" in revision_str
+#######################################################################3    
+    #define and initialize charts
+    occupancy_charts = [["OCCUPANCY","OCCUPANCY"]]
+    occupancy_charts.pop(0)
+    cdc_charts = [["CDC","CDC"]]
+    cdc_charts.pop(0)
+    bcal_charts = [["BCAL","BCAL"]]
+    bcal_charts.pop(0)
+    fcal_charts = [["FCAL","FCAL"]]
+    fcal_charts.pop(0)
+    tof_charts = [["TOF","TOF"]]
+    tof_charts.pop(0)
+    fdc_charts = [["FDC","FDC"]]
+    fdc_charts.pop(0)
+    st_charts = [["ST","ST"]]
+    st_charts.pop(0)
+    tagm_charts = [["TAGM","TAGM"]]
+    tagm_charts.pop(0)
+    tagh_charts = [["TAGH","TAGH"]]
+    tagh_charts.pop(0)
+    hldetectortiming_charts = [["HLTIMING","HLTIMING"]]
+    hldetectortiming_charts.pop(0)
+    ps_charts = [["PS","PS"]]
+    ps_charts.pop(0)
+    l1_charts = [["L1","L1"]]
+    l1_charts.pop(0)
+    rf_charts = [["RF","RF"]]
+    rf_charts.pop(0)
+    ana_charts1 = [["ANA1","ANA1"]]
+    ana_charts1.pop(0)
+    ana_charts2 = [["ANA2","ANA2"]]
+    ana_charts2.pop(0)
+    ana_charts3 = [["ANA3","ANA3"]]
+    ana_charts3.pop(0)
+    tpol_charts = [["TPOL","TPOL"]]
+    tpol_charts.pop(0)
 
-    # Fall 2014 run
-    if options[2] == 'RunPeriod-2014-10':
-        if revision < 3: 
-            cdc_charts = [["__CDC_cdc_e","Charge"],["__CDC_cdc_t","Time"],["CDC_occupancy","Occupancy"]]
-        elif revision == 3:
-            cdc_charts = [["__CDC_expert_cdc_e","Charge"],["__CDC_expert_cdc_t","Time"],["CDC_occupancy","Occupancy"]]
-        elif revision == 4:
-            cdc_charts = [["__CDC_expert_cdc_e","Charge"],["__CDC_cdc_raw_t","Time"],["CDC_occupancy","Occupancy"],["__CDC_cdc_ped","Pedestal"],["__CDC_cdc_windata_ped_mean","WinDataPedMean"],["__CDC_cdc_windata_ped_width","WinDataPedWidth"],["__CDC_cdc_raw_intpp_vs_n","RawIntVsN"],["__CDC_cdc_raw_t_vs_n","RawTimeVsN"],["__CDC_cdc_ped_vs_n","PedVsN"]]
-        else:
-            cdc_charts = [["__CDC_cdc_raw_intpp","RawInt"],["__CDC_cdc_raw_t","Time"],["CDC_occupancy","Occupancy"],["__CDC_cdc_ped","Pedestal"],["__CDC_cdc_raw_intpp_vs_n","RawIntVsN"],["__CDC_cdc_raw_t_vs_n","RawTimeVsN"],["__CDC_cdc_ped_vs_n","PedVsN"],["__CDC_cdc_windata_ped_vs_n","WinDataPedVsN"]]
-            
-        fdc_charts = [["__FDC_fdcos","FdcStripOcc"],["__FDC_fdcow","FdcWireOcc"]]
-    
-        if revision < 6:
-            bcal_charts = [["bcal_summary","DigiSummary"],["bcal_occupancy","DigiOccupancy"],["bcal_cluster","Cluster"],["__bcal_bcal_shower_plane","ShowerPosition"]]
-        elif revision < 12:
-            bcal_charts = [["bcal_summary","DigiSummary"],["bcal_times","DigiTime"],["bcal_occupancy","DigiOccupancy"],["bcal_cluster","Cluster"],["bcal_shower","Shower"]]
-        elif revision < 14: 
-            bcal_charts = [["bcal_summary","DigiSummary"],["bcal_times","DigiTime"],["bcal_occupancy","DigiOccupancy"],["bcal_cluster","Cluster"],["bcal_shower","Shower"],["bcal_hist_eff","Effic"]]
-        else:
-            bcal_charts = [["bcal_summary","DigiSummary"],["bcal_times","DigiTime"],["bcal_occupancy","DigiOccupancy"],["bcal_cluster","Cluster"],["bcal_shower","Shower"],["bcal_hist_eff","Effic"],["bcal_inv_mass","BCALInvMass"],["bcal_fcal_inv_mass","B/FCALInvMass"]]
+    folder_path = get_path(options)
+    print folder_path
+    print "<br>"
+    #for each file in the folder find the corresponding textfile entry and sort into the subdetector table
+    if os.path.isdir(folder_path):
+        os.chdir(folder_path)
+        for file in glob.glob("*.png"):
+            is_found = False
+            #print file
+            #print "<br>"
+            filename = ""
+            dispname = ""
+            with open('/u/group/halld/www/halldweb/htbin/data_monitoring/monitoring/figure_titles','r') as f:
+                for line in f:
+                    filename = line.split(',', 2)[0]
+                    dispname = line.split(',', 2)[1]
+                    if filename == file:
+                        is_found = True
+                        break
+                    
+            if is_found == False:
+                #print file
+                #print "================================"
+                #print "<br>"
+                continue
+            else:
+                if filename.find("p2pi")>-1 or filename.find("p3pi")>-1:
+#                    print "   --found ANA1 <br>"
+                    ana_charts3.append([filename[:-4],dispname])
+                    continue
 
-        fcal_charts = [["__fcal_digHitE","DigiPulseInt"],["__fcal_digOcc2D","DigiOccupancy"],["__fcal_digT","DigiTime"],["fcal_hit_energy","HitSummary"],["fcal_hit_timing","HitTime"],["fcal_cluster_et","ClusterEnergyTime"],["fcal_cluster_space","ClusterSpace"]]
-        tof_charts = [["__tof_tofe","Energy"],["__tof_toft","Time"],["__tof_tofo1","OccupancyPlane1"],["__tof_tofo2","OccupancyPlane2"]]
-        st_charts = [["__st_st_pi_dhit","DigiPulseInt"],["__st_st_pt_dhit","DigiTime"],["__st_st_sec_adc_dhit","DigiOccupancy"]]
-        tagm_charts = [["__tagm_tagm_adc_pint","DigiPulseInt"],["__tagm_tagm_adc_mult","DigiMultiplicity"],["__tagm_tagm_hit_seen","HitOccupancy"],["__tagm_tagm_hit_time","HitTime"]]
-        
-        if revision < 5:
-            tagh_charts = [["__TAGH_DigiHit_PulseIntegral","DigiPulseInt"],["__TAGH_DigiHit_tdcTime","DigiTDCTime"],["TAGH_hit","HitSummary"]]
-        elif revision < 12:
-            tagh_charts = [["__TAGH_DigiHit_PulseIntegral","DigiPulseInt"],["__TAGH_DigiHit_tdcTime","DigiTDCTime"],["__TAGH_DigiHit_PedestalVsSlotID","DigiPedVsSlot"],["TAGH_hit","HitSummary"]]
-        elif revision < 13:
-            tagh_charts = [["__TAGH_DigiHit_DigiHit_PulseIntegral","DigiPulseInt"],["__TAGH_DigiHit_DigiHit_tdcTime","DigiTDCTime"],["__TAGH_DigiHit_DigiHit_PedestalVsSlotID","DigiPedVsSlot"],["TAGH_hit","HitSummary"]]
-        else:
-            tagh_charts = [["__TAGH_DigiHit_DigiHit_RawIntegral","DigiRawInt"],["__TAGH_DigiHit_DigiHit_tdcTime","DigiTDCTime"],["__TAGH_DigiHit_DigiHit_PedestalVsSlotID","DigiPedVsSlot"],["TAGH_hit","HitSummary"]]
+                if filename.find("Reconstruction")>-1 or filename.find("Num")>-1 or filename.find("EventInfo")>-1 or filename.find("Matching")>-1 or filename.find("Track")>-1:
+#                    print "   --found ANA1 <br>"
+                    ana_charts1.append([filename[:-4],dispname])
+                    continue
 
-        if revision > 15:
-            hldetectortiming_charts = [["HistMacro_TaggerTiming","Tagger Timing"],["HistMacro_TaggerRFAlignment","Tagger-RF"],["HistMacro_TaggerSCAlignment","Tagger-SC"],["HistMacro_CalorimeterTiming","FCAL/BCAL"],["HistMacro_PIDSystemTiming","SC/TOF"],["HistMacro_TrackMatchedTiming","Track Matched Timing"]]
+                if filename.find("_p1")>-1 or filename.find("_p2")>-1:
+                #    print "   --found ANA1 <br>"
+                    ana_charts2.append([filename[:-4],dispname])
+                    continue
 
-        if revision < 4:
-            ana_charts1 = [["HistMacro_EventInfo","EventInfo"],["HistMacro_NumLowLevelObjects_p1","LLObjects1"],["HistMacro_NumLowLevelObjects_p2","LLObjects2"],["HistMacro_NumHighLevelObjects","HLObjects"],["__Independent_Hist_TrackMultiplicity_NumGoodReconstructedParticles","TrackMult"],["HistMacro_Tracking","TrackSummary"],["HistMacro_Kinematics_p1","Kinematics1"],["HistMacro_Kinematics_p2","Kinematics2"]]
-        elif revision < 5:
-            ana_charts1 = [["HistMacro_EventInfo","EventInfo"],["HistMacro_NumLowLevelObjects_p1","LLObjects1"],["HistMacro_NumLowLevelObjects_p2","LLObjects2"],["HistMacro_NumHighLevelObjects","HLObjects"],["__Independent_Hist_TrackMultiplicity_NumGoodReconstructedParticles","TrackMult"],["HistMacro_Tracking_p1","Tracking1"],["HistMacro_Tracking_p2","Tracking2"],["HistMacro_Kinematics_p1","Kinematics1"],["HistMacro_Kinematics_p2","Kinematics2"]]
-        elif revision < 12:
-            ana_charts1 = [["HistMacro_EventInfo","EventInfo"],["HistMacro_NumLowLevelObjects_p1","LLObjects1"],["HistMacro_NumLowLevelObjects_p2","LLObjects2"],["HistMacro_NumHighLevelObjects","HLObjects"],["__Independent_Hist_TrackMultiplicity_NumGoodReconstructedParticles","TrackMult"],["HistMacro_Tracking_p1","Tracking1"],["HistMacro_Tracking_p2","Tracking2"],["HistMacro_Tracking_p3","Tracking3"],["HistMacro_Matching_p1","Matching1"],["HistMacro_Matching_p2","Matching2"],["HistMacro_Kinematics_p1","Kinematics1"],["HistMacro_Kinematics_p2","Kinematics2"]]
-        else:
-            ana_charts1 = [["HistMacro_EventInfo","EventInfo"],["HistMacro_NumLowLevelObjects_p1","LLObjects1"],["HistMacro_NumLowLevelObjects_p2","LLObjects2"],["HistMacro_NumHighLevelObjects","HLObjects"],["__Independent_Hist_TrackMultiplicity_NumGoodReconstructedParticles","TrackMult"],["HistMacro_Tracking_p1","Tracking1"],["HistMacro_Tracking_p2","Tracking2"],["HistMacro_Tracking_p3","Tracking3"],["HistMacro_Matching_BCAL","MatchBCAL"],["HistMacro_Matching_FCAL","MatchFCAL"],["HistMacro_Matching_SC","MatchSC/ST"],["HistMacro_Matching_TOF","MatchTOF"]]
-            
-        if revision < 12:
-            ana_charts2 = [["HistMacro_FCALReconstruction_p1","FCAL1"],["HistMacro_FCALReconstruction_p2","FCAL2"],["HistMacro_BCALReconstruction_p1","BCAL1"],["HistMacro_BCALReconstruction_p2","BCAL2"],["HistMacro_SCReconstruction_p1","SC/ST1"],["HistMacro_SCReconstruction_p2","SC/ST2"],["HistMacro_SCReconstruction_p3","SC/ST3"],["HistMacro_TOFReconstruction_p1","TOF1"],["HistMacro_TOFReconstruction_p2","TOF2"]]
-        else:
-            ana_charts2 = [["HistMacro_FCALReconstruction_p1","FCAL1"],["HistMacro_FCALReconstruction_p2","FCAL2"],["HistMacro_BCALReconstruction_p1","BCAL1"],["HistMacro_BCALReconstruction_p2","BCAL2"],["HistMacro_SCReconstruction_p1","SC/ST1"],["HistMacro_SCReconstruction_p2","SC/ST2"],["HistMacro_SCReconstruction_p3","SC/ST3"],["HistMacro_TOFReconstruction_p1","TOF1"],["HistMacro_TOFReconstruction_p2","TOF2"],["HistMacro_Kinematics_p1","Kinematics1"],["HistMacro_Kinematics_p2","Kinematics2"]]
+                if filename.find("_occupancy")>-1 or filename.find("Occupancy")>-1:
+#                    print "   --found Occupancy <br>"
+                    occupancy_charts.append([filename[:-4],dispname])
+                    continue
 
-        ana_charts3 = [["HistMacro_p2pi_pmiss","&pi;<sup>+</sup>&pi;<sup>-</sup>"],["HistMacro_p3pi_pmiss_2FCAL","&pi;<sup>+</sup>&pi;<sup>-</sup>&pi;<sup>0</sup>(2FCAL)"],["HistMacro_p3pi_pmiss_FCAL-BCAL","&pi;<sup>+</sup>&pi;<sup>-</sup>&pi;<sup>0</sup>(F/BCAL)"]]    
-    # Spring 2015 run
-    elif options[2] == 'RunPeriod-2015-03' or options[2] == 'detcom_02' or options[2] == 'RunPeriod-2015-06':
-        cdc_charts = [["__CDC_cdc_raw_intpp","RawInt"],["__CDC_cdc_raw_t","Time"],["CDC_occupancy","Occupancy"],["__CDC_cdc_ped","Pedestal"],["__CDC_cdc_raw_intpp_vs_n","RawIntVsN"],["__CDC_cdc_raw_t_vs_n","RawTimeVsN"],["__CDC_cdc_ped_vs_n","PedVsN"],["__CDC_cdc_windata_ped_vs_n","WinDataPedVsN"]]
-        fdc_charts = [["__FDC_fdcos","FdcStripOcc"],["__FDC_fdcow","FdcWireOcc"]]
-        if revision < 4:
-                bcal_charts = [["bcal_summary","DigiSummary"],["bcal_times","DigiTime"],["bcal_occupancy","DigiOccupancy"],["bcal_cluster","Cluster"],["bcal_shower","Shower"],["bcal_hist_eff","Effic"]]
-	elif revision < 5:
-		bcal_charts = [["bcal_summary","DigiSummary"],["bcal_times","DigiTime"],["bcal_occupancy","DigiOccupancy"],["bcal_cluster","Cluster"],["bcal_shower","Shower"],["bcal_hist_eff","Effic"],["bcal_inv_mass","InvMass"],["trig_fcalbcal","Trigger"]]
-        else:
-               	bcal_charts = [["bcal_summary","DigiSummary"],["bcal_times","DigiTime"],["bcal_occupancy","DigiOccupancy"],["bcal_cluster","Cluster"],["bcal_shower","Shower"],["bcal_hist_eff","Effic"],["bcal_inv_mass","BCALInvMass"],["bcal_fcal_inv_mass","B/FCALInvMass"],["trig_fcalbcal","Trigger"]]
-   
-        fcal_charts = [["__fcal_digHitE","DigiPulseInt"],["__fcal_digOcc2D","DigiOccupancy"],["__fcal_digT","DigiTime"],["fcal_hit_energy","HitSummary"],["fcal_hit_timing","HitTime"],["fcal_cluster_et","ClusterEnergyTime"],["fcal_cluster_space","ClusterSpace"]]
-        tof_charts = [["__tof_tofe","Energy"],["__tof_toft","Time"],["__tof_tofo1","OccupancyPlane1"],["__tof_tofo2","OccupancyPlane2"]]
-        if revision < 9:
-		st_charts = [["__st_st_pi_dhit","DigiPulseInt"],["__st_st_pt_dhit","DigiTime"],["__st_st_sec_adc_dhit","DigiOccupancy"]]
-	else:
-		st_charts = [["ST_Monitoring_Waveform_ch4","LowWaveform"],["ST_Monitoring_Multi","LowMulti"],["ST_Monitoring_Pid","TrackingPID"],["ST_Monitoring_Eff","TrackingEff"]]
-        tagm_charts = [["__tagm_tagm_adc_pint","DigiPulseInt"],["__tagm_tagm_adc_mult","DigiMultiplicity"],["__tagm_tagm_hit_seen","HitOccupancy"],["__tagm_tagm_hit_time","HitTime"]]
-        if revision < 4:
-		tagh_charts = [["__TAGH_DigiHit_DigiHit_RawIntegral","DigiRawInt"],["__TAGH_DigiHit_DigiHit_tdcTime","DigiTDCTime"],["__TAGH_DigiHit_DigiHit_PedestalVsSlotID","DigiPedVsSlot"],["TAGH_hit","HitSummary"]]
-	else:
-		tagh_charts = [["__TAGH_DigiHit_DigiHit_RawIntegral","DigiRawInt"],["__TAGH_DigiHit_DigiHit_tdcTime","DigiTDCTime"],["__TAGH_DigiHit_DigiHit_PedestalVsSlotID","DigiPedVsSlot"],["TAGH_hit","HitSummary"],["TAGH_hit2","HitSummary2"]]
-	if revision > 3:
-		ps_charts = [["PSC_hit","PSC1"],["PSC_hit2","PSC2"],["PSC_hit3","PSC3"],["PS_hit","PS1"],["PS_hit2","PS2"],["__PSPair_PSC_PS_PS_E","PS_E"],["PS_PSC_coinc","PairCoinc"],["PS_eff","PairEff"],["PS_TAG_energy","PairTagEnergy"]] #,["TAG_eff","TagEff"],["TAG_2D_eff","Tag2DEff"]]
-        if revision > 4:
-		rf_charts = [["HistMacro_RF_p1","RF1"],["HistMacro_RF_p2","RF2"],["HistMacro_RF_p3","RF3"]]
-        if revision > 5:
-		hldetectortiming_charts = [["HistMacro_TaggerTiming","Tagger Timing"],["HistMacro_TaggerRFAlignment","Tagger-RF"],["HistMacro_TaggerSCAlignment","Tagger-SC"],["HistMacro_CalorimeterTiming","FCAL/BCAL"],["HistMacro_PIDSystemTiming","SC/TOF"],["HistMacro_TrackMatchedTiming","Track Matched Timing"]]
-        ana_charts1 = [["HistMacro_EventInfo","EventInfo"],["HistMacro_NumLowLevelObjects_p1","LLObjects1"],["HistMacro_NumLowLevelObjects_p2","LLObjects2"],["HistMacro_NumHighLevelObjects","HLObjects"],["__Independent_Hist_TrackMultiplicity_NumGoodReconstructedParticles","TrackMult"],["HistMacro_Tracking_p1","Tracking1"],["HistMacro_Tracking_p2","Tracking2"],["HistMacro_Tracking_p3","Tracking3"],["HistMacro_Matching_BCAL","MatchBCAL"],["HistMacro_Matching_FCAL","MatchFCAL"],["HistMacro_Matching_SC","MatchSC/ST"],["HistMacro_Matching_TOF","MatchTOF"]]
-        if revision < 4: 
-            ana_charts2 = [["HistMacro_FCALReconstruction_p1","FCAL1"],["HistMacro_FCALReconstruction_p2","FCAL2"],["HistMacro_BCALReconstruction_p1","BCAL1"],["HistMacro_BCALReconstruction_p2","BCAL2"],["HistMacro_SCReconstruction_p1","SC/ST1"],["HistMacro_SCReconstruction_p2","SC/ST2"],["HistMacro_SCReconstruction_p3","SC/ST3"],["HistMacro_TOFReconstruction_p1","TOF1"],["HistMacro_TOFReconstruction_p2","TOF2"],["HistMacro_Kinematics_p1","Kinematics1"],["HistMacro_Kinematics_p2","Kinematics2"]]
-        if revision < 8:
-            ana_charts2 = [["HistMacro_FCALReconstruction_p1","FCAL1"],["HistMacro_FCALReconstruction_p2","FCAL2"],["HistMacro_FCALReconstruction_p3","FCAL3"],["HistMacro_BCALReconstruction_p1","BCAL1"],["HistMacro_BCALReconstruction_p2","BCAL2"],["HistMacro_BCALReconstruction_p3","BCAL3"],["HistMacro_SCReconstruction_p1","SC/ST1"],["HistMacro_SCReconstruction_p2","SC/ST2"],["HistMacro_SCReconstruction_p3","SC/ST3"],["HistMacro_TOFReconstruction_p1","TOF1"],["HistMacro_TOFReconstruction_p2","TOF2"],["HistMacro_Kinematics_p1","Kinematics1"],["HistMacro_Kinematics_p2","Kinematics2"]]
-	else:
-            ana_charts2 = [["HistMacro_FCALReconstruction_p1","FCAL1"],["HistMacro_FCALReconstruction_p2","FCAL2"],["HistMacro_FCALReconstruction_p3","FCAL3"],["HistMacro_BCALReconstruction_p1","BCAL1"],["HistMacro_BCALReconstruction_p2","BCAL2"],["HistMacro_BCALReconstruction_p3","BCAL3"],["HistMacro_SCReconstruction_p1","SC/ST1"],["HistMacro_SCReconstruction_p2","SC/ST2"],["HistMacro_TOFReconstruction_p1","TOF1"],["HistMacro_TOFReconstruction_p2","TOF2"],["HistMacro_Kinematics_p1","Kinematics1"],["HistMacro_Kinematics_p2","Kinematics2"]]
-        if revision < 10: 
-            ana_charts3 = [["HistMacro_p2pi_pmiss","&pi;<sup>+</sup>&pi;<sup>-</sup>1"],["HistMacro_p2pi_preco1","&pi;<sup>+</sup>&pi;<sup>-</sup>2"],["HistMacro_p3pi_pmiss_2FCAL","&pi;<sup>+</sup>&pi;<sup>-</sup>&pi;<sup>0</sup>(2FCAL)"],["HistMacro_p3pi_pmiss_FCAL-BCAL","&pi;<sup>+</sup>&pi;<sup>-</sup>&pi;<sup>0</sup>(F/BCAL)"]]
-        else:
-            ana_charts3 = [["HistMacro_p2pi_pmiss","&pi;<sup>+</sup>&pi;<sup>-</sup>1"],["HistMacro_p2pi_preco1","&pi;<sup>+</sup>&pi;<sup>-</sup>2"],["HistMacro_p3pi_preco_2FCAL","&pi;<sup>+</sup>&pi;<sup>-</sup>&pi;<sup>0</sup>(2FCAL)"],["HistMacro_p3pi_preco_FCAL-BCAL","&pi;<sup>+</sup>&pi;<sup>-</sup>&pi;<sup>0</sup>(F/BCAL)"]]
-    # Fall 2015 run
-    elif options[2] == 'RunPeriod-2015-12' or options[2] == 'RunPeriod-2016-02':
-        cdc_charts = [["__CDC_cdc_raw_intpp","RawInt"],["__CDC_cdc_raw_t","Time"],["CDC_occupancy","Occupancy"],["__CDC_cdc_ped","Pedestal"],["__CDC_cdc_raw_intpp_vs_n","RawIntVsN"],["__CDC_cdc_raw_t_vs_n","RawTimeVsN"],["__CDC_cdc_ped_vs_n","PedVsN"],["__CDC_cdc_windata_ped_vs_n","WinDataPedVsN"]]
-        fdc_charts = [["FDC_P1_pseudo_occupancy", "FDC P1"],["FDC_P2_pseudo_occupancy", "FDC P2"],["FDC_P3_pseudo_occupancy", "FDC P3"],["FDC_P4_pseudo_occupancy", "FDC P4"]]
-        bcal_charts = [["bcal_summary","DigiSummary"],["bcal_times","DigiTime"],["bcal_occupancy","DigiOccupancy"],["bcal_cluster","Cluster"],["bcal_shower","Shower"],["bcal_hist_eff","Effic"],["bcal_inv_mass","BCALInvMass"],["bcal_fcal_inv_mass","B/FCALInvMass"],["trig_fcalbcal","Trigger"]]
-   
-        fcal_charts = [["__fcal_digHitE","DigiPulseInt"],["__fcal_digOcc2D","DigiOccupancy"],["__fcal_digT","DigiTime"],["fcal_hit_energy","HitSummary"],["fcal_hit_timing","HitTime"],["fcal_cluster_et","ClusterEnergyTime"],["fcal_cluster_space","ClusterSpace"]]
-        tof_charts = [["__tof_tofe","Energy"],["__tof_toft","Time"],["__tof_tofo1","OccupancyPlane1"],["__tof_tofo2","OccupancyPlane2"]]
-        st_charts = [["ST_Monitoring_Waveform_ch4","LowWaveform"],["ST_Monitoring_Multi","LowMulti"],["ST_Monitoring_Pid","TrackingPID"],["ST_Monitoring_Eff","TrackingEff"]]
-        tagm_charts = [["__tagm_tagm_adc_pint","DigiPulseInt"],["__tagm_tagm_adc_mult","DigiMultiplicity"],["__tagm_tagm_hit_seen","HitOccupancy"],["__tagm_tagm_hit_time","HitTime"]]
-        tagh_charts = [["__TAGH_DigiHit_DigiHit_RawIntegral","DigiRawInt"],["__TAGH_DigiHit_DigiHit_tdcTime","DigiTDCTime"],["__TAGH_DigiHit_DigiHit_PedestalVsSlotID","DigiPedVsSlot"],["TAGH_hit","HitSummary"],["TAGH_hit2","HitSummary2"]]
-        ps_charts = [["PSC_hit","PSC1"],["PSC_hit2","PSC2"],["PSC_hit3","PSC3"],["PS_hit","PS1"],["PS_hit2","PS2"],["__PSPair_PSC_PS_PS_E","PS_E"],["PS_PSC_coinc","PairCoinc"],["PS_eff","PairEff"],["PS_TAG_energy","PairTagEnergy"]] #,["TAG_eff","TagEff"],["TAG_2D_eff","Tag2DEff"]]
-        rf_charts = [["HistMacro_RF_p1","RF1"],["HistMacro_RF_p2","RF2"],["HistMacro_RF_p3","RF3"]]
-        l1_charts = [["l1_rate","L1Rate"],["l1_fcal_bcal","L1FCALBCAL"],["l1_ancilary","L1Ancillary"]]
-        hldetectortiming_charts = [["HistMacro_TaggerTiming","Tagger Timing"],["HistMacro_TaggerRFAlignment","Tagger-RF"],["HistMacro_TaggerSCAlignment","Tagger-SC"],["HistMacro_CalorimeterTiming","FCAL/BCAL"],["HistMacro_PIDSystemTiming","SC/TOF"],["HistMacro_TrackMatchedTiming","Track Matched Timing"]]
-        ana_charts1 = [["HistMacro_EventInfo","EventInfo"],["HistMacro_NumLowLevelObjects_p1","LLObjects1"],["HistMacro_NumLowLevelObjects_p2","LLObjects2"],["HistMacro_NumHighLevelObjects","HLObjects"],["__Independent_Hist_TrackMultiplicity_NumGoodReconstructedParticles","TrackMult"],["HistMacro_Tracking_p1","Tracking1"],["HistMacro_Tracking_p2","Tracking2"],["HistMacro_Tracking_p3","Tracking3"],["HistMacro_Matching_BCAL","MatchBCAL"],["HistMacro_Matching_FCAL","MatchFCAL"],["HistMacro_Matching_SC","MatchSC/ST"],["HistMacro_Matching_TOF","MatchTOF"]]
-        ana_charts2 = [["HistMacro_FCALReconstruction_p1","FCAL1"],["HistMacro_FCALReconstruction_p2","FCAL2"],["HistMacro_FCALReconstruction_p3","FCAL3"],["HistMacro_BCALReconstruction_p1","BCAL1"],["HistMacro_BCALReconstruction_p2","BCAL2"],["HistMacro_BCALReconstruction_p3","BCAL3"],["HistMacro_SCReconstruction_p1","SC/ST1"],["HistMacro_SCReconstruction_p2","SC/ST2"],["HistMacro_TOFReconstruction_p1","TOF1"],["HistMacro_TOFReconstruction_p2","TOF2"],["HistMacro_Kinematics_p1","Kinematics1"],["HistMacro_Kinematics_p2","Kinematics2"]]
-        ana_charts3 = [["HistMacro_p2pi_pmiss","&pi;<sup>+</sup>&pi;<sup>-</sup>1"],["HistMacro_p2pi_preco1","&pi;<sup>+</sup>&pi;<sup>-</sup>2"],["HistMacro_p3pi_preco_2FCAL","&pi;<sup>+</sup>&pi;<sup>-</sup>&pi;<sup>0</sup>(2FCAL)"],["HistMacro_p3pi_preco_FCAL-BCAL","&pi;<sup>+</sup>&pi;<sup>-</sup>&pi;<sup>0</sup>(F/BCAL)"]]
+                if filename.find("L1")>-1 or filename.find("l1")>-1:
+#                    print "   --found L1 <br>"
+                    l1_charts.append([filename[:-4],dispname])
+                    continue
 
+                if filename.find("CDC")>-1 or filename.find("cdc")>-1:
+#                    print "   --found cdc <br>"
+                    cdc_charts.append([filename[:-4],dispname])
+                    continue
+                
+                if (filename.find("BCAL")>-1 or filename.find("bcal")>-1) and filename.find("Reconstruction") == -1:
+#                    print "   --found bcal <br>"
+                    bcal_charts.append([filename[:-4],dispname])
+                    continue
+                
+                if (filename.find("FCAL")>-1 or filename.find("fcal")>-1) and (filename.find("Reconstruction")<0 and filename.find("Matching")<0):
+#                    print "   --found fcal <br>"
+                    fcal_charts.append([filename[:-4],dispname])
+                    continue
+                
+                if filename.find("TOF")>-1 or filename.find("tof")>-1 and (filename.find("Reconstruction")<0 and filename.find("occupancy")<0):
+#                    print "   --found tof <br>"
+                    tof_charts.append([filename[:-4],dispname])
+                    continue
+                
+                if (filename.find("FDC")>-1 or filename.find("fdc")>-1) and filename.find("occupancy")<0:
+#                    print "   --found fdc <br>"
+                    fdc_charts.append([filename[:-4],dispname])
+                    continue
+               
+                if (filename.find("ST_")>-1 or filename.find("st_")>-1) and filename.find("occupancy")<0:
+#                    print "   --found st <br>"
+                    st_charts.append([filename[:-4],dispname])
+                    continue
+                
+                if filename.find("TAGM")>-1 or filename.find("tagm")>-1:
+#                    print "   --found tagm <br>"
+                    tagm_charts.append([filename[:-4],dispname])
+                    continue
+                
+                if filename.find("TAGH")>-1 or filename.find("tagh")>-1:
+#                    print "   --found tagh <br>"
+                    tagh_charts.append([filename[:-4],dispname])
+                    continue
+                
+                if filename.find("Alignment")>-1 or filename.find("Timing")>-1:
+#                    print "   --found hldetect <br>"
+                    hldetectortiming_charts.append([filename[:-4],dispname])
+                    continue
+
+                if filename.find("PS")>-1 or filename.find("ps_")>-1 or filename.find("TAG_")>-1:
+#                    print "   --found ps <br>"
+                    ps_charts.append([filename[:-4],dispname])
+                    continue
+
+                if filename.find("RF_")>-1:
+#                    print "   --found RF <br>"
+                    rf_charts.append([filename[:-4],dispname])
+                    continue
+
+                if filename.find("TPOL")>-1:
+#                    print "   --found RF <br>"
+                    tpol_charts.append([filename[:-4],dispname])
+                    continue
+
+
+            print filename
+            print "<br>"
+
+            #print name
+            #print "<br>"
+    else:
+        print "This run number does not exist for the given run period/version number!!!!"
+        print "<br>"
+        print "<br>"
+        print "<br>"
+        print "<br>"
+####################################################################################
     # set names to "rootspy" if these are online histograms 
     #if revision == 0:
         #for chart in cdc_charts:
@@ -607,7 +690,7 @@ def main():
       <tr>"""
 
     #if revision == 0:
-    occupancy_charts = [["CDC_occupancy","CDC"],["FDC_occupancy","FDC"],["FCAL_occupancy","FCAL"],["BCAL_occupancy","BCAL"],["PS_occupancy","PS"],["RF_TPOL_occupancy","RF & TPOL"],["ST_occupancy","ST"],["TAGGER_occupancy","TAGGER"],["TOF_occupancy","TOF"]]
+
     print "<td>Online Occupancies: </td>"
     print_row(options, occupancy_charts)
 
@@ -671,9 +754,10 @@ def main():
 
     record_singlerun=get_data_singlerun(options)
     #print "<br> Run %s" % (options[0]) # record_singlerun[3])
-    for row in record_singlerun:
-       print "<br> <b> Run %s: </b> Beam current = %s nA, Radiator = %s, Solenoid current = %s A, Trigger = %s" % (options[0], row[3], row[4], row[5], row[6]) 
-
+    
+    print "<br>"
+    print "<b id='RunLine'> <b>Run %s:</b> </b>" % (options[0])
+ 
     # display histogram
     print """<img width=700px src="" id="imageshow" style="display:none">"""
     print "</div>"
