@@ -5,17 +5,6 @@ export MONITORING_HOME=/group/halld/Software/scripts/monitoring/
 # SET /apps/bin AT FRONT OF PATH (to use working version of git)
 export PATH=/apps/bin:$PATH
 
-# SETUP gcc 4.9.2
-export PATH=/apps/gcc/4.9.2/bin:${PATH}
-if [ ! $?MANPATH ]; then
-        export MANPATH=""
-fi
-export MANPATH=/apps/gcc/4.9.2/share/man:${MANPATH}
-if [ ! $?LD_LIBRARY_PATH ]; then
-        export LD_LIBRARY_PATH=""
-fi
-export LD_LIBRARY_PATH=/apps/gcc/4.9.2/lib64:/apps/gcc/4.9.2/lib:${LD_LIBRARY_PATH}
-
 # PYTHON
 export PATH=/apps/python/PRO/bin:$PATH
 export LD_LIBRARY_PATH=/apps/python/PRO/lib:$LD_LIBRARY_PATH
@@ -35,7 +24,7 @@ export GLUEX_VERSION_XML=/u/scratch/gluex/nightly/${DATE}/${BMS_OSNAME}/version_
 eval `$BUILD_SCRIPTS/version.pl -s bash $GLUEX_VERSION_XML`
 
 # SET FULL ENVIRONMENT
-source $BUILD_SCRIPTS/gluex_env.sh -v
+source $BUILD_SCRIPTS/gluex_env_jlab.sh -v
 
 # SETUP SQLITE & RESOURCES
 export SQLITE_PATH=ccdb.sqlite #only used locally
