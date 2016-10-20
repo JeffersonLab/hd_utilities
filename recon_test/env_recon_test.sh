@@ -24,7 +24,7 @@ export GLUEX_VERSION_XML=/u/scratch/gluex/nightly/${DATE}/${BMS_OSNAME}/version_
 eval `$BUILD_SCRIPTS/version.pl -s bash $GLUEX_VERSION_XML`
 
 # SET FULL ENVIRONMENT
-source $BUILD_SCRIPTS/gluex_env_jlab.sh -v
+source $BUILD_SCRIPTS/gluex_env_jlab.sh
 
 # SETUP SQLITE & RESOURCES
 export SQLITE_PATH=ccdb.sqlite #only used locally
