@@ -152,14 +152,16 @@ def print_option_selector(options):
 
     with open('./figure_titles','r') as f:
         for line in f:
-            filename = line.split(',', 2)[0][:-4]
-            dispname = line.split(',', 2)[1]
+            words=line.split(',', 3)
+            filename = words[0][:-4]#line.split(',', 2)[0][:-4]
+            dispname = words[1]#line.split(',', 2)[1]
             #print filename                                                                                                                                                                                       
             #print "   "                                                                                                                                                                                          
             #print dispname                                                                                                                                                                                       
             #print "<br>"                                                                                                                                                                                         
             plotNames.append([filename[0:],dispname[0:]])
 
+    plotNames.sort(key=lambda x: x[1])
     print "Select Run Period:"
     periods = get_periods(options)
     print "<select id=\"period\" name=\"period\" onChange=\"changePeriod()\">" 

@@ -1,106 +1,108 @@
-__bcal_bcal_shower_plane.png,BCAL Shower Pos. X-Y
-bcal_cluster.png,BCAL Clusters
-bcal_fcal_inv_mass.png,Pi0 Inv. Mass (BCAL/FCAL)
-bcal_hist_eff.png,BCAL Efficiency
-bcal_inv_mass.png,Pi0 Inv. Mass (BCAL only)
-bcal_occupancy.png,BCAL Occupancy
-BCAL_occupancy.png,BCAL Occupancy (online)
-bcal_shower.png,BCAL Showers
-bcal_summary.png,BCAL DigiHits
-bcal_times.png,BCAL Times
-__CDC_cdc_ped.png,CDC DigiHit Pedestal
-__CDC_cdc_ped_vs_n.png,CDC DigiHit Pedestal Per-straw
-__CDC_cdc_raw_intpp.png,CDC DigiHit Raw Integral
-__CDC_cdc_raw_intpp_vs_n.png,CDC DigiHit Raw Integral Per-straw
-__CDC_cdc_raw_t.png,CDC DigiHit Time
-__CDC_cdc_raw_t_vs_n.png,CDC DigiHit Time Per-straw
-__CDC_cdc_windata_ped_vs_n.png,CDC DigiHit Pedestal (From Raw Data) Per-straw
-CDC_occupancy.png,CDC Occupancy
-fcal_cluster_et.png,FCAL Clusters 1
-fcal_cluster_space.png,FCAL Clusters 2
-__fcal_digHitE.png,FCAL DigiHit Raw Integral
-__fcal_digOcc2D.png,FCAL Occupancy
-__fcal_digT.png,FCAL DigiHit Time
-fcal_hit_energy.png,FCAL Hits 1
-fcal_hit_timing.png,FCAL Hits 2
-FCAL_occupancy.png,FCAL Occupancy (online)
-FDC_occupancy.png,FDC Hit Occupancy
-FDC_P1_pseudo_occupancy.png,FDC Package 1 Occupancy
-FDC_P2_pseudo_occupancy.png,FDC Package 2 Occupancy
-FDC_P3_pseudo_occupancy.png,FDC Package 3 Occupancy
-FDC_P4_pseudo_occupancy.png,FDC Package 4 Occupancy
-HistMacro_BCALReconstruction_p1.png,Recon. BCAL 1
-HistMacro_BCALReconstruction_p2.png,Recon. BCAL 2
-HistMacro_BCALReconstruction_p3.png,Recon. BCAL 3
-HistMacro_CalorimeterTiming.png,HLDT Calorimeter Timing
-HistMacro_EventInfo.png,Recon. Event Info
-HistMacro_FCALReconstruction_p1.png,Recon. FCAL 1
-HistMacro_FCALReconstruction_p2.png,Recon. FCAL 2
-HistMacro_FCALReconstruction_p3.png,Recon. FCAL 3
-HistMacro_Kinematics_p1.png,Recon. Kinematics 1
-HistMacro_Kinematics_p2.png,Recon. Kinematics 2
-HistMacro_Matching_BCAL.png,Recon. BCAL Matching
-HistMacro_Matching_FCAL.png,Recon. FCAL Matching
-HistMacro_Matching_SC.png,Recon. SC Matching
-HistMacro_Matching_TOF.png,Recon. TOF Matching
-HistMacro_NumHighLevelObjects.png,Recon. Num. High-Level Objects
-HistMacro_NumLowLevelObjects_p1.png,Recon. Num. Low-Level Objects 1
-HistMacro_NumLowLevelObjects_p2.png,Recon. Num. Low-Level Objects 2
-HistMacro_p2pi_pmiss.png,p2pi w/ missing proton
-HistMacro_p2pi_preco1.png,p2pi w/ reconstructed proton
-HistMacro_p3pi_preco_2FCAL.png,p3pi w/ FCAL pi0
-HistMacro_p3pi_preco_FCAL-BCAL.png,p3pi w/ BCAL/FCAL pi0
-HistMacro_PIDSystemTiming.png,HLDT PID System Timing
-HistMacro_RF_p1.png,RF 1
-HistMacro_RF_p2.png,RF 2
-HistMacro_RF_p3.png,RF 3
-HistMacro_SCReconstruction_p1.png,Recon. SC 1
-HistMacro_SCReconstruction_p2.png,Recon. SC 2
-HistMacro_TaggerRFAlignment.png,HLDT Tagger/RF Align.
-HistMacro_TaggerSCAlignment.png,HLDT Tagger/SC Align.
-HistMacro_TaggerTiming.png,HLDT Tagger Timing
-HistMacro_TOFReconstruction_p1.png,Recon. TOF 1
-HistMacro_TOFReconstruction_p2.png,Recon. TOF 2
-HistMacro_Tracking_p1.png,Recon. Tracking 1
-HistMacro_Tracking_p2.png,Recon. Tracking 2
-HistMacro_Tracking_p3.png,Recon. Tracking 3
-HistMacro_TrackMatchedTiming.png,HLDT Track-Matched Timing
-HistMacro_TrackMultiplicity.png,Recon. Track Multiplicity
-__Independent_Hist_TrackMultiplicity_NumGoodReconstructedParticles.png,Recon. Num. Good Particles
-l1_ancilary.png,L1 Ancilary
-l1_fcal_bcal.png,L1 FCAL/BCAL
-l1_rate.png,L1 Rate
-PSC_hit2.png,PSC Hits 2
-PSC_hit3.png,PSC Hits 3
-PSC_hit.png,PSC Hits
-PS_eff.png,PS Efficiency
-PS_hit2.png,PS Hits 2
-PS_hit.png,PS Hits
-PS_occupancy.png,PS Occupancy
-__PSPair_PSC_PS_PS_E.png,PS Pair Energy
-PS_PSC_coinc.png,PS/PSC Coincidence
-PS_TAG_energy.png,PS/TAGGER Energy
-RF_TPOL_occupancy.png,RF/TPOL Occupancy
-ST_Monitoring_Eff.png,SC Efficiency
-ST_Monitoring_Multi.png,SC Multiplicity
-ST_Monitoring_Pid.png,SC dE/dx
-ST_Monitoring_Waveform_ch4.png,SC Waveforms
-ST_occupancy.png,SC Occupancy
-TAG_2D_eff.png,Tagger 2D Efficiency
-TAG_eff.png,Tagger Efficiency
-TAGGER_occupancy.png,Tagger Occupancy
-__TAGH_DigiHit_DigiHit_PedestalVsSlotID.png,TAGH DigiHit Pedestal
-__TAGH_DigiHit_DigiHit_RawIntegral.png,TAGH DigiHit Integral
-__TAGH_DigiHit_DigiHit_tdcTime.png,TAGH TDC time
-TAGH_hit2.png,TAGH Hits 2
-TAGH_hit.png,TAGH Hits 1
-__tagm_tagm_adc_mult.png,TAGM Multiplicity
-__tagm_tagm_adc_pint.png,TAGM Integral
-__tagm_tagm_hit_seen.png,TAGM Occupancy
-__tagm_tagm_hit_time.png,TAGH TDC time 
-TOF_occupancy.png,TOF Occupancy
-__tof_tofe.png,TOF Hit Energy
-__tof_tofo1.png,TOF Occupancy Plane 1
-__tof_tofo2.png,TOF Occupancy Plane 2
-__tof_toft.png,TOF Hit Time
-__TPOL_DigiHit_DigiHit_RawIntegral.png,TPOL Integral
+__bcal_bcal_shower_plane.png,BCAL Shower Pos. X-Y,BCAL
+bcal_cluster.png,BCAL Clusters,BCAL
+bcal_fcal_inv_mass.png,Pi0 Inv. Mass (BCAL/FCAL),BCAL
+bcal_hist_eff.png,BCAL Efficiency,BCAL
+bcal_inv_mass.png,Pi0 Inv. Mass (BCAL only),BCAL
+bcal_occupancy.png,BCAL Occupancy,OCCUPANCY
+BCAL_occupancy.png,BCAL Occupancy (online),OCCUPANCY
+bcal_shower.png,BCAL Showers,BCAL
+bcal_summary.png,BCAL DigiHits,BCAL
+bcal_times.png,BCAL Times,BCAL
+__CDC_cdc_ped.png,CDC DigiHit Pedestal,CDC
+__CDC_cdc_ped_vs_n.png,CDC DigiHit Pedestal Per-straw,CDC
+__CDC_cdc_raw_intpp.png,CDC DigiHit Raw Integral,CDC
+__CDC_cdc_raw_intpp_vs_n.png,CDC DigiHit Raw Integral Per-straw,CDC
+__CDC_cdc_raw_t.png,CDC DigiHit Time,CDC
+__CDC_cdc_raw_t_vs_n.png,CDC DigiHit Time Per-straw,CDC
+__CDC_cdc_windata_ped_vs_n.png,CDC DigiHit Pedestal (From Raw Data) Per-straw,CDC
+CDC_occupancy.png,CDC Occupancy,OCCUPANCY
+fcal_cluster_et.png,FCAL Clusters 1,FCAL
+fcal_cluster_space.png,FCAL Clusters 2,FCAL
+__fcal_digHitE.png,FCAL DigiHit Raw Integral,FCAL
+__fcal_digOcc2D.png,FCAL Occupancy,FCAL
+__fcal_digT.png,FCAL DigiHit Time,FCAL
+fcal_hit_energy.png,FCAL Hits 1,FCAL
+fcal_hit_timing.png,FCAL Hits 2,FCAL
+FCAL_occupancy.png,FCAL Occupancy (online),OCCUPANCY
+FDC_occupancy.png,FDC Hit Occupancy,OCCUPANCY
+FDC_P1_pseudo_occupancy.png,FDC Package 1 Occupancy,OCCUPANCY
+FDC_P2_pseudo_occupancy.png,FDC Package 2 Occupancy,OCCUPANCY
+FDC_P3_pseudo_occupancy.png,FDC Package 3 Occupancy,OCCUPANCY
+FDC_P4_pseudo_occupancy.png,FDC Package 4 Occupancy,OCCUPANCY
+HistMacro_BCALReconstruction_p1.png,Recon. BCAL 1,RECONSTRUCTION
+HistMacro_BCALReconstruction_p2.png,Recon. BCAL 2,RECONSTRUCTION
+HistMacro_BCALReconstruction_p3.png,Recon. BCAL 3,RECONSTRUCTION
+HistMacro_CalorimeterTiming.png,HLDT Calorimeter Timing,HLDT
+HistMacro_EventInfo.png,Recon. Event Info,RECONSTRUCTION
+HistMacro_FCALReconstruction_p1.png,Recon. FCAL 1,RECONSTRUCTION
+HistMacro_FCALReconstruction_p2.png,Recon. FCAL 2,RECONSTRUCTION
+HistMacro_FCALReconstruction_p3.png,Recon. FCAL 3,RECONSTRUCTION
+HistMacro_Kinematics_p1.png,Recon. Kinematics 1,RECONSTRUCTION
+HistMacro_Kinematics_p2.png,Recon. Kinematics 2,RECONSTRUCTION
+HistMacro_Matching_BCAL.png,Recon. BCAL Matching,RECONSTRUCTION
+HistMacro_Matching_FCAL.png,Recon. FCAL Matching,RECONSTRUCTION
+HistMacro_Matching_SC.png,Recon. SC Matching,RECONSTRUCTION
+HistMacro_Matching_TOF.png,Recon. TOF Matching,RECONSTRUCTION
+HistMacro_NumHighLevelObjects.png,Recon. Num. High-Level Objects,RECONSTRUCTION
+HistMacro_NumLowLevelObjects_p1.png,Recon. Num. Low-Level Objects 1,RECONSTRUCTION
+HistMacro_NumLowLevelObjects_p2.png,Recon. Num. Low-Level Objects 2,RECONSTRUCTION
+HistMacro_p2pi_pmiss.png,p2pi w/ missing proton,ANA
+HistMacro_p2pi_preco1.png,p2pi w/ reconstructed proton,ANA
+HistMacro_p3pi_preco_2FCAL.png,p3pi w/ FCAL pi0,ANA
+HistMacro_p3pi_preco_FCAL-BCAL.png,p3pi w/ BCAL/FCAL pi0,ANA
+HistMacro_PIDSystemTiming.png,HLDT PID System Timing,HLDT
+HistMacro_RF_p1.png,RF 1,RF
+HistMacro_RF_p2.png,RF 2,RF
+HistMacro_RF_p3.png,RF 3,RF
+HistMacro_SCReconstruction_p1.png,Recon. SC 1,RECONSTRUCTION
+HistMacro_SCReconstruction_p2.png,Recon. SC 2,RECONSTRUCTION
+HistMacro_TaggerRFAlignment.png,HLDT Tagger/RF Align.,HLDT
+HistMacro_TaggerSCAlignment.png,HLDT Tagger/SC Align.,HLDT
+HistMacro_TaggerTiming.png,HLDT Tagger Timing,HLDT
+HistMacro_TOFReconstruction_p1.png,Recon. TOF 1,RECONSTRUCTION
+HistMacro_TOFReconstruction_p2.png,Recon. TOF 2,RECONSTRUCTION
+HistMacro_Tracking_p1.png,Recon. Tracking 1,RECONSTRUCTION
+HistMacro_Tracking_p2.png,Recon. Tracking 2,RECONSTRUCTION
+HistMacro_Tracking_p3.png,Recon. Tracking 3,RECONSTRUCTION
+HistMacro_TrackMatchedTiming.png,HLDT Track-Matched Timing,HLDT
+HistMacro_TrackMultiplicity.png,Recon. Track Multiplicity,RECONSTRUCTION
+__Independent_Hist_TrackMultiplicity_NumGoodReconstructedParticles.png,Recon. Num. Good Particles,RECONSTRUCTION
+l1_ancilary.png,L1 Ancilary,L1
+l1_fcal_bcal.png,L1 FCAL/BCAL,L1
+l1_rate.png,L1 Rate,L1
+PSC_hit2.png,PSC Hits 2,PS
+PSC_hit3.png,PSC Hits 3,PS
+PSC_hit.png,PSC Hits,PS
+PS_eff.png,PS Efficiency,PS
+PS_hit2.png,PS Hits 2,PS
+PS_hit.png,PS Hits,PS
+PS_occupancy.png,PS Occupancy,OCCUPANCY
+__PSPair_PSC_PS_PS_E.png,PS Pair Energy,PS
+PS_PSC_coinc.png,PS/PSC Coincidence,PS
+PS_TAG_energy.png,PS/TAGGER Energy,PS
+RF_TPOL_occupancy.png,RF/TPOL Occupancy,OCCUPANCY
+ST_Monitoring_Eff.png,SC Efficiency,SC
+ST_Monitoring_Multi.png,SC Multiplicity,SC
+ST_Monitoring_Pid.png,SC dE/dx,SC
+ST_Monitoring_Waveform_ch4.png,SC Waveforms,SC
+ST_occupancy.png,SC Occupancy,OCCUPANCY
+TAG_2D_eff.png,Tagger 2D Efficiency,PS
+TAG_eff.png,Tagger Efficiency,PS
+TAGGER_occupancy.png,Tagger Occupancy,OCCUPANCY
+__TAGH_DigiHit_DigiHit_PedestalVsSlotID.png,TAGH DigiHit Pedestal,TAGH
+__TAGH_DigiHit_DigiHit_RawIntegral.png,TAGH DigiHit Integral,TAGH
+__TAGH_DigiHit_DigiHit_tdcTime.png,TAGH TDC time,TAGH
+TAGH_hit2.png,TAGH Hits 2,TAGH
+TAGH_hit.png,TAGH Hits 1,TAGH
+__tagm_tagm_adc_mult.png,TAGM Multiplicity,TAGM
+__tagm_tagm_adc_pint.png,TAGM Integral,TAGM
+__tagm_tagm_hit_seen.png,TAGM Occupancy,TAGM
+__tagm_tagm_hit_time.png,TAGH TDC time,TAGM
+TOF_occupancy.png,TOF Occupancy,OCCUPANCY
+__tof_tofe.png,TOF Hit Energy,TOF
+__tof_tofo1.png,TOF Occupancy Plane 1,OCCUPANCY
+__tof_tofo2.png,TOF Occupancy Plane 2,OCCUPANCY
+__tof_toft.png,TOF Hit Time,TOF
+__TPOL_DigiHit_DigiHit_RawIntegral.png,TPOL Integral,TPOL
+HistMacro_p2pi.png,p+2pi Recon,ANA
+HistMacro_p3pi.png,p+3pi Recon,ANA

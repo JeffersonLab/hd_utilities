@@ -1,5 +1,4 @@
 #!/usr/bin/python
-
 import MySQLdb
 import cgi
 import cgitb
@@ -163,7 +162,16 @@ def printHTMLHead(title):
         /* Menu line styles */
         .link-list li.open  { font-weight:bold; }
         .link-list li.close { font-weight:normal; }
-      </style>
+      
+        .header .sign:after{
+        content:"+";
+        display:inline-block;      
+        }
+        .header.expand .sign:after{
+         content:"-";
+        }
+
+        </style>
 """
 
     print "<script src=\"https://halldweb.jlab.org/data_monitoring/js/runBrowser/TreeMenu.js\" type=\"text/javascript\"></script>"
@@ -171,30 +179,49 @@ def printHTMLHead(title):
 
     print """
       <script type="text/javascript">
-        var freeze = false;
-
-        function showPlot(ver, name, period)
+	       
+	var freeze = false;
+	
+        function showPlot()
 	{
-	  var imgsrc = "https://halldweb.jlab.org/work/halld2/data_monitoring/"
-          imgsrc += period;
-          imgsrc += "/";
-          imgsrc += ver;
-          imgsrc += "/Run";
-	  imgsrc += $(this.run_number).val()
-	  imgsrc += "/";
-	  imgsrc += name;
+          if(document.getElementById("plotToShow").value != "none")
+          {
+	  var imgsrc = document.getElementById("folderPath").innerHTML;//"https://halldweb.jlab.org/work/halld2/data_monitoring/"		
+	  imgsrc += document.getElementById("plotToShow").value;
 	  imgsrc += ".png";
-          if(!freeze) {
-	    document.getElementById('imageshow').src=imgsrc;
-            document.getElementById('imageshow').style.display='block';
-	  }
+
+          document.getElementById('imageshow').src=imgsrc;
+          document.getElementById('imageshow').style.display='block';
+          }
         }
 
         function freezeIt()
         {
-          if(freeze) freeze = false;
-          else freeze = true;
+          if(freeze) {freeze = false;}
+          else 
+          {
+          freeze = true;
+          }
         }
+
+
+        function updatePlot(name)
+        {
+         if(!freeze)
+             document.getElementById("plotToShow").value=name;
+        }
+    </script>
+
+      <script>
+         function toggleRows(id)
+         {
+           var e = document.getElementById(id);
+            if(e.style.display == 'none')
+              e.style.display = 'block';
+            else
+              e.style.display = 'none';
+           
+         }
       </script>
 
       <script>
@@ -208,6 +235,66 @@ def printHTMLHead(title):
         function changePeriod()
 	{
            $("#ver").load("/data_monitoring/textdata/" + $(this.period).val() + ".txt");
+        }
+      </script>
+      
+      <script>
+        function changeRunList(options)
+        {
+	
+            var Options=options;
+            
+            var RUNLIST = document.getElementById("runList");
+            var listItem = RUNLIST.getElementsByTagName("li");
+
+            for(var i=0; i<listItem.length ;i++)
+            {
+                 //listItem[i].innerHTML="hello"+i;
+            }
+	
+	/*var txtFile = new XMLHttpRequest();
+	txtFile.open("GET", "/u/group/halld/www/halldweb/htbin/data_monitoring/monitoring/file.txt", true);
+	console.log(txtFile.readyState);
+	txtFile.onreadystatechange = function() {
+      if (txtFile.readyState === 4) {  // Makes sure the document is ready to parse
+        if (txtFile.status === 200) {  // Makes sure it's found the file
+          text = txtFile.responseText;
+          console.log(text);
+        }
+      }
+    }*/
+	
+      }
+      </script>
+
+      <script>
+        function changePath()
+        {
+            var runpth="./";
+           
+            var Period = document.getElementById("period");
+            var Periodstr = Period.options[Period.selectedIndex].text;
+
+            var Version = document.getElementById("ver");
+            var Versionstr = Version.options[Version.selectedIndex].value;
+
+
+           if(Periodstr !=  "None" )
+             {
+              runpth = "/work/halld2/data_monitoring/";
+              runpth += Periodstr;
+              runpth += "/";
+              runpth += Versionstr
+              runpth += "/Run";
+              var length = ($(this.run_number).val()).length;
+              for(var i=0;i<6-length;i++)
+              {
+                runpth += "0";
+              }
+            runpth += $(this.run_number).val()
+            runpth += "/";
+             }
+           document.getElementById("folderPath").innerHTML=runpth;
         }
       </script>
 
@@ -227,7 +314,7 @@ def print_version_selector(options):
     print """<form action="/cgi-bin/data_monitoring/monitoring/runBrowser.py" method="POST">"""
     
     periods = get_periods(options)
-    print "<select id=\"period\" name=\"period\" onChange=\"changePeriod()\">" 
+    print "<select id=\"period\" name=\"period\" onChange=\"changePeriod();changePath();\">" 
     for period in periods:
         if period[0] == "RunPeriod-2015-01":
             continue;
@@ -240,7 +327,7 @@ def print_version_selector(options):
     recon_versions = []
 
     versions = get_versions(options)
-    print "<select id=\"ver\" name=\"ver\">" 
+    print "<select id=\"ver\" name=\"ver\" onChange=\"changeRunList(options);changePath();showPlot();\">" 
     for version in versions:
         revision = ("ver%02d" % version[0])
         data_type = version[1]
@@ -370,7 +457,7 @@ def print_run_selector(records, options, row):
                             numevents = db.get_condition(row[0], "event_count").value
                     print "<li>"
                     #print records
-                    print ("<label><input type=\"radio\" id=\"run_number\" name=\"run_number\" value=\"%s\" onclick=\"changeRun(%s,%s)\"> %s (%s eve)</label>" % (row[0], row[0], row[0], row[0], numevents))
+                    print ("<label><input type=\"radio\" id=\"run_number\" name=\"run_number\" value=\"%s\" onclick=\"changeRun(%s,%s);changePath();showPlot()\"> %s (%s eve)</label>" % (row[0], row[0], row[0], row[0], numevents))
                     print ("<a href=\"/cgi-bin/data_monitoring/monitoring/browseJSRoot.py?run_number=%s&ver=%s&period=%s\" target=\"_blank\"><button type=\"button\"> ROOT </button></a>" % (row[0], options[1], options[2]))
                     print ("<a href=\"https://halldweb.jlab.org/rcdb/runs/info/%s\" target=\"_blank\"><button type=\"button\"> RCDB </button></a>" % (row[0]))
                     print "</li>"
@@ -386,8 +473,8 @@ def print_run_selector(records, options, row):
 #print row of table to display histograms
 def print_row(options, charts):
     for chart in charts:
-        print "<td style='text-align:center' bgcolor='#A9E2F3' onclick=\"freezeIt(); showPlot(\'%s\', \'%s\', \'%s\');\" onmouseover=\"showPlot(\'%s\', \'%s\', \'%s\'); this.style.backgroundColor='#F78181';\" onmouseout=\"this.style.backgroundColor='#A9E2F3';\">%s</td>" % (options[1], chart[0], options[2], options[1], chart[0], options[2], chart[1])
-    print "</tr>" 
+        print "<td class=\"plotrows\" style='text-align:center' bgcolor='#A9E2F3' onclick=\"freezeIt(); updatePlot(\'%s\');showPlot();\" onmouseover=\"updatePlot(\'%s\');showPlot(); this.style.backgroundColor='#F78181';\" onmouseout=\"this.style.backgroundColor='#A9E2F3';\">%s</td>" % (chart[0],chart[0], chart[1])
+#    print "</tr>" 
 
 
 #return the option passed to the script
@@ -436,8 +523,7 @@ def get_path(options):
 
 # main function
 # This is where the program starts
-def main():
-    
+def main():    
     # get options that may have been passed to this script
     options=get_options()
 
@@ -455,13 +541,8 @@ def main():
     # print the page body
     print "<body style=\"overflow-y: hidden\" >"
 
-    #print "<b id=test>Test Text"
-    #print "</b>"
-    #print "<br>"
-    #myvar = "test"
-    #print "<input type=\"radio\" name=\"group1\" value=\"blah\" onclick=changeText(\"test\",\"%s\")> My button" % (myvar)
-    #print "<br>"
-    
+
+    print "<input type=\"hidden\" id=\"plotToShow\" value=\"none\">"
    #set period and version if only run_number is given
     if options[0] != None:
         # set period first
@@ -472,8 +553,6 @@ def main():
             versions=get_versions(options)
             revision = ("%s_ver%d" % (versions[0][1], versions[0][0]))
             options[1]=revision
-
-
     
     # print version selector
     print """<div id="nav" class="link-list">"""
@@ -540,121 +619,82 @@ def main():
     ana_charts3.pop(0)
     tpol_charts = [["TPOL","TPOL"]]
     tpol_charts.pop(0)
+    uncat_charts = [["UNCAT","UNCAT"]]
+    uncat_charts.pop(0)
 
-    folder_path = get_path(options)
+    #folder_path="./"
+    folder_path=get_path(options)
+    print "<b id='folderPath'>"
     print folder_path
+    print "</b>"
+    #print "folder_path = document.getElementById(\"folderPath\").innerHTML" #get_path(options)
+    #print folder_path
     print "<br>"
     #for each file in the folder find the corresponding textfile entry and sort into the subdetector table
     if os.path.isdir(folder_path):
         os.chdir(folder_path)
         for file in glob.glob("*.png"):
+            if os.stat(folder_path+file).st_size < 3000:
+                continue
+
             is_found = False
             #print file
             #print "<br>"
             filename = ""
             dispname = ""
+            category =""
             with open('/u/group/halld/www/halldweb/htbin/data_monitoring/monitoring/figure_titles','r') as f:
                 for line in f:
-                    filename = line.split(',', 2)[0]
-                    dispname = line.split(',', 2)[1]
+                    words=line.split(',',3)
+                    filename = words[0]#line.split(',', 3)[0]
+                    dispname = words[1]#line.split(',', 3)[1]
+                    category = words[2]#line.split(
                     if filename == file:
                         is_found = True
                         break
                     
             if is_found == False:
-                #print file
-                #print "================================"
-                #print "<br>"
+                print "<script>"
+                print "console.log(\"%s\")" % (file)
+                print "</script>"
                 continue
             else:
-                if filename.find("p2pi")>-1 or filename.find("p3pi")>-1:
-#                    print "   --found ANA1 <br>"
+                if category[:-1]=="ANA":
                     ana_charts3.append([filename[:-4],dispname])
-                    continue
-
-                if filename.find("Reconstruction")>-1 or filename.find("Num")>-1 or filename.find("EventInfo")>-1 or filename.find("Matching")>-1 or filename.find("Track")>-1:
-#                    print "   --found ANA1 <br>"
-                    ana_charts1.append([filename[:-4],dispname])
-                    continue
-
-                if filename.find("_p1")>-1 or filename.find("_p2")>-1:
-                #    print "   --found ANA1 <br>"
-                    ana_charts2.append([filename[:-4],dispname])
-                    continue
-
-                if filename.find("_occupancy")>-1 or filename.find("Occupancy")>-1:
-#                    print "   --found Occupancy <br>"
+                elif category[:-1]=="OCCUPANCY":
                     occupancy_charts.append([filename[:-4],dispname])
-                    continue
-
-                if filename.find("L1")>-1 or filename.find("l1")>-1:
-#                    print "   --found L1 <br>"
-                    l1_charts.append([filename[:-4],dispname])
-                    continue
-
-                if filename.find("CDC")>-1 or filename.find("cdc")>-1:
-#                    print "   --found cdc <br>"
+                elif category[:-1] == "RECONSTRUCTION":
+                    ana_charts1.append([filename[:-4],dispname])
+                elif category[:-1]== "CDC":
                     cdc_charts.append([filename[:-4],dispname])
-                    continue
-                
-                if (filename.find("BCAL")>-1 or filename.find("bcal")>-1) and filename.find("Reconstruction") == -1:
-#                    print "   --found bcal <br>"
+                elif category[:-1]== "BCAL":
                     bcal_charts.append([filename[:-4],dispname])
-                    continue
-                
-                if (filename.find("FCAL")>-1 or filename.find("fcal")>-1) and (filename.find("Reconstruction")<0 and filename.find("Matching")<0):
-#                    print "   --found fcal <br>"
+                elif category[:-1]== "FCAL":
                     fcal_charts.append([filename[:-4],dispname])
-                    continue
-                
-                if filename.find("TOF")>-1 or filename.find("tof")>-1 and (filename.find("Reconstruction")<0 and filename.find("occupancy")<0):
-#                    print "   --found tof <br>"
+                elif category[:-1]== "TOF":
                     tof_charts.append([filename[:-4],dispname])
-                    continue
-                
-                if (filename.find("FDC")>-1 or filename.find("fdc")>-1) and filename.find("occupancy")<0:
-#                    print "   --found fdc <br>"
+                elif category[:-1]== "FDC":
                     fdc_charts.append([filename[:-4],dispname])
-                    continue
-               
-                if (filename.find("ST_")>-1 or filename.find("st_")>-1) and filename.find("occupancy")<0:
-#                    print "   --found st <br>"
+                elif category[:-1]== "SC":
                     st_charts.append([filename[:-4],dispname])
-                    continue
-                
-                if filename.find("TAGM")>-1 or filename.find("tagm")>-1:
-#                    print "   --found tagm <br>"
+                elif category[:-1] == "TAGM":
                     tagm_charts.append([filename[:-4],dispname])
-                    continue
-                
-                if filename.find("TAGH")>-1 or filename.find("tagh")>-1:
-#                    print "   --found tagh <br>"
+                elif category[:-1]== "TAGH":
                     tagh_charts.append([filename[:-4],dispname])
-                    continue
-                
-                if filename.find("Alignment")>-1 or filename.find("Timing")>-1:
-#                    print "   --found hldetect <br>"
+                elif category[:-1]== "L1":
+                    l1_charts.append([filename[:-4],dispname])
+                elif category[:-1]== "HLDT":
                     hldetectortiming_charts.append([filename[:-4],dispname])
-                    continue
-
-                if filename.find("PS")>-1 or filename.find("ps_")>-1 or filename.find("TAG_")>-1:
-#                    print "   --found ps <br>"
+                elif category[:-1]== "PS":
                     ps_charts.append([filename[:-4],dispname])
-                    continue
-
-                if filename.find("RF_")>-1:
-#                    print "   --found RF <br>"
+                elif category[:-1]== "RF":
                     rf_charts.append([filename[:-4],dispname])
-                    continue
-
-                if filename.find("TPOL")>-1:
-#                    print "   --found RF <br>"
+                elif category[:-1]=="TPOL":
                     tpol_charts.append([filename[:-4],dispname])
-                    continue
-
-
-            print filename
-            print "<br>"
+                else:
+                    uncat_charts.append([filename[:-4],dispname])
+            #print filename
+            #print "<br>"
 
             #print name
             #print "<br>"
@@ -664,92 +704,133 @@ def main():
         print "<br>"
         print "<br>"
         print "<br>"
+    
 ####################################################################################
-    # set names to "rootspy" if these are online histograms 
-    #if revision == 0:
-        #for chart in cdc_charts:
-        #    chart[0] = chart[0].replace("__CDC_cdc","_rootspy__rootspy_CDC_cdc")
-        #for chart in fdc_charts:
-        #    chart[0] = chart[0].replace("__FDC","_rootspy__rootspy_FDC")
-        #for chart in fcal_charts:
-        #    chart[0] = chart[0].replace("__fcal","_rootspy__rootspy_fcal")
-        #for chart in tof_charts:
-        #    chart[0] = chart[0].replace("__tof","_rootspy__rootspy_tof")
-        #for chart in st_charts:
-        #    chart[0] = chart[0].replace("__st_st","_rootspy__rootspy_st_st")
-        #for chart in tagm_charts:
-        #    chart[0] = chart[0].replace("__tagm_tagm","_rootspy__rootspy_tagm_tagm")
-        #for chart in tagh_charts:
-        #    chart[0] = chart[0].replace("__TAGH","_rootspy__rootspy_TAGH")
-        #for chart in ana_charts1:
-        #    chart[0] = chart[0].replace("__Independent","_rootspy__rootspy_Independent")
 
     # display all possible charts in table for selection
-    print """Mouse over <font style="background-color: #A9E2F3">light blue</font> entries in table to view histograms, and <b>click</b>  on an entry to freeze/unfreeze a specific historgram. <br>"""
-    print """<table style="width:200px; font-size:0.8em">
-      <tr>"""
-
-    #if revision == 0:
-
-    print "<td>Online Occupancies: </td>"
-    print_row(options, occupancy_charts)
-
-    if not isRecon:
-        print "<td>CDC: </td>"
-        print_row(options, cdc_charts)
-        print "<td>FDC: </td>"
-        print_row(options, fdc_charts)
-        print "<td>BCAL: </td>" 
-        print_row(options, bcal_charts)
-        print "<td>FCAL: </td>" 
-        print_row(options, fcal_charts)
-        print "<td>TOF: </td>" 
-        print_row(options, tof_charts)
-        print "<td>SC/ST: </td>" 
-        print_row(options, st_charts)
-        print "<td>TAGM:</td>"
-        print_row(options, tagm_charts)
-        print "<td>TAGH:</td>"
-        print_row(options, tagh_charts)
-        print "</table>"
-        
-        if revision > 4 and options[2] == 'RunPeriod-2015-03' or options[2] == 'RunPeriod-2015-06' or options[2] == 'RunPeriod-2015-12' or options[2] == 'RunPeriod-2016-02':
-            print """<table style="width:200px; font-size:0.8em">
-	   <tr>"""
-            print "<td>RF:</td>"
-            print_row(options, rf_charts)
-            print "</table>"
-            
-        if (revision > 5 and options[2] == 'RunPeriod-2015-03') or (revision > 15 and options[2] == 'RunPeriod-2014-10') or options[2] == 'RunPeriod-2015-06' or options[2] == 'RunPeriod-2015-12' or options[2] == 'RunPeriod-2016-02':
-            print """<table style="font-size:0.8em">
-	   <tr>"""
-            print "<td>HLDetectorTiming:</td>"
-            print_row(options, hldetectortiming_charts)
-            print "</table>"
-        
-    if revision > 3 and options[2] == 'RunPeriod-2015-03' or options[2] == 'RunPeriod-2015-06' or options[2] == 'RunPeriod-2015-12' or options[2] == 'RunPeriod-2016-02':
-        print """<table style="width:200px; font-size:0.8em">
-	   <tr>"""
-        print "<td>PS:</td>"
-        print_row(options, ps_charts)
-        print "<td>L1:</td>"
-        print_row(options, l1_charts)
-        print "</table>"
-        
-    print """<table style="width:200px; font-size:0.8em">
-       <tr>"""
-    print "<td>RECO:  </td>" 
-    print_row(options, ana_charts1)
-    print "<td></td>"
-    print_row(options, ana_charts2)
-    print "</table>"
+    print """Click on a system header, then mouse over <font style="background-color: #A9E2F3">light blue</font> entries in table to view histograms, and <b>click</b>  on an entry to freeze/unfreeze a specific historgram. <br>"""
+    print """<table style="width:200px; font-size:0.8em">"""
     
-    if not isRecon:
-        print """<table style="width=200px; font-size:0.8em">
-      <tr>"""
-        print "<td>ANA:</td>" 
-        print_row(options, ana_charts3)
-             
+    
+    if len(occupancy_charts)>0:
+        print "<th onclick=toggleRows(\"occcharts\") >Occupancy: "
+        print "</th>"
+        print "<tr id=\"occcharts\" style=\"display:none;\">"
+        print_row(options,occupancy_charts)
+        print "</tr>"
+
+    if len(rf_charts)>0:
+        print "<th onclick=toggleRows(\"rfcharts\") >RF: "
+        print "</th>"
+        print "<tr id=\"rfcharts\" style=\"display:none;\">"
+        print_row(options,rf_charts)
+        print "</tr>"
+    
+    if len(tpol_charts)>0:
+        print "<th onclick=toggleRows(\"tpolcharts\") >TPOL: "
+        print "</th>"
+        print "<tr id=\"tpolcharts\" style=\"display:none;\">"
+        print_row(options,tpol_charts)
+        print "</tr>"
+
+    if len(tagm_charts)>0:
+        print "<th onclick=toggleRows(\"tagmcharts\") >TAGM: "
+        print "</th>"
+        print "<tr id=\"tagmcharts\" style=\"display:none;\">"
+        print_row(options,tagm_charts)
+        print "</tr>"
+
+    if len(tagh_charts)>0:
+        print "<th onclick=toggleRows(\"taghcharts\") >TAGH: "
+        print "</th>"
+        print "<tr id=\"taghcharts\" style=\"display:none;\">"
+        print_row(options,tagh_charts)
+        print "</tr>"
+
+    if len(ps_charts)>0:
+        print "<th onclick=toggleRows(\"pscharts\") >PS: "
+        print "</th>"
+        print "<tr id=\"pscharts\" style=\"display:none;\">"
+        print_row(options,ps_charts)
+        print "</tr>"
+
+    if len(st_charts)>0:
+        print "<th onclick=toggleRows(\"stcharts\") >SC/ST: "
+        print "</td>"
+        print "<tr id=\"stcharts\" style=\"display:none;\">"
+        print_row(options,st_charts)
+        print "</tr>"
+
+    if len(cdc_charts)>0:
+        print "<th onclick=toggleRows(\"cdccharts\") >CDC: "
+        print "</th>"
+        print "<tr id=\"cdccharts\" style=\"display:none;\">"
+        print_row(options,cdc_charts)
+        print "</tr>"
+
+    if len(bcal_charts)>0:
+        print "<th onclick=toggleRows(\"bcalcharts\") >BCAL: "
+        print "</th>"
+        print "<tr id=\"bcalcharts\" style=\"display:none;\">"
+        print_row(options,bcal_charts)
+        print "</tr>"
+
+    if len(fdc_charts)>0:
+        print "<th onclick=toggleRows(\"fdccharts\") >FDC: "
+        print "</th>"
+        print "<tr id=\"fdccharts\" style=\"display:none;\">"
+        print_row(options,fdc_charts)
+        print "</tr>"
+
+    if len(fcal_charts)>0:
+        print "<th onclick=toggleRows(\"fcalcharts\") >FCAL: "
+        print "</th>"
+        print "<tr id=\"fcalcharts\" style=\"display:none;\">"
+        print_row(options,fcal_charts)
+        print "</tr>"
+
+    if len(tof_charts)>0:
+        print "<th onclick=toggleRows(\"tofcharts\") >TOF: "
+        print "</td>"
+        print "<tr id=\"tofcharts\" style=\"display:none;\">"
+        print_row(options,tof_charts)
+        print "</tr>"
+
+    if len(l1_charts)>0:
+        print "<th onclick=toggleRows(\"l1charts\") >L1: "
+        print "</th>"
+        print "<tr id=\"l1charts\" style=\"display:none;\">"
+        print_row(options,l1_charts)
+        print "</tr>"
+
+    if len(hldetectortiming_charts)>0:
+        print "<th onclick=toggleRows(\"hldtcharts\") >HLDT: "
+        print "</th>"
+        print "<tr id=\"hldtcharts\" style=\"display:none;\">"
+        print_row(options,hldetectortiming_charts)
+        print "</tr>"
+
+    if len(ana_charts1)>0:
+        print "<th onclick=toggleRows(\"ana1charts\") >Recon.: "
+        print "</th>"
+        print "<tr id=\"ana1charts\" style=\"display:none;\">"
+        print_row(options,ana_charts1)
+        print "</tr>"
+
+    if len(ana_charts3)>0:
+        print "<th onclick=toggleRows(\"ana3charts\") >ANA: "
+        print "</th>"
+        print "<tr id=\"ana3charts\" style=\"display:none;\">"
+        print_row(options,ana_charts3)
+        print "</tr>"
+
+    if len(uncat_charts)>0:
+        print "<th onclick=toggleRows(\"uncatcharts\") >Uncategorized: "
+        print "</th>"
+        print "<tr id=\"uncatcharts\" style=\"display:none;\">"
+        print_row(options,uncat_charts)
+        print "</tr>"
+
     print "</table>"
 
     record_singlerun=get_data_singlerun(options)

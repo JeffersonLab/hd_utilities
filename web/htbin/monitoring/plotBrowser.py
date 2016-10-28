@@ -9,6 +9,7 @@ cgitb.enable()
 import re
 
 import os
+import os.path
 os.environ["RCDB_HOME"] = "/group/halld/www/halldweb/html/rcdb_home"
 import sys
 sys.path.append("/group/halld/www/halldweb/html/rcdb_home/python")
@@ -56,6 +57,23 @@ def get_versions(options):
         curs.execute(query, (str(options[5]))) 
     rows=curs.fetchall()
 
+    unique=[]
+    #unique.append(rows[1])
+    #unique.append(rows[2])
+    dup = 0
+    for row in rows:
+	for ent in range(0,len(unique)):
+		if unique[ent][0] == row[0] and unique[ent][1]==row[1]:			
+			dup=1
+			break
+	if dup == 1:
+		dup=0
+		continue
+	else:
+		unique.append(row)
+
+    rows=unique
+
     return rows
 
 # get list of periods from the DB
@@ -70,7 +88,7 @@ def get_periods(options):
 def show_plots(records, plotName, verName, periodName, rcdb_query):
     #print "<table border=\"1\">"
     #print "<tr>"
-
+    
     loc_i = 0
     temp_runs = []
 
@@ -97,12 +115,18 @@ def show_plots(records, plotName, verName, periodName, rcdb_query):
             print "<table border=\"1\">"
             print "<tr>"
             for temp_run in temp_runs:
-                print "<td style='text-align:center; font-size:1.5em' >"
+		#PATH="/cgi-bin/data_monitoring/monitoring/runBrowser.py?run_number=%s&ver=%s&period=%s\"  target=\"_blank\"> Run %s </b>" % (temp_run, verName, periodName, temp_run)
+                #if not os.path.isfile(PATH):
+		#	continue
+		print "<td style='text-align:center; font-size:1.5em' >"
                 print "<b><a href=\"/cgi-bin/data_monitoring/monitoring/runBrowser.py?run_number=%s&ver=%s&period=%s\"  target=\"_blank\"> Run %s </b>" % (temp_run, verName, periodName, temp_run)
                 print "</td>"
             print "</tr>"
             print "<tr>"
             for temp_run in temp_runs:
+		#PATH="/work/halld2/data_monitoring/%s/%s/Run%06d/%s.png" % (periodName, verName, temp_run, plotName)
+		#if not os.path.isfile(PATH):
+		#	continue
                 print "<td>"
                 web_link = "https://halldweb.jlab.org/work/halld2/data_monitoring/%s/%s/Run%06d/%s.png" % (periodName, verName, temp_run, plotName)
                 print "<img width=400px src=\"%s\" onclick=\"window.open('%s', '_blank')\" >" % (web_link, web_link)
@@ -165,14 +189,47 @@ def printHTMLHead(title):
         function changePeriod()
 	{
            $("#ver").load("/data_monitoring/textdata/" + $(this.period).val() + ".txt");
-        }
+
+         var chosenPeriod=$(this.period).val()
+
+	var runlow=0;
+	var runhigh=999999999;	
+   
+	if(chosenPeriod == "RunPeriod-2014-10")
+	{
+            runlow=1;
+            runhigh=9000;
+        
+	}else if(chosenPeriod == "RunPeriod-2015-03")
+         {
+	    runlow=2600;
+            runhigh=9000;
+	}else if(chosenPeriod == "RunPeriod-2015-06")
+	{	    
+	    runlow=3400;
+            runhigh=9000;
+	}else if( chosenPeriod == "RunPeriod-2015-12")
+         {
+	    runlow=4000;
+            runhigh=9000;
+	}else if(chosenPeriod == "RunPeriod-2016-02")
+	{
+	    runlow=10000;
+            runhigh=19999;
+	}
+	
+	document.getElementById("runlow").value=runlow;
+	document.getElementById("runhigh").value=runhigh;
+	
+	}
         </script>
-    """
+
+      """
 
 def print_option_selector(options):
     print """<form action="/cgi-bin/data_monitoring/monitoring/plotBrowser.py" method="POST">"""
 
-    
+
 
  #   mypath = "/work/halld2/data_monitoring/RunPeriod-2016-02/recon_ver02/Run011366/"
     plotNames = [["CDC_occupancy","CDC Occupancy"]]
@@ -183,17 +240,19 @@ def print_option_selector(options):
     
     with open('./figure_titles','r') as f:
         for line in f:
-            filename = line.split(',', 2)[0][:-4]
-            dispname = line.split(',', 2)[1]
+            words=line.split(',', 3)
+            filename = words[0][:-4]
+            dispname = words[1]#line.split(',', 2)[1]
             #print filename
             #print "   "
             #print dispname
             #print "<br>"
             plotNames.append([filename[0:],dispname[0:]])
             
+    plotNames.sort(key=lambda x: x[1])
     print "Select Run Period:"
     periods = get_periods(options)
-    print "<select id=\"period\" name=\"period\" onChange=\"changePeriod()\">" 
+    print "<select id=\"period\" name=\"period\" onChange=\"changePeriod();\">" 
     for period in periods:
         if period[0] == "RunPeriod-2015-01":
             continue;
@@ -212,9 +271,11 @@ def print_option_selector(options):
         production_time = version[2]
         full_version_name = "%s_%s" % (data_type, revision)
         print "<option value=\"%s\" " % full_version_name
-        if options != None and full_version_name == options[1]:
+	print str(full_version_name)
+	print str(options[3])        
+	if options != None and str(full_version_name) == str(options[3]):
             print "selected"
-	version_name = ""
+        version_name = ""
         if version[0] == 0 and data_type == "rawdata":
             version_name = "RootSpy"
         elif data_type == "mon":
@@ -243,11 +304,11 @@ def print_option_selector(options):
     print "</select>"
     print """ and run number range to query:"""
     if options == None:
-        print "<input type=\"text\" name=\"run1\" />"
-        print "<input type=\"text\" name=\"run2\" />"
+        print "<input type=\"text\" id=\"runlow\" name=\"run1\" />"
+        print "<input type=\"text\" id=\"runhigh\" name=\"run2\" />"
     else:
-        print "<input type=\"text\" value=\"%s\" name=\"run1\" />" % (options[0])
-        print "<input type=\"text\" value=\"%s\" name=\"run2\" />" % (options[1])
+        print "<input type=\"text\" id=\"runlow\" value=\"%s\" name=\"run1\" />" % (options[0])
+        print "<input type=\"text\" id=\"runhigh\" value=\"%s\" name=\"run2\" />" % (options[1])
     print "<input type=\"submit\" value=\"Display\" />"
 
     print "<br>"
@@ -354,9 +415,10 @@ def main():
     # print the page body
     print "<body style=\"overflow-y: hidden\" >"
     print "<h1>Offline Data Monitoring: Plot Browser</h1>"
-
+    
     # print option selector form
     print_option_selector(options)
+
     print "<hr>"
 
     print """<div style="height: 75%; overflow-y: scroll;">"""
