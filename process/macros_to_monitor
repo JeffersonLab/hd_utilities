@@ -23,7 +23,7 @@
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/ST_online_lowlevel/ST_Monitoring_Waveform_ch4.C
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/ST_online_lowlevel/ST_Monitoring_Multi.C 
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/ST_online_tracking/ST_Monitoring_Pid.C
-/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/ST_online_tracking/ST_Monitoring_Eff.C
+#/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/ST_online_tracking/ST_Monitoring_Eff.C
 # TAGH
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/TAGH_online/TAGH_hit.C
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/TAGH_online/TAGH_hit2.C
@@ -39,7 +39,7 @@
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/PSPair_online/TAG_2D_eff.C
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/PSPair_online/TAG_eff.C
 # Trigger
-/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/TRIG_online/trig_fcalbcal.C
+#/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/TRIG_online/trig_fcalbcal.C
 # RF
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/RF_online/HistMacro_RF_p1.C
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/RF_online/HistMacro_RF_p2.C
@@ -77,10 +77,8 @@
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_Matching_SC.C
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_Matching_TOF.C
 # ANALYSIS
-/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/p2pi_hists/HistMacro_p2pi_pmiss.C
-/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/p2pi_hists/HistMacro_p2pi_preco1.C
-/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/p3pi_hists/HistMacro_p3pi_preco_2FCAL.C
-/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/p3pi_hists/HistMacro_p3pi_preco_FCAL-BCAL.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/p2pi_hists/HistMacro_p2pi.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/p3pi_hists/HistMacro_p3pi.C
 # OCCUPANCIES
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/occupancy_online/BCAL_occupancy.C
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/occupancy_online/FCAL_occupancy.C
