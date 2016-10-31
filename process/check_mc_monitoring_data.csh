@@ -1,4 +1,5 @@
 #!/bin/tcsh
+# NEEDS TO BE UPDATED FOR NEXT SIMULATION RUN
 # Set environmental variables for cron job
 set LOCKFILE=lock.mc
 
