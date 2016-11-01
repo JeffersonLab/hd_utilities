@@ -3,8 +3,10 @@
 import os
 import phadd
 
+# SET THIS
 RUNPERIOD = "RunPeriod-2016-02"
 VERSION = "ver04"
+
 BASEDIR = "/cache/halld/%s/analysis/%s/hists"%(RUNPERIOD,VERSION)
 merged_dir = "%s/%s"%(BASEDIR,"merged")
 
