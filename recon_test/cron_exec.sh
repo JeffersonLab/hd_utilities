@@ -115,7 +115,11 @@ Check_Workflow_Loop()
 Send_Email()
 {
 	cd /group/halld/Software/scripts/simple_email_list/lists/recon_test/
+	echo "Test Results:" >> message.txt
 	echo https://halldweb.jlab.org/recon_test/$DATE/ >> message.txt
+	echo "" >> message.txt
+	echo "Browser:" >> message.txt
+	echo https://halldweb.jlab.org/cgi-bin/data_monitoring/monitoring/recontestBrowser.py >> message.txt
 	/group/halld/Software/scripts/simple_email_list/scripts/simple_email_list.pl
 }
 
