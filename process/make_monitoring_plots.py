@@ -25,8 +25,8 @@ from datamon_db import datamon_db
 class make_monitoring_plots:
 
     def __init__(self):
-        self.CANVAS_WIDTH = 800
-        self.CANVAS_HEIGHT = 600
+        self.CANVAS_WIDTH = 1200
+        self.CANVAS_HEIGHT = 800
 
         self.VERBOSE = 1
 

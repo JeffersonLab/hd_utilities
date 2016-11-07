@@ -241,6 +241,11 @@ class datamon_db:
         db_cmd = "INSERT INTO run_info (run_num) VALUES (%s)"
         self.db.execute(db_cmd, [run_num])
         self.db_conn.commit()
+
+    #def DeleteRun(self, run_num):
+    #    db_cmd = "DELETE FROM run_info WHERE run_num=(%s)"
+    #    self.db.execute(db_cmd, [run_num])
+    #    self.db_conn.commit()
         
     def UpdateRunInfo(self, run_num, run_properties):
         if(len(run_properties)==0):

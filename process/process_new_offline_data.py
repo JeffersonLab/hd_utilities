@@ -613,8 +613,10 @@ def main():
         if(db.GetRunID(runnum) < 0):
             db.CreateRun(runnum)
             # add run start time, needed for monitoring web pages
+            rdcb_run = rcdb_conn.get_run(run_number)
             run_properties = {}
-            run_properties['start_time'] = rcdb_conn.get_run(run_number).start_time
+            run_properties['start_time'] = rcdb_run.start_time
+            run_properties['num_events'] = rcdb_run.get_condition_value('event_count')
             db.UpdateRunInfo(runnum, run_properties)
 
         ## make sure we have a directory to store some meta-information
