@@ -188,7 +188,7 @@ Save_EVIOSkims()
 		mkdir -p -m 755 $OUTDIR_THIS
 
 		# save it
-		local OUTPUT_FILE=${OUTDIR_THIS}/${EVIO_FILE}
+		local OUTPUT_FILE=${OUTDIR_THIS}/${SKIM_NAME}_${RUN_NUMBER}_${FILE_NUMBER}.hddm
 		mv -v $EVIO_FILE $OUTPUT_FILE
 		chmod 644 $OUTPUT_FILE
 
@@ -218,7 +218,7 @@ Save_HDDMSkims()
 		mkdir -p -m 755 $OUTDIR_THIS
 
 		# save it
-		local OUTPUT_FILE=${OUTDIR_THIS}/${HDDM_FILE}
+		local OUTPUT_FILE=${OUTDIR_THIS}/${SKIM_NAME}_${RUN_NUMBER}_${FILE_NUMBER}.hddm
 		mv -v $HDDM_FILE $OUTPUT_FILE
 		chmod 644 $OUTPUT_FILE
 
