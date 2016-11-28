@@ -182,7 +182,10 @@ def add_job(WORKFLOW, FILEPATH, config_dict):
 	# PREPARE NAMES
 	STUBNAME = RUNNO + "_" + FILENO
 	DATE = time.strftime("%Y-%m-%d")
-	JOBNAME = WORKFLOW + "_" + STUBNAME + "_" + DATE
+	if(WORKFLOW.find("ver") == -1):
+		JOBNAME = WORKFLOW + "_" + STUBNAME + "_" + DATE
+	else:
+                JOBNAME = WORKFLOW + "_" + STUBNAME
 
 	# SETUP OTHER VARIABLES:
 	INPUTDATA_TYPE = "mss" if(INDATA_DIR[:5] == "/mss/") else "file"
