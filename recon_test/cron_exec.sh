@@ -132,7 +132,7 @@ cd ${WORK_AREA}
 
 # SUBMIT JOBS FOR EACH WORKFLOW (RUN# must be 6 digits, and FILE# must be 3 digits!!)
 Submit_Job 2016-02 011529 000
-#Submit_Job 2016-10 020000 000
+Submit_Job 2016-10 022016 000
 
 # CHECK FOR JOB SUCCESS. IF SUCCESS, SEND EMAIL
 Check_Workflow_Loop recon_tests
