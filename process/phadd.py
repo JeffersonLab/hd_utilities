@@ -31,8 +31,10 @@ class phadd:
         self.p = None
         self.stage_files = in_stagefiles
         #self.tempdir = tempfile.gettempdir()
-        self.tempdir = "/scratch/gxproj5"
+        self.tempdir = "/scratch/"+os.environ['USER']
         self.Init(in_targetfile, in_sourcefiles, in_args, in_nthreads, in_chunksize)
+        if not os.path.exists(self.tempdir):
+            os.system("mkdir -p "+self.tempdir)
 
     def __del__(self):
         # stop all threads
@@ -79,6 +81,7 @@ class phadd:
     def Add(self):
         if len(self.sourcefiles) == 1:
             # merging one file is easy!  just copy it
+            print "cp %s %s"%(self.sourcefiles[0],self.targetfile)
             os.system("cp %s %s"%(self.sourcefiles[0],self.targetfile))
         elif len(self.sourcefiles) <= self.chunksize:
             # if we have fewer files than our chunk size, then we can just do one round of adding files
