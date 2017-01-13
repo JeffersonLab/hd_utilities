@@ -311,15 +311,15 @@ class ProcessMonDataConfig:
                 file_runnum = int(fname_fields[2])
                 filenum = int(fname_fields[3])
                 # HACK - only save 100 files for now (MC)
-                if filenum > 100:
-                    continue
+                #if filenum > 100:
+                #    continue
             except ValueError:
                 logging.error("invalid filename = " + fname + ", skipping ...")
                 continue
             if file_runnum != runnum :
                 logging.error("invalid filename = " + fname + ", skipping ...")
                 continue
-           # save a mapping of the file paths with their numbers
+            # save a mapping of the file paths with their numbers
             monitoring_files[filepath] = filenum
 
         return monitoring_files
@@ -374,7 +374,7 @@ def ProcessOfflineData(args):
         summed_root_dir = config.MERGED_ROOTFILE_OUTPUT_DIRECTORY
         
     summed_rootfile = join(summed_root_dir,"hd_root_" + rundir + ".root")  # figure out the output filename
-    if config.MAKE_SUMMED_ROOTFILE:
+    if config.MAKE_SUMMED_ROOTFILE and ( len(monitoring_files.keys()) > 0 ):   # only merge if there are files to process
         if config.VERBOSE>1:
             print "  summing ROOT files..."
         # make sure the output cirectory exists
@@ -395,9 +395,24 @@ def ProcessOfflineData(args):
         hadder.Add()
         del hadder
 
+        # also, save a copy of the summed file on the write-through cache
+        if config.REVISION == "mc":
+            rootfilespath = join(config.INPUT_DIRECTORY,config.ROOTFILE_DIR)
+        else:
+            rootfilespath = join(config.INPUT_DIRECTORY,config.REVISION,config.ROOTFILE_DIR)  # base directory where the ROOT files are stored
+        cache_summed_root_dir = join(rootfilespath,"hists_merged")
+        if not isdir(cache_summed_root_dir):
+            os.system("mkdir -m"+config.NEWDIR_MODE+" -p " + cache_summed_root_dir)
+
+        ##
+        print "copying %s to %s"%(summed_rootfile, cache_summed_root_dir)
+        ##
+        os.system("cp -v %s %s"%(summed_rootfile, cache_summed_root_dir))
+
         # this option motivated by new plans for file management when working off of the write-through cache
         # instead of keeping individual ROOT files semi-permanently, for some jobs we merge ROOT files as they
         # come in and keep a copy of the final merged file in the original directory
+        # This is probably a bad idea for the write-through cache, though... this plan needs more thought
         if config.MERGE_INCREMENT:
             rootfile_dir = "/".join(monitoring_files.keys()[0].split('/')[:-1])
             # delete old files
@@ -476,39 +491,21 @@ def ProcessOfflineData(args):
             os.system("jcache unpin %s/*.root"%(tree_dir))
     """
 
-    # STEP 5 (old)
-    # save REST files
-    """
-    if config.COPY_REST_FILES:
-        if config.VERBOSE>1:
-            print "  saving REST files..."
-        rest_dir = join(config.INPUT_DIRECTORY,config.REVISION,"REST",rundir)
-        rest_files = [ join(rest_dir,f) for f in listdir(rest_dir) if f[-5:] == ".hddm" ]
-        # generate one REST file per run 
-        merged_rest_dir = join(config.INPUT_DIRECTORY,config.REVISION,"REST","fullruns")
-        if not os.path.exists(merged_rest_dir):
-            os.system("mkdir -p " + merged_rest_dir)
-        merged_rest_filename = "%s/dana_rest_%s.hddm"%(merged_rest_dir,rundir)
-        if os.path.isfile(merged_rest_filename):
-            os.system("rm -f %s"%merged_rest_filename)
-        os.system("hddm_merge_files -r -I -C -o%s %s"%(merged_rest_filename," ".join(sorted(rest_files))))
-    """
-
     # CLEANUP
     ## save some information about what has been processed so far
     #rootfiles = []
-    #if config.REVISION == "mc":
-    #    misc_dir = join(config.INPUT_DIRECTORY,"misc",rundir)
-    #else:
-    #    misc_dir = join(config.INPUT_DIRECTORY,config.REVISION,"misc",rundir)
-    #with open(join(misc_dir,"rootfiles.txt"),"w") as outf:
+    if config.REVISION == "mc":
+        log_dir = join(config.OUTPUT_DIRECTORY,"log",rundir)
+    else:
+        log_dir = join(config.OUTPUT_DIRECTORY,"log",rundir)
+    #with open(join(log_dir,"rootfiles.txt"),"w") as outf:
     #    for (fname,filenum) in monitoring_files.items():
     #        rootfiles.append(fname)
     #        print>>outf,fname
-    #try:
-    #    pickle.dump( rootfiles, open(join(misc_dir,"processed_files.dat"),"w") )
-    #except Exception, e:
-    #    logging.error("Couldn't save list of processed files: %s"%str(e))
+    try:
+        pickle.dump( sorted(monitoring_files.keys()), open(join(log_dir,"processed_files.dat"),"w") )
+    except Exception, e:
+        logging.error("Couldn't save list of processed files: %s"%str(e))
 
     # cleanup memory
     if config.MAKE_DB_SUMMARY:
@@ -595,7 +592,10 @@ def main():
     # depend on the full results from a run
     runs_to_process = []
     for rundir in rundirs_on_disk:
-        runnum = int(rundir)    
+        try:
+            runnum = int(rundir)    
+        except:
+            continue
 
         # handle any options about which runs to process
         # specifying a particular run to process beats specifying a range
@@ -612,8 +612,11 @@ def main():
         ## add blank run to DB if it doesn't exist
         if(db.GetRunID(runnum) < 0):
             db.CreateRun(runnum)
+            # skip run if it's not in RCDB for some weird reason
+            if rcdb_conn.get_run(runnum) is None:
+                continue
             # add run start time, needed for monitoring web pages
-            rdcb_run = rcdb_conn.get_run(run_number)
+            rcdb_run = rcdb_conn.get_run(runnum)
             run_properties = {}
             run_properties['start_time'] = rcdb_run.start_time
             run_properties['num_events'] = rcdb_run.get_condition_value('event_count')
@@ -621,6 +624,13 @@ def main():
 
         ## make sure we have a directory to store some meta-information
         rootfiles_already_processed = []  # let's not do this anymore
+        if config.REVISION == "mc":
+            log_dir = join(config.OUTPUT_DIRECTORY,"log",rundir)
+        else:
+            log_dir = join(config.OUTPUT_DIRECTORY,"log",rundir)
+        if isfile(join(log_dir,"processed_files.dat")):
+            rootfiles_already_processed = pickle.load( open(join(log_dir,"processed_files.dat"),"r") )
+
         #if config.REVISION == "mc":
         #    misc_dir = join(config.INPUT_DIRECTORY,"misc","%06d"%(int(rundir)))
         #else:

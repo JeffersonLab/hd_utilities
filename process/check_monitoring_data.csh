@@ -3,14 +3,14 @@
 set LOCKFILE=lock.offline
 
 set DATATYPE=mon
-set VERSION=07
-set RUNPERIOD=RunPeriod-2016-02
+set VERSION=01
+set RUNPERIOD=RunPeriod-2016-10
 set INPUTDIR=/cache/halld/offline_monitoring/$RUNPERIOD
 set INPUT_SMALLFILE_DIR=/cache/halld/offline_monitoring/$RUNPERIOD
 #set OUTPUTDIR=/work/halld/data_monitoring/$RUNPERIOD/ver$VERSION
 set OUTPUTDIR=/work/halld2/data_monitoring/${RUNPERIOD}/${DATATYPE}_ver${VERSION}
 set ROOTOUTPUTDIR=/work/halld/data_monitoring/${RUNPERIOD}/${DATATYPE}_ver${VERSION}/rootfiles
-set ARGS=" --force -T $ROOTOUTPUTDIR -v $RUNPERIOD,$VERSION  "
+set ARGS="  -T $ROOTOUTPUTDIR -v $RUNPERIOD,$VERSION  "
 #set ARGS=" -s -b 10700 -T $ROOTOUTPUTDIR -v $RUNPERIOD,$VERSION  "
 #set ARGS=" -R 3185 -S -v $RUNPERIOD,$VERSION "
 #set ARGS=" --force -d -s -S -v RunPeriod-2015-03,$VERSION "
@@ -20,9 +20,9 @@ set ARGS=" --force -T $ROOTOUTPUTDIR -v $RUNPERIOD,$VERSION  "
 
 # Load standard environment for ROOT
 #source /home/gxproj5/halld/hdswif/setup_jlab-2015-03.csh
-source /home/gxproj5/env_monitoring_launch.csh
+source /home/gxproj1/env_monitoring_incoming.csh
 
-set MONITORING_HOME=/home/gxproj5/monitoring/process
+set MONITORING_HOME=/home/gxproj1/monitoring/process
 source $MONITORING_HOME/monitoring_env.csh
 set MONITORING_LIBDIR=$MONITORING_HOME/lib
 set MONITORING_LOGDIR=$MONITORING_HOME/log
@@ -36,9 +36,9 @@ if (! -d $MONITORING_LOGDIR ) then
 endif
 
 # delete logs that are older than 30 days
-if (-d $MONITORING_LOGDIR && $MONITORING_LOGDIR != "/log" ) then
-    find $MONITORING_LOGDIR/ -mtime +30 -exec rm '{}' \;
-endif
+#if (-d $MONITORING_LOGDIR && $MONITORING_LOGDIR != "/log" ) then
+#    find $MONITORING_LOGDIR/ -mtime +30 -exec rm '{}' \;
+#endif
 
 # run the script
 cd $MONITORING_HOME
