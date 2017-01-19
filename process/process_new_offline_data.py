@@ -81,6 +81,7 @@ class ProcessMonDataConfig:
         self.RUN_NUMBER = None         # optionally process just one run
         self.MERGE_INCREMENT = False
         self.EOR_PROCESSING = True
+        self.BATCH_TEMP_DIR = False
 
         self.EVIO_SKIMS_TO_MERGE = []
         self.ROOT_TREES_TO_MERGE = []
@@ -124,6 +125,8 @@ class ProcessMonDataConfig:
             self.COPY_REST_FILES = True
         if(options.merge_increment):
             self.MERGE_INCREMENT = True
+        if(options.batch_tempdir):
+            self.BATCH_TEMP_DIR = True
 
         # should we process only one run?
         if(options.run_number):
@@ -392,6 +395,8 @@ def ProcessOfflineData(args):
         else:
             hadder = phadd.phadd(summed_rootfile, sorted(monitoring_files.keys()), " -k ", 6, 10)
             #hadder = phadd.phadd(summed_rootfile, sorted(monitoring_files.keys()), " -v 0 ", 6, 10)
+        if config.BATCH_TEMP_DIR:
+            hadder.tempdir = os.environ['BATCH_TMPDIR']
         hadder.Add()
         del hadder
 
@@ -561,6 +566,8 @@ def main():
                       help="Merge these EVIO skims.")
     parser.add_option("-T","--merged-root-output-dir", dest="root_output_dir",
                       help="Directory to save merged ROOT files")
+    parser.add_option("-B","--batchfarm-tempdir", dest="batch_tempdir", action="store_true",
+                      help="Merge ROOT files in the local directory, as required by current batch farm configuration")
     
     (options, args) = parser.parse_args(sys.argv)
 

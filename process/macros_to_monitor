@@ -48,8 +48,10 @@
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Calibration/HLDetectorTiming/HistMacro_CalorimeterTiming.C
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Calibration/HLDetectorTiming/HistMacro_PIDSystemTiming.C
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Calibration/HLDetectorTiming/HistMacro_TaggerRFAlignment.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Calibration/HLDetectorTiming/HistMacro_TaggerRFAlignment2.C
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Calibration/HLDetectorTiming/HistMacro_TaggerSCAlignment.C
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Calibration/HLDetectorTiming/HistMacro_TaggerTiming.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Calibration/HLDetectorTiming/HistMacro_TrackingTiming.C
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Calibration/HLDetectorTiming/HistMacro_TrackMatchedTiming.C
 # RECONSTRUCTION
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_NumHighLevelObjects.C

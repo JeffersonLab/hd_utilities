@@ -8,7 +8,8 @@ def AddJobToSWIF(workflow,run_period,version,run):
 
     # config
     project = "gluex"         
-    track = "reconstruction"  
+    track = "analysis"
+    #track = "debug"    # for quick execution of merging
     basedir = "/home/gxproj1/monitoring/process"
     disk_space = 5     # GB
     mem_requested = 6  # GB
@@ -52,8 +53,8 @@ if __name__ == "__main__":
 
     # create one job for each run
     for rundir in sorted(os.listdir(INPUTDIR)):
-        print "run = %d"%(int(rundir))
 	try:
+            print "run = %d"%(int(rundir))
             run  = int(rundir)
             AddJobToSWIF(WORKFLOW,RUNPERIOD,VERSION,run)
 	except:
