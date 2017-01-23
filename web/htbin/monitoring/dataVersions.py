@@ -16,9 +16,19 @@ dbname = 'data_monitoring'
 conn=MySQLdb.connect(host=dbhost, user=dbuser, db=dbname)
 curs=conn.cursor()
 
-runPeriodList = [ 'RunPeriod-2014-10', 'RunPeriod-2015-01', 'RunPeriod-2015-03',
-                  'RunPeriod-2015-06', 'RunPeriod-2015-12', 'RunPeriod-2016-02',
-                  'RunPeriod-2016-10' ]
+#runPeriodList = [ 'RunPeriod-2014-10', 'RunPeriod-2015-01', 'RunPeriod-2015-03',
+#                  'RunPeriod-2015-06', 'RunPeriod-2015-12', 'RunPeriod-2016-02',
+#                  'RunPeriod-2016-10', 'RunPeriod-2017-01' ]
+
+runPeriodList = [ ]
+
+def loadRunPeriodList():
+    # hacK!
+    global runPeriodList
+
+    cmd = "select distinct run_period from version_info"
+    curs.execute(cmd)
+    runPeriodList = [ el[0] for el in curs.fetchall() ]
 
 # print the HTTP header
 def printHTTPheader():
@@ -78,7 +88,7 @@ def printPageHeader(theRunPeriod):
 
 def getVersionData(run_period):
     cmd = "SELECT * FROM version_info WHERE run_period=%s ORDER BY data_type ASC, revision ASC"
-    curs.execute(cmd, run_period)
+    curs.execute(cmd, [run_period])
     rows=curs.fetchall()
     return rows
 
@@ -164,6 +174,8 @@ def printHelpText():
 
 
 def main():
+    loadRunPeriodList()
+
     # get options that may have been passed to this script
     options=get_options()
 
