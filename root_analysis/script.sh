@@ -101,16 +101,17 @@ Save_ROOTFiles()
 	for ROOT_FILE in `ls *.root`; do
 		Extract_BaseName $ROOT_FILE BASE_NAME
 
-		# setup output dir
-		local OUTDIR_THIS=${OUTDIR_LARGE}/${BASE_NAME}/${RUN_NUMBER}/
-		mkdir -p -m 755 $OUTDIR_THIS
-
-		# save it
+		# setup output
 		if ["${FILE_NUMBER}" -eq "-1"] ; then
+			local OUTDIR_THIS=${OUTDIR_LARGE}/${BASE_NAME}/${RUN_NUMBER}/
 			local OUTPUT_FILE=${OUTDIR_THIS}/${BASE_NAME}_${RUN_NUMBER}_${FILE_NUMBER}.root
 		else
+			local OUTDIR_THIS=${OUTDIR_LARGE}/${BASE_NAME}/
 			local OUTPUT_FILE=${OUTDIR_THIS}/${BASE_NAME}_${RUN_NUMBER}.root
 		fi
+
+		# save it
+		mkdir -p -m 755 $OUTDIR_THIS
 		mv -v $ROOT_FILE $OUTPUT_FILE
 		chmod 644 $OUTPUT_FILE
 
