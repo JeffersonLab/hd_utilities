@@ -125,7 +125,7 @@ def validate_config(config_dict):
 		sys.exit(1)
 
 	# JOB, SCRIPT CONTROL
-	if("ENVFILE" not in config_dict) or ("SCRIPTFILE" not in config_dict) or ("JANA_CONFIG" not in config_dict):
+	if("ENVFILE" not in config_dict) or ("SCRIPTFILE" not in config_dict):
 		print "ERROR: JOB, SCRIPT CONTROL NOT FULLY SPECIFIED IN CONFIG FILE. ABORTING"
 		sys.exit(1)
 
@@ -137,7 +137,15 @@ def validate_config(config_dict):
 ####################################################### FIND FILES #######################################################
 
 def find_files(INDATA_DIR, FORMATTED_RUN, FORMATTED_FILE):
-	pathstring = INDATA_DIR + '/*' + FORMATTED_RUN + '*_*' + FORMATTED_FILE + '*'
+	# Note: This won't work if the file names don't contain ".", or if there are directories that DO contain "."
+
+	# If need specific file #
+	if(FORMATTED_FILE != "*"):
+		pathstring = INDATA_DIR + '/*' + FORMATTED_RUN + '*_*' + FORMATTED_FILE + '*.*'
+		return glob.glob(pathstring)
+
+	# Else just require run # in name
+	pathstring = INDATA_DIR + '/*' + FORMATTED_RUN + '*.*'
 	return glob.glob(pathstring)
 
 ######################################################## ADD JOB #########################################################
@@ -164,34 +172,41 @@ def find_num_threads(JANA_CONFIG_FILENAME):
 
 def add_job(WORKFLOW, FILEPATH, config_dict):
 
-	# EXTRACT PATH, RUNNO, & FILE #: ASSUME THE FORM */*_RUNNO_FILENO.*
-	# added forth digit for sim1.1
+	# EXTRACT PATH, RUNNO, & FILE #: ASSUME THE FORM IS EITHER */*_RUNNO_FILENO.* OR */*_RUNNO.*
 	match = re.search(r"(.*)/(.*)_(\d\d\d\d\d\d)_(\d\d\d).(.*)", FILEPATH)
-	if (match == ""):
-		print "WARNING: FILE " + FILEPATH + " DOESN'T MATCH EXPECTED NAME FORMAT. SKIPPING."
-		return
-	INDATA_DIR = match.group(1)
-	PREFIX = match.group(2)
-	RUNNO = match.group(3)
-	FILENO = match.group(4)
-	EXTENSION = match.group(5)
-	FILENAME = PREFIX + "_" + RUNNO + "_" + FILENO + "." + EXTENSION
+	if(match is not None):
+		INDATA_DIR = match.group(1)
+		PREFIX = match.group(2)
+		RUNNO = match.group(3)
+		FILENO = match.group(4)
+		EXTENSION = match.group(5)
+	else: # Try with no file #
+		match = re.search(r"(.*)/(.*)_(\d\d\d\d\d\d).(.*)", FILEPATH)
+		if(match is None):
+			print "WARNING: FILE " + FILEPATH + " DOESN'T MATCH EXPECTED NAME FORMAT. SKIPPING."
+			return
+		INDATA_DIR = match.group(1)
+		PREFIX = match.group(2)
+		RUNNO = match.group(3)
+		FILENO = "-1"
+		EXTENSION = match.group(4)
 	if(VERBOSE == True):
-		print "FILEPATH, COMPONENTS: " + FILEPATH + " " + INDATA_DIR + " " + PREFIX + " " + RUNNO + " " + FILENO + " " + EXTENSION + " " + FILENAME
+		print "FILEPATH, COMPONENTS: " + FILEPATH + " " + INDATA_DIR + " " + PREFIX + " " + RUNNO + " " + FILENO + " " + EXTENSION
 
 	# PREPARE NAMES
-	STUBNAME = RUNNO + "_" + FILENO
 	DATE = time.strftime("%Y-%m-%d")
+	STUBNAME = RUNNO if(FILENO == "-1") else RUNNO + "_" + FILENO
+	FILENAME = PREFIX + "_" + RUNNO + "." + EXTENSION if(FILENO == "-1") else PREFIX + "_" + RUNNO + "_" + FILENO + "." + EXTENSION
 	if(WORKFLOW.find("ver") == -1):
 		JOBNAME = WORKFLOW + "_" + STUBNAME + "_" + DATE
 	else:
-                JOBNAME = WORKFLOW + "_" + STUBNAME
+		JOBNAME = WORKFLOW + "_" + STUBNAME
 
 	# SETUP OTHER VARIABLES:
 	INPUTDATA_TYPE = "mss" if(INDATA_DIR[:5] == "/mss/") else "file"
 	CACHE_PIN_DAYS = config_dict["CACHE_PIN_DAYS"] if ("CACHE_PIN_DAYS" in config_dict) else "0"
-	JANA_CONFIG = config_dict["JANA_CONFIG"]
-	NUM_THREADS = find_num_threads(JANA_CONFIG)
+	JANA_CONFIG = config_dict["JANA_CONFIG"] if ("JANA_CONFIG" in config_dict) else "NA"
+	NUM_THREADS = find_num_threads(JANA_CONFIG) if ("JANA_CONFIG" in config_dict) else "1"
 
 	# CREATE ADD-JOB COMMAND
 	# job
@@ -207,12 +222,22 @@ def add_job(WORKFLOW, FILEPATH, config_dict):
 	# stderr
 	add_command += " -stderr " + config_dict["OUTDIR_SMALL"] + "/log/" + RUNNO + "/stderr." + STUBNAME + ".err"
 	# tags
-	add_command += " -tag run_number " + RUNNO + " -tag file_number " + FILENO + " -tag num_threads " + NUM_THREADS
+	add_command += " -tag run_number " + RUNNO + " -tag num_threads " + NUM_THREADS
+	# file # tag
+	if(FILENO != "-1"):
+		add_command += " -tag file_number " + FILENO
 	# command + arguments
 	add_command += " " + config_dict["SCRIPTFILE"] + " " + config_dict["ENVFILE"] + " " + FILENAME + " " + JANA_CONFIG
 	# command arguments continued
 	add_command += " " + config_dict["OUTDIR_LARGE"] + " " + config_dict["OUTDIR_SMALL"] + " " + RUNNO + " " + FILENO + " " + CACHE_PIN_DAYS
+
 	# optional command arguments
+	if('ROOT_SCRIPT' in config_dict):
+		add_command += " " + config_dict["ROOT_SCRIPT"]
+	if('TREE_NAME' in config_dict):
+		add_command += " " + config_dict["TREE_NAME"]
+	if('SELECTOR_NAME' in config_dict):
+		add_command += " " + config_dict["SELECTOR_NAME"]
 	if('WEBDIR_SMALL' in config_dict):
 		add_command += " " + config_dict["WEBDIR_SMALL"]
 	if('WEBDIR_LARGE' in config_dict):
@@ -283,11 +308,13 @@ def main(argv):
 		# Format run number
 		FORMATTED_RUN = "%06d" % RUN
 
-		# Find files for run number
+		# Find files for run number: First try separate folder for each run
 		INDATA_DIR = INDATA_TOPDIR + "/*" + FORMATTED_RUN + "*/"
-		# For sim1.1
-		#INDATA_DIR = INDATA_TOPDIR + "/"
 		file_list = find_files(INDATA_DIR, FORMATTED_RUN, INPUT_FILE_NUM)
+		if(len(file_list) == 0): # No files. Now just try the input dir
+			INDATA_DIR = INDATA_TOPDIR + "/"
+			file_list = find_files(INDATA_DIR, FORMATTED_RUN, INPUT_FILE_NUM)
+
 		if(VERBOSE == True):
 			print str(len(file_list)) + " files found for run " + str(RUN)
 
