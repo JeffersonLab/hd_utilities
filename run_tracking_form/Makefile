@@ -1,23 +1,15 @@
-RUN_ARG = $(shell echo $(RUN_START)+25\*\($*-1\) | bc)
+RUN_ARG = $(shell echo $(RUN_START)+30\*\($*-1\) | bc)
 
 all: checklist_run
 
-checklist_run: checklist_run_1.ps checklist_run_2.ps checklist_run_3.ps \
-	checklist_run_4.ps
+checklist_run: checklist_run_1.pdf checklist_run_2.pdf checklist_run_3.pdf \
+	checklist_run_4.pdf
 
 checklist_run_%.tex: checklist_run.tex incr_runs.perl
 	incr_runs.perl $(RUN_ARG) > $@
 
-%.ps : %.dvi
-	dvips -o $*.ps $*
-
-%.ps : %.ps.gz
-	rm -f $*.ps
-	gunzip -c $*.ps.gz > $*.ps
-
-%.dvi : %.tex
-	latex $*
-	latex $*
+%.pdf : %.tex
+	pdflatex $*
 
 clean:
-	$(RM) *.ps *.dvi checklist_run_*.tex
+	$(RM) *.pdf checklist_run_*.tex
