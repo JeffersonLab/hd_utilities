@@ -102,7 +102,7 @@ Save_ROOTFiles()
 		Extract_BaseName $ROOT_FILE BASE_NAME
 
 		# setup output
-		if ["${FILE_NUMBER}" -eq "-1"] ; then
+		if [ "${FILE_NUMBER}" != "-1" ] ; then
 			local OUTDIR_THIS=${OUTDIR_LARGE}/${BASE_NAME}/${RUN_NUMBER}/
 			local OUTPUT_FILE=${OUTDIR_THIS}/${BASE_NAME}_${RUN_NUMBER}_${FILE_NUMBER}.root
 		else
