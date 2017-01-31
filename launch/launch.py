@@ -217,10 +217,14 @@ def add_job(WORKFLOW, FILEPATH, config_dict):
 	add_command += " -cores " + config_dict["NCORES"] + " -disk " + config_dict["DISK"] + " -ram " + config_dict["RAM"] + " -time " + config_dict["TIMELIMIT"]
 	# inputs
 	add_command += " -input " + FILENAME + " " + INPUTDATA_TYPE + ":" + INDATA_DIR + "/" + FILENAME
-	# stdout
-	add_command += " -stdout " + config_dict["OUTDIR_SMALL"] + "/log/" + RUNNO + "/stdout." + STUBNAME + ".out"
-	# stderr
-	add_command += " -stderr " + config_dict["OUTDIR_SMALL"] + "/log/" + RUNNO + "/stderr." + STUBNAME + ".err"
+	# stdout, stderr
+	if(FILENO != "-1")
+		add_command += " -stdout " + config_dict["OUTDIR_SMALL"] + "/log/" + RUNNO + "/stdout." + STUBNAME + ".out"
+		add_command += " -stderr " + config_dict["OUTDIR_SMALL"] + "/log/" + RUNNO + "/stderr." + STUBNAME + ".err"
+	else:
+		add_command += " -stdout " + config_dict["OUTDIR_SMALL"] + "/log/stdout." + STUBNAME + ".out"
+		add_command += " -stderr " + config_dict["OUTDIR_SMALL"] + "/log/stderr." + STUBNAME + ".err"
+
 	# tags
 	add_command += " -tag run_number " + RUNNO + " -tag num_threads " + NUM_THREADS
 	# file # tag
