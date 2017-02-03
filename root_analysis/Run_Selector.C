@@ -34,7 +34,7 @@ void Run_Selector(string locTreeName, string locInputFile, string locOutputFile,
 		dproof->Process_Chain(locChain, locSelectorName, outputHistFileName, "", "", proof_Nthreads);
 	}
 	else { // get TTree and use standard TTree::Process
-	        TFile *f = TFile::Open(locInputFile);
+	        TFile *f = TFile::Open(locInputFile.c_str());
 		TTree* locTree = (TTree*)gDirectory->Get(locTreeName.c_str());
 		locTree->Process(locSelectorName.c_str());
 	}
