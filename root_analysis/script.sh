@@ -132,7 +132,9 @@ Run_Script()
 	# RUN ROOT
 	Extract_FileName $SELECTOR_NAME SELECTOR_FILE
 	cp ${SELECTOR_NAME}.* .
-	root -b -q $INPUTFILE $ROOT_SCRIPT'("'$TREE_NAME'", "'${SELECTOR_FILE}.C+'")'
+	SELECTOR_BASE=${SELECTOR_FILE/DSelector_/}
+	echo root -b -q $ROOT_SCRIPT'("'$TREE_NAME'", "'$INPUTFILE'", "'$SELECTOR_BASE'", "'${SELECTOR_FILE}.C+'")'
+	root -b -q $ROOT_SCRIPT'("'$TREE_NAME'", "'$INPUTFILE'", "'$SELECTOR_BASE'", "'${SELECTOR_FILE}.C+'")'
 
 	# RETURN CODE
 	RETURN_CODE=$?
