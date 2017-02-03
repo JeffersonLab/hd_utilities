@@ -19,8 +19,7 @@ from collections import defaultdict
 #################################################### GLOBAL VARIABLES ####################################################
 
 VERBOSE = 6
-#RAW_DATA_BASE_DIR = "/mss/halld/"
-RAW_DATA_BASE_DIR = "/cache/halld/"
+RAW_DATA_BASE_DIR = "/mss/halld/"
 
 ####################################################### TRY COMMAND ######################################################
 
