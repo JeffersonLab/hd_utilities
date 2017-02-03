@@ -218,7 +218,7 @@ def add_job(WORKFLOW, FILEPATH, config_dict):
 	# inputs
 	add_command += " -input " + FILENAME + " " + INPUTDATA_TYPE + ":" + INDATA_DIR + "/" + FILENAME
 	# stdout, stderr
-	if(FILENO != "-1")
+	if(FILENO != "-1"):
 		add_command += " -stdout " + config_dict["OUTDIR_SMALL"] + "/log/" + RUNNO + "/stdout." + STUBNAME + ".out"
 		add_command += " -stderr " + config_dict["OUTDIR_SMALL"] + "/log/" + RUNNO + "/stderr." + STUBNAME + ".err"
 	else:
