@@ -177,6 +177,9 @@ def main(argv):
 
 			# Check the timestamp
 			file_path = RAW_DATA_BASE_DIR + "/RunPeriod-" + RUN_PERIOD + "/rawdata/Run" + run_string + "/hd_rawdata_" + run_string + "_" + file_string + ".evio"
+			if not os.path.exists(file_path):
+				print "FILE IS IN WRONG DIRECTORY: " + file_path
+				continue
 			modified_time = os.path.getmtime(file_path) # time that the file was last modified, in seconds since the epoch
 			current_time = time.time() # in seconds since the epoch
 			delta_t = (current_time - modified_time)/60.0
