@@ -197,14 +197,21 @@ class make_monitoring_plots:
                     self.ClearPad(self.c1)
                     root_dir.cd()
                     try:
-                        gROOT.ProcessLine(".x " + macro_file)
+                        # reset interpreter to handle a succession of unnamed scripts
+                        #gROOT.Reset()     ## currently dealing with ROOT6 bug - sdobbs, Feb. 6, 2017
+                        #gROOT.ProcessLine(".x " + macro_file)
+                        img_fname = macro_file.split('/')[-1]
+                        if img_fname[-2:] == ".C":
+                            img_fname = img_fname[0:-2]
+                        img_fname = self.output_directory + "/" + img_fname.replace("/","_")
+                        os.system("python run_single_root_command.py -F %s -O %s %s"%(self.rootfile_name,img_fname,macro_file))
                     except:
                         logging.error("Error processing "+macro_file)
                     # save the canvas - the name depends just on the file name
                     img_fname = macro_file.split('/')[-1]
-                    if img_fname[-2:] == ".C":
-                        img_fname = img_fname[0:-2]
-                    self.print_canvas_png(img_fname)
+                    #if img_fname[-2:] == ".C":
+                    #    img_fname = img_fname[0:-2]
+                    #self.print_canvas_png(img_fname)
                 else:
                     logging.info("could not find macro = " + macro_file + " !")
                     
