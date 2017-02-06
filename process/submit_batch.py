@@ -38,9 +38,9 @@ def AddJobToSWIF(workflow,run_period,version,run):
 
 if __name__ == "__main__":
     # SET THIS
-    WORKFLOW = "offmon_2016-10_ver02_post"
+    WORKFLOW = "offmon_2016-10_ver03_post"
     DATATYPE="mon"
-    VERSION="02"
+    VERSION="03"
     RUNPERIOD="RunPeriod-2016-10"
 
     # A directory containing directories for each run, from which we can extract which directories were processed

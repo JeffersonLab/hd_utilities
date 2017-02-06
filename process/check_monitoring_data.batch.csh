@@ -25,7 +25,7 @@ set INPUTDIR=/cache/halld/offline_monitoring/$RUNPERIOD
 set INPUT_SMALLFILE_DIR=/cache/halld/offline_monitoring/$RUNPERIOD
 set OUTPUTDIR=/work/halld2/data_monitoring/${RUNPERIOD}/${DATATYPE}_ver${VERSION}
 set ROOTOUTPUTDIR=/work/halld/data_monitoring/${RUNPERIOD}/${DATATYPE}_ver${VERSION}/rootfiles
-set ARGS=" --force -B -R $RUN -E -T $ROOTOUTPUTDIR -v $RUNPERIOD,$VERSION  "
+set ARGS=" -s --force -B -R $RUN -E -T $ROOTOUTPUTDIR -v $RUNPERIOD,$VERSION  "
 
 # Load standard environment for ROOT
 source /home/gxproj1/env_monitoring_launch.csh

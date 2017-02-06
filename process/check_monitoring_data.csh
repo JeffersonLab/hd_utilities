@@ -4,7 +4,7 @@ set LOCKFILE=lock.offline
 
 set DATATYPE=mon
 set VERSION=01
-set RUNPERIOD=RunPeriod-2016-10
+set RUNPERIOD=RunPeriod-2017-01
 set INPUTDIR=/cache/halld/offline_monitoring/$RUNPERIOD
 set INPUT_SMALLFILE_DIR=/cache/halld/offline_monitoring/$RUNPERIOD
 #set OUTPUTDIR=/work/halld/data_monitoring/$RUNPERIOD/ver$VERSION
