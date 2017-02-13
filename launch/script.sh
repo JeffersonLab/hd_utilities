@@ -14,16 +14,15 @@ Setup_Script()
 	printenv
 	echo "PERL INCLUDES: "
 	perl -e "print qq(@INC)"
-	echo ""
 
 	# COPY INPUT FILE TO WORKING DIRECTORY
 	# This step is necessary since the cache files will be created as soft links in the current directory, and we want to avoid large I/O processes.
 	# We first copy the input file to the current directory, then remove the link.
 	echo "LOCAL FILES PRIOR TO INPUT COPY"
 	ls -l
-	cp $INPUTFILE ./tmp_file
+	cp -v $INPUTFILE ./tmp_file
 	rm -f $INPUTFILE
-	mv tmp_file $INPUTFILE
+	mv -v tmp_file $INPUTFILE
 	echo "LOCAL FILES AFTER INPUT COPY"
 	ls -l
 }
@@ -189,7 +188,7 @@ Save_EVIOSkims()
 		mkdir -p -m 755 $OUTDIR_THIS
 
 		# save it
-		local OUTPUT_FILE=${OUTDIR_THIS}/${SKIM_NAME}_${RUN_NUMBER}_${FILE_NUMBER}.evio
+		local OUTPUT_FILE=${OUTDIR_THIS}/${EVIO_FILE}
 		mv -v $EVIO_FILE $OUTPUT_FILE
 		chmod 644 $OUTPUT_FILE
 
@@ -219,7 +218,7 @@ Save_HDDMSkims()
 		mkdir -p -m 755 $OUTDIR_THIS
 
 		# save it
-		local OUTPUT_FILE=${OUTDIR_THIS}/${SKIM_NAME}_${RUN_NUMBER}_${FILE_NUMBER}.hddm
+		local OUTPUT_FILE=${OUTDIR_THIS}/${HDDM_FILE}
 		mv -v $HDDM_FILE $OUTPUT_FILE
 		chmod 644 $OUTPUT_FILE
 
@@ -275,7 +274,7 @@ Save_IDXA()
 		Extract_BaseName $IDXA_FILE BASE_NAME
 
 		# setup output dir
-		local OUTDIR_THIS=${OUTDIR_SMALL}/IDXA/${RUN_NUMBER}/
+		local OUTDIR_THIS=${OUTDIR_IDXA}/IDXA/${RUN_NUMBER}/
 		mkdir -p -m 755 $OUTDIR_THIS
 
 		# save it
@@ -313,9 +312,10 @@ INPUTFILE=$2
 CONFIG_FILE=$3
 OUTDIR_LARGE=$4
 OUTDIR_SMALL=$5
-RUN_NUMBER=$6
-FILE_NUMBER=$7
-CACHE_PIN_DAYS=$8
+OUTDIR_IDXA=$6
+RUN_NUMBER=$7
+FILE_NUMBER=$8
+CACHE_PIN_DAYS=$9
 
 # PRINT INPUTS
 echo "HOSTNAME          = $HOSTNAME"
@@ -324,6 +324,7 @@ echo "INPUTFILE         = $INPUTFILE"
 echo "CONFIG_FILE       = $CONFIG_FILE"
 echo "OUTDIR_LARGE      = $OUTDIR_LARGE"
 echo "OUTDIR_SMALL      = $OUTDIR_SMALL"
+echo "OUTDIR_IDXA       = $OUTDIR_IDXA"
 echo "RUN_NUMBER        = $RUN_NUMBER"
 echo "FILE_NUMBER       = $FILE_NUMBER"
 echo "CACHE_PIN_DAYS    = $CACHE_PIN_DAYS"

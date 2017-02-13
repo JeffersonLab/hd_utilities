@@ -130,7 +130,7 @@ def validate_config(config_dict):
 		sys.exit(1)
 
 	# FILE INPUT, OUTPUT BASE DIRECTORIES
-	if("INDATA_TOPDIR" not in config_dict) or ("OUTDIR_LARGE" not in config_dict) or ("OUTDIR_SMALL" not in config_dict):
+	if("INDATA_TOPDIR" not in config_dict) or ("OUTDIR_LARGE" not in config_dict) or ("OUTDIR_SMALL" not in config_dict) or ("OUTDIR_IDXA" not in config_dict):
 		print "ERROR: FILE INPUT, OUTPUT BASE DIRECTORIES NOT FULLY SPECIFIED IN CONFIG FILE. ABORTING"
 		sys.exit(1)
 
@@ -233,7 +233,7 @@ def add_job(WORKFLOW, FILEPATH, config_dict):
 	# command + arguments
 	add_command += " " + config_dict["SCRIPTFILE"] + " " + config_dict["ENVFILE"] + " " + FILENAME + " " + JANA_CONFIG
 	# command arguments continued
-	add_command += " " + config_dict["OUTDIR_LARGE"] + " " + config_dict["OUTDIR_SMALL"] + " " + RUNNO + " " + FILENO + " " + CACHE_PIN_DAYS
+	add_command += " " + config_dict["OUTDIR_LARGE"] + " " + config_dict["OUTDIR_SMALL"] + " " + config_dict["OUTDIR_IDXA"] + " " + RUNNO + " " + FILENO + " " + CACHE_PIN_DAYS
 
 	# optional command arguments
 	if('ROOT_SCRIPT' in config_dict):
