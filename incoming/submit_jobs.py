@@ -41,7 +41,7 @@ def try_command(command, sleeptime = 5):
 
 ################################################### BUILD DICTIONARIES ###################################################
 
-def build_file_dictionary(RUN_PERIOD):
+def build_file_dictionary(RUN_PERIOD, NUM_FILES_PER_RUN):
 	file_path = RAW_DATA_BASE_DIR + "/RunPeriod-" + RUN_PERIOD + "/rawdata/Run*/hd_rawdata_*_*.evio"
 	file_list = glob.glob(file_path)
 
@@ -52,6 +52,8 @@ def build_file_dictionary(RUN_PERIOD):
 		file_name = file_path[(file_path.rfind("/") + 1):] #hd_rawdata_<run_string>_<file_string>.evio"
 		run_string = file_name[11:17] #skip "hd_rawdata_" 
 		file_string = file_name[18:-5] #skip "hd_rawdata_run#_" and ".evio" on the end 
+		if(int(file_string) >= NUM_FILES_PER_RUN):
+			continue
 		file_dictionary[run_string].add(file_string)
 		num_files += 1
 		if VERBOSE > 1:
@@ -139,7 +141,7 @@ def main(argv):
 
 	# SEARCH FOR TAPE FILES
 	# Loop over the tape directories, finding all of the input files, and determining their run & file #'s
-	file_dictionary = build_file_dictionary(RUN_PERIOD)
+	file_dictionary = build_file_dictionary(RUN_PERIOD, NUM_FILES_PER_RUN)
 
 	# SEARCH FOR JOBS
 	# For the workflow, get the full status output from SWIF about what jobs are in the workflow
