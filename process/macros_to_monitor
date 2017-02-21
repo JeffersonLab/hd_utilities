@@ -25,10 +25,10 @@
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/FCAL_online/fcal_hit_energy.C
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/FCAL_online/fcal_hit_timing.C
 # SC
-/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/ST_online_lowlevel/ST_Monitoring_Waveform_ch4.C
-/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/ST_online_lowlevel/ST_Monitoring_Multi.C 
-/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/ST_online_tracking/ST_Monitoring_Pid.C
-#/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/ST_online_tracking/ST_Monitoring_Eff.C
+#/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/ST_online_lowlevel/ST_Monitoring_Waveform_ch4.C
+#/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/ST_online_lowlevel/ST_Monitoring_Multi.C 
+#/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/ST_online_tracking/ST_Monitoring_Pid.C
+##/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/ST_online_tracking/ST_Monitoring_Eff.C
 # TAGH
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/TAGH_online/TAGH_hit.C
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/TAGH_online/TAGH_hit2.C
@@ -38,11 +38,11 @@
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/PSC_online/PSC_hit3.C
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/PS_online/PS_hit.C
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/PS_online/PS_hit2.C
-/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/PSPair_online/PS_eff.C
-/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/PSPair_online/PS_PSC_coinc.C
-/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/PSPair_online/PS_TAG_energy.C
-/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/PSPair_online/TAG_2D_eff.C
-/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/PSPair_online/TAG_eff.C
+#/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/PSPair_online/PS_eff.C
+#/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/PSPair_online/PS_PSC_coinc.C
+#/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/PSPair_online/PS_TAG_energy.C
+#/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/PSPair_online/TAG_2D_eff.C
+#/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/PSPair_online/TAG_eff.C
 # Trigger
 #/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/TRIG_online/trig_fcalbcal.C
 # RF
