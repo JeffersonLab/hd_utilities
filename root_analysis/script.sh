@@ -132,8 +132,8 @@ Run_Script()
 	# RUN ROOT
 	Extract_FileName $SELECTOR_NAME SELECTOR_FILE
 	cp ${SELECTOR_NAME}.* .
-	root -b -q $INPUTFILE $ROOT_SCRIPT'("'$TREE_NAME'", "'${SELECTOR_FILE}.C+'", '${NUM_THREADS}')'
-
+	root -b -q $ROOT_SCRIPT'("'$INPUTFILE'", "'$TREE_NAME'", "'${SELECTOR_FILE}.C+'", '${NUM_THREADS}')'
+$ 
 	# RETURN CODE
 	RETURN_CODE=$?
 	echo "Return Code = " $RETURN_CODE
