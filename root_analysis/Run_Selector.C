@@ -11,6 +11,9 @@ using namespace std;
 
 int Run_Selector(string locInputFileName, string locTreeName, string locSelectorName, unsigned int locNThreads)
 {
+	//Load library & headers
+	Long_t locResult = gROOT->ProcessLine(".x $ROOT_ANALYSIS_HOME/scripts/Load_DSelector.C");
+
 	//tell it to compile selector (if user did not)
 	if(locSelectorName[locSelectorName.size() - 1] != '+')
 		locSelectorName += '+';
