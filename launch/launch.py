@@ -242,6 +242,7 @@ def add_job(WORKFLOW, FILEPATH, config_dict):
 		add_command += " " + config_dict["TREE_NAME"]
 	if('SELECTOR_NAME' in config_dict):
 		add_command += " " + config_dict["SELECTOR_NAME"]
+		add_command += " " + config_dict["NCORES"]
 	if('WEBDIR_SMALL' in config_dict):
 		add_command += " " + config_dict["WEBDIR_SMALL"]
 	if('WEBDIR_LARGE' in config_dict):

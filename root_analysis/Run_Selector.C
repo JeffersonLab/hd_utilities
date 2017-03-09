@@ -1,7 +1,6 @@
 #include <string>
 #include <iostream>
 #include "TROOT.h"
-#include "TFile.h"
 #include "TTree.h"
 #include "TDirectory.h"
 
@@ -9,35 +8,23 @@ R__LOAD_LIBRARY(libDSelector)
 
 using namespace std;
 
-void Run_Selector(string locTreeName, string locInputFile, string locOutputFile, string locSelectorName)
+int Run_Selector(string locTreeName, string locSelectorName, unsigned int locNThreads)
 {
-	//load libraries, etc.
-	Long_t locResult = gROOT->ProcessLine(".x $ROOT_ANALYSIS_HOME/scripts/Load_DSelector.C");
-	bool proof = 1;
-	int proof_Nthreads = 6; //make sure to request NCORES in the config!
-
 	//tell it to compile selector (if user did not)
 	if(locSelectorName[locSelectorName.size() - 1] != '+')
 		locSelectorName += '+';
 
 	//process tree
-	cout << "tree name, selector name = " << locTreeName << ", " << locSelectorName << endl;
+	cout << "tree name, selector name, #threads = " << locTreeName << ", " << locSelectorName << ", " << locNThreads << endl;
+	TTree* locTree = (TTree*)gDirectory->Get(locTreeName.c_str());
 
-	if(proof) { // add TTree to chain and use PROOFLiteManager
-	      	TChain *locChain = new TChain(locTreeName.c_str());
-		locChain->Add(locInputFile.c_str());
-	
-		string outputHistFileName = locOutputFile;
-		outputHistFileName += Form(".root");
-	
-		DPROOFLiteManager *dproof = new DPROOFLiteManager();
-		dproof->Process_Chain(locChain, locSelectorName, outputHistFileName, "", "", proof_Nthreads);
-	}
-	else { // get TTree and use standard TTree::Process
-	        TFile *f = TFile::Open(locInputFile.c_str());
-		TTree* locTree = (TTree*)gDirectory->Get(locTreeName.c_str());
-		locTree->Process(locSelectorName.c_str());
+	if(locNThreads == 1) //process tree directly
+	{
+		Long64_t locStatus = locTree->Process(locSelectorName.c_str());
+		return (locStatus >= Long64_t(0));
 	}
 
+	//Use PROOF
+	return (DPROOFLiteManager::Process_Tree(locTree, locSelectorName, locNThreads) ? 0 : 1); //0 = success
 }
 
