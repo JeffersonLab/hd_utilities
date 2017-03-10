@@ -13,8 +13,9 @@ int Run_Selector(string locInputFileName, string locTreeName, string locSelector
 {
 	//Load library & headers
 	Long_t locResult = gROOT->ProcessLine(".x $ROOT_ANALYSIS_HOME/scripts/Load_DSelector.C");
+	cout << "load return code: " << locResult << endl;
 	if(locResult != 0)
-		return locResult; //error loading, return
+		return 999; //error loading, return
 
 	//tell it to compile selector (if user did not)
 	if(locSelectorName[locSelectorName.size() - 1] != '+')
