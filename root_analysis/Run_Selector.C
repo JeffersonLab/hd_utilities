@@ -27,6 +27,7 @@ int Run_Selector(string locInputFileName, string locTreeName, string locSelector
 	TFile* locFile = new TFile(locInputFileName.c_str(), "READ");
 	TTree* locTree = (TTree*)gDirectory->Get(locTreeName.c_str());
 	Long64_t locStatus = locTree->Process(locSelectorName.c_str());
+	cout << "tree status = " << locStatus << endl;
 	return ((locStatus >= Long64_t(0)) ? 0 : 999); //0 = success
 }
 
