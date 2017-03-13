@@ -24,7 +24,10 @@ int Run_Selector(string locInputFileName, string locTreeName, string locSelector
 	cout << "file name, tree name, selector name, #threads = " << locInputFileName << ", " << locTreeName << ", " << locSelectorName << ", " << locNThreads << endl;
 
 	if(locNThreads > 1) //USE PROOF
+	{
+		DPROOFLiteManager::Set_SandBox("./");
 		return (DPROOFLiteManager::Process_Tree(locInputFileName, locTreeName, locSelectorName, locNThreads) ? 0 : 999); //0 = success
+	}
 
 	//process tree directly
 	TFile* locFile = new TFile(locInputFileName.c_str(), "READ");
