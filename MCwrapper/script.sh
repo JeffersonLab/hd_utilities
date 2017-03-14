@@ -19,6 +19,12 @@ setenv CLEANSMEAR $15
 setenv CLEANRECON $16
 setenv MCSWIF $17
 setenv NUMTHREADS $18
+setenv GENERATOR $19
+setenv GEANTVER $20
+
+if ("$GEANTVER" == "3") then
+setenv NUMTHREADS 1
+endif
 
 # PRINT INPUTS
 echo "ENVIRONMENT       = $ENVIRONMENT"
@@ -32,37 +38,40 @@ echo "Geant        = $GEANT  $CLEANGEANT"
 echo "MCsmear        = $SMEAR $CLEANSMEAR"
 echo "Recon        = $RECON   $CLEANRECON"
 # ENVIRONMENT
-
+echo $ENVIRONMENT
 source $ENVIRONMENT
 echo pwd = $PWD
 #printenv
 #necessary to run swif, uses local directory if swif=0 is used
 if ("$MCSWIF" == "1") then
 mkdir $OUTDIR
-midir $OUTDIR/log
+mkdir $OUTDIR/log
 cp $INDIR/Gcontrol.in ./
-cp $INDIR/$CONFIG_FILE.input ./
+if ("$GENERATOR" == "genr8") then
+    cp $INDIR/$CONFIG_FILE.input ./
+endif
 endif
 
 if ("$GENR" != "0") then
-    echo "RUNNING GENR8"
-    set RUNNUM = $RUN_NUMBER+$FILE_NUMBER
-    # RUN genr8 and convert
-    if ( -f $CONFIG_FILE.input ) then
-	echo " input file found"
-    else
-	echo $CONFIG_FILE".input does not exist"
-	exit
+    if ("$GENERATOR" == "genr8") then
+	echo "RUNNING GENR8"
+	set RUNNUM = $RUN_NUMBER+$FILE_NUMBER
+	# RUN genr8 and convert
+	if ( -f $CONFIG_FILE.input ) then
+	    echo " input file found"
+	else
+	    echo $CONFIG_FILE".input does not exist"
+	    exit
+	endif
+	genr8 -r$RUNNUM -M$EVT_TO_GEN -A$CONFIG_FILE\_$RUN_NUMBER\_$FILE_NUMBER.ascii < $CONFIG_FILE.input
+	genr8_2_hddm $CONFIG_FILE\_$RUN_NUMBER\_$FILE_NUMBER.ascii
     endif
-    genr8 -r$RUNNUM -M$EVT_TO_GEN -A$CONFIG_FILE\_$RUN_NUMBER\_$FILE_NUMBER.ascii < $CONFIG_FILE.input
-    genr8_2_hddm $CONFIG_FILE\_$RUN_NUMBER\_$FILE_NUMBER.ascii
-
 
 #GEANT/smearing
 #modify TEMPIN/TEMPOUT/TEMPTRIG/TOSMEAR in control.in
 
     if ("$GEANT" != "0") then
-	echo "RUNNING GEANT"
+	echo "RUNNING GEANT"$GEANTVER
 	set colsize=`rcnd $RUN_NUMBER collimator_diameter | awk '{print $1}' | sed -r 's/.{2}$//' | sed -e 's/\.//g'`
 	if ("$colsize" == "B" || "$colsize" == "R" ) then
 	set colsize = "34"
@@ -71,13 +80,24 @@ if ("$GENR" != "0") then
 	set inputfile=$CONFIG_FILE\_$RUN_NUMBER\_$FILE_NUMBER
 	cp $PWD/Gcontrol.in $PWD/control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
 	sed -i 's/TEMPIN/'$inputfile.hddm'/' control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
+	sed -i 's/TEMPRUNG/'$RUN_NUMBER'/' control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
 	sed -i 's/TEMPOUT/'$inputfile'_geant.hddm/' control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
 	sed -i 's/TEMPTRIG/'$EVT_TO_GEN'/' control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
 	sed -i 's/TOSMEAR/'$SMEAR'/' control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
 	sed -i 's/TEMPCOLD/'0.00$colsize'/' control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
 	mv $PWD/control'_'$RUN_NUMBER'_'$FILE_NUMBER.in $PWD/control.in
+	
+	if ("$GEANTVER" == "3") then
 	hdgeant #$CONFIG_FILE\_$RUN_NUMBER\_$FILE_NUMBER.hddm $PWD/control.in
-#run reconstruction
+	else
+	#make run.mac then call it below
+	rm run.mac
+	echo /run/beamOn $EVT_TO_GEN >> run.mac
+	echo "exit" >> run.mac
+	hdgeant4 -t$NUMTHREADS run.mac
+	endif
+
+	#run reconstruction
 	if ("$CLEANGENR" == "1") then
 	rm *.ascii
 	rm $CONFIG_FILE\_$RUN_NUMBER\_$FILE_NUMBER.hddm
@@ -85,7 +105,7 @@ if ("$GENR" != "0") then
 
 	if ("$RECON" != "0") then
 	    echo "RUNNING RECONSTRUCTION"
-	    hd_root $inputfile'_geant_smeared.hddm' --plugin=danarest -PNTHREADS=$NUMTHREADS
+	    hd_root $inputfile'_geant_smeared.hddm' -PPLUGINS=danarest,monitoring_hists -PNTHREADS=$NUMTHREADS
 	    mv dana_rest.hddm dana_rest_$CONFIG_FILE\_$RUN_NUMBER\_$FILE_NUMBER.hddm
 
 	    if ("$CLEANGEANT" == "1") then

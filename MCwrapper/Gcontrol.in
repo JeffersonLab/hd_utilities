@@ -20,6 +20,7 @@ c reached before the event count specified in card TRIG is exhausted then the
 c processing will stop at the end of file.
 INFILE 'TEMPIN'
 TRIG TEMPTRIG
+RUNG TEMPRUNG
 
 c The BEAM card configures the built-in coherent bremsstralung photon
 c beam generator in HDGeant.  If the INFILE card is not present and BEAM
@@ -35,8 +36,35 @@ c      Epeak  - energy of the primary coherent peak edge (GeV)
 c      Emin   - minimum energy of the coherent bremsstrahlung beam (GeV)
 c      collz  - z position of collimator in m
 c      colld  - diameter of collimator in m 
+c      Eemit  - electron beam emittance in m.rad
+c      radthick - dimaond radiator thickneess in m
 c Omitting the final parameter Emin results in the default value being used.
-BEAM 12. 9. 0.0012 76.00 TEMPCOLD
+BEAM 12. 9.0 0.0012 76.00 TEMPCOLD 10.e-9 20.e-6
+
+c The GENBEAM card configures the simulation program to act purely as a
+c Monte Carlo event generator, and not to actually track any of the particles
+c that it generates. The events are written to the output file with only the
+c MC section filled out (reactions tag). This file can be fed back later to
+c HDGeant using the INFILE card above to carry out the actual simulation.
+c This provides access to the built-in photon beam generator of HDGeant to
+c someone who wants to study the properties of the beam apart from its
+c interactions in the target. Three keywords are currently supported.
+c    'precol'   - single-photon events starting upstream of the primary
+c                 collimator, with correlated spatial and momentum 
+c                 distributions for the well-tuned GlueX beamline.
+c    'postcol'  - single-photon events starting downstream of the secondary
+c                 collimator. Beam photons have been tracked through the 
+c                 system of collimators and sweep magnets but then stopped
+c                 before entry into the pair spectrometer.
+c    'postconv' - e+e- pair and e+e-/e-recoil events generated in the
+c                 TPOL target. Beam photons have been tracked through
+c                 the system of collimators and then pair-converted in
+c                 the TPOL coverter using a custom polarization-sensitive
+c                 pair/triplet production generator. They are saved as
+c                 a single vertex within the PTAR target.
+c The first two modes are supported by both HDGeant and HDGeant4, while
+c postconv is only supported at present by HDGeant4.
+cGENBEAM 'postconv'
 
 c Commenting out the following line will disable simulated hits output.
 OUTFILE 'TEMPOUT'
@@ -83,13 +111,13 @@ c PLOG 1
 c TLOG 1
 c
 c   particle  momentum  theta  phi  delta_momentum delta_theta delta_phi
-cKINE   108      1.0       50.   0.      0.              0.        360.
+KINE   108      0.5       90.  180.      0.            180.        360.
 
 c The SCAP card determines the vertex position for the particle gun.  It
 c supports the following three arguments, all of which default to 0.
 c
 c    vertex_x vertex_y vertex_z
-cSCAP    0.       0.      65.
+SCAP    0.       0.      65.
 
 c The TGTWIDTH card is used to determine an extended volume from
 c which the particle gun will generate vertexes. The vertex position
@@ -101,8 +129,8 @@ c to zero meaning the vertex is always located at the point specified
 c by SCAP. Note that this only affects the particle gun. Events read
 c from a file contain their own vertex information.
 c
-c            vertex_extent_r  vertext_extent_z
-c TGTWIDTH           0.5              0.2
+c            vertex_extent_r  vertex_extent_z
+TGTWIDTH           0.5              15
 
 c If you specify a non-zero value for vertex_x and/or vertex_y above then
 c all tracks will emerge from the given point.  If you leave them at zero,
@@ -118,26 +146,51 @@ HALO  5e-5
 
 c The following lines control the rate (GHz) of background beam photons
 c that are overlayed on each event in the simulation, in addition to the
-c particles produced by the standard generation mechanism.  A value of
-c 1.10 corresponds to nominal GlueX running conditions at an intensity of
-c 10^7 tagged photons on target per second.  To disable the generation of
-c random beam background, comment this line out or set the value of BGRATE
-c to zero.  Background beam photons are generated during the time interval
-c given by the BGGATE card, whose two arguments specify the earliest and
-c latest times (ns relative to the time of the original photon that caused
-c the event) that a random beam photon could produce background hits
-c somewhere in the detector.  Note that for this to work, the BEAM card
-c must be present (see above).  This means that background generation is
-c disabled when the simulation operates in particle gun mode.
-c If Emin is set in the BEAM card (see above), the rate of background photons
-c is automatically rescaled as follows:
-c       Rate(E_gamma > Thr)  =  Rate(E_gamma = 0.12 Gev) * K,
-c where K is a scale factor calculated inside uginit.F:
-c       K = 1 for Thr = 0.12 GeV,
-c       K > 1 for Thr < 0.12 GeV. 
-c Note, K is calculated assuming the beam energies Emax = 12, Epeak = 9. 
-BGRATE 1.10
-BGGATE -800. 800.
+c particles produced by the standard generation mechanism. BGGATE expects
+c two values in ns, which define the window around the trigger time that
+c background beam photons are overlaid on the simulation. The value you
+c should enter for BGRATE depends on many details of the photon beam: the
+c endpoint energy, the low-energy cutoff to be used in generating beam
+c photons, the location of coherent edge, the electron beam spot size and
+c emittance at the primary collimator, the electron beam current, etc. To
+c find the setting that is right for you, follow these steps in order.
+c  1) Check the BEAM card above that it has correct values for the electron
+c     beam energy (field 1) and the low-energy cutoff that you want to use
+c     in your simulation (field 3). Remember these values.
+c  2) Open a new tab in a web browser and enter the following URL,
+c     http://zeus.phys.uconn.edu/halld/cobrems/ratetool.cgi which displays
+c     a form containing many fields describing the electron beam and the
+c     photon beamline. Enter the correct values in all fields in the
+c     left-most column of parameters. The right column of parameters 
+c     defines the windows over which the tool will compute integrals of
+c     the beam rate. Set the "end-point" window to span the full range
+c     from your beamEmin (see step 1 above) to the electron beam endpoint,
+c     Then click the Plot Spectrum button. After a few seconds, the form will
+c     respond with a few plots and rate numbers in bold text. Record the
+c     value given for the "end-point rate". This is your BGRATE value.
+c  3) Enter your BGRATE value found in step 2 after BGRATE in the line
+c     below, and remove any characters before the BGRATE keyword. You are
+c     now ready to go. If you ever change anything in the beamline geometry
+c     eg. the collimator diameter, the coherent edge position, or the value
+c     of beamEmin, do not forget to come back and change your BGRATE.
+BGGATE -200. 200.
+BGRATE 4.80
+
+c The above cards BGRATE, BGGATE normally cause the simulation to add
+c accidental tagger hits to the simulated output record, in addition to
+c adding these beam photons to the list of particles to be tracked through
+c the detector. If you want the accidental tagger hits to be added to the
+c simulated output record but you do not want to track the background
+c beam photons, remove the comment in front of BGTAGONLY below.
+c NOTICE: If you turn on BGTAGONLY then you might as well raise the
+c minimum energy of beam photons being generated to the lower bound of
+c the tagger energy range you are interested in, which might be 3 GeV for
+c low-intensity running, 7 GeV for high-intensity running, or even 8 GeV
+c if you are only interested in the region of the coherent peak. This
+c minimum is the third field of the BEAM card above. Remember that if
+c you change beamEmin, you also need to change BGRATE to match, as 
+c described above.
+BGTAGONLY 1
 
 c The following line controls the uncertainty of the event time reference
 c relative to the RF structure of the beam. The event time reference is
@@ -154,7 +207,6 @@ c bucket will be generated by the simulation in multiples of 2 ns. If
 c this line is commented out, a default value of 10ns is assumed. The
 c decimal point is significant.
 TREFSIGMA 10.
-
 
 c The following card seeds the random number generator, though it may be
 c overridden if seeds are found in the input file (see below). It must be
@@ -174,7 +226,7 @@ c seeds. The seeds are written to the output HDDM file though so if one
 c uses the output file for input to another invocation of hdgeant(++)
 c then the same seeds will be used. You may check for seeds in the input
 c file using hddm-xml file.hddm | grep random .
-RNDM 121
+RNDM 3
 
 c The following line controls the cutoffs for tracking of particles.
 c CUTS cutgam cutele cutneu cuthad cutmuo bcute bcutm dcute dcutm ppcutm tofmax
@@ -190,7 +242,33 @@ c  - dcutm  = Cut for muon delta-rays. (10 TeV)
 c  - ppcutm = Cut for e+e- pairs by muons. (0.01 GeV)
 c  - tofmax = Time of flight cut (1.E+10 sec)
 c  - gcuts  = 5 user words (0.)
+c Only the first 5 fields (the ones that start with 'cut')
+c are supported by hdgeant4.
 CUTS 1e-4 1e-4 1e-3 1e-3 1e-4
+
+c Geant4 introduced the concept of ?a unique cut in range? which allows the user
+c to specify the threshold for secondaries production in terms of the range that
+c the secondary would have in the medium in which it is generated, rather than
+c in terms of a threshold energy. The RANGECUT card below supports the same
+c sequence as the first 5 arguments of the CUTS card above, except that the
+c values are interpreted as threshold ranges (cm) instead of kinetic energies.
+c This card is supported by hdgeant4 only. It is complementary to the CUTS card
+c in that CUTS are applied to the corresponding particles when they are being
+c tracked, whereas RANGECUTS are used to decide whether they should be
+c generated (as secondaries) in the first place.
+
+cRANGECUTS 0.1 0.1 1.0 1.0 0.1
+
+c Geant4 physics models are more comprehensive than the ones provided in G3,
+c and one consequence of this is that some particles (eg. neutrons) seem to go
+c on and on in Geant4 for lifetimes of many seconds in some cases. The following
+c card tells the simulation to stop tracks that are still being followed after 
+c this much time (seconds) has gone by. This card is only supported by hdgeant4.
+c There is an equivalent feature in hdgeant3 (see field 12 of CUTS card above)
+c but normally it is not needed to get efficient operation, so it is almost
+c never needed.
+
+TOFMAX 1e-5
 
 c The following line controls a set of generic flags that are used to
 c control aspects of the simulation generally related to debugging.
@@ -203,10 +281,12 @@ c          = 4 turns on step-by-step plotting during tracking
 c  SWIT(3) = 1 stores track trajectories for plotting after tracking is done
 c  SWIT(4) = 0 trace trajectories of all particle types
 c          = 3 trace only charged particle trajectories
+c This card is only supported by hdgeant3.
 SWIT 0 0 0 0 0 0 0 0 0 0
 
 c The following card enables the GelHad package (from BaBar)
 c   on/off  ecut   scale   mode   thresh
+c This card is only supported by hdgeant3.
 GELH  1     0.2     1.0     4     0.160
 
 c The following card selects the hadronic physics package
@@ -240,6 +320,7 @@ c behaviour is normal in most cases, but in the case of Cerenkov light
 c generation it leads to an underestimate for the yields.
 c   ABAN 1	abandon stopping tracks (default)
 c   ABAN 0	do not abandon stopping tracks
+c This card is only supported by hdgeant3.
 ABAN 0
 
 c The following card sets up the simulation to perform debugging on
@@ -265,7 +346,7 @@ c TRAJECTORIES = 3  store full trajectory of primary tracks
 c TRAJECTORIES = 4  store full trajectory of primary tracks and birth/death points of secondaries
 c TRAJECTORIES = 5  store full trajectory for all particles
 c
-TRAJECTORIES 0
+TRAJECTORIES 4
 
 c The following tracking parameters are defined for each tracking medium
 c   TMAXFD (REAL) maximum angular deviation due to the magnetic field
@@ -280,29 +361,41 @@ c the user code in the GSTMED() call.  Users who know what they are doing can
 c force Geant to instead use the values passed in the arguments to GSTMED()
 c by removing the comment in front of the following card.  Any parameters with
 c zero values are still assigned automatic values even when AUTO is turned off.
+c This card is only supported by hdgeant3.
 cAUTO 0
 
 c The magnetic field map is accessed through the HDGEOMETRY library
 c so that the same map can be used for both simulation and reconstruction.
 c There are multiple map types and for each type, more than one map may
 c exist. The map types consist of the default type of "CalibDB", the 
-c constant type of "Const" and the spoiled field type of "Spoiled".
+c constant type of "Const", the spoiled field type of "Spoiled", or
+c "NoField" if the simulation should be performed with the solenoid off.
 c The type is set using the BFIELDTYPE card. If no BFIELDTYPE card is
 c present, then no the default type "CalibDB" is used.
 c The specific parameters used for the field can be specified using the
 c BFIELDMAP card. If undefined, then the default that is hardcoded into
 c the HDGEOMETRY library is used. Note that these correspond to the
-c similarly named configuration parameters used in the econstruction.
-c The difference being that underscores are not allowed here. To
+c similarly named configuration parameters used in the reconstruction,
+c the difference being that underscores are not allowed here. To
 c specify the values to the reconstruction code used here, use the
-c -PBFIELD_TYPE=CalibDB and -PBFIELD_MAP=Magents/Solenoid/solenoid_1500
-c BFIELDMAP 'Magnets/Solenoid/solenoid_1200A_poisson_20140520'
-c BFIELDTYPE 'Const'
+c -PBFIELD_TYPE=CalibDB and -PBFIELD_MAP=Magnets/Solenoid/solenoid_1500
+BFIELDMAP 'Magnets/Solenoid/solenoid_1200A_poisson_20140520'
+cBFIELDTYPE 'NoField'
+
+c The pair spectrometer magnetic field map can also be accessed through the
+c HDGGEOMTRY library in a similar fashion to the solenoid field. The cards
+c PSBFIELDMAP and PSBFIELDTYPE correspond in form and meaning to BFIELDMAP
+c and BFIELDTYPE, except that only "Const" and "CalibDB" (default) are
+c supported values for PSBFIELDTYPE. To specify the values used here to
+c the reconstruction code, use options -PPSBFIELD_TYPE=CalibDB and 
+c -PPSBFIELD_MAP=Magnets/PairSpectrometer/PS_1.8T_20150513_test
+c on the jana command line.
+PSBFIELDMAP 'Magnets/PairSpectrometer/PS_1.8T_20150513_test'
+cPSBFIELDTYPE 'Const'
 
 c Use this card to enable/disable ( SAVEHITS  1/0 ) writing events with no 
 c hits in the detector to the hddm output file. Default value is 0.
   SAVEHITS  0
-
 
 c This card is used to enable/disable ( SHOWERS_IN_COL 1/0 ) simulation of 
 c showers in the primary and secondary collimators placed in the collimator cave. 

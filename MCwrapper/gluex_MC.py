@@ -42,7 +42,7 @@ VERBOSE    = False
 
 # PROJECT INFO
 PROJECT    = "gluex"          # http://scicomp.jlab.org/scicomp/#/projects
-TRACK      = "simulation"     # https://scicomp.jlab.org/docs/batch_job_tracks
+TRACK      = "simulation"		   # https://scicomp.jlab.org/docs/batch_job_tracks
 
 # RESOURCES for swif jobs
 NCORES     = "8"               # Number of CPU cores
@@ -53,9 +53,12 @@ OS         = "centos7"        # Specify CentOS65 machines
 
 
 # OUTPUT DATA LOCATION
-DATA_OUTPUT_BASE_DIR    = "./MyOutputLocation/"#your desired output location (only needed for SWIF jobs)
+DATA_OUTPUT_BASE_DIR    = "My-output-location"#your desired output location (only needed for SWIF jobs
 #environment file location
-ENVFILE           = "master_env_setup"#change this to your own environment file
+ENVFILE           = "my-environment-file"#change this to your own environment file
+
+GENERATOR = "genr8"
+GEANTVER = 4
 
 def add_job(WORKFLOW,CHANNEL, RUNNO, FILENO,SCRIPT,COMMAND):
 
@@ -200,7 +203,7 @@ def main(argv):
 		if num == 0:
 			continue
 
-		COMMAND=ENVFILE+" "+CHANNEL+" "+str(indir)+" "+str(outdir)+" "+str(RUNNUM)+" "+str(FILENUM)+" "+str(num)+" "+str(VERSION)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(MCSWIF)+" "+str(NUMTHREADS)
+		COMMAND=ENVFILE+" "+CHANNEL+" "+str(indir)+" "+str(outdir)+" "+str(RUNNUM)+" "+str(FILENUM)+" "+str(num)+" "+str(VERSION)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(MCSWIF)+" "+str(NUMTHREADS)+" "+str(GENERATOR)+" "+str(GEANTVER)
 		#print COMMAND
 		#either call script.sh or add a job depending on swif flag
 		if MCSWIF == 0:
