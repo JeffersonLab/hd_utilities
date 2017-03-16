@@ -1,11 +1,7 @@
 #!/usr/bin/env python
 ##########################################################################################################################
 #
-# 2017/01 Thomas Britton
-# Heavily based off of work by Paul Mattione
-#
-# NOTE: THERE ARE GLOBAL VARIABLES BELOW THAT SHOULD BE MODIFIED BEFORE RUNNING
-#
+# 2017/03 Thomas Britton
 #
 #   Options:
 #      MC variation can be changed by supplying "variation=xxxxx" option otherwise default: mc
@@ -34,34 +30,9 @@ import subprocess
 from subprocess import call
 import glob
 
+def add_job(WORKFLOW,CHANNEL, RUNNO, FILENO,SCRIPT,COMMAND, VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR):
 
-#################################################### GLOBAL VARIABLES ####################################################
-
-# DEBUG
-VERBOSE    = False
-
-# PROJECT INFO
-PROJECT    = "gluex"          # http://scicomp.jlab.org/scicomp/#/projects
-TRACK      = "simulation"		   # https://scicomp.jlab.org/docs/batch_job_tracks
-
-# RESOURCES for swif jobs
-NCORES     = "8"               # Number of CPU cores
-DISK       = "10GB"            # Max Disk usage
-RAM        = "20GB"            # Max RAM usage
-TIMELIMIT  = "300minutes"      # Max walltime
-OS         = "centos7"        # Specify CentOS65 machines
-
-
-# OUTPUT DATA LOCATION
-DATA_OUTPUT_BASE_DIR    = "My-output-location"#your desired output location (only needed for SWIF jobs
-#environment file location
-ENVFILE           = "my-environment-file"#change this to your own environment file
-
-GENERATOR = "genr8"
-GEANTVER = 4
-
-def add_job(WORKFLOW,CHANNEL, RUNNO, FILENO,SCRIPT,COMMAND):
-
+        
 	# PREPARE NAMES
 	STUBNAME = str(RUNNO) + "_" + str(FILENO)
 	JOBNAME = WORKFLOW + "_" + STUBNAME
@@ -94,28 +65,55 @@ def add_job(WORKFLOW,CHANNEL, RUNNO, FILENO,SCRIPT,COMMAND):
 ########################################################## MAIN ##########################################################
 	
 def main(argv):
-	parser_usage = "swif_gluex_MC.py workflow channel Run_Number num_events [all other options]"
+	parser_usage = "gluex_MC.py config_file Run_Number num_events [all other options]"
 	parser = OptionParser(usage = parser_usage)
 	(options, args) = parser.parse_args(argv)
 
-
 	#check if there are enough arguments
-	if(len(argv)<4):
+	if(len(argv)<3):
 		parser.print_help()
 		return
 
 	#check if the needed arguments are valid
-	if len(args[0].split("="))>1 or len(args[1].split("="))>1 or len(args[2].split("="))>1:
+	if len(args[1].split("="))>1 or len(args[2].split("="))>1:
 		parser.print_help()
 		return
-	#load all argument passed in and set default options
-	WORKFLOW = args[0]
-	CHANNEL = args[1]	
-	RUNNUM = int(args[2])
-	EVTS = int(args[3])
 
-	VERSION  = "mc"
-	PERFILE=1000
+        #!!!!!!!!!!!!!!!!!!REQUIRED COMMAND LINE ARGUMENTS!!!!!!!!!!!!!!!!!!!!!!!!
+        CONFIG_FILE = args[0]
+        RUNNUM = int(args[1])
+	EVTS = int(args[2])
+        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+	#load all argument passed in and set default options
+        VERBOSE    = False
+
+        DATA_OUTPUT_BASE_DIR    = "UNKNOWN_LOCATION"#your desired output location (only needed for SWIF jobs
+        
+        ENVFILE = "my-environment-file"#change this to your own environment file
+        
+        GENERATOR = "genr8"
+        GEANTVER = 4        
+        GENCONFIG = "genrator config file"
+
+        CUSTOM_MAKEMC=""
+        CUSTOM_GCONTROL=""
+
+        #-------SWIF ONLY-------------
+        # PROJECT INFO
+        PROJECT    = "gluex"          # http://scicomp.jlab.org/scicomp/#/projects
+        TRACK      = "simulation"     # https://scicomp.jlab.org/docs/batch_job_tracks
+        
+        # RESOURCES for swif jobs
+        NCORES     = "8"               # Number of CPU cores
+        DISK       = "10GB"            # Max Disk usage
+        RAM        = "20GB"            # Max RAM usage
+        TIMELIMIT  = "300minutes"      # Max walltime
+        OS         = "centos7"        # Specify CentOS65 machines
+
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        VERSION  = "mc"
+	PERFILE=10000
 	GENR=1
 	GEANT=1
 	SMEAR=1
@@ -124,10 +122,75 @@ def main(argv):
 	CLEANGEANT=1
 	CLEANSMEAR=1
 	CLEANRECON=0
-	MCSWIF=0
-	NUMTHREADS=4
+        MCSWIF=0
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-	#loop over arguments
+        f = open(CONFIG_FILE,"r")
+
+        for line in f:
+                if len(line)==0:
+                       continue
+                if line[0]=="#":
+                       continue
+
+                parts=line.split("=")
+
+                if len(parts)==1:
+                        #print "Warning! No Sets given"
+                        continue
+                
+                if len(parts)>2:
+                        print "warning! I am going to have a really difficult time with:"
+                        print line
+                        print "I'm going to just ignore it and hope it isn't a problem...."
+                        continue
+                        
+                        
+                rm_comments=[]
+                if len(parts)>1:
+                        rm_comments=parts[1].split("#")
+                
+                j=-1
+                for i in parts:
+                        j=j+1
+                        i=i.strip()
+                        parts[j]=i
+                
+                if str(parts[0]).upper()=="VERBOSE" :
+                        if rm_comments[0].strip().upper()=="TRUE" or rm_comments[0].strip() == "1":
+                                VERBOSE=True
+                elif str(parts[0]).upper()=="PROJECT" :
+                        PROJECT=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="TRACK" :
+                        TRACK=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="NCORES" :
+                        NCORES=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="DISK" :
+                        DISK=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="RAM" :
+                        RAM=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="TIMELIMIT" :
+                        TIMELIMIT=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="OS" :
+                        OS=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="DATA_OUTPUT_BASE_DIR" :
+                        DATA_OUTPUT_BASE_DIR=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="ENVIRONMENT_FILE" :
+                        ENVFILE=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="GENERATOR" :
+                        GENERATOR=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="GEANT_VERSION" :
+                        GEANTVER=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="WORKFLOW_NAME" :
+                        WORKFLOW=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="GENERATOR_CONFIG" :
+                        GENCONFIG=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="CUSTOM_MAKEMC" :
+                        CUSTOM_MAKEMC=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="CUSTOM_GCONTROL" :
+                        CUSTOM_GCONTROL=rm_comments[0].strip()
+
+	#loop over command line arguments 
 	for argu in args:
 		argfound=0
 		flag=argu.split("=")
@@ -170,16 +233,31 @@ def main(argv):
 				MCSWIF=int(flag[1])
 			if flag[0]=="numthreads":
 				argfound=1
-				NUMTHREADS=int(flag[1])
+				NCORES=int(flag[1])
 			if argfound==0:
 				print "WARNING OPTION: "+argu+" NOT FOUND!"
+
 	
+        if str(GEANTVER)=="3":
+                NCORES=1
+
+        #loop over config file and set the "parameters"
+        
+        
+
+
+        if DATA_OUTPUT_BASE_DIR == "UNKNOWN_LOCATION" and MCSWIF==1:
+                print "I doubt that SWIF will find "+DATA_OUTPUT_BASE_DIR+" so I am saving you the embarassment and stopping this"
+                return
+
+        name_breakdown=GENCONFIG.split("/")
+        CHANNEL = name_breakdown[len(name_breakdown)-1].split(".")[0]
 
 	#print a line indicating SWIF or Local run
 	if MCSWIF != 1:
-		print "Locally simulating "+args[2]+" "+CHANNEL+" Events"
+		print "Locally simulating "+args[1]+" "+CHANNEL+" Events"
 	else:
-		print "Creating "+WORKFLOW+" to simulate "+args[2]+" "+CHANNEL+" Events"
+		print "Creating "+WORKFLOW+" to simulate "+args[1]+" "+CHANNEL+" Events"
 	# CREATE WORKFLOW
 		status = subprocess.call(["swif", "create", "-workflow", WORKFLOW])
 
@@ -187,7 +265,15 @@ def main(argv):
 	FILES_TO_GEN=EVTS/PERFILE
 	REMAINING_GEN=EVTS%PERFILE
 
-	indir=os.getcwd()
+	indir=os.environ.get('MCWRAPPER_CENTRAL')
+
+        if len(CUSTOM_MAKEMC)!= 0:
+                indir=CUSTOM_MAKEMC
+
+        if str(indir) == "None":
+                print "MCWRAPPER_CENTRAL not set"
+                return
+
 	outdir=DATA_OUTPUT_BASE_DIR
 	#if local run set out directory to cwd
 	if MCSWIF==0:
@@ -203,13 +289,13 @@ def main(argv):
 		if num == 0:
 			continue
 
-		COMMAND=ENVFILE+" "+CHANNEL+" "+str(indir)+" "+str(outdir)+" "+str(RUNNUM)+" "+str(FILENUM)+" "+str(num)+" "+str(VERSION)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(MCSWIF)+" "+str(NUMTHREADS)+" "+str(GENERATOR)+" "+str(GEANTVER)
+		COMMAND=ENVFILE+" "+GENCONFIG+" "+CHANNEL+" "+str(outdir)+" "+str(RUNNUM)+" "+str(FILENUM)+" "+str(num)+" "+str(VERSION)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(MCSWIF)+" "+str(NCORES)+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(CUSTOM_GCONTROL)
 		#print COMMAND
-		#either call script.sh or add a job depending on swif flag
-		if MCSWIF == 0:
-			os.system("./script.sh "+COMMAND)
+		#either call MakeMC.sh or add a job depending on swif flag
+                if MCSWIF == 0:
+			os.system(str(indir)+"/MakeMC.sh "+COMMAND)
 		else:
-			add_job(WORKFLOW, CHANNEL, RUNNUM, FILENUM,str(os.getcwd())+"/script.sh",COMMAND)
+			add_job(WORKFLOW, CHANNEL, RUNNUM, FILENUM,str(indir)+"/MakeMC.sh",COMMAND,VERBOSE,TRACK,PROJECT,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR)
 
 if __name__ == "__main__":
    main(sys.argv[1:])
