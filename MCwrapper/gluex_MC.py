@@ -190,6 +190,8 @@ def main(argv):
                 elif str(parts[0]).upper()=="CUSTOM_GCONTROL" :
                         CUSTOM_GCONTROL=rm_comments[0].strip()
 
+        print TRACK
+        print PROJECT
 	#loop over command line arguments 
 	for argu in args:
 		argfound=0
@@ -295,7 +297,7 @@ def main(argv):
                 if MCSWIF == 0:
 			os.system(str(indir)+"/MakeMC.sh "+COMMAND)
 		else:
-			add_job(WORKFLOW, CHANNEL, RUNNUM, FILENUM,str(indir)+"/MakeMC.sh",COMMAND,VERBOSE,TRACK,PROJECT,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR)
+			add_job(WORKFLOW, CHANNEL, RUNNUM, FILENUM,str(indir)+"/MakeMC.sh",COMMAND,VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR)
 
 if __name__ == "__main__":
    main(sys.argv[1:])
