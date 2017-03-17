@@ -61,11 +61,26 @@ def add_job(WORKFLOW,CHANNEL, RUNNO, FILENO,SCRIPT,COMMAND, VERBOSE,PROJECT,TRAC
 	# ADD JOB
 	status = subprocess.call(add_command.split(" "))
 		
+def showhelp():
+        helpstring= "variation=%s where %s is a valid jana_calib_context variation string (default is \"mc\")\n"
+        helpstring+= " per_file=%i where %i is the number of events you want per file/job (default is 10000)\n"
+        helpstring+= " numthread=%i sets the number of threads to use to %i.  Note that this will overwrite the NCORES set in MC.config\n"
+        helpstring+= " generate=[0/1] where 0 means that the generation step and any subsequent step will not run (default is 1)\n"
+        helpstring+= " geant=[0/1] where 0 means that the geant step and any subsequent step will not run (default is 1)\n"
+        helpstring+= " mcsmear=[0/1] where 0 means that the mcsmear step and any subsequent step will not run (default is 1)\n"
+        helpstring+= " recon=[0/1] where 0 means that the reconstruction step will not run (default is 1)\n"
+        helpstring+= " cleangenerate=[0/1] where 0 means that the generation step will not be cleaned up after use (default is 1)\n"
+        helpstring+= " cleangeant=[0/1] where 0 means that the geant step will not be cleaned up after use (default is 1)\n"
+        helpstring+= " cleanmcsmear=[0/1] where 0 means that the mcsmear step will not  (default is 1)\n"
+        helpstring+= " cleanrecon=[0/1] where 0 means that the reconstruction step will not run (default is 1)\n"
+        helpstring+= " swif=[0/1] where 1 means that a workflow will be created and jobs added to it (default is 0)\n"
+        return helpstring
 
 ########################################################## MAIN ##########################################################
 	
 def main(argv):
-	parser_usage = "gluex_MC.py config_file Run_Number num_events [all other options]"
+	parser_usage = "gluex_MC.py config_file Run_Number num_events [all other options]\n\n where [all other options] are:\n\n "
+        parser_usage += showhelp()
 	parser = OptionParser(usage = parser_usage)
 	(options, args) = parser.parse_args(argv)
 
@@ -285,7 +300,7 @@ def main(argv):
 		if num == 0:
 			continue
 
-		COMMAND=ENVFILE+" "+GENCONFIG+" "+CHANNEL+" "+str(outdir)+" "+str(RUNNUM)+" "+str(FILENUM)+" "+str(num)+" "+str(VERSION)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(MCSWIF)+" "+str(NCORES)+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(CUSTOM_GCONTROL)
+		COMMAND=ENVFILE+" "+GENCONFIG+" "+CHANNEL+" "+str(outdir)+" "+str(RUNNUM)+" "+str(FILENUM-1)+" "+str(num)+" "+str(VERSION)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(MCSWIF)+" "+str(NCORES)+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(CUSTOM_GCONTROL)
 		#print COMMAND
 		#either call MakeMC.csh or add a job depending on swif flag
                 if MCSWIF == 0:
