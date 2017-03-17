@@ -124,7 +124,7 @@ def main(argv):
 	CLEANRECON=0
         MCSWIF=0
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+        #loop over config file and set the "parameters"
         f = open(CONFIG_FILE,"r")
 
         for line in f:
@@ -190,8 +190,6 @@ def main(argv):
                 elif str(parts[0]).upper()=="CUSTOM_GCONTROL" :
                         CUSTOM_GCONTROL=rm_comments[0].strip()
 
-        print TRACK
-        print PROJECT
 	#loop over command line arguments 
 	for argu in args:
 		argfound=0
@@ -243,10 +241,6 @@ def main(argv):
         if str(GEANTVER)=="3":
                 NCORES=1
 
-        #loop over config file and set the "parameters"
-        
-        
-
 
         if DATA_OUTPUT_BASE_DIR == "UNKNOWN_LOCATION" and MCSWIF==1:
                 print "I doubt that SWIF will find "+DATA_OUTPUT_BASE_DIR+" so I am saving you the embarassment and stopping this"
@@ -257,9 +251,9 @@ def main(argv):
 
 	#print a line indicating SWIF or Local run
 	if MCSWIF != 1:
-		print "Locally simulating "+args[1]+" "+CHANNEL+" Events"
+		print "Locally simulating "+args[2]+" "+CHANNEL+" Events"
 	else:
-		print "Creating "+WORKFLOW+" to simulate "+args[1]+" "+CHANNEL+" Events"
+		print "Creating "+WORKFLOW+" to simulate "+args[2]+" "+CHANNEL+" Events"
 	# CREATE WORKFLOW
 		status = subprocess.call(["swif", "create", "-workflow", WORKFLOW])
 
@@ -293,11 +287,11 @@ def main(argv):
 
 		COMMAND=ENVFILE+" "+GENCONFIG+" "+CHANNEL+" "+str(outdir)+" "+str(RUNNUM)+" "+str(FILENUM)+" "+str(num)+" "+str(VERSION)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(MCSWIF)+" "+str(NCORES)+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(CUSTOM_GCONTROL)
 		#print COMMAND
-		#either call MakeMC.sh or add a job depending on swif flag
+		#either call MakeMC.csh or add a job depending on swif flag
                 if MCSWIF == 0:
-			os.system(str(indir)+"/MakeMC.sh "+COMMAND)
+			os.system(str(indir)+"/MakeMC.csh "+COMMAND)
 		else:
-			add_job(WORKFLOW, CHANNEL, RUNNUM, FILENUM,str(indir)+"/MakeMC.sh",COMMAND,VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR)
+			add_job(WORKFLOW, CHANNEL, RUNNUM, FILENUM,str(indir)+"/MakeMC.csh",COMMAND,VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR)
 
 if __name__ == "__main__":
    main(sys.argv[1:])
