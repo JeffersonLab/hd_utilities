@@ -34,7 +34,8 @@ echo "OUTDIR            = $OUTDIR"
 echo "RUN_NUMBER        = $RUN_NUMBER"
 echo "FILE_NUMBER       = $FILE_NUMBER"
 echo "NUM TO GEN        = $EVT_TO_GEN"
-echo "genr8        = $GENR  $CLEANGENR"
+echo "generator        = $GENERATOR"
+echo "generation        = $GENR  $CLEANGENR"
 echo "Geant        = $GEANT  $CLEANGEANT"
 echo "MCsmear        = $SMEAR $CLEANSMEAR"
 echo "Recon        = $RECON   $CLEANRECON"
@@ -54,16 +55,29 @@ else
     cp $CUSTOM_GCONTROL/Gcontrol.in ./
 endif
 
-if ("$GENERATOR" == "genr8") then
-    cp $CONFIG_FILE ./
-endif
 endif
 
+
+
 if ("$GENR" != "0") then
-    if ("$GENERATOR" != "genr8") then
+    if ("$GENERATOR" != "genr8" && "$GENERATOR" != "bggen") then
 	echo "NO VALID GENERATOR GIVEN"
 	exit
     endif
+
+    if ("$GENERATOR" == "genr8") then
+	echo "configuring genr8"
+	cp $CONFIG_FILE ./
+    else if ("$GENERATOR" == "bggen") then
+	echo "configuring bggen"
+	cp $MCWRAPPER_CENTRAL/Generators/bggen/particle.dat ./
+	cp $MCWRAPPER_CENTRAL/Generators/bggen/pythia.dat ./
+	cp $MCWRAPPER_CENTRAL/Generators/bggen/pythia-geant.map ./
+	cp $CONFIG_FILE ./bggen\_$RUN_NUMBER\_$FILE_NUMBER.conf
+    endif
+
+
+
     if ("$GENERATOR" == "genr8") then
 	echo "RUNNING GENR8"
 	set RUNNUM = $RUN_NUMBER+$FILE_NUMBER
@@ -76,6 +90,21 @@ if ("$GENR" != "0") then
 	endif
 	genr8 -r$RUNNUM -M$EVT_TO_GEN -A$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.ascii < $CONFIG_FILE
 	genr8_2_hddm $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.ascii
+    else if ("$GENERATOR" == "bggen") then
+
+	set colsize=`rcnd $RUN_NUMBER collimator_diameter | awk '{print $1}' | sed -r 's/.{2}$//' | sed -e 's/\.//g'`
+	if ("$colsize" == "B" || "$colsize" == "R" ) then
+	set colsize = "34"
+	endif
+	set RANDOM=$$
+	echo $RANDOM
+	sed -i 's/TEMPTRIG/'$EVT_TO_GEN'/' bggen\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	sed -i 's/TEMPRUNNO/'$RUN_NUMBER'/' bggen\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	sed -i 's/TEMPCOLD/'0.00$colsize'/' bggen\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	sed -i 's/TEMPrand/'$RANDOM'/' bggen\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	ln -s bggen\_$RUN_NUMBER\_$FILE_NUMBER.conf fort.15
+	bggen
+	mv bggen.hddm $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm
     endif
 
 #GEANT/smearing
@@ -114,8 +143,16 @@ if ("$GENR" != "0") then
 
 	#run reconstruction
 	if ("$CLEANGENR" == "1") then
-	rm *.ascii
-	rm $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm
+	    if ("$GENERATOR" == "genr8") then
+		rm *.ascii
+	    else if ("$GENERATOR" == "bggen") then
+		rm particle.dat
+		rm pythia.dat
+		rm pythia-geant.map
+		unlink fort.15
+	    endif
+	
+	    rm $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm
 	endif
 
 	if ("$RECON" != "0") then
