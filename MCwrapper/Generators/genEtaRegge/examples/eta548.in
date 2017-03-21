@@ -1,0 +1,15 @@
+#Emin Emax (photon energy range)
+7.0 11.7
+#Electron beam energy [GeV], coherent peak [GeV] and collimator diameter [m]
+12.0 9.0 0.0034
+#mass[GeV] width[GeV]
+0.547853 0.000
+#g_eta_gamma_gamma g_rho_eta_gamma g_omega_eta_gamma g_phi_eta_gamma 
+0.0429 0.81 0.29 0.38
+#Number of decay particles
+3
+#GEANT ids of decay particles (1=gamma,7=pi0, 8=pi+, 9=pi-, 17=eta).
+1 2 3
+
+
+   

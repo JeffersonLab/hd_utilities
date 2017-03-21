@@ -49,20 +49,26 @@ if ("$MCSWIF" == "1") then
 mkdir $OUTDIR
 mkdir $OUTDIR/log
 
+endif
+
 if ("$CUSTOM_GCONTROL"=="") then
     cp $MCWRAPPER_CENTRAL/Gcontrol.in ./
 else
     cp $CUSTOM_GCONTROL/Gcontrol.in ./
 endif
 
-endif
-
-
 
 if ("$GENR" != "0") then
-    if ("$GENERATOR" != "genr8" && "$GENERATOR" != "bggen") then
+    if ("$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge") then
 	echo "NO VALID GENERATOR GIVEN"
 	exit
+    endif
+
+    if ( -f $CONFIG_FILE ) then
+	    echo " input file found"
+	else
+	    echo $CONFIG_FILE" does not exist"
+	    exit
     endif
 
     if ("$GENERATOR" == "genr8") then
@@ -74,24 +80,20 @@ if ("$GENR" != "0") then
 	cp $MCWRAPPER_CENTRAL/Generators/bggen/pythia.dat ./
 	cp $MCWRAPPER_CENTRAL/Generators/bggen/pythia-geant.map ./
 	cp $CONFIG_FILE ./bggen\_$RUN_NUMBER\_$FILE_NUMBER.conf
+    else if ("$GENERATOR" == "genEtaRegge") then
+	echo "configuring genEtaRegge"
+	cp $CONFIG_FILE ./
     endif
-
-
-
+    set config_file_name=`basename "$CONFIG_FILE"`
+    echo $config_file_name
+    
     if ("$GENERATOR" == "genr8") then
 	echo "RUNNING GENR8"
 	set RUNNUM = $RUN_NUMBER+$FILE_NUMBER
 	# RUN genr8 and convert
-	if ( -f $CONFIG_FILE ) then
-	    echo " input file found"
-	else
-	    echo $CONFIG_FILE" does not exist"
-	    exit
-	endif
-	genr8 -r$RUNNUM -M$EVT_TO_GEN -A$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.ascii < $CONFIG_FILE
+	genr8 -r$RUNNUM -M$EVT_TO_GEN -A$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.ascii < $config_file_name
 	genr8_2_hddm $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.ascii
     else if ("$GENERATOR" == "bggen") then
-
 	set colsize=`rcnd $RUN_NUMBER collimator_diameter | awk '{print $1}' | sed -r 's/.{2}$//' | sed -e 's/\.//g'`
 	if ("$colsize" == "B" || "$colsize" == "R" ) then
 	set colsize = "34"
@@ -105,6 +107,9 @@ if ("$GENR" != "0") then
 	ln -s bggen\_$RUN_NUMBER\_$FILE_NUMBER.conf fort.15
 	bggen
 	mv bggen.hddm $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm
+        else if ("$GENERATOR" == "genEtaRegge") then
+	echo "RUNNING GENETAREGGE" 
+	genEtaRegge -N$EVT_TO_GEN -O$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm -I$config_file_name
     endif
 
 #GEANT/smearing
@@ -118,7 +123,7 @@ if ("$GENR" != "0") then
 	endif
 
 	set inputfile=$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER
-	cp $MCWRAPPER_CENTRAL/Gcontrol.in $PWD/control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
+	cp Gcontrol.in $PWD/control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
 	sed -i 's/TEMPIN/'$inputfile.hddm'/' control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
 	sed -i 's/TEMPRUNG/'$RUN_NUMBER'/' control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
 	sed -i 's/TEMPOUT/'$inputfile'_geant.hddm/' control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
@@ -163,6 +168,7 @@ if ("$GENR" != "0") then
 
 	    if ("$CLEANGEANT" == "1") then
 	    rm *_geant.hddm
+	    rm Gcontrol.in
 	    endif
 
 	    if ("$CLEANSMEAR" == "1") then
