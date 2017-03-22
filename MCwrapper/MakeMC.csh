@@ -59,8 +59,9 @@ endif
 
 
 if ("$GENR" != "0") then
-    if ("$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge") then
+    if ("$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp") then
 	echo "NO VALID GENERATOR GIVEN"
+	echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp] are supported"
 	exit
     endif
 
@@ -82,6 +83,9 @@ if ("$GENR" != "0") then
 	cp $CONFIG_FILE ./bggen\_$RUN_NUMBER\_$FILE_NUMBER.conf
     else if ("$GENERATOR" == "genEtaRegge") then
 	echo "configuring genEtaRegge"
+	cp $CONFIG_FILE ./
+    else if ("$GENERATOR" == "gen_2pi_amp") then
+	echo "configuring gen_2pi_amp"
 	cp $CONFIG_FILE ./
     endif
     set config_file_name=`basename "$CONFIG_FILE"`
@@ -110,6 +114,12 @@ if ("$GENR" != "0") then
         else if ("$GENERATOR" == "genEtaRegge") then
 	echo "RUNNING GENETAREGGE" 
 	genEtaRegge -N$EVT_TO_GEN -O$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm -I$config_file_name
+	else if ("$GENERATOR" == "gen_2pi_amp") then
+	echo "RUNNING GEN_2PI_AMP" 
+        set optionals_line = `head -n 1 $config_file_name | sed -r 's/.//'`
+	echo $optionals_line
+	echo gen_2pi_amp -c $config_file_name -o $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm -hd $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.root -n $EVT_TO_GEN -r $RUN_NUMBER $optionals_line
+	gen_2pi_amp -c $config_file_name -hd $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm -o $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.root -n $EVT_TO_GEN -r $RUN_NUMBER $optionals_line
     endif
 
 #GEANT/smearing
