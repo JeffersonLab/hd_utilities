@@ -83,6 +83,7 @@
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_Matching_FCAL.C
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_Matching_SC.C
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_Matching_TOF.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_Matching_TOF2.C
 # high-level monitoring plots
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/highlevel_online/HistMacro_Beam.C
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/highlevel_online/HistMacro_Kinematics.C
