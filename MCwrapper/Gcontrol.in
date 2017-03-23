@@ -81,7 +81,7 @@ c
 c POSTSMEAR  - set this 1 to auto-invoke the mcsmear program and 0 to not
 c DELETEUNSMEARED - set this to 1 to delete the OUTFILE after running mcsmear
 c MCSMEAROPTS - String to specify additional arguments to pass to mcsmear
-POSTSMEAR TOSMEAR
+POSTSMEAR 0
 DELETEUNSMEARED 0
 c MCSMEAROPTS '-t1000 -d0'
 
@@ -346,7 +346,7 @@ c TRAJECTORIES = 3  store full trajectory of primary tracks
 c TRAJECTORIES = 4  store full trajectory of primary tracks and birth/death points of secondaries
 c TRAJECTORIES = 5  store full trajectory for all particles
 c
-TRAJECTORIES 4
+TRAJECTORIES 0
 
 c The following tracking parameters are defined for each tracking medium
 c   TMAXFD (REAL) maximum angular deviation due to the magnetic field
