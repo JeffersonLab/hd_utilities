@@ -108,11 +108,21 @@ def main(argv):
         ENVFILE = "my-environment-file"#change this to your own environment file
         
         GENERATOR = "genr8"
-        GEANTVER = 4        
         GENCONFIG = "genrator config file"
 
-        CUSTOM_MAKEMC=""
-        CUSTOM_GCONTROL=""
+        eBEAM_ENERGY="12"
+        COHERENT_PEAK="9"
+        MIN_GEN_ENERGY="4"
+        MAX_GEN_ENERGY="12"
+        
+
+        GEANTVER = 4        
+        BGFOLD="0"
+
+
+
+        CUSTOM_MAKEMC="DEFAULT"
+        CUSTOM_GCONTROL="0"
 
         #-------SWIF ONLY-------------
         # PROJECT INFO
@@ -164,7 +174,7 @@ def main(argv):
                 rm_comments=[]
                 if len(parts)>1:
                         rm_comments=parts[1].split("#")
-                
+                        
                 j=-1
                 for i in parts:
                         j=j+1
@@ -204,9 +214,20 @@ def main(argv):
                         CUSTOM_MAKEMC=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="CUSTOM_GCONTROL" :
                         CUSTOM_GCONTROL=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="BKG_FOLD" :
+                        BGFOLD=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="eBEAM_ENERGY" :
+                        eBEAM_ENERGY=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="COHERENT_PEAK" :
+                        COHERENT_PEAK=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="MIN_GEN_ENERGY" :
+                        MIN_GEN_ENERGY=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="MAX_GEN_ENERGY" :
+                        MAX_GEN_ENERGY=rm_comments[0].strip()
 
 	#loop over command line arguments 
-	for argu in args:
+	
+        for argu in args:
 		argfound=0
 		flag=argu.split("=")
 		#redundat check to jump over the first 4 arguments
@@ -248,13 +269,13 @@ def main(argv):
 				MCSWIF=int(flag[1])
 			if flag[0]=="numthreads":
 				argfound=1
-				NCORES=int(flag[1])
+				NCORES=str(flag[1])
 			if argfound==0:
 				print "WARNING OPTION: "+argu+" NOT FOUND!"
 
 	
         if str(GEANTVER)=="3":
-                NCORES=1
+                NCORES="1"
 
 
         if DATA_OUTPUT_BASE_DIR == "UNKNOWN_LOCATION" and MCSWIF==1:
@@ -278,7 +299,7 @@ def main(argv):
 
 	indir=os.environ.get('MCWRAPPER_CENTRAL')
 
-        if len(CUSTOM_MAKEMC)!= 0:
+        if len(CUSTOM_MAKEMC)!= 0 and CUSTOM_MAKEMC != "DEFAULT":
                 indir=CUSTOM_MAKEMC
 
         if str(indir) == "None":
@@ -299,8 +320,10 @@ def main(argv):
 		#if ever asked to generate 0 events....just don't
 		if num == 0:
 			continue
+                
+                print BGFOLD
+		COMMAND=ENVFILE+" "+GENCONFIG+" "+CHANNEL+" "+str(outdir)+" "+str(RUNNUM)+" "+str(FILENUM-1)+" "+str(num)+" "+str(VERSION)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(MCSWIF)+" "+str(NCORES)+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)
 
-		COMMAND=ENVFILE+" "+GENCONFIG+" "+CHANNEL+" "+str(outdir)+" "+str(RUNNUM)+" "+str(FILENUM-1)+" "+str(num)+" "+str(VERSION)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(MCSWIF)+" "+str(NCORES)+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(CUSTOM_GCONTROL)
 		#print COMMAND
 		#either call MakeMC.csh or add a job depending on swif flag
                 if MCSWIF == 0:

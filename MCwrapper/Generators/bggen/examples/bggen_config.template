@@ -12,12 +12,12 @@ C        HDDM  simple  ntuple
 WROUT      1      0     0 
 
 NPRIEV   10           number of events to print
-EPHLIM   4. 12.       energy range in GeV
+EPHLIM   TEMPMINGENE TEMPMAXGENE       energy range in GeV
 
 RNDMSEQ    TEMPRAND            random number sequence   integer values
 
-EELEC     12.           electron beam energy
-EPEAK      9.        coherent peak energy
+EELEC     TEMPELECE           electron beam energy
+EPEAK     TEMPCOHERENT        coherent peak energy
 ZCOLLIM   7600.         distance to the collimator in cm
 DCOLLIM   TEMPCOLD   collimator diameter in m
 

@@ -1,27 +1,57 @@
 #!/bin/csh -f
 
 # SET INPUTS
-setenv ENVIRONMENT $1
-setenv CONFIG_FILE $2
-setenv GEN_NAME $3
-setenv OUTDIR $4
-setenv RUN_NUMBER $5
-setenv FILE_NUMBER $6
-setenv EVT_TO_GEN $7
-setenv JANA_CALIB_CONTEXT "variation="$8
-setenv GENR $9
-setenv GEANT $10
-setenv SMEAR $11
-setenv RECON $12
-setenv CLEANGENR $13
-setenv CLEANGEANT $14
-setenv CLEANSMEAR $15
-setenv CLEANRECON $16
-setenv MCSWIF $17
-setenv NUMTHREADS $18
-setenv GENERATOR $19
-setenv GEANTVER $20
-setenv CUSTOM_GCONTROL $21
+setenv ENVIRONMENT $1 
+shift
+setenv CONFIG_FILE $1
+shift
+setenv GEN_NAME $1
+shift
+setenv OUTDIR $1
+shift
+setenv RUN_NUMBER $1
+shift
+setenv FILE_NUMBER $1
+shift
+setenv EVT_TO_GEN $1
+shift
+setenv JANA_CALIB_CONTEXT "variation="$1
+shift
+setenv GENR $1
+shift
+setenv GEANT $1
+shift
+setenv SMEAR $1
+shift
+setenv RECON $1
+shift
+setenv CLEANGENR $1
+shift
+setenv CLEANGEANT $1
+shift
+setenv CLEANSMEAR $1
+shift
+setenv CLEANRECON $1
+shift
+setenv MCSWIF $1
+shift
+setenv NUMTHREADS $1
+shift
+setenv GENERATOR $1
+shift
+setenv GEANTVER $1
+shift
+setenv BKGFOLDSTR $1
+shift
+setenv CUSTOM_GCONTROL $1
+shift
+setenv eBEAM_ENERGY $1
+shift
+setenv COHERENT_PEAK $1
+shift
+setenv GEN_MIN_ENERGY $1
+shift
+setenv GEN_MAX_ENERGY $1
 
 if ("$GEANTVER" == "3") then
 setenv NUMTHREADS 1
@@ -37,8 +67,11 @@ echo "NUM TO GEN        = $EVT_TO_GEN"
 echo "generator        = $GENERATOR"
 echo "generation        = $GENR  $CLEANGENR"
 echo "Geant        = $GEANT  $CLEANGEANT"
+echo "GCONTROL        = $CUSTOM_GCONTROL"
+echo "BKG_FOLD      = $BKGFOLDSTR"
 echo "MCsmear        = $SMEAR $CLEANSMEAR"
 echo "Recon        = $RECON   $CLEANRECON"
+
 # ENVIRONMENT
 echo $ENVIRONMENT
 source $ENVIRONMENT
@@ -46,22 +79,20 @@ echo pwd = $PWD
 #printenv
 #necessary to run swif, uses local directory if swif=0 is used
 if ("$MCSWIF" == "1") then
-mkdir $OUTDIR
-mkdir $OUTDIR/log
-
+mkdir -p $OUTDIR
+mkdir -p $OUTDIR/log
 endif
 
-if ("$CUSTOM_GCONTROL"=="") then
-    cp $MCWRAPPER_CENTRAL/Gcontrol.in ./
+if ("$CUSTOM_GCONTROL" == "0" ) then
+cp $MCWRAPPER_CENTRAL/Gcontrol.in ./
 else
-    cp $CUSTOM_GCONTROL/Gcontrol.in ./
+cp $CUSTOM_GCONTROL/Gcontrol.in ./
 endif
-
 
 if ("$GENR" != "0") then
-    if ("$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp") then
+    if ("$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0") then
 	echo "NO VALID GENERATOR GIVEN"
-	echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp] are supported"
+	echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0] are supported"
 	exit
     endif
 
@@ -81,11 +112,27 @@ if ("$GENR" != "0") then
 	cp $MCWRAPPER_CENTRAL/Generators/bggen/pythia.dat ./
 	cp $MCWRAPPER_CENTRAL/Generators/bggen/pythia-geant.map ./
 	cp $CONFIG_FILE ./bggen\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	if ( `echo $eBEAM_ENERGY | grep -o "\." | wc -l` == 0) then
+	    set eBEAM_ENERGY = $eBEAM_ENERGY\.
+	endif
+	if ( `echo $COHERENT_PEAK | grep -o "\." | wc -l` == 0) then
+	    set COHERENT_PEAK = $COHERENT_PEAK\.
+	endif
+	if ( `echo $GEN_MIN_ENERGY | grep -o "\." | wc -l` == 0) then
+	    set GEN_MIN_ENERGY = $GEN_MIN_ENERGY\.
+	endif
+	if ( `echo $GEN_MAX_ENERGY | grep -o "\." | wc -l` == 0) then
+	    set GEN_MAX_ENERGY = $GEN_MAX_ENERGY\.
+	endif
+	
     else if ("$GENERATOR" == "genEtaRegge") then
 	echo "configuring genEtaRegge"
 	cp $CONFIG_FILE ./
     else if ("$GENERATOR" == "gen_2pi_amp") then
 	echo "configuring gen_2pi_amp"
+	cp $CONFIG_FILE ./
+    else if ("$GENERATOR" == "gen_pi0") then
+	echo "configuring gen_pi0"
 	cp $CONFIG_FILE ./
     endif
     set config_file_name=`basename "$CONFIG_FILE"`
@@ -108,6 +155,11 @@ if ("$GENR" != "0") then
 	sed -i 's/TEMPRUNNO/'$RUN_NUMBER'/' bggen\_$RUN_NUMBER\_$FILE_NUMBER.conf
 	sed -i 's/TEMPCOLD/'0.00$colsize'/' bggen\_$RUN_NUMBER\_$FILE_NUMBER.conf
 	sed -i 's/TEMPrand/'$RANDOM'/' bggen\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	sed -i 's/TEMPELECE/'$eBEAM_ENERGY'/' bggen\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	sed -i 's/TEMPCOHERENT/'$COHERENT_PEAK'/' bggen\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	sed -i 's/TEMPMINGENE/'$GEN_MIN_ENERGY'/' bggen\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	sed -i 's/TEMPMAXGENE/'$GEN_MAX_ENERGY'/' bggen\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	
 	ln -s bggen\_$RUN_NUMBER\_$FILE_NUMBER.conf fort.15
 	bggen
 	mv bggen.hddm $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm
@@ -120,6 +172,11 @@ if ("$GENR" != "0") then
 	echo $optionals_line
 	echo gen_2pi_amp -c $config_file_name -o $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm -hd $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.root -n $EVT_TO_GEN -r $RUN_NUMBER $optionals_line
 	gen_2pi_amp -c $config_file_name -hd $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm -o $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.root -n $EVT_TO_GEN -r $RUN_NUMBER $optionals_line
+	else if ("$GENERATOR" == "gen_pi0") then
+	echo "RUNNING GEN_PI0" 
+        set optionals_line = `head -n 1 $config_file_name | sed -r 's/.//'`
+	echo $optionals_line
+	gen_pi0 -c $config_file_name -hd $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm -o $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK  -s $FILE_NUMBER $optionals_line -m $eBEAM_ENERGY
     endif
 
 #GEANT/smearing
@@ -138,7 +195,7 @@ if ("$GENR" != "0") then
 	sed -i 's/TEMPRUNG/'$RUN_NUMBER'/' control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
 	sed -i 's/TEMPOUT/'$inputfile'_geant.hddm/' control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
 	sed -i 's/TEMPTRIG/'$EVT_TO_GEN'/' control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
-	sed -i 's/TOSMEAR/'$SMEAR'/' control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
+	#sed -i 's/TOSMEAR/'$SMEAR'/' control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
 	sed -i 's/TEMPCOLD/'0.00$colsize'/' control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
 	mv $PWD/control'_'$RUN_NUMBER'_'$FILE_NUMBER.in $PWD/control.in
 	
@@ -155,46 +212,56 @@ if ("$GENR" != "0") then
 	echo "INVALID GEANT VERSION"
 	exit
 	endif
-
-	#run reconstruction
-	if ("$CLEANGENR" == "1") then
-	    if ("$GENERATOR" == "genr8") then
-		rm *.ascii
-	    else if ("$GENERATOR" == "bggen") then
-		rm particle.dat
-		rm pythia.dat
-		rm pythia-geant.map
-		unlink fort.15
-	    endif
 	
-	    rm $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm
-	endif
-
-	if ("$RECON" != "0") then
-	    echo "RUNNING RECONSTRUCTION"
-	    hd_root $inputfile'_geant_smeared.hddm' -PPLUGINS=danarest,monitoring_hists -PNTHREADS=$NUMTHREADS
-	    mv hd_root.root hd_root_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.root
-	    mv dana_rest.hddm dana_rest_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm
-
-	    if ("$CLEANGEANT" == "1") then
-	    rm *_geant.hddm
-	    rm Gcontrol.in
+	if ("$SMEAR" != "0") then
+	    echo "RUNNING MCSMEAR"
+	    
+	    if ("$BKGFOLDSTR" == "0") then
+	    mcsmear -o$inputfile'_geant_smeared.hddm' $inputfile'_geant.hddm'
+	    else
+	    echo 'mcsmear -o'$inputfile'_geant_smeared.hddm'' '$inputfile'_geant.hddm'' '$BKGFOLDSTR
+	    mcsmear -o$inputfile'_geant_smeared.hddm' $inputfile'_geant.hddm' $BKGFOLDSTR
 	    endif
-
-	    if ("$CLEANSMEAR" == "1") then
-	    rm *_smeared.hddm
-	    rm smear.root
+	    #run reconstruction
+	    if ("$CLEANGENR" == "1") then
+		if ("$GENERATOR" == "genr8") then
+		    rm *.ascii
+		else if ("$GENERATOR" == "bggen") then
+		    rm particle.dat
+		    rm pythia.dat
+		    rm pythia-geant.map
+		    unlink fort.15
+		endif
+		
+		rm $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm
 	    endif
-
-	    if ("$CLEANRECON" == "1") then
-	    rm dana_rest*
+	    
+	    if ("$RECON" != "0") then
+		echo "RUNNING RECONSTRUCTION"
+		hd_root $inputfile'_geant_smeared.hddm' -PPLUGINS=danarest,monitoring_hists -PNTHREADS=$NUMTHREADS
+		mv hd_root.root hd_root_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.root
+		mv dana_rest.hddm dana_rest_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm
+		
+		if ("$CLEANGEANT" == "1") then
+		rm *_geant.hddm
+		rm Gcontrol.in
+		endif
+		
+		if ("$CLEANSMEAR" == "1") then
+		rm *_smeared.hddm
+		rm smear.root
+		endif
+		
+		if ("$CLEANRECON" == "1") then
+		rm dana_rest*
+		endif
 	    endif
-
 	endif
     endif
 endif
 
 if ("$MCSWIF" == "1") then
     cp $PWD/*.hddm $OUTDIR
+    cp $PWD/*.root $OUTDIR
     cp $PWD/*.ascii $OUTDIR
 endif
