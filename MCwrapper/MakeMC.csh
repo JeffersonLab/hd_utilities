@@ -72,13 +72,13 @@ echo "BKG_FOLD      = $BKGFOLDSTR"
 echo "MCsmear        = $SMEAR $CLEANSMEAR"
 echo "Recon        = $RECON   $CLEANRECON"
 
+#printenv
+#necessary to run swif, uses local directory if swif=0 is used
+if ("$MCSWIF" == "1") then
 # ENVIRONMENT
 echo $ENVIRONMENT
 source $ENVIRONMENT
 echo pwd = $PWD
-#printenv
-#necessary to run swif, uses local directory if swif=0 is used
-if ("$MCSWIF" == "1") then
 mkdir -p $OUTDIR
 mkdir -p $OUTDIR/log
 endif
