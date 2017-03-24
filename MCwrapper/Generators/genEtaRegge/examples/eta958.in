@@ -1,7 +1,7 @@
 #Emin Emax (photon energy range)
-7.0 11.7
+TEMPMINGENE TEMPMAXGENE
 #Electron beam energy [GeV], coherent peak [GeV] and collimator diameter [m]
-12.0 9.0 0.0034
+TEMPELECE TEMPCOHERENT TEMPCOLD
 #mass[GeV] width[GeV]
 0.95766 0.000205
 #g_eta_gamma_gamma g_rho_eta_gamma g_omega_eta_gamma g_phi_eta_gamma 

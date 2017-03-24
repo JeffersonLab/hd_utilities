@@ -307,9 +307,10 @@ def main(argv):
                 return
 
 	outdir=DATA_OUTPUT_BASE_DIR
-	#if local run set out directory to cwd
-	if MCSWIF==0:
-		outdir="./"	
+	
+        #if local run set out directory to cwd
+	if outdir[len(outdir)-1] != "/" :
+                outdir+= "/"
 
 	#for every needed file call the script with the right options
 	for FILENUM in range(1, FILES_TO_GEN + 2):

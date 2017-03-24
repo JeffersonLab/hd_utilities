@@ -105,13 +105,13 @@ if ("$GENR" != "0") then
 
     if ("$GENERATOR" == "genr8") then
 	echo "configuring genr8"
-	cp $CONFIG_FILE ./genr8\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	cp $CONFIG_FILE ./genr8\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
     else if ("$GENERATOR" == "bggen") then
 	echo "configuring bggen"
 	cp $MCWRAPPER_CENTRAL/Generators/bggen/particle.dat ./
 	cp $MCWRAPPER_CENTRAL/Generators/bggen/pythia.dat ./
 	cp $MCWRAPPER_CENTRAL/Generators/bggen/pythia-geant.map ./
-	cp $CONFIG_FILE ./bggen\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	cp $CONFIG_FILE ./bggen\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
 	if ( `echo $eBEAM_ENERGY | grep -o "\." | wc -l` == 0) then
 	    set eBEAM_ENERGY = $eBEAM_ENERGY\.
 	endif
@@ -127,13 +127,13 @@ if ("$GENR" != "0") then
 	
     else if ("$GENERATOR" == "genEtaRegge") then
 	echo "configuring genEtaRegge"
-	cp $CONFIG_FILE ./genEtaRegge\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	cp $CONFIG_FILE ./genEtaRegge\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
     else if ("$GENERATOR" == "gen_2pi_amp") then
 	echo "configuring gen_2pi_amp"
-	cp $CONFIG_FILE ./gen_2pi_amp\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	cp $CONFIG_FILE ./gen_2pi_amp\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
     else if ("$GENERATOR" == "gen_pi0") then
 	echo "configuring gen_pi0"
-	cp $CONFIG_FILE ./gen_pi0\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	cp $CONFIG_FILE ./gen_pi0\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
     endif
     set config_file_name=`basename "$CONFIG_FILE"`
     echo $config_file_name
@@ -141,9 +141,9 @@ if ("$GENR" != "0") then
     if ("$GENERATOR" == "genr8") then
 	echo "RUNNING GENR8"
 	set RUNNUM = $RUN_NUMBER+$FILE_NUMBER
-	sed -i 's/TEMPCOHERENT/'$COHERENT_PEAK'/' genr8\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	sed -i 's/TEMPCOHERENT/'$COHERENT_PEAK'/' genr8\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
 	# RUN genr8 and convert
-	genr8 -r$RUN_NUMBER -M$EVT_TO_GEN -A$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.ascii < genr8\_$RUN_NUMBER\_$FILE_NUMBER.conf #$config_file_name
+	genr8 -r$RUN_NUMBER -M$EVT_TO_GEN -A$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.ascii < genr8\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf #$config_file_name
 	genr8_2_hddm $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.ascii
     else if ("$GENERATOR" == "bggen") then
 	set colsize=`rcnd $RUN_NUMBER collimator_diameter | awk '{print $1}' | sed -r 's/.{2}$//' | sed -e 's/\.//g'`
@@ -152,16 +152,16 @@ if ("$GENR" != "0") then
 	endif
 	set RANDOM=$$
 	echo $RANDOM
-	sed -i 's/TEMPTRIG/'$EVT_TO_GEN'/' bggen\_$RUN_NUMBER\_$FILE_NUMBER.conf
-	sed -i 's/TEMPRUNNO/'$RUN_NUMBER'/' bggen\_$RUN_NUMBER\_$FILE_NUMBER.conf
-	sed -i 's/TEMPCOLD/'0.00$colsize'/' bggen\_$RUN_NUMBER\_$FILE_NUMBER.conf
-	sed -i 's/TEMPRAND/'$RANDOM'/' bggen\_$RUN_NUMBER\_$FILE_NUMBER.conf
-	sed -i 's/TEMPELECE/'$eBEAM_ENERGY'/' bggen\_$RUN_NUMBER\_$FILE_NUMBER.conf
-	sed -i 's/TEMPCOHERENT/'$COHERENT_PEAK'/' bggen\_$RUN_NUMBER\_$FILE_NUMBER.conf
-	sed -i 's/TEMPMINGENE/'$GEN_MIN_ENERGY'/' bggen\_$RUN_NUMBER\_$FILE_NUMBER.conf
-	sed -i 's/TEMPMAXGENE/'$GEN_MAX_ENERGY'/' bggen\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	sed -i 's/TEMPTRIG/'$EVT_TO_GEN'/' bggen\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	sed -i 's/TEMPRUNNO/'$RUN_NUMBER'/' bggen\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	sed -i 's/TEMPCOLD/'0.00$colsize'/' bggen\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	sed -i 's/TEMPRAND/'$RANDOM'/' bggen\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	sed -i 's/TEMPELECE/'$eBEAM_ENERGY'/' bggen\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	sed -i 's/TEMPCOHERENT/'$COHERENT_PEAK'/' bggen\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	sed -i 's/TEMPMINGENE/'$GEN_MIN_ENERGY'/' bggen\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	sed -i 's/TEMPMAXGENE/'$GEN_MAX_ENERGY'/' bggen\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
 	
-	ln -s bggen\_$RUN_NUMBER\_$FILE_NUMBER.conf fort.15
+	ln -s bggen\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf fort.15
 	bggen
 	mv bggen.hddm $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm
         else if ("$GENERATOR" == "genEtaRegge") then
@@ -170,23 +170,23 @@ if ("$GENR" != "0") then
 	if ("$colsize" == "B" || "$colsize" == "R" ) then
 	set colsize = "34"
 	endif
-	sed -i 's/TEMPCOLD/'0.00$colsize'/' genEtaRegge\_$RUN_NUMBER\_$FILE_NUMBER.conf
-	sed -i 's/TEMPELECE/'$eBEAM_ENERGY'/' genEtaRegge\_$RUN_NUMBER\_$FILE_NUMBER.conf
-	sed -i 's/TEMPCOHERENT/'$COHERENT_PEAK'/' genEtaRegge\_$RUN_NUMBER\_$FILE_NUMBER.conf
-	sed -i 's/TEMPMINGENE/'$GEN_MIN_ENERGY'/' genEtaRegge\_$RUN_NUMBER\_$FILE_NUMBER.conf
-	sed -i 's/TEMPMAXGENE/'$GEN_MAX_ENERGY'/' genEtaRegge\_$RUN_NUMBER\_$FILE_NUMBER.conf
-	genEtaRegge -N$EVT_TO_GEN -O$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm -I'genEtaRegge'\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	sed -i 's/TEMPCOLD/'0.00$colsize'/' genEtaRegge\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	sed -i 's/TEMPELECE/'$eBEAM_ENERGY'/' genEtaRegge\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	sed -i 's/TEMPCOHERENT/'$COHERENT_PEAK'/' genEtaRegge\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	sed -i 's/TEMPMINGENE/'$GEN_MIN_ENERGY'/' genEtaRegge\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	sed -i 's/TEMPMAXGENE/'$GEN_MAX_ENERGY'/' genEtaRegge\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
+	genEtaRegge -N$EVT_TO_GEN -O$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm -I'genEtaRegge'\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
 	else if ("$GENERATOR" == "gen_2pi_amp") then
 	echo "RUNNING GEN_2PI_AMP" 
         set optionals_line = `head -n 1 $config_file_name | sed -r 's/.//'`
 	echo $optionals_line
-	echo gen_2pi_amp -c gen_2pi_amp\_$RUN_NUMBER\_$FILE_NUMBER.conf -o $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm -hd $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.root -n $EVT_TO_GEN -r $RUN_NUMBER  -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
-	gen_2pi_amp -c gen_2pi_amp\_$RUN_NUMBER\_$FILE_NUMBER.conf -hd $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm -o $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY - b $GEN_MAX_ENERGY $optionals_line
+	echo gen_2pi_amp -c gen_2pi_amp\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf -o $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm -hd $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.root -n $EVT_TO_GEN -r $RUN_NUMBER  -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
+	gen_2pi_amp -c gen_2pi_amp\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf -hd $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm -o $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY - b $GEN_MAX_ENERGY $optionals_line
 	else if ("$GENERATOR" == "gen_pi0") then
 	echo "RUNNING GEN_PI0" 
         set optionals_line = `head -n 1 $config_file_name | sed -r 's/.//'`
 	echo $optionals_line
-	gen_pi0 -c gen_pi0\_$RUN_NUMBER\_$FILE_NUMBER.conf -hd $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm -o $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK  -s $FILE_NUMBER $optionals_line -m $eBEAM_ENERGY
+	gen_pi0 -c gen_pi0\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf -hd $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm -o $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK  -s $FILE_NUMBER $optionals_line -m $eBEAM_ENERGY
     endif
 
 #GEANT/smearing
@@ -255,6 +255,7 @@ if ("$GENR" != "0") then
 		if ("$CLEANGEANT" == "1") then
 		rm *_geant.hddm
 		rm Gcontrol.in
+		
 		endif
 		
 		if ("$CLEANSMEAR" == "1") then
@@ -270,8 +271,19 @@ if ("$GENR" != "0") then
     endif
 endif
 
-if ("$MCSWIF" == "1") then
-    cp $PWD/*.hddm $OUTDIR
-    cp $PWD/*.root $OUTDIR
-    cp $PWD/*.ascii $OUTDIR
+if (! -d "$OUTDIR" ) then
+    mkdir $OUTDIR
 endif
+if (! -d "$OUTDIR/configurations/" ) then
+    mkdir $OUTDIR/configurations/
+endif
+if (! -d "$OUTDIR/hddm/" ) then
+    mkdir $OUTDIR/hddm/
+endif
+if (! -d "$OUTDIR/root/" ) then
+    mkdir $OUTDIR/root/
+endif
+    mv $PWD/*.conf $OUTDIR/configurations/
+    mv $PWD/*.hddm $OUTDIR/hddm/
+    mv $PWD/*.root $OUTDIR/root/
+
