@@ -90,7 +90,7 @@ cp $CUSTOM_GCONTROL/Gcontrol.in ./
 endif
 
 if ("$GENR" != "0") then
-    if ("$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0") then
+    if ("$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" ) then
 	echo "NO VALID GENERATOR GIVEN"
 	echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0] are supported"
 	exit
@@ -131,6 +131,9 @@ if ("$GENR" != "0") then
     else if ("$GENERATOR" == "gen_2pi_amp") then
 	echo "configuring gen_2pi_amp"
 	cp $CONFIG_FILE ./gen_2pi_amp\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
+    else if ("$GENERATOR" == "gen_2pi_primakoff") then
+	echo "configuring gen_2pi_primakoff"
+	cp $CONFIG_FILE ./gen_2pi_primakoff\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
     else if ("$GENERATOR" == "gen_pi0") then
 	echo "configuring gen_pi0"
 	cp $CONFIG_FILE ./gen_pi0\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
@@ -182,6 +185,12 @@ if ("$GENR" != "0") then
 	echo $optionals_line
 	echo gen_2pi_amp -c gen_2pi_amp\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf -o $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm -hd $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.root -n $EVT_TO_GEN -r $RUN_NUMBER  -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
 	gen_2pi_amp -c gen_2pi_amp\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf -hd $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm -o $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY - b $GEN_MAX_ENERGY $optionals_line
+	else if ("$GENERATOR" == "gen_2pi_primakoff") then
+	echo "RUNNING GEN_2PI_PRIMAKOFF" 
+        set optionals_line = `head -n 1 $config_file_name | sed -r 's/.//'`
+	echo $optionals_line
+	echo gen_2pi_primakoff -c gen_2pi_primakoff\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf -o $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm -hd $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.root -n $EVT_TO_GEN -r $RUN_NUMBER  -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
+	gen_2pi_primakoff -c gen_2pi_primakoff\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf -hd $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm -o $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY - b $GEN_MAX_ENERGY $optionals_line
 	else if ("$GENERATOR" == "gen_pi0") then
 	echo "RUNNING GEN_PI0" 
         set optionals_line = `head -n 1 $config_file_name | sed -r 's/.//'`
