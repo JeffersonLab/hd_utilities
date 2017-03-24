@@ -1,0 +1,16 @@
+Bradford Cannon
+Florida State Univeristy
+Release Date: /03/24/2017
+
+                        REQURIREMENTS
+SHELL:         /bin/tcsh
+COMPILER:      g++ (GCC) 4.4.7 20120313 (Red Hat 4.4.7-4)
+DO NOT SOURCE: /group/halld/Software/build_scripts/gluex_env_jlab.csh
+
+Usage: ./scalerVtime.csh [OPTION] [PERIOD/RANGE/NUMBER]
+	-period          Analyize an entire run period.   Example: ./scalerVtime.csh -period RunPeriod-2016-02
+	-range           Analyize a range of runs.        Example: ./scalerVtime.csh -range 30600 30700
+	-number          Analyize one run.                Example: ./scalerVtime.csh -number 30651
+	-help						 Print help menu.									Example: ./scalerVtime.csh -help
+
+*A more detailed description of this software is given in the help menu.
