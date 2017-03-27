@@ -79,25 +79,25 @@ if [[ "$MCSWIF" -eq "1" ]]; then
     # ENVIRONMENT
     echo $ENVIRONMENT
     source $ENVIRONMENT
-    echo pwd = $PWD
+    echo pwd=$PWD
     mkdir -p $OUTDIR
     mkdir -p $OUTDIR/log
 fi
 
-if [[ "$CUSTOM_GCONTROL" -eq "0"  ]]; then
+if [[ "$CUSTOM_GCONTROL" -eq "0" ]]; then
     cp $MCWRAPPER_CENTRAL/Gcontrol.in ./
 else
     cp $CUSTOM_GCONTROL/Gcontrol.in ./
 fi
 
 if [[ "$GENR" != "0" ]]; then
-    if [[ "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff"  ]]; then
+    if [[ "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" ]]; then
 	echo "NO VALID GENERATOR GIVEN"
 	echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0] are supported"
 	exit
     fi
     
-    if [[ -f $CONFIG_FILE  ]]; then
+    if [[ -f $CONFIG_FILE ]]; then
 	echo " input file found"
     else
 	echo $CONFIG_FILE" does not exist"
@@ -107,54 +107,54 @@ if [[ "$GENR" != "0" ]]; then
     if [[ "$GENERATOR" -eq "genr8" ]]; then
 	echo "configuring genr8"
 	cp $CONFIG_FILE ./genr8\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
-    else if [[ "$GENERATOR" -eq "bggen" ]]; then
+    elif [[ "$GENERATOR" -eq "bggen" ]]; then
 	echo "configuring bggen"
 	cp $MCWRAPPER_CENTRAL/Generators/bggen/particle.dat ./
 	cp $MCWRAPPER_CENTRAL/Generators/bggen/pythia.dat ./
 	cp $MCWRAPPER_CENTRAL/Generators/bggen/pythia-geant.map ./
 	cp $CONFIG_FILE ./bggen\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
 	if [[ `echo $eBEAM_ENERGY | grep -o "\." | wc -l` -eq 0 ]]; then
-	    set eBEAM_ENERGY = $eBEAM_ENERGY\.
+	    eBEAM_ENERGY=$eBEAM_ENERGY\.
 	fi
 	if [[ `echo $COHERENT_PEAK | grep -o "\." | wc -l` -eq 0 ]]; then
-	    set COHERENT_PEAK = $COHERENT_PEAK\.
+	    COHERENT_PEAK=$COHERENT_PEAK\.
 	fi
 	if [[ `echo $GEN_MIN_ENERGY | grep -o "\." | wc -l` -eq 0 ]]; then
-	    set GEN_MIN_ENERGY = $GEN_MIN_ENERGY\.
+	    GEN_MIN_ENERGY=$GEN_MIN_ENERGY\.
 	fi
 	if [[ `echo $GEN_MAX_ENERGY | grep -o "\." | wc -l` -eq 0 ]]; then
-	    set GEN_MAX_ENERGY = $GEN_MAX_ENERGY\.
+	    GEN_MAX_ENERGY=$GEN_MAX_ENERGY\.
 	fi
 	
-    else if [[ "$GENERATOR" -eq "genEtaRegge" ]]; then
+    elif [[ "$GENERATOR" -eq "genEtaRegge" ]]; then
 	echo "configuring genEtaRegge"
 	cp $CONFIG_FILE ./genEtaRegge\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
-    else if [[ "$GENERATOR" -eq "gen_2pi_amp" ]]; then
+    elif [[ "$GENERATOR" -eq "gen_2pi_amp" ]]; then
 	echo "configuring gen_2pi_amp"
 	cp $CONFIG_FILE ./gen_2pi_amp\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
-    else if [[ "$GENERATOR" -eq "gen_2pi_primakoff" ]]; then
+    elif [[ "$GENERATOR" -eq "gen_2pi_primakoff" ]]; then
 	echo "configuring gen_2pi_primakoff"
 	cp $CONFIG_FILE ./gen_2pi_primakoff\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
-    else if [[ "$GENERATOR" -eq "gen_pi0" ]]; then
+    elif [[ "$GENERATOR" -eq "gen_pi0" ]]; then
 	echo "configuring gen_pi0"
 	cp $CONFIG_FILE ./gen_pi0\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
     fi
-    set config_file_name=`basename "$CONFIG_FILE"`
+    config_file_name=`basename "$CONFIG_FILE"`
     echo $config_file_name
     
     if [[ "$GENERATOR" -eq "genr8" ]]; then
 	echo "RUNNING GENR8"
-	set RUNNUM = $RUN_NUMBER+$FILE_NUMBER
+	RUNNUM=$RUN_NUMBER+$FILE_NUMBER
 	sed -i 's/TEMPCOHERENT/'$COHERENT_PEAK'/' genr8\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
 	# RUN genr8 and convert
 	genr8 -r$RUN_NUMBER -M$EVT_TO_GEN -A$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.ascii < genr8\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf #$config_file_name
 	genr8_2_hddm $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.ascii
-    else if [[ "$GENERATOR" -eq "bggen" ]]; then
-	set colsize=`rcnd $RUN_NUMBER collimator_diameter | awk '{print $1}' | sed -r 's/.{2}$//' | sed -e 's/\.//g'`
-	if [[ "$colsize" -eq "B" || "$colsize" -eq "R"  ]]; then
-	    set colsize = "34"
+    elif [[ "$GENERATOR" -eq "bggen" ]]; then
+	colsize=`rcnd $RUN_NUMBER collimator_diameter | awk '{print $1}' | sed -r 's/.{2}$//' | sed -e 's/\.//g'`
+	if [[ "$colsize" -eq "B" || "$colsize" -eq "R" ]]; then
+	    colsize="34"
 	fi
-	set RANDOM=$$
+	RANDOM=$$
 	echo $RANDOM
 	sed -i 's/TEMPTRIG/'$EVT_TO_GEN'/' bggen\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
 	sed -i 's/TEMPRUNNO/'$RUN_NUMBER'/' bggen\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
@@ -168,11 +168,11 @@ if [[ "$GENR" != "0" ]]; then
 	ln -s bggen\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf fort.15
 	bggen
 	mv bggen.hddm $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm
-    else if [[ "$GENERATOR" -eq "genEtaRegge" ]]; then
+    elif [[ "$GENERATOR" -eq "genEtaRegge" ]]; then
 	echo "RUNNING GENETAREGGE" 
-	set colsize=`rcnd $RUN_NUMBER collimator_diameter | awk '{print $1}' | sed -r 's/.{2}$//' | sed -e 's/\.//g'`
-	if [[ "$colsize" -eq "B" || "$colsize" -eq "R"  ]]; then
-	    set colsize = "34"
+	colsize=`rcnd $RUN_NUMBER collimator_diameter | awk '{print $1}' | sed -r 's/.{2}$//' | sed -e 's/\.//g'`
+	if [[ "$colsize" -eq "B" || "$colsize" -eq "R" ]]; then
+	    colsize="34"
 	fi
 	sed -i 's/TEMPCOLD/'0.00$colsize'/' genEtaRegge\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
 	sed -i 's/TEMPELECE/'$eBEAM_ENERGY'/' genEtaRegge\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
@@ -180,21 +180,21 @@ if [[ "$GENR" != "0" ]]; then
 	sed -i 's/TEMPMINGENE/'$GEN_MIN_ENERGY'/' genEtaRegge\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
 	sed -i 's/TEMPMAXGENE/'$GEN_MAX_ENERGY'/' genEtaRegge\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
 	genEtaRegge -N$EVT_TO_GEN -O$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm -I'genEtaRegge'\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf
-    else if [[ "$GENERATOR" -eq "gen_2pi_amp" ]]; then
+    elif [[ "$GENERATOR" -eq "gen_2pi_amp" ]]; then
 	echo "RUNNING GEN_2PI_AMP" 
-        set optionals_line = `head -n 1 $config_file_name | sed -r 's/.//'`
+        optionals_line=`head -n 1 $config_file_name | sed -r 's/.//'`
 	echo $optionals_line
 	echo gen_2pi_amp -c gen_2pi_amp\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf -o $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm -hd $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.root -n $EVT_TO_GEN -r $RUN_NUMBER  -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
 	gen_2pi_amp -c gen_2pi_amp\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf -hd $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm -o $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY - b $GEN_MAX_ENERGY $optionals_line
-    else if [[ "$GENERATOR" -eq "gen_2pi_primakoff" ]]; then
+    elif [[ "$GENERATOR" -eq "gen_2pi_primakoff" ]]; then
 	echo "RUNNING GEN_2PI_PRIMAKOFF" 
-        set optionals_line = `head -n 1 $config_file_name | sed -r 's/.//'`
+        optionals_line=`head -n 1 $config_file_name | sed -r 's/.//'`
 	echo $optionals_line
 	echo gen_2pi_primakoff -c gen_2pi_primakoff\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf -o $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm -hd $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.root -n $EVT_TO_GEN -r $RUN_NUMBER  -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
 	gen_2pi_primakoff -c gen_2pi_primakoff\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf -hd $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm -o $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY - b $GEN_MAX_ENERGY $optionals_line
-    else if [[ "$GENERATOR" -eq "gen_pi0" ]]; then
+    elif [[ "$GENERATOR" -eq "gen_pi0" ]]; then
 	echo "RUNNING GEN_PI0" 
-        set optionals_line = `head -n 1 $config_file_name | sed -r 's/.//'`
+        optionals_line=`head -n 1 $config_file_name | sed -r 's/.//'`
 	echo $optionals_line
 	gen_pi0 -c gen_pi0\_$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.conf -hd $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.hddm -o $GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK  -s $FILE_NUMBER $optionals_line -m $eBEAM_ENERGY
     fi
@@ -204,12 +204,12 @@ if [[ "$GENR" != "0" ]]; then
     
     if [[ "$GEANT" != "0" ]]; then
 	echo "RUNNING GEANT"$GEANTVER
-	set colsize=`rcnd $RUN_NUMBER collimator_diameter | awk '{print $1}' | sed -r 's/.{2}$//' | sed -e 's/\.//g'`
-	if [[ "$colsize" -eq "B" || "$colsize" -eq "R"  ]]; then
-	    set colsize = "34"
+	colsize=`rcnd $RUN_NUMBER collimator_diameter | awk '{print $1}' | sed -r 's/.{2}$//' | sed -e 's/\.//g'`
+	if [[ "$colsize" -eq "B" || "$colsize" -eq "R" ]]; then
+	    colsize="34"
 	fi
 	
-	set inputfile=$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER
+	inputfile=$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER
 	cp Gcontrol.in $PWD/control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
 	sed -i 's/TEMPIN/'$inputfile.hddm'/' control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
 	sed -i 's/TEMPRUNG/'$RUN_NUMBER'/' control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
@@ -221,7 +221,7 @@ if [[ "$GENR" != "0" ]]; then
 	
 	if [[ "$GEANTVER" -eq "3" ]]; then
 	    hdgeant 
-	else if [[ "$GEANTVER" -eq "4" ]]; then
+	elif [[ "$GEANTVER" -eq "4" ]]; then
 	    #make run.mac then call it below
 	    rm run.mac
 	    echo /run/beamOn $EVT_TO_GEN >> run.mac
@@ -246,7 +246,7 @@ if [[ "$GENR" != "0" ]]; then
 	    if [[ "$CLEANGENR" -eq "1" ]]; then
 		if [[ "$GENERATOR" -eq "genr8" ]]; then
 		    rm *.ascii
-		else if [[ "$GENERATOR" -eq "bggen" ]]; then
+		elif [[ "$GENERATOR" -eq "bggen" ]]; then
 		    rm particle.dat
 		    rm pythia.dat
 		    rm pythia-geant.map
