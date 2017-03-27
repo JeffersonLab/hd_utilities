@@ -20,7 +20,7 @@
 # https://scicomp.jlab.org/help/swif/add-job.txt #consider phase!
 #
 ##########################################################################################################################
-
+from os import environ
 from optparse import OptionParser
 import os.path
 import os
@@ -99,6 +99,8 @@ def main(argv):
         RUNNUM = int(args[1])
 	EVTS = int(args[2])
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
 
 	#load all argument passed in and set default options
         VERBOSE    = False
@@ -322,15 +324,17 @@ def main(argv):
 		if num == 0:
 			continue
                 
-                print BGFOLD
 		COMMAND=ENVFILE+" "+GENCONFIG+" "+CHANNEL+" "+str(outdir)+" "+str(RUNNUM)+" "+str(FILENUM-1)+" "+str(num)+" "+str(VERSION)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(MCSWIF)+" "+str(NCORES)+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)
 
+                script_to_use = "/MakeMC.csh"
+                if environ['SHELL']=="/bin/bash" :
+                        script_to_use = "/MakeMC.sh"
 		#print COMMAND
 		#either call MakeMC.csh or add a job depending on swif flag
                 if MCSWIF == 0:
-			os.system(str(indir)+"/MakeMC.csh "+COMMAND)
+			os.system(str(indir)+script_to_use+" "+COMMAND)
 		else:
-			add_job(WORKFLOW, CHANNEL, RUNNUM, FILENUM,str(indir)+"/MakeMC.csh",COMMAND,VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR)
+			add_job(WORKFLOW, CHANNEL, RUNNUM, FILENUM,str(indir)+script_to_use,COMMAND,VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR)
 
 if __name__ == "__main__":
    main(sys.argv[1:])
