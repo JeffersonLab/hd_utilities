@@ -209,8 +209,17 @@ if ("$GENR" != "0") then
 	set colsize = "34"
 	endif
 
+	if ( `echo $eBEAM_ENERGY | grep -o "\." | wc -l` == 0) then
+	    set eBEAM_ENERGY = $eBEAM_ENERGY\.
+	endif
+	if ( `echo $COHERENT_PEAK | grep -o "\." | wc -l` == 0) then
+	    set COHERENT_PEAK = $COHERENT_PEAK\.
+	endif
+
 	set inputfile=$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER
 	cp Gcontrol.in $PWD/control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
+	sed -i 's/TEMPELECE/'$eBEAM_ENERGY'/' control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
+	sed -i 's/TEMPCOHERENT/'$COHERENT_PEAK'/' control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
 	sed -i 's/TEMPIN/'$inputfile.hddm'/' control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
 	sed -i 's/TEMPRUNG/'$RUN_NUMBER'/' control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
 	sed -i 's/TEMPOUT/'$inputfile'_geant.hddm/' control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
@@ -264,8 +273,9 @@ if ("$GENR" != "0") then
 		
 		if ("$CLEANGEANT" == "1") then
 		rm *_geant.hddm
-		rm Gcontrol.in
-		
+		    if("$PWD" != "$MCWRAPPER_CENTRAL")
+			rm Gcontrol.in	
+		    endif
 		endif
 		
 		if ("$CLEANSMEAR" == "1") then

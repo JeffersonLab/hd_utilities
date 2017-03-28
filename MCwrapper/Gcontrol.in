@@ -39,7 +39,7 @@ c      colld  - diameter of collimator in m
 c      Eemit  - electron beam emittance in m.rad
 c      radthick - dimaond radiator thickneess in m
 c Omitting the final parameter Emin results in the default value being used.
-BEAM 12. 9.0 0.0012 76.00 TEMPCOLD 10.e-9 20.e-6
+BEAM TEMPELECE TEMPCOHERENT 0.0012 76.00 TEMPCOLD 10.e-9 20.e-6
 
 c The GENBEAM card configures the simulation program to act purely as a
 c Monte Carlo event generator, and not to actually track any of the particles
