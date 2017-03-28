@@ -234,7 +234,7 @@ if [[ "$GENR" != "0" ]]; then
 	    hdgeant 
 	elif [[ "$GEANTVER" -eq "4" ]]; then
 	    #make run.mac then call it below
-	    rm run.mac
+	    rm -f run.mac
 	    echo /run/beamOn $EVT_TO_GEN >> run.mac
 	    echo "exit" >> run.mac
 	    hdgeant4 -t$NUMTHREADS run.mac
