@@ -86,6 +86,7 @@ endif
 
 if ("$CUSTOM_GCONTROL" == "0" ) then
 cp $MCWRAPPER_CENTRAL/Gcontrol.in ./
+chmod 777 ./Gcontrol.in
 else
 cp $CUSTOM_GCONTROL/Gcontrol.in ./
 endif
@@ -218,6 +219,7 @@ if ("$GENR" != "0") then
 
 	set inputfile=$GEN_NAME\_$RUN_NUMBER\_$FILE_NUMBER
 	cp Gcontrol.in $PWD/control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
+	chmod 777 $PWD/control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
 	sed -i 's/TEMPELECE/'$eBEAM_ENERGY'/' control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
 	sed -i 's/TEMPCOHERENT/'$COHERENT_PEAK'/' control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
 	sed -i 's/TEMPIN/'$inputfile.hddm'/' control'_'$RUN_NUMBER'_'$FILE_NUMBER.in
@@ -273,7 +275,7 @@ if ("$GENR" != "0") then
 		
 		if ("$CLEANGEANT" == "1") then
 		rm *_geant.hddm
-		    if("$PWD" != "$MCWRAPPER_CENTRAL")
+		    if ("$PWD" != "$MCWRAPPER_CENTRAL") then
 			rm Gcontrol.in	
 		    endif
 		endif
