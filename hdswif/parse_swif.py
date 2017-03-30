@@ -361,9 +361,10 @@ def main(argv):
     hmaxrss = TH1F("hmaxrss", ";maxrss (GB)", 200, 0,max_ram_requested + 1)
     hauger_mem = TH1F("hauger_mem", ";mem (GB)", 200, 0,max_ram_requested + 1)
     hauger_vmem = TH1F("hauger_vmem", ";vmem (GB)", 200, 0,max_ram_requested + 1)
-    hauger_mem_vs_runnb = TH2F("hauger_mem_vs_runnb", ";mem (GB);runnb", 200, 0,max_ram_requested + 1, 500, 10350, 11700)
+    hauger_mem_vs_runnb = TH2F("hauger_mem_vs_runnb", ";mem (GB);runnb", 200, 0,max_ram_requested + 1, 500, 30000, 31500)
 
     hwalltime = TH1F("hwalltime", ";wall time (hrs)", 200, 0,8)
+    hcputime = TH1F("hcputime", ";cpu time (hrs)", 200, 0, 80)
     gcput_walltime = TGraph()
     gcput_walltime.SetName("gcput_walltime")
     gcput_walltime.SetTitle("");
@@ -378,8 +379,8 @@ def main(argv):
             name_text = str(name.text)
             #match = re.match(r'sim.*_(\d\d\d\d\d\d)_(\d\d\d\d)',name_text)
             #match = re.match(r'recon.*_(\d\d\d\d\d\d)_(\d\d\d)',name_text)
-            #match = re.match(r'offmon.*_(\d\d\d\d\d\d)_(\d\d\d)',name_text)
-            match = re.match(r'analysis.*_(\d\d\d\d\d\d)_(\d\d\d)',name_text)
+            match = re.match(r'offmon.*_(\d\d\d\d\d\d)_(\d\d\d)',name_text)
+            #match = re.match(r'analysis.*_(\d\d\d\d\d\d)_(\d\d\d)',name_text)
             run_num  = match.group(1)
             file_num = match.group(2)
             
@@ -414,7 +415,8 @@ def main(argv):
             auger_cpu_sec_text = ""
             for auger_cpu_sec in attempt.iter('auger_cpu_sec'):
                 auger_cpu_sec_text = str(auger_cpu_sec.text)
-        
+                hcputime.Fill(float(auger_cpu_sec_text) / 3600.)
+
             # Find auger_mem_kb
             auger_mem_kb_text = ""
             for auger_mem_kb in attempt.iter('auger_mem_kb'):
@@ -600,22 +602,22 @@ def main(argv):
     hCumulativeTimeSinceLaunch_submitted.SetLineColor(colors[0])
     hCumulativeTimeSinceLaunch_submitted.SetMinimum(0)
     hCumulativeTimeSinceLaunch_submitted.Add(-1*hCumulativeTimeSinceLaunch_dependency)
-    hCumulativeTimeSinceLaunch_submitted.Draw("same")
+    hCumulativeTimeSinceLaunch_submitted.Draw("HISTsame")
     hCumulativeTimeSinceLaunch_dependency.SetLineColor(colors[1])
     hCumulativeTimeSinceLaunch_dependency.Add(-1*hCumulativeTimeSinceLaunch_pending)
-    hCumulativeTimeSinceLaunch_dependency.Draw("same")
+    hCumulativeTimeSinceLaunch_dependency.Draw("HISTsame")
     hCumulativeTimeSinceLaunch_pending.SetLineColor(colors[2])
     hCumulativeTimeSinceLaunch_pending.Add(-1*hCumulativeTimeSinceLaunch_stagingIn)
-    hCumulativeTimeSinceLaunch_pending.Draw("same")
+    hCumulativeTimeSinceLaunch_pending.Draw("HISTsame")
     hCumulativeTimeSinceLaunch_stagingIn.SetLineColor(colors[3])
     hCumulativeTimeSinceLaunch_stagingIn.Add(-1*hCumulativeTimeSinceLaunch_active)
-    hCumulativeTimeSinceLaunch_stagingIn.Draw("same")
+    hCumulativeTimeSinceLaunch_stagingIn.Draw("HISTsame")
     hCumulativeTimeSinceLaunch_active.SetLineColor(colors[4])
     hCumulativeTimeSinceLaunch_active.Add(-1*hCumulativeTimeSinceLaunch_stagingOut)
-    hCumulativeTimeSinceLaunch_active.Draw("same")
+    hCumulativeTimeSinceLaunch_active.Draw("HISTsame")
     hCumulativeTimeSinceLaunch_stagingOut.SetLineColor(colors[5])
     hCumulativeTimeSinceLaunch_stagingOut.Add(-1*hCumulativeTimeSinceLaunch_complete)
-    hCumulativeTimeSinceLaunch_stagingOut.Draw("same")
+    hCumulativeTimeSinceLaunch_stagingOut.Draw("HISTsame")
 
     hCumulativeTimeSinceLaunch_complete.Draw("same")
     
@@ -645,7 +647,7 @@ def main(argv):
 
     c1.Update()
     c1.SaveAs(local_figureDir + '/cumulativeNumsSinceLaunch.png')
-    c1.SaveAs(local_figureDir + '/cumulativeNumsSinceLaunch.root')
+    #c1.SaveAs(local_figureDir + '/cumulativeNumsSinceLaunch.root')
     #c1.SaveAs(local_figureDir + '/cumulativeNumsSinceLaunch.pdf')
     c1.Close()
     
@@ -692,15 +694,19 @@ def main(argv):
     # Draw number of jobs histogram
     c1 = TCanvas( 'c1', 'Number of Jobs Active', 0, 0, 800, 600 )
     c1.SetBottomMargin(0.15)
-    c1.SetRightMargin(0.02)
+    c1.SetRightMargin(0.05)
     hJobsActive.GetXaxis().SetTitleSize(0.08);
     hJobsActive.GetXaxis().SetLabelSize(0.06);
     hJobsActive.GetXaxis().SetTitleOffset(0.750);
     hJobsActive.GetYaxis().SetLabelSize(0.06);
     hJobsActive.Draw()
     c1.Update()
+    text = "mean: " + str(int(hJobsActive.GetMean()))
+    latex.SetTextColor(ROOT.kRed)
+    latex.DrawLatex(0.50,0.85,text)
+    latex.SetTextColor(ROOT.kBlack)
     c1.SaveAs(local_figureDir + '/hJobsActive.png')
-    c1.SaveAs(local_figureDir + '/hJobsActive.root')
+    #c1.SaveAs(local_figureDir + '/hJobsActive.root')
     c1.Close()
 
     outfile.write('    <h2>Number of Jobs Active</h2>\n')
@@ -758,7 +764,7 @@ def main(argv):
     
     c1.Update()
     c1.SaveAs(local_figureDir + '/duration.png')
-    c1.SaveAs(local_figureDir + '/duration.root')
+    #c1.SaveAs(local_figureDir + '/duration.root')
     c1.Close()
     
     outfile.write('    <h2>Duration of Each Stage</h2>\n')
@@ -787,15 +793,27 @@ def main(argv):
 
     #--------------------------------------------------------------------
     # Draw wall time, cpu time vs wall time
-    c1 = TCanvas( 'c1', 'Example with Formula', 0, 0, 1800, 600 )
-    c1.Divide(2,1,.002,.002)
+    c1 = TCanvas( 'c1', 'Example with Formula', 0, 0, 2400, 600 )
+    c1.Divide(3,1,.002,.002)
     c1.cd(1)
     c1.cd(1).SetRightMargin(0.02)
     c1.cd(1).SetTopMargin(0.03)
     hwalltime.Draw()
+    text = "mean: " + str(int(hwalltime.GetMean()*100) / 100.)
+    latex.SetTextColor(ROOT.kRed)
+    latex.DrawLatex(0.50,0.85,text)
+    latex.SetTextColor(ROOT.kBlack)
     c1.cd(2)
     c1.cd(2).SetRightMargin(0.02)
     c1.cd(2).SetTopMargin(0.03)
+    hcputime.Draw()
+    text = "mean: " + str(int(hcputime.GetMean()*100) / 100.)
+    latex.SetTextColor(ROOT.kRed)
+    latex.DrawLatex(0.50,0.85,text)
+    latex.SetTextColor(ROOT.kBlack)
+    c1.cd(3)
+    c1.cd(3).SetRightMargin(0.02)
+    c1.cd(3).SetTopMargin(0.03)
     gcput_walltime.GetXaxis().SetLimits(0,8);
     gcput_walltime.SetMinimum(0);
     gcput_walltime.SetMaximum(120);
@@ -822,9 +840,9 @@ def main(argv):
     c1.SaveAs(local_figureDir + '/walltime.png')
     c1.Close()
     
-    outfile.write('    <h2>Wall Time, CPU Time vs Wall Time</h2>\n')
+    outfile.write('    <h2>Wall Time, CPU Time, CPU Time vs Wall Time</h2>\n')
     outfile.write('    <a href = "' + web_figureDir + '/walltime.png">\n')
-    outfile.write('      <img src = "' + web_figureDir + '/walltime.png" width = "80%">\n')
+    outfile.write('      <img src = "' + web_figureDir + '/walltime.png" width = "100%">\n')
     outfile.write('    </a>\n')
     outfile.write('    <hr>\n')
 
@@ -862,7 +880,7 @@ def main(argv):
     
     c1.Update()
     c1.SaveAs(local_figureDir + '/hauger_mem.png')
-    c1.SaveAs(local_figureDir + '/hauger_mem.root')
+    #c1.SaveAs(local_figureDir + '/hauger_mem.root')
     c1.Close()
     
     outfile.write('    <h2>MAX Memory reported by AUGER</h2>\n')
@@ -970,9 +988,13 @@ def main(argv):
     outfile.write('</html>\n')
     outfile.close()
 
+    ROOT.gROOT.EndOfProcessCleanups()
+
+    return
+
 #------------------------------         end of main function          ---------------------------------#
     
-## main function 
+#main function 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+   main(sys.argv[1:])
 
