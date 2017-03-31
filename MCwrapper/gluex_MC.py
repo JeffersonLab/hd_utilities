@@ -119,7 +119,7 @@ def main(argv):
         
 
         GEANTVER = 4        
-        BGFOLD="0"
+        BGFOLD="DEFAULT"
 
 
 
@@ -216,7 +216,7 @@ def main(argv):
                         CUSTOM_MAKEMC=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="CUSTOM_GCONTROL" :
                         CUSTOM_GCONTROL=rm_comments[0].strip()
-                elif str(parts[0]).upper()=="BKG_FOLD" :
+                elif str(parts[0]).upper()=="BKG" :
                         BGFOLD=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="eBEAM_ENERGY" :
                         eBEAM_ENERGY=rm_comments[0].strip()
