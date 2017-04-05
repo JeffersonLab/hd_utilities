@@ -39,7 +39,7 @@ c      colld  - diameter of collimator in m
 c      Eemit  - electron beam emittance in m.rad
 c      radthick - dimaond radiator thickneess in m
 c Omitting the final parameter Emin results in the default value being used.
-BEAM TEMPELECE TEMPCOHERENT 0.0012 76.00 TEMPCOLD 10.e-9 20.e-6
+BEAM TEMPELECE TEMPCOHERENT TEMPMINE 76.00 TEMPCOLD 10.e-9 20.e-6
 
 c The GENBEAM card configures the simulation program to act purely as a
 c Monte Carlo event generator, and not to actually track any of the particles
@@ -190,7 +190,7 @@ c if you are only interested in the region of the coherent peak. This
 c minimum is the third field of the BEAM card above. Remember that if
 c you change beamEmin, you also need to change BGRATE to match, as 
 c described above.
-BGTAGONLY 1
+BGTAGONLY 0
 
 c The following line controls the uncertainty of the event time reference
 c relative to the RF structure of the beam. The event time reference is

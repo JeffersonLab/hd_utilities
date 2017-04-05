@@ -39,7 +39,8 @@ def add_job(WORKFLOW,CHANNEL, RUNNO, FILENO,SCRIPT,COMMAND, VERBOSE,PROJECT,TRAC
 
 	# CREATE ADD-JOB COMMAND
 	# job
-	add_command = "swif add-job -workflow " + WORKFLOW + " -name " + JOBNAME
+        #try removing the name specification
+	add_command = "swif add-job -workflow " + WORKFLOW #+ " -name " + JOBNAME
 	# project/track
 	add_command += " -project " + PROJECT + " -track " + TRACK
 	# resources
@@ -300,9 +301,17 @@ def main(argv):
 	REMAINING_GEN=EVTS%PERFILE
 
 	indir=os.environ.get('MCWRAPPER_CENTRAL')
+        
+        script_to_use = "/MakeMC.csh"
+        if environ['SHELL']=="/bin/bash" :
+                script_to_use = "/MakeMC.sh"
+        
+        indir+=script_to_use
 
         if len(CUSTOM_MAKEMC)!= 0 and CUSTOM_MAKEMC != "DEFAULT":
                 indir=CUSTOM_MAKEMC
+
+        
 
         if str(indir) == "None":
                 print "MCWRAPPER_CENTRAL not set"
@@ -326,15 +335,13 @@ def main(argv):
                 
 		COMMAND=ENVFILE+" "+GENCONFIG+" "+CHANNEL+" "+str(outdir)+" "+str(RUNNUM)+" "+str(FILENUM-1)+" "+str(num)+" "+str(VERSION)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(MCSWIF)+" "+str(NCORES)+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)
 
-                script_to_use = "/MakeMC.csh"
-                if environ['SHELL']=="/bin/bash" :
-                        script_to_use = "/MakeMC.sh"
+               
 		#print COMMAND
 		#either call MakeMC.csh or add a job depending on swif flag
                 if MCSWIF == 0:
-			os.system(str(indir)+script_to_use+" "+COMMAND)
+			os.system(str(indir)+" "+COMMAND)
 		else:
-			add_job(WORKFLOW, CHANNEL, RUNNUM, FILENUM,str(indir)+script_to_use,COMMAND,VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR)
+			add_job(WORKFLOW, CHANNEL, RUNNUM, FILENUM,str(indir),COMMAND,VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR)
 
 if __name__ == "__main__":
    main(sys.argv[1:])
