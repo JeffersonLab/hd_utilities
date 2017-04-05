@@ -223,9 +223,9 @@ def main(argv):
                         eBEAM_ENERGY=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="COHERENT_PEAK" :
                         COHERENT_PEAK=rm_comments[0].strip()
-                elif str(parts[0]).upper()=="MIN_GEN_ENERGY" :
+                elif str(parts[0]).upper()=="GEN_MIN_ENERGY" :
                         MIN_GEN_ENERGY=rm_comments[0].strip()
-                elif str(parts[0]).upper()=="MAX_GEN_ENERGY" :
+                elif str(parts[0]).upper()=="GEN_MAX_ENERGY" :
                         MAX_GEN_ENERGY=rm_comments[0].strip()
 
 	#loop over command line arguments 
