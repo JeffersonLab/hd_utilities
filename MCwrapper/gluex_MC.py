@@ -227,7 +227,8 @@ def main(argv):
                         MIN_GEN_ENERGY=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="GEN_MAX_ENERGY" :
                         MAX_GEN_ENERGY=rm_comments[0].strip()
-
+                else:
+                        print "unknown config parameter!! "+str(parts[0])
 	#loop over command line arguments 
 	
         for argu in args:

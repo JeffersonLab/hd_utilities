@@ -112,11 +112,24 @@ done
 
 formatted_fileNumber=$formatted_fileNumber$FILE_NUMBER
 
-
 set colsize=`rcnd $RUN_NUMBER collimator_diameter | awk '{print $1}' | sed -r 's/.{2}$//' | sed -e 's/\.//g'`
 if [[ "$colsize" == "B" || "$colsize" == "R" || "$JANA_CALIB_CONTEXT" != "variation=mc" ]]; then
     set colsize="50"
 fi
+
+if [[ `echo $eBEAM_ENERGY | grep -o "\." | wc -l` == 0 ]]; then
+    set eBEAM_ENERGY=$eBEAM_ENERGY\.
+fi
+if [[ `echo $COHERENT_PEAK | grep -o "\." | wc -l` == 0 ]]; then
+    set COHERENT_PEAK=$COHERENT_PEAK\.
+fi
+if [[ `echo $GEN_MIN_ENERGY | grep -o "\." | wc -l` == 0 ]]; then
+    set GEN_MIN_ENERGY=$GEN_MIN_ENERGY\.
+fi
+if [[ `echo $GEN_MAX_ENERGY | grep -o "\." | wc -l` == 0 ]]; then
+    set GEN_MAX_ENERGY=$GEN_MAX_ENERGY\.
+fi
+
 
 if [[ "$GENR" != "0" ]]; then
     if [["$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" ]]; then
@@ -141,18 +154,7 @@ if [[ "$GENR" != "0" ]]; then
 	cp $MCWRAPPER_CENTRAL/Generators/bggen/pythia.dat ./
 	cp $MCWRAPPER_CENTRAL/Generators/bggen/pythia-geant.map ./
 	cp $CONFIG_FILE ./bggen\_$GEN_NAME\_$formatted_runNumber\_$formatted_fileNumber.conf
-	if [[ `echo $eBEAM_ENERGY | grep -o "\." | wc -l` == 0 ]]; then
-	    set eBEAM_ENERGY=$eBEAM_ENERGY\.
-	fi
-	if [[ `echo $COHERENT_PEAK | grep -o "\." | wc -l` == 0 ]]; then
-	    set COHERENT_PEAK=$COHERENT_PEAK\.
-	fi
-	if [[ `echo $GEN_MIN_ENERGY | grep -o "\." | wc -l` == 0 ]]; then
-	    set GEN_MIN_ENERGY=$GEN_MIN_ENERGY\.
-	fi
-	if [[ `echo $GEN_MAX_ENERGY | grep -o "\." | wc -l` == 0 ]]; then
-	    set GEN_MAX_ENERGY=$GEN_MAX_ENERGY\.
-	fi
+	
 	
     elif [[ "$GENERATOR" == "genEtaRegge" ]]; then
 	echo "configuring genEtaRegge"

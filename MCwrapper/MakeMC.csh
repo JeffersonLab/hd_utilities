@@ -116,6 +116,19 @@ if ( "$colsize" == "B" || "$colsize" == "R" || "$JANA_CALIB_CONTEXT" != "variati
 	set colsize="50"
 endif
 
+if ( `echo $eBEAM_ENERGY | grep -o "\." | wc -l` == 0 ) then
+    set eBEAM_ENERGY=$eBEAM_ENERGY\.
+endif
+if ( `echo $COHERENT_PEAK | grep -o "\." | wc -l` == 0 ) then
+    set COHERENT_PEAK=$COHERENT_PEAK\.
+endif
+if ( `echo $GEN_MIN_ENERGY | grep -o "\." | wc -l` == 0 ) then
+    set GEN_MIN_ENERGY=$GEN_MIN_ENERGY\.
+endif
+if ( `echo $GEN_MAX_ENERGY | grep -o "\." | wc -l` == 0 ) then
+    set GEN_MAX_ENERGY=$GEN_MAX_ENERGY\.
+endif
+
 if ( "$GENR" != "0" ) then
     if ( "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" ) then
 	echo "NO VALID GENERATOR GIVEN"
@@ -139,18 +152,6 @@ if ( "$GENR" != "0" ) then
 	cp $MCWRAPPER_CENTRAL/Generators/bggen/pythia.dat ./
 	cp $MCWRAPPER_CENTRAL/Generators/bggen/pythia-geant.map ./
 	cp $CONFIG_FILE ./bggen\_$GEN_NAME\_$formatted_runNumber\_$formatted_fileNumber.conf
-	if ( `echo $eBEAM_ENERGY | grep -o "\." | wc -l` == 0 ) then
-	    set eBEAM_ENERGY=$eBEAM_ENERGY\.
-	endif
-	if ( `echo $COHERENT_PEAK | grep -o "\." | wc -l` == 0 ) then
-	    set COHERENT_PEAK=$COHERENT_PEAK\.
-	endif
-	if ( `echo $GEN_MIN_ENERGY | grep -o "\." | wc -l` == 0 ) then
-	    set GEN_MIN_ENERGY=$GEN_MIN_ENERGY\.
-	endif
-	if ( `echo $GEN_MAX_ENERGY | grep -o "\." | wc -l` == 0 ) then
-	    set GEN_MAX_ENERGY=$GEN_MAX_ENERGY\.
-	endif
 	
     else if ( "$GENERATOR" == "genEtaRegge" ) then
 	echo "configuring genEtaRegge"
@@ -204,13 +205,13 @@ if ( "$GENR" != "0" ) then
         set optionals_line=`head -n 1 $config_file_name | sed -r 's/.//'`
 	echo $optionals_line
 	echo gen_2pi_amp -c gen_2pi_amp\_$GEN_NAME\_$formatted_runNumber\_$formatted_fileNumber.conf -o $GEN_NAME\_$formatted_runNumber\_$formatted_fileNumber.hddm -hd $GEN_NAME\_$formatted_runNumber\_$formatted_fileNumber.root -n $EVT_TO_GEN -r $RUN_NUMBER  -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
-	gen_2pi_amp -c gen_2pi_amp\_$GEN_NAME\_$formatted_runNumber\_$formatted_fileNumber.conf -hd $GEN_NAME\_$formatted_runNumber\_$formatted_fileNumber.hddm -o $GEN_NAME\_$formatted_runNumber\_$formatted_fileNumber.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY - b $GEN_MAX_ENERGY $optionals_line
+	gen_2pi_amp -c gen_2pi_amp\_$GEN_NAME\_$formatted_runNumber\_$formatted_fileNumber.conf -hd $GEN_NAME\_$formatted_runNumber\_$formatted_fileNumber.hddm -o $GEN_NAME\_$formatted_runNumber\_$formatted_fileNumber.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
 	else if ( "$GENERATOR" == "gen_2pi_primakoff" ) then
 	echo "RUNNING GEN_2PI_PRIMAKOFF" 
         set optionals_line=`head -n 1 $config_file_name | sed -r 's/.//'`
 	echo $optionals_line
 	echo gen_2pi_primakoff -c gen_2pi_primakoff\_$GEN_NAME\_$formatted_runNumber\_$formatted_fileNumber.conf -o $GEN_NAME\_$formatted_runNumber\_$formatted_fileNumber.hddm -hd $GEN_NAME\_$formatted_runNumber\_$formatted_fileNumber.root -n $EVT_TO_GEN -r $RUN_NUMBER  -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
-	gen_2pi_primakoff -c gen_2pi_primakoff\_$GEN_NAME\_$formatted_runNumber\_$formatted_fileNumber.conf -hd $GEN_NAME\_$formatted_runNumber\_$formatted_fileNumber.hddm -o $GEN_NAME\_$formatted_runNumber\_$formatted_fileNumber.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY - b $GEN_MAX_ENERGY $optionals_line
+	gen_2pi_primakoff -c gen_2pi_primakoff\_$GEN_NAME\_$formatted_runNumber\_$formatted_fileNumber.conf -hd $GEN_NAME\_$formatted_runNumber\_$formatted_fileNumber.hddm -o $GEN_NAME\_$formatted_runNumber\_$formatted_fileNumber.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
 	else if ( "$GENERATOR" == "gen_pi0" ) then
 	echo "RUNNING GEN_PI0" 
         set optionals_line=`head -n 1 $config_file_name | sed -r 's/.//'`
