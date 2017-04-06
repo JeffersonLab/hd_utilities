@@ -379,7 +379,7 @@ c similarly named configuration parameters used in the reconstruction,
 c the difference being that underscores are not allowed here. To
 c specify the values to the reconstruction code used here, use the
 c -PBFIELD_TYPE=CalibDB and -PBFIELD_MAP=Magnets/Solenoid/solenoid_1500
-BFIELDMAP 'Magnets/Solenoid/solenoid_1200A_poisson_20140520'
+cBFIELDMAP 'Magnets/Solenoid/solenoid_1200A_poisson_20140520'
 cBFIELDTYPE 'NoField'
 
 c The pair spectrometer magnetic field map can also be accessed through the
@@ -390,7 +390,7 @@ c supported values for PSBFIELDTYPE. To specify the values used here to
 c the reconstruction code, use options -PPSBFIELD_TYPE=CalibDB and 
 c -PPSBFIELD_MAP=Magnets/PairSpectrometer/PS_1.8T_20150513_test
 c on the jana command line.
-PSBFIELDMAP 'Magnets/PairSpectrometer/PS_1.8T_20150513_test'
+cPSBFIELDMAP 'Magnets/PairSpectrometer/PS_1.8T_20150513_test'
 cPSBFIELDTYPE 'Const'
 
 c Use this card to enable/disable ( SAVEHITS  1/0 ) writing events with no 
