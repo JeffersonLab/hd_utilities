@@ -219,7 +219,7 @@ def main(argv):
                         CUSTOM_GCONTROL=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="BKG" :
                         BGFOLD=rm_comments[0].strip()
-                elif str(parts[0]).upper()=="eBEAM_ENERGY" :
+                elif str(parts[0]).upper()=="EBEAM_ENERGY" :
                         eBEAM_ENERGY=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="COHERENT_PEAK" :
                         COHERENT_PEAK=rm_comments[0].strip()
