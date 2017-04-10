@@ -52,6 +52,8 @@ shift
 setenv GEN_MAX_ENERGY $1
 shift
 setenv TAGSTR $1
+shift
+setenv CUSTOM_PLUGINS $1
 
 if ("$GEANTVER" == "3") then
 setenv NUMTHREADS 1
@@ -135,6 +137,19 @@ if ( `echo $GEN_MIN_ENERGY | grep -o "\." | wc -l` == 0 ) then
 endif
 if ( `echo $GEN_MAX_ENERGY | grep -o "\." | wc -l` == 0 ) then
     set GEN_MAX_ENERGY=$GEN_MAX_ENERGY\.
+endif
+
+if ( ! -d "$OUTDIR" ) then
+    mkdir $OUTDIR
+endif
+if ( ! -d "$OUTDIR/configurations/" ) then
+    mkdir $OUTDIR/configurations/
+endif
+if ( ! -d "$OUTDIR/hddm/" ) then
+    mkdir $OUTDIR/hddm/
+endif
+if ( ! -d "$OUTDIR/root/" ) then
+    mkdir $OUTDIR/root/
 endif
 
 if ( "$GENR" != "0" ) then
@@ -333,8 +348,21 @@ if ( "$GENR" != "0" ) then
 	    
 	    if ( "$RECON" != "0" ) then
 		echo "RUNNING RECONSTRUCTION"
-		hd_root $STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' -PPLUGINS=danarest,monitoring_hists -PNTHREADS=$NUMTHREADS
-		mv hd_root.root hd_root_$STANDARD_NAME.root
+		set pluginlist=("danarest" "monitoring_hists")
+	     
+		if ( "$CUSTOM_PLUGINS" != "None" ) then
+		    set pluginlist=( "$pluginlist" "$CUSTOM_PLUGINS" )
+		endif	
+
+		set PluginStr=""
+	       
+		foreach plugin ($pluginlist)
+		set PluginStr="$PluginStr""$plugin"","
+		end
+		
+		echo "Running hd_root with:""$PluginStr"
+		
+		hd_root $STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' -PPLUGINS=$PluginStr -PNTHREADS=$NUMTHREADS
 		mv dana_rest.hddm dana_rest_$STANDARD_NAME.hddm
 		
 		if ( "$CLEANGEANT" == "1" ) then
@@ -352,23 +380,22 @@ if ( "$GENR" != "0" ) then
 		if ( "$CLEANRECON" == "1" ) then
 		rm dana_rest*
 		endif
+
+		set rootfiles=`ls *.root`
+	       
+		foreach rootfile ($rootfiles)
+		    set filename_root=`basename $rootfile | sed -r 's/.{5}$//'`
+		    echo $filename_root
+                    mv $rootfile $filename_root'_'$STANDARD_NAME'.root'
+                end
+
+		mv $PWD/$filename_root\_$STANDARD_NAME.root $OUTDIR/root/
+
 	    endif
 	endif
     endif
 endif
 
-if ( ! -d "$OUTDIR" ) then
-    mkdir $OUTDIR
-endif
-if ( ! -d "$OUTDIR/configurations/" ) then
-    mkdir $OUTDIR/configurations/
-endif
-if ( ! -d "$OUTDIR/hddm/" ) then
-    mkdir $OUTDIR/hddm/
-endif
-if ( ! -d "$OUTDIR/root/" ) then
-    mkdir $OUTDIR/root/
-endif
     mv $PWD/*.conf $OUTDIR/configurations/
     mv $PWD/*.hddm $OUTDIR/hddm/
-    mv $PWD/*.root $OUTDIR/root/
+    mv $PWD/*.root $OUTDIR/root/ #just in case

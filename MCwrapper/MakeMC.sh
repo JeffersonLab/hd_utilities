@@ -52,6 +52,8 @@ shift
 export GEN_MAX_ENERGY=$1
 shift
 export TAGSTR=$1
+shift
+export CUSTOM_PLUGINS=$1
 
 if [[ "$GEANTVER" == "3" ]]; then
 export NUMTHREADS=1
@@ -112,30 +114,43 @@ done
 
 formatted_fileNumber=$formatted_fileNumber$FILE_NUMBER
 
-custom_tag=""
+set custom_tag=""
 
 if [[ "$TAGSTR" != "I_dont_have_one" ]]; then
-custom_tag=$TAGSTR\_
+set custom_tag=$TAGSTR\_
 fi
 
-STANDARD_NAME=$custom_tag$formatted_runNumber\_$formatted_fileNumber
+set STANDARD_NAME=$custom_tag$formatted_runNumber\_$formatted_fileNumber
 
-colsize=`rcnd $RUN_NUMBER collimator_diameter | awk '{print $1}' | sed -r 's/.{2}$//' | sed -e 's/\.//g'`
+set colsize=`rcnd $RUN_NUMBER collimator_diameter | awk '{print $1}' | sed -r 's/.{2}$//' | sed -e 's/\.//g'`
 if [[ "$colsize" == "B" || "$colsize" == "R" || "$JANA_CALIB_CONTEXT" != "variation=mc" ]]; then
-	colsize="50"
+	set colsize="50"
 fi
 
 if [[ `echo $eBEAM_ENERGY | grep -o "\." | wc -l` == 0 ]]; then
-    eBEAM_ENERGY=$eBEAM_ENERGY\.
+    set eBEAM_ENERGY=$eBEAM_ENERGY\.
 fi
 if [[ `echo $COHERENT_PEAK | grep -o "\." | wc -l` == 0 ]]; then
-    COHERENT_PEAK=$COHERENT_PEAK\.
+    set COHERENT_PEAK=$COHERENT_PEAK\.
 fi
 if [[ `echo $GEN_MIN_ENERGY | grep -o "\." | wc -l` == 0 ]]; then
-    GEN_MIN_ENERGY=$GEN_MIN_ENERGY\.
+    set GEN_MIN_ENERGY=$GEN_MIN_ENERGY\.
 fi
 if [[ `echo $GEN_MAX_ENERGY | grep -o "\." | wc -l` == 0 ]]; then
-    GEN_MAX_ENERGY=$GEN_MAX_ENERGY\.
+    set GEN_MAX_ENERGY=$GEN_MAX_ENERGY\.
+fi
+
+if [[ ! -d "$OUTDIR" ]]; then
+    mkdir $OUTDIR
+fi
+if [[ ! -d "$OUTDIR/configurations/" ]]; then
+    mkdir $OUTDIR/configurations/
+fi
+if [[ ! -d "$OUTDIR/hddm/" ]]; then
+    mkdir $OUTDIR/hddm/
+fi
+if [[ ! -d "$OUTDIR/root/" ]]; then
+    mkdir $OUTDIR/root/
 fi
 
 if [[ "$GENR" != "0" ]]; then
@@ -154,11 +169,11 @@ if [[ "$GENR" != "0" ]]; then
 
     if [[ "$GENERATOR" == "genr8" ]]; then
 	echo "configuring genr8"
-	STANDARD_NAME="genr8_"$STANDARD_NAME
+	set STANDARD_NAME="genr8_"$STANDARD_NAME
 	cp $CONFIG_FILE ./$STANDARD_NAME.conf
     elif [[ "$GENERATOR" == "bggen" ]]; then
 	echo "configuring bggen"
-	STANDARD_NAME="bggen_"$STANDARD_NAME
+	set STANDARD_NAME="bggen_"$STANDARD_NAME
 	cp $MCWRAPPER_CENTRAL/Generators/bggen/particle.dat ./
 	cp $MCWRAPPER_CENTRAL/Generators/bggen/pythia.dat ./
 	cp $MCWRAPPER_CENTRAL/Generators/bggen/pythia-geant.map ./
@@ -166,33 +181,33 @@ if [[ "$GENR" != "0" ]]; then
 	
     elif [[ "$GENERATOR" == "genEtaRegge" ]]; then
 	echo "configuring genEtaRegge"
-	STANDARD_NAME="genEtaRegge_"$STANDARD_NAME
+	set STANDARD_NAME="genEtaRegge_"$STANDARD_NAME
 	cp $CONFIG_FILE ./$STANDARD_NAME.conf
     elif [[ "$GENERATOR" == "gen_2pi_amp" ]]; then
 	echo "configuring gen_2pi_amp"
-	STANDARD_NAME="gen_2pi_amp_"$STANDARD_NAME
+	set STANDARD_NAME="gen_2pi_amp_"$STANDARD_NAME
 	cp $CONFIG_FILE ./$STANDARD_NAME.conf
     elif [[ "$GENERATOR" == "gen_2pi_primakoff" ]]; then
 	echo "configuring gen_2pi_primakoff"
-	STANDARD_NAME="gen_2pi_primakoff_"$STANDARD_NAME
+	set STANDARD_NAME="gen_2pi_primakoff_"$STANDARD_NAME
 	cp $CONFIG_FILE ./$STANDARD_NAME.conf
     elif [[ "$GENERATOR" == "gen_pi0" ]]; then
 	echo "configuring gen_pi0"
-	STANDARD_NAME="genr_pi0_"$STANDARD_NAME
+	set STANDARD_NAME="genr_pi0_"$STANDARD_NAME
 	cp $CONFIG_FILE ./$STANDARD_NAME.conf
     fi
-    config_file_name=`basename "$CONFIG_FILE"`
+    set config_file_name=`basename "$CONFIG_FILE"`
     echo $config_file_name
     
     if [[ "$GENERATOR" == "genr8" ]]; then
 	echo "RUNNING GENR8"
-	RUNNUM=$formatted_runNumber+$formatted_fileNumber
+	set RUNNUM=$formatted_runNumber+$formatted_fileNumber
 	sed -i 's/TEMPCOHERENT/'$COHERENT_PEAK'/' $STANDARD_NAME.conf
 	# RUN genr8 and convert
 	genr8 -r$formatted_runNumber -M$EVT_TO_GEN -A$STANDARD_NAME.ascii < $STANDARD_NAME.conf #$config_file_name
 	genr8_2_hddm $STANDARD_NAME.ascii
     elif [[ "$GENERATOR" == "bggen" ]]; then
-	RANDOM=$$
+	set RANDOM=$$
 	echo $RANDOM
 	sed -i 's/TEMPTRIG/'$EVT_TO_GEN'/' $STANDARD_NAME.conf
 	sed -i 's/TEMPRUNNO/'$RUN_NUMBER'/' $STANDARD_NAME.conf
@@ -217,19 +232,19 @@ if [[ "$GENR" != "0" ]]; then
 	genEtaRegge -N$EVT_TO_GEN -O$STANDARD_NAME.hddm -I$STANDARD_NAME.conf
 	elif [[ "$GENERATOR" == "gen_2pi_amp" ]]; then
 	echo "RUNNING GEN_2PI_AMP" 
-        optionals_line=`head -n 1 $config_file_name | sed -r 's/.//'`
+        set optionals_line=`head -n 1 $config_file_name | sed -r 's/.//'`
 	echo $optionals_line
 	echo gen_2pi_amp -c $STANDARD_NAME.conf -o $STANDARD_NAME.hddm -hd $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER  -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
 	gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
 	elif [[ "$GENERATOR" == "gen_2pi_primakoff" ]]; then
 	echo "RUNNING GEN_2PI_PRIMAKOFF" 
-        optionals_line=`head -n 1 $config_file_name | sed -r 's/.//'`
+        set optionals_line=`head -n 1 $config_file_name | sed -r 's/.//'`
 	echo $optionals_line
 	echo gen_2pi_primakoff -c $STANDARD_NAME.conf -o  $STANDARD_NAME.hddm -hd  $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER  -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
 	gen_2pi_primakoff -c $STANDARD_NAME.conf -hd  $STANDARD_NAME.hddm -o  $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
 	elif [[ "$GENERATOR" == "gen_pi0" ]]; then
 	echo "RUNNING GEN_PI0" 
-        optionals_line=`head -n 1 $config_file_name | sed -r 's/.//'`
+        set optionals_line=`head -n 1 $config_file_name | sed -r 's/.//'`
 	echo $optionals_line
 	gen_pi0 -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK  -s $formatted_fileNumber $optionals_line -m $eBEAM_ENERGY
     fi
@@ -240,10 +255,10 @@ if [[ "$GENR" != "0" ]]; then
 		echo "RUNNING GEANT"$GEANTVER
 
 	    if [[ `echo $eBEAM_ENERGY | grep -o "\." | wc -l` == 0 ]]; then
-		eBEAM_ENERGY=$eBEAM_ENERGY\.
+		set eBEAM_ENERGY=$eBEAM_ENERGY\.
 	    fi
 	    if [[ `echo $COHERENT_PEAK | grep -o "\." | wc -l` == 0 ]]; then
-		COHERENT_PEAK=$COHERENT_PEAK\.
+		set COHERENT_PEAK=$COHERENT_PEAK\.
 	    fi
 
 	    cp temp_Gcontrol.in $PWD/control'_'$formatted_runNumber'_'$formatted_fileNumber.in
@@ -288,21 +303,21 @@ if [[ "$GENR" != "0" ]]; then
 		echo "running MCsmear without folding in random background"
 		mcsmear -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm'
 	    else
-		if [[ "$BKGFOLDSTR" == "DEFAULT" ]]; then
+		if( "$BKGFOLDSTR" == "DEFAULT" ]]; then
 		    #find file and run:1
 		    echo "Finding the right file to fold in"
-		    runperiod="RunPeriod-2017-01"
+		    set runperiod="RunPeriod-2017-01"
 
 		    if [[ $RUN_NUMBER > 40000 ]]; then
 			echo
-			#runperiod="RunPeriod-2017-10"
+			#set runperiod="RunPeriod-2017-10"
 		    fi
 
 		    if [[ $RUN_NUMBER < 30000 ]]; then
 			echo "Warning: random triggers did not exist by this point"
 		    fi
-		    bkglocstring="/cache/halld/""$runperiod""/sim/random_triggers/""$formatted_runNumber"".hddm"
-		    #bkglocstring="/w/halld-scifs1a/home/tbritton/converted.hddm"
+		    set bkglocstring="/cache/halld/""$runperiod""/sim/random_triggers/""$formatted_runNumber"".hddm"
+		    #set bkglocstring="/w/halld-scifs1a/home/tbritton/converted.hddm"
 		    
 		    if [[ ! -f $bkglocstring ]]; then
 			echo "Could not find mix-in file "$bkglocstring
@@ -334,8 +349,21 @@ if [[ "$GENR" != "0" ]]; then
 	    
 	    if [[ "$RECON" != "0" ]]; then
 		echo "RUNNING RECONSTRUCTION"
-		hd_root $STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' -PPLUGINS=danarest,monitoring_hists -PNTHREADS=$NUMTHREADS
-		mv hd_root.root hd_root_$STANDARD_NAME.root
+		set pluginlist=("danarest" "monitoring_hists")
+	     
+		if [[ "$CUSTOM_PLUGINS" != "None" ]]; then
+		    set pluginlist=( "$pluginlist" "$CUSTOM_PLUGINS" )
+		fi	
+
+		set PluginStr=""
+	       
+		for plugin in "${pluginlist[@]}"; do
+		set PluginStr="$PluginStr""$plugin"","
+		done
+		
+		echo "Running hd_root with:""$PluginStr"
+		
+		hd_root $STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' -PPLUGINS=$PluginStr -PNTHREADS=$NUMTHREADS
 		mv dana_rest.hddm dana_rest_$STANDARD_NAME.hddm
 		
 		if [[ "$CLEANGEANT" == "1" ]]; then
@@ -353,23 +381,22 @@ if [[ "$GENR" != "0" ]]; then
 		if [[ "$CLEANRECON" == "1" ]]; then
 		rm dana_rest*
 		fi
+
+		set rootfiles=`ls *.root`
+	       
+		for rootfile in "$rootfiles[@]}"; do
+		    set filename_root=`basename $rootfile | sed -r 's/.{5}$//'`
+		    echo $filename_root
+                    mv $rootfile $filename_root'_'$STANDARD_NAME'.root'
+                done
+
+		mv $PWD/$filename_root\_$STANDARD_NAME.root $OUTDIR/root/
+
 	    fi
 	fi
     fi
 fi
 
-if [[ ! -d "$OUTDIR" ]]; then
-    mkdir $OUTDIR
-fi
-if [[ ! -d "$OUTDIR/configurations/" ]]; then
-    mkdir $OUTDIR/configurations/
-fi
-if [[ ! -d "$OUTDIR/hddm/" ]]; then
-    mkdir $OUTDIR/hddm/
-fi
-if [[ ! -d "$OUTDIR/root/" ]]; then
-    mkdir $OUTDIR/root/
-fi
     mv $PWD/*.conf $OUTDIR/configurations/
     mv $PWD/*.hddm $OUTDIR/hddm/
-    mv $PWD/*.root $OUTDIR/root/
+    mv $PWD/*.root $OUTDIR/root/ #just in case
