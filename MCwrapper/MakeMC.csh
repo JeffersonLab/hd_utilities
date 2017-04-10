@@ -385,7 +385,7 @@ if ( "$GENR" != "0" ) then
 	       
 		foreach rootfile ($rootfiles)
 		    set filename_root=`basename $rootfile | sed -r 's/.{5}$//'`
-		    echo $filename_root
+		    #echo $filename_root
                     mv $rootfile $filename_root'_'$STANDARD_NAME'.root'
                 end
 

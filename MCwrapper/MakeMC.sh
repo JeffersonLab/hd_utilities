@@ -80,19 +80,19 @@ echo "detected bash"
 #printenv
 #necessary to run swif, uses local directory if swif=0 is used
 if [[ "$MCSWIF" == "1" ]]; then
-# ENVIRONMENT
-echo $ENVIRONMENT
-source $ENVIRONMENT
-echo pwd=$PWD
-mkdir -p $OUTDIR
-mkdir -p $OUTDIR/log
+    # ENVIRONMENT
+    echo $ENVIRONMENT
+    source $ENVIRONMENT
+    echo pwd=$PWD
+    mkdir -p $OUTDIR
+    mkdir -p $OUTDIR/log
 fi
 
 if [[ "$CUSTOM_GCONTROL" == "0" ]]; then
-cp $MCWRAPPER_CENTRAL/Gcontrol.in ./temp_Gcontrol.in
-chmod 777 ./temp_Gcontrol.in
+    cp $MCWRAPPER_CENTRAL/Gcontrol.in ./temp_Gcontrol.in
+    chmod 777 ./temp_Gcontrol.in
 else
-cp $CUSTOM_GCONTROL/Gcontrol.in ./temp_Gcontrol.in
+    cp $CUSTOM_GCONTROL/Gcontrol.in ./temp_Gcontrol.in
 fi
 
 length_count=$((`echo $RUN_NUMBER | wc -c` - 1))
@@ -117,14 +117,14 @@ formatted_fileNumber=$formatted_fileNumber$FILE_NUMBER
 set custom_tag=""
 
 if [[ "$TAGSTR" != "I_dont_have_one" ]]; then
-set custom_tag=$TAGSTR\_
+    set custom_tag=$TAGSTR\_
 fi
 
 set STANDARD_NAME=$custom_tag$formatted_runNumber\_$formatted_fileNumber
 
 set colsize=`rcnd $RUN_NUMBER collimator_diameter | awk '{print $1}' | sed -r 's/.{2}$//' | sed -e 's/\.//g'`
 if [[ "$colsize" == "B" || "$colsize" == "R" || "$JANA_CALIB_CONTEXT" != "variation=mc" ]]; then
-	set colsize="50"
+    set colsize="50"
 fi
 
 if [[ `echo $eBEAM_ENERGY | grep -o "\." | wc -l` == 0 ]]; then
@@ -159,14 +159,14 @@ if [[ "$GENR" != "0" ]]; then
 	echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0] are supported"
 	exit
     fi
-
+    
     if [[ -f $CONFIG_FILE ]]; then
-	    echo " input file found"
-	else
-	    echo $CONFIG_FILE" does not exist"
-	    exit
+	echo " input file found"
+    else
+	echo $CONFIG_FILE" does not exist"
+	exit
     fi
-
+    
     if [[ "$GENERATOR" == "genr8" ]]; then
 	echo "configuring genr8"
 	set STANDARD_NAME="genr8_"$STANDARD_NAME
@@ -221,7 +221,7 @@ if [[ "$GENR" != "0" ]]; then
 	ln -s $STANDARD_NAME.conf fort.15
 	bggen
 	mv bggen.hddm $STANDARD_NAME.hddm
-        elif [[ "$GENERATOR" == "genEtaRegge" ]]; then
+    elif [[ "$GENERATOR" == "genEtaRegge" ]]; then
 	echo "RUNNING GENETAREGGE" 
 	
 	sed -i 's/TEMPCOLD/'0.00$colsize'/' $STANDARD_NAME.conf
@@ -230,71 +230,71 @@ if [[ "$GENR" != "0" ]]; then
 	sed -i 's/TEMPMINGENE/'$GEN_MIN_ENERGY'/' $STANDARD_NAME.conf
 	sed -i 's/TEMPMAXGENE/'$GEN_MAX_ENERGY'/' $STANDARD_NAME.conf
 	genEtaRegge -N$EVT_TO_GEN -O$STANDARD_NAME.hddm -I$STANDARD_NAME.conf
-	elif [[ "$GENERATOR" == "gen_2pi_amp" ]]; then
+    elif [[ "$GENERATOR" == "gen_2pi_amp" ]]; then
 	echo "RUNNING GEN_2PI_AMP" 
         set optionals_line=`head -n 1 $config_file_name | sed -r 's/.//'`
 	echo $optionals_line
 	echo gen_2pi_amp -c $STANDARD_NAME.conf -o $STANDARD_NAME.hddm -hd $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER  -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
 	gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
-	elif [[ "$GENERATOR" == "gen_2pi_primakoff" ]]; then
+    elif [[ "$GENERATOR" == "gen_2pi_primakoff" ]]; then
 	echo "RUNNING GEN_2PI_PRIMAKOFF" 
         set optionals_line=`head -n 1 $config_file_name | sed -r 's/.//'`
 	echo $optionals_line
 	echo gen_2pi_primakoff -c $STANDARD_NAME.conf -o  $STANDARD_NAME.hddm -hd  $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER  -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
 	gen_2pi_primakoff -c $STANDARD_NAME.conf -hd  $STANDARD_NAME.hddm -o  $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
-	elif [[ "$GENERATOR" == "gen_pi0" ]]; then
+    elif [[ "$GENERATOR" == "gen_pi0" ]]; then
 	echo "RUNNING GEN_PI0" 
         set optionals_line=`head -n 1 $config_file_name | sed -r 's/.//'`
 	echo $optionals_line
 	gen_pi0 -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK  -s $formatted_fileNumber $optionals_line -m $eBEAM_ENERGY
     fi
-
-#GEANT/smearing
-
-	if [[ "$GEANT" != "0" ]]; then
-		echo "RUNNING GEANT"$GEANTVER
-
-	    if [[ `echo $eBEAM_ENERGY | grep -o "\." | wc -l` == 0 ]]; then
-		set eBEAM_ENERGY=$eBEAM_ENERGY\.
-	    fi
-	    if [[ `echo $COHERENT_PEAK | grep -o "\." | wc -l` == 0 ]]; then
-		set COHERENT_PEAK=$COHERENT_PEAK\.
-	    fi
-
-	    cp temp_Gcontrol.in $PWD/control'_'$formatted_runNumber'_'$formatted_fileNumber.in
-	    chmod 777 $PWD/control'_'$formatted_runNumber'_'$formatted_fileNumber.in
-	    sed -i 's/TEMPELECE/'$eBEAM_ENERGY'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
-	    sed -i 's/TEMPCOHERENT/'$COHERENT_PEAK'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
-	    sed -i 's/TEMPIN/'$STANDARD_NAME.hddm'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
-	    sed -i 's/TEMPRUNG/'$RUN_NUMBER'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
-	    sed -i 's/TEMPOUT/'$STANDARD_NAME'_geant'$GEANTVER'.hddm/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
-	    sed -i 's/TEMPTRIG/'$EVT_TO_GEN'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
-	    sed -i 's/TEMPCOLD/'0.00$colsize'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
-
-	    if [[ "$BKGFOLDSTR" != "BeamPhotons" ]]; then
-		echo "removing Beam Photon background from geant simulation"
-		sed -i 's/BGRATE/cBGRATE/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
-		sed -i 's/BGGATE/cBGGATE/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
-		sed -i 's/TEMPMINE/'$GEN_MIN_ENERGY'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
-	    else
-		sed -i 's/TEMPMINE/0.0012/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
-	    fi
-
-	    mv $PWD/control'_'$formatted_runNumber'_'$formatted_fileNumber.in $PWD/control.in
+    
+    #GEANT/smearing
+    
+    if [[ "$GEANT" != "0" ]]; then
+	echo "RUNNING GEANT"$GEANTVER
 	
-	    if [[ "$GEANTVER" == "3" ]]; then
-		hdgeant 
-	    elif [[ "$GEANTVER" == "4" ]]; then
-		#make run.mac then call it below
-		rm -f run.mac
-		echo "/run/beamOn $EVT_TO_GEN" > run.mac
-		echo "exit" >>! run.mac
-		hdgeant4 -t$NUMTHREADS run.mac
-		rm run.mac
-	    else
-		echo "INVALID GEANT VERSION"
-		exit
-	    fi
+	if [[ `echo $eBEAM_ENERGY | grep -o "\." | wc -l` == 0 ]]; then
+	    set eBEAM_ENERGY=$eBEAM_ENERGY\.
+	fi
+	if [[ `echo $COHERENT_PEAK | grep -o "\." | wc -l` == 0 ]]; then
+	    set COHERENT_PEAK=$COHERENT_PEAK\.
+	fi
+	
+	cp temp_Gcontrol.in $PWD/control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	chmod 777 $PWD/control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	sed -i 's/TEMPELECE/'$eBEAM_ENERGY'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	sed -i 's/TEMPCOHERENT/'$COHERENT_PEAK'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	sed -i 's/TEMPIN/'$STANDARD_NAME.hddm'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	sed -i 's/TEMPRUNG/'$RUN_NUMBER'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	sed -i 's/TEMPOUT/'$STANDARD_NAME'_geant'$GEANTVER'.hddm/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	sed -i 's/TEMPTRIG/'$EVT_TO_GEN'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	sed -i 's/TEMPCOLD/'0.00$colsize'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	
+	if [[ "$BKGFOLDSTR" != "BeamPhotons" ]]; then
+	    echo "removing Beam Photon background from geant simulation"
+	    sed -i 's/BGRATE/cBGRATE/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	    sed -i 's/BGGATE/cBGGATE/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	    sed -i 's/TEMPMINE/'$GEN_MIN_ENERGY'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	else
+	    sed -i 's/TEMPMINE/0.0012/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	fi
+	
+	mv $PWD/control'_'$formatted_runNumber'_'$formatted_fileNumber.in $PWD/control.in
+	
+	if [[ "$GEANTVER" == "3" ]]; then
+	    hdgeant 
+	elif [[ "$GEANTVER" == "4" ]]; then
+	    #make run.mac then call it below
+	    rm -f run.mac
+	    echo "/run/beamOn $EVT_TO_GEN" > run.mac
+	    echo "exit" >>! run.mac
+	    hdgeant4 -t$NUMTHREADS run.mac
+	    rm run.mac
+	else
+	    echo "INVALID GEANT VERSION"
+	    exit
+	fi
 	
 	if [[ "$SMEAR" != "0" ]]; then
 	    echo "RUNNING MCSMEAR"
@@ -307,12 +307,12 @@ if [[ "$GENR" != "0" ]]; then
 		    #find file and run:1
 		    echo "Finding the right file to fold in"
 		    set runperiod="RunPeriod-2017-01"
-
+		    
 		    if [[ $RUN_NUMBER > 40000 ]]; then
 			echo
 			#set runperiod="RunPeriod-2017-10"
 		    fi
-
+		    
 		    if [[ $RUN_NUMBER < 30000 ]]; then
 			echo "Warning: random triggers did not exist by this point"
 		    fi
@@ -350,15 +350,15 @@ if [[ "$GENR" != "0" ]]; then
 	    if [[ "$RECON" != "0" ]]; then
 		echo "RUNNING RECONSTRUCTION"
 		set pluginlist=("danarest" "monitoring_hists")
-	     
+		
 		if [[ "$CUSTOM_PLUGINS" != "None" ]]; then
-		    set pluginlist=( "$pluginlist" "$CUSTOM_PLUGINS" )
+			set pluginlist=( "$pluginlist" "$CUSTOM_PLUGINS" )
 		fi	
-
+		
 		set PluginStr=""
-	       
+		
 		for plugin in "${pluginlist[@]}"; do
-		set PluginStr="$PluginStr""$plugin"","
+		    set PluginStr="$PluginStr""$plugin"","
 		done
 		
 		echo "Running hd_root with:""$PluginStr"
@@ -367,36 +367,36 @@ if [[ "$GENR" != "0" ]]; then
 		mv dana_rest.hddm dana_rest_$STANDARD_NAME.hddm
 		
 		if [[ "$CLEANGEANT" == "1" ]]; then
-		rm *_geant$GEANTVER.hddm
+		    rm *_geant$GEANTVER.hddm
 		    if [[ "$PWD" != "$MCWRAPPER_CENTRAL" ]]; then
 			rm temp_Gcontrol.in	
 		    fi
 		fi
 		
 		if [[ "$CLEANSMEAR" == "1" ]]; then
-		rm *_smeared.hddm
-		rm smear.root
+		    rm *_smeared.hddm
+		    rm smear.root
 		fi
 		
 		if [[ "$CLEANRECON" == "1" ]]; then
-		rm dana_rest*
+		    rm dana_rest*
 		fi
-
+		
 		set rootfiles=`ls *.root`
-	       
+		
 		for rootfile in "$rootfiles[@]}"; do
 		    set filename_root=`basename $rootfile | sed -r 's/.{5}$//'`
-		    echo $filename_root
-                    mv $rootfile $filename_root'_'$STANDARD_NAME'.root'
+		    #echo $filename_root
+		    mv $rootfile $filename_root'_'$STANDARD_NAME'.root'
                 done
-
+		
 		mv $PWD/$filename_root\_$STANDARD_NAME.root $OUTDIR/root/
-
+		
 	    fi
 	fi
     fi
 fi
 
-    mv $PWD/*.conf $OUTDIR/configurations/
-    mv $PWD/*.hddm $OUTDIR/hddm/
-    mv $PWD/*.root $OUTDIR/root/ #just in case
+mv $PWD/*.conf $OUTDIR/configurations/
+mv $PWD/*.hddm $OUTDIR/hddm/
+mv $PWD/*.root $OUTDIR/root/ #just in case
