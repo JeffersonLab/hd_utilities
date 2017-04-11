@@ -302,7 +302,7 @@ if ( "$GENR" != "0" ) then
 		echo "running MCsmear without folding in random background"
 		mcsmear -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm'
 	    else
-		if( "$BKGFOLDSTR" == "DEFAULT" ) then
+		if ( "$BKGFOLDSTR" == "DEFAULT" ) then
 		    #find file and run:1
 		    echo "Finding the right file to fold in"
 		    set runperiod="RunPeriod-2017-01"
