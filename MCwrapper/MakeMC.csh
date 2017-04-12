@@ -55,7 +55,7 @@ setenv TAGSTR $1
 shift
 setenv CUSTOM_PLUGINS $1
 
-if ("$GEANTVER" == "3") then
+if ( "$GEANTVER" == "3" ) then
 setenv NUMTHREADS 1
 endif
 
@@ -79,7 +79,7 @@ echo "detected c-shell"
 
 #printenv
 #necessary to run swif, uses local directory if swif=0 is used
-if ("$MCSWIF" == "1") then
+if ( "$MCSWIF" == "1" ) then
 # ENVIRONMENT
 echo $ENVIRONMENT
 source $ENVIRONMENT
@@ -360,35 +360,38 @@ if ( "$GENR" != "0" ) then
 		set PluginStr="$PluginStr""$plugin"","
 		end
 		
+		set PluginStr=`echo $PluginStr | sed -r 's/.{1}$//'`
 		echo "Running hd_root with:""$PluginStr"
-		
-		hd_root $STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' -PPLUGINS=$PluginStr -PNTHREADS=$NUMTHREADS
+		echo "hd_root ""$STANDARD_NAME"'_geant'"$GEANTVER"'_smeared.hddm'" -PPLUGINS=""$PluginStr ""-PNTHREADS=""$NUMTHREADS"
+		hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' -PPLUGINS=$PluginStr -PNTHREADS=$NUMTHREADS
 		mv dana_rest.hddm dana_rest_$STANDARD_NAME.hddm
 		
 		if ( "$CLEANGEANT" == "1" ) then
-		rm *_geant$GEANTVER.hddm
+		    rm *_geant$GEANTVER.hddm
+		    rm control.in
+		    rm -f geant.hbook
+		    rm -f hdgeant.rz
 		    if ( "$PWD" != "$MCWRAPPER_CENTRAL" ) then
 			rm temp_Gcontrol.in	
 		    endif
 		endif
 		
 		if ( "$CLEANSMEAR" == "1" ) then
-		rm *_smeared.hddm
-		rm smear.root
+		    rm *_smeared.hddm
+		    rm smear.root
 		endif
 		
 		if ( "$CLEANRECON" == "1" ) then
-		rm dana_rest*
+		    rm dana_rest*
 		endif
-
+		
 		set rootfiles=`ls *.root`
-	       
+		set filename_root=""
 		foreach rootfile ($rootfiles)
-		    set filename_root=`basename $rootfile | sed -r 's/.{5}$//'`
-		    #echo $filename_root
-                    mv $rootfile $filename_root'_'$STANDARD_NAME'.root'
+		    set filename_root=`echo $rootfile | sed -r 's/.{5}$//'`
+		    set filetomv="$rootfile"
+                    mv $filetomv $filename_root\_$STANDARD_NAME.root
                 end
-
 		mv $PWD/$filename_root\_$STANDARD_NAME.root $OUTDIR/root/
 
 	    endif

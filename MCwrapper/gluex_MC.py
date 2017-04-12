@@ -101,6 +101,10 @@ def main(argv):
 	EVTS = int(args[2])
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+        print "*********************************"
+        print "Welcome to v1.3 of the MCwrapper"
+        print "Thomas Britton 04/12/17"
+        print "*********************************"
 
 
 	#load all argument passed in and set default options
