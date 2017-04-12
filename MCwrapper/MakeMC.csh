@@ -52,8 +52,10 @@ shift
 setenv GEN_MAX_ENERGY $1
 shift
 setenv TAGSTR $1
+shift
+setenv CUSTOM_PLUGINS $1
 
-if ("$GEANTVER" == "3") then
+if ( "$GEANTVER" == "3" ) then
 setenv NUMTHREADS 1
 endif
 
@@ -77,7 +79,7 @@ echo "detected c-shell"
 
 #printenv
 #necessary to run swif, uses local directory if swif=0 is used
-if ("$MCSWIF" == "1") then
+if ( "$MCSWIF" == "1" ) then
 # ENVIRONMENT
 echo $ENVIRONMENT
 source $ENVIRONMENT
@@ -135,6 +137,19 @@ if ( `echo $GEN_MIN_ENERGY | grep -o "\." | wc -l` == 0 ) then
 endif
 if ( `echo $GEN_MAX_ENERGY | grep -o "\." | wc -l` == 0 ) then
     set GEN_MAX_ENERGY=$GEN_MAX_ENERGY\.
+endif
+
+if ( ! -d "$OUTDIR" ) then
+    mkdir $OUTDIR
+endif
+if ( ! -d "$OUTDIR/configurations/" ) then
+    mkdir $OUTDIR/configurations/
+endif
+if ( ! -d "$OUTDIR/hddm/" ) then
+    mkdir $OUTDIR/hddm/
+endif
+if ( ! -d "$OUTDIR/root/" ) then
+    mkdir $OUTDIR/root/
 endif
 
 if ( "$GENR" != "0" ) then
@@ -287,7 +302,7 @@ if ( "$GENR" != "0" ) then
 		echo "running MCsmear without folding in random background"
 		mcsmear -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm'
 	    else
-		if( "$BKGFOLDSTR" == "DEFAULT" ) then
+		if ( "$BKGFOLDSTR" == "DEFAULT" ) then
 		    #find file and run:1
 		    echo "Finding the right file to fold in"
 		    set runperiod="RunPeriod-2017-01"
@@ -333,42 +348,57 @@ if ( "$GENR" != "0" ) then
 	    
 	    if ( "$RECON" != "0" ) then
 		echo "RUNNING RECONSTRUCTION"
-		hd_root $STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' -PPLUGINS=danarest,monitoring_hists -PNTHREADS=$NUMTHREADS
-		mv hd_root.root hd_root_$STANDARD_NAME.root
+		set pluginlist=("danarest" "monitoring_hists")
+	     
+		if ( "$CUSTOM_PLUGINS" != "None" ) then
+		    set pluginlist=( "$pluginlist" "$CUSTOM_PLUGINS" )
+		endif	
+
+		set PluginStr=""
+	       
+		foreach plugin ($pluginlist)
+		set PluginStr="$PluginStr""$plugin"","
+		end
+		
+		set PluginStr=`echo $PluginStr | sed -r 's/.{1}$//'`
+		echo "Running hd_root with:""$PluginStr"
+		echo "hd_root ""$STANDARD_NAME"'_geant'"$GEANTVER"'_smeared.hddm'" -PPLUGINS=""$PluginStr ""-PNTHREADS=""$NUMTHREADS"
+		hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' -PPLUGINS=$PluginStr -PNTHREADS=$NUMTHREADS
 		mv dana_rest.hddm dana_rest_$STANDARD_NAME.hddm
 		
 		if ( "$CLEANGEANT" == "1" ) then
-		rm *_geant$GEANTVER.hddm
+		    rm *_geant$GEANTVER.hddm
+		    rm control.in
+		    rm -f geant.hbook
+		    rm -f hdgeant.rz
 		    if ( "$PWD" != "$MCWRAPPER_CENTRAL" ) then
 			rm temp_Gcontrol.in	
 		    endif
 		endif
 		
 		if ( "$CLEANSMEAR" == "1" ) then
-		rm *_smeared.hddm
-		rm smear.root
+		    rm *_smeared.hddm
+		    rm smear.root
 		endif
 		
 		if ( "$CLEANRECON" == "1" ) then
-		rm dana_rest*
+		    rm dana_rest*
 		endif
+		
+		set rootfiles=`ls *.root`
+		set filename_root=""
+		foreach rootfile ($rootfiles)
+		    set filename_root=`echo $rootfile | sed -r 's/.{5}$//'`
+		    set filetomv="$rootfile"
+                    mv $filetomv $filename_root\_$STANDARD_NAME.root
+                end
+		mv $PWD/$filename_root\_$STANDARD_NAME.root $OUTDIR/root/
+
 	    endif
 	endif
     endif
 endif
 
-if ( ! -d "$OUTDIR" ) then
-    mkdir $OUTDIR
-endif
-if ( ! -d "$OUTDIR/configurations/" ) then
-    mkdir $OUTDIR/configurations/
-endif
-if ( ! -d "$OUTDIR/hddm/" ) then
-    mkdir $OUTDIR/hddm/
-endif
-if ( ! -d "$OUTDIR/root/" ) then
-    mkdir $OUTDIR/root/
-endif
     mv $PWD/*.conf $OUTDIR/configurations/
     mv $PWD/*.hddm $OUTDIR/hddm/
-    mv $PWD/*.root $OUTDIR/root/
+    mv $PWD/*.root $OUTDIR/root/ #just in case
