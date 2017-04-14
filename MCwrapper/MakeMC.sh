@@ -316,7 +316,7 @@ if [[ "$GENR" != "0" ]]; then
 		    if [[ $RUN_NUMBER < 30000 ]]; then
 			echo "Warning: random triggers did not exist by this point"
 		    fi
-		    bkglocstring="/cache/halld/""$runperiod""/sim/random_triggers/""$formatted_runNumber"".hddm"
+		    bkglocstring="/cache/halld/""$runperiod""/sim/random_triggers/""run$formatted_runNumber""_random.hddm"
 		    #bkglocstring="/w/halld-scifs1a/home/tbritton/converted.hddm"
 		    
 		    if [[ ! -f $bkglocstring ]]; then

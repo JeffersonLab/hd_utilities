@@ -60,6 +60,7 @@ setenv NUMTHREADS 1
 endif
 
 # PRINT INPUTS
+echo `date`
 echo "CONTEXT           = $JANA_CALIB_CONTEXT"
 echo "ENVIRONMENT       = $ENVIRONMENT"
 echo "CONFIG_FILE       = $CONFIG_FILE"
@@ -315,7 +316,7 @@ if ( "$GENR" != "0" ) then
 		    if ( $RUN_NUMBER < 30000 ) then
 			echo "Warning: random triggers did not exist by this point"
 		    endif
-		    set bkglocstring="/cache/halld/""$runperiod""/sim/random_triggers/""$formatted_runNumber"".hddm"
+		    set bkglocstring="/cache/halld/""$runperiod""/sim/random_triggers/""run$formatted_runNumber""_random.hddm"
 		    #set bkglocstring="/w/halld-scifs1a/home/tbritton/converted.hddm"
 		    
 		    if ( ! -f $bkglocstring ) then
@@ -402,3 +403,4 @@ endif
     mv $PWD/*.conf $OUTDIR/configurations/
     mv $PWD/*.hddm $OUTDIR/hddm/
     mv $PWD/*.root $OUTDIR/root/ #just in case
+echo `date`
