@@ -117,7 +117,7 @@ def main(argv):
         ENVFILE = "my-environment-file"#change this to your own environment file
         
         GENERATOR = "genr8"
-        GENCONFIG = "genrator config file"
+        GENCONFIG = "NA"
 
         eBEAM_ENERGY="12"
         COHERENT_PEAK="9"

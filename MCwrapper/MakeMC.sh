@@ -164,7 +164,7 @@ if [[ "$GENR" != "0" ]]; then
     fi
     
 	if [[ "$gen_pre" == "file" ]]; then
-		set gen_in_file=`echo $GENERATOR | sed -r 's/^.{5}//'`
+		gen_in_file=`echo $GENERATOR | sed -r 's/^.{5}//'`
 		echo "bypassing generation"
 		if [[ -f $gen_in_file ]]; then
 			echo "using pre-generated file: "$gen_in_file
@@ -213,9 +213,12 @@ if [[ "$GENR" != "0" ]]; then
 	STANDARD_NAME="genr_pi0_"$STANDARD_NAME
 	cp $CONFIG_FILE ./$STANDARD_NAME.conf
     fi
+	
+	if [[ "$gen_pre" != "file" ]]; then
     config_file_name=`basename "$CONFIG_FILE"`
     echo $config_file_name
-    
+    fi
+
     if [[ "$GENERATOR" == "genr8" ]]; then
 	echo "RUNNING GENR8"
 	RUNNUM=$formatted_runNumber+$formatted_fileNumber
@@ -418,7 +421,8 @@ if [[ "$GENR" != "0" ]]; then
 	fi
     fi
 fi
-
+if [[ "$gen_pre" != "file" ]]; then
 mv $PWD/*.conf $OUTDIR/configurations/
+fi
 mv $PWD/*.hddm $OUTDIR/hddm/
 #mv $PWD/*.root $OUTDIR/root/ #just in case

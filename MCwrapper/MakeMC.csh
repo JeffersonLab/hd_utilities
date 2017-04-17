@@ -213,8 +213,11 @@ if ( "$GENR" != "0" ) then
 	set STANDARD_NAME="genr_pi0_"$STANDARD_NAME
 	cp $CONFIG_FILE ./$STANDARD_NAME.conf
     endif
-    set config_file_name=`basename "$CONFIG_FILE"`
+
+	if ( "$gen_pre" != "file" ) then
+    config_file_name=`basename "$CONFIG_FILE"`
     echo $config_file_name
+    endif
     
     if ( "$GENERATOR" == "genr8" ) then
 	echo "RUNNING GENR8"
@@ -417,7 +420,9 @@ if ( "$GENR" != "0" ) then
     endif
 endif
 
-    mv $PWD/*.conf $OUTDIR/configurations/
+if ( "$gen_pre" != "file" ) then
+mv $PWD/*.conf $OUTDIR/configurations/
+fi
     mv $PWD/*.hddm $OUTDIR/hddm/
 #    mv $PWD/*.root $OUTDIR/root/ #just in case
 echo `date`
