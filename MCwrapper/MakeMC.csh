@@ -419,5 +419,5 @@ endif
 
     mv $PWD/*.conf $OUTDIR/configurations/
     mv $PWD/*.hddm $OUTDIR/hddm/
-    mv $PWD/*.root $OUTDIR/root/ #just in case
+#    mv $PWD/*.root $OUTDIR/root/ #just in case
 echo `date`

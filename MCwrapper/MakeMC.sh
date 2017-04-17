@@ -175,7 +175,7 @@ if [[ "$GENR" != "0" ]]; then
 		fi
 				
 	else 
-		if [[ -f $CONFIG_FILE ]] then
+		if [[ -f $CONFIG_FILE ]]; then
 	    	echo "input file found"
 		else
 	    	echo $CONFIG_FILE" does not exist"
@@ -421,4 +421,4 @@ fi
 
 mv $PWD/*.conf $OUTDIR/configurations/
 mv $PWD/*.hddm $OUTDIR/hddm/
-mv $PWD/*.root $OUTDIR/root/ #just in case
+#mv $PWD/*.root $OUTDIR/root/ #just in case
