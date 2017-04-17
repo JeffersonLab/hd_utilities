@@ -153,19 +153,36 @@ if [[ ! -d "$OUTDIR/root/" ]]; then
     mkdir $OUTDIR/root/
 fi
 
+gen_pre=""
+
 if [[ "$GENR" != "0" ]]; then
-    if [[ "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" ]]; then
+	gen_pre=`echo $GENERATOR | cut -c1-4`
+    if [[ "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" ]]; then
 	echo "NO VALID GENERATOR GIVEN"
 	echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0] are supported"
 	exit
     fi
     
-    if [[ -f $CONFIG_FILE ]]; then
-	echo " input file found"
-    else
-	echo $CONFIG_FILE" does not exist"
-	exit
-    fi
+	if [[ "$gen_pre" == "file" ]]; then
+		gen_in_file=`echo $GENERATOR | sed -r 's/^.{5}//'`
+		echo "bypassing generation"
+		if [[ -f $gen_in_file ]]; then
+			echo "using pre-generated file: "$gen_in_file
+			cp $gen_in_file ./$STANDARD_NAME.hddm
+		else
+			echo "cannot find file: "$gen_in_file
+			exit
+		fi
+				
+	else 
+		if [[ -f $CONFIG_FILE ]]; then
+	    	echo "input file found"
+		else
+	    	echo $CONFIG_FILE" does not exist"
+	    	exit
+    	fi
+
+	fi
     
     if [[ "$GENERATOR" == "genr8" ]]; then
 	echo "configuring genr8"
@@ -196,9 +213,12 @@ if [[ "$GENR" != "0" ]]; then
 	STANDARD_NAME="genr_pi0_"$STANDARD_NAME
 	cp $CONFIG_FILE ./$STANDARD_NAME.conf
     fi
+	
+	if [[ "$gen_pre" != "file" ]]; then
     config_file_name=`basename "$CONFIG_FILE"`
     echo $config_file_name
-    
+    fi
+
     if [[ "$GENERATOR" == "genr8" ]]; then
 	echo "RUNNING GENR8"
 	RUNNUM=$formatted_runNumber+$formatted_fileNumber
@@ -234,7 +254,7 @@ if [[ "$GENR" != "0" ]]; then
 	echo "RUNNING GEN_2PI_AMP" 
         optionals_line=`head -n 1 $config_file_name | sed -r 's/.//'`
 	echo $optionals_line
-	echo gen_2pi_amp -c $STANDARD_NAME.conf -o $STANDARD_NAME.hddm -hd $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER  -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
+	echo gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER  -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
 	gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
     elif [[ "$GENERATOR" == "gen_2pi_primakoff" ]]; then
 	echo "RUNNING GEN_2PI_PRIMAKOFF" 
@@ -316,7 +336,7 @@ if [[ "$GENR" != "0" ]]; then
 		    if [[ $RUN_NUMBER < 30000 ]]; then
 			echo "Warning: random triggers did not exist by this point"
 		    fi
-		    bkglocstring="/cache/halld/""$runperiod""/sim/random_triggers/""$formatted_runNumber"".hddm"
+		    bkglocstring="/cache/halld/""$runperiod""/sim/random_triggers/""run$formatted_runNumber""_random.hddm"
 		    #bkglocstring="/w/halld-scifs1a/home/tbritton/converted.hddm"
 		    
 		    if [[ ! -f $bkglocstring ]]; then
@@ -401,7 +421,8 @@ if [[ "$GENR" != "0" ]]; then
 	fi
     fi
 fi
-
+if [[ "$gen_pre" != "file" ]]; then
 mv $PWD/*.conf $OUTDIR/configurations/
+fi
 mv $PWD/*.hddm $OUTDIR/hddm/
-mv $PWD/*.root $OUTDIR/root/ #just in case
+#mv $PWD/*.root $OUTDIR/root/ #just in case
