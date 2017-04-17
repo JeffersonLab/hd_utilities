@@ -72,7 +72,7 @@ def showhelp():
         helpstring+= " recon=[0/1] where 0 means that the reconstruction step will not run (default is 1)\n"
         helpstring+= " cleangenerate=[0/1] where 0 means that the generation step will not be cleaned up after use (default is 1)\n"
         helpstring+= " cleangeant=[0/1] where 0 means that the geant step will not be cleaned up after use (default is 1)\n"
-        helpstring+= " cleanmcsmear=[0/1] where 0 means that the mcsmear step will not  (default is 1)\n"
+        helpstring+= " cleanmcsmear=[0/1] where 0 means that the mcsmear step will not be cleaned up after use (default is 1)\n"
         helpstring+= " cleanrecon=[0/1] where 0 means that the reconstruction step will not run (default is 1)\n"
         helpstring+= " swif=[0/1] where 1 means that a workflow will be created and jobs added to it (default is 0)\n"
         return helpstring
@@ -102,8 +102,8 @@ def main(argv):
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         print "*********************************"
-        print "Welcome to v1.3 of the MCwrapper"
-        print "Thomas Britton 04/12/17"
+        print "Welcome to v1.3.1 of the MCwrapper"
+        print "Thomas Britton 04/14/17"
         print "*********************************"
 
 
@@ -267,7 +267,7 @@ def main(argv):
 			if flag[0]=="recon":
 				argfound=1
 				RECON=int(flag[1])
-			if flag[0]=="cleangenr8":
+			if flag[0]=="cleangenerate":
 				argfound=1
 				CLEANGENR=int(flag[1])
 			if flag[0]=="cleangeant":

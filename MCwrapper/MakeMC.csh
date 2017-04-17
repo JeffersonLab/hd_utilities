@@ -153,19 +153,36 @@ if ( ! -d "$OUTDIR/root/" ) then
     mkdir $OUTDIR/root/
 endif
 
+set gen_pre=""
+
 if ( "$GENR" != "0" ) then
-    if ( "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" ) then
+	set	gen_pre=`echo $GENERATOR | cut -c1-4`
+    if ( "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" ) then
 	echo "NO VALID GENERATOR GIVEN"
 	echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0] are supported"
 	exit
     endif
 
-    if ( -f $CONFIG_FILE ) then
-	    echo " input file found"
-	else
-	    echo $CONFIG_FILE" does not exist"
-	    exit
-    endif
+	if ( "$gen_pre" == "file" ) then
+		set gen_in_file=`echo $GENERATOR | sed -r 's/^.{5}//'`
+		echo "bypassing generation"
+		if ( -f $gen_in_file ) then
+			echo "using pre-generated file: "$gen_in_file
+			cp $gen_in_file ./$STANDARD_NAME.hddm
+		else
+			echo "cannot find file: "$gen_in_file
+			exit
+		endif
+				
+	else 
+		if ( -f $CONFIG_FILE ) then
+	    	echo "input file found"
+		else
+	    	echo $CONFIG_FILE" does not exist"
+	    	exit
+    	endif
+
+	endif
 
     if ( "$GENERATOR" == "genr8" ) then
 	echo "configuring genr8"
