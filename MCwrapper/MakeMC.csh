@@ -214,8 +214,9 @@ if ( "$GENR" != "0" ) then
 	cp $CONFIG_FILE ./$STANDARD_NAME.conf
     endif
 
+
 	if ( "$gen_pre" != "file" ) then
-    config_file_name=`basename "$CONFIG_FILE"`
+    set config_file_name=`basename "$CONFIG_FILE"`
     echo $config_file_name
     endif
     
@@ -422,7 +423,7 @@ endif
 
 if ( "$gen_pre" != "file" ) then
 mv $PWD/*.conf $OUTDIR/configurations/
-fi
-    mv $PWD/*.hddm $OUTDIR/hddm/
+endif
+mv $PWD/*.hddm $OUTDIR/hddm/
 #    mv $PWD/*.root $OUTDIR/root/ #just in case
 echo `date`
