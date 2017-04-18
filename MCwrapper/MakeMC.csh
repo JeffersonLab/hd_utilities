@@ -153,6 +153,29 @@ if ( ! -d "$OUTDIR/root/" ) then
     mkdir $OUTDIR/root/
 endif
 
+set bkglocstring=""
+if ( "$BKGFOLDSTR" == "DEFAULT" ) then
+		    #find file and run:1
+		    echo "Finding the right file to fold in during MCsmear step"
+		    set runperiod="RunPeriod-2017-01"
+
+		    if ( $RUN_NUMBER > 40000 ) then
+			echo
+			#set runperiod="RunPeriod-2017-10"
+		    endif
+
+		    if ( $RUN_NUMBER < 30000 ) then
+			echo "Warning: random triggers did not exist by this point"
+		    endif
+		    set bkglocstring="/cache/halld/""$runperiod""/sim/random_triggers/""run$formatted_runNumber""_random.hddm"
+		    #set bkglocstring="/w/halld-scifs1a/home/tbritton/converted.hddm"
+		    
+		    if ( ! -f $bkglocstring ) then
+			echo "Could not find mix-in file "$bkglocstring
+			exit
+		    endif
+endif
+
 set gen_pre=""
 
 if ( "$GENR" != "0" ) then
@@ -323,37 +346,15 @@ if ( "$GENR" != "0" ) then
 	    if ( "$BKGFOLDSTR" == "BeamPhotons" || "$BKGFOLDSTR" == "None" ) then
 		echo "running MCsmear without folding in random background"
 		mcsmear -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm'
-	    else
-		if ( "$BKGFOLDSTR" == "DEFAULT" ) then
-		    #find file and run:1
-		    echo "Finding the right file to fold in"
-		    set runperiod="RunPeriod-2017-01"
-
-		    if ( $RUN_NUMBER > 40000 ) then
-			echo
-			#set runperiod="RunPeriod-2017-10"
-		    endif
-
-		    if ( $RUN_NUMBER < 30000 ) then
-			echo "Warning: random triggers did not exist by this point"
-		    endif
-		    set bkglocstring="/cache/halld/""$runperiod""/sim/random_triggers/""run$formatted_runNumber""_random.hddm"
-		    #set bkglocstring="/w/halld-scifs1a/home/tbritton/converted.hddm"
-		    
-		    if ( ! -f $bkglocstring ) then
-			echo "Could not find mix-in file "$bkglocstring
-			exit
-		    else
+	    else if ( "$BKGFOLDSTR" == "DEFAULT" )
 			echo "mcsmear -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
 			mcsmear -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
-		    endif
-		    
 		else
 		    #trust the user and use their string
 		    echo 'mcsmear -o'$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm'' '$STANDARD_NAME'_geant'$GEANTVER'.hddm'' '$BKGFOLDSTR
 		    mcsmear -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm' $BKGFOLDSTR
 		endif
-	    endif
+	
 	    #run reconstruction
 	    if ( "$CLEANGENR" == "1" ) then
 		if ( "$GENERATOR" == "genr8" ) then
@@ -435,6 +436,10 @@ if ( "$gen_pre" != "file" ) then
 mv $PWD/*.conf $OUTDIR/configurations/
 endif
 
-mv $PWD/*.hddm $OUTDIR/hddm/
+set hddmfiles=`ls *.hddm`
+if ( $hddmfiles != "" ) then
+	mv $PWD/*.hddm $OUTDIR/hddm/
+endif
+
 #    mv $PWD/*.root $OUTDIR/root/ #just in case
 echo `date`
