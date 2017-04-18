@@ -436,7 +436,7 @@ if ( "$gen_pre" != "file" ) then
 mv $PWD/*.conf $OUTDIR/configurations/
 endif
 
-set hddmfiles=`ls *.hddm`
+set hddmfiles=`ls | grep .hddm`
 if ( $hddmfiles != "" ) then
 	mv $PWD/*.hddm $OUTDIR/hddm/
 endif
