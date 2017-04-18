@@ -369,25 +369,34 @@ if ( "$GENR" != "0" ) then
 	    endif
 	    
 	    if ( "$RECON" != "0" ) then
-		echo "RUNNING RECONSTRUCTION"
-		set pluginlist=("danarest" "monitoring_hists")
-	     
-		if ( "$CUSTOM_PLUGINS" != "None" ) then
-		    set pluginlist=( "$pluginlist" "$CUSTOM_PLUGINS" )
-		endif	
+			echo "RUNNING RECONSTRUCTION"
+		
+			set	recon_pre=`echo $CUSTOM_PLUGINS | cut -c1-4`
 
-		set PluginStr=""
+			if ( "$recon_pre" == "file" ) then
+				set jana_config_file=`echo $CUSTOM_PLUGINS | sed -r 's/^.{5}//'`
+				echo "using config file: "$jana_config_file
+				hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' --config=$jana_config_file -PNTHREADS=$NUMTHREADS
+			else
+				set pluginlist=("danarest" "monitoring_hists")
+	     
+				if ( "$CUSTOM_PLUGINS" != "None" ) then
+			    	set pluginlist=( "$pluginlist" "$CUSTOM_PLUGINS" )
+				endif	
+
+				set PluginStr=""
 	       
-		foreach plugin ($pluginlist)
-		set PluginStr="$PluginStr""$plugin"","
-		end
+				foreach plugin ($pluginlist)
+					set PluginStr="$PluginStr""$plugin"","
+				end
 		
-		set PluginStr=`echo $PluginStr | sed -r 's/.{1}$//'`
-		echo "Running hd_root with:""$PluginStr"
-		echo "hd_root ""$STANDARD_NAME"'_geant'"$GEANTVER"'_smeared.hddm'" -PPLUGINS=""$PluginStr ""-PNTHREADS=""$NUMTHREADS"
-		hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' -PPLUGINS=$PluginStr -PNTHREADS=$NUMTHREADS
-		mv dana_rest.hddm dana_rest_$STANDARD_NAME.hddm
-		
+				set PluginStr=`echo $PluginStr | sed -r 's/.{1}$//'`
+				echo "Running hd_root with:""$PluginStr"
+				echo "hd_root ""$STANDARD_NAME"'_geant'"$GEANTVER"'_smeared.hddm'" -PPLUGINS=""$PluginStr ""-PNTHREADS=""$NUMTHREADS"
+				hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' -PPLUGINS=$PluginStr -PNTHREADS=$NUMTHREADS
+				mv dana_rest.hddm dana_rest_$STANDARD_NAME.hddm
+		endif
+
 		if ( "$CLEANGEANT" == "1" ) then
 		    rm *_geant$GEANTVER.hddm
 		    rm control.in
@@ -424,6 +433,7 @@ endif
 if ( "$gen_pre" != "file" ) then
 mv $PWD/*.conf $OUTDIR/configurations/
 endif
+
 mv $PWD/*.hddm $OUTDIR/hddm/
 #    mv $PWD/*.root $OUTDIR/root/ #just in case
 echo `date`

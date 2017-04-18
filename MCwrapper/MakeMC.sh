@@ -369,26 +369,36 @@ if [[ "$GENR" != "0" ]]; then
 	    
 	    if [[ "$RECON" != "0" ]]; then
 		echo "RUNNING RECONSTRUCTION"
-		declare -a pluginlist=("danarest" "monitoring_hists")
-		echo ${pluginlist[@]}
-		echo $CUSTOM_PLUGINS
-                if [[ "$CUSTOM_PLUGINS" != "None" ]]; then
-                    pluginlist=("${pluginlist[@]}" $CUSTOM_PLUGINS)
-                fi
-		echo ${pluginlist[@]}
+		
+		recon_pre=`echo $CUSTOM_PLUGINS | cut -c1-4`
 
-		PluginStr=""
+		if [[ "$recon_pre" == "file" ]]; then
+			jana_config_file=`echo $CUSTOM_PLUGINS | sed -r 's/^.{5}//'`
+			echo "using config file: "$jana_config_file
+			hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' --config=$jana_config_file -PNTHREADS=$NUMTHREADS
+		else
 		
-                for plugin in "${pluginlist[@]}"; do
-                    PluginStr="$PluginStr""$plugin"","
-                done
+			declare -a pluginlist=("danarest" "monitoring_hists")
+			echo ${pluginlist[@]}
+			echo $CUSTOM_PLUGINS
+            if [[ "$CUSTOM_PLUGINS" != "None" ]]; then
+				pluginlist=("${pluginlist[@]}" $CUSTOM_PLUGINS)
+            fi
+			echo ${pluginlist[@]}
+
+			PluginStr=""
 		
-		PluginStr=`echo $PluginStr | sed -r 's/.{1}$//'`
-                echo "Running hd_root with:""$PluginStr"
-		echo "hd_root ""$STANDARD_NAME"'_geant'"$GEANTVER"'_smeared.hddm'" -PPLUGINS=""$PluginStr ""-PNTHREADS=""$NUMTHREADS"
-		hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' -PPLUGINS=$PluginStr -PNTHREADS=$NUMTHREADS
-		mv dana_rest.hddm dana_rest_$STANDARD_NAME.hddm
+            for plugin in "${pluginlist[@]}"; do
+				PluginStr="$PluginStr""$plugin"","
+            done
 		
+			PluginStr=`echo $PluginStr | sed -r 's/.{1}$//'`
+            echo "Running hd_root with:""$PluginStr"
+			echo "hd_root ""$STANDARD_NAME"'_geant'"$GEANTVER"'_smeared.hddm'" -PPLUGINS=""$PluginStr ""-PNTHREADS=""$NUMTHREADS"
+			hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' -PPLUGINS=$PluginStr -PNTHREADS=$NUMTHREADS
+			mv dana_rest.hddm dana_rest_$STANDARD_NAME.hddm
+		fi
+
 		if [[ "$CLEANGEANT" == "1" ]]; then
 		    rm *_geant$GEANTVER.hddm
 		    rm control.in
