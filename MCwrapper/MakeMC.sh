@@ -425,8 +425,8 @@ if [[ "$GENR" != "0" ]]; then
 		filename_root=`echo $rootfile | sed -r 's/.{5}$//'`
 		filetomv="$rootfile"
 		mv $filetomv $filename_root\_$STANDARD_NAME.root
-                done
 		mv $PWD/$filename_root\_$STANDARD_NAME.root $OUTDIR/root/
+        done
 	    fi
 	fi
     fi

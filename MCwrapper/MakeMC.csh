@@ -1,5 +1,5 @@
 #!/bin/csh -f
-
+    
 # SET INPUTS
 setenv ENVIRONMENT $1 
 shift
@@ -82,18 +82,18 @@ echo "detected c-shell"
 #necessary to run swif, uses local directory if swif=0 is used
 if ( "$MCSWIF" == "1" ) then
 # ENVIRONMENT
-echo $ENVIRONMENT
-source $ENVIRONMENT
-echo pwd=$PWD
-mkdir -p $OUTDIR
-mkdir -p $OUTDIR/log
+    echo $ENVIRONMENT
+    source $ENVIRONMENT
+    echo pwd=$PWD
+    mkdir -p $OUTDIR
+    mkdir -p $OUTDIR/log
 endif
 
 if ( "$CUSTOM_GCONTROL" == "0" ) then
-cp $MCWRAPPER_CENTRAL/Gcontrol.in ./temp_Gcontrol.in
-chmod 777 ./temp_Gcontrol.in
+    cp $MCWRAPPER_CENTRAL/Gcontrol.in ./temp_Gcontrol.in
+    chmod 777 ./temp_Gcontrol.in
 else
-cp $CUSTOM_GCONTROL/Gcontrol.in ./temp_Gcontrol.in
+    cp $CUSTOM_GCONTROL/Gcontrol.in ./temp_Gcontrol.in
 endif
 
 @ length_count=`echo $RUN_NUMBER | wc -c` - 1
@@ -395,7 +395,7 @@ if ( "$GENR" != "0" ) then
 				echo "hd_root ""$STANDARD_NAME"'_geant'"$GEANTVER"'_smeared.hddm'" -PPLUGINS=""$PluginStr ""-PNTHREADS=""$NUMTHREADS"
 				hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' -PPLUGINS=$PluginStr -PNTHREADS=$NUMTHREADS
 				mv dana_rest.hddm dana_rest_$STANDARD_NAME.hddm
-		endif
+			endif
 
 		if ( "$CLEANGEANT" == "1" ) then
 		    rm *_geant$GEANTVER.hddm
@@ -421,9 +421,10 @@ if ( "$GENR" != "0" ) then
 		foreach rootfile ($rootfiles)
 		    set filename_root=`echo $rootfile | sed -r 's/.{5}$//'`
 		    set filetomv="$rootfile"
-                    mv $filetomv $filename_root\_$STANDARD_NAME.root
-                end
-		mv $PWD/$filename_root\_$STANDARD_NAME.root $OUTDIR/root/
+            mv $filetomv $filename_root\_$STANDARD_NAME.root
+        	mv $PWD/$filename_root\_$STANDARD_NAME.root $OUTDIR/root/
+        end
+		
 
 	    endif
 	endif
