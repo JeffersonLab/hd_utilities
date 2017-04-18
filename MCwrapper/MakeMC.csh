@@ -1,5 +1,5 @@
 #!/bin/csh -f
-
+    
 # SET INPUTS
 setenv ENVIRONMENT $1 
 shift
@@ -82,18 +82,18 @@ echo "detected c-shell"
 #necessary to run swif, uses local directory if swif=0 is used
 if ( "$MCSWIF" == "1" ) then
 # ENVIRONMENT
-echo $ENVIRONMENT
-source $ENVIRONMENT
-echo pwd=$PWD
-mkdir -p $OUTDIR
-mkdir -p $OUTDIR/log
+    echo $ENVIRONMENT
+    source $ENVIRONMENT
+    echo pwd=$PWD
+    mkdir -p $OUTDIR
+    mkdir -p $OUTDIR/log
 endif
 
 if ( "$CUSTOM_GCONTROL" == "0" ) then
-cp $MCWRAPPER_CENTRAL/Gcontrol.in ./temp_Gcontrol.in
-chmod 777 ./temp_Gcontrol.in
+    cp $MCWRAPPER_CENTRAL/Gcontrol.in ./temp_Gcontrol.in
+    chmod 777 ./temp_Gcontrol.in
 else
-cp $CUSTOM_GCONTROL/Gcontrol.in ./temp_Gcontrol.in
+    cp $CUSTOM_GCONTROL/Gcontrol.in ./temp_Gcontrol.in
 endif
 
 @ length_count=`echo $RUN_NUMBER | wc -c` - 1
@@ -151,6 +151,29 @@ if ( ! -d "$OUTDIR/hddm/" ) then
 endif
 if ( ! -d "$OUTDIR/root/" ) then
     mkdir $OUTDIR/root/
+endif
+
+set bkglocstring=""
+if ( "$BKGFOLDSTR" == "DEFAULT" ) then
+		    #find file and run:1
+		    echo "Finding the right file to fold in during MCsmear step"
+		    set runperiod="RunPeriod-2017-01"
+
+		    if ( $RUN_NUMBER > 40000 ) then
+			echo
+			#set runperiod="RunPeriod-2017-10"
+		    endif
+
+		    if ( $RUN_NUMBER < 30000 ) then
+			echo "Warning: random triggers did not exist by this point"
+		    endif
+		    set bkglocstring="/cache/halld/""$runperiod""/sim/random_triggers/""run$formatted_runNumber""_random.hddm"
+		    #set bkglocstring="/w/halld-scifs1a/home/tbritton/converted.hddm"
+		    
+		    if ( ! -f $bkglocstring ) then
+			echo "Could not find mix-in file "$bkglocstring
+			exit
+		    endif
 endif
 
 set gen_pre=""
@@ -323,37 +346,15 @@ if ( "$GENR" != "0" ) then
 	    if ( "$BKGFOLDSTR" == "BeamPhotons" || "$BKGFOLDSTR" == "None" ) then
 		echo "running MCsmear without folding in random background"
 		mcsmear -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm'
-	    else
-		if ( "$BKGFOLDSTR" == "DEFAULT" ) then
-		    #find file and run:1
-		    echo "Finding the right file to fold in"
-		    set runperiod="RunPeriod-2017-01"
-
-		    if ( $RUN_NUMBER > 40000 ) then
-			echo
-			#set runperiod="RunPeriod-2017-10"
-		    endif
-
-		    if ( $RUN_NUMBER < 30000 ) then
-			echo "Warning: random triggers did not exist by this point"
-		    endif
-		    set bkglocstring="/cache/halld/""$runperiod""/sim/random_triggers/""run$formatted_runNumber""_random.hddm"
-		    #set bkglocstring="/w/halld-scifs1a/home/tbritton/converted.hddm"
-		    
-		    if ( ! -f $bkglocstring ) then
-			echo "Could not find mix-in file "$bkglocstring
-			exit
-		    else
+	    else if ( "$BKGFOLDSTR" == "DEFAULT" )
 			echo "mcsmear -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
 			mcsmear -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
-		    endif
-		    
 		else
 		    #trust the user and use their string
 		    echo 'mcsmear -o'$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm'' '$STANDARD_NAME'_geant'$GEANTVER'.hddm'' '$BKGFOLDSTR
 		    mcsmear -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm' $BKGFOLDSTR
 		endif
-	    endif
+	
 	    #run reconstruction
 	    if ( "$CLEANGENR" == "1" ) then
 		if ( "$GENERATOR" == "genr8" ) then
@@ -369,25 +370,34 @@ if ( "$GENR" != "0" ) then
 	    endif
 	    
 	    if ( "$RECON" != "0" ) then
-		echo "RUNNING RECONSTRUCTION"
-		set pluginlist=("danarest" "monitoring_hists")
-	     
-		if ( "$CUSTOM_PLUGINS" != "None" ) then
-		    set pluginlist=( "$pluginlist" "$CUSTOM_PLUGINS" )
-		endif	
+			echo "RUNNING RECONSTRUCTION"
+		
+			set	recon_pre=`echo $CUSTOM_PLUGINS | cut -c1-4`
 
-		set PluginStr=""
+			if ( "$recon_pre" == "file" ) then
+				set jana_config_file=`echo $CUSTOM_PLUGINS | sed -r 's/^.{5}//'`
+				echo "using config file: "$jana_config_file
+				hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' --config=$jana_config_file -PNTHREADS=$NUMTHREADS
+			else
+				set pluginlist=("danarest" "monitoring_hists")
+	     
+				if ( "$CUSTOM_PLUGINS" != "None" ) then
+			    	set pluginlist=( "$pluginlist" "$CUSTOM_PLUGINS" )
+				endif	
+
+				set PluginStr=""
 	       
-		foreach plugin ($pluginlist)
-		set PluginStr="$PluginStr""$plugin"","
-		end
+				foreach plugin ($pluginlist)
+					set PluginStr="$PluginStr""$plugin"","
+				end
 		
-		set PluginStr=`echo $PluginStr | sed -r 's/.{1}$//'`
-		echo "Running hd_root with:""$PluginStr"
-		echo "hd_root ""$STANDARD_NAME"'_geant'"$GEANTVER"'_smeared.hddm'" -PPLUGINS=""$PluginStr ""-PNTHREADS=""$NUMTHREADS"
-		hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' -PPLUGINS=$PluginStr -PNTHREADS=$NUMTHREADS
-		mv dana_rest.hddm dana_rest_$STANDARD_NAME.hddm
-		
+				set PluginStr=`echo $PluginStr | sed -r 's/.{1}$//'`
+				echo "Running hd_root with:""$PluginStr"
+				echo "hd_root ""$STANDARD_NAME"'_geant'"$GEANTVER"'_smeared.hddm'" -PPLUGINS=""$PluginStr ""-PNTHREADS=""$NUMTHREADS"
+				hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' -PPLUGINS=$PluginStr -PNTHREADS=$NUMTHREADS
+				mv dana_rest.hddm dana_rest_$STANDARD_NAME.hddm
+			endif
+
 		if ( "$CLEANGEANT" == "1" ) then
 		    rm *_geant$GEANTVER.hddm
 		    rm control.in
@@ -412,9 +422,10 @@ if ( "$GENR" != "0" ) then
 		foreach rootfile ($rootfiles)
 		    set filename_root=`echo $rootfile | sed -r 's/.{5}$//'`
 		    set filetomv="$rootfile"
-                    mv $filetomv $filename_root\_$STANDARD_NAME.root
-                end
-		mv $PWD/$filename_root\_$STANDARD_NAME.root $OUTDIR/root/
+            mv $filetomv $filename_root\_$STANDARD_NAME.root
+        	mv $PWD/$filename_root\_$STANDARD_NAME.root $OUTDIR/root/
+        end
+		
 
 	    endif
 	endif
@@ -424,6 +435,11 @@ endif
 if ( "$gen_pre" != "file" ) then
 mv $PWD/*.conf $OUTDIR/configurations/
 endif
-mv $PWD/*.hddm $OUTDIR/hddm/
+
+set hddmfiles=`ls | grep .hddm`
+if ( $hddmfiles != "" ) then
+	mv $PWD/*.hddm $OUTDIR/hddm/
+endif
+
 #    mv $PWD/*.root $OUTDIR/root/ #just in case
 echo `date`

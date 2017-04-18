@@ -153,6 +153,30 @@ if [[ ! -d "$OUTDIR/root/" ]]; then
     mkdir $OUTDIR/root/
 fi
 
+bkglocstring=""
+if [[ "$BKGFOLDSTR" == "DEFAULT" ]]; then
+		    #find file and run:1
+		    echo "Finding the right file to fold in during MCsmear step"
+		    runperiod="RunPeriod-2017-01"
+
+		    if [[ $RUN_NUMBER > 40000 ]]; then
+			echo
+			#set runperiod="RunPeriod-2017-10"
+		    fi
+
+		    if [[ $RUN_NUMBER < 30000 ]]; then
+			echo "Warning: random triggers did not exist by this point"
+		    fi
+
+		    bkglocstring="/cache/halld/""$runperiod""/sim/random_triggers/""run$formatted_runNumber""_random.hddm"
+		    #set bkglocstring="/w/halld-scifs1a/home/tbritton/converted.hddm"
+		    
+		    if [[ ! -f $bkglocstring ]]; then
+			echo "Could not find mix-in file "$bkglocstring
+			exit
+		    fi
+fi
+
 gen_pre=""
 
 if [[ "$GENR" != "0" ]]; then
@@ -322,36 +346,14 @@ if [[ "$GENR" != "0" ]]; then
 	    if [[ "$BKGFOLDSTR" == "BeamPhotons" || "$BKGFOLDSTR" == "None" ]]; then
 		echo "running MCsmear without folding in random background"
 		mcsmear -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm'
-	    else
-		if [[ "$BKGFOLDSTR" == "DEFAULT" ]]; then
-		    #find file and run:1
-		    echo "Finding the right file to fold in"
-		    runperiod="RunPeriod-2017-01"
-		    
-		    if [[ $RUN_NUMBER > 40000 ]]; then
-			echo
-			#runperiod="RunPeriod-2017-10"
-		    fi
-		    
-		    if [[ $RUN_NUMBER < 30000 ]]; then
-			echo "Warning: random triggers did not exist by this point"
-		    fi
-		    bkglocstring="/cache/halld/""$runperiod""/sim/random_triggers/""run$formatted_runNumber""_random.hddm"
-		    #bkglocstring="/w/halld-scifs1a/home/tbritton/converted.hddm"
-		    
-		    if [[ ! -f $bkglocstring ]]; then
-			echo "Could not find mix-in file "$bkglocstring
-			exit
-		    else
+	    elif [[ "$BKGFOLDSTR" == "DEFAULT" ]]; then
 			echo "mcsmear -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
 			mcsmear -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
-		    fi
-		    
 		else
 		    #trust the user and use their string
 		    echo 'mcsmear -o'$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm'' '$STANDARD_NAME'_geant'$GEANTVER'.hddm'' '$BKGFOLDSTR
 		    mcsmear -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm' $BKGFOLDSTR
-		fi
+
 	    fi
 	    #run reconstruction
 	    if [[ "$CLEANGENR" == "1" ]]; then
@@ -369,26 +371,36 @@ if [[ "$GENR" != "0" ]]; then
 	    
 	    if [[ "$RECON" != "0" ]]; then
 		echo "RUNNING RECONSTRUCTION"
-		declare -a pluginlist=("danarest" "monitoring_hists")
-		echo ${pluginlist[@]}
-		echo $CUSTOM_PLUGINS
-                if [[ "$CUSTOM_PLUGINS" != "None" ]]; then
-                    pluginlist=("${pluginlist[@]}" $CUSTOM_PLUGINS)
-                fi
-		echo ${pluginlist[@]}
+		
+		recon_pre=`echo $CUSTOM_PLUGINS | cut -c1-4`
 
-		PluginStr=""
+		if [[ "$recon_pre" == "file" ]]; then
+			jana_config_file=`echo $CUSTOM_PLUGINS | sed -r 's/^.{5}//'`
+			echo "using config file: "$jana_config_file
+			hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' --config=$jana_config_file -PNTHREADS=$NUMTHREADS
+		else
 		
-                for plugin in "${pluginlist[@]}"; do
-                    PluginStr="$PluginStr""$plugin"","
-                done
+			declare -a pluginlist=("danarest" "monitoring_hists")
+			echo ${pluginlist[@]}
+			echo $CUSTOM_PLUGINS
+            if [[ "$CUSTOM_PLUGINS" != "None" ]]; then
+				pluginlist=("${pluginlist[@]}" $CUSTOM_PLUGINS)
+            fi
+			echo ${pluginlist[@]}
+
+			PluginStr=""
 		
-		PluginStr=`echo $PluginStr | sed -r 's/.{1}$//'`
-                echo "Running hd_root with:""$PluginStr"
-		echo "hd_root ""$STANDARD_NAME"'_geant'"$GEANTVER"'_smeared.hddm'" -PPLUGINS=""$PluginStr ""-PNTHREADS=""$NUMTHREADS"
-		hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' -PPLUGINS=$PluginStr -PNTHREADS=$NUMTHREADS
-		mv dana_rest.hddm dana_rest_$STANDARD_NAME.hddm
+            for plugin in "${pluginlist[@]}"; do
+				PluginStr="$PluginStr""$plugin"","
+            done
 		
+			PluginStr=`echo $PluginStr | sed -r 's/.{1}$//'`
+            echo "Running hd_root with:""$PluginStr"
+			echo "hd_root ""$STANDARD_NAME"'_geant'"$GEANTVER"'_smeared.hddm'" -PPLUGINS=""$PluginStr ""-PNTHREADS=""$NUMTHREADS"
+			hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' -PPLUGINS=$PluginStr -PNTHREADS=$NUMTHREADS
+			mv dana_rest.hddm dana_rest_$STANDARD_NAME.hddm
+		fi
+
 		if [[ "$CLEANGEANT" == "1" ]]; then
 		    rm *_geant$GEANTVER.hddm
 		    rm control.in
@@ -415,14 +427,17 @@ if [[ "$GENR" != "0" ]]; then
 		filename_root=`echo $rootfile | sed -r 's/.{5}$//'`
 		filetomv="$rootfile"
 		mv $filetomv $filename_root\_$STANDARD_NAME.root
-                done
 		mv $PWD/$filename_root\_$STANDARD_NAME.root $OUTDIR/root/
+        done
 	    fi
 	fi
     fi
 fi
 if [[ "$gen_pre" != "file" ]]; then
-mv $PWD/*.conf $OUTDIR/configurations/
+	mv $PWD/*.conf $OUTDIR/configurations/
 fi
-mv $PWD/*.hddm $OUTDIR/hddm/
+hddmfiles=$(ls | grep .hddm)
+if [[ $hddmfiles != "" ]]; then
+	mv $PWD/*.hddm $OUTDIR/hddm/
+fi
 #mv $PWD/*.root $OUTDIR/root/ #just in case
