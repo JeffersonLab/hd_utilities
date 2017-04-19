@@ -19,6 +19,7 @@ c process the following 100 input events and stop.  If the end of the file is
 c reached before the event count specified in card TRIG is exhausted then the
 c processing will stop at the end of file.
 INFILE 'TEMPIN'
+SKIP TEMPSKIP
 TRIG TEMPTRIG
 RUNG TEMPRUNG
 

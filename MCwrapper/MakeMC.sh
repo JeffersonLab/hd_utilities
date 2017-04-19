@@ -54,6 +54,8 @@ shift
 export TAGSTR=$1
 shift
 export CUSTOM_PLUGINS=$1
+shift
+export PER_FILE=$1
 
 if [[ "$GEANTVER" == "3" ]]; then
     export NUMTHREADS=1
@@ -323,6 +325,13 @@ if [[ "$GENR" != "0" ]]; then
 	sed -i 's/TEMPOUT/'$STANDARD_NAME'_geant'$GEANTVER'.hddm/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	sed -i 's/TEMPTRIG/'$EVT_TO_GEN'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	sed -i 's/TEMPCOLD/'0.00$colsize'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+
+	if [[ "$gen_pre" == "file" ]]; then
+			skip_num=$((FILE_NUMBER * PER_FILE))
+            sed -i 's/TEMPSKIP/'$skip_num'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+        else
+	    sed -i 's/TEMPSKIP/'0'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+        fi
 	
 	if [[ "$BKGFOLDSTR" != "BeamPhotons" ]]; then
 	    echo "removing Beam Photon background from geant simulation"
@@ -404,8 +413,12 @@ if [[ "$GENR" != "0" ]]; then
             echo "Running hd_root with:""$PluginStr"
 			echo "hd_root ""$STANDARD_NAME"'_geant'"$GEANTVER"'_smeared.hddm'" -PPLUGINS=""$PluginStr ""-PNTHREADS=""$NUMTHREADS"
 			hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' -PPLUGINS=$PluginStr -PNTHREADS=$NUMTHREADS
-			mv dana_rest.hddm dana_rest_$STANDARD_NAME.hddm
 		fi
+
+		if [[ -f dana_rest.hddm ]]; then
+                    mv dana_rest.hddm dana_rest_$STANDARD_NAME.hddm
+                fi
+
 
 		if [[ "$CLEANGEANT" == "1" ]]; then
 		    rm *_geant$GEANTVER.hddm
@@ -430,11 +443,11 @@ if [[ "$GENR" != "0" ]]; then
 		rootfiles=$(ls *.root)
 		filename_root=""
 		for rootfile in $rootfiles; do
-		filename_root=`echo $rootfile | sed -r 's/.{5}$//'`
-		filetomv="$rootfile"
-		mv $filetomv $filename_root\_$STANDARD_NAME.root
-		mv $PWD/$filename_root\_$STANDARD_NAME.root $OUTDIR/root/
-        done
+		    filename_root=`echo $rootfile | sed -r 's/.{5}$//'`
+		    filetomv="$rootfile"
+		    mv $filetomv $filename_root\_$STANDARD_NAME.root
+		    mv $PWD/$filename_root\_$STANDARD_NAME.root $OUTDIR/root/
+		done
 	    fi
 	fi
     fi
@@ -443,7 +456,7 @@ if [[ "$gen_pre" != "file" ]]; then
 	mv $PWD/*.conf $OUTDIR/configurations/
 fi
 hddmfiles=$(ls | grep .hddm)
-if [[ $hddmfiles != "" ]]; then
+if [[ "$hddmfiles" != "" ]]; then
 	mv $PWD/*.hddm $OUTDIR/hddm/
 fi
 #mv $PWD/*.root $OUTDIR/root/ #just in case
