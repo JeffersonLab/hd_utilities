@@ -176,6 +176,14 @@ if ( "$BKGFOLDSTR" == "DEFAULT" ) then
 		    endif
 endif
 
+
+set recon_pre=`echo $CUSTOM_PLUGINS | cut -c1-4`
+set jana_config_file=`echo $CUSTOM_PLUGINS | sed -r 's/^.{5}//'`
+
+if ( -f $jana_config_file ) then
+cp $jana_config_file ./jana_config.cfg
+endif
+
 set gen_pre=""
 
 if ( "$GENR" != "0" ) then
@@ -372,12 +380,11 @@ if ( "$GENR" != "0" ) then
 	    if ( "$RECON" != "0" ) then
 			echo "RUNNING RECONSTRUCTION"
 		
-			set	recon_pre=`echo $CUSTOM_PLUGINS | cut -c1-4`
+
 
 			if ( "$recon_pre" == "file" ) then
-				set jana_config_file=`echo $CUSTOM_PLUGINS | sed -r 's/^.{5}//'`
 				echo "using config file: "$jana_config_file
-				hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' --config=$jana_config_file -PNTHREADS=$NUMTHREADS
+				    hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' --config=jana_config.cfg -PNTHREADS=$NUMTHREADS
 			else
 				set pluginlist=("danarest" "monitoring_hists")
 	     
