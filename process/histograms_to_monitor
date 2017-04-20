@@ -47,3 +47,6 @@ tofo1
 tofo2
 # RECONSTRUCTION
 NumGoodReconstructedParticles
+f1tdc_unlocked
+f1tdc_bad_output_fifo
+f1tdc_bad_hit_fifo

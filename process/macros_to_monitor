@@ -94,6 +94,7 @@
 # ANALYSIS
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/p2pi_hists/HistMacro_p2pi.C
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/p3pi_hists/HistMacro_p3pi.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/ppi0gamma_hists/HistMacro_ppi0gamma.C
 # OCCUPANCIES
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/occupancy_online/BCAL_occupancy.C
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/occupancy_online/FCAL_occupancy.C
