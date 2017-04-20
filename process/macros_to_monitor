@@ -113,3 +113,8 @@
 #/work/halld2/home/sdobbs/Software/sim-recon/sim-recon.git/src/plugins/monitoring/L1_online/l1_ancilary.C
 #/work/halld2/home/sdobbs/Software/sim-recon/sim-recon.git/src/plugins/monitoring/L1_online/l1_fcal_bcal.C
 #/work/halld2/home/sdobbs/Software/sim-recon/sim-recon.git/src/plugins/monitoring/L1_online/l1_rate.C
+# ALIGNMENT
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/TrackingPulls/PlotCDCStrawResiduals.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/TrackingPulls/PlotCathodeResidualsLocal.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/TrackingPulls/PlotWireResidualsLocal.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/p2pi_hists/HistMacro_p2pi_KinFitPullsVsPhi.C
