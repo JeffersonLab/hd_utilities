@@ -211,7 +211,7 @@ Save_HDDMSkims()
 	# SAVE HDDM SKIMS #assumes REST file already backed up and removed!
 	echo "Saving HDDM skim files"
 	for HDDM_FILE in `ls *.hddm`; do
-		Extract_SkimName $HDDM_FILE SKIM_NAME
+		Extract_BaseName $HDDM_FILE SKIM_NAME
 
 		# setup output dir
 		local OUTDIR_THIS=${OUTDIR_LARGE}/${SKIM_NAME}/${RUN_NUMBER}/
