@@ -150,6 +150,12 @@ fi
 if [[ ! -d "$OUTDIR/configurations/" ]]; then
     mkdir $OUTDIR/configurations/
 fi
+if [[ ! -d "$OUTDIR/configurations/generation/" ]]; then
+    mkdir $OUTDIR/configurations/generation/
+fi
+if [[ ! -d "$OUTDIR/configurations/geant/" ]]; then
+    mkdir $OUTDIR/configurations/geant/
+fi
 if [[ ! -d "$OUTDIR/hddm/" ]]; then
     mkdir $OUTDIR/hddm/
 fi
@@ -354,6 +360,7 @@ if [[ "$GENR" != "0" ]]; then
 	    sed -i 's/TEMPMINE/0.0012/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	fi
 	
+	cp $PWD/control'_'$formatted_runNumber'_'$formatted_fileNumber.in $OUTDIR/configurations/geant/
 	mv $PWD/control'_'$formatted_runNumber'_'$formatted_fileNumber.in $PWD/control.in
 	
 	if [[ "$GEANTVER" == "3" ]]; then
@@ -405,6 +412,7 @@ if [[ "$GENR" != "0" ]]; then
 		if [[ "$recon_pre" == "file" ]]; then
 			echo "using config file: "$jana_config_file
 			hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' --config=jana_config.cfg -PNTHREADS=$NUMTHREADS
+			rm jana_config.cfg
 		else
 		
 			declare -a pluginlist=("danarest" "monitoring_hists")
@@ -469,7 +477,7 @@ if [[ "$GENR" != "0" ]]; then
     fi
 fi
 if [[ "$gen_pre" != "file" ]]; then
-	mv $PWD/*.conf $OUTDIR/configurations/
+	mv $PWD/*.conf $OUTDIR/configurations/generation/
 fi
 hddmfiles=$(ls | grep .hddm)
 if [[ "$hddmfiles" != "" ]]; then
