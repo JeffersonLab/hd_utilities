@@ -91,6 +91,8 @@ if ( "$MCSWIF" == "1" ) then
     mkdir -p $OUTDIR/log
 endif
 
+set current_files=`find . -maxdepth 1 -type f`
+
 if ( "$CUSTOM_GCONTROL" == "0" ) then
     cp $MCWRAPPER_CENTRAL/Gcontrol.in ./temp_Gcontrol.in
     chmod 777 ./temp_Gcontrol.in
@@ -423,7 +425,7 @@ if ( "$GENR" != "0" ) then
 		endif
 
 		if ( "$CLEANGEANT" == "1" ) then
-		    rm *_geant$GEANTVER.hddm
+		    rm $STANDARD_NAME'_geant'$GEANTVER'.hddm'
 		    rm control.in
 		    rm -f geant.hbook
 		    rm -f hdgeant.rz
@@ -433,7 +435,7 @@ if ( "$GENR" != "0" ) then
 		endif
 		
 		if ( "$CLEANSMEAR" == "1" ) then
-		    rm *_smeared.hddm
+		    rm $STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm'
 		    rm smear.root
 		endif
 		
@@ -443,11 +445,16 @@ if ( "$GENR" != "0" ) then
 		
 		set rootfiles=`ls *.root`
 		set filename_root=""
+
 		foreach rootfile ($rootfiles)
-		    set filename_root=`echo $rootfile | sed -r 's/.{5}$//'`
-		    set filetomv="$rootfile"
-		    mv $filetomv $filename_root\_$STANDARD_NAME.root
-		    mv $PWD/$filename_root\_$STANDARD_NAME.root $OUTDIR/root/
+	    	set filename_root=`echo $rootfile | sed -r 's/.{5}$//'`
+			set filetomv="$rootfile"
+			set filecheck=`echo $current_files | grep -c $filetomv`
+			
+			if ( "$filecheck" == "0" ) then
+		    	mv $filetomv $filename_root\_$STANDARD_NAME.root
+		    	mv $PWD/$filename_root\_$STANDARD_NAME.root $OUTDIR/root/
+			endif
 		end
 		
 		
@@ -463,7 +470,13 @@ endif
 set hddmfiles=`ls | grep .hddm`
 
 if ( "$hddmfiles" != "" ) then
-    mv $PWD/*.hddm $OUTDIR/hddm/
+	foreach hddmfile ($hddmfiles)
+		set filetomv="$hddmfile" 
+		set filecheck=`echo $current_files | grep -c $filetomv`
+		if ( "$filecheck" == "0" ) then
+    		mv $hddmfile $OUTDIR/hddm/
+		endif
+	end
 endif
 
 #    mv $PWD/*.root $OUTDIR/root/ #just in case

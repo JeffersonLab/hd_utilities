@@ -103,7 +103,7 @@ def main(argv):
 
         print "*********************************"
         print "Welcome to v1.4 of the MCwrapper"
-        print "Thomas Britton 04/20/17"
+        print "Thomas Britton 04/21/17"
         print "*********************************"
 
 
@@ -357,4 +357,3 @@ def main(argv):
 
 if __name__ == "__main__":
    main(sys.argv[1:])
-

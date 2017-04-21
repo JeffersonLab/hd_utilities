@@ -90,6 +90,8 @@ if [[ "$MCSWIF" == "1" ]]; then
     mkdir -p $OUTDIR/log
 fi
 
+current_files=`find . -maxdepth 1 -type f`
+
 if [[ "$CUSTOM_GCONTROL" == "0" ]]; then
     cp $MCWRAPPER_CENTRAL/Gcontrol.in ./temp_Gcontrol.in
     chmod 777 ./temp_Gcontrol.in
@@ -431,7 +433,7 @@ if [[ "$GENR" != "0" ]]; then
 
 
 		if [[ "$CLEANGEANT" == "1" ]]; then
-		    rm *_geant$GEANTVER.hddm
+		    rm $STANDARD_NAME'_geant'$GEANTVER'.hddm'
 		    rm control.in
 		    rm -f geant.hbook
 		    rm -f hdgeant.rz
@@ -442,7 +444,7 @@ if [[ "$GENR" != "0" ]]; then
 		fi
 		
 		if [[ "$CLEANSMEAR" == "1" ]]; then
-		    rm *_smeared.hddm
+		    rm $STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm'
 		    rm smear.root
 		fi
 		
@@ -455,8 +457,12 @@ if [[ "$GENR" != "0" ]]; then
 		for rootfile in $rootfiles; do
 		    filename_root=`echo $rootfile | sed -r 's/.{5}$//'`
 		    filetomv="$rootfile"
-		    mv $filetomv $filename_root\_$STANDARD_NAME.root
-		    mv $PWD/$filename_root\_$STANDARD_NAME.root $OUTDIR/root/
+			filecheck=`echo $current_files | grep -c $filetomv`
+			
+			if [[ "$filecheck" == "0" ]]; then
+			    mv $filetomv $filename_root\_$STANDARD_NAME.root
+			    mv $PWD/$filename_root\_$STANDARD_NAME.root $OUTDIR/root/
+			fi
 		done
 	    fi
 	fi
@@ -467,6 +473,12 @@ if [[ "$gen_pre" != "file" ]]; then
 fi
 hddmfiles=$(ls | grep .hddm)
 if [[ "$hddmfiles" != "" ]]; then
-	mv $PWD/*.hddm $OUTDIR/hddm/
+	for hddmfile in $hddmfiles; do
+		filetomv="$hddmfile" 
+		filecheck=`echo $current_files | grep -c $filetomv`
+		if [[ "$filecheck" == "0" ]]; then
+    		mv $hddmfile $OUTDIR/hddm/
+		fi
+	done
 fi
 #mv $PWD/*.root $OUTDIR/root/ #just in case
