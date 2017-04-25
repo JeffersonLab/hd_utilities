@@ -96,7 +96,7 @@ if [[ "$CUSTOM_GCONTROL" == "0" ]]; then
     cp $MCWRAPPER_CENTRAL/Gcontrol.in ./temp_Gcontrol.in
     chmod 777 ./temp_Gcontrol.in
 else
-    cp $CUSTOM_GCONTROL/Gcontrol.in ./temp_Gcontrol.in
+    cp $CUSTOM_GCONTROL ./temp_Gcontrol.in
 fi
 
 length_count=$((`echo $RUN_NUMBER | wc -c` - 1))
