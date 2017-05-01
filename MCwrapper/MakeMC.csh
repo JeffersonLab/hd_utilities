@@ -267,12 +267,12 @@ if ( "$GENR" != "0" ) then
 	genr8 -r$formatted_runNumber -M$EVT_TO_GEN -A$STANDARD_NAME.ascii < $STANDARD_NAME.conf #$config_file_name
 	genr8_2_hddm $STANDARD_NAME.ascii
     else if ( "$GENERATOR" == "bggen" ) then
-	set RANDOM=$$
-	echo $RANDOM
+	set RANDOMnum=`bash -c 'echo $RANDOM'`
+	echo $RANDOMnum
 	sed -i 's/TEMPTRIG/'$EVT_TO_GEN'/' $STANDARD_NAME.conf
 	sed -i 's/TEMPRUNNO/'$RUN_NUMBER'/' $STANDARD_NAME.conf
 	sed -i 's/TEMPCOLD/'0.00$colsize'/' $STANDARD_NAME.conf
-	sed -i 's/TEMPRAND/'$RANDOM'/' $STANDARD_NAME.conf
+	sed -i 's/TEMPRAND/'$RANDOMnum'/' $STANDARD_NAME.conf
 	sed -i 's/TEMPELECE/'$eBEAM_ENERGY'/' $STANDARD_NAME.conf
 	sed -i 's/TEMPCOHERENT/'$COHERENT_PEAK'/' $STANDARD_NAME.conf
 	sed -i 's/TEMPMINGENE/'$GEN_MIN_ENERGY'/' $STANDARD_NAME.conf
@@ -292,10 +292,10 @@ if ( "$GENR" != "0" ) then
     else if ( "$GENERATOR" == "gen_2pi_amp" ) then
 	echo "RUNNING GEN_2PI_AMP" 
     set optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
-	set RANDOM=$$
+	set RANDOMnum=`bash -c 'echo $RANDOM'`
 	echo $optionals_line
-	echo gen_2pi_amp -c $STANDARD_NAME.conf -o $STANDARD_NAME.hddm -hd $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -s $RANDOM $optionals_line
-	gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -s $RANDOM $optionals_line
+	echo gen_2pi_amp -c $STANDARD_NAME.conf -o $STANDARD_NAME.hddm -hd $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -s $RANDOMnum $optionals_line
+	gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -s $RANDOMnum $optionals_line
 	else if ( "$GENERATOR" == "gen_omega_3pi" ) then
 	echo "RUNNING GEN_OMEGA_3PI" 
     set optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
