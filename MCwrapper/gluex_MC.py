@@ -102,8 +102,8 @@ def main(argv):
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         print "*********************************"
-        print "Welcome to v1.4.1 of the MCwrapper"
-        print "Thomas Britton 04/25/17"
+        print "Welcome to v1.4.2 of the MCwrapper"
+        print "Thomas Britton 05/01/17"
         print "*********************************"
 
 
@@ -290,9 +290,11 @@ def main(argv):
 
 	
         if str(GEANTVER)=="3":
+                print "!!!  Warning: Geant 3 detected! NumThreads has been set to 1"
+                print "!!!  This is done to ensure efficient use of resources while running and should provide faster job starts."
                 NCORES="1"
-
-
+                print ""
+                
         if DATA_OUTPUT_BASE_DIR == "UNKNOWN_LOCATION" and MCSWIF==1:
                 print "I doubt that SWIF will find "+DATA_OUTPUT_BASE_DIR+" so I am saving you the embarassment and stopping this"
                 return

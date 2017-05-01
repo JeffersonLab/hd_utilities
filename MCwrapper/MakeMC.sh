@@ -57,10 +57,6 @@ export CUSTOM_PLUGINS=$1
 shift
 export PER_FILE=$1
 
-if [[ "$GEANTVER" == "3" ]]; then
-    export NUMTHREADS=1
-fi
-
 # PRINT INPUTS
 echo "CONTEXT           = $JANA_CALIB_CONTEXT"
 echo "ENVIRONMENT       = $ENVIRONMENT"
@@ -301,19 +297,19 @@ if [[ "$GENR" != "0" ]]; then
 	echo "RUNNING GEN_2PI_AMP" 
         optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
 	echo $optionals_line
-	echo gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER  -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
+	echo gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
 	gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
 	elif [[ "$GENERATOR" == "gen_omega_3pi" ]]; then
 	echo "RUNNING GEN_OMEGA_3PI" 
         optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
 	echo $optionals_line
-	echo gen_omega_3pi -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER  -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
+	echo gen_omega_3pi -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
 	gen_omega_3pi -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_li
     elif [[ "$GENERATOR" == "gen_2pi_primakoff" ]]; then
 	echo "RUNNING GEN_2PI_PRIMAKOFF" 
         optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
 	echo $optionals_line
-	echo gen_2pi_primakoff -c $STANDARD_NAME.conf -o  $STANDARD_NAME.hddm -hd  $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER  -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
+	echo gen_2pi_primakoff -c $STANDARD_NAME.conf -o  $STANDARD_NAME.hddm -hd  $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
 	gen_2pi_primakoff -c $STANDARD_NAME.conf -hd  $STANDARD_NAME.hddm -o  $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
     elif [[ "$GENERATOR" == "gen_pi0" ]]; then
 	echo "RUNNING GEN_PI0" 
