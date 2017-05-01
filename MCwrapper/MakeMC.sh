@@ -295,10 +295,11 @@ if [[ "$GENR" != "0" ]]; then
 	genEtaRegge -N$EVT_TO_GEN -O$STANDARD_NAME.hddm -I$STANDARD_NAME.conf
     elif [[ "$GENERATOR" == "gen_2pi_amp" ]]; then
 	echo "RUNNING GEN_2PI_AMP" 
-        optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
+    optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
 	echo $optionals_line
-	echo gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
-	gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
+	RANDOM=$$
+	echo gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -s $RANDOM $optionals_line
+	gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -s $RANDOM $optionals_line
 	elif [[ "$GENERATOR" == "gen_omega_3pi" ]]; then
 	echo "RUNNING GEN_OMEGA_3PI" 
         optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
