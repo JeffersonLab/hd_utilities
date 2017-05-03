@@ -160,7 +160,8 @@ if [[ ! -d "$OUTDIR/root/" ]]; then
 fi
 
 bkglocstring=""
-if [[ "$BKGFOLDSTR" == "DEFAULT" ]]; then
+bkgloc_pre=`echo $BKGFOLDSTR | cut -c 1-4`
+if [[ "$BKGFOLDSTR" == "DEFAULT" || "$bkgloc_pre" == "loc:" ]]; then
 		    #find file and run:1
 		    echo "Finding the right file to fold in during MCsmear step"
 		    runperiod="RunPeriod-2017-01"
@@ -174,8 +175,13 @@ if [[ "$BKGFOLDSTR" == "DEFAULT" ]]; then
 			echo "Warning: random triggers did not exist by this point"
 		    fi
 
+			if [[ "$bkgloc_pre" == "loc:" ]]; then
+			rand_bkg_loc=`echo $BKGFOLDSTR | cut -c 5-`
+ 		   	bkglocstring=$rand_bkg_loc"/run$formatted_runNumber""_random.hddm"
+			else
 		    bkglocstring="/cache/halld/""$runperiod""/sim/random_triggers/""run$formatted_runNumber""_random.hddm"
-		    #set bkglocstring="/w/halld-scifs1a/home/tbritton/converted.hddm"
+		    fi
+			#set bkglocstring="/w/halld-scifs1a/home/tbritton/converted.hddm"
 		    
 		    if [[ ! -f $bkglocstring ]]; then
 			echo "Could not find mix-in file "$bkglocstring
@@ -381,8 +387,11 @@ if [[ "$GENR" != "0" ]]; then
 		echo "running MCsmear without folding in random background"
 		mcsmear -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm'
 	    elif [[ "$BKGFOLDSTR" == "DEFAULT" ]]; then
-			echo "mcsmear -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
-			mcsmear -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
+		echo "mcsmear -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
+		mcsmear -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
+		elif [[ "$bkgloc_pre" == "loc:" ]]; then
+		echo "mcsmear -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
+		mcsmear -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
 		else
 		    #trust the user and use their string
 		    echo 'mcsmear -o'$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm'' '$STANDARD_NAME'_geant'$GEANTVER'.hddm'' '$BKGFOLDSTR

@@ -160,7 +160,9 @@ if ( ! -d "$OUTDIR/root/" ) then
 endif
 
 set bkglocstring=""
-if ( "$BKGFOLDSTR" == "DEFAULT" ) then
+set bkgloc_pre=`echo $BKGFOLDSTR | cut -c 1-4`
+
+if ( "$BKGFOLDSTR" == "DEFAULT" || "$bkgloc_pre" == "loc:" ) then
    #find file and run:1
     echo "Finding the right file to fold in during MCsmear step"
     set runperiod="RunPeriod-2017-01"
@@ -173,9 +175,15 @@ if ( "$BKGFOLDSTR" == "DEFAULT" ) then
     if ( $RUN_NUMBER < 30000 ) then
 	echo "Warning: random triggers did not exist by this point"
     endif
+	
+	if ( "$bkgloc_pre" == "loc:" ) then
+	set rand_bkg_loc=`echo $BKGFOLDSTR | cut -c 5-`
+    set bkglocstring=$rand_bkg_loc"/run$formatted_runNumber""_random.hddm"
+	else
     set bkglocstring="/cache/halld/""$runperiod""/sim/random_triggers/""run$formatted_runNumber""_random.hddm"
     #set bkglocstring="/w/halld-scifs1a/home/tbritton/converted.hddm"
-		    
+	endif
+
     if ( ! -f $bkglocstring ) then
 	echo "Could not find mix-in file "$bkglocstring
 	exit
@@ -315,6 +323,9 @@ if ( "$GENR" != "0" ) then
 	gen_pi0 -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK  -s $formatted_fileNumber $optionals_line -m $eBEAM_ENERGY
     endif
 
+   set RETURN_CODE=$?
+   #echo "Return Code = " $RETURN_CODE
+
 #GEANT/smearing
 
     if ( "$GEANT" != "0" ) then
@@ -371,6 +382,8 @@ if ( "$GENR" != "0" ) then
 	    echo "INVALID GEANT VERSION"
 	    exit
 	endif
+	set RETURN_CODE=$?
+	#echo "Return Code = " $RETURN_CODE
 	
 	if ( "$SMEAR" != "0" ) then
 	    echo "RUNNING MCSMEAR"
@@ -379,6 +392,9 @@ if ( "$GENR" != "0" ) then
 		echo "running MCsmear without folding in random background"
 		mcsmear -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm'
 	    else if ( "$BKGFOLDSTR" == "DEFAULT" ) then
+		echo "mcsmear -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
+		mcsmear -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
+		else if ( "$bkgloc_pre" == "loc:" ) then
 		echo "mcsmear -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
 		mcsmear -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
 	    else
@@ -400,6 +416,9 @@ if ( "$GENR" != "0" ) then
 		rm $STANDARD_NAME.hddm
 	    endif
 	    
+	    set RETURN_CODE=$?
+	    #echo "Return Code = " $RETURN_CODE
+    
 	    if ( "$RECON" != "0" ) then
 		echo "RUNNING RECONSTRUCTION"
 		
@@ -425,7 +444,9 @@ if ( "$GENR" != "0" ) then
 		    hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' -PPLUGINS=$PluginStr -PNTHREADS=$NUMTHREADS
 		    
 		endif
-
+		
+		set RETURN_CODE=$?
+		#echo "Return Code = " $RETURN_CODE
 		if ( -f dana_rest.hddm ) then
 		    mv dana_rest.hddm dana_rest_$STANDARD_NAME.hddm
 		endif
