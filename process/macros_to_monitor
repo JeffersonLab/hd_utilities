@@ -117,4 +117,7 @@
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/TrackingPulls/PlotCDCStrawResiduals.C
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/TrackingPulls/PlotCathodeResidualsLocal.C
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/TrackingPulls/PlotWireResidualsLocal.C
-/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/p2pi_hists/HistMacro_p2pi_KinFitPullsVsPhi.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Calibration/CDC_TimeToDistance/HistMacro_CDCTimeToDistance.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/p2pi_hists/HistMacro_p2pi_KinFitPullsVsPhi_Proton.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/p2pi_hists/HistMacro_p2pi_KinFitPullsVsPhi_PiPlus.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/p2pi_hists/HistMacro_p2pi_KinFitPullsVsPhi_PiMinus.C
