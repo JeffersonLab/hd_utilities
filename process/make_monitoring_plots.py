@@ -325,7 +325,7 @@ if __name__ == "__main__":
     if len(args) < 1:
         parser.print_help()
     else:
-        plotter.rootfile_name = args[0]
+        plotter.rootfile_name = args[1]
 
         # do the heavy work
         plotter.MakePlots()
