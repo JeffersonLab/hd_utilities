@@ -59,6 +59,11 @@ def add_job(WORKFLOW, RUNNO, FILENO,SCRIPT,COMMAND, VERBOSE,PROJECT,TRACK,NCORES
 	if(VERBOSE == True):
 		print "job add command is \n" + str(add_command)
 
+        if(int(NCORES)==1 and int(RAM[:-2]) >= 10 and RAM[-2:]=="GB"):
+                print "SciComp has a limit on RAM requested per thread, as RAM is the limiting factor."
+                print "This will likely cause an AUGER-SUBMIT error."
+                print "Please either increase NCORES or decrease RAM requested and try again."
+                exit(1)
 	# ADD JOB
 	status = subprocess.call(add_command.split(" "))
 		
@@ -102,7 +107,7 @@ def main(argv):
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         print "*********************************"
-        print "Welcome to v1.5 of the MCwrapper"
+        print "Welcome to v1.5.1 of the MCwrapper"
         print "Thomas Britton 05/03/17"
         print "*********************************"
 
@@ -289,11 +294,11 @@ def main(argv):
 				print "WARNING OPTION: "+argu+" NOT FOUND!"
 
 	
-        if str(GEANTVER)=="3":
-                print "!!!  Warning: Geant 3 detected! NumThreads has been set to 1"
-                print "!!!  This is done to ensure efficient use of resources while running and should provide faster job starts."
-                NCORES="1"
-                print ""
+      #  if str(GEANTVER)=="3":
+      #          print "!!!  Warning: Geant 3 detected! NumThreads has been set to 1"
+      #          print "!!!  This is done to ensure efficient use of resources while running and should provide faster job starts."
+      #          NCORES="2"
+      #          print ""
                 
         if DATA_OUTPUT_BASE_DIR == "UNKNOWN_LOCATION" and MCSWIF==1:
                 print "I doubt that SWIF will find "+DATA_OUTPUT_BASE_DIR+" so I am saving you the embarassment and stopping this"
