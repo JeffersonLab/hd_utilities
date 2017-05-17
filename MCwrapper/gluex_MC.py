@@ -107,8 +107,8 @@ def main(argv):
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         print "*********************************"
-        print "Welcome to v1.5.1 of the MCwrapper"
-        print "Thomas Britton 05/03/17"
+        print "Welcome to v1.5.1p1 of the MCwrapper"
+        print "Thomas Britton 05/17/17"
         print "*********************************"
 
 
@@ -361,6 +361,10 @@ def main(argv):
 			os.system(str(indir)+" "+COMMAND)
 		else:
 			add_job(WORKFLOW, RUNNUM, FILENUM,str(indir),COMMAND,VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR)
-
+                        
+        
+        if MCSWIF == 1:
+                print "All Jobs created.  Please call \"swif run "+WORKFLOW+"\" to run"
+                
 if __name__ == "__main__":
    main(sys.argv[1:])
