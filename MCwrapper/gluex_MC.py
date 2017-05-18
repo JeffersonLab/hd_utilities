@@ -87,8 +87,9 @@ def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DA
         if(VERBOSE==True):
                 print add_command
 
-        mkdircom=DATA_OUTPUT_BASE_DIR+"/log/"
-        if add_command.find(';')!=-1 or add_command.find('&')!=-1 or mkdircom.find(';')!=-1 or mkdircom.find('&')!=-1:#THIS CHECK HELPS PROTEXT AGAINST A POTENTIAL HACK VIA CONFIG FILES
+        mkdircom="mkdir -p "+DATA_OUTPUT_BASE_DIR+"/log/"
+        mkdircom2="mkdir -p "+RUNNING_DIR
+        if add_command.find(';')!=-1 or add_command.find('&')!=-1 or mkdircom.find(';')!=-1 or mkdircom.find('&')!=-1 or mkdircom2.find(';')!=-1 or mkdircom2.find('&')!=-1:#THIS CHECK HELPS PROTEXT AGAINST A POTENTIAL HACK VIA CONFIG FILES
                 print "Nice try.....you cannot use ; or &"
                 exit(1)
 
@@ -96,7 +97,7 @@ def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DA
 #        output = subprocess.check_output(add_command.split(" "), stdin=ps.stdout)
 #        ps.wait()
                 #print output
-
+        status = subprocess.call(mkdircom2, shell=True)
         status = subprocess.call(mkdircom, shell=True)
         status = subprocess.call(add_command, shell=True)
 
