@@ -65,6 +65,9 @@ def add_job(WORKFLOW, RUNNO, FILENO,SCRIPT,COMMAND, VERBOSE,PROJECT,TRACK,NCORES
                 print "Please either increase NCORES or decrease RAM requested and try again."
                 exit(1)
 	# ADD JOB
+        if add_command.find(';')!=-1 or add_command.find('&')!=-1 :#THIS CHECK HELPS PROTEXT AGAINST A POTENTIAL HACK VIA CONFIG FILES
+                                print "Nice try.....you cannot use ; or &"
+                                exit(1)
 	status = subprocess.call(add_command.split(" "))
 		
 def showhelp():
@@ -79,7 +82,7 @@ def showhelp():
         helpstring+= " cleangeant=[0/1] where 0 means that the geant step will not be cleaned up after use (default is 1)\n"
         helpstring+= " cleanmcsmear=[0/1] where 0 means that the mcsmear step will not be cleaned up after use (default is 1)\n"
         helpstring+= " cleanrecon=[0/1] where 0 means that the reconstruction step will not run (default is 1)\n"
-        helpstring+= " swif=[0/1] where 1 means that a workflow will be created and jobs added to it (default is 0)\n"
+        helpstring+= " swif=[0/1/2] where 1 means that a workflow will be created and jobs added to it, 2 will do the same as 1 but also run the workflow (default is 0)\n"
         return helpstring
 
 ########################################################## MAIN ##########################################################
@@ -107,7 +110,7 @@ def main(argv):
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         print "*********************************"
-        print "Welcome to v1.5.1p1 of the MCwrapper"
+        print "Welcome to v1.5.2 of the MCwrapper"
         print "Thomas Britton 05/17/17"
         print "*********************************"
 
@@ -223,6 +226,9 @@ def main(argv):
                         GEANTVER=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="WORKFLOW_NAME" :
                         WORKFLOW=rm_comments[0].strip()
+                        if WORKFLOW.find(';')!=-1 or WORKFLOW.find('&')!=-1 :#THIS CHECK HELPS PROTEXT AGAINST A POTENTIAL HACK IN WORKFLOW NAMES
+                                print "Nice try.....you cannot use ; or & in the name"
+                                exit(1)
                 elif str(parts[0]).upper()=="GENERATOR_CONFIG" :
                         GENCONFIG=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="CUSTOM_MAKEMC" :
@@ -300,7 +306,7 @@ def main(argv):
       #          NCORES="2"
       #          print ""
                 
-        if DATA_OUTPUT_BASE_DIR == "UNKNOWN_LOCATION" and MCSWIF==1:
+        if DATA_OUTPUT_BASE_DIR == "UNKNOWN_LOCATION":
                 print "I doubt that SWIF will find "+DATA_OUTPUT_BASE_DIR+" so I am saving you the embarassment and stopping this"
                 return
 
@@ -308,7 +314,7 @@ def main(argv):
         CHANNEL = name_breakdown[len(name_breakdown)-1].split(".")[0]
 
 	#print a line indicating SWIF or Local run
-	if MCSWIF != 1:
+	if MCSWIF == 0:
 		print "Locally simulating "+args[2]+" "+CHANNEL+" Events"
 	else:
 		print "Creating "+WORKFLOW+" to simulate "+args[2]+" "+CHANNEL+" Events"
@@ -365,6 +371,9 @@ def main(argv):
         
         if MCSWIF == 1:
                 print "All Jobs created.  Please call \"swif run "+WORKFLOW+"\" to run"
+        elif MCSWIF == 2:
+                swifrun = "swif run "+WORKFLOW
+                subprocess.call(swifrun.split(" "))
                 
 if __name__ == "__main__":
    main(sys.argv[1:])

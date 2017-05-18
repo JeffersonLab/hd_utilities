@@ -78,7 +78,7 @@ echo "detected c-shell"
 
 #printenv
 #necessary to run swif, uses local directory if swif=0 is used
-if ( "$MCSWIF" == "1" ) then
+if ( "$MCSWIF" != "0" ) then
 # ENVIRONMENT
     echo $ENVIRONMENT
     source $ENVIRONMENT
