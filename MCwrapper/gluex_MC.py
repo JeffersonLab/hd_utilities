@@ -78,7 +78,12 @@ def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DA
         add_command = "echo \'"+indir + " "+COMMAND+"\'"
         add_command += " | qsub "
         bits=NCORES.split(":")
-        add_command +="-l nodes="+bits[0]+":"+bits[1]+":ppn="+bits[2]+" -l walltime="
+        if (len(bits)==3):
+                add_command +="-l nodes="+bits[0]+":"+bits[1]+":ppn="+bits[2]
+        elif (len(bits==2)):
+                add_command +="-l nodes="+bits[0]+":ppn="+bits[1]
+
+        add_command += " -l walltime="
         add_command +=TIMELIMIT+" -o "
         add_command += DATA_OUTPUT_BASE_DIR+"/log/"+JOBNAME+".out -e "
         add_command += DATA_OUTPUT_BASE_DIR+"/log/"+JOBNAME+".err "
