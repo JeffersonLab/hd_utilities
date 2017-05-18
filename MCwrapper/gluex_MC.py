@@ -75,8 +75,8 @@ def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DA
         STUBNAME = str(RUNNUM) + "_" + str(FILENUM)
 	JOBNAME = WORKFLOW + "_" + STUBNAME
 
-        add_command = "echo '"+indir + " "+COMMAND+"'"
-        add_command += " | qsub "
+        add_commands = "echo '"+indir + " "+COMMAND+"'"
+        add_command = " qsub "
         bits=NCORES.split(":")
         add_command +="-l nodes="+bits[0]+":"+bits[1]+":ppn="+bits[2]+" -l walltime="
         add_command +=TIMELIMIT+" -o "
@@ -91,7 +91,12 @@ def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DA
         if add_command.find(';')!=-1 or add_command.find('&')!=-1 :#THIS CHECK HELPS PROTEXT AGAINST A POTENTIAL HACK VIA CONFIG FILES
                 print "Nice try.....you cannot use ; or &"
                 exit(1)
-	status = subprocess.call(add_command.split(" "), shell=True)
+
+        ps = subprocess.Popen(('echo',indir+" "+COMMAND ), stdout=subprocess.PIPE)
+        output = subprocess.check_output(add_command.split(" "), stdin=ps.stdout)
+        ps.wait()
+                #print output
+	#status = subprocess.call(add_command.split(" "), shell=True)
 
 
 def showhelp():
