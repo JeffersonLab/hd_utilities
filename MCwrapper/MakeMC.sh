@@ -31,7 +31,9 @@ export CLEANSMEAR=$1
 shift
 export CLEANRECON=$1
 shift
-export MCSWIF=$1
+export BATCHSYS=$1
+shift
+export BATCHRUN=$1
 shift
 export NUMTHREADS=$1
 shift
@@ -77,7 +79,7 @@ echo "detected bash"
 
 #printenv
 #necessary to run swif, uses local directory if swif=0 is used
-if [[ "$MCSWIF" != "0" ]]; then
+if [[ "$BATCHRUN" != "0" ]]; then
     # ENVIRONMENT
     echo $ENVIRONMENT
     source $ENVIRONMENT
