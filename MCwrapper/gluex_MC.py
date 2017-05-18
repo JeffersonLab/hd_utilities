@@ -70,7 +70,7 @@ def swif_add_job(WORKFLOW, RUNNO, FILENO,SCRIPT,COMMAND, VERBOSE,PROJECT,TRACK,N
                 exit(1)
 	status = subprocess.call(add_command.split(" "))
 
-def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT ):
+def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR ):
         #name
         STUBNAME = str(RUNNUM) + "_" + str(FILENUM)
 	JOBNAME = WORKFLOW + "_" + STUBNAME
@@ -81,14 +81,14 @@ def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DA
         add_command +="-l nodes="+bits[0]+":"+bits[1]+":ppn="+bits[2]+" -l walltime="
         add_command +=TIMELIMIT+" -o "
         add_command += DATA_OUTPUT_BASE_DIR+"/log/"+JOBNAME+".out -e "
-        add_command += DATA_OUTPUT_BASE_DIR+"/log/"+JOBNAME+".err"
-        
+        add_command += DATA_OUTPUT_BASE_DIR+"/log/"+JOBNAME+".err "
+        add_command += "-d "+RUNNING_DIR
 
         if(VERBOSE==True):
                 print add_command
 
-
-        if add_command.find(';')!=-1 or add_command.find('&')!=-1 :#THIS CHECK HELPS PROTEXT AGAINST A POTENTIAL HACK VIA CONFIG FILES
+        mkdircom=DATA_OUTPUT_BASE_DIR+"/log/"
+        if add_command.find(';')!=-1 or add_command.find('&')!=-1 or mkdircom.find(';')!=-1 or mkdircom.find('&')!=-1:#THIS CHECK HELPS PROTEXT AGAINST A POTENTIAL HACK VIA CONFIG FILES
                 print "Nice try.....you cannot use ; or &"
                 exit(1)
 
@@ -96,6 +96,8 @@ def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DA
 #        output = subprocess.check_output(add_command.split(" "), stdin=ps.stdout)
 #        ps.wait()
                 #print output
+
+        status = subprocess.call(mkdircom, shell=True)
         status = subprocess.call(add_command, shell=True)
 
 
@@ -139,7 +141,7 @@ def main(argv):
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         print "*********************************"
-        print "Welcome to v1.5.2 of the MCwrapper"
+        print "Welcome to v1.6 of the MCwrapper"
         print "Thomas Britton 05/18/17"
         print "*********************************"
 
@@ -160,7 +162,7 @@ def main(argv):
         COHERENT_PEAK="9"
         MIN_GEN_ENERGY="4"
         MAX_GEN_ENERGY="12"
-        
+        RUNNING_DIR="./"
 
         GEANTVER = 4        
         BGFOLD="DEFAULT"
@@ -281,6 +283,8 @@ def main(argv):
                         CUSTOM_PLUGINS=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="BATCH_SYS" :
                         BATCHSYS=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="RUNNING_DIRECTORY" :
+                        RUNNING_DIR=rm_comments[0].strip()
                 else:
                         print "unknown config parameter!! "+str(parts[0])
 	#loop over command line arguments 
@@ -399,7 +403,7 @@ def main(argv):
                         if BATCHSYS.upper()=="SWIF":
                         	swif_add_job(WORKFLOW, RUNNUM, FILENUM,str(indir),COMMAND,VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR)
                         elif BATCHSYS.upper()=="QSUB":
-                                qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT )
+                                qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR )
 
         
         if BATCHRUN == 1 and BATCHSYS.upper() == "SWIF":
