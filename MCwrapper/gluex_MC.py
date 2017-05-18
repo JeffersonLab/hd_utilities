@@ -91,7 +91,7 @@ def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DA
         if add_command.find(';')!=-1 or add_command.find('&')!=-1 :#THIS CHECK HELPS PROTEXT AGAINST A POTENTIAL HACK VIA CONFIG FILES
                 print "Nice try.....you cannot use ; or &"
                 exit(1)
-	status = subprocess.call(add_command.split(" "))
+	status = subprocess.call("echo "+add_command.split(" "))
 
 
 def showhelp():
