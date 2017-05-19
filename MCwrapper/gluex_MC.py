@@ -30,7 +30,7 @@ import subprocess
 from subprocess import call
 import glob
 
-def add_job(WORKFLOW, RUNNO, FILENO,SCRIPT,COMMAND, VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR):
+def swif_add_job(WORKFLOW, RUNNO, FILENO,SCRIPT,COMMAND, VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR):
 
         
 	# PREPARE NAMES
@@ -66,10 +66,48 @@ def add_job(WORKFLOW, RUNNO, FILENO,SCRIPT,COMMAND, VERBOSE,PROJECT,TRACK,NCORES
                 exit(1)
 	# ADD JOB
         if add_command.find(';')!=-1 or add_command.find('&')!=-1 :#THIS CHECK HELPS PROTEXT AGAINST A POTENTIAL HACK VIA CONFIG FILES
-                                print "Nice try.....you cannot use ; or &"
-                                exit(1)
+                print "Nice try.....you cannot use ; or &"
+                exit(1)
 	status = subprocess.call(add_command.split(" "))
-		
+
+def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR ):
+        #name
+        STUBNAME = str(RUNNUM) + "_" + str(FILENUM)
+	JOBNAME = WORKFLOW + "_" + STUBNAME
+
+        add_command = "echo \'"+indir + " "+COMMAND+"\'"
+        add_command += " | qsub "
+        bits=NCORES.split(":")
+        if (len(bits)==3):
+                add_command +="-l nodes="+bits[0]+":"+bits[1]+":ppn="+bits[2]
+        elif (len(bits)==2):
+                add_command +="-l nodes="+bits[0]+":ppn="+bits[1]
+
+        add_command += " -l walltime="
+        add_command +=TIMELIMIT+" -o "
+        add_command += DATA_OUTPUT_BASE_DIR+"/log/"+JOBNAME+".out -e "
+        add_command += DATA_OUTPUT_BASE_DIR+"/log/"+JOBNAME+".err "
+        add_command += "-d "+RUNNING_DIR
+        add_command += " -N "+JOBNAME
+
+        if(VERBOSE==True):
+                print add_command
+
+        mkdircom="mkdir -p "+DATA_OUTPUT_BASE_DIR+"/log/"
+        mkdircom2="mkdir -p "+RUNNING_DIR
+        if add_command.find(';')!=-1 or add_command.find('&')!=-1 or mkdircom.find(';')!=-1 or mkdircom.find('&')!=-1 or mkdircom2.find(';')!=-1 or mkdircom2.find('&')!=-1:#THIS CHECK HELPS PROTEXT AGAINST A POTENTIAL HACK VIA CONFIG FILES
+                print "Nice try.....you cannot use ; or &"
+                exit(1)
+
+#        ps = subprocess.Popen(('echo',indir+" "+COMMAND ), stdout=subprocess.PIPE)
+#        output = subprocess.check_output(add_command.split(" "), stdin=ps.stdout)
+#        ps.wait()
+                #print output
+        status = subprocess.call(mkdircom2, shell=True)
+        status = subprocess.call(mkdircom, shell=True)
+        status = subprocess.call(add_command, shell=True)
+
+
 def showhelp():
         helpstring= "variation=%s where %s is a valid jana_calib_context variation string (default is \"mc\")\n"
         helpstring+= " per_file=%i where %i is the number of events you want per file/job (default is 10000)\n"
@@ -82,7 +120,7 @@ def showhelp():
         helpstring+= " cleangeant=[0/1] where 0 means that the geant step will not be cleaned up after use (default is 1)\n"
         helpstring+= " cleanmcsmear=[0/1] where 0 means that the mcsmear step will not be cleaned up after use (default is 1)\n"
         helpstring+= " cleanrecon=[0/1] where 0 means that the reconstruction step will not run (default is 1)\n"
-        helpstring+= " swif=[0/1/2] where 1 means that a workflow will be created and jobs added to it, 2 will do the same as 1 but also run the workflow (default is 0)\n"
+        helpstring+= " batch=[0/1/2] where 1 means that jobs will be submitted, 2 will do the same as 1 but also run the workflow in the case of swif(default is 0)\n"
         return helpstring
 
 ########################################################## MAIN ##########################################################
@@ -110,8 +148,8 @@ def main(argv):
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         print "*********************************"
-        print "Welcome to v1.5.2 of the MCwrapper"
-        print "Thomas Britton 05/17/17"
+        print "Welcome to v1.6 of the MCwrapper"
+        print "Thomas Britton 05/18/17"
         print "*********************************"
 
 
@@ -131,7 +169,7 @@ def main(argv):
         COHERENT_PEAK="9"
         MIN_GEN_ENERGY="4"
         MAX_GEN_ENERGY="12"
-        
+        RUNNING_DIR="./"
 
         GEANTVER = 4        
         BGFOLD="DEFAULT"
@@ -142,6 +180,7 @@ def main(argv):
         CUSTOM_GCONTROL="0"
         CUSTOM_PLUGINS="None"
 
+        BATCHSYS="NULL"
         #-------SWIF ONLY-------------
         # PROJECT INFO
         PROJECT    = "gluex"          # http://scicomp.jlab.org/scicomp/#/projects
@@ -165,7 +204,7 @@ def main(argv):
 	CLEANGEANT=1
 	CLEANSMEAR=1
 	CLEANRECON=0
-        MCSWIF=0
+        BATCHRUN=0
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         #loop over config file and set the "parameters"
         f = open(CONFIG_FILE,"r")
@@ -191,7 +230,7 @@ def main(argv):
                         
                 rm_comments=[]
                 if len(parts)>1:
-                        rm_comments=parts[1].split("#")
+                        rm_comments=parts[len(parts)-1].split("#")
                         
                 j=-1
                 for i in parts:
@@ -249,6 +288,10 @@ def main(argv):
                         TAGSTR=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="CUSTOM_PLUGINS" :
                         CUSTOM_PLUGINS=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="BATCH_SYS" :
+                        BATCHSYS=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="RUNNING_DIRECTORY" :
+                        RUNNING_DIR=rm_comments[0].strip()
                 else:
                         print "unknown config parameter!! "+str(parts[0])
 	#loop over command line arguments 
@@ -290,9 +333,9 @@ def main(argv):
 			if flag[0]=="cleanrecon":
 				argfound=1
 				CLEANRECON=int(flag[1])
-			if flag[0]=="swif":
+			if flag[0]=="batch":
 				argfound=1
-				MCSWIF=int(flag[1])
+				BATCHRUN=int(flag[1])
 			if flag[0]=="numthreads":
 				argfound=1
 				NCORES=str(flag[1])
@@ -314,11 +357,13 @@ def main(argv):
         CHANNEL = name_breakdown[len(name_breakdown)-1].split(".")[0]
 
 	#print a line indicating SWIF or Local run
-	if MCSWIF == 0:
+	if BATCHRUN == 0 or BATCHSYS=="NULL":
 		print "Locally simulating "+args[2]+" "+CHANNEL+" Events"
 	else:
 		print "Creating "+WORKFLOW+" to simulate "+args[2]+" "+CHANNEL+" Events"
 	# CREATE WORKFLOW
+       
+        if (BATCHSYS.upper() =="SWIF" and int(BATCHRUN) != 0):
 		status = subprocess.call(["swif", "create", "-workflow", WORKFLOW])
 
 	#calculate files needed to gen
@@ -335,8 +380,6 @@ def main(argv):
 
         if len(CUSTOM_MAKEMC)!= 0 and CUSTOM_MAKEMC != "DEFAULT":
                 indir=CUSTOM_MAKEMC
-
-        
 
         if str(indir) == "None":
                 print "MCWRAPPER_CENTRAL not set"
@@ -358,20 +401,22 @@ def main(argv):
 		if num == 0:
 			continue
                 
-		COMMAND=ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(RUNNUM)+" "+str(FILENUM-1)+" "+str(num)+" "+str(VERSION)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(MCSWIF)+" "+str(NCORES)+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)
-
+		COMMAND=ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(RUNNUM)+" "+str(FILENUM-1)+" "+str(num)+" "+str(VERSION)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHRUN)+" "+str(BATCHRUN)+" "+str(NCORES).strip()[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)
                
 		#print COMMAND
 		#either call MakeMC.csh or add a job depending on swif flag
-                if MCSWIF == 0:
+                if BATCHRUN == 0 or BATCHSYS=="NULL":
 			os.system(str(indir)+" "+COMMAND)
 		else:
-			add_job(WORKFLOW, RUNNUM, FILENUM,str(indir),COMMAND,VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR)
-                        
+                        if BATCHSYS.upper()=="SWIF":
+                        	swif_add_job(WORKFLOW, RUNNUM, FILENUM,str(indir),COMMAND,VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR)
+                        elif BATCHSYS.upper()=="QSUB":
+                                qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR )
+
         
-        if MCSWIF == 1:
+        if BATCHRUN == 1 and BATCHSYS.upper() == "SWIF":
                 print "All Jobs created.  Please call \"swif run "+WORKFLOW+"\" to run"
-        elif MCSWIF == 2:
+        elif BATCHRUN == 2 and BATCHSYS.upper()=="SWIF":
                 swifrun = "swif run "+WORKFLOW
                 subprocess.call(swifrun.split(" "))
                 

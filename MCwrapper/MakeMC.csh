@@ -31,7 +31,9 @@ setenv CLEANSMEAR $1
 shift
 setenv CLEANRECON $1
 shift
-setenv MCSWIF $1
+setenv BATCHSYS $1
+shift
+setenv BATCHRUN $1
 shift
 setenv NUMTHREADS $1
 shift
@@ -76,12 +78,11 @@ echo "Recon             = $RECON   $CLEANRECON"
 
 echo "detected c-shell"
 
-#printenv
 #necessary to run swif, uses local directory if swif=0 is used
-if ( "$MCSWIF" != "0" ) then
+if ( "$BATCHRUN" != "0" ) then
 # ENVIRONMENT
     echo $ENVIRONMENT
-    source $ENVIRONMENT
+    #source $ENVIRONMENT
     echo pwd=$PWD
     mkdir -p $OUTDIR
     mkdir -p $OUTDIR/log
