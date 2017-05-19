@@ -301,10 +301,10 @@ if ( "$GENR" != "0" ) then
     else if ( "$GENERATOR" == "gen_2pi_amp" ) then
 	echo "RUNNING GEN_2PI_AMP" 
     set optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
-	set RANDOMnum=`bash -c 'echo $RANDOM'`
+	#set RANDOMnum=`bash -c 'echo $RANDOM'`
 	echo $optionals_line
-	echo gen_2pi_amp -c $STANDARD_NAME.conf -o $STANDARD_NAME.hddm -hd $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -s $RANDOMnum $optionals_line
-	gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -s $RANDOMnum $optionals_line
+	echo gen_2pi_amp -c $STANDARD_NAME.conf -o $STANDARD_NAME.hddm -hd $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
+	gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
 	else if ( "$GENERATOR" == "gen_omega_3pi" ) then
 	echo "RUNNING GEN_OMEGA_3PI" 
     set optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
