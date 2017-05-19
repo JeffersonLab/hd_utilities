@@ -59,7 +59,7 @@ def swif_add_job(WORKFLOW, RUNNO, FILENO,SCRIPT,COMMAND, VERBOSE,PROJECT,TRACK,N
 	if(VERBOSE == True):
 		print "job add command is \n" + str(add_command)
 
-        if(int(NCORES)==1 and int(RAM[:-2]) >= 10 and RAM[-2:]=="GB"):
+        if(int(NCORES)==1 and int(RAM[:-2]) >= 10 and RAM[-2:]=="GB" ):
                 print "SciComp has a limit on RAM requested per thread, as RAM is the limiting factor."
                 print "This will likely cause an AUGER-SUBMIT error."
                 print "Please either increase NCORES or decrease RAM requested and try again."
@@ -149,7 +149,7 @@ def main(argv):
 
         print "*********************************"
         print "Welcome to v1.6 of the MCwrapper"
-        print "Thomas Britton 05/18/17"
+        print "Thomas Britton 05/19/17"
         print "*********************************"
 
 
