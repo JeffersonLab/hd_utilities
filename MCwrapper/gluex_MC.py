@@ -88,6 +88,7 @@ def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DA
         add_command += DATA_OUTPUT_BASE_DIR+"/log/"+JOBNAME+".out -e "
         add_command += DATA_OUTPUT_BASE_DIR+"/log/"+JOBNAME+".err "
         add_command += "-d "+RUNNING_DIR
+        add_command += " -N "+JOBNAME
 
         if(VERBOSE==True):
                 print add_command
