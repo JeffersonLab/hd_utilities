@@ -361,7 +361,8 @@ def main(argv):
 	else:
 		print "Creating "+WORKFLOW+" to simulate "+args[2]+" "+CHANNEL+" Events"
 	# CREATE WORKFLOW
-        if (BATCHSYS.upper=="SWIF" and BATCHRUN != 0):
+       
+        if (BATCHSYS.upper() =="SWIF" and int(BATCHRUN) != 0):
 		status = subprocess.call(["swif", "create", "-workflow", WORKFLOW])
 
 	#calculate files needed to gen
