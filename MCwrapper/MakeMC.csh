@@ -78,13 +78,11 @@ echo "Recon             = $RECON   $CLEANRECON"
 
 echo "detected c-shell"
 
-printenv >>! $OUTDIR/configurations/environment_used.env
-
 #necessary to run swif, uses local directory if swif=0 is used
 if ( "$BATCHRUN" != "0" ) then
 # ENVIRONMENT
     echo $ENVIRONMENT
-    source $ENVIRONMENT
+    #source $ENVIRONMENT
     echo pwd=$PWD
     mkdir -p $OUTDIR
     mkdir -p $OUTDIR/log
