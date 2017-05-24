@@ -107,6 +107,30 @@ def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DA
         status = subprocess.call(mkdircom, shell=True)
         status = subprocess.call(add_command, shell=True)
 
+def  condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR ):
+        STUBNAME = str(RUNNUM) + "_" + str(FILENUM)
+	JOBNAME = WORKFLOW + "_" + STUBNAME
+
+        mkdircom="mkdir -p "+DATA_OUTPUT_BASE_DIR+"/log/"
+
+        f=open('MCcondor.submit','w')
+        f.write("Executable = "+indir+"\n") 
+        f.write("Arguments  = "+COMMAND+"\n")
+        f.write("Error      = "+DATA_OUTPUT_BASE_DIR+"/log/"+"error_"+JOBNAME+".log\n")
+        f.write("Log      = "+DATA_OUTPUT_BASE_DIR+"/log/"+"out_"+JOBNAME+".log\n")
+        f.write("RequestCpus = "+NCORES+"\n")
+        f.write("Queue 1\n")
+        f.close()
+
+        add_command="condor_submit -name "+JOBNAME+" MCcondor.submit"
+        if add_command.find(';')!=-1 or add_command.find('&')!=-1 or mkdircom.find(';')!=-1 or mkdircom.find('&')!=-1:#THIS CHECK HELPS PROTEXT AGAINST A POTENTIAL HACK VIA CONFIG FILES
+                print "Nice try.....you cannot use ; or &"
+                exit(1)
+
+        status = subprocess.call(mkdircom, shell=True)
+        status = subprocess.call(add_command, shell=True)
+        status = subprocess.call("rm MCcondor.submit", shell=True)
+
 
 def showhelp():
         helpstring= "variation=%s where %s is a valid jana_calib_context variation string (default is \"mc\")\n"
@@ -148,8 +172,8 @@ def main(argv):
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         print "*********************************"
-        print "Welcome to v1.6 of the MCwrapper"
-        print "Thomas Britton 05/19/17"
+        print "Welcome to v1.7 of the MCwrapper"
+        print "Thomas Britton 05/24/17"
         print "*********************************"
 
 
@@ -288,7 +312,7 @@ def main(argv):
                         TAGSTR=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="CUSTOM_PLUGINS" :
                         CUSTOM_PLUGINS=rm_comments[0].strip()
-                elif str(parts[0]).upper()=="BATCH_SYS" :
+                elif str(parts[0]).upper()=="BATCH_SYSTEM" :
                         BATCHSYS=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="RUNNING_DIRECTORY" :
                         RUNNING_DIR=rm_comments[0].strip()
@@ -412,6 +436,8 @@ def main(argv):
                         	swif_add_job(WORKFLOW, RUNNUM, FILENUM,str(indir),COMMAND,VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR)
                         elif BATCHSYS.upper()=="QSUB":
                                 qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR )
+                        elif BATCHSYS.upper()=="CONDOR":
+                                condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR )
 
         
         if BATCHRUN == 1 and BATCHSYS.upper() == "SWIF":
