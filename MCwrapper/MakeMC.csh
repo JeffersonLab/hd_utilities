@@ -82,7 +82,7 @@ echo "detected c-shell"
 if ( "$BATCHRUN" != "0" ) then
 # ENVIRONMENT
     echo $ENVIRONMENT
-    #source $ENVIRONMENT
+    source $ENVIRONMENT
     echo pwd=$PWD
     mkdir -p $OUTDIR
     mkdir -p $OUTDIR/log
