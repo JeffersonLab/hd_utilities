@@ -173,7 +173,7 @@ def main(argv):
 
         print "*********************************"
         print "Welcome to v1.7 of the MCwrapper"
-        print "Thomas Britton 05/19/17"
+        print "Thomas Britton 05/24/17"
         print "*********************************"
 
 
@@ -312,7 +312,7 @@ def main(argv):
                         TAGSTR=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="CUSTOM_PLUGINS" :
                         CUSTOM_PLUGINS=rm_comments[0].strip()
-                elif str(parts[0]).upper()=="BATCH_SYS" :
+                elif str(parts[0]).upper()=="BATCH_SYSTEM" :
                         BATCHSYS=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="RUNNING_DIRECTORY" :
                         RUNNING_DIR=rm_comments[0].strip()
