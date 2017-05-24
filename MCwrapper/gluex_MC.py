@@ -115,7 +115,6 @@ def  condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, 
 
         f=open('MCcondor.submit','w')
         f.write("Executable = "+indir+"\n") 
-        f.write("NameAdd = "+JOBNAME+"\n")
         f.write("Arguments  = "+COMMAND+"\n")
         f.write("Error      = error_"+JOBNAME+".log\n")
         f.write("Log      = out_"+JOBNAME+".log\n")
@@ -123,8 +122,14 @@ def  condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, 
         f.write("Queue 1\n")
         f.close()
 
+        add_command="condor_submit -name "+JOBNAME+" MCcondor.submit"
+        if add_command.find(';')!=-1 or add_command.find('&')!=-1 or mkdircom.find(';')!=-1 or mkdircom.find('&')!=-1 or mkdircom2.find(';')!=-1 or mkdircom2.find('&')!=-1:#THIS CHECK HELPS PROTEXT AGAINST A POTENTIAL HACK VIA CONFIG FILES
+                print "Nice try.....you cannot use ; or &"
+                exit(1)
+
         status = subprocess.call(mkdircom, shell=True)
-        status = subprocess.call("condor_submit MCcondor.submit", shell=True) 
+        status = subprocess.call(add_command, shell=True)
+        status = subprocess.call("rm MCcondor.submit", shell=True)
 
 
 def showhelp():
