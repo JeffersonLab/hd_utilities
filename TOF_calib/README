@@ -1,0 +1,83 @@
+TOF TDC calibration of double ended paddles
+--------------------------------------------
+
+A) analyze data with plugin "TOF_calib"
+   creates root files in "localdir/tofdata_run####.root"            
+   add root files  together: "hadd big99999.root tofdata_run####.root ... tofdata_run####.root"
+
+B) All the callibration is now done with one command
+   ./DO_CALIB.csh "####" where "####" is the run number
+   the input data files is expected to be in localdir
+   with the name "tofdata_run####.root"
+   or "big99999.root" if #### = 99999
+
+The Following is a descrption of all the root scripts and shell scripts used:
+
+1) DO_CALIB.csh : main shell scripts that does it all
+
+2a) src/WALK.C root wrapper to compile the src/walk1.C scripts to run faster.
+    a) in root: .L src/walk1.C+g;
+    b) in root: walk1(####);
+
+2b) calculate walk correction parameters with src/walk1.C 
+    output: tof_walk_parameters_run####dat
+            tof_TDC_ADC_timediff_run####.dat
+            walk_results_run%%%%.root
+            tof_walk_parameters_run####.DB                : the walk parameters from the fit
+            adc_vs_tdc_relative_global_time_run####.DB    : global time difference between TDC and ADC
+            adc_vs_tdc_relative_time_run####.DB           : relative time differnece between TDC and ADC times
+
+
+3) domeantime.csh to calculate all meantimes for both planes
+   it uses the root script wrapper src/MT1.C to compile and run
+   the codes in the root script src/meantime1.C 
+   if DEBUG is set to 2 it will also generate lots of plots
+   output: mtpos_refpadXplaneY.dat   X=0,..,43 Y=0,1
+           mtparameters_plane0_ref18.dat
+
+4)root -b -q "src/meantime2.C" generate all mean time differences for refrence paddles 
+   in the first plane. The main reference paddle is chosen to be paddle 18.
+   output file:   "calibration/mtparameters_plane0_ref18.dat"
+
+ 
+5) ./dotimediff.csh $ to calculate all time differences it uses the root script
+   src/TDIFF.C as wrapper to compile and run the code in the root script
+   src/timedifference.C
+   output:  deltat_tpos_refpadXplaneY.dat   X=0,..,43 Y=0,1
+
+6) src/tdlook.C(plane) tool to detemine effective speed of light in paddles.
+   output files: 
+   tof_speeds_plane0.dat
+   tof_timediffoffsets_plane0.dat
+   tof_speeds_plane1.dat
+   tof_timediffoffsets_plane1.dat
+   tofpaddles_propagation_speed_run####.DB
+
+7) src/consolidate.C(RUNNUMBER) calculate individual pmt TDC offsets requiring
+   the input files:
+   tof_timediffoffsets_plane0.dat, 
+   tof_timediffoffsets_plane1.dat
+   mtparameters_plane0_ref18.dat
+
+   generating the output files: 
+   tofpmt_tdc_offsets_all.dat
+   tofpmt_tdc_offsets_all_run####.DB
+
+8) root -b -q "src/DOALLFIT.C(RUNNUMBER,10)"
+   get offsets for single ended readout paddles located at the center of the TOF
+   runs src/dofitall.C
+   output files:
+   tofpmt_tdc_offsets_all_FULL_run####.DB
+   adchists_runXXXX.root with histograms: 
+   histograms: TimingN          TDC offsets of single ended pmt M
+               xTvsxEN          xpos from TDC vs xpos from E for paddle N
+               TDiff_TDCvsADC
+               ENvsxEN
+               ADCHistsN        ADC Integral for PMT N for central hit
+               xTvsEPMTN        xpos from TDC vs ADC Integral for pmt N
+               xTvsEPMTcorrN
+               TimingX          timing histograms
+
+
+
+
