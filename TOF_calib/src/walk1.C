@@ -268,7 +268,8 @@ void walk1(int Run) {
     OUTF<<n<<" "<< FitPar[n][0]<<"  "<< FitPar[n][1]<<"  " << FitPar[n][2] 
 	<<"  "<< FitPar[n][3]<<"  "<< FitPar[n][4]<<"  " << FitPar[n][5]
 	<<"  "<< FitPar[n][6]<<"  " << FitPar[n][7]<<"       "<<CHI2[n]<<endl ;
-    TheOffsets[n] = FitPar[n][0]+FitPar[n][2]*TMath::Power(15000.,FitPar[n][4]);
+    //TheOffsets[n] = FitPar[n][0]+FitPar[n][2]*TMath::Power(15000.,FitPar[n][4]);
+		TheOffsets[n] = FitPar[n][0]+FitPar[n][2]*TMath::Power(1500.,-0.5)+FitPar[n][4]*TMath::Power(1500.,-0.333)+FitPar[n][6]*TMath::Power(1500.,-0.2);
     MeanOffset->Fill(TheOffsets[n]);
     OUTF1<<n<<"  "<<TheOffsets[n]<<"       "<<CHI2[n]<<endl;
   }
@@ -279,8 +280,10 @@ void walk1(int Run) {
   sprintf(outf, "calibration%d/tof_walk_parameters_run%d.DB",RunNumber,RunNumber);
   OUTF.open(outf);
   for (int n=0; n<176; n++){
-    OUTF<< FitPar[n][0]<<"   " << FitPar[n][2] 
-	<<"   "<< FitPar[n][4]<<"  15000."<<endl ;
+    //OUTF<< FitPar[n][0]<<"   " << FitPar[n][2] 
+	//<<"   "<< FitPar[n][4]<<"  15000."<<endl ;
+			OUTF<< FitPar[n][0]<<"   " << FitPar[n][2] 
+		<<"   "<< FitPar[n][4]<<"   "<<FitPar[n][6]<<"  1500."<<endl ;
   }
   OUTF.close();
   
