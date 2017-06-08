@@ -59,24 +59,35 @@ setenv CUSTOM_PLUGINS $1
 shift
 setenv PER_FILE $1
 
-# PRINT INPUTS
-echo `date`
-echo "CONTEXT           = $JANA_CALIB_CONTEXT"
-echo "ENVIRONMENT       = $ENVIRONMENT"
-echo "CONFIG_FILE       = $CONFIG_FILE"
-echo "OUTDIR            = $OUTDIR"
-echo "RUN_NUMBER        = $RUN_NUMBER"
-echo "FILE_NUMBER       = $FILE_NUMBER"
-echo "NUM TO GEN        = $EVT_TO_GEN"
-echo "generator         = $GENERATOR"
-echo "generation        = $GENR  $CLEANGENR"
-echo "Geant             = $GEANT  $CLEANGEANT"
-echo "GCONTROL          = $CUSTOM_GCONTROL"
-echo "BKG_FOLD          = $BKGFOLDSTR"
-echo "MCsmear           = $SMEAR   $CLEANSMEAR"
-echo "Recon             = $RECON   $CLEANRECON"
+echo ""
+echo ""
+echo "Detected c-shell"
 
-echo "detected c-shell"
+# PRINT INPUTS
+echo "Job started: " `date`
+echo "Producing file number: "$FILE_NUMBER
+echo "Containing at most "$PER_FILE" events"
+echo "Output location: "$OUTDIR
+echo "Environment file: " $ENVIRONMENT
+echo "Context: "$JANA_CALIB_CONTEXT
+echo "Run Number: "$RUN_NUMBER
+echo "Electron beam energy to use: "$eBEAM_ENERGY" GeV"
+echo "Photon Energy between "$GEN_MIN_ENERGY" and "$GEN_MAX_ENERGY" GeV"
+echo "Coherent Peak position: "$COHERENT_PEAK
+echo "----------------------------------------------"
+echo "Run generation step? "$GENR"  Will be cleaned?" $CLEANGENR
+echo "Using "$GENERATOR"  with config: "$CONFIG_FILE
+echo "----------------------------------------------"
+echo "Run geant step? "$GEANT"  Will be cleaned?" $CLEANGEANT
+echo "Using geant"$GEANTVER
+echo "Background to use: "$BKGFOLDSTR
+echo "Run mcsmear ? "$SMEAR"  Will be cleaned?" $CLEANSMEAR
+echo "----------------------------------------------"
+echo "Run reconstruction? "$RECON"  Will be cleaned?" $CLEANRECON
+echo "With additional plugins: "$CUSTOM_PLUGINS
+echo "=============================================="
+echo ""
+echo ""
 
 #necessary to run swif, uses local directory if swif=0 is used
 if ( "$BATCHRUN" != "0" ) then
