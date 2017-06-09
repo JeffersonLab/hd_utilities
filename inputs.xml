@@ -1,0 +1,6 @@
+<compMod>
+<parameter name="triggerRate" value="50.0e3" units="Hz"/>
+<parameter name="runningTime" value="73.0" units="days"/>
+<parameter name="runningEfficiency" value="0.5" units="dimensionless"/>
+<parameter name="timePeriod" value="12.0" units="months"/>
+</compMod>
