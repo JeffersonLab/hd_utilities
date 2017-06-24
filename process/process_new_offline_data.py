@@ -376,7 +376,8 @@ def ProcessOfflineData(args):
     else:
         summed_root_dir = config.MERGED_ROOTFILE_OUTPUT_DIRECTORY
         
-    summed_rootfile = join(summed_root_dir,"hd_root_" + rundir + ".root")  # figure out the output filename
+    summed_rootfile_name = "hd_root_" + rundir + ".root"
+    summed_rootfile = join(summed_root_dir,summed_rootfile_name)  # figure out the output filename
     if config.MAKE_SUMMED_ROOTFILE and ( len(monitoring_files.keys()) > 0 ):   # only merge if there are files to process
         if config.VERBOSE>1:
             print "  summing ROOT files..."
@@ -477,10 +478,16 @@ def ProcessOfflineData(args):
             if config.VERBOSE>2:
                 print "  merging %s ..."%tree
             tree_dir = join(config.INPUT_DIRECTORY,config.REVISION,tree,"%06d"%run)
-            merged_skim_file = "%s_%06d.root"%(tree,run)
-            os.system("rm -f %s/%s"%(tree_dir,merged_skim_file))
-            os.system("hadd -k -v 0 %s/%s %s/*.root"%(tree_dir,merged_skim_file,tree_dir))
-            os.system("jcache put %s/%s"%(tree_dir,merged_skim_file))
+            merged_tree_dir = join(config.INPUT_DIRECTORY,config.REVISION,tree,"merged")
+            if not isdir(merged_tree_dir):
+                os.system("mkdir -m"+config.NEWDIR_MODE+" -p " + merged_tree_dir)
+            
+            merged_tree_file = "%s_%06d.root"%(tree,run)
+            os.system("rm -f %s/%s"%(merged_tree_dir,merged_tree_file))
+            if config.VERBOSE>0:
+                print "merging into %s/%s ..."%(merged_tree_dir,merged_tree_file)
+            os.system("hadd -k %s/%s %s/*.root"%(merged_tree_dir,merged_tree_file,tree_dir))
+            os.system("jcache put %s/%s"%(merged_tree_dir,merged_tree_file))
             os.system("jcache unpin %s/*.root"%(tree_dir))
     # merge evio files
     """
