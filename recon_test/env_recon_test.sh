@@ -3,24 +3,24 @@
 export MONITORING_HOME=/group/halld/Software/scripts/monitoring/
 
 # SET PATH FOR PERL MODULES (Does not seem to be automatically present when running jobs from cron)
-export PERL5LIB=/usr/local/lib64/perl5:/usr/local/share/perl5:/usr/lib64/perl5/vendor_perl:/usr/share/perl5/vendor_perl:/usr/lib64/perl5:/usr/share/perl5
+#export PERL5LIB=/usr/local/lib64/perl5:/usr/local/share/perl5:/usr/lib64/perl5/vendor_perl:/usr/share/perl5/vendor_perl:/usr/lib64/perl5:/usr/share/perl5
 
 # INITIALIZE
 export EDITOR=vim
 export BUILD_SCRIPTS=/group/halld/Software/build_scripts/
 export BMS_OSNAME=`${BUILD_SCRIPTS}/osrelease.pl`
 # farm-specific set-up
-nodename=`uname -n`
-if [[ $nodename =~ ^farm* || $nodename =~ ^ifarm* || $nodename =~ ^qcd* || $nodename =~ ^gluon* ]]
-    then
-    if [[ $BMS_OSNAME == *CentOS6* || $BMS_OSNAME == *RHEL6* ]]
-	then
-	GCC_HOME=/apps/gcc/4.9.2
-	export PATH=${GCC_HOME}/bin:${PATH}
-	export LD_LIBRARY_PATH=${GCC_HOME}/lib64:${GCC_HOME}/lib
-	export BMS_OSNAME=`$BUILD_SCRIPTS/osrelease.pl`
-    fi
-fi
+#nodename=`uname -n`
+#if [[ $nodename =~ ^farm* || $nodename =~ ^ifarm* || $nodename =~ ^qcd* || $nodename =~ ^gluon* ]]
+#    then
+#    if [[ $BMS_OSNAME == *CentOS6* || $BMS_OSNAME == *RHEL6* ]]
+#	then
+#	GCC_HOME=/apps/gcc/4.9.2
+#	export PATH=${GCC_HOME}/bin:${PATH}
+#	export LD_LIBRARY_PATH=${GCC_HOME}/lib64:${GCC_HOME}/lib
+#	export BMS_OSNAME=`$BUILD_SCRIPTS/osrelease.pl`
+#    fi
+#fi
 
 # SET SOFTWARE VERSIONS/PATHS (e.g. $ROOTSYS, $CCDB_HOME, etc.)
 export GLUEX_TOP=/group/halld/Software/builds/$BMS_OSNAME/
