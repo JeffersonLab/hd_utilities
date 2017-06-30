@@ -48,6 +48,7 @@ Check_Workflow()
 	local num_jobs_index=-1
 	local num_succeeded_index=-1
 	local num_problems_index=-1
+	local num_canceled_index=-1
 	local word_count=0
 
 	for word in $STATUS_OUTPUT; do
@@ -61,6 +62,9 @@ Check_Workflow()
 		if [ "$word" = "succeeded" ]; then
 			num_succeeded_index=$(($word_count + 2))
 		fi
+		if [ "$word" = "canceled" ]; then
+			num_canceled_index=$(($word_count + 2))
+		fi
 	done
 	#echo $num_jobs_index $num_succeeded_index $num_problems_index
 
@@ -73,8 +77,11 @@ Check_Workflow()
 
 	local num_jobs=`echo $STATUS_OUTPUT | cut -d " " -f $num_jobs_index`
 	local num_succeeded=`echo $STATUS_OUTPUT | cut -d " " -f $num_succeeded_index`
-	#echo $num_jobs $num_succeeded
-	if [ "$num_jobs" = "$num_succeeded" ]; then
+        local num_canceled=`echo $STATUS_OUTPUT | cut -d " " -f $num_canceled_index`
+	#echo $num_jobs $num_succeeded $num_canceled
+	local num_check_jobs=$((num_jobs - num_canceled))
+	#echo "new num jobs: " $num_check_jobs
+	if [ "$num_check_jobs" = "$num_succeeded" ]; then
 		return 0
 	fi
 
@@ -115,11 +122,14 @@ Check_Workflow_Loop()
 Send_Email()
 {
 	cd /group/halld/Software/scripts/simple_email_list/lists/recon_test/
+	echo "SENDING EMAIL"
 	echo "Test Results:" >> message.txt
 	echo https://halldweb.jlab.org/recon_test/$DATE/ >> message.txt
 	echo "" >> message.txt
 	echo "Browser:" >> message.txt
 	echo https://halldweb.jlab.org/cgi-bin/data_monitoring/monitoring/recontestBrowser.py >> message.txt
+	#echo "MESSAGE CONTENT:"
+	#cat message.txt
 	/group/halld/Software/scripts/simple_email_list/scripts/simple_email_list.pl
 }
 
