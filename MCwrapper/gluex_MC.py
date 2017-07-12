@@ -121,7 +121,7 @@ def  condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, 
         f.write("RequestCpus = "+NCORES+"\n")
         f.write("Queue 1\n")
         f.close()
-
+        
         add_command="condor_submit -name "+JOBNAME+" MCcondor.submit"
         if add_command.find(';')!=-1 or add_command.find('&')!=-1 or mkdircom.find(';')!=-1 or mkdircom.find('&')!=-1:#THIS CHECK HELPS PROTEXT AGAINST A POTENTIAL HACK VIA CONFIG FILES
                 print "Nice try.....you cannot use ; or &"

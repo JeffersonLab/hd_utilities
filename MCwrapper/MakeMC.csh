@@ -174,7 +174,8 @@ if ( "$BKGFOLDSTR" == "DEFAULT" || "$bkgloc_pre" == "loc:" ) then
     endif
 
     if ( $RUN_NUMBER < 30000 ) then
-	echo "Warning: random triggers did not exist by this point"
+	echo "Warning: random triggers do not exist for this run"
+	exit
     endif
 	
 	if ( "$bkgloc_pre" == "loc:" ) then
