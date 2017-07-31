@@ -40,7 +40,7 @@ TH2D *xTvsEPMT[179];
 TH2D *xTvsEPMTcorr[179];
 
 int DEBUG = 10;
-int use_current_calibration = 0;
+int use_current_calibration = 1;
 
 TH2D *h2d;
 void saverootfile(int R){
@@ -482,12 +482,17 @@ void dofitall(int R , int dbgmode){
 
 
   // get walk correction parameters
-  double WalkPar[176][3];
+  double WalkPar[176][17];
   double dummy;
-  sprintf(fnam,"calibration%d/tof_walk_parameters_run%d.DB",RunNumber,RunNumber);
+  int idx;
+  sprintf(fnam,"calibration%d/tof_walk_parameters_run%d.dat",RunNumber,RunNumber);
   INF.open(fnam);
   for (int k=0;k<176;k++){
-    INF>>dummy>>WalkPar[k][0]>>WalkPar[k][1]>>WalkPar[k][2];
+    INF >> idx;
+    for (int s=0;s<17;s++) {
+      INF >> WalkPar[k][s];
+    }
+    INF>>dummy; // this is the chi2 of both fits
   }
   INF.close();
 
@@ -563,10 +568,21 @@ void dofitall(int R , int dbgmode){
   t3->SetBranchAddress("TDCST",TDCST);
 
   unsigned int nentries = (unsigned int) t3->GetEntries();
-  cout<<"Start reading root file with "<<nentries<<" events ..."<<endl;
+  cout<<"Number of Entries "<<nentries;
+  /*
+  if (nentries>100000000){
+    nentries = 100000000;
+    cout<<"  use only 100000000";
+  }
+  cout<<endl;
+  */
   for (unsigned int kk=0; kk<nentries; kk++){
     t3->GetEntry(kk);
     //cout<<Event<<" "<<Nhits<<" "<<NhitsA<<" "<<NsinglesA<<" "<<NsinglesT<<endl;
+    if (!(kk%10000000)){
+      TDatime a;
+      cout<<"Current time is "<<a.Get()<<endl;
+    }
     
     int CenterHits[2][2];
     memset(CenterHits,0,16);
@@ -594,11 +610,49 @@ void dofitall(int R , int dbgmode){
 	  tL -= PMTOffsets[hid1];
 	  tR -= PMTOffsets[hid2];
 
-	  // apply walk correciton
-	  float tcL = WalkPar[hid1][0] * ( pow(ADCL[n],WalkPar[hid1][1]) -  
-					   pow(WalkPar[hid1][2],WalkPar[hid1][1]));
-	  float tcR = WalkPar[hid2][0] * ( pow(ADCR[n],WalkPar[hid2][1]) -  
-					   pow(WalkPar[hid2][2],WalkPar[hid2][1]));
+	  
+	  // apply walk correction
+	  int DOFF = 0;
+	  if (PEAKL[n]>WalkPar[hid1][16]){
+	    DOFF = 8;
+	  }
+	  double a1 = WalkPar[hid1][0+DOFF]
+	    +WalkPar[hid1][2+DOFF]*TMath::Power(PEAKL[n],-0.5) 
+	    +WalkPar[hid1][4+DOFF]*TMath::Power(PEAKL[n],-0.33) 
+	    +WalkPar[hid1][6+DOFF]*TMath::Power(PEAKL[n],-0.2);
+	  if (PEAKL[n]>4095){
+	    a1 += 0.55;
+	  }
+
+	  DOFF = 8;
+	  double a2 = WalkPar[hid1][0+DOFF]
+	    +WalkPar[hid1][2+DOFF]*TMath::Power(1500.,-0.5) 
+	    +WalkPar[hid1][4+DOFF]*TMath::Power(1500.,-0.33) 
+	    +WalkPar[hid1][6+DOFF]*TMath::Power(1500.,-0.2);
+
+	  float tcL = a1 - a2;
+
+	  // apply walk correction
+	  DOFF = 0;
+	  if (PEAKR[n]>WalkPar[hid2][16]){
+	    DOFF = 8;
+	  }
+	  a1 = WalkPar[hid2][0+DOFF]
+	    +WalkPar[hid2][2+DOFF]*TMath::Power(PEAKR[n],-0.5) 
+	    +WalkPar[hid2][4+DOFF]*TMath::Power(PEAKR[n],-0.33) 
+	    +WalkPar[hid2][6+DOFF]*TMath::Power(PEAKR[n],-0.2);
+	  if (PEAKR[n]>4095){
+	    a1 += 0.55;
+	  }
+	  
+	  DOFF = 8;
+	  a2 = WalkPar[hid2][0+DOFF]
+	    +WalkPar[hid2][2+DOFF]*TMath::Power(1500.,-0.5) 
+	    +WalkPar[hid2][4+DOFF]*TMath::Power(1500.,-0.33) 
+	    +WalkPar[hid2][6+DOFF]*TMath::Power(1500.,-0.2);
+
+	  float tcR = a1 - a2; 
+
 	  tL -= tcL;
 	  tR -= tcR;
 
@@ -667,8 +721,28 @@ void dofitall(int R , int dbgmode){
       int s = side;
 
       float T = TDCST[i];
-      float walk =  WalkPar[idx][0] * ( pow(ADCS[i],WalkPar[idx][1]) -  
-					pow(WalkPar[idx][2],WalkPar[idx][1]));
+
+      // get walk correction
+      int DOFF = 0;
+      if (PEAK[i]>WalkPar[idx][16]){
+	DOFF = 8;
+      }
+      double a1 = WalkPar[idx][0+DOFF]
+	+WalkPar[idx][2+DOFF]*TMath::Power(PEAK[i],-0.5) 
+	+WalkPar[idx][4+DOFF]*TMath::Power(PEAK[i],-0.33) 
+	+WalkPar[idx][6+DOFF]*TMath::Power(PEAK[i],-0.2);
+      if (PEAK[i]>4095){
+	a1 += 0.55;
+      }
+      
+      DOFF = 8;
+      double a2 = WalkPar[idx][0+DOFF]
+	+WalkPar[idx][2+DOFF]*TMath::Power(1500.,-0.5) 
+	+WalkPar[idx][4+DOFF]*TMath::Power(1500.,-0.33) 
+	+WalkPar[idx][6+DOFF]*TMath::Power(1500.,-0.2);
+      
+      float walk = a1 - a2;
+
       T -= walk;
 
       if (plane){

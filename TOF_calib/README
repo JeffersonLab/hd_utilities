@@ -1,5 +1,17 @@
-TOF TDC calibration of double ended paddles
---------------------------------------------
+TOF TDC calibration of ALL paddle PMTS
+--------------------------------------
+This is a new calibration version that is modified to use the ADC signal amplitudes
+to determine the walk correction of the TDC times.
+The main script that controls all steps of the calibration "DOC_CALIB.csh" is modified
+to do the meantime script and time difference script in parallel threads to improve
+speed when running on the farm nodes (requires two cores(nodes)).
+Of course prior to running the script the root files need to be available.
+
+after the calibration there are python and root scripts that facilitate reviewing the results
+and writing the resulting calibration parameters to the database tables.
+
+The data base tables are new and have an appendix "_NEWAMP" to the table names.
+
 
 A) analyze data with plugin "TOF_calib"
    creates root files in "localdir/tofdata_run####.root"            

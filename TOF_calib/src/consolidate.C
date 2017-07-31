@@ -47,6 +47,8 @@ void consolidate(int RunNumber){
 
   char inf[128];
   sprintf(inf,"calibration%d/mtparameters_plane0_ref18.dat",RunNumber);
+  cout<<"read data from: "<<inf<<endl;
+
   ifstream INF;
   INF.open(inf);
   int k,plane;
@@ -59,6 +61,8 @@ void consolidate(int RunNumber){
 
   sprintf(inf,"calibration%d/tof_timediffoffsets_plane0.dat",RunNumber);
   //sprintf(inf,"calibration%d/timediff_offsets_plane0_run%d.dat",RunNumber,RunNumber);
+
+  cout<<"read data from: "<<inf<<endl;
   INF.open(inf);
   double dummy;
   while(!INF.eof()) {
@@ -69,6 +73,7 @@ void consolidate(int RunNumber){
  
   sprintf(inf,"calibration%d/tof_timediffoffsets_plane1.dat",RunNumber);
   //sprintf(inf,"calibration%d/timediff_offsets_plane1_run%d.dat",RunNumber,RunNumber);
+  cout<<"read data from: "<<inf<<endl;
   INF.open(inf);
   while(!INF.eof()) {
     INF>>k>>t>>dummy;

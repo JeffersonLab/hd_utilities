@@ -88,12 +88,17 @@ void doadctimeoffsets(int RunNumber){
 
 
   // get walk correction parameters
-  double WalkPar[176][3];
+  double WalkPar[176][17];
   double dum;
-  sprintf(fnam,"calibration%d/tof_walk_parameters_run%d.DB",RunNumber,RunNumber);
+  int idx;
+  sprintf(fnam,"calibration%d/tof_walk_parameters_run%d.dat",RunNumber,RunNumber);
   INF.open(fnam);
   for (int k=0;k<176;k++){
-    INF>>dum>>WalkPar[k][0]>>WalkPar[k][1]>>WalkPar[k][2];
+    INF >> idx;
+    for (int s=0;s<17;s++) {
+      INF >> WalkPar[k][s];
+    }
+    INF>>dummy; // this is the chi2 of both fits
   }
   INF.close();
 
@@ -119,6 +124,8 @@ void doadctimeoffsets(int RunNumber){
   float ADCR[100];
   int OFL[100];
   int OFR[100];
+  float PEAKL[100];
+  float PEAKR[100];
 
   int NsinglesA;
   int PlaneSA[100];
@@ -127,6 +134,7 @@ void doadctimeoffsets(int RunNumber){
   float ADCS[100];
   float TADCS[100];
   int OF[100];
+  float PEAK[100];
 
   int NsinglesT;
   int PlaneST[100];
@@ -151,6 +159,8 @@ void doadctimeoffsets(int RunNumber){
   t3->SetBranchAddress("ADCR",ADCR);
   t3->SetBranchAddress("OFL",OFL);
   t3->SetBranchAddress("OFR",OFR);
+  t3->SetBranchAddress("PEAKL",PEAKL);
+  t3->SetBranchAddress("PEAKR",PEAKR);
  
   t3->SetBranchAddress("NsinglesA",&NsinglesA);
   t3->SetBranchAddress("PlaneSA",PlaneSA);
@@ -159,6 +169,7 @@ void doadctimeoffsets(int RunNumber){
   t3->SetBranchAddress("ADCS",ADCS);
   t3->SetBranchAddress("TADCS",TADCS);
   t3->SetBranchAddress("OF",OF);
+  t3->SetBranchAddress("PEAK",PEAK);
 
   t3->SetBranchAddress("NsinglesT",&NsinglesT);
   t3->SetBranchAddress("PlaneST",PlaneST);
@@ -167,10 +178,21 @@ void doadctimeoffsets(int RunNumber){
   t3->SetBranchAddress("TDCST",TDCST);
 
   unsigned int nentries = (unsigned int) t3->GetEntries();
-  cout<<"Start reading root file with "<<nentries<<" events ..."<<endl;
+  cout<<"Number of Entries "<<nentries;
+  /*
+  if (nentries>100000000){
+    nentries = 100000000;
+    cout<<"  use only 100000000";
+  }
+  cout<<endl;
+  */
   for (unsigned int kk=0; kk<nentries; kk++){
     t3->GetEntry(kk);
     //cout<<Event<<" "<<Nhits<<" "<<NhitsA<<" "<<NsinglesA<<" "<<NsinglesT<<endl;
+    if (!(kk%10000000)){
+      TDatime a;
+      cout<<"Current time is "<<a.Get()<<endl;
+    }
 
     float THESHIFT = TShift;
     
@@ -203,11 +225,48 @@ void doadctimeoffsets(int RunNumber){
           tR -= PMTOffsets[hid2];
 
           // apply walk correciton
-          float tcL = WalkPar[hid1][0] * ( pow(ADCL[n],WalkPar[hid1][1]) -  
-                                           pow(WalkPar[hid1][2],WalkPar[hid1][1]));
-          float tcR = WalkPar[hid2][0] * ( pow(ADCR[n],WalkPar[hid2][1]) -  
-                                           pow(WalkPar[hid2][2],WalkPar[hid2][1]));
-          tL -= tcL;
+	  int DOFF = 0;
+	  if (PEAKL[n]>WalkPar[hid1][16]){
+	    DOFF = 8;
+	  }
+	  double a1 = WalkPar[hid1][0+DOFF]
+            +WalkPar[hid1][2+DOFF]*TMath::Power(PEAKL[n],-0.5) 
+            +WalkPar[hid1][4+DOFF]*TMath::Power(PEAKL[n],-0.33) 
+            +WalkPar[hid1][6+DOFF]*TMath::Power(PEAKL[n],-0.2);
+
+	  if (PEAKL[n]>4095){
+	    a1 += 0.55; // overflow hits
+	  }
+	  
+	  DOFF = 8;
+          double a2 = WalkPar[hid1][0+DOFF]
+            +WalkPar[hid1][2+DOFF]*TMath::Power(1500.,-0.5) 
+            +WalkPar[hid1][4+DOFF]*TMath::Power(1500.,-0.33) 
+            +WalkPar[hid1][6+DOFF]*TMath::Power(1500.,-0.2);
+	  
+          float tcL = a1 - a2;
+	  
+ 	  DOFF = 0;
+	  if (PEAKR[n]>WalkPar[hid2][16]){
+	    DOFF = 8;
+	  }
+	  a1 = WalkPar[hid2][0+DOFF]
+            +WalkPar[hid2][2+DOFF]*TMath::Power(PEAKR[n],-0.5) 
+            +WalkPar[hid2][4+DOFF]*TMath::Power(PEAKR[n],-0.33) 
+            +WalkPar[hid2][6+DOFF]*TMath::Power(PEAKR[n],-0.2);
+	  if (PEAKR[n]>4095){
+	    a1 += 0.55; // overflow hits
+	  }
+          
+	  DOFF = 8;
+          a2 = WalkPar[hid2][0+DOFF]
+            +WalkPar[hid2][2+DOFF]*TMath::Power(1500.,-0.5) 
+            +WalkPar[hid2][4+DOFF]*TMath::Power(1500.,-0.33) 
+            +WalkPar[hid2][6+DOFF]*TMath::Power(1500.,-0.2);
+	  
+          float tcR = a1 - a2;
+	  
+	  tL -= tcL;
           tR -= tcR;
 
 	  tL += TDC_T_OFFSET;
@@ -238,8 +297,29 @@ void doadctimeoffsets(int RunNumber){
 	
 	if ((PlaneST[j] == plane ) && (PaddleST[j] == paddle)){
 	  // found matching TDC hit
-	  float walk = WalkPar[idx][0] * ( pow(ADCS[i],WalkPar[idx][1]) -  
-                                           pow(WalkPar[idx][2],WalkPar[idx][1]));
+	  // now apply walk correction to hit
+
+	  int DOFF = 0;
+	  if (PEAK[i]>WalkPar[idx][16]){
+	    DOFF = 8;
+	  }
+	  double a1 = WalkPar[idx][0+DOFF]
+            +WalkPar[idx][2+DOFF]*TMath::Power(PEAK[i],-0.5) 
+            +WalkPar[idx][4+DOFF]*TMath::Power(PEAK[i],-0.33) 
+            +WalkPar[idx][6+DOFF]*TMath::Power(PEAK[i],-0.2);
+          
+	  if (PEAK[i]>4095){
+	    a1 += 0.55; // overflow hits
+	  }
+
+	  DOFF = 8;
+	  double a2 = WalkPar[idx][0+DOFF]
+            +WalkPar[idx][2+DOFF]*TMath::Power(1500.,-0.5) 
+            +WalkPar[idx][4+DOFF]*TMath::Power(1500.,-0.33) 
+            +WalkPar[idx][6+DOFF]*TMath::Power(1500.,-0.2);
+	  
+	  double walk = a1 - a2;
+
 	  float T = TDCST[j] - walk;  // apply walk correction 
 	  T -= PMTOffsets[idx];       // apply pmt timing offset
 	  T += TDC_T_OFFSET;          // apply global TDC time offset
