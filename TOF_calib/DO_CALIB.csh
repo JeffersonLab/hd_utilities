@@ -3,20 +3,21 @@
 set RUN = $1
 
 mkdir calibration$RUN
-mkdir calibration$RUN/plots
-ln -s ./calibration$RUN/plots plots
 
 # do walk correction
 root -b -q "src/walk1.C+($RUN)"
 
 # do mean time determination
-./domeantime.csh $RUN
+./domeantime.csh $RUN &
 
-# calculate all realative meatimes
-root -b -q "src/meantime2.C($RUN)"
+set PID = $!
 
 # calculate time differences
 ./dotimediff.csh $RUN
+
+while ( `ps -p "$PID" | wc -l` > 1 )
+  sleep 60
+end
 
 # calculate eff. speeds in paddles for both planes
 root -b -q "src/tdlook.C($RUN,0)"
@@ -35,5 +36,3 @@ root -b -q "src/doadctimeoffsets.C+($RUN)"
 
 # determine attenuation length
 #root -b -q "src/dofit.C($RUN)"
-
-rm -rf plots

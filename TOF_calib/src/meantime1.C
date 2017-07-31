@@ -69,10 +69,14 @@ void meantime1(int Run, int REF, int RefPlane){
   ifstream INF;
   INF.open(inf);
   int idx;
-  double FitPar[176][6];
+  double FitPar[176][17];
+  double dummy;
   for (int n=0; n<176; n++){
-    INF >> idx >>  FitPar[n][0] >> FitPar[n][1] >> FitPar[n][2] 
-        >> FitPar[n][3] >> FitPar[n][4] >> FitPar[n][5];
+    INF >> idx;
+    for (int s=0;s<17;s++) {
+      INF >> FitPar[n][s];
+    }
+    INF>>dummy; // this is the chi2 of both fits
   }
   INF.close();
 
@@ -130,11 +134,13 @@ void meantime1(int Run, int REF, int RefPlane){
   
   unsigned int nentries = (unsigned int) t3->GetEntries();
   cout<<"Number of Entries "<<nentries;
+  /*
   if (nentries>100000000){
     nentries = 100000000;
     cout<<"  use only 100000000";
   }
   cout<<endl;
+  */
   for (unsigned int k=0; k<nentries; k++){
     t3->GetEntry(k);
     //cout<<Event<<" "<<Nhits<<endl;
@@ -164,15 +170,48 @@ void meantime1(int Run, int REF, int RefPlane){
 
 	  int idxL = REFPLANE*88 + PaddleA[n]-1;
 	  int idxR = idxL + 44;
-	  float ScaleFactor = 1;
-	  if ((idxR>71) && (idxR<88))
-	    ScaleFactor = 1.;
 
 	  // calculate walk correction for TDC times
-	  float tcL = FitPar[idxL][2] * ( pow(ADCL[n]*ScaleFactor,FitPar[idxL][4]) -  
-					  pow(15000.,FitPar[idxL][4]));
-	  float tcR = FitPar[idxR][2] * ( pow(ADCR[n]*ScaleFactor,FitPar[idxR][4]) -  
-					  pow(15000.,FitPar[idxR][4]));
+	  int DOFF = 0;
+	  if (PEAKL[n]>FitPar[idxL][16]){
+	    DOFF = 8;
+	  }
+	  double a1 = FitPar[idxL][0+DOFF]
+	    +FitPar[idxL][2+DOFF]*TMath::Power(PEAKL[n],-0.5) 
+	    +FitPar[idxL][4+DOFF]*TMath::Power(PEAKL[n],-0.33) 
+	    +FitPar[idxL][6+DOFF]*TMath::Power(PEAKL[n],-0.2);
+	  if (PEAKL[n]>4095){
+	    a1 += 0.55;
+	  }
+
+	  DOFF = 8;
+	  double a2 = FitPar[idxL][0+DOFF]
+	    +FitPar[idxL][2+DOFF]*TMath::Power(1500.,-0.5) 
+	    +FitPar[idxL][4+DOFF]*TMath::Power(1500.,-0.33) 
+	    +FitPar[idxL][6+DOFF]*TMath::Power(1500.,-0.2);
+
+	  float tcL = a1 - a2;
+
+	  DOFF = 0;
+	  if (PEAKR[n]>FitPar[idxR][16]){
+	    DOFF = 8;
+	  }	  
+	  a1 = FitPar[idxR][0+DOFF]
+	    +FitPar[idxR][2+DOFF]*TMath::Power(PEAKR[n],-0.5) 
+	    +FitPar[idxR][4+DOFF]*TMath::Power(PEAKR[n],-0.33) 
+	    +FitPar[idxR][6+DOFF]*TMath::Power(PEAKR[n],-0.2);
+	  if (PEAKR[n]>4095){
+	    a1 += 0.55;
+	  }
+
+	  DOFF = 8;
+	  a2 = FitPar[idxR][0+DOFF]
+	    +FitPar[idxR][2+DOFF]*TMath::Power(1500.,-0.5) 
+	    +FitPar[idxR][4+DOFF]*TMath::Power(1500.,-0.33) 
+	    +FitPar[idxR][6+DOFF]*TMath::Power(1500.,-0.2);
+
+	  float tcR = a1 - a2; 
+
 	  float tcorr = tcR + tcL;
 	  //cout<<endl;
 	  //cout<<tcorr<<"  "<<ADCL[n]<<"  "<<ADCR[n]<<endl;
@@ -194,16 +233,50 @@ void meantime1(int Run, int REF, int RefPlane){
 	    if ((PlaneA[i] == THEPLANE) && (PaddleA[i] == Paddle[n])){
 	      int idxL = 88 * THEPLANE + PaddleA[i]-1;
 	      int idxR =  idxL + 44;
-	      float ScaleFactor = 1;
-	      if ((idxR>71) && (idxR<88))
-		ScaleFactor = 1.;
 
-	      //apply walk correction
-	      float tcL = FitPar[idxL][2] * ( pow(ADCL[i]*ScaleFactor,FitPar[idxL][4]) -  
-					      pow(15000.,FitPar[idxL][4]));
-	      float tcR = FitPar[idxR][2] * ( pow(ADCR[i]*ScaleFactor,FitPar[idxR][4]) -  
-					      pow(15000.,FitPar[idxR][4]));
+	      // calculate walk correction for TDC times
+	      int DOFF = 0;
+	      if (PEAKL[n]>FitPar[idxL][16]){
+		DOFF = 8;
+	      }
+	      double a1 = FitPar[idxL][0+DOFF]
+		+FitPar[idxL][2+DOFF]*TMath::Power(PEAKL[n],-0.5) 
+		+FitPar[idxL][4+DOFF]*TMath::Power(PEAKL[n],-0.33) 
+		+FitPar[idxL][6+DOFF]*TMath::Power(PEAKL[n],-0.2);
+	      if (PEAKL[n]>4095){
+		a1 += 0.55;
+	      }
+
+	      DOFF = 8;
+	      double a2 = FitPar[idxL][0+DOFF]
+		+FitPar[idxL][2+DOFF]*TMath::Power(1500.,-0.5) 
+		+FitPar[idxL][4+DOFF]*TMath::Power(1500.,-0.33) 
+		+FitPar[idxL][6+DOFF]*TMath::Power(1500.,-0.2);
+	      
+	      float tcL = a1 - a2;
+	      
+	      DOFF = 0;
+	      if (PEAKR[n]>FitPar[idxR][16]){
+		DOFF = 8;
+	      }	  
+	      a1 = FitPar[idxR][0+DOFF]
+		+FitPar[idxR][2+DOFF]*TMath::Power(PEAKR[n],-0.5) 
+		+FitPar[idxR][4+DOFF]*TMath::Power(PEAKR[n],-0.33) 
+		+FitPar[idxR][6+DOFF]*TMath::Power(PEAKR[n],-0.2);
+	      if (PEAKR[n]>4095){
+		a1 += 0.55;
+	      }
+
+	      DOFF = 8;
+	      a2 = FitPar[idxR][0+DOFF]
+		+FitPar[idxR][2+DOFF]*TMath::Power(1500.,-0.5) 
+		+FitPar[idxR][4+DOFF]*TMath::Power(1500.,-0.33) 
+		+FitPar[idxR][6+DOFF]*TMath::Power(1500.,-0.2);
+	      
+	      float tcR = a1 - a2; 
+	      
 	      float tcorr = tcR + tcL;
+
 	      //cout<<tcorr<<"  "<<ADCL[i]<<"  "<<ADCR[i]<<endl;
 	      if (!NOWALK) {
 		MT_Pad = MeanTime[n] - tcorr/2.;
