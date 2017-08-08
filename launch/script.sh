@@ -77,12 +77,12 @@ Save_OutputFiles()
 	rm -f $INPUTFILE
 
 	# BUILD TAPEDIR, IF $OUTDIR_LARGE STARTS WITH "/cache/"
-	# AND CACHE_PIN_DAYS WAS GIVEN AND GREATER THAN 0  && [ "$CACHE_PIN_DAYS" -gt "0" ]
+	# AND CACHE_PIN_DAYS WAS GIVEN AND GREATER THAN 0
 	# If so, output files are pinned & jcache put.  If not, then they aren't. 
 	local TAPEDIR=""
 	local OUTDIR_LARGE_BASE=`echo $OUTDIR_LARGE | awk '{print substr($0,1,7)}'`
 	# first strip /cache/, then insert /mss/
-	if [ "$OUTDIR_LARGE_BASE" == "/cache/" ]; then
+	if [ "$OUTDIR_LARGE_BASE" == "/cache/" ] && [ $CACHE_PIN_DAYS -gt 0 ] ; then
 		local OUTPATH=`echo $OUTDIR_LARGE | awk '{print substr($0,8)}'`
 		TAPEDIR=/mss/${OUTPATH}/
 	fi
