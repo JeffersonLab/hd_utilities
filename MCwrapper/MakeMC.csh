@@ -141,7 +141,9 @@ if ( `echo $GEN_MAX_ENERGY | grep -o "\." | wc -l` == 0 ) then
     set GEN_MAX_ENERGY=$GEN_MAX_ENERGY\.
 endif
 
+echo `-d "$OUTDIR"`
 if ( ! -d "$OUTDIR" ) then
+    echo "making dir"
     mkdir $OUTDIR
 endif
 if ( ! -d "$OUTDIR/configurations/" ) then
