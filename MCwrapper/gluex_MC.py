@@ -144,7 +144,7 @@ def showhelp():
         helpstring+= " cleangeant=[0/1] where 0 means that the geant step will not be cleaned up after use (default is 1)\n"
         helpstring+= " cleanmcsmear=[0/1] where 0 means that the mcsmear step will not be cleaned up after use (default is 1)\n"
         helpstring+= " cleanrecon=[0/1] where 0 means that the reconstruction step will not run (default is 1)\n"
-        helpstring+= " batch=[0/1/2] where 1 means that jobs will be submitted, 2 will do the same as 1 but also run the workflow in the case of swif(default is 0)\n"
+        helpstring+= " batch=[0/1/2] where 1 means that jobs will be submitted, 2 will do the same as 1 but also run the workflow in the case of swif(default is 0 [interactive])\n"
         return helpstring
 
 ########################################################## MAIN ##########################################################
@@ -172,10 +172,9 @@ def main(argv):
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         print "*********************************"
-        print "Welcome to v1.7 of the MCwrapper"
-        print "Thomas Britton 05/24/17"
+        print "Welcome to v1.7.1 of the MCwrapper"
+        print "Thomas Britton 06/08/17"
         print "*********************************"
-
 
 	#load all argument passed in and set default options
         VERBOSE    = False
