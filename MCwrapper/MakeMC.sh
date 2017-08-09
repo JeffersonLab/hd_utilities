@@ -58,7 +58,8 @@ shift
 export CUSTOM_PLUGINS=$1
 shift
 export PER_FILE=$1
-
+shift
+export RUNNING_DIR=$1
 
 echo ""
 echo ""
@@ -97,6 +98,9 @@ echo ""
 if [[ "$BATCHRUN" != "0" ]]; then
     # ENVIRONMENT
     echo $ENVIRONMENT
+	if [[ "$BATCHSYS" == "QSUB" ]]; then
+		cd $RUNNING_DIR
+	fi
     source $ENVIRONMENT
     echo pwd=$PWD
     mkdir -p $OUTDIR

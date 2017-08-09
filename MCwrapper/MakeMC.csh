@@ -58,6 +58,8 @@ shift
 setenv CUSTOM_PLUGINS $1
 shift
 setenv PER_FILE $1
+shift
+setenv RUNNING_DIR $1
 
 echo ""
 echo ""
@@ -93,6 +95,10 @@ echo ""
 if ( "$BATCHRUN" != "0" ) then
 # ENVIRONMENT
     echo $ENVIRONMENT
+	if ( "$BATCHSYS" == "QSUB" ) then
+		cd $RUNNING_DIR
+	endif
+	
     source $ENVIRONMENT
     echo pwd=$PWD
     mkdir -p $OUTDIR
