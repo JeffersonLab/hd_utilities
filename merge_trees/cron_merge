@@ -1,0 +1,6 @@
+# http://www.thegeekstuff.com/2009/06/15-practical-crontab-examples/
+#-----------------------------------------------------------------------------
+# Min    Hour    Day    Month    Weekday    Command
+#-----------------------------------------------------------------------------
+MAILTO=aaustreg@jlab.org
+*/15      *      *       *         *       /bin/bash -c ~/monitoring/merge_trees/cron_exec.sh > /home/gxproj1/merge_trees.log 2>&1
