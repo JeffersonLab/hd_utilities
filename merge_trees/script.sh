@@ -129,8 +129,10 @@ Delete_InputFiles()
 	    local TEMP_FILE="${TYPE}_${RUN}.root"
 	fi
 	
-	# DELETE INPUTFILES
-	rm -rf $INPUTDIR/$TYPE/$RUN/*
+	# DELETE OR UNPIN INPUTFILES
+	echo Delete $TYPE
+	#rm -rf $INPUTDIR/$TYPE/$RUN/*
+	#jcache unpin $INPUTDIR/$TYPE/$RUN/*
 	
     done
 }

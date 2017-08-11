@@ -316,9 +316,9 @@ def main(argv):
 	command = "swif run -workflow " + MERGE_WORKFLOW
 	if VERBOSE > 1:
 		print command
-	try_command(command)
+        try_command(command)
 
-        print "Runs complete and submitted:" + str(n_submit)
+        print "New runs complete and submitted:" + str(n_submit)
 
 if __name__ == "__main__":
 	main(sys.argv[1:])
