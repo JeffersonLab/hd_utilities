@@ -224,9 +224,9 @@ gen_pre=""
 
 if [[ "$GENR" != "0" ]]; then
 	gen_pre=`echo $GENERATOR | cut -c1-4`
-    if [[ "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" && "$GENERATOR" != "gen_omega_3pi" ]]; then
+    if [[ "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" && "$GENERATOR" != "gen_omega_3pi" && "$GENERATOR" != "gen_2k" ]]; then
 	echo "NO VALID GENERATOR GIVEN"
-	echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0, gen_omega_3pi] are supported"
+	echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0, gen_omega_3pi, gen_2k] are supported"
 	exit
     fi
     
@@ -283,6 +283,10 @@ if [[ "$GENR" != "0" ]]; then
 	echo "configuring gen_pi0"
 	STANDARD_NAME="genr_pi0_"$STANDARD_NAME
 	cp $CONFIG_FILE ./$STANDARD_NAME.conf
+	elif [[ "$GENERATOR" == "gen_2k" ]]; then
+	echo "configuring gen_2k"
+	set STANDARD_NAME="gen_2k_"$STANDARD_NAME
+	cp $CONFIG_FILE ./$STANDARD_NAME.conf
     fi
 	
 	if [[ "$gen_pre" != "file" ]]; then
@@ -326,8 +330,8 @@ if [[ "$GENR" != "0" ]]; then
     optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
 	echo $optionals_line
 	#RANDOMnum=`bash -c 'echo $RANDOM'`
-	echo gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
-	gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
+	echo gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK $optionals_line
+	gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK $optionals_line
 	elif [[ "$GENERATOR" == "gen_omega_3pi" ]]; then
 	echo "RUNNING GEN_OMEGA_3PI" 
         optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
@@ -345,7 +349,14 @@ if [[ "$GENR" != "0" ]]; then
         optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
 	echo $optionals_line
 	gen_pi0 -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK  -s $formatted_fileNumber $optionals_line -m $eBEAM_ENERGY
-    fi
+    elif [[ "$GENERATOR" == "gen_2k" ]] then
+	echo "RUNNING GEN_2K" 
+    set optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
+	#set RANDOMnum=`bash -c 'echo $RANDOM'`
+	echo $optionals_line
+	echo gen_2k -c $STANDARD_NAME.conf -o $STANDARD_NAME.hddm -hd $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK $optionals_line
+	gen_2k -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK $optionals_line
+	fi
     
     #GEANT/smearing
     

@@ -173,7 +173,7 @@ def main(argv):
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         print "*********************************"
-        print "Welcome to v1.7.2 of the MCwrapper"
+        print "Welcome to v1.8.0 of the MCwrapper"
         print "Thomas Britton 08/11/17"
         print "*********************************"
 
