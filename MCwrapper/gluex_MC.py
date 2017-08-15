@@ -123,7 +123,7 @@ def  cmu_qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES
                 qsub_ml_command ="-l nodes="+bits[0]+":ppn="+bits[1]
 
         shell_to_use="/bin/bash "
-        if(indir[len(indir)-3]=='c')
+        if (indir[len(indir)-3]=='c'):
         {
                 shell_to_use="/bin/csh "
         }
