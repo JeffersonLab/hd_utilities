@@ -109,6 +109,10 @@ def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DA
         status = subprocess.call(add_command, shell=True)
 
 def  cmu_qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR ):
+        #name
+        STUBNAME = str(RUNNUM) + "_" + str(FILENUM)
+	JOBNAME = WORKFLOW + "_" + STUBNAME
+       
         sub_command="qsub MCqsub.submit"
        
         qsub_ml_command=""
@@ -118,6 +122,12 @@ def  cmu_qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES
         elif (len(bits)==2):
                 qsub_ml_command ="-l nodes="+bits[0]+":ppn="+bits[1]
 
+        shell_to_use="/bin/bash "
+        if(indir[len(indir)-3]=='c')
+        {
+                shell_to_use="/bin/csh "
+        }
+
         f=open('MCqsub.submit','w')
         f.write("#!/bin/sh -f"+"\n" )
         f.write("#PBS"+" -N "+JOBNAME+"\n" )
@@ -125,31 +135,12 @@ def  cmu_qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES
         f.write("#PBS"+" -o "+DATA_OUTPUT_BASE_DIR+"/log/"+JOBNAME+".out"+"\n" )
         f.write("#PBS"+" -e "+DATA_OUTPUT_BASE_DIR+"/log/"+JOBNAME+".err"+"\n" )
         f.write("#PBS"+" -l walltime="+TIMELIMIT+"\n" )
-        f.write("/bin/bash "+indir+" "+COMMAND+"\n" )
-
-        #name
-        STUBNAME = str(RUNNUM) + "_" + str(FILENUM)
-	JOBNAME = WORKFLOW + "_" + STUBNAME
-
-        #add_command = "echo \'"+indir + " "+COMMAND+"\'"
-        #add_command += " | qsub "
-        
-        #add_command += "-d "+RUNNING_DIR
-
-        if(VERBOSE==True):
-                print add_command
+        f.write("trap \'\' 2 9 15 \n" )
+        f.write(shell_to_use+indir+" "+COMMAND+"\n" )
+        f.write("exit \n")
 
         mkdircom="mkdir -p "+DATA_OUTPUT_BASE_DIR+"/log/"
-        #mkdircom2="mkdir -p "+RUNNING_DIR
-        #if add_command.find(';')!=-1 or add_command.find('&')!=-1 or mkdircom.find(';')!=-1 or mkdircom.find('&')!=-1 or mkdircom2.find(';')!=-1 or mkdircom2.find('&')!=-1:#THIS CHECK HELPS PROTEXT AGAINST A POTENTIAL HACK VIA CONFIG FILES
-        #        print "Nice try.....you cannot use ; or &"
-        #        exit(1)
 
-#        ps = subprocess.Popen(('echo',indir+" "+COMMAND ), stdout=subprocess.PIPE)
-#        output = subprocess.check_output(add_command.split(" "), stdin=ps.stdout)
-#        ps.wait()
-                #print output
-       # status = subprocess.call(mkdircom2, shell=True)
         status = subprocess.call(mkdircom, shell=True)
         status = subprocess.call(sub_command, shell=True)
 
