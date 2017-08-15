@@ -125,6 +125,7 @@ def  cmu_qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES
         f.write("#PBS"+" -o "+DATA_OUTPUT_BASE_DIR+"/log/"+JOBNAME+".out"+"\n" )
         f.write("#PBS"+" -e "+DATA_OUTPUT_BASE_DIR+"/log/"+JOBNAME+".err"+"\n" )
         f.write("#PBS"+" -l walltime="+TIMELIMIT+"\n" )
+        f.write("/bin/bash "+indir+" "+COMMAND+"\n" )
 
         #name
         STUBNAME = str(RUNNUM) + "_" + str(FILENUM)
