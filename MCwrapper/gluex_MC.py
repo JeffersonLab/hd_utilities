@@ -135,9 +135,9 @@ def  cmu_qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES
         f.write("#PBS"+" -o "+DATA_OUTPUT_BASE_DIR+"/log/"+JOBNAME+".out"+"\n" )
         f.write("#PBS"+" -e "+DATA_OUTPUT_BASE_DIR+"/log/"+JOBNAME+".err"+"\n" )
         f.write("#PBS"+" -l walltime="+TIMELIMIT+"\n" )
-        f.write("trap \'\' 2 9 15 \n" )
+       # f.write("trap \'\' 2 9 15 \n" )
         f.write(shell_to_use+indir+" "+COMMAND+"\n" )
-        f.write("exit \n")
+       # f.write("exit \n")
 
         mkdircom="mkdir -p "+DATA_OUTPUT_BASE_DIR+"/log/"
 
