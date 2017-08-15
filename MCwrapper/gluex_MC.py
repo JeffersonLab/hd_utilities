@@ -108,6 +108,50 @@ def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DA
         status = subprocess.call(mkdircom, shell=True)
         status = subprocess.call(add_command, shell=True)
 
+def  cmu_qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR ):
+        sub_command="qsub MCqsub.submit"
+       
+        qsub_ml_command=""
+        bits=NCORES.split(":")
+        if (len(bits)==3):
+                qsub_ml_command ="-l nodes="+bits[0]+":"+bits[1]+":ppn="+bits[2]
+        elif (len(bits)==2):
+                qsub_ml_command ="-l nodes="+bits[0]+":ppn="+bits[1]
+
+        f=open('MCqsub.submit','w')
+        f.write("#!/bin/sh -f"+"\n" )
+        f.write("#PBS"+" -N "+JOBNAME+"\n" )
+        f.write("#PBS"+" -l "+qsub_ml_command+"\n" )
+        f.write("#PBS"+" -o "+DATA_OUTPUT_BASE_DIR+"/log/"+JOBNAME+".out"+"\n" )
+        f.write("#PBS"+" -e "+DATA_OUTPUT_BASE_DIR+"/log/"+JOBNAME+".err"+"\n" )
+        f.write("#PBS"+" -l walltime="+TIMELIMIT+"\n" )
+
+        #name
+        STUBNAME = str(RUNNUM) + "_" + str(FILENUM)
+	JOBNAME = WORKFLOW + "_" + STUBNAME
+
+        #add_command = "echo \'"+indir + " "+COMMAND+"\'"
+        #add_command += " | qsub "
+        
+        #add_command += "-d "+RUNNING_DIR
+
+        if(VERBOSE==True):
+                print add_command
+
+        mkdircom="mkdir -p "+DATA_OUTPUT_BASE_DIR+"/log/"
+        #mkdircom2="mkdir -p "+RUNNING_DIR
+        #if add_command.find(';')!=-1 or add_command.find('&')!=-1 or mkdircom.find(';')!=-1 or mkdircom.find('&')!=-1 or mkdircom2.find(';')!=-1 or mkdircom2.find('&')!=-1:#THIS CHECK HELPS PROTEXT AGAINST A POTENTIAL HACK VIA CONFIG FILES
+        #        print "Nice try.....you cannot use ; or &"
+        #        exit(1)
+
+#        ps = subprocess.Popen(('echo',indir+" "+COMMAND ), stdout=subprocess.PIPE)
+#        output = subprocess.check_output(add_command.split(" "), stdin=ps.stdout)
+#        ps.wait()
+                #print output
+       # status = subprocess.call(mkdircom2, shell=True)
+        status = subprocess.call(mkdircom, shell=True)
+        status = subprocess.call(sub_command, shell=True)
+
 def  condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR ):
         STUBNAME = str(RUNNUM) + "_" + str(FILENUM)
 	JOBNAME = WORKFLOW + "_" + STUBNAME
@@ -197,8 +241,6 @@ def main(argv):
 
         GEANTVER = 4        
         BGFOLD="DEFAULT"
-
-
 
         CUSTOM_MAKEMC="DEFAULT"
         CUSTOM_GCONTROL="0"
@@ -374,7 +416,7 @@ def main(argv):
       #          print ""
                 
         if DATA_OUTPUT_BASE_DIR == "UNKNOWN_LOCATION":
-                print "I doubt that SWIF will find "+DATA_OUTPUT_BASE_DIR+" so I am saving you the embarassment and stopping this"
+                print "I doubt that the system will find "+DATA_OUTPUT_BASE_DIR+" so I am saving you the embarassment and stopping this"
                 return
 
         name_breakdown=GENCONFIG.split("/")
@@ -436,6 +478,8 @@ def main(argv):
                         	swif_add_job(WORKFLOW, RUNNUM, FILENUM,str(indir),COMMAND,VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR)
                         elif BATCHSYS.upper()=="QSUB":
                                 qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR )
+                        elif BATCHSYS.upper()=="CMUQSUB":
+                                cmu_qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR )
                         elif BATCHSYS.upper()=="CONDOR":
                                 condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR )
 
