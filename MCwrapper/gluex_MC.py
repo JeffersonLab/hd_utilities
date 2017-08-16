@@ -23,6 +23,7 @@
 from os import environ
 from optparse import OptionParser
 import os.path
+import time
 import os
 import sys
 import re
@@ -118,9 +119,9 @@ def  cmu_qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES
         qsub_ml_command=""
         bits=NCORES.split(":")
         if (len(bits)==3):
-                qsub_ml_command ="-l nodes="+bits[0]+":ppn="+bits[2]
+                qsub_ml_command ="nodes="+bits[0]+":ppn="+bits[2]
         elif (len(bits)==2):
-                qsub_ml_command ="-l nodes="+bits[0]+":ppn="+bits[1]
+                qsub_ml_command ="nodes="+bits[0]+":ppn="+bits[1]
 
         shell_to_use="/bin/bash "
         if (indir[len(indir)-3]=='c'):
@@ -145,6 +146,10 @@ def  cmu_qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES
        # f.write("trap \'\' 2 9 15 \n" )
         f.write(shell_to_use+indir+" "+COMMAND+"\n" )
         f.write("exit 0\n")
+        f.close()
+
+        time.sleep(0.25)
+
 
         mkdircom="mkdir -p "+DATA_OUTPUT_BASE_DIR+"/log/"
 
