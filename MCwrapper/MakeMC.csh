@@ -58,6 +58,10 @@ shift
 setenv CUSTOM_PLUGINS $1
 shift
 setenv PER_FILE $1
+shift
+setenv RUNNING_DIR $1
+shift
+setenv SQLITEPATH $1
 
 echo ""
 echo ""
@@ -65,6 +69,7 @@ echo "Detected c-shell"
 
 # PRINT INPUTS
 echo "Job started: " `date`
+echo "sqlite path: " $SQLITEPATH
 echo "Producing file number: "$FILE_NUMBER
 echo "Containing at most "$PER_FILE" events"
 echo "Output location: "$OUTDIR
@@ -89,11 +94,20 @@ echo "=============================================="
 echo ""
 echo ""
 
+cd $RUNNING_DIR
+
 #necessary to run swif, uses local directory if swif=0 is used
 if ( "$BATCHRUN" != "0" ) then
 # ENVIRONMENT
     echo $ENVIRONMENT
+	#if ( "$BATCHSYS" == "QSUB" ) then
+	#	cd $RUNNING_DIR
+	#endif
+	
     source $ENVIRONMENT
+    cp $SQLITEPATH .
+    setenv CCDB_CONNECTION sqlite:///$RUNNING_DIR/ccdb.sqlite
+    setenv JANA_CALIB_URL ${CCDB_CONNECTION}
     echo pwd=$PWD
     mkdir -p $OUTDIR
     mkdir -p $OUTDIR/log
@@ -152,7 +166,9 @@ if ( `echo $GEN_MAX_ENERGY | grep -o "\." | wc -l` == 0 ) then
     set GEN_MAX_ENERGY=$GEN_MAX_ENERGY\.
 endif
 
+#echo `-d "$OUTDIR"`
 if ( ! -d "$OUTDIR" ) then
+    echo "making dir"
     mkdir $OUTDIR
 endif
 if ( ! -d "$OUTDIR/configurations/" ) then
@@ -185,7 +201,8 @@ if ( "$BKGFOLDSTR" == "DEFAULT" || "$bkgloc_pre" == "loc:" ) then
     endif
 
     if ( $RUN_NUMBER < 30000 ) then
-	echo "Warning: random triggers did not exist by this point"
+	echo "Warning: random triggers do not exist for this run"
+	exit
     endif
 	
 	if ( "$bkgloc_pre" == "loc:" ) then
@@ -214,9 +231,9 @@ set gen_pre=""
 
 if ( "$GENR" != "0" ) then
     set gen_pre=`echo $GENERATOR | cut -c1-4`
-    if ( "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" && "$GENERATOR" != "gen_omega_3pi" ) then
+    if ( "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" && "$GENERATOR" != "gen_omega_3pi" && "$GENERATOR" != "gen_2k" ) then
 	echo "NO VALID GENERATOR GIVEN"
-	echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0, gen_omega_3pi] are supported"
+	echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0, gen_omega_3pi, gen_2k] are supported"
 	exit
     endif
 
@@ -272,6 +289,10 @@ if ( "$GENR" != "0" ) then
 	echo "configuring gen_pi0"
 	set STANDARD_NAME="genr_pi0_"$STANDARD_NAME
 	cp $CONFIG_FILE ./$STANDARD_NAME.conf
+	else if ( "$GENERATOR" == "gen_2k" ) then
+	echo "configuring gen_2k"
+	set STANDARD_NAME="gen_2k_"$STANDARD_NAME
+	cp $CONFIG_FILE ./$STANDARD_NAME.conf
     endif
 
     if ( "$gen_pre" != "file" ) then
@@ -326,14 +347,21 @@ if ( "$GENR" != "0" ) then
 	echo "RUNNING GEN_2PI_PRIMAKOFF" 
         set optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
 	echo $optionals_line
-	echo gen_2pi_primakoff -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER  -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
-	gen_2pi_primakoff -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
+	echo gen_2pi_primakoff -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER  -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK $optionals_line
+	gen_2pi_primakoff -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK $optionals_line
     else if ( "$GENERATOR" == "gen_pi0" ) then
 	echo "RUNNING GEN_PI0" 
         set optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
 	echo $optionals_line
 	gen_pi0 -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK  -s $formatted_fileNumber $optionals_line -m $eBEAM_ENERGY
-    endif
+    else if ( "$GENERATOR" == "gen_2k" ) then
+	echo "RUNNING GEN_2K" 
+    set optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
+	#set RANDOMnum=`bash -c 'echo $RANDOM'`
+	echo $optionals_line
+	echo gen_2k -c $STANDARD_NAME.conf -o $STANDARD_NAME.hddm -hd $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
+	gen_2k -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
+	endif
 
    set RETURN_CODE=$?
    #echo "Return Code = " $RETURN_CODE

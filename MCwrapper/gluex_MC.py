@@ -23,6 +23,7 @@
 from os import environ
 from optparse import OptionParser
 import os.path
+import time
 import os
 import sys
 import re
@@ -90,6 +91,7 @@ def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DA
         add_command += "-d "+RUNNING_DIR
         add_command += " -N "+JOBNAME
 
+
         if(VERBOSE==True):
                 print add_command
 
@@ -107,6 +109,53 @@ def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DA
         status = subprocess.call(mkdircom, shell=True)
         status = subprocess.call(add_command, shell=True)
 
+def  cmu_qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, MEMLIMIT ):
+        #name
+        STUBNAME = str(RUNNUM) + "_" + str(FILENUM)
+	JOBNAME = WORKFLOW + "_" + STUBNAME
+       
+        sub_command="qsub MCqsub.submit"
+       
+        qsub_ml_command=""
+        bits=NCORES.split(":")
+        if (len(bits)==3):
+                qsub_ml_command ="nodes="+bits[0]+":ppn="+bits[2]
+        elif (len(bits)==2):
+                qsub_ml_command ="nodes="+bits[0]+":ppn="+bits[1]
+
+        shell_to_use="/bin/bash "
+        if (indir[len(indir)-3]=='c'):
+                shell_to_use="/bin/csh "
+
+        f=open('MCqsub.submit','w')
+        f.write("#!/bin/sh -f"+"\n" )
+        f.write("#PBS"+" -N "+JOBNAME+"\n" )
+        f.write("#PBS"+" -l "+qsub_ml_command+"\n" )
+        f.write("#PBS"+" -o "+DATA_OUTPUT_BASE_DIR+"/log/"+JOBNAME+".out"+"\n" )
+        f.write("#PBS"+" -e "+DATA_OUTPUT_BASE_DIR+"/log/"+JOBNAME+".err"+"\n" )
+        f.write("#PBS"+" -l walltime="+TIMELIMIT+"\n" )
+        if (len(bits)==3):
+                f.write("#PBS"+" -q "+bit[1]+"\n" )
+        f.write("#PBS"+" -l mem="+MEMLIMIT+",ncpus=1\n" ) 
+        f.write("#PBS"+" -m ae"+"\n" )  
+        f.write("#PBS"+" -p 0"+"\n" )
+        f.write("#PBS -c c=2 \n")
+        f.write("NCPU=\\ \n")
+        f.write("NNODES=\\ \n")    
+       
+       # f.write("trap \'\' 2 9 15 \n" )
+        f.write(shell_to_use+indir+" "+COMMAND+"\n" )
+        f.write("exit 0\n")
+        f.close()
+
+        time.sleep(0.25)
+
+
+        mkdircom="mkdir -p "+DATA_OUTPUT_BASE_DIR+"/log/"
+
+        status = subprocess.call(mkdircom, shell=True)
+        status = subprocess.call(sub_command, shell=True)
+
 def  condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR ):
         STUBNAME = str(RUNNUM) + "_" + str(FILENUM)
 	JOBNAME = WORKFLOW + "_" + STUBNAME
@@ -121,7 +170,7 @@ def  condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, 
         f.write("RequestCpus = "+NCORES+"\n")
         f.write("Queue 1\n")
         f.close()
-
+        
         add_command="condor_submit -name "+JOBNAME+" MCcondor.submit"
         if add_command.find(';')!=-1 or add_command.find('&')!=-1 or mkdircom.find(';')!=-1 or mkdircom.find('&')!=-1:#THIS CHECK HELPS PROTEXT AGAINST A POTENTIAL HACK VIA CONFIG FILES
                 print "Nice try.....you cannot use ; or &"
@@ -172,8 +221,8 @@ def main(argv):
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         print "*********************************"
-        print "Welcome to v1.7.1 of the MCwrapper"
-        print "Thomas Britton 06/08/17"
+        print "Welcome to v1.8.0 of the MCwrapper"
+        print "Thomas Britton 08/11/17"
         print "*********************************"
 
 	#load all argument passed in and set default options
@@ -196,8 +245,6 @@ def main(argv):
 
         GEANTVER = 4        
         BGFOLD="DEFAULT"
-
-
 
         CUSTOM_MAKEMC="DEFAULT"
         CUSTOM_GCONTROL="0"
@@ -315,6 +362,8 @@ def main(argv):
                         BATCHSYS=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="RUNNING_DIRECTORY" :
                         RUNNING_DIR=rm_comments[0].strip()
+		elif str(parts[0]).upper()=="SQLITEPATH" :
+			SQLITEPATH=rm_comments[0].strip()
                 else:
                         print "unknown config parameter!! "+str(parts[0])
 	#loop over command line arguments 
@@ -373,7 +422,7 @@ def main(argv):
       #          print ""
                 
         if DATA_OUTPUT_BASE_DIR == "UNKNOWN_LOCATION":
-                print "I doubt that SWIF will find "+DATA_OUTPUT_BASE_DIR+" so I am saving you the embarassment and stopping this"
+                print "I doubt that the system will find "+DATA_OUTPUT_BASE_DIR+" so I am saving you the embarassment and stopping this"
                 return
 
         name_breakdown=GENCONFIG.split("/")
@@ -424,7 +473,7 @@ def main(argv):
 		if num == 0:
 			continue
                 
-		COMMAND=ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(RUNNUM)+" "+str(FILENUM-1)+" "+str(num)+" "+str(VERSION)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHRUN)+" "+str(BATCHRUN)+" "+str(NCORES).strip()[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)
+		COMMAND=ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(RUNNUM)+" "+str(FILENUM-1)+" "+str(num)+" "+str(VERSION)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHRUN)+" "+str(BATCHRUN)+" "+str(NCORES).strip()[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(SQLITEPATH)
                
 		#print COMMAND
 		#either call MakeMC.csh or add a job depending on swif flag
@@ -435,6 +484,8 @@ def main(argv):
                         	swif_add_job(WORKFLOW, RUNNUM, FILENUM,str(indir),COMMAND,VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR)
                         elif BATCHSYS.upper()=="QSUB":
                                 qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR )
+                        elif BATCHSYS.upper()=="CMUQSUB":
+                                cmu_qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, RAM )
                         elif BATCHSYS.upper()=="CONDOR":
                                 condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR )
 
