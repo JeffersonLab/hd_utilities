@@ -242,6 +242,7 @@ def main(argv):
         MIN_GEN_ENERGY="4"
         MAX_GEN_ENERGY="12"
         RUNNING_DIR="./"
+	SQLITEPATH="no_sqlite"
 
         GEANTVER = 4        
         BGFOLD="DEFAULT"

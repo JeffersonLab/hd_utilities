@@ -102,9 +102,11 @@ if [[ "$BATCHRUN" != "0" ]]; then
     # ENVIRONMENT
     echo $ENVIRONMENT
     source $ENVIRONMENT
-    cp $SQLITEPATH .
-    export CCDB_CONNECTION sqlite:///$RUNNING_DIR/ccdb.sqlite
-    export JANA_CALIB_URL $CCDB_CONNECTION
+    if [[ "$SQLITEPATH" != "no_sqlite" ]]; then
+        cp $SQLITEPATH .
+        export CCDB_CONNECTION sqlite:///$RUNNING_DIR/ccdb.sqlite
+        export JANA_CALIB_URL $CCDB_CONNECTION
+    fi
     echo pwd=$PWD
     mkdir -p $OUTDIR
     mkdir -p $OUTDIR/log

@@ -105,9 +105,11 @@ if ( "$BATCHRUN" != "0" ) then
 	#endif
 	
     source $ENVIRONMENT
-    cp $SQLITEPATH .
-    setenv CCDB_CONNECTION sqlite:///$RUNNING_DIR/ccdb.sqlite
-    setenv JANA_CALIB_URL ${CCDB_CONNECTION}
+    if ( "$SQLITEPATH" != "no_sqlite" ) then
+        cp $SQLITEPATH .
+        setenv CCDB_CONNECTION sqlite:///$RUNNING_DIR/ccdb.sqlite
+        setenv JANA_CALIB_URL ${CCDB_CONNECTION}
+    endif
     echo pwd=$PWD
     mkdir -p $OUTDIR
     mkdir -p $OUTDIR/log
