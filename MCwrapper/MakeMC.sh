@@ -59,7 +59,9 @@ export CUSTOM_PLUGINS=$1
 shift
 export PER_FILE=$1
 shift
-export RUNNING_DIR=$1
+export RUNNING_DIR $1
+shift
+export SQLITEPATH $1
 
 echo ""
 echo ""
@@ -91,7 +93,7 @@ echo "=============================================="
 echo ""
 echo ""
 
-
+cd $RUNNING_DIR
 
 #printenv
 #necessary to run swif, uses local directory if swif=0 is used
@@ -102,6 +104,11 @@ if [[ "$BATCHRUN" != "0" ]]; then
 		cd $RUNNING_DIR
 	fi
     source $ENVIRONMENT
+    if [[ "$SQLITEPATH" != "no_sqlite" ]]; then
+        cp $SQLITEPATH .
+        export CCDB_CONNECTION sqlite:///$RUNNING_DIR/ccdb.sqlite
+        export JANA_CALIB_URL $CCDB_CONNECTION
+    fi
     echo pwd=$PWD
     mkdir -p $OUTDIR
     mkdir -p $OUTDIR/log

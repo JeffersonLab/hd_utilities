@@ -242,6 +242,7 @@ def main(argv):
         MIN_GEN_ENERGY="4"
         MAX_GEN_ENERGY="12"
         RUNNING_DIR="./"
+	SQLITEPATH="no_sqlite"
 
         GEANTVER = 4        
         BGFOLD="DEFAULT"
@@ -362,6 +363,8 @@ def main(argv):
                         BATCHSYS=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="RUNNING_DIRECTORY" :
                         RUNNING_DIR=rm_comments[0].strip()
+		elif str(parts[0]).upper()=="SQLITEPATH" :
+			SQLITEPATH=rm_comments[0].strip()
                 else:
                         print "unknown config parameter!! "+str(parts[0])
 	#loop over command line arguments 
@@ -471,7 +474,7 @@ def main(argv):
 		if num == 0:
 			continue
                 
-		COMMAND=ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(RUNNUM)+" "+str(FILENUM-1)+" "+str(num)+" "+str(VERSION)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHRUN)+" "+str(BATCHRUN)+" "+str(NCORES).strip()[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)
+		COMMAND=ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(RUNNUM)+" "+str(FILENUM-1)+" "+str(num)+" "+str(VERSION)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHRUN)+" "+str(BATCHRUN)+" "+str(NCORES).strip()[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(SQLITEPATH)
                
 		#print COMMAND
 		#either call MakeMC.csh or add a job depending on swif flag

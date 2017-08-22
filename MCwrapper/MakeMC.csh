@@ -60,6 +60,8 @@ shift
 setenv PER_FILE $1
 shift
 setenv RUNNING_DIR $1
+shift
+setenv SQLITEPATH $1
 
 echo ""
 echo ""
@@ -67,6 +69,7 @@ echo "Detected c-shell"
 
 # PRINT INPUTS
 echo "Job started: " `date`
+echo "sqlite path: " $SQLITEPATH
 echo "Producing file number: "$FILE_NUMBER
 echo "Containing at most "$PER_FILE" events"
 echo "Output location: "$OUTDIR
@@ -91,15 +94,22 @@ echo "=============================================="
 echo ""
 echo ""
 
+cd $RUNNING_DIR
+
 #necessary to run swif, uses local directory if swif=0 is used
 if ( "$BATCHRUN" != "0" ) then
 # ENVIRONMENT
     echo $ENVIRONMENT
-	if ( "$BATCHSYS" == "QSUB" ) then
-		cd $RUNNING_DIR
-	endif
+	#if ( "$BATCHSYS" == "QSUB" ) then
+	#	cd $RUNNING_DIR
+	#endif
 	
     source $ENVIRONMENT
+    if ( "$SQLITEPATH" != "no_sqlite" ) then
+        cp $SQLITEPATH .
+        setenv CCDB_CONNECTION sqlite:///$RUNNING_DIR/ccdb.sqlite
+        setenv JANA_CALIB_URL ${CCDB_CONNECTION}
+    endif
     echo pwd=$PWD
     mkdir -p $OUTDIR
     mkdir -p $OUTDIR/log
