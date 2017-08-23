@@ -119,7 +119,7 @@ def  cmu_qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES
         qsub_ml_command=""
         bits=NCORES.split(":")
         if (len(bits)==3):
-                qsub_ml_command ="nodes="+bits[0]+":"+bits[1]":ppn="+bits[2]
+                qsub_ml_command ="nodes="+bits[0]+":"+bits[1]+":ppn="+bits[2]
         elif (len(bits)==2):
                 qsub_ml_command ="nodes="+bits[0]+":ppn="+bits[1]
 
@@ -135,7 +135,7 @@ def  cmu_qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES
         f.write("#PBS"+" -e "+DATA_OUTPUT_BASE_DIR+"/log/"+JOBNAME+".err"+"\n" )
         f.write("#PBS"+" -l walltime="+TIMELIMIT+"\n" )
         #if (len(bits)==3):
-        #        f.write("#PBS"+" -q "+bit[1]+"\n" )
+        #        f.write("#PBS"+" -q "+bits[1]+"\n" )
         f.write("#PBS"+" -l mem="+MEMLIMIT+"\n" ) 
         f.write("#PBS"+" -m ae"+"\n" )  
         f.write("#PBS"+" -p 0"+"\n" )
