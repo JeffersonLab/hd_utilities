@@ -137,7 +137,7 @@ def  cmu_qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES
         #if (len(bits)==3):
         #        f.write("#PBS"+" -q "+bits[1]+"\n" )
         f.write("#PBS"+" -l mem="+MEMLIMIT+"\n" ) 
-        f.write("#PBS"+" -m ae"+"\n" )  
+        f.write("#PBS"+" -m a"+"\n" )  
         f.write("#PBS"+" -p 0"+"\n" )
         f.write("#PBS -c c=2 \n")
         f.write("NCPU=\\ \n")
