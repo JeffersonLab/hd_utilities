@@ -97,6 +97,9 @@ def  oldqsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES,
 
         mkdircom="mkdir -p "+DATA_OUTPUT_BASE_DIR+"/log/"
         mkdircom2="mkdir -p "+RUNNING_DIR
+        if(DATA_OUTPUT_BASE_DIR!=LOG_DIR)
+                status = subprocess.call("mkdir -p "+LOG_DIR, shell=True)
+
         if add_command.find(';')!=-1 or add_command.find('&')!=-1 or mkdircom.find(';')!=-1 or mkdircom.find('&')!=-1 or mkdircom2.find(';')!=-1 or mkdircom2.find('&')!=-1:#THIS CHECK HELPS PROTEXT AGAINST A POTENTIAL HACK VIA CONFIG FILES
                 print "Nice try.....you cannot use ; or &"
                 exit(1)
@@ -109,7 +112,7 @@ def  oldqsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES,
         status = subprocess.call(mkdircom, shell=True)
         status = subprocess.call(add_command, shell=True)
 
-def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, MEMLIMIT ):
+def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, MEMLIMIT, QUEUENAME, LOG_DIR ):
         #name
         STUBNAME = str(RUNNUM) + "_" + str(FILENUM)
 	JOBNAME = WORKFLOW + "_" + STUBNAME
@@ -131,11 +134,11 @@ def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DA
         f.write("#!/bin/sh -f"+"\n" )
         f.write("#PBS"+" -N "+JOBNAME+"\n" )
         f.write("#PBS"+" -l "+qsub_ml_command+"\n" )
-        f.write("#PBS"+" -o "+DATA_OUTPUT_BASE_DIR+"/log/"+JOBNAME+".out"+"\n" )
-        f.write("#PBS"+" -e "+DATA_OUTPUT_BASE_DIR+"/log/"+JOBNAME+".err"+"\n" )
+        f.write("#PBS"+" -o "+LOG_DIR+"/log/"+JOBNAME+".out"+"\n" )
+        f.write("#PBS"+" -e "+LOG_DIR+"/log/"+JOBNAME+".err"+"\n" )
         f.write("#PBS"+" -l walltime="+TIMELIMIT+"\n" )
-        #if (len(bits)==3):
-        #        f.write("#PBS"+" -q "+bits[1]+"\n" )
+        if (QUEUENAME != "DEF"):
+                f.write("#PBS"+" -q "+QUEUENAME+"\n" )
         f.write("#PBS"+" -l mem="+MEMLIMIT+"\n" ) 
         f.write("#PBS"+" -m a"+"\n" )  
         f.write("#PBS"+" -p 0"+"\n" )
@@ -230,8 +233,9 @@ def main(argv):
 
         TAGSTR="I_dont_have_one"
 
-        DATA_OUTPUT_BASE_DIR    = "UNKNOWN_LOCATION"#your desired output location (only needed for SWIF jobs
+        DATA_OUTPUT_BASE_DIR    = "UNKNOWN_LOCATION"#your desired output location
         
+       
         ENVFILE = "my-environment-file"#change this to your own environment file
         
         GENERATOR = "genr8"
@@ -252,6 +256,7 @@ def main(argv):
         CUSTOM_PLUGINS="None"
 
         BATCHSYS="NULL"
+        QUEUENAME="DEF"
         #-------SWIF ONLY-------------
         # PROJECT INFO
         PROJECT    = "gluex"          # http://scicomp.jlab.org/scicomp/#/projects
@@ -360,7 +365,10 @@ def main(argv):
                 elif str(parts[0]).upper()=="CUSTOM_PLUGINS" :
                         CUSTOM_PLUGINS=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="BATCH_SYSTEM" :
-                        BATCHSYS=rm_comments[0].strip()
+                        batch_sys_parts=rm_comments[0].strip().split(":")
+                        BATCHSYS=batch_sys_parts[0]
+                        if batch_sys_parts.len > 1 :
+                                QUEUENAME=batch_sys_parts[1]
                 elif str(parts[0]).upper()=="RUNNING_DIRECTORY" :
                         RUNNING_DIR=rm_comments[0].strip()
 		elif str(parts[0]).upper()=="SQLITEPATH" :
@@ -369,6 +377,9 @@ def main(argv):
                         print "unknown config parameter!! "+str(parts[0])
 	#loop over command line arguments 
 	
+        LOG_DIR = DATA_OUTPUT_BASE_DIR  #set LOG_DIR=DATA_OUTPUT_BASE_DIR
+
+
         for argu in args:
 		argfound=0
 		flag=argu.split("=")
@@ -412,6 +423,9 @@ def main(argv):
 			if flag[0]=="numthreads":
 				argfound=1
 				NCORES=str(flag[1])
+                        if flag[0]=="logdir":
+				argfound=1
+				LOG_DIR=str(flag[1])
 			if argfound==0:
 				print "WARNING OPTION: "+argu+" NOT FOUND!"
 
@@ -484,7 +498,7 @@ def main(argv):
                         if BATCHSYS.upper()=="SWIF":
                         	swif_add_job(WORKFLOW, RUNNUM, FILENUM,str(indir),COMMAND,VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR)
                         elif BATCHSYS.upper()=="QSUB":
-                                qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, RAM )
+                                qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, RAM, QUEUENAME, LOG_DIR )
                         elif BATCHSYS.upper()=="CONDOR":
                                 condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR )
 
