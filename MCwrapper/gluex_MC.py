@@ -71,7 +71,7 @@ def swif_add_job(WORKFLOW, RUNNO, FILENO,SCRIPT,COMMAND, VERBOSE,PROJECT,TRACK,N
                 exit(1)
 	status = subprocess.call(add_command.split(" "))
 
-def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR ):
+def  oldqsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR ):
         #name
         STUBNAME = str(RUNNUM) + "_" + str(FILENUM)
 	JOBNAME = WORKFLOW + "_" + STUBNAME
