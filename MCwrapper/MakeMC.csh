@@ -67,6 +67,20 @@ echo ""
 echo ""
 echo "Detected c-shell"
 
+set copeak=`rcnd $RUN_NUMBER coherent_peak | awk '{print $1}' | sed 's/\.//g' | awk -vFS="" -vOFS="" '{$1=$1"."}1' `
+
+if ( "$COHERENT_PEAK" != "rcdb" || "$JANA_CALIB_CONTEXT" != "variation=mc" ) then
+    set copeak=$COHERENT_PEAK
+else if ( $copeak == "R.un" ) then
+	set copeak=9
+else if ( $copeak == "-.10" ) then
+	set copeak=9
+endif
+
+setenv COHERENT_PEAK $copeak
+
+
+
 # PRINT INPUTS
 echo "Job started: " `date`
 echo "sqlite path: " $SQLITEPATH

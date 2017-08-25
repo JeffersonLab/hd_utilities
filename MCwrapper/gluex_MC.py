@@ -238,7 +238,7 @@ def main(argv):
         GENCONFIG = "NA"
 
         eBEAM_ENERGY="12"
-        COHERENT_PEAK="9"
+        COHERENT_PEAK="rcdb"
         MIN_GEN_ENERGY="4"
         MAX_GEN_ENERGY="12"
         RUNNING_DIR="./"

@@ -59,13 +59,26 @@ export CUSTOM_PLUGINS=$1
 shift
 export PER_FILE=$1
 shift
-export RUNNING_DIR $1
+export RUNNING_DIR=$1
 shift
-export SQLITEPATH $1
+export SQLITEPATH=$1
 
 echo ""
 echo ""
 echo "Detected bash shell"
+
+copeak=`rcnd $RUN_NUMBER coherent_peak | awk '{print $1}' | sed 's/\.//g' | awk -vFS="" -vOFS="" '{$1=$1"."}1' `
+
+if ( "$COHERENT_PEAK" != "rcdb" || "$JANA_CALIB_CONTEXT" != "variation=mc" ) then
+    copeak=$COHERENT_PEAK
+elif ( $copeak == "R.un" ) then
+	copeak=9
+elif ( $copeak == "-.10" ) then
+	copeak=9
+endif
+
+export COHERENT_PEAK=$copeak
+
 
 # PRINT INPUTS
 echo "Job started: " `date`
@@ -154,6 +167,7 @@ colsize=`rcnd $RUN_NUMBER collimator_diameter | awk '{print $1}' | sed -r 's/.{2
 if [[ "$colsize" == "B" || "$colsize" == "R" || "$JANA_CALIB_CONTEXT" != "variation=mc" ]]; then
     colsize="50"
 fi
+
 
 if [[ `echo $eBEAM_ENERGY | grep -o "\." | wc -l` == 0 ]]; then
     eBEAM_ENERGY=$eBEAM_ENERGY\.
