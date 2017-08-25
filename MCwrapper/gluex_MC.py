@@ -370,7 +370,7 @@ def main(argv):
                 elif str(parts[0]).upper()=="BATCH_SYSTEM" :
                         batch_sys_parts=rm_comments[0].strip().split(":")
                         BATCHSYS=batch_sys_parts[0]
-                        if batch_sys_parts.len > 1 :
+                        if len(batch_sys_parts) > 1 :
                                 QUEUENAME=batch_sys_parts[1]
                 elif str(parts[0]).upper()=="RUNNING_DIRECTORY" :
                         RUNNING_DIR=rm_comments[0].strip()
