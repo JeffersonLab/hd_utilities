@@ -85,6 +85,7 @@ echo "Using "$GENERATOR"  with config: "$CONFIG_FILE
 echo "----------------------------------------------"
 echo "Run geant step? "$GEANT"  Will be cleaned?" $CLEANGEANT
 echo "Using geant"$GEANTVER
+echo "Custom Gcontrol?" "$CUSTOM_GCONTROL"
 echo "Background to use: "$BKGFOLDSTR
 echo "Run mcsmear ? "$SMEAR"  Will be cleaned?" $CLEANSMEAR
 echo "----------------------------------------------"
@@ -100,16 +101,14 @@ cd $RUNNING_DIR
 if ( "$BATCHRUN" != "0" ) then
 # ENVIRONMENT
     echo $ENVIRONMENT
-	#if ( "$BATCHSYS" == "QSUB" ) then
-	#	cd $RUNNING_DIR
-	#endif
-	
     source $ENVIRONMENT
+
     if ( "$SQLITEPATH" != "no_sqlite" ) then
         cp $SQLITEPATH .
         setenv CCDB_CONNECTION sqlite:///$RUNNING_DIR/ccdb.sqlite
         setenv JANA_CALIB_URL ${CCDB_CONNECTION}
     endif
+
     echo pwd=$PWD
     mkdir -p $OUTDIR
     mkdir -p $OUTDIR/log
@@ -118,6 +117,7 @@ endif
 set current_files=`find . -maxdepth 1 -type f`
 
 if ( "$CUSTOM_GCONTROL" == "0" ) then
+	echo $MCWRAPPER_CENTRAL
     cp $MCWRAPPER_CENTRAL/Gcontrol.in ./temp_Gcontrol.in
     chmod 777 ./temp_Gcontrol.in
 else
@@ -432,17 +432,17 @@ if ( "$GENR" != "0" ) then
 	    
 	    if ( "$BKGFOLDSTR" == "BeamPhotons" || "$BKGFOLDSTR" == "None" ) then
 		echo "running MCsmear without folding in random background"
-		mcsmear -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm'
+		mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm'
 	    else if ( "$BKGFOLDSTR" == "DEFAULT" ) then
-		echo "mcsmear -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
-		mcsmear -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
+		echo "mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
+		mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
 		else if ( "$bkgloc_pre" == "loc:" ) then
-		echo "mcsmear -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
-		mcsmear -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
+		echo "mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
+		mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
 	    else
 		#trust the user and use their string
-		echo 'mcsmear -o'$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm'' '$STANDARD_NAME'_geant'$GEANTVER'.hddm'' '$BKGFOLDSTR
-		mcsmear -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm' $BKGFOLDSTR
+		echo 'mcsmear -PTHREAD_TIMEOUT=300 -o'$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm'' '$STANDARD_NAME'_geant'$GEANTVER'.hddm'' '$BKGFOLDSTR
+		mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm' $BKGFOLDSTR
 	    endif
 	
 	    #run reconstruction
