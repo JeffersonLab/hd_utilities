@@ -97,9 +97,7 @@ def  oldqsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES,
 
         mkdircom="mkdir -p "+DATA_OUTPUT_BASE_DIR+"/log/"
         mkdircom2="mkdir -p "+RUNNING_DIR
-        if(DATA_OUTPUT_BASE_DIR!=LOG_DIR)
-                status = subprocess.call("mkdir -p "+LOG_DIR, shell=True)
-
+        
         if add_command.find(';')!=-1 or add_command.find('&')!=-1 or mkdircom.find(';')!=-1 or mkdircom.find('&')!=-1 or mkdircom2.find(';')!=-1 or mkdircom2.find('&')!=-1:#THIS CHECK HELPS PROTEXT AGAINST A POTENTIAL HACK VIA CONFIG FILES
                 print "Nice try.....you cannot use ; or &"
                 exit(1)
@@ -153,6 +151,10 @@ def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DA
 
         time.sleep(0.25)
 
+        if(DATA_OUTPUT_BASE_DIR!=LOG_DIR)
+                status = subprocess.call("mkdir -p "+LOG_DIR+"/log/", shell=True)
+
+
         mkdircom="mkdir -p "+DATA_OUTPUT_BASE_DIR+"/log/"
 
         status = subprocess.call(mkdircom, shell=True)
@@ -196,7 +198,8 @@ def showhelp():
         helpstring+= " cleangeant=[0/1] where 0 means that the geant step will not be cleaned up after use (default is 1)\n"
         helpstring+= " cleanmcsmear=[0/1] where 0 means that the mcsmear step will not be cleaned up after use (default is 1)\n"
         helpstring+= " cleanrecon=[0/1] where 0 means that the reconstruction step will not run (default is 1)\n"
-        helpstring+= " batch=[0/1/2] where 1 means that jobs will be submitted, 2 will do the same as 1 but also run the workflow in the case of swif(default is 0 [interactive])\n"
+        helpstring+= " batch=[0/1/2] where 1 means that jobs will be submitted, 2 will do the same as 1 but also run the workflow in the case of swif (default is 0 [interactive])\n"
+        helpstring+= " logdir=[path] will direct the .out and .err files to the specified path for qsub\n"
         return helpstring
 
 ########################################################## MAIN ##########################################################
