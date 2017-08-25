@@ -151,7 +151,7 @@ def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DA
 
         time.sleep(0.25)
 
-        if(DATA_OUTPUT_BASE_DIR!=LOG_DIR)
+        if ( DATA_OUTPUT_BASE_DIR != LOG_DIR ) :
                 status = subprocess.call("mkdir -p "+LOG_DIR+"/log/", shell=True)
 
 
