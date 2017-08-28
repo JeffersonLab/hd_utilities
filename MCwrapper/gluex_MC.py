@@ -228,7 +228,7 @@ def main(argv):
 
         print "*********************************"
         print "Welcome to v1.8.0 of the MCwrapper"
-        print "Thomas Britton 08/25/17"
+        print "Thomas Britton 08/28/17"
         print "*********************************"
 
 	#load all argument passed in and set default options
@@ -244,7 +244,7 @@ def main(argv):
         GENERATOR = "genr8"
         GENCONFIG = "NA"
 
-        eBEAM_ENERGY="12"
+        eBEAM_ENERGY="rcdb"
         COHERENT_PEAK="rcdb"
         MIN_GEN_ENERGY="4"
         MAX_GEN_ENERGY="12"

@@ -67,17 +67,39 @@ echo ""
 echo ""
 echo "Detected bash shell"
 
-copeak=`rcnd $RUN_NUMBER coherent_peak | awk '{print $1}' | sed 's/\.//g' | awk -vFS="" -vOFS="" '{$1=$1"."}1' `
+elecE = 0
+elecE_text = `rcnd $RUN_NUMBER beam_energy | awk '{print $1}'`
 
-if ( "$COHERENT_PEAK" != "rcdb" || "$JANA_CALIB_CONTEXT" != "variation=mc" ) then
+if [[ "$eBEAM_ENERGY" != "rcdb" || "$JANA_CALIB_CONTEXT" != "variation=mc" ]]; then
+    elecE=$eBEAM_ENERGY
+elif [[ $elecE_text == "Run" ]]; then
+	elecE=12
+elif [[ $elecE_text == "-1.0" ]]; then
+	elecE=12 #Should never happen
+else
+	elecE = `echo "$elecE_text / 1000" | bc -l `
+fi
+
+copeak = 0
+copeak_text = `rcnd $RUN_NUMBER coherent_peak | awk '{print $1}'`
+
+if [[ "$COHERENT_PEAK" != "rcdb" || "$JANA_CALIB_CONTEXT" != "variation=mc" ]]; then
     copeak=$COHERENT_PEAK
-elif ( $copeak == "R.un" ) then
+elif [[ $copeak_text == "Run" ]]; then
 	copeak=9
-elif ( $copeak == "-.10" ) then
-	copeak=9
-endif
+elif [[ $copeak_text == "-1.0" ]]; then
+	copeak=`echo "($elecE_text + 100) / 1000" | bc -l ` #for now add a smidge to the max electron e
+else
+	copeak = `echo "$copeak_text / 1000" | bc -l `
+fi
 
-export COHERENT_PEAK=$copeak
+#echo $copeak
+
+#set copeak=`rcnd $RUN_NUMBER coherent_peak | awk '{print $1}' | sed 's/\.//g' #| awk -vFS="" -vOFS="" '{$1=$1"."}1' `
+
+setenv COHERENT_PEAK $copeak
+
+setenv eBEAM_ENERGY $elecE
 
 
 # PRINT INPUTS
