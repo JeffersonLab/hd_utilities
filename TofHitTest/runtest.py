@@ -18,8 +18,9 @@ RunPeriod = "3"
 for d in os.listdir(loc):
     if d.startswith("calibration"+RunPeriod):
         r = d[11:16]
-        RUNS.append(r)
-        DIRS.append(d)
+        if int(r)>30785 and int(r)<30900:
+            RUNS.append(r)
+            DIRS.append(d)
 
 RUNS.sort()
 DIRS.sort()
@@ -28,8 +29,6 @@ dataloc = '/cache/halld/RunPeriod-2017-01/rawdata/'
 mssloc = '/mss/halld/RunPeriod-2017-01/rawdata/'
 
 for r in RUNS:
-    if int(r) < 30321:
-        continue
 
     locdir = 'Run0'+r+ '/'
     fulldir = dataloc+locdir
