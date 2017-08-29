@@ -67,6 +67,22 @@ echo ""
 echo ""
 echo "Detected c-shell"
 
+
+set radthick="50.e-6"
+set words = `rcnd $RUN_NUMBER radiator_type | sed 's/ / /g' `
+foreach word ($words:q)	
+
+	set removedum = `echo $word:q | sed 's/um/ /g'`
+
+	if( $removedum != $word:q ) then
+		#set radthick=$removedum.e-6
+		set radthick = `echo $removedum.e-6 | tr -d '[:space:]'`
+	endif
+
+end
+
+echo polarization angle: `rcnd $RUN_NUMBER polarization_angle` # will need some doing
+
 set elecE = 0
 set elecE_text = `rcnd $RUN_NUMBER beam_energy | awk '{print $1}'`
 
@@ -425,6 +441,7 @@ if ( "$GENR" != "0" ) then
 	sed -i 's/TEMPOUT/'$STANDARD_NAME'_geant'$GEANTVER'.hddm/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	sed -i 's/TEMPTRIG/'$EVT_TO_GEN'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	sed -i 's/TEMPCOLD/'0.00$colsize'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	sed -i 's/TEMPRADTHICK/'"$radthick"'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 
 	if ( "$gen_pre" == "file" ) then
 		@ skip_num = $FILE_NUMBER * $PER_FILE
