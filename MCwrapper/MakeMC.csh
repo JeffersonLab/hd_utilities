@@ -106,7 +106,7 @@ if ( "$COHERENT_PEAK" != "rcdb" || "$JANA_CALIB_CONTEXT" != "variation=mc" ) the
 else if ( $copeak_text == "Run" ) then
 	set copeak=9
 else if ( $copeak_text == "-1.0" ) then
-	set copeak=` echo "($elecE_text + 100) / 1000" | bc -l ` #for now add a smidge to the max electron e
+	set copeak=0.0
 else
 	set copeak = `echo "$copeak_text / 1000" | bc -l `
 endif
