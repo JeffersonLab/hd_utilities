@@ -71,45 +71,6 @@ def swif_add_job(WORKFLOW, RUNNO, FILENO,SCRIPT,COMMAND, VERBOSE,PROJECT,TRACK,N
                 exit(1)
 	status = subprocess.call(add_command.split(" "))
 
-def  oldqsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR ):
-        #name
-        STUBNAME = str(RUNNUM) + "_" + str(FILENUM)
-	JOBNAME = WORKFLOW + "_" + STUBNAME
-
-        add_command = "echo \'"+indir + " "+COMMAND+"\'"
-        add_command += " | qsub "
-        bits=NCORES.split(":")
-        if (len(bits)==3):
-                add_command +="-l nodes="+bits[0]+":"+bits[1]+":ppn="+bits[2]
-        elif (len(bits)==2):
-                add_command +="-l nodes="+bits[0]+":ppn="+bits[1]
-
-        add_command += " -l walltime="
-        add_command +=TIMELIMIT+" -o "
-        add_command += DATA_OUTPUT_BASE_DIR+"/log/"+JOBNAME+".out -e "
-        add_command += DATA_OUTPUT_BASE_DIR+"/log/"+JOBNAME+".err "
-        add_command += "-d "+RUNNING_DIR
-        add_command += " -N "+JOBNAME
-
-
-        if(VERBOSE==True):
-                print add_command
-
-        mkdircom="mkdir -p "+DATA_OUTPUT_BASE_DIR+"/log/"
-        mkdircom2="mkdir -p "+RUNNING_DIR
-        
-        if add_command.find(';')!=-1 or add_command.find('&')!=-1 or mkdircom.find(';')!=-1 or mkdircom.find('&')!=-1 or mkdircom2.find(';')!=-1 or mkdircom2.find('&')!=-1:#THIS CHECK HELPS PROTEXT AGAINST A POTENTIAL HACK VIA CONFIG FILES
-                print "Nice try.....you cannot use ; or &"
-                exit(1)
-
-#        ps = subprocess.Popen(('echo',indir+" "+COMMAND ), stdout=subprocess.PIPE)
-#        output = subprocess.check_output(add_command.split(" "), stdin=ps.stdout)
-#        ps.wait()
-                #print output
-        status = subprocess.call(mkdircom2, shell=True)
-        status = subprocess.call(mkdircom, shell=True)
-        status = subprocess.call(add_command, shell=True)
-
 def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, MEMLIMIT, QUEUENAME, LOG_DIR ):
         #name
         STUBNAME = str(RUNNUM) + "_" + str(FILENUM)
@@ -159,6 +120,8 @@ def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DA
 
         status = subprocess.call(mkdircom, shell=True)
         status = subprocess.call(sub_command, shell=True)
+
+        status = subprocess.call("rm MCqsub.submit", shell=True)
         
 
 def  condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR ):
