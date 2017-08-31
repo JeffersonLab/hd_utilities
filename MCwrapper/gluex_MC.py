@@ -393,6 +393,8 @@ def main(argv):
 			if flag[0]=="variation":
 				argfound=1
 				VERSION=flag[1]
+                                for part in range(2,len(flag)):
+                                        VERSION+="="+flag[part]
 			if flag[0]=="per_file":
 				argfound=1
 				PERFILE=int(flag[1])
