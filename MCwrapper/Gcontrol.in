@@ -40,6 +40,7 @@ c      colld  - diameter of collimator in m
 c      Eemit  - electron beam emittance in m.rad
 c      radthick - dimaond radiator thickneess in m
 c Omitting the final parameter Emin results in the default value being used.
+c Setting Epeak to zero selects an amorphous radiator instead of diamond.
 BEAM TEMPELECE TEMPCOHERENT TEMPMINE 76.00 TEMPCOLD 10.e-9 TEMPRADTHICK
 
 c The GENBEAM card configures the simulation program to act purely as a
