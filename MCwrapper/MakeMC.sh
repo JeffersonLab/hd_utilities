@@ -13,7 +13,14 @@ export FILE_NUMBER=$1
 shift
 export EVT_TO_GEN=$1
 shift
-export JANA_CALIB_CONTEXT="variation="$1
+export VERSION $1
+shift
+export CALIBTIME $1
+wholecontext=$VERSION
+if [[ $CALIBTIME != "notime" ]]; then
+wholecontext="variation=$VERSION calibtime=$CALIBTIME"
+fi
+setenv JANA_CALIB_CONTEXT "$wholecontext"
 shift
 export GENR=$1
 shift

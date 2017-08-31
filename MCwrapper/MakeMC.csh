@@ -13,7 +13,14 @@ setenv FILE_NUMBER $1
 shift
 setenv EVT_TO_GEN $1
 shift
-setenv JANA_CALIB_CONTEXT "variation="$1
+setenv VERSION $1
+shift
+setenv CALIBTIME $1
+set wholecontext = $VERSION
+if($CALIBTIME != "notime") then
+set wholecontext = "variation=$VERSION calibtime=$CALIBTIME"
+endif
+setenv JANA_CALIB_CONTEXT "$wholecontext"
 shift
 setenv GENR $1
 shift

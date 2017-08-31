@@ -66,7 +66,7 @@ def swif_add_job(WORKFLOW, RUNNO, FILENO,SCRIPT,COMMAND, VERBOSE,PROJECT,TRACK,N
                 print "Please either increase NCORES or decrease RAM requested and try again."
                 exit(1)
 	# ADD JOB
-        if add_command.find(';')!=-1 or add_command.find('&')!=-1 :#THIS CHECK HELPS PROTEXT AGAINST A POTENTIAL HACK VIA CONFIG FILES
+        if add_command.find(';')!=-1 or add_command.find('&')!=-1 :#THIS CHECK HELPS PROTECT AGAINST A POTENTIAL HACK VIA CONFIG FILES
                 print "Nice try.....you cannot use ; or &"
                 exit(1)
 	status = subprocess.call(add_command.split(" "))
@@ -191,7 +191,7 @@ def main(argv):
 
         print "*********************************"
         print "Welcome to v1.8.0 of the MCwrapper"
-        print "Thomas Britton 08/28/17"
+        print "Thomas Britton 08/31/17"
         print "*********************************"
 
 	#load all argument passed in and set default options
@@ -237,6 +237,7 @@ def main(argv):
 
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         VERSION  = "mc"
+        CALIBTIME="notime"
 	PERFILE=10000
 	GENR=1
 	GEANT=1
@@ -345,7 +346,6 @@ def main(argv):
 	
         LOG_DIR = DATA_OUTPUT_BASE_DIR  #set LOG_DIR=DATA_OUTPUT_BASE_DIR
 
-
         for argu in args:
 		argfound=0
 		flag=argu.split("=")
@@ -355,9 +355,13 @@ def main(argv):
 		else:#toggle the flags as user defines
 			if flag[0]=="variation":
 				argfound=1
+
 				VERSION=flag[1]
-                                for part in range(2,len(flag)):
-                                        VERSION+="="+flag[part]
+ #                               for part in range(2,len(flag)):
+  #                                      VERSION+="="+flag[part]
+                        if flag[0]=="calibtime":
+				argfound=1
+                               	CALIBTIME=flag[1]
 			if flag[0]=="per_file":
 				argfound=1
 				PERFILE=int(flag[1])
@@ -396,7 +400,6 @@ def main(argv):
 				LOG_DIR=str(flag[1])
 			if argfound==0:
 				print "WARNING OPTION: "+argu+" NOT FOUND!"
-
 	
       #  if str(GEANTVER)=="3":
       #          print "!!!  Warning: Geant 3 detected! NumThreads has been set to 1"
@@ -456,7 +459,7 @@ def main(argv):
 		if num == 0:
 			continue
                 
-		COMMAND=ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(RUNNUM)+" "+str(FILENUM-1)+" "+str(num)+" "+str(VERSION)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHRUN)+" "+str(BATCHRUN)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(SQLITEPATH)
+		COMMAND=ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(RUNNUM)+" "+str(FILENUM-1)+" "+str(num)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHRUN)+" "+str(BATCHRUN)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(SQLITEPATH)
                
 		#print COMMAND
 		#either call MakeMC.csh or add a job depending on swif flag
