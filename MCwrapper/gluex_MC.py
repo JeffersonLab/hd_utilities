@@ -120,8 +120,8 @@ def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DA
 
         status = subprocess.call(mkdircom, shell=True)
         status = subprocess.call(sub_command, shell=True)
-
-        status = subprocess.call("rm MCqsub.submit", shell=True)
+        if ( VERBOSE == False ) :
+                status = subprocess.call("rm MCqsub.submit", shell=True)
         
 
 def  condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR ):
@@ -191,7 +191,7 @@ def main(argv):
 
         print "*********************************"
         print "Welcome to v1.8.0 of the MCwrapper"
-        print "Thomas Britton 08/31/17"
+        print "Thomas Britton 09/1/17"
         print "*********************************"
 
 	#load all argument passed in and set default options
