@@ -13,7 +13,14 @@ setenv FILE_NUMBER $1
 shift
 setenv EVT_TO_GEN $1
 shift
-setenv JANA_CALIB_CONTEXT "variation="$1
+setenv VERSION $1
+shift
+setenv CALIBTIME $1
+set wholecontext = $VERSION
+if($CALIBTIME != "notime") then
+set wholecontext = "variation=$VERSION calibtime=$CALIBTIME"
+endif
+setenv JANA_CALIB_CONTEXT "$wholecontext"
 shift
 setenv GENR $1
 shift
@@ -58,13 +65,69 @@ shift
 setenv CUSTOM_PLUGINS $1
 shift
 setenv PER_FILE $1
+shift
+setenv RUNNING_DIR $1
+shift
+setenv SQLITEPATH $1
 
 echo ""
 echo ""
 echo "Detected c-shell"
 
+
+set radthick="50.e-6"
+set words = `rcnd $RUN_NUMBER radiator_type | sed 's/ / /g' `
+foreach word ($words:q)	
+
+	set removedum = `echo $word:q | sed 's/um/ /g'`
+
+	if( $removedum != $word:q ) then
+		#set radthick=$removedum.e-6
+		set radthick = `echo $removedum.e-6 | tr -d '[:space:]'`
+	endif
+
+end
+
+echo polarization angle: `rcnd $RUN_NUMBER polarization_angle` # will need some doing
+
+set elecE = 0
+set elecE_text = `rcnd $RUN_NUMBER beam_energy | awk '{print $1}'`
+
+#echo "text: " $elecE_text
+
+if ( "$eBEAM_ENERGY" != "rcdb" || "$JANA_CALIB_CONTEXT" != "variation=mc" ) then
+    set elecE=$eBEAM_ENERGY
+else if ( $elecE_text == "Run" ) then
+	set elecE=12
+else if ( $elecE_text == "-1.0" ) then
+	set elecE=12 #Should never happen
+else
+	set elecE = `echo "$elecE_text / 1000" | bc -l `
+endif
+
+set copeak = 0
+set copeak_text = `rcnd $RUN_NUMBER coherent_peak | awk '{print $1}'`
+
+if ( "$COHERENT_PEAK" != "rcdb" || "$JANA_CALIB_CONTEXT" != "variation=mc" ) then
+    set copeak=$COHERENT_PEAK
+else if ( $copeak_text == "Run" ) then
+	set copeak=9
+else if ( $copeak_text == "-1.0" ) then
+	set copeak=0.0
+else
+	set copeak = `echo "$copeak_text / 1000" | bc -l `
+endif
+
+#echo $copeak
+#set copeak=`rcnd $RUN_NUMBER coherent_peak | awk '{print $1}' | sed 's/\.//g' #| awk -vFS="" -vOFS="" '{$1=$1"."}1' `
+
+setenv COHERENT_PEAK $copeak
+setenv eBEAM_ENERGY $elecE
+
+
 # PRINT INPUTS
 echo "Job started: " `date`
+echo "sqlite path: " $SQLITEPATH
 echo "Producing file number: "$FILE_NUMBER
 echo "Containing at most "$PER_FILE" events"
 echo "Output location: "$OUTDIR
@@ -80,6 +143,7 @@ echo "Using "$GENERATOR"  with config: "$CONFIG_FILE
 echo "----------------------------------------------"
 echo "Run geant step? "$GEANT"  Will be cleaned?" $CLEANGEANT
 echo "Using geant"$GEANTVER
+echo "Custom Gcontrol?" "$CUSTOM_GCONTROL"
 echo "Background to use: "$BKGFOLDSTR
 echo "Run mcsmear ? "$SMEAR"  Will be cleaned?" $CLEANSMEAR
 echo "----------------------------------------------"
@@ -89,11 +153,20 @@ echo "=============================================="
 echo ""
 echo ""
 
+cd $RUNNING_DIR
+
 #necessary to run swif, uses local directory if swif=0 is used
 if ( "$BATCHRUN" != "0" ) then
 # ENVIRONMENT
     echo $ENVIRONMENT
     source $ENVIRONMENT
+
+    if ( "$SQLITEPATH" != "no_sqlite" ) then
+        cp $SQLITEPATH .
+        setenv CCDB_CONNECTION sqlite:///$RUNNING_DIR/ccdb.sqlite
+        setenv JANA_CALIB_URL ${CCDB_CONNECTION}
+    endif
+
     echo pwd=$PWD
     mkdir -p $OUTDIR
     mkdir -p $OUTDIR/log
@@ -102,6 +175,7 @@ endif
 set current_files=`find . -maxdepth 1 -type f`
 
 if ( "$CUSTOM_GCONTROL" == "0" ) then
+	echo $MCWRAPPER_CENTRAL
     cp $MCWRAPPER_CENTRAL/Gcontrol.in ./temp_Gcontrol.in
     chmod 777 ./temp_Gcontrol.in
 else
@@ -152,7 +226,9 @@ if ( `echo $GEN_MAX_ENERGY | grep -o "\." | wc -l` == 0 ) then
     set GEN_MAX_ENERGY=$GEN_MAX_ENERGY\.
 endif
 
+#echo `-d "$OUTDIR"`
 if ( ! -d "$OUTDIR" ) then
+    echo "making dir"
     mkdir $OUTDIR
 endif
 if ( ! -d "$OUTDIR/configurations/" ) then
@@ -185,7 +261,8 @@ if ( "$BKGFOLDSTR" == "DEFAULT" || "$bkgloc_pre" == "loc:" ) then
     endif
 
     if ( $RUN_NUMBER < 30000 ) then
-	echo "Warning: random triggers did not exist by this point"
+	echo "Warning: random triggers do not exist for this run"
+	exit
     endif
 	
 	if ( "$bkgloc_pre" == "loc:" ) then
@@ -214,9 +291,9 @@ set gen_pre=""
 
 if ( "$GENR" != "0" ) then
     set gen_pre=`echo $GENERATOR | cut -c1-4`
-    if ( "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" && "$GENERATOR" != "gen_omega_3pi" ) then
+    if ( "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" && "$GENERATOR" != "gen_omega_3pi" && "$GENERATOR" != "gen_2k" ) then
 	echo "NO VALID GENERATOR GIVEN"
-	echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0, gen_omega_3pi] are supported"
+	echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0, gen_omega_3pi, gen_2k] are supported"
 	exit
     endif
 
@@ -272,6 +349,10 @@ if ( "$GENR" != "0" ) then
 	echo "configuring gen_pi0"
 	set STANDARD_NAME="genr_pi0_"$STANDARD_NAME
 	cp $CONFIG_FILE ./$STANDARD_NAME.conf
+	else if ( "$GENERATOR" == "gen_2k" ) then
+	echo "configuring gen_2k"
+	set STANDARD_NAME="gen_2k_"$STANDARD_NAME
+	cp $CONFIG_FILE ./$STANDARD_NAME.conf
     endif
 
     if ( "$gen_pre" != "file" ) then
@@ -326,14 +407,21 @@ if ( "$GENR" != "0" ) then
 	echo "RUNNING GEN_2PI_PRIMAKOFF" 
         set optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
 	echo $optionals_line
-	echo gen_2pi_primakoff -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER  -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
-	gen_2pi_primakoff -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
+	echo gen_2pi_primakoff -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER  -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK $optionals_line
+	gen_2pi_primakoff -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK $optionals_line
     else if ( "$GENERATOR" == "gen_pi0" ) then
 	echo "RUNNING GEN_PI0" 
         set optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
 	echo $optionals_line
 	gen_pi0 -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK  -s $formatted_fileNumber $optionals_line -m $eBEAM_ENERGY
-    endif
+    else if ( "$GENERATOR" == "gen_2k" ) then
+	echo "RUNNING GEN_2K" 
+    set optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
+	#set RANDOMnum=`bash -c 'echo $RANDOM'`
+	echo $optionals_line
+	echo gen_2k -c $STANDARD_NAME.conf -o $STANDARD_NAME.hddm -hd $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
+	gen_2k -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
+	endif
 
    set RETURN_CODE=$?
    #echo "Return Code = " $RETURN_CODE
@@ -360,6 +448,7 @@ if ( "$GENR" != "0" ) then
 	sed -i 's/TEMPOUT/'$STANDARD_NAME'_geant'$GEANTVER'.hddm/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	sed -i 's/TEMPTRIG/'$EVT_TO_GEN'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	sed -i 's/TEMPCOLD/'0.00$colsize'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	sed -i 's/TEMPRADTHICK/'"$radthick"'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 
 	if ( "$gen_pre" == "file" ) then
 		@ skip_num = $FILE_NUMBER * $PER_FILE
@@ -402,17 +491,17 @@ if ( "$GENR" != "0" ) then
 	    
 	    if ( "$BKGFOLDSTR" == "BeamPhotons" || "$BKGFOLDSTR" == "None" ) then
 		echo "running MCsmear without folding in random background"
-		mcsmear -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm'
+		mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm'
 	    else if ( "$BKGFOLDSTR" == "DEFAULT" ) then
-		echo "mcsmear -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
-		mcsmear -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
+		echo "mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
+		mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
 		else if ( "$bkgloc_pre" == "loc:" ) then
-		echo "mcsmear -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
-		mcsmear -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
+		echo "mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
+		mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
 	    else
 		#trust the user and use their string
-		echo 'mcsmear -o'$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm'' '$STANDARD_NAME'_geant'$GEANTVER'.hddm'' '$BKGFOLDSTR
-		mcsmear -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm' $BKGFOLDSTR
+		echo 'mcsmear -PTHREAD_TIMEOUT=300 -o'$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm'' '$STANDARD_NAME'_geant'$GEANTVER'.hddm'' '$BKGFOLDSTR
+		mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm' $BKGFOLDSTR
 	    endif
 	
 	    #run reconstruction

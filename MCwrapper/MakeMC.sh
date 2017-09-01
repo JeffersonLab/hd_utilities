@@ -13,7 +13,14 @@ export FILE_NUMBER=$1
 shift
 export EVT_TO_GEN=$1
 shift
-export JANA_CALIB_CONTEXT="variation="$1
+export VERSION $1
+shift
+export CALIBTIME $1
+wholecontext=$VERSION
+if [[ $CALIBTIME != "notime" ]]; then
+wholecontext="variation=$VERSION calibtime=$CALIBTIME"
+fi
+setenv JANA_CALIB_CONTEXT "$wholecontext"
 shift
 export GENR=$1
 shift
@@ -58,11 +65,63 @@ shift
 export CUSTOM_PLUGINS=$1
 shift
 export PER_FILE=$1
-
+shift
+export RUNNING_DIR=$1
+shift
+export SQLITEPATH=$1
 
 echo ""
 echo ""
 echo "Detected bash shell"
+
+radthick="50.e-6"
+exponentialu=".e-6"
+words=`rcnd $RUN_NUMBER radiator_type | sed 's/ / /g' `
+for word in $words;
+do	
+	removedum=`echo $word | sed 's/um/ /g'`
+	if [[ $removedum != $word ]]; then
+		radthick=`echo "$removedum.e-6" | tr -d '[:space:]'`
+	fi
+
+done
+
+echo polarization angle: `rcnd $RUN_NUMBER polarization_angle`
+
+elecE=0
+elecE_text=`rcnd $RUN_NUMBER beam_energy | awk '{print $1}'`
+
+if [[ "$eBEAM_ENERGY" != "rcdb" || "$JANA_CALIB_CONTEXT" != "variation=mc" ]]; then
+    elecE=$eBEAM_ENERGY
+elif [[ $elecE_text == "Run" ]]; then
+	elecE=12
+elif [[ $elecE_text == "-1.0" ]]; then
+	elecE=12 #Should never happen
+else
+	elecE=`echo "$elecE_text / 1000" | bc -l `
+fi
+
+copeak=0
+copeak_text=`rcnd $RUN_NUMBER coherent_peak | awk '{print $1}'`
+
+if [[ "$COHERENT_PEAK" != "rcdb" || "$JANA_CALIB_CONTEXT" != "variation=mc" ]]; then
+    copeak=$COHERENT_PEAK
+elif [[ $copeak_text == "Run" ]]; then
+	copeak=9
+elif [[ $copeak_text == "-1.0" ]]; then
+	copeak=0.0 #for now add a smidge to the max electron e
+else
+	copeak=`echo "$copeak_text / 1000" | bc -l `
+fi
+
+#echo $copeak
+
+#set copeak=`rcnd $RUN_NUMBER coherent_peak | awk '{print $1}' | sed 's/\.//g' #| awk -vFS="" -vOFS="" '{$1=$1"."}1' `
+
+export COHERENT_PEAK=$copeak
+
+export eBEAM_ENERGY=$elecE
+
 
 # PRINT INPUTS
 echo "Job started: " `date`
@@ -90,14 +149,22 @@ echo "=============================================="
 echo ""
 echo ""
 
-
+cd $RUNNING_DIR
 
 #printenv
 #necessary to run swif, uses local directory if swif=0 is used
 if [[ "$BATCHRUN" != "0" ]]; then
     # ENVIRONMENT
     echo $ENVIRONMENT
+	if [[ "$BATCHSYS" == "QSUB" ]]; then
+		cd $RUNNING_DIR
+	fi
     source $ENVIRONMENT
+    if [[ "$SQLITEPATH" != "no_sqlite" ]]; then
+        cp $SQLITEPATH .
+        export CCDB_CONNECTION sqlite:///$RUNNING_DIR/ccdb.sqlite
+        export JANA_CALIB_URL $CCDB_CONNECTION
+    fi
     echo pwd=$PWD
     mkdir -p $OUTDIR
     mkdir -p $OUTDIR/log
@@ -144,6 +211,7 @@ if [[ "$colsize" == "B" || "$colsize" == "R" || "$JANA_CALIB_CONTEXT" != "variat
     colsize="50"
 fi
 
+
 if [[ `echo $eBEAM_ENERGY | grep -o "\." | wc -l` == 0 ]]; then
     eBEAM_ENERGY=$eBEAM_ENERGY\.
 fi
@@ -189,7 +257,8 @@ if [[ "$BKGFOLDSTR" == "DEFAULT" || "$bkgloc_pre" == "loc:" ]]; then
 		    fi
 
 		    if [[ $RUN_NUMBER < 30000 ]]; then
-			echo "Warning: random triggers did not exist by this point"
+			echo "Warning: random triggers do not exist for this run"
+			exit
 		    fi
 
 			if [[ "$bkgloc_pre" == "loc:" ]]; then
@@ -219,9 +288,9 @@ gen_pre=""
 
 if [[ "$GENR" != "0" ]]; then
 	gen_pre=`echo $GENERATOR | cut -c1-4`
-    if [[ "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" && "$GENERATOR" != "gen_omega_3pi" ]]; then
+    if [[ "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" && "$GENERATOR" != "gen_omega_3pi" && "$GENERATOR" != "gen_2k" ]]; then
 	echo "NO VALID GENERATOR GIVEN"
-	echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0, gen_omega_3pi] are supported"
+	echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0, gen_omega_3pi, gen_2k] are supported"
 	exit
     fi
     
@@ -278,6 +347,10 @@ if [[ "$GENR" != "0" ]]; then
 	echo "configuring gen_pi0"
 	STANDARD_NAME="genr_pi0_"$STANDARD_NAME
 	cp $CONFIG_FILE ./$STANDARD_NAME.conf
+	elif [[ "$GENERATOR" == "gen_2k" ]]; then
+	echo "configuring gen_2k"
+	set STANDARD_NAME="gen_2k_"$STANDARD_NAME
+	cp $CONFIG_FILE ./$STANDARD_NAME.conf
     fi
 	
 	if [[ "$gen_pre" != "file" ]]; then
@@ -321,8 +394,8 @@ if [[ "$GENR" != "0" ]]; then
     optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
 	echo $optionals_line
 	#RANDOMnum=`bash -c 'echo $RANDOM'`
-	echo gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
-	gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
+	echo gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK $optionals_line
+	gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK $optionals_line
 	elif [[ "$GENERATOR" == "gen_omega_3pi" ]]; then
 	echo "RUNNING GEN_OMEGA_3PI" 
         optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
@@ -333,14 +406,21 @@ if [[ "$GENR" != "0" ]]; then
 	echo "RUNNING GEN_2PI_PRIMAKOFF" 
         optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
 	echo $optionals_line
-	echo gen_2pi_primakoff -c $STANDARD_NAME.conf -o  $STANDARD_NAME.hddm -hd  $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
-	gen_2pi_primakoff -c $STANDARD_NAME.conf -hd  $STANDARD_NAME.hddm -o  $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
+	echo gen_2pi_primakoff -c $STANDARD_NAME.conf -o  $STANDARD_NAME.hddm -hd  $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK $optionals_line
+	gen_2pi_primakoff -c $STANDARD_NAME.conf -hd  $STANDARD_NAME.hddm -o  $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK $optionals_line
     elif [[ "$GENERATOR" == "gen_pi0" ]]; then
 	echo "RUNNING GEN_PI0" 
         optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
 	echo $optionals_line
 	gen_pi0 -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK  -s $formatted_fileNumber $optionals_line -m $eBEAM_ENERGY
-    fi
+    elif [[ "$GENERATOR" == "gen_2k" ]]; then
+	echo "RUNNING GEN_2K" 
+    set optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
+	#set RANDOMnum=`bash -c 'echo $RANDOM'`
+	echo $optionals_line
+	echo gen_2k -c $STANDARD_NAME.conf -o $STANDARD_NAME.hddm -hd $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK $optionals_line
+	gen_2k -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK $optionals_line
+	fi
     
     #GEANT/smearing
     
@@ -363,6 +443,7 @@ if [[ "$GENR" != "0" ]]; then
 	sed -i 's/TEMPOUT/'$STANDARD_NAME'_geant'$GEANTVER'.hddm/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	sed -i 's/TEMPTRIG/'$EVT_TO_GEN'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	sed -i 's/TEMPCOLD/'0.00$colsize'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	sed -i 's/TEMPRADTHICK/'"$radthick"'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 
 	if [[ "$gen_pre" == "file" ]]; then
 			skip_num=$((FILE_NUMBER * PER_FILE))
@@ -402,17 +483,17 @@ if [[ "$GENR" != "0" ]]; then
 	    
 	    if [[ "$BKGFOLDSTR" == "BeamPhotons" || "$BKGFOLDSTR" == "None" ]]; then
 		echo "running MCsmear without folding in random background"
-		mcsmear -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm'
+		mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm'
 	    elif [[ "$BKGFOLDSTR" == "DEFAULT" ]]; then
-		echo "mcsmear -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
-		mcsmear -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
+		echo "mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
+		mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
 		elif [[ "$bkgloc_pre" == "loc:" ]]; then
-		echo "mcsmear -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
-		mcsmear -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
+		echo "mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
+		mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
 		else
 		    #trust the user and use their string
-		    echo 'mcsmear -o'$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm'' '$STANDARD_NAME'_geant'$GEANTVER'.hddm'' '$BKGFOLDSTR
-		    mcsmear -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm' $BKGFOLDSTR
+		    echo 'mcsmear -PTHREAD_TIMEOUT=300 -o'$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm'' '$STANDARD_NAME'_geant'$GEANTVER'.hddm'' '$BKGFOLDSTR
+		    mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm' $BKGFOLDSTR
 
 	    fi
 	    #run reconstruction
