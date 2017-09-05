@@ -20,15 +20,21 @@
 #
 # Example:
 #
-#   ccdb_reduce.py -input=ccdb.sqlite -output=ccdb_reduced.sqlite -rmin=30000 =rmax=3999 -variation=default -date='2017-08021 12:00:00'
+#   ccdb_reduce.py -input=ccdb.sqlite -output=ccdb_reduced.sqlite -rmin=30000 -rmax=3999 -variation=default -date='2017-08021 12:00:00'
 #
 # The above example will read from a local file named "ccdb.sqlite" and write the
 # reduced DB to a file named "ccdb_reduced.sqlite". It will only write values
 # corresponding to the "default" variation for runs 30000-39999 with the specified
 # date/time. Note that the input file is first copied to the output file and then
-# the output file reduced. If the input filename and output filename are then same
-# then the copy does not take place and the input file is reduced. 
-#  
+# the output file reduced. If the input filename and output filename are the same
+# then the copy does not take place and the input file is reduced.
+# 
+# This script should do the right thing regarding variations. It uses the CCDB API
+# to get a list of constant set ids for each item using the specified variation.
+# This means all constant sets saved in the reduced file will be what would be
+# returned by querying the full DB. However, if you save variation "A" to the 
+# reduced file and then query it using the "default" variation, some constant sets
+# will not be correct.
 #
 # This will not make the absolute smallest possible SQLite file since there are
 # entries in things like the runRange tables that are not removed. This will
