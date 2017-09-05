@@ -19,6 +19,8 @@ export CALIBTIME $1
 wholecontext=$VERSION
 if [[ $CALIBTIME != "notime" ]]; then
 wholecontext="variation=$VERSION calibtime=$CALIBTIME"
+else
+wholecontext="variation=$VERSION"
 fi
 setenv JANA_CALIB_CONTEXT "$wholecontext"
 shift
@@ -127,6 +129,7 @@ export eBEAM_ENERGY=$elecE
 echo "Job started: " `date`
 echo "Producing file number: "$FILE_NUMBER
 echo "Containing at most "$PER_FILE" events"
+echo "Running location:" $RUNNING_DIR
 echo "Output location: "$OUTDIR
 echo "Environment file: " $ENVIRONMENT
 echo "Context: "$JANA_CALIB_CONTEXT
@@ -149,7 +152,17 @@ echo "=============================================="
 echo ""
 echo ""
 
+if [[ ! -d $RUNNING_DIR ]]; then
+mkdir $RUNNING_DIR
+fi
+
 cd $RUNNING_DIR
+
+if [[ ! -d $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER} ]] then
+mkdir $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
+fi
+
+cd $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
 
 #printenv
 #necessary to run swif, uses local directory if swif=0 is used
