@@ -13,16 +13,16 @@ export FILE_NUMBER=$1
 shift
 export EVT_TO_GEN=$1
 shift
-export VERSION $1
+export VERSION=$1
 shift
-export CALIBTIME $1
+export CALIBTIME=$1
 wholecontext=$VERSION
-if [[ $CALIBTIME != "notime" ]]; then
+if [[ "$CALIBTIME" != "notime" ]]; then
 wholecontext="variation=$VERSION calibtime=$CALIBTIME"
 else
 wholecontext="variation=$VERSION"
 fi
-setenv JANA_CALIB_CONTEXT "$wholecontext"
+export JANA_CALIB_CONTEXT="$wholecontext"
 shift
 export GENR=$1
 shift
@@ -158,7 +158,7 @@ fi
 
 cd $RUNNING_DIR
 
-if [[ ! -d $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER} ]] then
+if [[ ! -d $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER} ]]; then
 mkdir $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
 fi
 
@@ -554,7 +554,7 @@ if [[ "$GENR" != "0" ]]; then
 
 		if [[ -f dana_rest.hddm ]]; then
                     mv dana_rest.hddm dana_rest_$STANDARD_NAME.hddm
-                fi
+        fi
 
 
 		if [[ "$CLEANGEANT" == "1" ]]; then
@@ -591,7 +591,7 @@ if [[ "$GENR" != "0" ]]; then
 		done
 	    fi
 	fi
-    fi
+  fi
 fi
 if [[ "$gen_pre" != "file" ]]; then
 	mv $PWD/*.conf $OUTDIR/configurations/generation/
