@@ -20,7 +20,7 @@
 #
 # Example:
 #
-#   ccdb_reduce.py -input=ccdb.sqlite -output=ccdb_reduced.sqlite -rmin=30000 -rmax=3999 -variation=default -date='2017-08021 12:00:00'
+#   ccdb_reduce.py -input=ccdb.sqlite -output=ccdb_reduced.sqlite -rmin=30000 -rmax=3999 -variation=default -date='2017-08-21 12:00:00'
 #
 # The above example will read from a local file named "ccdb.sqlite" and write the
 # reduced DB to a file named "ccdb_reduced.sqlite". It will only write values
@@ -58,8 +58,11 @@
 
 
 import os
+import re
 import sys
 import sqlite3
+import datetime
+from subprocess import call
 
 import ccdb
 from ccdb import Directory, TypeTable, Assignment, ConstantSet
@@ -71,20 +74,45 @@ RUN_MAX = 39999
 VARIATION = 'default'
 DATE_AND_TIME = None
 USER = os.getenv('USER', 'anonymous')
+
 #---------------------------------------------------------------------------
 
 for arg in sys.argv:
-	if arg.startswith('-input='    ) : SQLITE_INFILE  = arg[6:]
-	if arg.startswith('-output='   ) : SQLITE_OUTFILE = arg[7:]
+	if arg.startswith('-input='    ) : SQLITE_INFILE  = arg[7:]
+	if arg.startswith('-output='   ) : SQLITE_OUTFILE = arg[8:]
 	if arg.startswith('-rmin='     ) : RUN_MIN        = arg[6:]
 	if arg.startswith('-rmax='     ) : RUN_MAX        = arg[6:]
-	if arg.startswith('-variation=') : VARIATION      = arg[10:]
-	if arg.startswith('-date='     ) : DATE_AND_TIME  = arg[5:]
+	if arg.startswith('-variation=') : VARIATION      = arg[11:]
+	if arg.startswith('-date='     ) : DATE_AND_TIME  = arg[6:]
+
+# Datetime string must be handled specially
+DATETIME = None
+if DATE_AND_TIME :
+	tok = []
+	for t in filter(None, re.split(r'(\d+)', DATE_AND_TIME)):
+		try: tok.append(int(t))
+		except: pass
+	if   len(tok) == 6 : DATETIME = datetime.datetime(tok[0], tok[1], tok[2], tok[3], tok[4], tok[5])
+	elif len(tok) == 3 : DATETIME = datetime.datetime(tok[0], tok[1], tok[2])
+	else: print 'Unable to parse date/time string properly!'
+
+sqlite_connect_str = "sqlite:///" + SQLITE_INFILE
+print ''
+print '--------------------------------------------------'
+print '    input: ' + sqlite_connect_str
+print '   output: ' + SQLITE_OUTFILE
+print '     rmin: ' + RUN_MIN
+print '     rmax: ' + RUN_MAX
+print 'variation: ' + VARIATION
+if DATETIME : print '     date: \'' + str(DATETIME) + '\''
+print '--------------------------------------------------'
+print ''
 
 #---------------------------------------------------------------------------
 
+
+
 # Connect to CCDB sqlite file
-sqlite_connect_str = "sqlite:///" + SQLITE_INFILE
 provider = ccdb.AlchemyProvider()                        # this class has all CCDB manipulation functions
 provider.connect(sqlite_connect_str)                     # use usual connection string to connect to database
 provider.authentication.current_user_name = USER         # to have a name in logs
@@ -106,14 +134,21 @@ for t in type_tables :
 	run = RUN_MIN
 	while run <= RUN_MAX:
 		try:
-			assignment = provider.get_assignment(str(t.path), run, VARIATION, DATE_AND_TIME)
+			assignment = provider.get_assignment(str(t.path), run, VARIATION, DATETIME)
 			constantsets_to_keep.append(assignment.constant_set_id)
-			print '%d : %d - %d : %s' % (assignment.id, assignment.run_range.min, assignment.run_range.max, t.path)
+			# print 'found id:%d   runs:%d - %d  %s' % (assignment.id, assignment.run_range.min, assignment.run_range.max, t.path)
 			if assignment.run_range.max >= RUN_MAX : break
 			run = assignment.run_range.max + 1
 		except:
 			#print 'skipping ' + t.path
 			break
+print 'Found %d constants in %d type tables for specfied parameters' % (len(constantsets_to_keep), len(type_tables))
+
+
+# Copy input to output if different files
+if SQLITE_OUTFILE != SQLITE_INFILE:
+	print 'Copying '+SQLITE_INFILE+' to '+SQLITE_OUTFILE+' ...'
+	call(['cp', SQLITE_INFILE, SQLITE_OUTFILE])
 
 # Close CCDB connection and re-open as straight sqlite connection
 provider.disconnect()
@@ -126,6 +161,7 @@ c.execute('SELECT id FROM constantSets')
 rows = c.fetchall()
 constantsets_all = []
 for row in rows : constantsets_all.append(row[0])
+print 'Found %d total constant sets in DB' % len(constantsets_all)
 
 # Form list of constant sets to delete and delete them
 constantsets_to_delete = []
