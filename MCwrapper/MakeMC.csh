@@ -19,6 +19,8 @@ setenv CALIBTIME $1
 set wholecontext = $VERSION
 if($CALIBTIME != "notime") then
 set wholecontext = "variation=$VERSION calibtime=$CALIBTIME"
+else
+set wholecontext = "variation=$VERSION"
 endif
 setenv JANA_CALIB_CONTEXT "$wholecontext"
 shift
@@ -124,12 +126,12 @@ endif
 setenv COHERENT_PEAK $copeak
 setenv eBEAM_ENERGY $elecE
 
-
 # PRINT INPUTS
 echo "Job started: " `date`
 echo "sqlite path: " $SQLITEPATH
 echo "Producing file number: "$FILE_NUMBER
 echo "Containing at most "$PER_FILE" events"
+echo "Running location:" $RUNNING_DIR
 echo "Output location: "$OUTDIR
 echo "Environment file: " $ENVIRONMENT
 echo "Context: "$JANA_CALIB_CONTEXT
@@ -153,7 +155,19 @@ echo "=============================================="
 echo ""
 echo ""
 
+
+if (! -d $RUNNING_DIR) then
+mkdir $RUNNING_DIR
+endif
+
 cd $RUNNING_DIR
+
+if(! -d $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}) then
+mkdir $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
+endif
+
+cd $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
+
 
 #necessary to run swif, uses local directory if swif=0 is used
 if ( "$BATCHRUN" != "0" ) then

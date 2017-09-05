@@ -191,7 +191,7 @@ def main(argv):
 
         print "*********************************"
         print "Welcome to v1.8.0 of the MCwrapper"
-        print "Thomas Britton 09/1/17"
+        print "Thomas Britton 09/4/17"
         print "*********************************"
 
 	#load all argument passed in and set default options
@@ -461,7 +461,7 @@ def main(argv):
                 
 		COMMAND=ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(RUNNUM)+" "+str(FILENUM-1)+" "+str(num)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHRUN)+" "+str(BATCHRUN)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(SQLITEPATH)
                
-		#print COMMAND
+	        #print COMMAND
 		#either call MakeMC.csh or add a job depending on swif flag
                 if BATCHRUN == 0 or BATCHSYS=="NULL":
 			os.system(str(indir)+" "+COMMAND)
