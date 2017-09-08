@@ -1,8 +1,13 @@
 #!/bin/bash
 
 # SET INPUTS
+export BATCHRUN=$1
+shift
 export ENVIRONMENT=$1 
 shift
+if [[ "$BATCHRUN" != "0" ]]; then
+source $ENVIRONMENT
+fi
 export CONFIG_FILE=$1
 shift
 export OUTDIR=$1
@@ -41,8 +46,6 @@ shift
 export CLEANRECON=$1
 shift
 export BATCHSYS=$1
-shift
-export BATCHRUN=$1
 shift
 export NUMTHREADS=$1
 shift
@@ -93,7 +96,7 @@ echo polarization angle: `rcnd $RUN_NUMBER polarization_angle`
 elecE=0
 elecE_text=`rcnd $RUN_NUMBER beam_energy | awk '{print $1}'`
 
-if [[ "$eBEAM_ENERGY" != "rcdb" || "$JANA_CALIB_CONTEXT" != "variation=mc" ]]; then
+if [[ "$eBEAM_ENERGY" != "rcdb" || "$VERSION" != "mc" ]]; then
     elecE=$eBEAM_ENERGY
 elif [[ $elecE_text == "Run" ]]; then
 	elecE=12
@@ -106,7 +109,7 @@ fi
 copeak=0
 copeak_text=`rcnd $RUN_NUMBER coherent_peak | awk '{print $1}'`
 
-if [[ "$COHERENT_PEAK" != "rcdb" || "$JANA_CALIB_CONTEXT" != "variation=mc" ]]; then
+if [[ "$COHERENT_PEAK" != "rcdb" || "$VERSION" != "mc" ]]; then
     copeak=$COHERENT_PEAK
 elif [[ $copeak_text == "Run" ]]; then
 	copeak=9
@@ -172,7 +175,7 @@ if [[ "$BATCHRUN" != "0" ]]; then
 	if [[ "$BATCHSYS" == "QSUB" ]]; then
 		cd $RUNNING_DIR
 	fi
-    source $ENVIRONMENT
+    
     if [[ "$SQLITEPATH" != "no_sqlite" ]]; then
         cp $SQLITEPATH .
         export CCDB_CONNECTION sqlite:///$RUNNING_DIR/ccdb.sqlite

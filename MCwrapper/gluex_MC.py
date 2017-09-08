@@ -190,8 +190,8 @@ def main(argv):
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         print "*********************************"
-        print "Welcome to v1.8.0 of the MCwrapper"
-        print "Thomas Britton 09/4/17"
+        print "Welcome to v1.8.1 of the MCwrapper"
+        print "Thomas Britton 09/8/17"
         print "*********************************"
 
 	#load all argument passed in and set default options
@@ -264,7 +264,7 @@ def main(argv):
                         #print "Warning! No Sets given"
                         continue
                 
-                if len(parts)>2:
+                if len(parts)>2 and str(parts[0]).upper() != "VARIATION":
                         print "warning! I am going to have a really difficult time with:"
                         print line
                         print "I'm going to just ignore it and hope it isn't a problem...."
@@ -338,6 +338,12 @@ def main(argv):
                                 QUEUENAME=batch_sys_parts[1]
                 elif str(parts[0]).upper()=="RUNNING_DIRECTORY" :
                         RUNNING_DIR=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="VARIATION" :
+                        if ( len(parts)>2 ) :
+                                VERSION=str(parts[1]).split("calibtime")[0].split("#")[0].strip()
+                                CALIBTIME=str(parts[2]).split("#")[0].strip()
+                        else:
+                                VERSION=rm_comments[0].strip()
 		elif str(parts[0]).upper()=="SQLITEPATH" :
 			SQLITEPATH=rm_comments[0].strip()
                 else:
@@ -357,6 +363,7 @@ def main(argv):
 				argfound=1
 
 				VERSION=flag[1]
+                                CALIBTIME="notime"
  #                               for part in range(2,len(flag)):
   #                                      VERSION+="="+flag[part]
                         if flag[0]=="calibtime":
@@ -459,7 +466,7 @@ def main(argv):
 		if num == 0:
 			continue
                 
-		COMMAND=ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(RUNNUM)+" "+str(FILENUM-1)+" "+str(num)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHRUN)+" "+str(BATCHRUN)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(SQLITEPATH)
+		COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(RUNNUM)+" "+str(FILENUM-1)+" "+str(num)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(SQLITEPATH)
                
 	        #print COMMAND
 		#either call MakeMC.csh or add a job depending on swif flag

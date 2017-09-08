@@ -1,8 +1,13 @@
 #!/bin/csh -f
     
 # SET INPUTS
+setenv BATCHRUN $1
+shift
 setenv ENVIRONMENT $1 
 shift
+if ( "$BATCHRUN" != "0" ) then
+source $ENVIRONMENT
+endif
 setenv CONFIG_FILE $1
 shift
 setenv OUTDIR $1
@@ -41,8 +46,6 @@ shift
 setenv CLEANRECON $1
 shift
 setenv BATCHSYS $1
-shift
-setenv BATCHRUN $1
 shift
 setenv NUMTHREADS $1
 shift
@@ -97,7 +100,7 @@ set elecE_text = `rcnd $RUN_NUMBER beam_energy | awk '{print $1}'`
 
 #echo "text: " $elecE_text
 
-if ( "$eBEAM_ENERGY" != "rcdb" || "$JANA_CALIB_CONTEXT" != "variation=mc" ) then
+if ( "$eBEAM_ENERGY" != "rcdb" || "$VERSION" != "mc" ) then
     set elecE=$eBEAM_ENERGY
 else if ( $elecE_text == "Run" ) then
 	set elecE=12
@@ -110,7 +113,7 @@ endif
 set copeak = 0
 set copeak_text = `rcnd $RUN_NUMBER coherent_peak | awk '{print $1}'`
 
-if ( "$COHERENT_PEAK" != "rcdb" || "$JANA_CALIB_CONTEXT" != "variation=mc" ) then
+if ( "$COHERENT_PEAK" != "rcdb" || "$VERSION" != "mc" ) then
     set copeak=$COHERENT_PEAK
 else if ( $copeak_text == "Run" ) then
 	set copeak=9
@@ -173,8 +176,7 @@ cd $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
 if ( "$BATCHRUN" != "0" ) then
 # ENVIRONMENT
     echo $ENVIRONMENT
-    source $ENVIRONMENT
-
+    
     if ( "$SQLITEPATH" != "no_sqlite" ) then
         cp $SQLITEPATH .
         setenv CCDB_CONNECTION sqlite:///$RUNNING_DIR/ccdb.sqlite
