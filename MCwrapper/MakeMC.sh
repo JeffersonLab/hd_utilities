@@ -84,13 +84,13 @@ exponentialu=".e-6"
 words=`rcnd $RUN_NUMBER radiator_type | sed 's/ / /g' `
 for word in $words;
 do	
-	if [[ "$word" != "number" ]]; then
+	#if [[ "$word" != "number" ]]; then
 
 		removedum=`echo $word | sed 's/um/ /g'`
 		if [[ $removedum != $word ]]; then
 			radthick=`echo "$removedum.e-6" | tr -d '[:space:]'`
 		fi
-	fi
+	#fi
 done
 
 echo polarization angle: `rcnd $RUN_NUMBER polarization_angle`
