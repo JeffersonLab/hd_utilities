@@ -84,13 +84,16 @@ set radthick="50.e-6"
 set words = `rcnd $RUN_NUMBER radiator_type | sed 's/ / /g' `
 foreach word ($words:q)	
 
-	set removedum = `echo $word:q | sed 's/um/ /g'`
+	if ( "$word:q" != "number" )
+		
+		set removedum = `echo $word:q | sed 's/um/ /g'`
 
-	if( $removedum != $word:q ) then
-		#set radthick=$removedum.e-6
-		set radthick = `echo $removedum.e-6 | tr -d '[:space:]'`
+		if ( $removedum != $word:q ) then
+			#set radthick=$removedum.e-6
+			set radthick = `echo $removedum.e-6 | tr -d '[:space:]'`
+		endif
 	endif
-
+	
 end
 
 echo polarization angle: `rcnd $RUN_NUMBER polarization_angle` # will need some doing
