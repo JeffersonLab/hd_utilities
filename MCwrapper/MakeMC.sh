@@ -127,14 +127,14 @@ fi
 
 export COHERENT_PEAK=$copeak
 
-if [[ "$VERSION" != "mc" && "$COHERENT_PEAK"=="rcdb" ]]; then
+if [[ "$VERSION" != "mc" && "$COHERENT_PEAK" == "rcdb" ]]; then
 	echo "error in requesting rcdb for the coherent peak and not using variation=mc"
 	exit 1
 if
 
 export eBEAM_ENERGY=$elecE
 
-if [[ "$VERSION" != "mc" && "$eBEAM_ENERGY"=="rcdb" ]]; then
+if [[ "$VERSION" != "mc" && "$eBEAM_ENERGY" == "rcdb" ]]; then
 	echo "error in requesting rcdb for the electron beam energy and not using variation=mc"
 	exit 1
 if
