@@ -22,7 +22,7 @@ setenv VERSION $1
 shift
 setenv CALIBTIME $1
 set wholecontext = $VERSION
-if($CALIBTIME != "notime") then
+if ( $CALIBTIME != "notime" ) then
 set wholecontext = "variation=$VERSION calibtime=$CALIBTIME"
 else
 set wholecontext = "variation=$VERSION"
