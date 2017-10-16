@@ -128,7 +128,7 @@ fi
 export COHERENT_PEAK=$copeak
 
 if [[ "$VERSION" != "mc" && "$COHERENT_PEAK" == "rcdb" ]]; then
-	echo "error in requesting rcdb for the coherent peak and not using variation=mc"
+	echo "error in requesting rcdb for the coherent peak while not using variation=mc"
 	exit 1
 if
 
