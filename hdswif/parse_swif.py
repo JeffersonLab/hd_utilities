@@ -357,6 +357,7 @@ def main(argv):
 
     # Histogram how many jobs are running in parallel
     hJobsActive = TH1F("hJobsActive","; number of jobs active;", 300, 0, 600);
+    hJobsPending = TH1F("hJobsPending","; number of jobs pending;", 300, 0, 600);
     
     hmaxrss = TH1F("hmaxrss", ";maxrss (GB)", 200, 0,max_ram_requested + 1)
     hauger_mem = TH1F("hauger_mem", ";mem (GB)", 200, 0,max_ram_requested + 1)
@@ -364,7 +365,7 @@ def main(argv):
     hauger_mem_vs_runnb = TH2F("hauger_mem_vs_runnb", ";mem (GB);runnb", 200, 0,max_ram_requested + 1, 500, 30000, 31500)
 
     hwalltime = TH1F("hwalltime", ";wall time (hrs)", 200, 0,8)
-    hcputime = TH1F("hcputime", ";cpu time (hrs)", 200, 0, 80)
+    hcputime = TH1F("hcputime", ";cpu time (hrs)", 200, 0, 120)
     gcput_walltime = TGraph()
     gcput_walltime.SetName("gcput_walltime")
     gcput_walltime.SetTitle("");
@@ -625,6 +626,10 @@ def main(argv):
     for i in range(0,hCumulativeTimeSinceLaunch_active.GetNbinsX()+2):
         hJobsActive.Fill(hCumulativeTimeSinceLaunch_active.GetBinContent(i))
 
+    # how many jobs are pending at each moment
+    for i in range(0,hCumulativeTimeSinceLaunch_pending.GetNbinsX()+2):
+        hJobsPending.Fill(hCumulativeTimeSinceLaunch_pending.GetBinContent(i))
+
 
     text = "launch: " + LAUNCH_TIME
     latex.DrawLatex(0.40,0.25,text)
@@ -709,7 +714,27 @@ def main(argv):
     #c1.SaveAs(local_figureDir + '/hJobsActive.root')
     c1.Close()
 
-    outfile.write('    <h2>Number of Jobs Active</h2>\n')
+    c1 = TCanvas( 'c1', 'Number of Jobs Pending', 0, 0, 800, 600 )
+    c1.SetBottomMargin(0.15)
+    c1.SetRightMargin(0.05)
+    hJobsPending.GetXaxis().SetTitleSize(0.08);
+    hJobsPending.GetXaxis().SetLabelSize(0.06);
+    hJobsPending.GetXaxis().SetTitleOffset(0.750);
+    hJobsPending.GetYaxis().SetLabelSize(0.06);
+    hJobsPending.Draw()
+    c1.Update()
+    text = "mean: " + str(int(hJobsPending.GetMean()))
+    latex.SetTextColor(ROOT.kRed)
+    latex.DrawLatex(0.50,0.85,text)
+    latex.SetTextColor(ROOT.kBlack)
+    c1.SaveAs(local_figureDir + '/hJobsPending.png')
+    #c1.SaveAs(local_figureDir + '/hJobsActive.root')
+    c1.Close()
+
+    outfile.write('    <h2>Number of Jobs in Each Stage</h2>\n')
+    outfile.write('    <a href = "' + web_figureDir + '/hJobsPending.png">\n')
+    outfile.write('      <img src = "' + web_figureDir + '/hJobsPending.png" width = "33%">\n')
+    outfile.write('    </a>\n')
     outfile.write('    <a href = "' + web_figureDir + '/hJobsActive.png">\n')
     outfile.write('      <img src = "' + web_figureDir + '/hJobsActive.png" width = "33%">\n')
     outfile.write('    </a>\n')
