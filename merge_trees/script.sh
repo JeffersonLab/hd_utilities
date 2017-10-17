@@ -131,7 +131,7 @@ Delete_InputFiles()
 	
 	# DELETE OR UNPIN INPUTFILES
 	echo Delete $TYPE
-	#rm -rf $INPUTDIR/$TYPE/$RUN/*
+	rm -rf $INPUTDIR/$TYPE/$RUN/*
 	#jcache unpin $INPUTDIR/$TYPE/$RUN/*
 	
     done
