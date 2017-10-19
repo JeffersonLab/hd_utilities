@@ -12,7 +12,7 @@ for host in $hosts
 do
     echo host = $host
     logfile=/u/scratch/$USER/b1pi_$host.log
-    echo logfile = $logfile
+    echo logfile = $logfile \(https://halldweb.jlab.org/b1pi/$date_token/b1pi_${host}.log\)
     rm -fv $logfile
     # the following ssh executes the command associated with the
     # /home/gluex/.ssh/b1pi_cron.pub key in
