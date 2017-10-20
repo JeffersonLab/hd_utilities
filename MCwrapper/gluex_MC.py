@@ -23,6 +23,11 @@
 from os import environ
 from optparse import OptionParser
 import os.path
+import rcdb
+import ccdb
+from ccdb.cmd.console_context import ConsoleContext
+import ccdb.path_utils
+import mysql.connector
 import time
 import os
 import sys
@@ -185,13 +190,13 @@ def main(argv):
 
         #!!!!!!!!!!!!!!!!!!REQUIRED COMMAND LINE ARGUMENTS!!!!!!!!!!!!!!!!!!!!!!!!
         CONFIG_FILE = args[0]
-        RUNNUM = int(args[1])
+        RUNNUM = args[1]
 	EVTS = int(args[2])
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         print "*********************************"
-        print "Welcome to v1.8.1 of the MCwrapper"
-        print "Thomas Britton 09/15/17"
+        print "Welcome to v1.9 of the MCwrapper"
+        print "Thomas Britton 10/20/17"
         print "*********************************"
 
 	#load all argument passed in and set default options
@@ -461,30 +466,124 @@ def main(argv):
                 outdir+= "/"
 
 	#for every needed file call the script with the right options
-	for FILENUM in range(1, FILES_TO_GEN + 2):
-		num=PERFILE
-		#last file gets the remainder
-		if FILENUM == FILES_TO_GEN +1:
-			num=REMAINING_GEN
-		#if ever asked to generate 0 events....just don't
-		if num == 0:
-			continue
-                
-		COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(RUNNUM)+" "+str(BASEFILENUM+FILENUM+-1)+" "+str(num)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(SQLITEPATH)
-               
-	        #print COMMAND
-		#either call MakeMC.csh or add a job depending on swif flag
-                if BATCHRUN == 0 or BATCHSYS=="NULL":
-			os.system(str(indir)+" "+COMMAND)
-		else:
-                        if BATCHSYS.upper()=="SWIF":
-                        	swif_add_job(WORKFLOW, RUNNUM, FILENUM,str(indir),COMMAND,VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR)
-                        elif BATCHSYS.upper()=="QSUB":
-                                qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, RAM, QUEUENAME, LOG_DIR )
-                        elif BATCHSYS.upper()=="CONDOR":
-                                condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR )
 
+        #need two loops 1) for when RUNNUM is a number and 2) when it contains a "-" as in 11366-11555 or RunPeriod2017-02
+        # for 2) use rcdb to get a list of the runs of a runperiod and amount of data.  Normalize number of events. Loop through list calling with the runnumbers from rcdb and their normalized num_events*requested events
+        RunType=str(RUNNUM).split("-")
         
+
+        if len(RunType) != 1 :
+                event_sum=0.
+                #Make python rcdb calls to form the vector
+                db = rcdb.RCDBProvider("mysql://rcdb@hallddb/rcdb")
+
+                dbhost = "hallddb.jlab.org"
+                dbuser = 'datmon'
+                dbpass = ''
+                dbname = 'data_monitoring'
+
+                runlow="0"
+                runhigh="0"
+
+                if RunType[0] != "RunPeriod":
+                        runlow=RunType[0]
+                        runhigh=RunType[1]
+                else:
+                        cnx = mysql.connector.connect(user='ccdb_user', database='ccdb', host='hallddb.jlab.org')
+                        cursor = cnx.cursor()
+                        #ccddb = ccdb.CCDBProvider("mysql://ccdb_user@hallddb/ccdb")
+                
+                        #runhigh=ccdbcon.session.query("select runMax from runRanges where name = test2")
+                        #runlow=runRange[0]
+                        #runhigh=runRange[1]
+                        runrange_name=""
+                        for npart in RunType:
+                                if npart=="RunPeriod":
+                                        continue
+                                else:
+                                        runrange_name=runrange_name+npart
+
+                        cursor.execute("select runMin,runMax from runRanges where name = '"+runrange_name+"'")
+                        runRange = cursor.fetchall()
+                        runlow=runRange[0][0]
+                        runhigh=runRange[0][1]
+                        print runRange
+                        #cursor.close()
+                        #cnx.close()
+                        print str(runlow)+"-->"+str(runhigh)
+
+                table = db.select_runs("@is_production and @status_approved",runlow,runhigh).get_values(['event_count'],True)
+                #print table
+                #print len(table)
+                for runs in table:
+                        if len(table)<=1:
+                                break
+                        event_sum = event_sum + runs[1]
+
+                #print event_sum
+                sum2=0.
+                for runs in table: #do for each job
+                        #print runs[0]
+                        if len(table) <= 1:
+                                break
+                        num_events_this_run=int(((float(runs[1])/float(event_sum))*EVTS)+.5)
+                        sum2=sum2+int(((float(runs[1])/float(event_sum))*EVTS)+.5)
+                        #print num_events_this_run
+                        
+                        if num_events_this_run == 0:
+			        continue
+
+                       #do for each file needed
+                        FILES_TO_GEN_this_run=num_events_this_run/PERFILE
+	                REMAINING_GEN_this_run=num_events_this_run%PERFILE
+
+                        for FILENUM_this_run in range(1, FILES_TO_GEN_this_run + 2):
+                                num_this_file=PERFILE
+
+                                if FILENUM_this_run == FILES_TO_GEN_this_run +1:
+			                num_this_file=REMAINING_GEN_this_run
+                                
+                                if num_this_file == 0:
+			                continue
+
+		                COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(runs[0])+" "+str(BASEFILENUM+FILENUM_this_run+-1)+" "+str(num_this_file)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(SQLITEPATH)
+                                if BATCHRUN == 0 or BATCHSYS=="NULL":
+                                        #print str(runs[0])+" "+str(BASEFILENUM+FILENUM_this_run+-1)+" "+str(num_this_file)
+        			        os.system(str(indir)+" "+COMMAND)
+	        	        else:
+                                        if BATCHSYS.upper()=="SWIF":
+                        	                swif_add_job(WORKFLOW, runs[0], FILENUM,str(indir),COMMAND,VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR)
+                                        elif BATCHSYS.upper()=="QSUB":
+                                                qsub_add_job(VERBOSE, WORKFLOW, runs[0], FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, RAM, QUEUENAME, LOG_DIR )
+                                        elif BATCHSYS.upper()=="CONDOR":
+                                                condor_add_job(VERBOSE, WORKFLOW, runs[0], FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR )
+                        #print "----------------"
+                
+        else:
+	        for FILENUM in range(1, FILES_TO_GEN + 2):
+		        num=PERFILE
+		        #last file gets the remainder
+		        if FILENUM == FILES_TO_GEN +1:
+			        num=REMAINING_GEN
+		        #if ever asked to generate 0 events....just don't
+		        if num == 0:
+			        continue
+                
+		        COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(RUNNUM)+" "+str(BASEFILENUM+FILENUM+-1)+" "+str(num)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(SQLITEPATH)
+               
+	                #print COMMAND
+		        #either call MakeMC.csh or add a job depending on swif flag
+                        if BATCHRUN == 0 or BATCHSYS=="NULL":
+        			os.system(str(indir)+" "+COMMAND)
+	        	else:
+                                if BATCHSYS.upper()=="SWIF":
+                        	        swif_add_job(WORKFLOW, RUNNUM, FILENUM,str(indir),COMMAND,VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR)
+                                elif BATCHSYS.upper()=="QSUB":
+                                        qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, RAM, QUEUENAME, LOG_DIR )
+                                elif BATCHSYS.upper()=="CONDOR":
+                                        condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR )
+
+                                        
         if BATCHRUN == 1 and BATCHSYS.upper() == "SWIF":
                 print "All Jobs created.  Please call \"swif run "+WORKFLOW+"\" to run"
         elif BATCHRUN == 2 and BATCHSYS.upper()=="SWIF":
