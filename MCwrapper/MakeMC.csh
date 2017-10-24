@@ -96,7 +96,8 @@ foreach word ($words:q)
 
 end
 
-echo polarization angle: `rcnd $RUN_NUMBER polarization_angle` # will need some doing
+set polarization_angle = `rcnd $RUN_NUMBER polarization_angle | awk '{print $1}'`
+echo polarization angle: $polarization_angle
 
 set elecE = 0
 set elecE_text = `rcnd $RUN_NUMBER beam_energy | awk '{print $1}'`
@@ -141,6 +142,11 @@ setenv eBEAM_ENERGY $elecE
 if ( "$VERSION" != "mc" && "$eBEAM_ENERGY" == "rcdb" ) then
 	echo "error in requesting rcdb for the electron beam energy and not using variation=mc"
 	exit 1
+endif
+
+if ( "$polarization_angle" == "-1.0" ) then
+	set copeak=`echo "$eBEAM_ENERGY + .5" | bc`
+	setenv COHERENT_PEAK $copeak
 endif
 
 # PRINT INPUTS

@@ -93,7 +93,8 @@ do
 	fi
 done
 
-echo polarization angle: `rcnd $RUN_NUMBER polarization_angle`
+polarization_angle=`rcnd $RUN_NUMBER polarization_angle | awk '{print $1}'`
+echo polarization angle: $polarization_angle
 
 elecE=0
 elecE_text=`rcnd $RUN_NUMBER beam_energy | awk '{print $1}'`
@@ -130,14 +131,19 @@ export COHERENT_PEAK=$copeak
 if [[ "$VERSION" != "mc" && "$COHERENT_PEAK" == "rcdb" ]]; then
 	echo "error in requesting rcdb for the coherent peak while not using variation=mc"
 	exit 1
-if
+fi
 
 export eBEAM_ENERGY=$elecE
 
 if [[ "$VERSION" != "mc" && "$eBEAM_ENERGY" == "rcdb" ]]; then
 	echo "error in requesting rcdb for the electron beam energy and not using variation=mc"
 	exit 1
-if
+fi
+
+if [[ "$polarization_angle" == "-1.0" ]]; then
+	copeak=`echo "$eBEAM_ENERGY + .5" | bc`
+	export COHERENT_PEAK=$copeak
+fi
 
 # PRINT INPUTS
 echo "Job started: " `date`
