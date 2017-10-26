@@ -153,7 +153,7 @@ endif
 echo "Job started: " `date`
 echo "sqlite path: " $SQLITEPATH
 echo "Producing file number: "$FILE_NUMBER
-echo "Containing at most "$PER_FILE" events"
+echo "Containing: " $EVT_TO_GEN"/""$PER_FILE"" events"
 echo "Running location:" $RUNNING_DIR
 echo "Output location: "$OUTDIR
 echo "Environment file: " $ENVIRONMENT
@@ -493,13 +493,15 @@ if ( "$GENR" != "0" ) then
 	    sed -i 's/TEMPSKIP/'0'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	endif
 
-	if ( "$BKGFOLDSTR" != "BeamPhotons" ) then
+	if ( "$BKGFOLDSTR" == "None" ) then
 	    echo "removing Beam Photon background from geant simulation"
 	    sed -i 's/BGRATE/cBGRATE/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	    sed -i 's/BGGATE/cBGGATE/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	    sed -i 's/TEMPMINE/'$GEN_MIN_ENERGY'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
-	else
+	else if ( "$BKGFOLDSTR" == "BeamPhotons" ) then
 	    sed -i 's/TEMPMINE/0.0012/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	else 
+	    sed -i 's/TEMPMINE/'$GEN_MIN_ENERGY'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	endif
 
 	cp $PWD/control'_'$formatted_runNumber'_'$formatted_fileNumber.in $OUTDIR/configurations/geant/
