@@ -1,8 +1,13 @@
 #!/bin/bash
 
 # SET INPUTS
+export BATCHRUN=$1
+shift
 export ENVIRONMENT=$1 
 shift
+if [[ "$BATCHRUN" != "0" ]]; then
+source $ENVIRONMENT
+fi
 export CONFIG_FILE=$1
 shift
 export OUTDIR=$1
@@ -42,8 +47,6 @@ export CLEANRECON=$1
 shift
 export BATCHSYS=$1
 shift
-export BATCHRUN=$1
-shift
 export NUMTHREADS=$1
 shift
 export GENERATOR=$1
@@ -81,19 +84,22 @@ exponentialu=".e-6"
 words=`rcnd $RUN_NUMBER radiator_type | sed 's/ / /g' `
 for word in $words;
 do	
-	removedum=`echo $word | sed 's/um/ /g'`
-	if [[ $removedum != $word ]]; then
-		radthick=`echo "$removedum.e-6" | tr -d '[:space:]'`
+	if [[ "$word" != "number" ]]; then
+		
+		removedum=`echo $word | sed 's/um/ /g'`
+		if [[ $removedum != $word ]]; then
+			radthick=`echo "$removedum.e-6" | tr -d '[:space:]'`
+		fi
 	fi
-
 done
 
-echo polarization angle: `rcnd $RUN_NUMBER polarization_angle`
+polarization_angle=`rcnd $RUN_NUMBER polarization_angle | awk '{print $1}'`
+echo polarization angle: $polarization_angle
 
 elecE=0
 elecE_text=`rcnd $RUN_NUMBER beam_energy | awk '{print $1}'`
 
-if [[ "$eBEAM_ENERGY" != "rcdb" || "$JANA_CALIB_CONTEXT" != "variation=mc" ]]; then
+if [[ "$eBEAM_ENERGY" != "rcdb" || "$VERSION" != "mc" ]]; then
     elecE=$eBEAM_ENERGY
 elif [[ $elecE_text == "Run" ]]; then
 	elecE=12
@@ -106,7 +112,7 @@ fi
 copeak=0
 copeak_text=`rcnd $RUN_NUMBER coherent_peak | awk '{print $1}'`
 
-if [[ "$COHERENT_PEAK" != "rcdb" || "$JANA_CALIB_CONTEXT" != "variation=mc" ]]; then
+if [[ "$COHERENT_PEAK" != "rcdb" || "$VERSION" != "mc" ]]; then
     copeak=$COHERENT_PEAK
 elif [[ $copeak_text == "Run" ]]; then
 	copeak=9
@@ -122,13 +128,27 @@ fi
 
 export COHERENT_PEAK=$copeak
 
+if [[ "$VERSION" != "mc" && "$COHERENT_PEAK" == "rcdb" ]]; then
+	echo "error in requesting rcdb for the coherent peak while not using variation=mc"
+	exit 1
+fi
+
 export eBEAM_ENERGY=$elecE
 
+if [[ "$VERSION" != "mc" && "$eBEAM_ENERGY" == "rcdb" ]]; then
+	echo "error in requesting rcdb for the electron beam energy and not using variation=mc"
+	exit 1
+fi
+
+if [[ "$polarization_angle" == "-1.0" ]]; then
+	copeak=`echo "$eBEAM_ENERGY + .5" | bc`
+	export COHERENT_PEAK=$copeak
+fi
 
 # PRINT INPUTS
 echo "Job started: " `date`
 echo "Producing file number: "$FILE_NUMBER
-echo "Containing at most "$PER_FILE" events"
+echo "Containing: " $EVT_TO_GEN"/""$PER_FILE"" events"
 echo "Running location:" $RUNNING_DIR
 echo "Output location: "$OUTDIR
 echo "Environment file: " $ENVIRONMENT
@@ -172,7 +192,7 @@ if [[ "$BATCHRUN" != "0" ]]; then
 	if [[ "$BATCHSYS" == "QSUB" ]]; then
 		cd $RUNNING_DIR
 	fi
-    source $ENVIRONMENT
+    
     if [[ "$SQLITEPATH" != "no_sqlite" ]]; then
         cp $SQLITEPATH .
         export CCDB_CONNECTION sqlite:///$RUNNING_DIR/ccdb.sqlite
@@ -407,32 +427,32 @@ if [[ "$GENR" != "0" ]]; then
     optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
 	echo $optionals_line
 	#RANDOMnum=`bash -c 'echo $RANDOM'`
-	echo gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK $optionals_line
-	gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK $optionals_line
+	echo gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
+	gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
 	elif [[ "$GENERATOR" == "gen_omega_3pi" ]]; then
 	echo "RUNNING GEN_OMEGA_3PI" 
         optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
 	echo $optionals_line
-	echo gen_omega_3pi -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_line
-	gen_omega_3pi -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY $optionals_li
+	echo gen_omega_3pi -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -m $eBEAM_ENERGY $optionals_line
+	gen_omega_3pi -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -m $eBEAM_ENERGY $optionals_line
     elif [[ "$GENERATOR" == "gen_2pi_primakoff" ]]; then
 	echo "RUNNING GEN_2PI_PRIMAKOFF" 
         optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
 	echo $optionals_line
-	echo gen_2pi_primakoff -c $STANDARD_NAME.conf -o  $STANDARD_NAME.hddm -hd  $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK $optionals_line
-	gen_2pi_primakoff -c $STANDARD_NAME.conf -hd  $STANDARD_NAME.hddm -o  $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK $optionals_line
+	echo gen_2pi_primakoff -c $STANDARD_NAME.conf -o  $STANDARD_NAME.hddm -hd  $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
+	gen_2pi_primakoff -c $STANDARD_NAME.conf -hd  $STANDARD_NAME.hddm -o  $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
     elif [[ "$GENERATOR" == "gen_pi0" ]]; then
 	echo "RUNNING GEN_PI0" 
         optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
 	echo $optionals_line
-	gen_pi0 -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK  -s $formatted_fileNumber $optionals_line -m $eBEAM_ENERGY
+	gen_pi0 -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK  -s $formatted_fileNumber -m $eBEAM_ENERGY $optionals_line
     elif [[ "$GENERATOR" == "gen_2k" ]]; then
 	echo "RUNNING GEN_2K" 
     set optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
 	#set RANDOMnum=`bash -c 'echo $RANDOM'`
 	echo $optionals_line
-	echo gen_2k -c $STANDARD_NAME.conf -o $STANDARD_NAME.hddm -hd $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK $optionals_line
-	gen_2k -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK $optionals_line
+	echo gen_2k -c $STANDARD_NAME.conf -o $STANDARD_NAME.hddm -hd $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
+	gen_2k -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
 	fi
     
     #GEANT/smearing
@@ -465,11 +485,13 @@ if [[ "$GENR" != "0" ]]; then
 	    sed -i 's/TEMPSKIP/'0'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
         fi
 	
-	if [[ "$BKGFOLDSTR" != "BeamPhotons" ]]; then
+	if [[ "$BKGFOLDSTR" == "None" ]]; then
 	    echo "removing Beam Photon background from geant simulation"
 	    sed -i 's/BGRATE/cBGRATE/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	    sed -i 's/BGGATE/cBGGATE/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	    sed -i 's/TEMPMINE/'$GEN_MIN_ENERGY'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	elif [[ "$BKGFOLDSTR" == "BeamPhotons" ]]; then
+		sed -i 's/TEMPMINE/0.0012/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	else
 	    sed -i 's/TEMPMINE/0.0012/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	fi
