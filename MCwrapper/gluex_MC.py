@@ -173,7 +173,7 @@ def showhelp():
 ########################################################## MAIN ##########################################################
 	
 def main(argv):
-	parser_usage = "gluex_MC.py config_file Run_Number num_events [all other options]\n\n where [all other options] are:\n\n "
+	parser_usage = "gluex_MC.py config_file Run_Number/Range num_events [all other options]\n\n where [all other options] are:\n\n "
         parser_usage += showhelp()
 	parser = OptionParser(usage = parser_usage)
 	(options, args) = parser.parse_args(argv)
