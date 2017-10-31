@@ -176,7 +176,7 @@ c     now ready to go. If you ever change anything in the beamline geometry
 c     eg. the collimator diameter, the coherent edge position, or the value
 c     of beamEmin, do not forget to come back and change your BGRATE.
 BGGATE -200. 200.
-BGRATE 4.80
+BGRATE 0.1273
 
 c The above cards BGRATE, BGGATE normally cause the simulation to add
 c accidental tagger hits to the simulated output record, in addition to
@@ -192,7 +192,7 @@ c if you are only interested in the region of the coherent peak. This
 c minimum is the third field of the BEAM card above. Remember that if
 c you change beamEmin, you also need to change BGRATE to match, as 
 c described above.
-BGTAGONLY 0
+BGTAGONLY TEMPBGTAGONLY
 
 c The following line controls the uncertainty of the event time reference
 c relative to the RF structure of the beam. The event time reference is

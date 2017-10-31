@@ -74,6 +74,8 @@ shift
 setenv RUNNING_DIR $1
 shift
 setenv SQLITEPATH $1
+shift
+setenv BGTAGONLY_OPTION $1
 
 echo ""
 echo ""
@@ -286,7 +288,7 @@ endif
 set bkglocstring=""
 set bkgloc_pre=`echo $BKGFOLDSTR | cut -c 1-4`
 
-if ( "$BKGFOLDSTR" == "DEFAULT" || "$bkgloc_pre" == "loc:" ) then
+if ( "$BKGFOLDSTR" == "DEFAULT" || "$bkgloc_pre" == "loc:" || "$BKGFOLDSTR" == "Random" ) then
    #find file and run:1
     echo "Finding the right file to fold in during MCsmear step"
     set runperiod="RunPeriod-2017-01"
@@ -485,6 +487,7 @@ if ( "$GENR" != "0" ) then
 	sed -i 's/TEMPTRIG/'$EVT_TO_GEN'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	sed -i 's/TEMPCOLD/'0.00$colsize'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	sed -i 's/TEMPRADTHICK/'"$radthick"'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	sed -i 's/TEMPBGTAGONLY/'$BGTAGONLY_OPTION'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 
 	if ( "$gen_pre" == "file" ) then
 		@ skip_num = $FILE_NUMBER * $PER_FILE
@@ -500,6 +503,10 @@ if ( "$GENR" != "0" ) then
 	    sed -i 's/TEMPMINE/'$GEN_MIN_ENERGY'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	else if ( "$BKGFOLDSTR" == "BeamPhotons" ) then
 	    sed -i 's/TEMPMINE/0.0012/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	else if ( "$BKGFOLDSTR" == "DEFAULT" || "$BKGFOLDSTR" == "Random" && "$BGTAGONLY_OPTION" == "0") then
+	    sed -i 's/BGRATE/cBGRATE/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	    sed -i 's/BGGATE/cBGGATE/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	    sed -i 's/TEMPMINE/'$GEN_MIN_ENERGY'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	else 
 	    sed -i 's/TEMPMINE/'$GEN_MIN_ENERGY'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	endif
@@ -530,7 +537,7 @@ if ( "$GENR" != "0" ) then
 	    if ( "$BKGFOLDSTR" == "BeamPhotons" || "$BKGFOLDSTR" == "None" ) then
 		echo "running MCsmear without folding in random background"
 		mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm'
-	    else if ( "$BKGFOLDSTR" == "DEFAULT" ) then
+	    else if ( "$BKGFOLDSTR" == "DEFAULT" || "$BKGFOLDSTR" == "Random" ) then
 		echo "mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
 		mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
 		else if ( "$bkgloc_pre" == "loc:" ) then
@@ -643,6 +650,15 @@ if ( "$hddmfiles" != "" ) then
     		mv $hddmfile $OUTDIR/hddm/
 		endif
 	end
+endif
+
+cd ..
+
+if ( `ls $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER} | wc -l` == 0 ) then
+	rm -rf $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
+else
+	echo "MOVING AND/OR CLEANUP FAILED"
+	echo `ls $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}`
 endif
 
 #    mv $PWD/*.root $OUTDIR/root/ #just in case
