@@ -24,7 +24,7 @@ echo \#count hdgeant.hddm `hddm_counter.pl hdgeant.hddm physicsEvent`
 echo \#count hdgeant_smeared.hddm `hddm_counter.pl hdgeant_smeared.hddm physicsEvent`
 echo \#count dana_rest.hddm `hddm_counter.pl dana_rest.hddm reconstructedPhysicsEvent`
 echo \#count dana_rest_b1pi.hddm `hddm_counter.pl dana_rest_b1pi.hddm reconstructedPhysicsEvent`
-export PLOTDIR=/group/halld/www/halldweb/html/b1pi/$TODAYS_DATE/$BMS_OSNAME/$RUN
+export PLOTDIR=/group/halld/www/halldweb/html/b1pi/$TODAYS_DATE/$BMS_OSNAME/Run$RUN
 mkdir -pv $PLOTDIR
 cp -v *.pdf *.gif *.html $PLOTDIR
 #
@@ -40,7 +40,7 @@ echo \#count hdgeant.hddm `hddm_counter.pl hdgeant.hddm physicsEvent`
 echo \#count hdgeant_smeared.hddm `hddm_counter.pl hdgeant_smeared.hddm physicsEvent`
 echo \#count dana_rest.hddm `hddm_counter.pl dana_rest.hddm reconstructedPhysicsEvent`
 echo \#count dana_rest_b1pi.hddm `hddm_counter.pl dana_rest_b1pi.hddm reconstructedPhysicsEvent`
-export PLOTDIR=/group/halld/www/halldweb/html/b1pi/$TODAYS_DATE/$BMS_OSNAME/$RUN
+export PLOTDIR=/group/halld/www/halldweb/html/b1pi/$TODAYS_DATE/$BMS_OSNAME/Run$RUN
 mkdir -pv $PLOTDIR
 cp -v *.pdf *.gif *.html $PLOTDIR
 
