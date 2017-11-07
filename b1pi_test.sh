@@ -3,6 +3,7 @@
 nevents=1000
 nthreads=1
 vertex="0 0 50 80"
+numrun=11366
 
 function show_help
 {
@@ -18,7 +19,7 @@ Perform a test of the simulation and reconstruction chain for
 
 Usage:
 
-  b1pi_test.sh [-n <number of events>] [-t <number of threads>] \\
+  b1pi_test.sh [-n <number of events>] [-t <number of threads>] [-r <run number>]\\
     [-v <vertex string>] [-d <b1pi_test script directory>]
 
 Example:
@@ -28,7 +29,7 @@ Example:
 EOF
 }
 
-while getopts "h?v:f:n:t:d:" opt; do
+while getopts "h?v:f:n:t:d:r:" opt; do
     case "$opt" in
     h|\?)
         show_help
@@ -43,6 +44,8 @@ while getopts "h?v:f:n:t:d:" opt; do
     t)  NTHREADS=$OPTARG
 	;;
     d)  B1PI_TEST_DIR=$OPTARG
+	;;
+    r)  RUN=$OPTARG
     esac
 done
 
@@ -75,17 +78,24 @@ if [ -z "$VERTEX" ]
     VERTEX=$vertex
 fi
 
+if [ -z "$RUN" ]
+    then
+    echo "info: run number not defined, using default values $numrun"
+    RUN=$numrun
+fi
+
 echo NEVENTS = $NEVENTS
 echo VERTEX = $VERTEX
 echo NTHREADS = $NTHREADS
 echo B1PI_TEST_DIR = $B1PI_TEST_DIR
+echo RUN = $RUN
 
 echo "Copying script files and macros ..."
 cp -pv $B1PI_TEST_DIR/* .
 cp -pv $B1PI_TEST_DIR/macros/* .
 
 echo "Running genr8 ..."
-genr8 -r11366 -M${NEVENTS} -Ab1_pi.ascii < b1_pi.input
+genr8 -r${RUN} -M${NEVENTS} -Ab1_pi.ascii < b1_pi.input
 
 echo "Converting generated events to HDDM ..."
 genr8_2_hddm -V"${VERTEX}" b1_pi.ascii 
