@@ -76,6 +76,8 @@ shift
 export SQLITEPATH=$1
 shift
 export BGTAGONLY_OPTION=$1
+shift
+export RADIATOR_THICKNESS=$1
 
 echo ""
 echo ""
@@ -83,17 +85,21 @@ echo "Detected bash shell"
 
 radthick="50.e-6"
 exponentialu=".e-6"
-words=`rcnd $RUN_NUMBER radiator_type | sed 's/ / /g' `
-for word in $words;
-do	
-	if [[ "$word" != "number" ]]; then
-		
-		removedum=`echo $word | sed 's/um/ /g'`
-		if [[ $removedum != $word ]]; then
-			radthick=`echo "$removedum.e-6" | tr -d '[:space:]'`
+
+if [[ "$RADIATOR_THICKNESS" != "rcdb" || "$VERSION" != "mc" ]]; then
+	radthick=$RADIATOR_THICKNESS
+else
+	words=`rcnd $RUN_NUMBER radiator_type | sed 's/ / /g' `
+	for word in $words;
+	do	
+		if [[ "$word" != "number" ]]; then	
+			removedum=`echo $word | sed 's/um/ /g'`
+			if [[ $removedum != $word ]]; then
+				radthick=`echo "$removedum.e-6" | tr -d '[:space:]'`
+			fi
 		fi
-	fi
-done
+	done
+fi
 
 polarization_angle=`rcnd $RUN_NUMBER polarization_angle | awk '{print $1}'`
 echo polarization angle: $polarization_angle
@@ -157,6 +163,7 @@ echo "Environment file: " $ENVIRONMENT
 echo "Context: "$JANA_CALIB_CONTEXT
 echo "Run Number: "$RUN_NUMBER
 echo "Electron beam energy to use: "$eBEAM_ENERGY" GeV"
+echo "Radiator Thickness to use: "$radthick" m"
 echo "Photon Energy between "$GEN_MIN_ENERGY" and "$GEN_MAX_ENERGY" GeV"
 echo "Coherent Peak position: "$COHERENT_PEAK
 echo "----------------------------------------------"
@@ -421,6 +428,7 @@ if [[ "$GENR" != "0" ]]; then
 	sed -i 's/TEMPCOLD/'0.00$colsize'/' $STANDARD_NAME.conf
 	sed -i 's/TEMPELECE/'$eBEAM_ENERGY'/' $STANDARD_NAME.conf
 	sed -i 's/TEMPCOHERENT/'$COHERENT_PEAK'/' $STANDARD_NAME.conf
+	sed -i 's/TEMPRADTHICK/'"$radthick"'/' $STANDARD_NAME.conf
 	sed -i 's/TEMPMINGENE/'$GEN_MIN_ENERGY'/' $STANDARD_NAME.conf
 	sed -i 's/TEMPMAXGENE/'$GEN_MAX_ENERGY'/' $STANDARD_NAME.conf
 	genEtaRegge -N$EVT_TO_GEN -O$STANDARD_NAME.hddm -I$STANDARD_NAME.conf
