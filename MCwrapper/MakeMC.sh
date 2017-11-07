@@ -95,7 +95,7 @@ else
 		if [[ "$word" != "number" ]]; then	
 			removedum=`echo $word | sed 's/um/ /g'`
 			if [[ $removedum != $word ]]; then
-				radthick=`echo "$removedum.e-6" | tr -d '[:space:]'`
+				radthick=`echo "$removedum\e-6" | tr -d '[:space:]'`
 			fi
 		fi
 	done
@@ -294,8 +294,7 @@ if [[ "$BKGFOLDSTR" == "DEFAULT" || "$bkgloc_pre" == "loc:" || "$BKGFOLDSTR" == 
 		    runperiod="RunPeriod-2017-01"
 
 		    if [[ $RUN_NUMBER > 40000 ]]; then
-			echo
-			#set runperiod="RunPeriod-2017-10"
+			set runperiod="RunPeriod-2018-01"
 		    fi
 
 		    if [[ $RUN_NUMBER < 30000 ]]; then

@@ -98,7 +98,7 @@ else
 			set removedum = `echo $word:q | sed 's/um/ /g'`
 
 			if ( $removedum != $word:q ) then
-				set radthick = `echo $removedum.e-6 | tr -d '[:space:]'`
+				set radthick = `echo $removedum\e-6 | tr -d '[:space:]'`
 			endif
 		endif
 	end
@@ -511,7 +511,7 @@ if ( "$GENR" != "0" ) then
 	    sed -i 's/TEMPMINE/'$GEN_MIN_ENERGY'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	else if ( "$BKGFOLDSTR" == "BeamPhotons" ) then
 	    sed -i 's/TEMPMINE/0.0012/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
-	else if ( "$BKGFOLDSTR" == "DEFAULT" || "$BKGFOLDSTR" == "Random" && "$BGTAGONLY_OPTION" == "0") then
+	else if ( ("$BKGFOLDSTR" == "DEFAULT" || "$BKGFOLDSTR" == "Random") && "$BGTAGONLY_OPTION" == "0") then
 	    sed -i 's/BGRATE/cBGRATE/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	    sed -i 's/BGGATE/cBGGATE/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	    sed -i 's/TEMPMINE/'$GEN_MIN_ENERGY'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
