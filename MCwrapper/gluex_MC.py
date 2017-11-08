@@ -328,6 +328,31 @@ def main(argv):
                         CUSTOM_GCONTROL=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="BKG" :
                         bkg_parts=rm_comments[0].strip().split("+")
+                        #print bkg_parts
+                        for part in bkg_parts:
+                                subparts=part.split(":")
+                                if len(subparts)>2:
+                                        print "Error in BKG Parsing: "+part
+                                        return
+                                if subparts[0].upper() == "TAGONLY":
+                                        BGTAGONLY=1
+                                        if len(subparts)==2:
+                                                BGRATE=subparts[1]
+
+                                elif subparts[0].upper() == "BEAMPHOTONS":
+                                        BGFOLD=subparts[0]
+                                        if len(subparts)==2:
+                                                BGRATE=subparts[1]
+                                elif subparts[0].upper() == "RANDOM" or subparts[0].upper() == "DEFAULT":
+                                        BGFOLD=subparts[0]
+                                else:
+                                        BGFOLD=part
+
+                        #IF BEAMPHOTONS OR TAGONLY IS IN THE LIST AND A BGRATE IS NOT SPECIFIED AND WE ARE TALKING VARIATION=mc THEN SET IT PROPERLY
+                        #print BGFOLD
+                        #print BGTAGONLY
+                        #print BGRATE
+                        #return
                         if len(bkg_parts)>1:
                                 BGFOLD=bkg_parts[0]
                                 BGTAGONLY=1
@@ -339,8 +364,6 @@ def main(argv):
                                 BGFOLD=bkg_parts[0]
                 elif str(parts[0]).upper()=="EBEAM_ENERGY" :
                         eBEAM_ENERGY=rm_comments[0].strip()
-                elif str(parts[0]).upper()=="BGRATE" :
-                        BGRATE=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="COHERENT_PEAK" :
                         COHERENT_PEAK=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="RADIATOR_THICKNESS" :
