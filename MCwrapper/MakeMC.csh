@@ -78,11 +78,15 @@ shift
 setenv BGTAGONLY_OPTION $1
 shift
 setenv RADIATOR_THICKNESS $1
+shift
+setenv BGRATE $1
 
 echo ""
 echo ""
 echo "Detected c-shell"
 
+
+set BGRATE_toUse=$BGRATE
 
 set radthick="50.e-6"
 
@@ -179,6 +183,7 @@ echo "Run geant step? "$GEANT"  Will be cleaned?" $CLEANGEANT
 echo "Using geant"$GEANTVER
 echo "Custom Gcontrol?" "$CUSTOM_GCONTROL"
 echo "Background to use: "$BKGFOLDSTR
+echo "BGRATE will be set to: "$BGRATE_toUse" GHz (if applicable)"
 echo "Run mcsmear ? "$SMEAR"  Will be cleaned?" $CLEANSMEAR
 echo "----------------------------------------------"
 echo "Run reconstruction? "$RECON"  Will be cleaned?" $CLEANRECON
@@ -496,6 +501,7 @@ if ( "$GENR" != "0" ) then
 	sed -i 's/TEMPCOLD/'0.00$colsize'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	sed -i 's/TEMPRADTHICK/'"$radthick"'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	sed -i 's/TEMPBGTAGONLY/'$BGTAGONLY_OPTION'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	sed -i 's/TEMPBGRATE/'$BGRATE_toUse'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 
 	if ( "$gen_pre" == "file" ) then
 		@ skip_num = $FILE_NUMBER * $PER_FILE

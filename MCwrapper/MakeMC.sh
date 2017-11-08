@@ -78,13 +78,16 @@ shift
 export BGTAGONLY_OPTION=$1
 shift
 export RADIATOR_THICKNESS=$1
+shift
+export BGRATE=$1
 
 echo ""
 echo ""
 echo "Detected bash shell"
 
+BGRATE_toUse=$BGRATE
+
 radthick="50.e-6"
-exponentialu=".e-6"
 
 if [[ "$RADIATOR_THICKNESS" != "rcdb" || "$VERSION" != "mc" ]]; then
 	radthick=$RADIATOR_THICKNESS
@@ -155,6 +158,7 @@ fi
 
 # PRINT INPUTS
 echo "Job started: " `date`
+echo "sqlite path: " $SQLITEPATH
 echo "Producing file number: "$FILE_NUMBER
 echo "Containing: " $EVT_TO_GEN"/""$PER_FILE"" events"
 echo "Running location:" $RUNNING_DIR
@@ -172,7 +176,9 @@ echo "Using "$GENERATOR"  with config: "$CONFIG_FILE
 echo "----------------------------------------------"
 echo "Run geant step? "$GEANT"  Will be cleaned?" $CLEANGEANT
 echo "Using geant"$GEANTVER
+echo "Custom Gcontrol?" "$CUSTOM_GCONTROL"
 echo "Background to use: "$BKGFOLDSTR
+echo "BGRATE will be set to: "$BGRATE_toUse" GHz (if applicable)"
 echo "Run mcsmear ? "$SMEAR"  Will be cleaned?" $CLEANSMEAR
 echo "----------------------------------------------"
 echo "Run reconstruction? "$RECON"  Will be cleaned?" $CLEANRECON
@@ -487,6 +493,7 @@ if [[ "$GENR" != "0" ]]; then
 	sed -i 's/TEMPCOLD/'0.00$colsize'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	sed -i 's/TEMPRADTHICK/'"$radthick"'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	sed -i 's/TEMPBGTAGONLY/'$BGTAGONLY_OPTION'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	sed -i 's/TEMPBGRATE/'$BGRATE_toUse'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 
 	if [[ "$gen_pre" == "file" ]]; then
 			skip_num=$((FILE_NUMBER * PER_FILE))
