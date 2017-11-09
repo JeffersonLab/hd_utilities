@@ -196,7 +196,7 @@ def main(argv):
 
         print "*********************************"
         print "Welcome to v1.9.1 of the MCwrapper"
-        print "Thomas Britton 11/08/17"
+        print "Thomas Britton 11/09/17"
         print "*********************************"
 
 	#load all argument passed in and set default options
@@ -340,6 +340,7 @@ def main(argv):
                                                 BGRATE=subparts[1]
 
                                 elif subparts[0].upper() == "BEAMPHOTONS":
+                                        #print subparts
                                         BGFOLD=subparts[0]
                                         if len(subparts)==2:
                                                 BGRATE=subparts[1]
@@ -353,15 +354,7 @@ def main(argv):
                         #print BGTAGONLY
                         #print BGRATE
                         #return
-                        if len(bkg_parts)>1:
-                                BGFOLD=bkg_parts[0]
-                                BGTAGONLY=1
-                        else:
-                            if bkg_parts[0].upper()=="TAGONLY" :
-                                    BGFOLD="None"
-                                    BGTAGONLY=1
-                            else:
-                                BGFOLD=bkg_parts[0]
+
                 elif str(parts[0]).upper()=="EBEAM_ENERGY" :
                         eBEAM_ENERGY=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="COHERENT_PEAK" :
