@@ -616,8 +616,7 @@ if ( "$GENR" != "0" ) then
 		    
 		endif
 		
-		set RETURN_CODE=$?
-		#echo "Return Code = " $RETURN_CODE
+		
 		if ( -f dana_rest.hddm ) then
 		    mv dana_rest.hddm dana_rest_$STANDARD_NAME.hddm
 		endif
