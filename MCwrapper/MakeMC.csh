@@ -419,13 +419,15 @@ if ( "$GENR" != "0" ) then
 	genr8_2_hddm $STANDARD_NAME.ascii
     else if ( "$GENERATOR" == "bggen" ) then
 	set RANDOMnum=`bash -c 'echo $RANDOM'`
-	echo $RANDOMnum
+	echo Random Number used: $RANDOMnum
 	sed -i 's/TEMPTRIG/'$EVT_TO_GEN'/' $STANDARD_NAME.conf
 	sed -i 's/TEMPRUNNO/'$RUN_NUMBER'/' $STANDARD_NAME.conf
 	sed -i 's/TEMPCOLD/'0.00$colsize'/' $STANDARD_NAME.conf
 	sed -i 's/TEMPRAND/'$RANDOMnum'/' $STANDARD_NAME.conf
-	sed -i 's/TEMPELECE/'$eBEAM_ENERGY'/' $STANDARD_NAME.conf
-	sed -i 's/TEMPCOHERENT/'$COHERENT_PEAK'/' $STANDARD_NAME.conf
+	set Fortran_eBEAM_ENRGY=`echo $eBEAM_ENERGY | cut -c -7`
+	sed -i 's/TEMPELECE/'$Fortran_eBEAM_ENRGY'/' $STANDARD_NAME.conf
+	set Fortran_COHERENT_PEAK=`echo $COHERENT_PEAK | cut -c -7`
+	sed -i 's/TEMPCOHERENT/'$Fortran_COHERENT_PEAK'/' $STANDARD_NAME.conf
 	sed -i 's/TEMPMINGENE/'$GEN_MIN_ENERGY'/' $STANDARD_NAME.conf
 	sed -i 's/TEMPMAXGENE/'$GEN_MAX_ENERGY'/' $STANDARD_NAME.conf
 	
