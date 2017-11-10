@@ -8,9 +8,12 @@ if (! $starting_directory || !$directory_label) {
     print_usage_message();
     exit 1;
 }
-$dir_table = "${directory_label}_dir";
-$file_table = "${directory_label}_file";
-$update_time_table = "${directory_label}_updateTime";
+$dir_table_final = "${directory_label}_dir";
+$file_table_final = "${directory_label}_file";
+$update_time_table_final = "${directory_label}_updateTime";
+$dir_table = $dir_table_final . "_temp";
+$file_table = $file_table_final . "_temp";
+$update_time_table = $update_time_table_final . "_temp";
 #
 # load perl modules
 #
@@ -111,6 +114,14 @@ while ($dirname = <FINDDIR>) {
 #    print "DEBUG: $idebug directories done\n";
 #    if ($idebug == 1000) {last;}
 }
+$sql = "drop table if exists $dir_table_final, $file_table_final, $update_time_table_final;";
+make_query($dbh_db, \$sth);
+$sql = "rename table $dir_table to $dir_table_final;";
+make_query($dbh_db, \$sth);
+$sql = "rename table $file_table to $file_table_final;";
+make_query($dbh_db, \$sth);
+$sql = "rename table $update_time_table to $update_time_table_final;";
+make_query($dbh_db, \$sth);
 $sth = 0;
 #
 # disconnect from database server
