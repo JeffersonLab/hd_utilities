@@ -472,6 +472,10 @@ if [[ "$GENR" != "0" ]]; then
 	gen_2k -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
 	fi
     
+	if [[ ! -f ./$STANDARD_NAME.hddm ]]; then
+		echo "An hddm file was not found after generation step.  Terminating MC production.  Please consult logs to diagnose"
+		exit 11
+	fi
     #GEANT/smearing
     
     if [[ "$GEANT" != "0" ]]; then
@@ -536,6 +540,11 @@ if [[ "$GENR" != "0" ]]; then
 	    exit
 	fi
 	
+	if [[ ! -f ./$STANDARD_NAME'_geant'$GEANTVER'.hddm' ]]; then
+		echo "An hddm file was not created by Geant.  Terminating MC production.  Please consult logs to diagnose"
+		exit 12
+	fi
+
 	if [[ "$SMEAR" != "0" ]]; then
 	    echo "RUNNING MCSMEAR"
 	    
@@ -568,6 +577,11 @@ if [[ "$GENR" != "0" ]]; then
 		rm $STANDARD_NAME.hddm
 	    fi
 	    
+		if [[ ! -f ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' ]]; then
+			echo "An hddm file was not created by mcsmear.  Terminating MC production.  Please consult logs to diagnose"
+			exit 13
+		fi
+
 	    if [[ "$RECON" != "0" ]]; then
 		echo "RUNNING RECONSTRUCTION"
 

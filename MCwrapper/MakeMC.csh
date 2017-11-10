@@ -476,8 +476,11 @@ if ( "$GENR" != "0" ) then
 	gen_2k -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -m $eBEAM_ENERGY $optionals_line
 	endif
 
-   set RETURN_CODE=$?
-   #echo "Return Code = " $RETURN_CODE
+    if ( ! -f ./$STANDARD_NAME.hddm ) then
+		echo "An hddm file was not found after generation step.  Terminating MC production.  Please consult logs to diagnose"
+		exit 11
+	endif
+
 
 #GEANT/smearing
 
@@ -544,8 +547,11 @@ if ( "$GENR" != "0" ) then
 	    echo "INVALID GEANT VERSION"
 	    exit
 	endif
-	set RETURN_CODE=$?
-	#echo "Return Code = " $RETURN_CODE
+
+	if ( ! -f ./$STANDARD_NAME'_geant'$GEANTVER'.hddm' ) then
+		echo "An hddm file was not created by Geant.  Terminating MC production.  Please consult logs to diagnose"
+		exit 12
+	endif
 	
 	if ( "$SMEAR" != "0" ) then
 	    echo "RUNNING MCSMEAR"
@@ -573,13 +579,16 @@ if ( "$GENR" != "0" ) then
 		    rm particle.dat
 		    rm pythia.dat
 		    rm pythia-geant.map
+			rm bggen.his
 		    unlink fort.15
 		endif		
 		rm $STANDARD_NAME.hddm
 	    endif
 	    
-	    set RETURN_CODE=$?
-	    #echo "Return Code = " $RETURN_CODE
+	    if ( ! -f ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' ) then
+			echo "An hddm file was not created by mcsmear.  Terminating MC production.  Please consult logs to diagnose"
+			exit 13
+		endif
     
 	    if ( "$RECON" != "0" ) then
 		echo "RUNNING RECONSTRUCTION"
