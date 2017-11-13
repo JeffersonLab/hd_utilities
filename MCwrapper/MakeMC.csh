@@ -212,7 +212,7 @@ if ( "$BATCHRUN" != "0" ) then
     echo $ENVIRONMENT
     
     if ( "$SQLITEPATH" != "no_sqlite" ) then
-        cp $SQLITEPATH .
+        cp $SQLITEPATH ./ccdb.sqlite
         setenv CCDB_CONNECTION sqlite:///$RUNNING_DIR/ccdb.sqlite
         setenv JANA_CALIB_URL ${CCDB_CONNECTION}
     endif
