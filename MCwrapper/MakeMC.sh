@@ -98,7 +98,7 @@ else
 		if [[ "$word" != "number" ]]; then	
 			removedum=`echo $word | sed 's/um/ /g'`
 			if [[ $removedum != $word ]]; then
-				radthick=`echo "$removedum\e-6" | tr -d '[:space:]'`
+				radthick=`echo "$removedum e-6" | tr -d '[:space:]'`
 			fi
 		fi
 	done
@@ -108,7 +108,18 @@ polarization_angle=`rcnd $RUN_NUMBER polarization_angle | awk '{print $1}'`
 echo polarization angle: $polarization_angle
 
 elecE=0
-elecE_text=`rcnd $RUN_NUMBER beam_energy | awk '{print $1}'`
+
+variation=$VERSION
+if [[ $CALIBTIME != "notime" ]]; then
+	variation=$variation+":"+$CALIBTIME
+fi
+
+ccdbelece="`ccdb dump PHOTON_BEAM/endpoint_energy:${RUN_NUMBER}:${variation}`"
+
+ccdblist=(`echo ${ccdbelece}`) #(${ccdbelece:/\ /\ /})
+ccdblist_length=${#ccdblist[@]}
+elecE_text=`echo ${ccdblist[$(($ccdblist_length-1))]}`
+#elecE_text=`rcnd $RUN_NUMBER beam_energy | awk '{print $1}'`
 
 if [[ "$eBEAM_ENERGY" != "rcdb" || "$VERSION" != "mc" ]]; then
     elecE=$eBEAM_ENERGY
@@ -117,7 +128,8 @@ elif [[ $elecE_text == "Run" ]]; then
 elif [[ $elecE_text == "-1.0" ]]; then
 	elecE=12 #Should never happen
 else
-	elecE=`echo "$elecE_text / 1000" | bc -l `
+	elecE=`echo $elecE_text`
+	#elecE=`echo "$elecE_text / 1000" | bc -l `
 fi
 
 copeak=0

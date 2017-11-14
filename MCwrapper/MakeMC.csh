@@ -102,7 +102,7 @@ else
 			set removedum = `echo $word:q | sed 's/um/ /g'`
 
 			if ( $removedum != $word:q ) then
-				set radthick = `echo $removedum\e-6 | tr -d '[:space:]'`
+				set radthick = `echo $removedum e-6 | tr -d '[:space:]'`
 			endif
 		endif
 	end
@@ -112,7 +112,16 @@ set polarization_angle = `rcnd $RUN_NUMBER polarization_angle | awk '{print $1}'
 echo polarization angle: $polarization_angle
 
 set elecE = 0
-set elecE_text = `rcnd $RUN_NUMBER beam_energy | awk '{print $1}'`
+set variation= $VERSION
+if ( $CALIBTIME != "notime" ) then
+set variation=$variation+":"+$CALIBTIME
+endif
+
+set ccdbelece=`ccdb dump PHOTON_BEAM/endpoint_energy:${RUN_NUMBER}:${variation}`
+
+set ccdblist=($ccdbelece:as/ / /)
+set elecE_text=$ccdblist[$#ccdblist]
+#set elecE_text = `rcnd $RUN_NUMBER beam_energy | awk '{print $1}'`
 
 #echo "text: " $elecE_text
 
@@ -123,7 +132,7 @@ else if ( $elecE_text == "Run" ) then
 else if ( $elecE_text == "-1.0" ) then
 	set elecE=12 #Should never happen
 else
-	set elecE = `echo "$elecE_text / 1000" | bc -l `
+	set elecE=`echo $elecE_text`  #set elecE = `echo "$elecE_text / 1000" | bc -l ` #rcdb method
 endif
 
 set copeak = 0
