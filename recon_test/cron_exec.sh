@@ -109,7 +109,7 @@ Check_Workflow_Loop()
 		if [ "$RETURN_CODE" -eq "2" ]; then
 			swif modify-jobs -workflow $WORKFLOW_NAME -ram add 2gb -problems AUGER-OVER_RLIMIT 
 			swif modify-jobs -workflow $WORKFLOW_NAME -time add 4h -problems AUGER-TIMEOUT 
-			swif retry-jobs -workflow $WORKFLOW_NAME -problems SWIF-SYSTEM-ERROR SWIF-USER-NON-ZERO AUGER-INPUT-FAIL AUGER-OUTPUT-FAIL AUGER-FAILED
+			swif retry-jobs -workflow $WORKFLOW_NAME -problems SWIF-SYSTEM-ERROR SWIF-USER-NON-ZERO AUGER-INPUT-FAIL AUGER-OUTPUT-FAIL AUGER-FAILED AUGER-SUBMIT
 		fi
 		sleep $sleep_length  
 	done
