@@ -347,7 +347,7 @@ gen_pre=""
 
 if [[ "$GENR" != "0" ]]; then
 	gen_pre=`echo $GENERATOR | cut -c1-4`
-    if [[ "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" && "$GENERATOR" != "gen_omega_3pi" && "$GENERATOR" != "gen_2k" ]]; then
+    if [[ "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" && "$GENERATOR" != "gen_omega_3pi" && "$GENERATOR" != "gen_2k"&& "$GENERATOR" != "bggen_jpsi" ]]; then
 	echo "NO VALID GENERATOR GIVEN"
 	echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0, gen_omega_3pi, gen_2k] are supported"
 	exit
@@ -410,12 +410,21 @@ if [[ "$GENR" != "0" ]]; then
 	echo "configuring gen_2k"
 	set STANDARD_NAME="gen_2k_"$STANDARD_NAME
 	cp $CONFIG_FILE ./$STANDARD_NAME.conf
+	elif [[ "$GENERATOR" == "bggen_jpsi" ]]; then
+	echo "configuring bggen_jpsi"
+	set STANDARD_NAME="bggen_jpsi_"$STANDARD_NAME
+	cp $MCWRAPPER_CENTRAL/Generators/bggen_jpsi/particle.dat ./
+	cp $MCWRAPPER_CENTRAL/Generators/bggen_jpsi/pythia.dat ./
+	cp $MCWRAPPER_CENTRAL/Generators/bggen_jpsi/pythia-geant.map ./
+	cp $CONFIG_FILE ./$STANDARD_NAME.conf
     fi
 	
 	if [[ "$gen_pre" != "file" ]]; then
     config_file_name=`basename "$CONFIG_FILE"`
     echo $config_file_name
     fi
+
+	#RANDOMnum_forGeneration=`bash -c 'echo $RANDOM'`
 
     if [[ "$GENERATOR" == "genr8" ]]; then
 	echo "RUNNING GENR8"
@@ -455,7 +464,7 @@ if [[ "$GENR" != "0" ]]; then
 	echo "RUNNING GEN_2PI_AMP" 
     optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
 	echo $optionals_line
-	#RANDOMnum=`bash -c 'echo $RANDOM'`
+	
 	echo gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
 	gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
 	elif [[ "$GENERATOR" == "gen_omega_3pi" ]]; then
@@ -482,6 +491,23 @@ if [[ "$GENR" != "0" ]]; then
 	echo $optionals_line
 	echo gen_2k -c $STANDARD_NAME.conf -o $STANDARD_NAME.hddm -hd $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
 	gen_2k -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
+	elif [[ "$GENERATOR" == "bggen" ]]; then
+	RANDOMnum=`bash -c 'echo $RANDOM'`
+	echo "Random number used: "$RANDOMnum
+	sed -i 's/TEMPTRIG/'$EVT_TO_GEN'/' $STANDARD_NAME.conf
+	sed -i 's/TEMPRUNNO/'$RUN_NUMBER'/' $STANDARD_NAME.conf
+	sed -i 's/TEMPCOLD/'0.00$colsize'/' $STANDARD_NAME.conf
+	sed -i 's/TEMPRAND/'$RANDOMnum'/' $STANDARD_NAME.conf
+	Fortran_eBEAM_ENRGY=`echo $eBEAM_ENERGY | cut -c -7`
+	sed -i 's/TEMPELECE/'$Fortran_eBEAM_ENRGY'/' $STANDARD_NAME.conf
+	Fortran_COHERENT_PEAK=`echo $COHERENT_PEAK | cut -c -7`
+	sed -i 's/TEMPCOHERENT/'$Fortran_COHERENT_PEAK'/' $STANDARD_NAME.conf
+	sed -i 's/TEMPMINGENE/'$GEN_MIN_ENERGY'/' $STANDARD_NAME.conf
+	sed -i 's/TEMPMAXGENE/'$GEN_MAX_ENERGY'/' $STANDARD_NAME.conf
+	
+	ln -s $STANDARD_NAME.conf fort.15
+	bggen_jpsi
+	mv bggen_jpsi.hddm $STANDARD_NAME.hddm
 	fi
     
 	if [[ ! -f ./$STANDARD_NAME.hddm ]]; then
@@ -581,10 +607,11 @@ if [[ "$GENR" != "0" ]]; then
 	    if [[ "$CLEANGENR" == "1" ]]; then
 		if [[ "$GENERATOR" == "genr8" ]]; then
 		    rm *.ascii
-		elif [[ "$GENERATOR" == "bggen" ]]; then
+		elif [[ "$GENERATOR" == "bggen" || "$GENERATOR" == "bggen" ]]; then
 		    rm particle.dat
 		    rm pythia.dat
 		    rm pythia-geant.map
+			rm -f bggen.nt
 		    unlink fort.15
 		fi
 		
