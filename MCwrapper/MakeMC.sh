@@ -347,9 +347,9 @@ gen_pre=""
 
 if [[ "$GENR" != "0" ]]; then
 	gen_pre=`echo $GENERATOR | cut -c1-4`
-    if [[ "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" && "$GENERATOR" != "gen_omega_3pi" && "$GENERATOR" != "gen_2k"&& "$GENERATOR" != "bggen_jpsi" ]]; then
+    if [[ "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" && "$GENERATOR" != "gen_omega_3pi" && "$GENERATOR" != "gen_2k" && "$GENERATOR" != "bggen_jpsi" && "$GENERATOR" != "gen_ee" ]]; then
 	echo "NO VALID GENERATOR GIVEN"
-	echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0, gen_omega_3pi, gen_2k] are supported"
+	echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0, gen_omega_3pi, gen_2k, bggen_jpsi, gen_ee] are supported"
 	exit
     fi
     
@@ -367,6 +367,8 @@ if [[ "$GENR" != "0" ]]; then
 	else 
 		if [[ -f $CONFIG_FILE ]]; then
 	    	echo "input file found"
+		elif [[ "$GENERATOR" == "gen_ee" ]]
+			echo "Config file not applicable"
 		else
 	    	echo $CONFIG_FILE" does not exist"
 	    	exit
@@ -417,6 +419,10 @@ if [[ "$GENR" != "0" ]]; then
 	cp $MCWRAPPER_CENTRAL/Generators/bggen_jpsi/pythia.dat ./
 	cp $MCWRAPPER_CENTRAL/Generators/bggen_jpsi/pythia-geant.map ./
 	cp $CONFIG_FILE ./$STANDARD_NAME.conf
+	elif [[ "$GENERATOR" == "gen_ee" ]]; then
+	echo "configuring gen_ee"
+	set STANDARD_NAME="gen_ee_"$STANDARD_NAME
+	echo "note: this generator is run completely from command line, thus no config file will be made and/or modified"
     fi
 	
 	if [[ "$gen_pre" != "file" ]]; then
@@ -508,6 +514,11 @@ if [[ "$GENR" != "0" ]]; then
 	ln -s $STANDARD_NAME.conf fort.15
 	bggen_jpsi
 	mv bggen_jpsi.hddm $STANDARD_NAME.hddm
+	elif [[ "$GENERATOR" == "gen_ee" ]]; then
+	set RANDOMnum=`bash -c 'echo $RANDOM'`
+	echo "Random number used: "$RANDOMnum
+	ee_mc -n$EVT_TO_GEN -R2 -b2 -l$GEN_MIN_ENERGY -u$GEN_MAX_ENERGY -t2 -r$RANDOMnum -omc_ee.hddm
+	mv mc_ee.hddm $STANDARD_NAME.hddm
 	fi
     
 	if [[ ! -f ./$STANDARD_NAME.hddm ]]; then
