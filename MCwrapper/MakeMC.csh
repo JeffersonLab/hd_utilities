@@ -86,7 +86,8 @@ echo ""
 echo "Detected c-shell"
 
 
-set BGRATE_toUse=$BGRATE
+
+
 
 set radthick="50.e-6"
 
@@ -111,8 +112,8 @@ endif
 set polarization_angle = `rcnd $RUN_NUMBER polarization_angle | awk '{print $1}'`
 echo polarization angle: $polarization_angle
 
-set elecE = 0
-set variation= $VERSION
+set elecE=0
+set variation=$VERSION
 if ( $CALIBTIME != "notime" ) then
 set variation=$variation+":"+$CALIBTIME
 endif
@@ -120,6 +121,7 @@ endif
 set ccdbelece=`ccdb dump PHOTON_BEAM/endpoint_energy:${RUN_NUMBER}:${variation}`
 
 set ccdblist=($ccdbelece:as/ / /)
+
 set elecE_text=$ccdblist[$#ccdblist]
 #set elecE_text = `rcnd $RUN_NUMBER beam_energy | awk '{print $1}'`
 
@@ -166,8 +168,38 @@ if ( "$VERSION" != "mc" && "$eBEAM_ENERGY" == "rcdb" ) then
 endif
 
 if ( "$polarization_angle" == "-1.0" ) then
-	set copeak=`echo "$eBEAM_ENERGY + .5" | bc`
+	set copeak=`echo "$eBEAM_ENERGY + .5" | bc `
 	setenv COHERENT_PEAK $copeak
+endif
+
+set colsize=`rcnd $RUN_NUMBER collimator_diameter | awk '{print $1}' | sed -r 's/.{2}$//'| sed -e 's/\.//g'`
+
+if ( "$colsize" == "B" || "$colsize" == "R" || "$JANA_CALIB_CONTEXT" != "variation=mc" ) then
+	set colsize="50"
+endif
+
+set beam_on_current=`rcnd $RUN_NUMBER beam_on_current | awk '{print $1}'`
+
+if ( $beam_on_current != "" ) then
+set beam_on_current=`echo "$beam_on_current / 1000." | bc -l`
+else
+echo "Run $RUN_NUMBER does not have a beam_on_current.  Defaulting to beam_current."
+set beam_on_current=`rcnd $RUN_NUMBER beam_current | awk '{print $1}'`
+endif
+
+if ( "$colsize" == "B" || "$colsize" == "R" || "$JANA_CALIB_CONTEXT" != "variation=mc" ) then
+	set colsize="50"
+endif
+
+set BGRATE_toUse=$BGRATE
+
+if ( "$BGRATE" != "rcdb" || "$VERSION" != "mc" ) then
+    set BGRATE_toUse=$BGGATE
+else
+	echo "Calculating BGRate.  This process takes a minute..."
+	set BGRATE_toUse=`BGRate_calc --runNo $RUN_NUMBER --coherent_peak $COHERENT_PEAK --beam_on_current $beam_on_current --beam_energy $eBEAM_ENERGY --collimator_diameter 0.00$colsize --radiator_thickness $radthick --endpoint_energy_low $GEN_MIN_ENERGY --endpoint_energy_high $GEN_MAX_ENERGY`
+	set BGRATE_list=($BGRATE_toUse:as/ / /)
+	set BGRATE_toUse=$BGRATE_list[$#BGRATE_list]
 endif
 
 # PRINT INPUTS
@@ -180,6 +212,7 @@ echo "Output location: "$OUTDIR
 echo "Environment file: " $ENVIRONMENT
 echo "Context: "$JANA_CALIB_CONTEXT
 echo "Run Number: "$RUN_NUMBER
+echo "Electron beam current to use: "$beam_on_current" uA"
 echo "Electron beam energy to use: "$eBEAM_ENERGY" GeV"
 echo "Radiator Thickness to use: "$radthick" m"
 echo "Photon Energy between "$GEN_MIN_ENERGY" and "$GEN_MAX_ENERGY" GeV"
@@ -266,11 +299,6 @@ if ( "$TAGSTR" != "I_dont_have_one" ) then
 endif
 
 set STANDARD_NAME=$custom_tag$formatted_runNumber\_$formatted_fileNumber
-
-set colsize=`rcnd $RUN_NUMBER collimator_diameter | awk '{print $1}' | sed -r 's/.{2}$//' | sed -e 's/\.//g'`
-if ( "$colsize" == "B" || "$colsize" == "R" || "$JANA_CALIB_CONTEXT" != "variation=mc" ) then
-	set colsize="50"
-endif
 
 if ( `echo $eBEAM_ENERGY | grep -o "\." | wc -l` == 0 ) then
     set eBEAM_ENERGY=$eBEAM_ENERGY\.

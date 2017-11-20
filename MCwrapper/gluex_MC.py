@@ -195,8 +195,8 @@ def main(argv):
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         print "*********************************"
-        print "Welcome to v1.9.1 of the MCwrapper"
-        print "Thomas Britton 11/14/17"
+        print "Welcome to v1.10 of the MCwrapper"
+        print "Thomas Britton 11/20/17"
         print "*********************************"
 
 	#load all argument passed in and set default options
@@ -217,7 +217,7 @@ def main(argv):
         MIN_GEN_ENERGY="3"
         MAX_GEN_ENERGY="12"
         RADIATOR_THICKNESS="rcdb"
-        BGRATE=".15" #GHz
+        BGRATE="rcdb" #GHz
         BGTAGONLY="0"
         RUNNING_DIR="./"
 	SQLITEPATH="no_sqlite"

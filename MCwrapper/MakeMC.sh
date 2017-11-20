@@ -168,6 +168,33 @@ if [[ "$polarization_angle" == "-1.0" ]]; then
 	export COHERENT_PEAK=$copeak
 fi
 
+beam_on_current=`rcnd $RUN_NUMBER beam_on_current | awk '{print $1}'`
+
+if [[ $beam_on_current != "" ]]; then
+beam_on_current=`echo "$beam_on_current / 1000." | bc -l`
+else
+echo "Run $RUN_NUMBER does not have a beam_on_current.  Defaulting to beam_current."
+beam_on_current=`rcnd $RUN_NUMBER beam_current | awk '{print $1}'`
+fi
+
+colsize=`rcnd $RUN_NUMBER collimator_diameter | awk '{print $1}' | sed -r 's/.{2}$//' | sed -e 's/\.//g'`
+if [[ "$colsize" == "B" || "$colsize" == "R" || "$JANA_CALIB_CONTEXT" != "variation=mc" ]]; then
+    colsize="50"
+fi
+
+BGRATE_toUse=$BGRATE
+
+if [[ "$BGRATE" != "rcdb" || "$VERSION" != "mc" ]]; then
+    BGRATE_toUse=$BGGATE
+else
+	echo "Calculating BGRate.  This process takes a minute..."
+	BGRATE_toUse=`BGRate_calc --runNo $RUN_NUMBER --coherent_peak $COHERENT_PEAK --beam_on_current $beam_on_current --beam_energy $eBEAM_ENERGY --collimator_diameter 0.00$colsize --radiator_thickness $radthick --endpoint_energy_low $GEN_MIN_ENERGY --endpoint_energy_high $GEN_MAX_ENERGY`
+	BGRATE_list=(`echo ${BGRATE_toUse}`)
+	BGRATE_list_length=${#BGRATE_list[@]}
+	BGRATE_toUse=`echo ${BGRATE_list[$(($BGRATE_list_length-1))]}`
+
+fi
+
 # PRINT INPUTS
 echo "Job started: " `date`
 echo "sqlite path: " $SQLITEPATH
@@ -178,6 +205,7 @@ echo "Output location: "$OUTDIR
 echo "Environment file: " $ENVIRONMENT
 echo "Context: "$JANA_CALIB_CONTEXT
 echo "Run Number: "$RUN_NUMBER
+echo "Electron beam current to use: "$beam_on_current" uA"
 echo "Electron beam energy to use: "$eBEAM_ENERGY" GeV"
 echo "Radiator Thickness to use: "$radthick" m"
 echo "Photon Energy between "$GEN_MIN_ENERGY" and "$GEN_MAX_ENERGY" GeV"
@@ -265,12 +293,6 @@ if [[ "$TAGSTR" != "I_dont_have_one" ]]; then
 fi
 
 STANDARD_NAME=$custom_tag$formatted_runNumber\_$formatted_fileNumber
-
-colsize=`rcnd $RUN_NUMBER collimator_diameter | awk '{print $1}' | sed -r 's/.{2}$//' | sed -e 's/\.//g'`
-if [[ "$colsize" == "B" || "$colsize" == "R" || "$JANA_CALIB_CONTEXT" != "variation=mc" ]]; then
-    colsize="50"
-fi
-
 
 if [[ `echo $eBEAM_ENERGY | grep -o "\." | wc -l` == 0 ]]; then
     eBEAM_ENERGY=$eBEAM_ENERGY\.
