@@ -481,7 +481,7 @@ def main(argv):
 
 	indir=os.environ.get('MCWRAPPER_CENTRAL')
         
-        script_to_use = "/MakeMC.sh"
+        script_to_use = "/MakeMC.csh"
         if environ['SHELL']=="/bin/bash" :
                 script_to_use = "/MakeMC.sh"
         
