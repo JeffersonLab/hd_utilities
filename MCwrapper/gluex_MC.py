@@ -196,7 +196,7 @@ def main(argv):
 
         print "*********************************"
         print "Welcome to v1.10 of the MCwrapper"
-        print "Thomas Britton 11/20/17"
+        print "Thomas Britton 11/21/17"
         print "*********************************"
 
 	#load all argument passed in and set default options
@@ -220,7 +220,8 @@ def main(argv):
         BGRATE="rcdb" #GHz
         BGTAGONLY="0"
         RUNNING_DIR="./"
-	SQLITEPATH="no_sqlite"
+	ccdbSQLITEPATH="no_sqlite"
+        rcdbSQLITEPATH="no_sqlite"
 
         GEANTVER = 4        
         BGFOLD="DEFAULT"
@@ -382,8 +383,10 @@ def main(argv):
                                 CALIBTIME=str(parts[2]).split("#")[0].strip()
                         else:
                                 VERSION=rm_comments[0].strip()
-		elif str(parts[0]).upper()=="SQLITEPATH" :
-			SQLITEPATH=rm_comments[0].strip()
+		elif str(parts[0]).upper()=="CCDBSQLITEPATH" :
+			ccdbSQLITEPATH=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="RCDBSQLITEPATH" :
+			rcdbSQLITEPATH=rm_comments[0].strip()
                 else:
                         print "unknown config parameter!! "+str(parts[0])
 	#loop over command line arguments 
@@ -478,7 +481,7 @@ def main(argv):
 
 	indir=os.environ.get('MCWRAPPER_CENTRAL')
         
-        script_to_use = "/MakeMC.csh"
+        script_to_use = "/MakeMC.sh"
         if environ['SHELL']=="/bin/bash" :
                 script_to_use = "/MakeMC.sh"
         
@@ -509,10 +512,10 @@ def main(argv):
                 #Make python rcdb calls to form the vector
                 db = rcdb.RCDBProvider("mysql://rcdb@hallddb/rcdb")
 
-                dbhost = "hallddb.jlab.org"
-                dbuser = 'datmon'
-                dbpass = ''
-                dbname = 'data_monitoring'
+                #dbhost = "hallddb.jlab.org"
+                #dbuser = 'datmon'
+                #dbpass = ''
+                #dbname = 'data_monitoring'
 
                 runlow=0
                 runhigh=0
@@ -578,7 +581,7 @@ def main(argv):
                                 if num_this_file == 0:
 			                continue
 
-		                COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(runs[0])+" "+str(BASEFILENUM+FILENUM_this_run+-1)+" "+str(num_this_file)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(SQLITEPATH)+" "+str(BGTAGONLY)+" "+str(RADIATOR_THICKNESS)+" "+str(BGRATE)
+		                COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(runs[0])+" "+str(BASEFILENUM+FILENUM_this_run+-1)+" "+str(num_this_file)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(ccdbSQLITEPATH)+" "+str(rcdbSQLITEPATH)+" "+str(BGTAGONLY)+" "+str(RADIATOR_THICKNESS)+" "+str(BGRATE)
                                 if BATCHRUN == 0 or BATCHSYS=="NULL":
                                         #print str(runs[0])+" "+str(BASEFILENUM+FILENUM_this_run+-1)+" "+str(num_this_file)
         			        os.system(str(indir)+" "+COMMAND)
@@ -592,6 +595,9 @@ def main(argv):
                         #print "----------------"
                 
         else:
+                if FILES_TO_GEN >= 500 and ( ccdbSQLITEPATH == "no_sqlite" or rcdbSQLITEPATH == "no_sqlite"):
+                        print "This job has >500 subjobs and risks ddosing the servers.  Please use sqlite or request again with a larger per file. "
+                        return
 	        for FILENUM in range(1, FILES_TO_GEN + 2):
 		        num=PERFILE
 		        #last file gets the remainder
@@ -601,7 +607,7 @@ def main(argv):
 		        if num == 0:
 			        continue
                 
-		        COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(RUNNUM)+" "+str(BASEFILENUM+FILENUM+-1)+" "+str(num)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(SQLITEPATH)+" "+str(BGTAGONLY)+" "+str(RADIATOR_THICKNESS)+" "+str(BGRATE)
+		        COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(RUNNUM)+" "+str(BASEFILENUM+FILENUM+-1)+" "+str(num)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(ccdbSQLITEPATH)+" "+str(rcdbSQLITEPATH)+" "+str(BGTAGONLY)+" "+str(RADIATOR_THICKNESS)+" "+str(BGRATE)
                
 	                #print COMMAND
 		        #either call MakeMC.csh or add a job depending on swif flag

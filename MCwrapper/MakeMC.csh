@@ -73,7 +73,9 @@ setenv PER_FILE $1
 shift
 setenv RUNNING_DIR $1
 shift
-setenv SQLITEPATH $1
+setenv ccdbSQLITEPATH $1
+shift
+setenv rcdbSQLITEPATH $1
 shift
 setenv BGTAGONLY_OPTION $1
 shift
@@ -81,12 +83,42 @@ setenv RADIATOR_THICKNESS $1
 shift
 setenv BGRATE $1
 
+
+#necessary to run swif, uses local directory if swif=0 is used
+if ( "$BATCHRUN" != "0" ) then
+# ENVIRONMENT
+    echo $ENVIRONMENT
+
+    echo pwd=$PWD
+    mkdir -p $OUTDIR
+    mkdir -p $OUTDIR/log
+endif
+
+if (! -d $RUNNING_DIR) then
+mkdir $RUNNING_DIR
+endif
+
+cd $RUNNING_DIR
+
+if(! -d $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}) then
+mkdir $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
+endif
+
+cd $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
+
+if ( "$ccdbSQLITEPATH" != "no_sqlite" ) then
+        cp $ccdbSQLITEPATH ./ccdb.sqlite
+        setenv CCDB_CONNECTION sqlite:///$PWD/ccdb.sqlite
+        setenv JANA_CALIB_URL ${CCDB_CONNECTION}
+endif
+if ( "$rcdbSQLITEPATH" != "no_sqlite" ) then
+        cp $rcdbSQLITEPATH ./rcdb.sqlite
+        setenv RCDB_CONNECTION sqlite:///$PWD/rcdb.sqlite
+endif
+
 echo ""
 echo ""
 echo "Detected c-shell"
-
-
-
 
 
 set radthick="50.e-6"
@@ -109,21 +141,22 @@ else
 	end
 endif
 
-set polarization_angle = `rcnd $RUN_NUMBER polarization_angle | awk '{print $1}'`
+set polarization_angle=`rcnd $RUN_NUMBER polarization_angle | awk '{print $1}'`
 echo polarization angle: $polarization_angle
 
 set elecE=0
 set variation=$VERSION
+
 if ( $CALIBTIME != "notime" ) then
 set variation=$variation+":"+$CALIBTIME
 endif
 
-set ccdbelece=`ccdb dump PHOTON_BEAM/endpoint_energy:${RUN_NUMBER}:${variation}`
+
+set ccdbelece="`ccdb dump PHOTON_BEAM/endpoint_energy:${RUN_NUMBER}:${variation}`"
 
 set ccdblist=($ccdbelece:as/ / /)
 
 set elecE_text=$ccdblist[$#ccdblist]
-#set elecE_text = `rcnd $RUN_NUMBER beam_energy | awk '{print $1}'`
 
 #echo "text: " $elecE_text
 
@@ -198,13 +231,19 @@ if ( "$BGRATE" != "rcdb" || "$VERSION" != "mc" ) then
 else
 	echo "Calculating BGRate.  This process takes a minute..."
 	set BGRATE_toUse=`BGRate_calc --runNo $RUN_NUMBER --coherent_peak $COHERENT_PEAK --beam_on_current $beam_on_current --beam_energy $eBEAM_ENERGY --collimator_diameter 0.00$colsize --radiator_thickness $radthick --endpoint_energy_low $GEN_MIN_ENERGY --endpoint_energy_high $GEN_MAX_ENERGY`
+
+	if ( "$BGRATE_toUse" == "" ) then
+		echo "BGrate_calc is not built or inaccessible.  Please check your build and/or specify a BGRate to be used."
+		exit 12
+	else
 	set BGRATE_list=($BGRATE_toUse:as/ / /)
 	set BGRATE_toUse=$BGRATE_list[$#BGRATE_list]
+	endif
 endif
 
 # PRINT INPUTS
 echo "Job started: " `date`
-echo "sqlite path: " $SQLITEPATH
+echo "ccdb sqlite path: " $ccdbSQLITEPATH
 echo "Producing file number: "$FILE_NUMBER
 echo "Containing: " $EVT_TO_GEN"/""$PER_FILE"" events"
 echo "Running location:" $RUNNING_DIR
@@ -235,34 +274,10 @@ echo ""
 echo ""
 
 
-if (! -d $RUNNING_DIR) then
-mkdir $RUNNING_DIR
-endif
-
-cd $RUNNING_DIR
-
-if(! -d $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}) then
-mkdir $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
-endif
-
-cd $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
 
 
-#necessary to run swif, uses local directory if swif=0 is used
-if ( "$BATCHRUN" != "0" ) then
-# ENVIRONMENT
-    echo $ENVIRONMENT
-    
-    if ( "$SQLITEPATH" != "no_sqlite" ) then
-        cp $SQLITEPATH ./ccdb.sqlite
-        setenv CCDB_CONNECTION sqlite:///$RUNNING_DIR/ccdb.sqlite
-        setenv JANA_CALIB_URL ${CCDB_CONNECTION}
-    endif
 
-    echo pwd=$PWD
-    mkdir -p $OUTDIR
-    mkdir -p $OUTDIR/log
-endif
+
 
 set current_files=`find . -maxdepth 1 -type f`
 
@@ -735,6 +750,9 @@ if ( "$GENR" != "0" ) then
 	endif
     endif
 endif
+
+rm -rf ccdb.sqlite
+rm -rf rcdb.sqlite
 
 if ( "$gen_pre" != "file" ) then
     mv $PWD/*.conf $OUTDIR/configurations/generation/

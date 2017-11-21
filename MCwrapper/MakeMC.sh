@@ -73,13 +73,53 @@ export PER_FILE=$1
 shift
 export RUNNING_DIR=$1
 shift
-export SQLITEPATH=$1
+export ccdbSQLITEPATH=$1
+shift
+export rcdbSQLITEPATH=$1
 shift
 export BGTAGONLY_OPTION=$1
 shift
 export RADIATOR_THICKNESS=$1
 shift
 export BGRATE=$1
+
+#printenv
+#necessary to run swif, uses local directory if swif=0 is used
+if [[ "$BATCHRUN" != "0" ]]; then
+    # ENVIRONMENT
+    echo $ENVIRONMENT
+	if [[ "$BATCHSYS" == "QSUB" ]]; then
+		cd $RUNNING_DIR
+	fi
+    
+    
+    echo pwd=$PWD
+    mkdir -p $OUTDIR
+    mkdir -p $OUTDIR/log
+fi
+
+if [[ ! -d $RUNNING_DIR ]]; then
+mkdir $RUNNING_DIR
+fi
+
+cd $RUNNING_DIR
+
+if [[ ! -d $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER} ]]; then
+mkdir $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
+fi
+
+cd $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
+
+if [[ "$ccdbSQLITEPATH" != "no_sqlite" ]]; then
+        cp $ccdbSQLITEPATH ./ccdb.sqlite
+        export CCDB_CONNECTION=sqlite:///$PWD/ccdb.sqlite
+        export JANA_CALIB_URL=$CCDB_CONNECTION
+fi
+
+if [[ "$rcdbSQLITEPATH" != "no_sqlite" ]]; then
+        cp $rcdbSQLITEPATH ./rcdb.sqlite
+        export RCDB_CONNECTION=sqlite:///$PWD/rcdb.sqlite
+fi
 
 echo ""
 echo ""
@@ -189,15 +229,22 @@ if [[ "$BGRATE" != "rcdb" || "$VERSION" != "mc" ]]; then
 else
 	echo "Calculating BGRate.  This process takes a minute..."
 	BGRATE_toUse=`BGRate_calc --runNo $RUN_NUMBER --coherent_peak $COHERENT_PEAK --beam_on_current $beam_on_current --beam_energy $eBEAM_ENERGY --collimator_diameter 0.00$colsize --radiator_thickness $radthick --endpoint_energy_low $GEN_MIN_ENERGY --endpoint_energy_high $GEN_MAX_ENERGY`
+	echo BGRATE Is: $BGRATE_toUse
+	if [[ $BGRATE_toUse == "" ]]; then
+		echo "BGrate_calc is not built or inaccessible.  Please check your build and/or specify a BGRate to be used."
+		exit 12
+	else
+
 	BGRATE_list=(`echo ${BGRATE_toUse}`)
 	BGRATE_list_length=${#BGRATE_list[@]}
 	BGRATE_toUse=`echo ${BGRATE_list[$(($BGRATE_list_length-1))]}`
+	fi
 
 fi
 
 # PRINT INPUTS
 echo "Job started: " `date`
-echo "sqlite path: " $SQLITEPATH
+echo "sqlite path: " $ccdbSQLITEPATH
 echo "Producing file number: "$FILE_NUMBER
 echo "Containing: " $EVT_TO_GEN"/""$PER_FILE"" events"
 echo "Running location:" $RUNNING_DIR
@@ -227,36 +274,7 @@ echo "=============================================="
 echo ""
 echo ""
 
-if [[ ! -d $RUNNING_DIR ]]; then
-mkdir $RUNNING_DIR
-fi
 
-cd $RUNNING_DIR
-
-if [[ ! -d $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER} ]]; then
-mkdir $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
-fi
-
-cd $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
-
-#printenv
-#necessary to run swif, uses local directory if swif=0 is used
-if [[ "$BATCHRUN" != "0" ]]; then
-    # ENVIRONMENT
-    echo $ENVIRONMENT
-	if [[ "$BATCHSYS" == "QSUB" ]]; then
-		cd $RUNNING_DIR
-	fi
-    
-    if [[ "$SQLITEPATH" != "no_sqlite" ]]; then
-        cp $SQLITEPATH ./ccdb.sqlite
-        export CCDB_CONNECTION sqlite:///$RUNNING_DIR/ccdb.sqlite
-        export JANA_CALIB_URL $CCDB_CONNECTION
-    fi
-    echo pwd=$PWD
-    mkdir -p $OUTDIR
-    mkdir -p $OUTDIR/log
-fi
 
 current_files=`find . -maxdepth 1 -type f`
 
@@ -389,7 +407,7 @@ if [[ "$GENR" != "0" ]]; then
 	else 
 		if [[ -f $CONFIG_FILE ]]; then
 	    	echo "input file found"
-		elif [[ "$GENERATOR" == "gen_ee" ]]
+		elif [[ "$GENERATOR" == "gen_ee" ]]; then
 			echo "Config file not applicable"
 		else
 	    	echo $CONFIG_FILE" does not exist"
@@ -519,7 +537,7 @@ if [[ "$GENR" != "0" ]]; then
 	echo $optionals_line
 	echo gen_2k -c $STANDARD_NAME.conf -o $STANDARD_NAME.hddm -hd $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
 	gen_2k -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
-	elif [[ "$GENERATOR" == "bggen" ]]; then
+	elif [[ "$GENERATOR" == "bggen_jpsi" ]]; then
 	RANDOMnum=`bash -c 'echo $RANDOM'`
 	echo "Random number used: "$RANDOMnum
 	sed -i 's/TEMPTRIG/'$EVT_TO_GEN'/' $STANDARD_NAME.conf
@@ -535,7 +553,7 @@ if [[ "$GENR" != "0" ]]; then
 	
 	ln -s $STANDARD_NAME.conf fort.15
 	bggen_jpsi
-	mv bggen_jpsi.hddm $STANDARD_NAME.hddm
+	mv bggen.hddm $STANDARD_NAME.hddm
 	elif [[ "$GENERATOR" == "gen_ee" ]]; then
 	set RANDOMnum=`bash -c 'echo $RANDOM'`
 	echo "Random number used: "$RANDOMnum
@@ -726,6 +744,10 @@ if [[ "$GENR" != "0" ]]; then
 	fi
   fi
 fi
+
+rm -rf ccdb.sqlite
+rm -rf rcdb.sqlite
+
 if [[ "$gen_pre" != "file" ]]; then
 	mv $PWD/*.conf $OUTDIR/configurations/generation/
 fi
@@ -740,6 +762,8 @@ if [[ "$hddmfiles" != "" ]]; then
 	done
 fi
 
+cd ..
+ 
 if [[ `ls $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER} | wc -l` == 0 ]]; then
 	rm -rf $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
 else
