@@ -227,17 +227,18 @@ BGRATE_toUse=$BGRATE
 if [[ "$BGRATE" != "rcdb" || "$VERSION" != "mc" ]]; then
     BGRATE_toUse=$BGGATE
 else
-	echo "Calculating BGRate.  This process takes a minute..."
-	BGRATE_toUse=`BGRate_calc --runNo $RUN_NUMBER --coherent_peak $COHERENT_PEAK --beam_on_current $beam_on_current --beam_energy $eBEAM_ENERGY --collimator_diameter 0.00$colsize --radiator_thickness $radthick --endpoint_energy_low $GEN_MIN_ENERGY --endpoint_energy_high $GEN_MAX_ENERGY`
-	echo BGRATE Is: $BGRATE_toUse
-	if [[ $BGRATE_toUse == "" ]]; then
-		echo "BGrate_calc is not built or inaccessible.  Please check your build and/or specify a BGRate to be used."
-		exit 12
-	else
-
-	BGRATE_list=(`echo ${BGRATE_toUse}`)
-	BGRATE_list_length=${#BGRATE_list[@]}
-	BGRATE_toUse=`echo ${BGRATE_list[$(($BGRATE_list_length-1))]}`
+	if [[ $BGTAGONLY_OPTION == "1" || $BKGFOLDSTR=="BeamPhotons" ]]; then
+		echo "Calculating BGRate.  This process takes a minute..."
+		BGRATE_toUse=`BGRate_calc --runNo $RUN_NUMBER --coherent_peak $COHERENT_PEAK --beam_on_current $beam_on_current --beam_energy $eBEAM_ENERGY --collimator_diameter 0.00$colsize --radiator_thickness $radthick --endpoint_energy_low $GEN_MIN_ENERGY --endpoint_energy_high $GEN_MAX_ENERGY`
+		echo BGRATE Is: $BGRATE_toUse
+		if [[ $BGRATE_toUse == "" ]]; then
+			echo "BGrate_calc is not built or inaccessible.  Please check your build and/or specify a BGRate to be used."
+			exit 12
+		else
+			BGRATE_list=(`echo ${BGRATE_toUse}`)
+			BGRATE_list_length=${#BGRATE_list[@]}
+			BGRATE_toUse=`echo ${BGRATE_list[$(($BGRATE_list_length-1))]}`
+		fi
 	fi
 
 fi
