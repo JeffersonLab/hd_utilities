@@ -195,8 +195,8 @@ def main(argv):
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         print "*********************************"
-        print "Welcome to v1.9 of the MCwrapper"
-        print "Thomas Britton 10/24/17"
+        print "Welcome to v1.10 of the MCwrapper"
+        print "Thomas Britton 11/22/17"
         print "*********************************"
 
 	#load all argument passed in and set default options
@@ -214,10 +214,14 @@ def main(argv):
 
         eBEAM_ENERGY="rcdb"
         COHERENT_PEAK="rcdb"
-        MIN_GEN_ENERGY="4"
+        MIN_GEN_ENERGY="3"
         MAX_GEN_ENERGY="12"
+        RADIATOR_THICKNESS="rcdb"
+        BGRATE="rcdb" #GHz
+        BGTAGONLY="0"
         RUNNING_DIR="./"
-	SQLITEPATH="no_sqlite"
+	ccdbSQLITEPATH="no_sqlite"
+        rcdbSQLITEPATH="no_sqlite"
 
         GEANTVER = 4        
         BGFOLD="DEFAULT"
@@ -314,7 +318,7 @@ def main(argv):
                         GEANTVER=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="WORKFLOW_NAME" :
                         WORKFLOW=rm_comments[0].strip()
-                        if WORKFLOW.find(';')!=-1 or WORKFLOW.find('&')!=-1 :#THIS CHECK HELPS PROTEXT AGAINST A POTENTIAL HACK IN WORKFLOW NAMES
+                        if WORKFLOW.find(';')!=-1 or WORKFLOW.find('&')!=-1 :#THIS CHECK HELPS PROTECT AGAINST A POTENTIAL HACK IN WORKFLOW NAMES
                                 print "Nice try.....you cannot use ; or & in the name"
                                 exit(1)
                 elif str(parts[0]).upper()=="GENERATOR_CONFIG" :
@@ -324,11 +328,40 @@ def main(argv):
                 elif str(parts[0]).upper()=="CUSTOM_GCONTROL" :
                         CUSTOM_GCONTROL=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="BKG" :
-                        BGFOLD=rm_comments[0].strip()
+                        bkg_parts=rm_comments[0].strip().split("+")
+                        #print bkg_parts
+                        for part in bkg_parts:
+                                subparts=part.split(":")
+                                if len(subparts)>2:
+                                        print "Error in BKG Parsing: "+part
+                                        return
+                                if subparts[0].upper() == "TAGONLY":
+                                        BGTAGONLY=1
+                                        if len(subparts)==2:
+                                                BGRATE=subparts[1]
+
+                                elif subparts[0].upper() == "BEAMPHOTONS":
+                                        #print subparts
+                                        BGFOLD=subparts[0]
+                                        if len(subparts)==2:
+                                                BGRATE=subparts[1]
+                                elif subparts[0].upper() == "RANDOM" or subparts[0].upper() == "DEFAULT":
+                                        BGFOLD=subparts[0]
+                                else:
+                                        BGFOLD=part
+
+                        #IF BEAMPHOTONS OR TAGONLY IS IN THE LIST AND A BGRATE IS NOT SPECIFIED AND WE ARE TALKING VARIATION=mc THEN SET IT PROPERLY
+                        #print BGFOLD
+                        #print BGTAGONLY
+                        #print BGRATE
+                        #return
+
                 elif str(parts[0]).upper()=="EBEAM_ENERGY" :
                         eBEAM_ENERGY=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="COHERENT_PEAK" :
                         COHERENT_PEAK=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="RADIATOR_THICKNESS" :
+                        RADIATOR_THICKNESS=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="GEN_MIN_ENERGY" :
                         MIN_GEN_ENERGY=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="GEN_MAX_ENERGY" :
@@ -344,14 +377,16 @@ def main(argv):
                                 QUEUENAME=batch_sys_parts[1]
                 elif str(parts[0]).upper()=="RUNNING_DIRECTORY" :
                         RUNNING_DIR=rm_comments[0].strip()
-                elif str(parts[0]).upper()=="VARIATION" :
+                elif str(parts[0]).upper()=="VARIATION":
                         if ( len(parts)>2 ) :
                                 VERSION=str(parts[1]).split("calibtime")[0].split("#")[0].strip()
                                 CALIBTIME=str(parts[2]).split("#")[0].strip()
                         else:
                                 VERSION=rm_comments[0].strip()
-		elif str(parts[0]).upper()=="SQLITEPATH" :
-			SQLITEPATH=rm_comments[0].strip()
+		elif str(parts[0]).upper()=="CCDBSQLITEPATH" :
+			ccdbSQLITEPATH=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="RCDBSQLITEPATH" :
+			rcdbSQLITEPATH=rm_comments[0].strip()
                 else:
                         print "unknown config parameter!! "+str(parts[0])
 	#loop over command line arguments 
@@ -477,10 +512,10 @@ def main(argv):
                 #Make python rcdb calls to form the vector
                 db = rcdb.RCDBProvider("mysql://rcdb@hallddb/rcdb")
 
-                dbhost = "hallddb.jlab.org"
-                dbuser = 'datmon'
-                dbpass = ''
-                dbname = 'data_monitoring'
+                #dbhost = "hallddb.jlab.org"
+                #dbuser = 'datmon'
+                #dbpass = ''
+                #dbname = 'data_monitoring'
 
                 runlow=0
                 runhigh=0
@@ -546,7 +581,7 @@ def main(argv):
                                 if num_this_file == 0:
 			                continue
 
-		                COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(runs[0])+" "+str(BASEFILENUM+FILENUM_this_run+-1)+" "+str(num_this_file)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(SQLITEPATH)
+		                COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(runs[0])+" "+str(BASEFILENUM+FILENUM_this_run+-1)+" "+str(num_this_file)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(ccdbSQLITEPATH)+" "+str(rcdbSQLITEPATH)+" "+str(BGTAGONLY)+" "+str(RADIATOR_THICKNESS)+" "+str(BGRATE)
                                 if BATCHRUN == 0 or BATCHSYS=="NULL":
                                         #print str(runs[0])+" "+str(BASEFILENUM+FILENUM_this_run+-1)+" "+str(num_this_file)
         			        os.system(str(indir)+" "+COMMAND)
@@ -560,6 +595,9 @@ def main(argv):
                         #print "----------------"
                 
         else:
+                if FILES_TO_GEN >= 500 and ( ccdbSQLITEPATH == "no_sqlite" or rcdbSQLITEPATH == "no_sqlite"):
+                        print "This job has >500 subjobs and risks ddosing the servers.  Please use sqlite or request again with a larger per file. "
+                        return
 	        for FILENUM in range(1, FILES_TO_GEN + 2):
 		        num=PERFILE
 		        #last file gets the remainder
@@ -569,7 +607,7 @@ def main(argv):
 		        if num == 0:
 			        continue
                 
-		        COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(RUNNUM)+" "+str(BASEFILENUM+FILENUM+-1)+" "+str(num)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(SQLITEPATH)
+		        COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(RUNNUM)+" "+str(BASEFILENUM+FILENUM+-1)+" "+str(num)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(ccdbSQLITEPATH)+" "+str(rcdbSQLITEPATH)+" "+str(BGTAGONLY)+" "+str(RADIATOR_THICKNESS)+" "+str(BGRATE)
                
 	                #print COMMAND
 		        #either call MakeMC.csh or add a job depending on swif flag

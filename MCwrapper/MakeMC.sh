@@ -73,31 +73,93 @@ export PER_FILE=$1
 shift
 export RUNNING_DIR=$1
 shift
-export SQLITEPATH=$1
+export ccdbSQLITEPATH=$1
+shift
+export rcdbSQLITEPATH=$1
+shift
+export BGTAGONLY_OPTION=$1
+shift
+export RADIATOR_THICKNESS=$1
+shift
+export BGRATE=$1
+
+#printenv
+#necessary to run swif, uses local directory if swif=0 is used
+if [[ "$BATCHRUN" != "0" ]]; then
+    # ENVIRONMENT
+    echo $ENVIRONMENT
+	if [[ "$BATCHSYS" == "QSUB" ]]; then
+		cd $RUNNING_DIR
+	fi
+    
+    
+    echo pwd=$PWD
+    mkdir -p $OUTDIR
+    mkdir -p $OUTDIR/log
+fi
+
+if [[ ! -d $RUNNING_DIR ]]; then
+mkdir $RUNNING_DIR
+fi
+
+cd $RUNNING_DIR
+
+if [[ ! -d $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER} ]]; then
+mkdir $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
+fi
+
+cd $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
+
+if [[ "$ccdbSQLITEPATH" != "no_sqlite" ]]; then
+        cp $ccdbSQLITEPATH ./ccdb.sqlite
+        export CCDB_CONNECTION=sqlite:///$PWD/ccdb.sqlite
+        export JANA_CALIB_URL=$CCDB_CONNECTION
+fi
+
+if [[ "$rcdbSQLITEPATH" != "no_sqlite" ]]; then
+        cp $rcdbSQLITEPATH ./rcdb.sqlite
+        export RCDB_CONNECTION=sqlite:///$PWD/rcdb.sqlite
+fi
 
 echo ""
 echo ""
 echo "Detected bash shell"
 
+BGRATE_toUse=$BGRATE
+
 radthick="50.e-6"
-exponentialu=".e-6"
-words=`rcnd $RUN_NUMBER radiator_type | sed 's/ / /g' `
-for word in $words;
-do	
-	if [[ "$word" != "number" ]]; then
-		
-		removedum=`echo $word | sed 's/um/ /g'`
-		if [[ $removedum != $word ]]; then
-			radthick=`echo "$removedum.e-6" | tr -d '[:space:]'`
+
+if [[ "$RADIATOR_THICKNESS" != "rcdb" || "$VERSION" != "mc" ]]; then
+	radthick=$RADIATOR_THICKNESS
+else
+	words=`rcnd $RUN_NUMBER radiator_type | sed 's/ / /g' `
+	for word in $words;
+	do	
+		if [[ "$word" != "number" ]]; then	
+			removedum=`echo $word | sed 's/um/ /g'`
+			if [[ $removedum != $word ]]; then
+				radthick=`echo "$removedum e-6" | tr -d '[:space:]'`
+			fi
 		fi
-	fi
-done
+	done
+fi
 
 polarization_angle=`rcnd $RUN_NUMBER polarization_angle | awk '{print $1}'`
 echo polarization angle: $polarization_angle
 
 elecE=0
-elecE_text=`rcnd $RUN_NUMBER beam_energy | awk '{print $1}'`
+
+variation=$VERSION
+if [[ $CALIBTIME != "notime" ]]; then
+	variation=$variation+":"+$CALIBTIME
+fi
+
+ccdbelece="`ccdb dump PHOTON_BEAM/endpoint_energy:${RUN_NUMBER}:${variation}`"
+
+ccdblist=(`echo ${ccdbelece}`) #(${ccdbelece:/\ /\ /})
+ccdblist_length=${#ccdblist[@]}
+elecE_text=`echo ${ccdblist[$(($ccdblist_length-1))]}`
+#elecE_text=`rcnd $RUN_NUMBER beam_energy | awk '{print $1}'`
 
 if [[ "$eBEAM_ENERGY" != "rcdb" || "$VERSION" != "mc" ]]; then
     elecE=$eBEAM_ENERGY
@@ -106,7 +168,8 @@ elif [[ $elecE_text == "Run" ]]; then
 elif [[ $elecE_text == "-1.0" ]]; then
 	elecE=12 #Should never happen
 else
-	elecE=`echo "$elecE_text / 1000" | bc -l `
+	elecE=`echo $elecE_text`
+	#elecE=`echo "$elecE_text / 1000" | bc -l `
 fi
 
 copeak=0
@@ -145,8 +208,44 @@ if [[ "$polarization_angle" == "-1.0" ]]; then
 	export COHERENT_PEAK=$copeak
 fi
 
+beam_on_current=`rcnd $RUN_NUMBER beam_on_current | awk '{print $1}'`
+
+if [[ $beam_on_current != "" ]]; then
+beam_on_current=`echo "$beam_on_current / 1000." | bc -l`
+else
+echo "Run $RUN_NUMBER does not have a beam_on_current.  Defaulting to beam_current."
+beam_on_current=`rcnd $RUN_NUMBER beam_current | awk '{print $1}'`
+fi
+
+colsize=`rcnd $RUN_NUMBER collimator_diameter | awk '{print $1}' | sed -r 's/.{2}$//' | sed -e 's/\.//g'`
+if [[ "$colsize" == "B" || "$colsize" == "R" || "$JANA_CALIB_CONTEXT" != "variation=mc" ]]; then
+    colsize="50"
+fi
+
+BGRATE_toUse=$BGRATE
+
+if [[ "$BGRATE" != "rcdb" || "$VERSION" != "mc" ]]; then
+    BGRATE_toUse=$BGGATE
+else
+	if [[ $BGTAGONLY_OPTION == "1" || $BKGFOLDSTR=="BeamPhotons" ]]; then
+		echo "Calculating BGRate.  This process takes a minute..."
+		BGRATE_toUse=`BGRate_calc --runNo $RUN_NUMBER --coherent_peak $COHERENT_PEAK --beam_on_current $beam_on_current --beam_energy $eBEAM_ENERGY --collimator_diameter 0.00$colsize --radiator_thickness $radthick --endpoint_energy_low $GEN_MIN_ENERGY --endpoint_energy_high $GEN_MAX_ENERGY`
+		echo BGRATE Is: $BGRATE_toUse
+		if [[ $BGRATE_toUse == "" ]]; then
+			echo "BGrate_calc is not built or inaccessible.  Please check your build and/or specify a BGRate to be used."
+			exit 12
+		else
+			BGRATE_list=(`echo ${BGRATE_toUse}`)
+			BGRATE_list_length=${#BGRATE_list[@]}
+			BGRATE_toUse=`echo ${BGRATE_list[$(($BGRATE_list_length-1))]}`
+		fi
+	fi
+
+fi
+
 # PRINT INPUTS
 echo "Job started: " `date`
+echo "sqlite path: " $ccdbSQLITEPATH
 echo "Producing file number: "$FILE_NUMBER
 echo "Containing: " $EVT_TO_GEN"/""$PER_FILE"" events"
 echo "Running location:" $RUNNING_DIR
@@ -154,7 +253,9 @@ echo "Output location: "$OUTDIR
 echo "Environment file: " $ENVIRONMENT
 echo "Context: "$JANA_CALIB_CONTEXT
 echo "Run Number: "$RUN_NUMBER
+echo "Electron beam current to use: "$beam_on_current" uA"
 echo "Electron beam energy to use: "$eBEAM_ENERGY" GeV"
+echo "Radiator Thickness to use: "$radthick" m"
 echo "Photon Energy between "$GEN_MIN_ENERGY" and "$GEN_MAX_ENERGY" GeV"
 echo "Coherent Peak position: "$COHERENT_PEAK
 echo "----------------------------------------------"
@@ -163,7 +264,9 @@ echo "Using "$GENERATOR"  with config: "$CONFIG_FILE
 echo "----------------------------------------------"
 echo "Run geant step? "$GEANT"  Will be cleaned?" $CLEANGEANT
 echo "Using geant"$GEANTVER
+echo "Custom Gcontrol?" "$CUSTOM_GCONTROL"
 echo "Background to use: "$BKGFOLDSTR
+echo "BGRATE will be set to: "$BGRATE_toUse" GHz (if applicable)"
 echo "Run mcsmear ? "$SMEAR"  Will be cleaned?" $CLEANSMEAR
 echo "----------------------------------------------"
 echo "Run reconstruction? "$RECON"  Will be cleaned?" $CLEANRECON
@@ -172,36 +275,7 @@ echo "=============================================="
 echo ""
 echo ""
 
-if [[ ! -d $RUNNING_DIR ]]; then
-mkdir $RUNNING_DIR
-fi
 
-cd $RUNNING_DIR
-
-if [[ ! -d $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER} ]]; then
-mkdir $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
-fi
-
-cd $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
-
-#printenv
-#necessary to run swif, uses local directory if swif=0 is used
-if [[ "$BATCHRUN" != "0" ]]; then
-    # ENVIRONMENT
-    echo $ENVIRONMENT
-	if [[ "$BATCHSYS" == "QSUB" ]]; then
-		cd $RUNNING_DIR
-	fi
-    
-    if [[ "$SQLITEPATH" != "no_sqlite" ]]; then
-        cp $SQLITEPATH .
-        export CCDB_CONNECTION sqlite:///$RUNNING_DIR/ccdb.sqlite
-        export JANA_CALIB_URL $CCDB_CONNECTION
-    fi
-    echo pwd=$PWD
-    mkdir -p $OUTDIR
-    mkdir -p $OUTDIR/log
-fi
 
 current_files=`find . -maxdepth 1 -type f`
 
@@ -239,12 +313,6 @@ fi
 
 STANDARD_NAME=$custom_tag$formatted_runNumber\_$formatted_fileNumber
 
-colsize=`rcnd $RUN_NUMBER collimator_diameter | awk '{print $1}' | sed -r 's/.{2}$//' | sed -e 's/\.//g'`
-if [[ "$colsize" == "B" || "$colsize" == "R" || "$JANA_CALIB_CONTEXT" != "variation=mc" ]]; then
-    colsize="50"
-fi
-
-
 if [[ `echo $eBEAM_ENERGY | grep -o "\." | wc -l` == 0 ]]; then
     eBEAM_ENERGY=$eBEAM_ENERGY\.
 fi
@@ -279,14 +347,13 @@ fi
 
 bkglocstring=""
 bkgloc_pre=`echo $BKGFOLDSTR | cut -c 1-4`
-if [[ "$BKGFOLDSTR" == "DEFAULT" || "$bkgloc_pre" == "loc:" ]]; then
+if [[ "$BKGFOLDSTR" == "DEFAULT" || "$bkgloc_pre" == "loc:" || "$BKGFOLDSTR" == "Random" ]]; then
 		    #find file and run:1
 		    echo "Finding the right file to fold in during MCsmear step"
 		    runperiod="RunPeriod-2017-01"
 
 		    if [[ $RUN_NUMBER > 40000 ]]; then
-			echo
-			#set runperiod="RunPeriod-2017-10"
+			set runperiod="RunPeriod-2018-01"
 		    fi
 
 		    if [[ $RUN_NUMBER < 30000 ]]; then
@@ -321,9 +388,9 @@ gen_pre=""
 
 if [[ "$GENR" != "0" ]]; then
 	gen_pre=`echo $GENERATOR | cut -c1-4`
-    if [[ "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" && "$GENERATOR" != "gen_omega_3pi" && "$GENERATOR" != "gen_2k" ]]; then
+    if [[ "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" && "$GENERATOR" != "gen_omega_3pi" && "$GENERATOR" != "gen_2k" && "$GENERATOR" != "bggen_jpsi" && "$GENERATOR" != "gen_ee" ]]; then
 	echo "NO VALID GENERATOR GIVEN"
-	echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0, gen_omega_3pi, gen_2k] are supported"
+	echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0, gen_omega_3pi, gen_2k, bggen_jpsi, gen_ee] are supported"
 	exit
     fi
     
@@ -341,6 +408,8 @@ if [[ "$GENR" != "0" ]]; then
 	else 
 		if [[ -f $CONFIG_FILE ]]; then
 	    	echo "input file found"
+		elif [[ "$GENERATOR" == "gen_ee" ]]; then
+			echo "Config file not applicable"
 		else
 	    	echo $CONFIG_FILE" does not exist"
 	    	exit
@@ -384,12 +453,25 @@ if [[ "$GENR" != "0" ]]; then
 	echo "configuring gen_2k"
 	set STANDARD_NAME="gen_2k_"$STANDARD_NAME
 	cp $CONFIG_FILE ./$STANDARD_NAME.conf
+	elif [[ "$GENERATOR" == "bggen_jpsi" ]]; then
+	echo "configuring bggen_jpsi"
+	set STANDARD_NAME="bggen_jpsi_"$STANDARD_NAME
+	cp $MCWRAPPER_CENTRAL/Generators/bggen_jpsi/particle.dat ./
+	cp $MCWRAPPER_CENTRAL/Generators/bggen_jpsi/pythia.dat ./
+	cp $MCWRAPPER_CENTRAL/Generators/bggen_jpsi/pythia-geant.map ./
+	cp $CONFIG_FILE ./$STANDARD_NAME.conf
+	elif [[ "$GENERATOR" == "gen_ee" ]]; then
+	echo "configuring gen_ee"
+	set STANDARD_NAME="gen_ee_"$STANDARD_NAME
+	echo "note: this generator is run completely from command line, thus no config file will be made and/or modified"
     fi
 	
 	if [[ "$gen_pre" != "file" ]]; then
     config_file_name=`basename "$CONFIG_FILE"`
     echo $config_file_name
     fi
+
+	#RANDOMnum_forGeneration=`bash -c 'echo $RANDOM'`
 
     if [[ "$GENERATOR" == "genr8" ]]; then
 	echo "RUNNING GENR8"
@@ -400,13 +482,15 @@ if [[ "$GENR" != "0" ]]; then
 	genr8_2_hddm $STANDARD_NAME.ascii
     elif [[ "$GENERATOR" == "bggen" ]]; then
 	RANDOMnum=`bash -c 'echo $RANDOM'`
-	echo $RANDOMnum
+	echo "Random number used: "$RANDOMnum
 	sed -i 's/TEMPTRIG/'$EVT_TO_GEN'/' $STANDARD_NAME.conf
 	sed -i 's/TEMPRUNNO/'$RUN_NUMBER'/' $STANDARD_NAME.conf
 	sed -i 's/TEMPCOLD/'0.00$colsize'/' $STANDARD_NAME.conf
 	sed -i 's/TEMPRAND/'$RANDOMnum'/' $STANDARD_NAME.conf
-	sed -i 's/TEMPELECE/'$eBEAM_ENERGY'/' $STANDARD_NAME.conf
-	sed -i 's/TEMPCOHERENT/'$COHERENT_PEAK'/' $STANDARD_NAME.conf
+	Fortran_eBEAM_ENRGY=`echo $eBEAM_ENERGY | cut -c -7`
+	sed -i 's/TEMPELECE/'$Fortran_eBEAM_ENRGY'/' $STANDARD_NAME.conf
+	Fortran_COHERENT_PEAK=`echo $COHERENT_PEAK | cut -c -7`
+	sed -i 's/TEMPCOHERENT/'$Fortran_COHERENT_PEAK'/' $STANDARD_NAME.conf
 	sed -i 's/TEMPMINGENE/'$GEN_MIN_ENERGY'/' $STANDARD_NAME.conf
 	sed -i 's/TEMPMAXGENE/'$GEN_MAX_ENERGY'/' $STANDARD_NAME.conf
 	
@@ -419,6 +503,7 @@ if [[ "$GENR" != "0" ]]; then
 	sed -i 's/TEMPCOLD/'0.00$colsize'/' $STANDARD_NAME.conf
 	sed -i 's/TEMPELECE/'$eBEAM_ENERGY'/' $STANDARD_NAME.conf
 	sed -i 's/TEMPCOHERENT/'$COHERENT_PEAK'/' $STANDARD_NAME.conf
+	sed -i 's/TEMPRADTHICK/'"$radthick"'/' $STANDARD_NAME.conf
 	sed -i 's/TEMPMINGENE/'$GEN_MIN_ENERGY'/' $STANDARD_NAME.conf
 	sed -i 's/TEMPMAXGENE/'$GEN_MAX_ENERGY'/' $STANDARD_NAME.conf
 	genEtaRegge -N$EVT_TO_GEN -O$STANDARD_NAME.hddm -I$STANDARD_NAME.conf
@@ -426,7 +511,7 @@ if [[ "$GENR" != "0" ]]; then
 	echo "RUNNING GEN_2PI_AMP" 
     optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
 	echo $optionals_line
-	#RANDOMnum=`bash -c 'echo $RANDOM'`
+	
 	echo gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
 	gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
 	elif [[ "$GENERATOR" == "gen_omega_3pi" ]]; then
@@ -453,8 +538,34 @@ if [[ "$GENR" != "0" ]]; then
 	echo $optionals_line
 	echo gen_2k -c $STANDARD_NAME.conf -o $STANDARD_NAME.hddm -hd $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
 	gen_2k -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
+	elif [[ "$GENERATOR" == "bggen_jpsi" ]]; then
+	RANDOMnum=`bash -c 'echo $RANDOM'`
+	echo "Random number used: "$RANDOMnum
+	sed -i 's/TEMPTRIG/'$EVT_TO_GEN'/' $STANDARD_NAME.conf
+	sed -i 's/TEMPRUNNO/'$RUN_NUMBER'/' $STANDARD_NAME.conf
+	sed -i 's/TEMPCOLD/'0.00$colsize'/' $STANDARD_NAME.conf
+	sed -i 's/TEMPRAND/'$RANDOMnum'/' $STANDARD_NAME.conf
+	Fortran_eBEAM_ENRGY=`echo $eBEAM_ENERGY | cut -c -7`
+	sed -i 's/TEMPELECE/'$Fortran_eBEAM_ENRGY'/' $STANDARD_NAME.conf
+	Fortran_COHERENT_PEAK=`echo $COHERENT_PEAK | cut -c -7`
+	sed -i 's/TEMPCOHERENT/'$Fortran_COHERENT_PEAK'/' $STANDARD_NAME.conf
+	sed -i 's/TEMPMINGENE/'$GEN_MIN_ENERGY'/' $STANDARD_NAME.conf
+	sed -i 's/TEMPMAXGENE/'$GEN_MAX_ENERGY'/' $STANDARD_NAME.conf
+	
+	ln -s $STANDARD_NAME.conf fort.15
+	bggen_jpsi
+	mv bggen.hddm $STANDARD_NAME.hddm
+	elif [[ "$GENERATOR" == "gen_ee" ]]; then
+	set RANDOMnum=`bash -c 'echo $RANDOM'`
+	echo "Random number used: "$RANDOMnum
+	ee_mc -n$EVT_TO_GEN -R2 -b2 -l$GEN_MIN_ENERGY -u$GEN_MAX_ENERGY -t2 -r$RANDOMnum -omc_ee.hddm
+	mv mc_ee.hddm $STANDARD_NAME.hddm
 	fi
     
+	if [[ ! -f ./$STANDARD_NAME.hddm ]]; then
+		echo "An hddm file was not found after generation step.  Terminating MC production.  Please consult logs to diagnose"
+		exit 11
+	fi
     #GEANT/smearing
     
     if [[ "$GEANT" != "0" ]]; then
@@ -469,6 +580,8 @@ if [[ "$GENR" != "0" ]]; then
 	
 	cp temp_Gcontrol.in $PWD/control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	chmod 777 $PWD/control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	RANDOMnumGeant=`shuf -i1-215 -n1`
+	sed -i 's/TEMPRANDOM/'$RANDOMnumGeant'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	sed -i 's/TEMPELECE/'$eBEAM_ENERGY'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	sed -i 's/TEMPCOHERENT/'$COHERENT_PEAK'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	sed -i 's/TEMPIN/'$STANDARD_NAME.hddm'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
@@ -477,6 +590,8 @@ if [[ "$GENR" != "0" ]]; then
 	sed -i 's/TEMPTRIG/'$EVT_TO_GEN'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	sed -i 's/TEMPCOLD/'0.00$colsize'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	sed -i 's/TEMPRADTHICK/'"$radthick"'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	sed -i 's/TEMPBGTAGONLY/'$BGTAGONLY_OPTION'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	sed -i 's/TEMPBGRATE/'$BGRATE_toUse'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 
 	if [[ "$gen_pre" == "file" ]]; then
 			skip_num=$((FILE_NUMBER * PER_FILE))
@@ -492,8 +607,12 @@ if [[ "$GENR" != "0" ]]; then
 	    sed -i 's/TEMPMINE/'$GEN_MIN_ENERGY'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	elif [[ "$BKGFOLDSTR" == "BeamPhotons" ]]; then
 		sed -i 's/TEMPMINE/0.0012/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	elif [[ "$BKGFOLDSTR" == "DEFAULT" || "$BKGFOLDSTR" == "Random" && "$BGTAGONLY_OPTION" == "0" ]]; then
+	    sed -i 's/BGRATE/cBGRATE/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	    sed -i 's/BGGATE/cBGGATE/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	    sed -i 's/TEMPMINE/'$GEN_MIN_ENERGY'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	else
-	    sed -i 's/TEMPMINE/0.0012/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	    sed -i 's/TEMPMINE/'$GEN_MIN_ENERGY'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	fi
 	
 	cp $PWD/control'_'$formatted_runNumber'_'$formatted_fileNumber.in $OUTDIR/configurations/geant/
@@ -513,13 +632,18 @@ if [[ "$GENR" != "0" ]]; then
 	    exit
 	fi
 	
+	if [[ ! -f ./$STANDARD_NAME'_geant'$GEANTVER'.hddm' ]]; then
+		echo "An hddm file was not created by Geant.  Terminating MC production.  Please consult logs to diagnose"
+		exit 12
+	fi
+
 	if [[ "$SMEAR" != "0" ]]; then
 	    echo "RUNNING MCSMEAR"
 	    
 	    if [[ "$BKGFOLDSTR" == "BeamPhotons" || "$BKGFOLDSTR" == "None" ]]; then
 		echo "running MCsmear without folding in random background"
 		mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm'
-	    elif [[ "$BKGFOLDSTR" == "DEFAULT" ]]; then
+	    elif [[ "$BKGFOLDSTR" == "DEFAULT" || "$BKGFOLDSTR" == "Random" ]]; then
 		echo "mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
 		mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
 		elif [[ "$bkgloc_pre" == "loc:" ]]; then
@@ -535,16 +659,22 @@ if [[ "$GENR" != "0" ]]; then
 	    if [[ "$CLEANGENR" == "1" ]]; then
 		if [[ "$GENERATOR" == "genr8" ]]; then
 		    rm *.ascii
-		elif [[ "$GENERATOR" == "bggen" ]]; then
+		elif [[ "$GENERATOR" == "bggen" || "$GENERATOR" == "bggen" ]]; then
 		    rm particle.dat
 		    rm pythia.dat
 		    rm pythia-geant.map
+			rm -f bggen.nt
 		    unlink fort.15
 		fi
 		
 		rm $STANDARD_NAME.hddm
 	    fi
 	    
+		if [[ ! -f ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' ]]; then
+			echo "An hddm file was not created by mcsmear.  Terminating MC production.  Please consult logs to diagnose"
+			exit 13
+		fi
+
 	    if [[ "$RECON" != "0" ]]; then
 		echo "RUNNING RECONSTRUCTION"
 
@@ -615,6 +745,10 @@ if [[ "$GENR" != "0" ]]; then
 	fi
   fi
 fi
+
+rm -rf ccdb.sqlite
+rm -rf rcdb.sqlite
+
 if [[ "$gen_pre" != "file" ]]; then
 	mv $PWD/*.conf $OUTDIR/configurations/generation/
 fi
@@ -628,4 +762,14 @@ if [[ "$hddmfiles" != "" ]]; then
 		fi
 	done
 fi
+
+cd ..
+ 
+if [[ `ls $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER} | wc -l` == 0 ]]; then
+	rm -rf $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
+else
+	echo "MOVING AND/OR CLEANUP FAILED"
+	echo `ls $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}`
+fi
+
 #mv $PWD/*.root $OUTDIR/root/ #just in case
