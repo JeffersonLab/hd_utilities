@@ -464,10 +464,12 @@ if [[ "$GENR" != "0" ]]; then
 	echo "configuring gen_ee"
 	set STANDARD_NAME="gen_ee_"$STANDARD_NAME
 	echo "note: this generator is run completely from command line, thus no config file will be made and/or modified"
+	cp $CONFIG_FILE ./cobrems.root
 	elif ( "$GENERATOR" == "gen_ee_hb" ) then
 		echo "configuring gen_ee_hb"
 		set STANDARD_NAME="gen_ee_hb_"$STANDARD_NAME
 		echo "note: this generator is run completely from command line, thus no config file will be made and/or modified"
+		cp $CONFIG_FILE ./cobrems.root
     fi
 	
 	if [[ "$gen_pre" != "file" ]]; then
