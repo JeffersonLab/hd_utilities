@@ -386,9 +386,9 @@ set gen_pre=""
 
 if ( "$GENR" != "0" ) then
     set gen_pre=`echo $GENERATOR | cut -c1-4`
-    if ( "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" && "$GENERATOR" != "gen_omega_3pi" && "$GENERATOR" != "gen_2k" && "$GENERATOR" != "bggen_jpsi" && "$GENERATOR" != "gen_ee" ) then
+    if ( "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" && "$GENERATOR" != "gen_omega_3pi" && "$GENERATOR" != "gen_2k" && "$GENERATOR" != "bggen_jpsi" && "$GENERATOR" != "gen_ee" && "$GENERATOR" != "gen_ee_hb" ) then
 		echo "NO VALID GENERATOR GIVEN"
-		echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0, gen_omega_3pi, gen_2k, bggen_jpsi, gen_ee] are supported"
+		echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0, gen_omega_3pi, gen_2k, bggen_jpsi, gen_ee , gen_ee_hb] are supported"
 		exit
     endif
 
@@ -406,7 +406,7 @@ if ( "$GENR" != "0" ) then
     else 
 		if ( -f $CONFIG_FILE ) then
 		    echo "input file found"
-		else if( "$GENERATOR" == "gen_ee" ) then
+		else if( "$GENERATOR" == "gen_ee" || "$GENERATOR" == "gen_ee_hb" ) then
 			echo "Config file not applicable"
 		else
 	    	echo $CONFIG_FILE" does not exist"
@@ -459,6 +459,10 @@ if ( "$GENR" != "0" ) then
 	else if ( "$GENERATOR" == "gen_ee" ) then
 		echo "configuring gen_ee"
 		set STANDARD_NAME="gen_ee_"$STANDARD_NAME
+		echo "note: this generator is run completely from command line, thus no config file will be made and/or modified"
+	else if ( "$GENERATOR" == "gen_ee_hb" ) then
+		echo "configuring gen_ee_hb"
+		set STANDARD_NAME="gen_ee_hb_"$STANDARD_NAME
 		echo "note: this generator is run completely from command line, thus no config file will be made and/or modified"
     endif
 
@@ -554,6 +558,10 @@ if ( "$GENR" != "0" ) then
 		echo ee_mc -n$EVT_TO_GEN -R2 -b2 -l$GEN_MIN_ENERGY -u$GEN_MAX_ENERGY -t2 -r$RANDOMnum -omc_ee.hddm
 		ee_mc -n$EVT_TO_GEN -R2 -b2 -l$GEN_MIN_ENERGY -u$GEN_MAX_ENERGY -t2 -r$RANDOMnum -omc_ee.hddm
 		mv mc_ee.hddm $STANDARD_NAME.hddm
+	else if ( "$GENERATOR" == "gen_ee_hb" ) then
+		echo ee_mc_hb -N$RUN_NUMBER -n$EVT_TO_GEN
+		ee_mc_hb -N$RUN_NUMBER -n$EVT_TO_GEN
+		mv genOut.hddm $STANDARD_NAME.hddm
 	endif
 
     if ( ! -f ./$STANDARD_NAME.hddm ) then
