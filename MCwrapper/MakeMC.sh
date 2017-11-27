@@ -655,6 +655,9 @@ if [[ "$GENR" != "0" ]]; then
 		    mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm' $BKGFOLDSTR
 
 	    fi
+	else
+			cp $STANDARD_NAME'_geant'$GEANTVER'.hddm' $STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm'
+	fi
 	    #run reconstruction
 	    if [[ "$CLEANGENR" == "1" ]]; then
 		if [[ "$GENERATOR" == "genr8" ]]; then
@@ -722,7 +725,7 @@ if [[ "$GENR" != "0" ]]; then
 		
 		if [[ "$CLEANSMEAR" == "1" ]]; then
 		    rm $STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm'
-		    rm smear.root
+		    rm -rf smear.root
 		fi
 		
 		if [[ "$CLEANRECON" == "1" ]]; then
@@ -743,7 +746,6 @@ if [[ "$GENR" != "0" ]]; then
 		done
 	    fi
 	fi
-  fi
 fi
 
 rm -rf ccdb.sqlite
