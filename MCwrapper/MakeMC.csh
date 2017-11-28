@@ -120,6 +120,7 @@ echo ""
 echo ""
 echo "Detected c-shell"
 
+set current_files=`find . -maxdepth 1 -type f`
 
 set radthick="50.e-6"
 
@@ -229,7 +230,7 @@ if ( "$BGRATE" != "rcdb" || "$VERSION" != "mc" ) then
 else
 	if ( $BGTAGONLY_OPTION == "1" || $BKGFOLDSTR == "BeamPhotons" ) then
 		echo "Calculating BGRate.  This process takes a minute..."
-		set BGRATE_toUse=`BGRate_calc --runNo $RUN_NUMBER --coherent_peak $COHERENT_PEAK --beam_on_current $beam_on_current --beam_energy $eBEAM_ENERGY --collimator_diameter 0.00$colsize --radiator_thickness $radthick --endpoint_energy_low $GEN_MIN_ENERGY --endpoint_energy_high $GEN_MAX_ENERGY`
+		set BGRATE_toUse=`BGRate_calc --write true --runNo $RUN_NUMBER --coherent_peak $COHERENT_PEAK --beam_on_current $beam_on_current --beam_energy $eBEAM_ENERGY --collimator_diameter 0.00$colsize --radiator_thickness $radthick --endpoint_energy_low $GEN_MIN_ENERGY --endpoint_energy_high $GEN_MAX_ENERGY`
 
 		if ( "$BGRATE_toUse" == "" ) then
 			echo "BGrate_calc is not built or inaccessible.  Please check your build and/or specify a BGRate to be used."
@@ -273,8 +274,6 @@ echo "=============================================="
 echo ""
 echo ""
 
-
-set current_files=`find . -maxdepth 1 -type f`
 
 if ( "$CUSTOM_GCONTROL" == "0" ) then
 	echo $MCWRAPPER_CENTRAL
@@ -466,6 +465,7 @@ if ( "$GENR" != "0" ) then
 		set STANDARD_NAME="gen_ee_hb_"$STANDARD_NAME
 		echo "note: this generator is run completely from command line, thus no config file will be made and/or modified"
 		cp $CONFIG_FILE ./cobrems.root
+		cp $MCWRAPPER_CENTRAL/Generators/gen_ee_hb/CFFs_DD_Feb2012.dat ./
     endif
 
     if ( "$gen_pre" != "file" ) then

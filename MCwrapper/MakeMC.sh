@@ -125,6 +125,8 @@ echo ""
 echo ""
 echo "Detected bash shell"
 
+current_files=`find . -maxdepth 1 -type f`
+
 BGRATE_toUse=$BGRATE
 
 radthick="50.e-6"
@@ -277,7 +279,7 @@ echo ""
 
 
 
-current_files=`find . -maxdepth 1 -type f`
+
 
 if [[ "$CUSTOM_GCONTROL" == "0" ]]; then
     cp $MCWRAPPER_CENTRAL/Gcontrol.in ./temp_Gcontrol.in
@@ -470,6 +472,7 @@ if [[ "$GENR" != "0" ]]; then
 		set STANDARD_NAME="gen_ee_hb_"$STANDARD_NAME
 		echo "note: this generator is run completely from command line, thus no config file will be made and/or modified"
 		cp $CONFIG_FILE ./cobrems.root
+		cp $MCWRAPPER_CENTRAL/Generators/gen_ee_hb/CFFs_DD_Feb2012.dat ./
     fi
 	
 	if [[ "$gen_pre" != "file" ]]; then
