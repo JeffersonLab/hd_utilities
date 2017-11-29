@@ -233,7 +233,7 @@ if ( "$BGRATE" != "rcdb" || "$VERSION" != "mc" ) then
 else
 	if ( $BGTAGONLY_OPTION == "1" || $BKGFOLDSTR == "BeamPhotons" ) then
 		echo "Calculating BGRate.  This process takes a minute..."
-		set BGRATE_toUse=`BGRate_calc --write true --runNo $RUN_NUMBER --coherent_peak $COHERENT_PEAK --beam_on_current $beam_on_current --beam_energy $eBEAM_ENERGY --collimator_diameter 0.00$colsize --radiator_thickness $radthick --endpoint_energy_low $GEN_MIN_ENERGY --endpoint_energy_high $GEN_MAX_ENERGY`
+		set BGRATE_toUse=`BGRate_calc --runNo $RUN_NUMBER --coherent_peak $COHERENT_PEAK --beam_on_current $beam_on_current --beam_energy $eBEAM_ENERGY --collimator_diameter 0.00$colsize --radiator_thickness $radthick --endpoint_energy_low $GEN_MIN_ENERGY --endpoint_energy_high $GEN_MAX_ENERGY`
 
 		if ( "$BGRATE_toUse" == "" ) then
 			echo "BGrate_calc is not built or inaccessible.  Please check your build and/or specify a BGRate to be used."
@@ -604,6 +604,7 @@ if ( "$GENR" != "0" ) then
 		else
 			sed -i 's/TEMPCOHERENT/'$COHERENT_PEAK'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 		endif
+
 		sed -i 's/TEMPIN/'$STANDARD_NAME.hddm'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 		sed -i 's/TEMPRUNG/'$RUN_NUMBER'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 		sed -i 's/TEMPOUT/'$STANDARD_NAME'_geant'$GEANTVER'.hddm/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
@@ -620,6 +621,7 @@ if ( "$GENR" != "0" ) then
 		else if ( $GENERATOR == "particle_gun" ) then
 			sed -i 's/INFILE/cINFILE/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 			sed -i 's/BEAM/cBEAM/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+			sed -i 's/TEMPSKIP/'0'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 			cat $STANDARD_NAME.conf >> control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 		else
 	    	sed -i 's/TEMPSKIP/'0'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
@@ -700,8 +702,10 @@ if ( "$GENR" != "0" ) then
 			else if ( "$GENERATOR" == "gen_ee_hb" ) then
 				rm CFFs_DD_Feb2012.dat 
 				rm ee.ascii
-			endif		
+			endif	
+			if ( "$GENERATOR" != "particle_gun" && "$gen_pre" != "file" ) then	
 				rm $STANDARD_NAME.hddm
+			endif
 	    endif
 	    
 		if ( ! -f ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' ) then

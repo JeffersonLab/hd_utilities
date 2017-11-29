@@ -387,9 +387,9 @@ gen_pre=""
 
 if [[ "$GENR" != "0" ]]; then
 	gen_pre=`echo $GENERATOR | cut -c1-4`
-    if [[ "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" && "$GENERATOR" != "gen_omega_3pi" && "$GENERATOR" != "gen_2k" && "$GENERATOR" != "bggen_jpsi" && "$GENERATOR" != "gen_ee" && "$GENERATOR" != "gen_ee_hb" ]]; then
+    if [[ "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" && "$GENERATOR" != "gen_omega_3pi" && "$GENERATOR" != "gen_2k" && "$GENERATOR" != "bggen_jpsi" && "$GENERATOR" != "gen_ee" && "$GENERATOR" != "gen_ee_hb" && "$GENERATOR" != "particle_gun" ]]; then
 	echo "NO VALID GENERATOR GIVEN"
-	echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0, gen_omega_3pi, gen_2k, bggen_jpsi, gen_ee, gen_ee_hb] are supported"
+	echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0, gen_omega_3pi, gen_2k, bggen_jpsi, gen_ee, gen_ee_hb, particle_gun] are supported"
 	exit
     fi
     
@@ -566,13 +566,17 @@ if [[ "$GENR" != "0" ]]; then
 	echo "Random number used: "$RANDOMnum
 	ee_mc -n$EVT_TO_GEN -R2 -b2 -l$GEN_MIN_ENERGY -u$GEN_MAX_ENERGY -t2 -r$RANDOMnum -omc_ee.hddm
 	mv mc_ee.hddm $STANDARD_NAME.hddm
-	else if [[ "$GENERATOR" == "gen_ee_hb" ]]; then
+	elif [[ "$GENERATOR" == "gen_ee_hb" ]]; then
 		echo ee_mc_hb -N$RUN_NUMBER -n$EVT_TO_GEN
 		ee_mc_hb -N$RUN_NUMBER -n$EVT_TO_GEN
 		mv genOut.hddm $STANDARD_NAME.hddm
+	elif [[ "$GENERATOR" == "particle_gun" ]]; then
+		echo "configuring the particle gun"
+		set STANDARD_NAME="particle_gun_"$STANDARD_NAME
+		cp $CONFIG_FILE ./$STANDARD_NAME.conf
 	fi
     
-	if [[ ! -f ./$STANDARD_NAME.hddm ]]; then
+	if [[ ! -f ./$STANDARD_NAME.hddm && "$GENERATOR" != "particle_gun" && "$gen_pre" != "file" ]]; then
 		echo "An hddm file was not found after generation step.  Terminating MC production.  Please consult logs to diagnose"
 		exit 11
 	fi
@@ -610,7 +614,12 @@ if [[ "$GENR" != "0" ]]; then
 	if [[ "$gen_pre" == "file" ]]; then
 			skip_num=$((FILE_NUMBER * PER_FILE))
             sed -i 's/TEMPSKIP/'$skip_num'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
-        else
+    elif [[ $GENERATOR == "particle_gun" ]]; then
+			sed -i 's/INFILE/cINFILE/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+			sed -i 's/BEAM/cBEAM/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+			sed -i 's/TEMPSKIP/'0'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+			cat $STANDARD_NAME.conf >> control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	else
 	    sed -i 's/TEMPSKIP/'0'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
         fi
 	
@@ -686,8 +695,9 @@ if [[ "$GENR" != "0" ]]; then
 				rm CFFs_DD_Feb2012.dat 
 				rm ee.ascii
 		fi
-		
-		rm $STANDARD_NAME.hddm
+		if [[ "$GENERATOR" != "particle_gun" && "$gen_pre" != "file" ]]; then
+			rm $STANDARD_NAME.hddm
+		fi
 	    fi
 	    
 		if [[ ! -f ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' ]]; then
