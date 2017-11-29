@@ -278,9 +278,6 @@ echo ""
 echo ""
 
 
-
-
-
 if [[ "$CUSTOM_GCONTROL" == "0" ]]; then
     cp $MCWRAPPER_CENTRAL/Gcontrol.in ./temp_Gcontrol.in
     chmod 777 ./temp_Gcontrol.in
@@ -596,7 +593,11 @@ if [[ "$GENR" != "0" ]]; then
 	RANDOMnumGeant=`shuf -i1-215 -n1`
 	sed -i 's/TEMPRANDOM/'$RANDOMnumGeant'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	sed -i 's/TEMPELECE/'$eBEAM_ENERGY'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
-	sed -i 's/TEMPCOHERENT/'$COHERENT_PEAK'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	if [[ "$polarization_angle" == "-1" ]]; then
+		sed -i 's/TEMPCOHERENT/'0'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	else
+		sed -i 's/TEMPCOHERENT/'$COHERENT_PEAK'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	fi
 	sed -i 's/TEMPIN/'$STANDARD_NAME.hddm'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	sed -i 's/TEMPRUNG/'$RUN_NUMBER'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	sed -i 's/TEMPOUT/'$STANDARD_NAME'_geant'$GEANTVER'.hddm/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
@@ -681,6 +682,9 @@ if [[ "$GENR" != "0" ]]; then
 		    rm pythia-geant.map
 			rm -f bggen.nt
 		    unlink fort.15
+		elif [[ "$GENERATOR" == "gen_ee_hb" ]]; then
+				rm CFFs_DD_Feb2012.dat 
+				rm ee.ascii
 		fi
 		
 		rm $STANDARD_NAME.hddm

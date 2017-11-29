@@ -201,6 +201,7 @@ endif
 
 if ( "$polarization_angle" == "-1.0" ) then
 	set copeak=`echo "$eBEAM_ENERGY + .5" | bc `
+	#set copeak=0
 	setenv COHERENT_PEAK $copeak
 endif
 
@@ -590,7 +591,11 @@ if ( "$GENR" != "0" ) then
 		set RANDOMnumGeant=`shuf -i1-215 -n1`
 		sed -i 's/TEMPRANDOM/'$RANDOMnumGeant'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 		sed -i 's/TEMPELECE/'$eBEAM_ENERGY'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
-		sed -i 's/TEMPCOHERENT/'$COHERENT_PEAK'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+		if ( "$polarization_angle" == "-1" ) then
+			sed -i 's/TEMPCOHERENT/'0'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+		else
+			sed -i 's/TEMPCOHERENT/'$COHERENT_PEAK'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+		endif
 		sed -i 's/TEMPIN/'$STANDARD_NAME.hddm'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 		sed -i 's/TEMPRUNG/'$RUN_NUMBER'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 		sed -i 's/TEMPOUT/'$STANDARD_NAME'_geant'$GEANTVER'.hddm/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
@@ -677,6 +682,9 @@ if ( "$GENR" != "0" ) then
 				rm bggen.his
 				rm -f bggen.nt
 		   		unlink fort.15
+			else if ( "$GENERATOR" == "gen_ee_hb" ) then
+				rm CFFs_DD_Feb2012.dat 
+				rm ee.ascii
 			endif		
 				rm $STANDARD_NAME.hddm
 	    endif
