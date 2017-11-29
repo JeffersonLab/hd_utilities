@@ -182,6 +182,12 @@ else
 	set copeak = `echo "$copeak_text / 1000" | bc -l `
 endif
 
+if ( "$polarization_angle" == "-1.0" ) then
+	#set copeak=`echo "$eBEAM_ENERGY + .5" | bc `
+	set copeak=0
+	setenv COHERENT_PEAK $copeak
+endif
+
 #echo $copeak
 #set copeak=`rcnd $RUN_NUMBER coherent_peak | awk '{print $1}' | sed 's/\.//g' #| awk -vFS="" -vOFS="" '{$1=$1"."}1' `
 
@@ -199,11 +205,7 @@ if ( "$VERSION" != "mc" && "$eBEAM_ENERGY" == "rcdb" ) then
 	exit 1
 endif
 
-if ( "$polarization_angle" == "-1.0" ) then
-	set copeak=`echo "$eBEAM_ENERGY + .5" | bc `
-	#set copeak=0
-	setenv COHERENT_PEAK $copeak
-endif
+
 
 set colsize=`rcnd $RUN_NUMBER collimator_diameter | awk '{print $1}' | sed -r 's/.{2}$//'| sed -e 's/\.//g'`
 
@@ -386,9 +388,9 @@ set gen_pre=""
 
 if ( "$GENR" != "0" ) then
     set gen_pre=`echo $GENERATOR | cut -c1-4`
-    if ( "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" && "$GENERATOR" != "gen_omega_3pi" && "$GENERATOR" != "gen_2k" && "$GENERATOR" != "bggen_jpsi" && "$GENERATOR" != "gen_ee" && "$GENERATOR" != "gen_ee_hb" ) then
+    if ( "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" && "$GENERATOR" != "gen_omega_3pi" && "$GENERATOR" != "gen_2k" && "$GENERATOR" != "bggen_jpsi" && "$GENERATOR" != "gen_ee" && "$GENERATOR" != "gen_ee_hb" && "$GENERATOR" != "particle_gun" ) then
 		echo "NO VALID GENERATOR GIVEN"
-		echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0, gen_omega_3pi, gen_2k, bggen_jpsi, gen_ee , gen_ee_hb] are supported"
+		echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0, gen_omega_3pi, gen_2k, bggen_jpsi, gen_ee , gen_ee_hb, particl_gun] are supported"
 		exit
     endif
 
@@ -402,7 +404,8 @@ if ( "$GENR" != "0" ) then
 	    	echo "cannot find file: "$gen_in_file
 	    	exit
 		endif
-				
+	else if ( "$GENERATOR" == "particle_gun") then
+		echo "bypassing generation" 
     else 
 		if ( -f $CONFIG_FILE ) then
 		    echo "input file found"
@@ -467,6 +470,10 @@ if ( "$GENR" != "0" ) then
 		echo "note: this generator is run completely from command line, thus no config file will be made and/or modified"
 		cp $CONFIG_FILE ./cobrems.root
 		cp $MCWRAPPER_CENTRAL/Generators/gen_ee_hb/CFFs_DD_Feb2012.dat ./
+	else if ( "$GENERATOR" == "particle_gun" ) then
+		echo "configuring the particle gun"
+		set STANDARD_NAME="particle_gun_"$STANDARD_NAME
+		cp $CONFIG_FILE ./$STANDARD_NAME.conf
     endif
 
     if ( "$gen_pre" != "file" ) then
@@ -530,14 +537,14 @@ if ( "$GENR" != "0" ) then
 		echo "RUNNING GEN_PI0" 
         set optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
 		echo $optionals_line
-		gen_pi0 -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK  -s $formatted_fileNumber -m $eBEAM_ENERGY $optionals_line
+		gen_pi0 -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -s $formatted_fileNumber -m $eBEAM_ENERGY $optionals_line
     else if ( "$GENERATOR" == "gen_2k" ) then
 		echo "RUNNING GEN_2K" 
     	set optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
 		#set RANDOMnum=`bash -c 'echo $RANDOM'`
 		echo $optionals_line
-		echo gen_2k -c $STANDARD_NAME.conf -o $STANDARD_NAME.hddm -hd $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -m $eBEAM_ENERGY $optionals_line
-		gen_2k -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -m $eBEAM_ENERGY $optionals_line
+		echo gen_2k -c $STANDARD_NAME.conf -o $STANDARD_NAME.hddm -hd $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
+		gen_2k -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
 	else if ( "$GENERATOR" == "bggen_jpsi" ) then
 		set RANDOMnum=`bash -c 'echo $RANDOM'`
 		echo Random Number used: $RANDOMnum
@@ -567,7 +574,8 @@ if ( "$GENR" != "0" ) then
 		mv genOut.hddm $STANDARD_NAME.hddm
 	endif
 
-    if ( ! -f ./$STANDARD_NAME.hddm ) then
+
+    if ( ! -f ./$STANDARD_NAME.hddm && "$GENERATOR" != "particle_gun" && "$gen_pre" != "file" ) then
 		echo "An hddm file was not found after generation step.  Terminating MC production.  Please consult logs to diagnose"
 		exit 11
 	endif
@@ -608,6 +616,11 @@ if ( "$GENR" != "0" ) then
 		if ( "$gen_pre" == "file" ) then
 			@ skip_num = $FILE_NUMBER * $PER_FILE
 	    	sed -i 's/TEMPSKIP/'$skip_num'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	
+		else if ( $GENERATOR == "particle_gun" ) then
+			sed -i 's/INFILE/cINFILE/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+			sed -i 's/BEAM/cBEAM/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+			cat $STANDARD_NAME.conf >> control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 		else
 	    	sed -i 's/TEMPSKIP/'0'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 		endif
@@ -627,6 +640,8 @@ if ( "$GENR" != "0" ) then
 	    	sed -i 's/TEMPMINE/'$GEN_MIN_ENERGY'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 		endif
 
+		echo "" >> control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+		echo END >> control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 		cp $PWD/control'_'$formatted_runNumber'_'$formatted_fileNumber.in $OUTDIR/configurations/geant/
 
 		mv $PWD/control'_'$formatted_runNumber'_'$formatted_fileNumber.in $PWD/control.in
