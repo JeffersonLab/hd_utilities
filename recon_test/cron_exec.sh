@@ -49,6 +49,7 @@ Check_Workflow()
 	local num_succeeded_index=-1
 	local num_problems_index=-1
 	local num_canceled_index=-1
+	local num_failed_index=-1
 	local word_count=0
 
 	for word in $STATUS_OUTPUT; do
@@ -65,6 +66,9 @@ Check_Workflow()
 		if [ "$word" = "canceled" ]; then
 			num_canceled_index=$(($word_count + 2))
 		fi
+		if [ "$word" = "failed" ]; then
+			num_failed_index=$(($word_count + 2))
+		fi
 	done
 	#echo $num_jobs_index $num_succeeded_index $num_problems_index
 
@@ -77,9 +81,11 @@ Check_Workflow()
 
 	local num_jobs=`echo $STATUS_OUTPUT | cut -d " " -f $num_jobs_index`
 	local num_succeeded=`echo $STATUS_OUTPUT | cut -d " " -f $num_succeeded_index`
-        local num_canceled=`echo $STATUS_OUTPUT | cut -d " " -f $num_canceled_index`
+	local num_failed=`echo $STATUS_OUTPUT | cut -d " " -f $num_failed_index`
+	local num_canceled=`echo $STATUS_OUTPUT | cut -d " " -f $num_canceled_index`
 	#echo $num_jobs $num_succeeded $num_canceled
-	local num_check_jobs=$((num_jobs - num_canceled))
+
+	local num_check_jobs=$((num_jobs - num_canceled - num_failed))
 	#echo "new num jobs: " $num_check_jobs
 	if [ "$num_check_jobs" = "$num_succeeded" ]; then
 		return 0
