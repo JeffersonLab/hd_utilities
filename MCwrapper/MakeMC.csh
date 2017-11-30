@@ -434,7 +434,7 @@ if ( "$GENR" != "0" ) then
 		cp $CONFIG_FILE ./$STANDARD_NAME.conf
     else if ( "$GENERATOR" == "gen_2pi_amp" ) then
 		echo "configuring gen_2pi_amp"
-		set STANDARD_NAME="gen_2pi_amp_"$STANDARD_NAME
+		set STANDARD_NAME="gen_2pi_amp_"$STANDARD_NAME	
 		cp $CONFIG_FILE ./$STANDARD_NAME.conf
 	else if ( "$GENERATOR" == "gen_omega_3pi" ) then
 		echo "configuring gen_omega_3pi"
@@ -517,6 +517,12 @@ if ( "$GENR" != "0" ) then
     else if ( "$GENERATOR" == "gen_2pi_amp" ) then
 		echo "RUNNING GEN_2PI_AMP" 
     	set optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
+		if ( "$polarization_angle" == "-1" ) then
+			sed -i 's/TEMPPOLFRAC/'0'/' $STANDARD_NAME.conf
+		else
+			sed -i 's/TEMPPOLFRAC/'.4'/' $STANDARD_NAME.conf
+		endif
+		sed -i 's/TEMPPOLANGLE/'$polarization_angle'/' $STANDARD_NAME.conf
 	#set RANDOMnum=`bash -c 'echo $RANDOM'`
 		echo $optionals_line
 		echo gen_2pi_amp -c $STANDARD_NAME.conf -o $STANDARD_NAME.hddm -hd $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -m $eBEAM_ENERGY $optionals_line
