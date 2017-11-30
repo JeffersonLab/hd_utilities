@@ -43,12 +43,12 @@ class CheckNewRuns:
         self.ONLINE_ROOT_DIR = self.BASE_ONLINEMON_DIR + '/root'
         self.ONLINE_CONDITION_DIR = self.BASE_ONLINEMON_DIR + '/conditions'
 
-        self.MIN_RUN_NUMBER = 10000
+        self.MIN_RUN_NUMBER = 30001
         #self.MAX_RUN_NUMBER = 9000
         self.MAX_RUN_NUMBER = 1000000
-        self.VERSION_NUMBER  =  62   ## hardcode default - need to change this
-        self.MONITORING_OUTPUT_DIR = "/work/halld/data_monitoring"
-        self.RUN_PERIOD = "RunPeriod-2016-02"
+        self.VERSION_NUMBER  =  88  ## hardcode default - need to change this
+        self.MONITORING_OUTPUT_DIR = "/work/halld2/data_monitoring"
+        self.RUN_PERIOD = "RunPeriod-2017-01"
 
         self.MAKE_PLOTS = True
         self.MAKE_DB_SUMMARY = True
@@ -130,12 +130,13 @@ class CheckNewRuns:
                 rootfile_name = join(self.ONLINE_ROOT_DIR,"hdmon_online%06d.root"%run)
 
                 if not isfile(rootfile_name):
+                    print "can't find ROOT file!"
                     continue
         
                 if self.MAKE_PLOTS:
                     if self.VERBOSE>1:
                         print "  creating plots..."
-                    monitoring_data_dir = join(self.MONITORING_OUTPUT_DIR, self.RUN_PERIOD, "ver00", ("Run%06d" % run))
+                    monitoring_data_dir = join(self.MONITORING_OUTPUT_DIR, self.RUN_PERIOD, "rawdata_ver00", ("Run%06d" % run))
                     #mkdir_p(monitoring_data_dir)
                     os.system("mkdir -m"+self.NEWDIR_MODE+" -p " + monitoring_data_dir)  ## need error checks
 
@@ -168,6 +169,7 @@ class CheckNewRuns:
                 ## we successfully processed the run!  make a note of that
                 oldrun_list.append(run)
                 with open(self.PROCESSED_RUN_LIST_FILE,"w") as outf:
+                    print "WRITING LIST OUT"
                     pickle.dump( oldrun_list, outf )
 
 
