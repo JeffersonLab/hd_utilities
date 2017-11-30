@@ -638,6 +638,9 @@ if [[ "$GENR" != "0" ]]; then
 	    sed -i 's/TEMPMINE/'$GEN_MIN_ENERGY'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	fi
 	
+	echo "" >> control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	echo END >> control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+
 	cp $PWD/control'_'$formatted_runNumber'_'$formatted_fileNumber.in $OUTDIR/configurations/geant/
 	mv $PWD/control'_'$formatted_runNumber'_'$formatted_fileNumber.in $PWD/control.in
 	
