@@ -519,10 +519,12 @@ if [[ "$GENR" != "0" ]]; then
 	echo $optionals_line
 		if [[ "$polarization_angle" == "-1" ]]; then
 			sed -i 's/TEMPPOLFRAC/'0'/' $STANDARD_NAME.conf
+			sed -i 's/TEMPPOLANGLE/'0'/' $STANDARD_NAME.conf
 		else
 			sed -i 's/TEMPPOLFRAC/'.4'/' $STANDARD_NAME.conf
+			sed -i 's/TEMPPOLANGLE/'$polarization_angle'/' $STANDARD_NAME.conf
 		fi
-		sed -i 's/TEMPPOLANGLE/'$polarization_angle'/' $STANDARD_NAME.conf
+		
 	echo gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
 	gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
 	elif [[ "$GENERATOR" == "gen_omega_3pi" ]]; then
