@@ -111,14 +111,14 @@ fi
 cd $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
 
 if [[ "$ccdbSQLITEPATH" != "no_sqlite" ]]; then
-        cp $ccdbSQLITEPATH ./ccdb.sqlite
-        export CCDB_CONNECTION=sqlite:///$PWD/ccdb.sqlite
+        #cp $ccdbSQLITEPATH ./ccdb.sqlite
+        export CCDB_CONNECTION=sqlite:///$ccdbSQLITEPATH
         export JANA_CALIB_URL=$CCDB_CONNECTION
 fi
 
 if [[ "$rcdbSQLITEPATH" != "no_sqlite" ]]; then
-        cp $rcdbSQLITEPATH ./rcdb.sqlite
-        export RCDB_CONNECTION=sqlite:///$PWD/rcdb.sqlite
+        #cp $rcdbSQLITEPATH ./rcdb.sqlite
+        export RCDB_CONNECTION=sqlite:///$rcdbSQLITEPATH
 fi
 
 echo ""
@@ -525,14 +525,23 @@ if [[ "$GENR" != "0" ]]; then
 			sed -i 's/TEMPPOLANGLE/'$polarization_angle'/' $STANDARD_NAME.conf
 		fi
 		
-	echo gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
+	echo gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY  $optionals_line
 	gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
 	elif [[ "$GENERATOR" == "gen_omega_3pi" ]]; then
 	echo "RUNNING GEN_OMEGA_3PI" 
-        optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
+    optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
+
+		if [[ "$polarization_angle" == "-1.0" ]]; then
+			sed -i 's/TEMPPOLFRAC/'0'/' $STANDARD_NAME.conf
+			sed -i 's/TEMPPOLANGLE/'0'/' $STANDARD_NAME.conf
+		else
+			sed -i 's/TEMPPOLFRAC/'.4'/' $STANDARD_NAME.conf
+			sed -i 's/TEMPPOLANGLE/'$polarization_angle'/' $STANDARD_NAME.conf
+		fi
+
 	echo $optionals_line
-	echo gen_omega_3pi -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -m $eBEAM_ENERGY $optionals_line
-	gen_omega_3pi -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -m $eBEAM_ENERGY $optionals_line
+	echo gen_omega_3pi -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -m $eBEAM_ENERGY -p $COHERENT_PEAK $optionals_line
+	gen_omega_3pi -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -m $eBEAM_ENERGY -p $COHERENT_PEAK $optionals_line
     elif [[ "$GENERATOR" == "gen_2pi_primakoff" ]]; then
 	echo "RUNNING GEN_2PI_PRIMAKOFF" 
         optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
