@@ -153,7 +153,7 @@ elecE=0
 
 variation=$VERSION
 if [[ $CALIBTIME != "notime" ]]; then
-	variation=$variation+":"+$CALIBTIME
+	variation=$variation":"$CALIBTIME
 fi
 
 ccdbelece="`ccdb dump PHOTON_BEAM/endpoint_energy:${RUN_NUMBER}:${variation}`"
@@ -517,7 +517,7 @@ if [[ "$GENR" != "0" ]]; then
 	echo "RUNNING GEN_2PI_AMP" 
     optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
 	echo $optionals_line
-		if [[ "$polarization_angle" == "-1" ]]; then
+		if [[ "$polarization_angle" == "-1.0" ]]; then
 			sed -i 's/TEMPPOLFRAC/'0'/' $STANDARD_NAME.conf
 			sed -i 's/TEMPPOLANGLE/'0'/' $STANDARD_NAME.conf
 		else
