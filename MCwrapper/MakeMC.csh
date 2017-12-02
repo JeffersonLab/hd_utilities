@@ -131,10 +131,16 @@ else
 	foreach word ($words:q)	
 
 		if ( $word != "number" ) then
-			set removedum = `echo $word:q | sed 's/um/ /g'`
 
-			if ( $removedum != $word:q ) then
-				set radthick = `echo $removedum e-6 | tr -d '[:space:]'`
+			if ( "$word" == "3x10-4" ) then
+				set radthick="30e-6"
+				end
+			else
+				set removedum = `echo $word:q | sed 's/um/ /g'`
+
+				if ( $removedum != $word:q ) then
+					set radthick = `echo $removedum e-6 | tr -d '[:space:]'`
+				endif
 			endif
 		endif
 	end
@@ -214,12 +220,12 @@ endif
 
 set beam_on_current=`rcnd $RUN_NUMBER beam_on_current | awk '{print $1}'`
 
-if ( $beam_on_current != "" ) then
-	set beam_on_current=`echo "$beam_on_current / 1000." | bc -l`
-else
+if ( $beam_on_current == "" ) then
 	echo "Run $RUN_NUMBER does not have a beam_on_current.  Defaulting to beam_current."
 	set beam_on_current=`rcnd $RUN_NUMBER beam_current | awk '{print $1}'`
 endif
+
+set beam_on_current=`echo "$beam_on_current / 1000." | bc -l`
 
 if ( "$colsize" == "B" || "$colsize" == "R" || "$JANA_CALIB_CONTEXT" != "variation=mc" ) then
 	set colsize="50"

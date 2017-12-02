@@ -137,10 +137,15 @@ else
 	words=`rcnd $RUN_NUMBER radiator_type | sed 's/ / /g' `
 	for word in $words;
 	do	
-		if [[ "$word" != "number" ]]; then	
+		if [[ "$word" != "number" ]]; then
+			if [[ "$word" == "3x10-4" ]]; then
+				radthick="30e-6"
+				done
+			else	
 			removedum=`echo $word | sed 's/um/ /g'`
 			if [[ $removedum != $word ]]; then
 				radthick=`echo "$removedum e-6" | tr -d '[:space:]'`
+			fi
 			fi
 		fi
 	done
@@ -212,12 +217,12 @@ fi
 
 beam_on_current=`rcnd $RUN_NUMBER beam_on_current | awk '{print $1}'`
 
-if [[ $beam_on_current != "" ]]; then
-beam_on_current=`echo "$beam_on_current / 1000." | bc -l`
-else
+if [[ $beam_on_current == "" ]]; then
 echo "Run $RUN_NUMBER does not have a beam_on_current.  Defaulting to beam_current."
 beam_on_current=`rcnd $RUN_NUMBER beam_current | awk '{print $1}'`
 fi
+
+beam_on_current=`echo "$beam_on_current / 1000." | bc -l`
 
 colsize=`rcnd $RUN_NUMBER collimator_diameter | awk '{print $1}' | sed -r 's/.{2}$//' | sed -e 's/\.//g'`
 if [[ "$colsize" == "B" || "$colsize" == "R" || "$JANA_CALIB_CONTEXT" != "variation=mc" ]]; then
