@@ -147,7 +147,15 @@ else
 endif
 
 set polarization_angle=`rcnd $RUN_NUMBER polarization_angle | awk '{print $1}'`
-echo polarization angle: $polarization_angle
+
+if ( "$polarization_angle" == "" ) then
+	set poldir=`rcnd $RUN_NUMBER polarization_direction | awk '{print $1}'`
+	if ( "$poldir" == "PARA" ) then
+		set polarization_angle="0.0"
+	else
+		set polarization_angle="90.0"
+	endif
+endif
 
 set elecE=0
 set variation=$VERSION
@@ -264,6 +272,7 @@ echo "Electron beam current to use: "$beam_on_current" uA"
 echo "Electron beam energy to use: "$eBEAM_ENERGY" GeV"
 echo "Radiator Thickness to use: "$radthick" m"
 echo "Photon Energy between "$GEN_MIN_ENERGY" and "$GEN_MAX_ENERGY" GeV"
+echo "Polarization Angle: "$polarization_angle "degrees"
 echo "Coherent Peak position: "$COHERENT_PEAK
 echo "----------------------------------------------"
 echo "Run generation step? "$GENR"  Will be cleaned?" $CLEANGENR
