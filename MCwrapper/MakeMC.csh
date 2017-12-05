@@ -366,13 +366,19 @@ set bkgloc_pre=`echo $BKGFOLDSTR | cut -c 1-4`
 if ( "$BKGFOLDSTR" == "DEFAULT" || "$bkgloc_pre" == "loc:" || "$BKGFOLDSTR" == "Random" ) then
    #find file and run:1
     echo "Finding the right file to fold in during MCsmear step"
-    set runperiod="RunPeriod-2017-01"
+    set runperiod="RunPeriod-2018-01"
 
-    if ( $RUN_NUMBER > 40000 ) then
+    if ( $RUN_NUMBER >= 40000 ) then
 		set runperiod="RunPeriod-2018-01"
+	else if ( $RUN_NUMBER >= 30000 ) then
+		set runperiod="RunPeriod-2017-01"
+	else if ( $RUN_NUMBER >= 20000 ) then
+		set runperiod="RunPeriod-2016-10"
+	else if ( $RUN_NUMBER >= 10000 ) then
+		set runperiod="RunPeriod-2016-02"
     endif
 
-    if ( $RUN_NUMBER < 30000 ) then
+    if ( $RUN_NUMBER < 10000 ) then
 		echo "Warning: random triggers do not exist for this run"
 		exit
     endif
