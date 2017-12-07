@@ -113,13 +113,13 @@ c PLOG 1
 c TLOG 1
 c
 c   particle  momentum  theta  phi  delta_momentum delta_theta delta_phi
-KINE   108      0.5       90.  180.      0.            180.        360.
+cKINE   108      0.5       90.  180.      0.            180.        360.
 
 c The SCAP card determines the vertex position for the particle gun.  It
 c supports the following three arguments, all of which default to 0.
 c
 c    vertex_x vertex_y vertex_z
-SCAP    0.       0.      65.
+cSCAP    0.       0.      65.
 
 c The TGTWIDTH card is used to determine an extended volume from
 c which the particle gun will generate vertexes. The vertex position
@@ -438,5 +438,3 @@ c
 c DRAY 0 no delta ray production
 c      1 delta ray production with generation of secondaries (default)
 c      2 delta ray production without generation of secondaries
-
-END
