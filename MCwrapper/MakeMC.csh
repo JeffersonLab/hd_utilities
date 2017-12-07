@@ -775,11 +775,11 @@ if ( "$GENR" != "0" ) then
 		   		hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' -PPLUGINS=$PluginStr -PNTHREADS=$NUMTHREADS
 		    
 			endif
-			set hd_root_return_code=$?
-			if ( hd_root_return_code != 0 ) then
-				echo "Something went wrong with hd_root"
-				exit hd_root_return_code
-			endif
+			#set hd_root_return_code=$?
+			#if ( hd_root_return_code != 0 ) then
+			#	echo "Something went wrong with hd_root"
+			#	exit hd_root_return_code
+			#endif
 			if ( -f dana_rest.hddm ) then
 				mv dana_rest.hddm dana_rest_$STANDARD_NAME.hddm
 			endif
