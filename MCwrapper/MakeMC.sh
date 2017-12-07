@@ -6,7 +6,7 @@ shift
 export ENVIRONMENT=$1 
 shift
 if [[ "$BATCHRUN" != "0" ]]; then
-source $ENVIRONMENT
+	source $ENVIRONMENT
 fi
 export CONFIG_FILE=$1
 shift
@@ -242,7 +242,7 @@ fi
 BGRATE_toUse=$BGRATE
 
 if [[ "$BGRATE" != "rcdb" || "$VERSION" != "mc" ]]; then
-    BGRATE_toUse=$BGGATE
+    BGRATE_toUse=$BGRATE
 else
 	if [[ $BGTAGONLY_OPTION == "1" || $BKGFOLDSTR=="BeamPhotons" ]]; then
 		echo "Calculating BGRate.  This process takes a minute..."
@@ -469,7 +469,7 @@ if [[ "$GENR" != "0" ]]; then
 	cp $CONFIG_FILE ./$STANDARD_NAME.conf
     elif [[ "$GENERATOR" == "gen_pi0" ]]; then
 	echo "configuring gen_pi0"
-	STANDARD_NAME="genr_pi0_"$STANDARD_NAME
+	STANDARD_NAME="gen_pi0_"$STANDARD_NAME
 	cp $CONFIG_FILE ./$STANDARD_NAME.conf
 	elif [[ "$GENERATOR" == "gen_2k" ]]; then
 	echo "configuring gen_2k"
@@ -774,6 +774,10 @@ if [[ "$GENR" != "0" ]]; then
             echo "Running hd_root with:""$PluginStr"
 			echo "hd_root ""$STANDARD_NAME"'_geant'"$GEANTVER"'_smeared.hddm'" -PPLUGINS=""$PluginStr ""-PNTHREADS=""$NUMTHREADS"
 			hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' -PPLUGINS=$PluginStr -PNTHREADS=$NUMTHREADS
+		fi
+		if [[ hd_root_return_code != 0 ]]; then
+				echo "Something went wrong with hd_root"
+				exit hd_root_return_code
 		fi
 
 		if [[ -f dana_rest.hddm ]]; then

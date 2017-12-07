@@ -242,7 +242,7 @@ endif
 set BGRATE_toUse=$BGRATE
 
 if ( "$BGRATE" != "rcdb" || "$VERSION" != "mc" ) then
-    set BGRATE_toUse=$BGGATE
+    set BGRATE_toUse=$BGRATE
 else
 	if ( $BGTAGONLY_OPTION == "1" || $BKGFOLDSTR == "BeamPhotons" ) then
 		echo "Calculating BGRate.  This process takes a minute..."
@@ -466,7 +466,7 @@ if ( "$GENR" != "0" ) then
 		cp $CONFIG_FILE ./$STANDARD_NAME.conf
     else if ( "$GENERATOR" == "gen_pi0" ) then
 		echo "configuring gen_pi0"
-		set STANDARD_NAME="genr_pi0_"$STANDARD_NAME
+		set STANDARD_NAME="gen_pi0_"$STANDARD_NAME
 		cp $CONFIG_FILE ./$STANDARD_NAME.conf
 	else if ( "$GENERATOR" == "gen_2k" ) then
 		echo "configuring gen_2k"
@@ -775,8 +775,11 @@ if ( "$GENR" != "0" ) then
 		   		hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' -PPLUGINS=$PluginStr -PNTHREADS=$NUMTHREADS
 		    
 			endif
-		
-		
+			set hd_root_return_code=$?
+			if ( hd_root_return_code != 0 ) then
+				echo "Something went wrong with hd_root"
+				exit hd_root_return_code
+			endif
 			if ( -f dana_rest.hddm ) then
 				mv dana_rest.hddm dana_rest_$STANDARD_NAME.hddm
 			endif
