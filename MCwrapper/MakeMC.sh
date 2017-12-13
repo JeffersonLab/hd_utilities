@@ -127,8 +127,6 @@ echo "Detected bash shell"
 
 current_files=`find . -maxdepth 1 -type f`
 
-BGRATE_toUse=$BGRATE
-
 radthick="50.e-6"
 
 if [[ "$RADIATOR_THICKNESS" != "rcdb" || "$VERSION" != "mc" ]]; then
@@ -140,7 +138,7 @@ else
 		if [[ "$word" != "number" ]]; then
 			if [[ "$word" == "3x10-4" ]]; then
 				radthick="30e-6"
-				done
+				break
 			else	
 			removedum=`echo $word | sed 's/um/ /g'`
 			if [[ $removedum != $word ]]; then
@@ -247,7 +245,7 @@ else
 	if [[ $BGTAGONLY_OPTION == "1" || $BKGFOLDSTR=="BeamPhotons" ]]; then
 		echo "Calculating BGRate.  This process takes a minute..."
 		BGRATE_toUse=`BGRate_calc --runNo $RUN_NUMBER --coherent_peak $COHERENT_PEAK --beam_on_current $beam_on_current --beam_energy $eBEAM_ENERGY --collimator_diameter 0.00$colsize --radiator_thickness $radthick --endpoint_energy_low $GEN_MIN_ENERGY --endpoint_energy_high $GEN_MAX_ENERGY`
-		echo BGRATE Is: $BGRATE_toUse
+
 		if [[ $BGRATE_toUse == "" ]]; then
 			echo "BGrate_calc is not built or inaccessible.  Please check your build and/or specify a BGRate to be used."
 			exit 12
@@ -368,13 +366,13 @@ if [[ "$BKGFOLDSTR" == "DEFAULT" || "$bkgloc_pre" == "loc:" || "$BKGFOLDSTR" == 
 		    
 			runperiod="RunPeriod-2017-01"
 
-		    if [[ $RUN_NUMBER >= 40000 ]]; then
+		    if [[ $RUN_NUMBER -gt 40000 || $RUN_NUMBER == 40000 ]]; then
 				runperiod="RunPeriod-2018-01"
-			elif [[ $RUN_NUMBER >= 30000 ]]; then
+			elif [[ $RUN_NUMBER -gt 30000 || $RUN_NUMBER == 30000 ]]; then
 				runperiod="RunPeriod-2017-01"
-			elif [[ $RUN_NUMBER >= 20000 ]]; then
+			elif [[ $RUN_NUMBER -gt 20000 || $RUN_NUMBER == 20000 ]]; then
 				runperiod="RunPeriod-2016-10"
-			elif [[ $RUN_NUMBER >= 10000 ]]; then
+			elif [[ $RUN_NUMBER -gt 10000 || $RUN_NUMBER == 10000 ]]; then
 				runperiod="RunPeriod-2016-02"
 		    fi
 
@@ -401,11 +399,12 @@ fi
 recon_pre=`echo $CUSTOM_PLUGINS | cut -c1-4`
 jana_config_file=`echo $CUSTOM_PLUGINS | sed -r 's/^.{5}//'`
 
-if [[ -f $jana_config_file ]]; then
-echo "gathering jana config file"
-cp $jana_config_file ./jana_config.cfg
+if [[ $recon_pre == "file" ]]; then
+	if [[ -f $jana_config_file ]]; then
+	echo "gathering jana config file"
+	cp $jana_config_file ./jana_config.cfg
+	fi
 fi
-
 gen_pre=""
 
 if [[ "$GENR" != "0" ]]; then
@@ -508,6 +507,7 @@ if [[ "$GENR" != "0" ]]; then
 	sed -i 's/TEMPCOHERENT/'$COHERENT_PEAK'/' $STANDARD_NAME.conf
 	# RUN genr8 and convert
 	genr8 -r$formatted_runNumber -M$EVT_TO_GEN -A$STANDARD_NAME.ascii < $STANDARD_NAME.conf #$config_file_name
+	generator_return_code=$?
 	genr8_2_hddm $STANDARD_NAME.ascii
     elif [[ "$GENERATOR" == "bggen" ]]; then
 	RANDOMnum=`bash -c 'echo $RANDOM'`
@@ -525,6 +525,7 @@ if [[ "$GENR" != "0" ]]; then
 	
 	ln -s $STANDARD_NAME.conf fort.15
 	bggen
+	generator_return_code=$?
 	mv bggen.hddm $STANDARD_NAME.hddm
     elif [[ "$GENERATOR" == "genEtaRegge" ]]; then
 	echo "RUNNING GENETAREGGE" 
@@ -536,7 +537,8 @@ if [[ "$GENR" != "0" ]]; then
 	sed -i 's/TEMPMINGENE/'$GEN_MIN_ENERGY'/' $STANDARD_NAME.conf
 	sed -i 's/TEMPMAXGENE/'$GEN_MAX_ENERGY'/' $STANDARD_NAME.conf
 	genEtaRegge -N$EVT_TO_GEN -O$STANDARD_NAME.hddm -I$STANDARD_NAME.conf
-    elif [[ "$GENERATOR" == "gen_2pi_amp" ]]; then
+    generator_return_code=$?
+	elif [[ "$GENERATOR" == "gen_2pi_amp" ]]; then
 	echo "RUNNING GEN_2PI_AMP" 
     optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
 	echo $optionals_line
@@ -550,6 +552,7 @@ if [[ "$GENR" != "0" ]]; then
 		
 	echo gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY  $optionals_line
 	gen_2pi_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
+	generator_return_code=$?
 	elif [[ "$GENERATOR" == "gen_omega_3pi" ]]; then
 	echo "RUNNING GEN_OMEGA_3PI" 
     optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
@@ -565,24 +568,28 @@ if [[ "$GENR" != "0" ]]; then
 	echo $optionals_line
 	echo gen_omega_3pi -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -m $eBEAM_ENERGY -p $COHERENT_PEAK $optionals_line
 	gen_omega_3pi -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -m $eBEAM_ENERGY -p $COHERENT_PEAK $optionals_line
-    elif [[ "$GENERATOR" == "gen_2pi_primakoff" ]]; then
+    generator_return_code=$?
+	elif [[ "$GENERATOR" == "gen_2pi_primakoff" ]]; then
 	echo "RUNNING GEN_2PI_PRIMAKOFF" 
-        optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
+    optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
 	echo $optionals_line
 	echo gen_2pi_primakoff -c $STANDARD_NAME.conf -o  $STANDARD_NAME.hddm -hd  $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
 	gen_2pi_primakoff -c $STANDARD_NAME.conf -hd  $STANDARD_NAME.hddm -o  $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
-    elif [[ "$GENERATOR" == "gen_pi0" ]]; then
+    generator_return_code=$?
+	elif [[ "$GENERATOR" == "gen_pi0" ]]; then
 	echo "RUNNING GEN_PI0" 
-        optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
+    optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
 	echo $optionals_line
 	gen_pi0 -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK  -s $formatted_fileNumber -m $eBEAM_ENERGY $optionals_line
-    elif [[ "$GENERATOR" == "gen_2k" ]]; then
+    generator_return_code=$?
+	elif [[ "$GENERATOR" == "gen_2k" ]]; then
 	echo "RUNNING GEN_2K" 
     set optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
 	#set RANDOMnum=`bash -c 'echo $RANDOM'`
 	echo $optionals_line
 	echo gen_2k -c $STANDARD_NAME.conf -o $STANDARD_NAME.hddm -hd $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
 	gen_2k -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
+	generator_return_code=$?
 	elif [[ "$GENERATOR" == "bggen_jpsi" ]]; then
 	RANDOMnum=`bash -c 'echo $RANDOM'`
 	echo "Random number used: "$RANDOMnum
@@ -599,15 +606,18 @@ if [[ "$GENR" != "0" ]]; then
 	
 	ln -s $STANDARD_NAME.conf fort.15
 	bggen_jpsi
+	generator_return_code=$?
 	mv bggen.hddm $STANDARD_NAME.hddm
 	elif [[ "$GENERATOR" == "gen_ee" ]]; then
 	set RANDOMnum=`bash -c 'echo $RANDOM'`
 	echo "Random number used: "$RANDOMnum
 	ee_mc -n$EVT_TO_GEN -R2 -b2 -l$GEN_MIN_ENERGY -u$GEN_MAX_ENERGY -t2 -r$RANDOMnum -omc_ee.hddm
+	generator_return_code=$?
 	mv mc_ee.hddm $STANDARD_NAME.hddm
 	elif [[ "$GENERATOR" == "gen_ee_hb" ]]; then
 		echo ee_mc_hb -N$RUN_NUMBER -n$EVT_TO_GEN
 		ee_mc_hb -N$RUN_NUMBER -n$EVT_TO_GEN
+		generator_return_code=$?
 		mv genOut.hddm $STANDARD_NAME.hddm
 	elif [[ "$GENERATOR" == "particle_gun" ]]; then
 		echo "configuring the particle gun"
@@ -615,6 +625,15 @@ if [[ "$GENR" != "0" ]]; then
 		cp $CONFIG_FILE ./$STANDARD_NAME.conf
 	fi
     
+
+	if [[ $generator_return_code != 0 ]]; then
+				echo
+				echo
+				echo "Something went wrong with " "$GENERATOR"
+				echo "status code: "$generator_return_code
+				exit $generator_return_code
+	fi
+
 	if [[ ! -f ./$STANDARD_NAME.hddm && "$GENERATOR" != "particle_gun" && "$gen_pre" != "file" ]]; then
 		echo "An hddm file was not found after generation step.  Terminating MC production.  Please consult logs to diagnose"
 		exit 11
@@ -639,7 +658,8 @@ if [[ "$GENR" != "0" ]]; then
 	if [[ "$polarization_angle" == "-1" ]]; then
 		sed -i 's/TEMPCOHERENT/'0'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	else
-		sed -i 's/TEMPCOHERENT/'$COHERENT_PEAK'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+		Fortran_COHERENT_PEAK=`echo $COHERENT_PEAK | cut -c -7`
+		sed -i 's/TEMPCOHERENT/'$Fortran_COHERENT_PEAK'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	fi
 	sed -i 's/TEMPIN/'$STANDARD_NAME.hddm'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	sed -i 's/TEMPRUNG/'$RUN_NUMBER'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
@@ -684,19 +704,29 @@ if [[ "$GENR" != "0" ]]; then
 	mv $PWD/control'_'$formatted_runNumber'_'$formatted_fileNumber.in $PWD/control.in
 	
 	if [[ "$GEANTVER" == "3" ]]; then
-	    hdgeant 
+	    hdgeant
+		geant_return_code=$?
 	elif [[ "$GEANTVER" == "4" ]]; then
 	    #make run.mac then call it below
 	    rm -f run.mac
 	    echo "/run/beamOn $EVT_TO_GEN" > run.mac
 	    echo "exit" >>! run.mac
 	    hdgeant4 -t$NUMTHREADS run.mac
+		geant_return_code=$?
 	    rm run.mac
 	else
 	    echo "INVALID GEANT VERSION"
-	    exit
+	    exit 1
 	fi
 	
+	if [[ $geant_return_code != 0 ]]; then
+			echo
+			echo
+			echo "Something went wrong with hdgeant(4)"
+			echo "status code: "$geant_return_code
+			exit $geant_return_code
+	fi
+
 	if [[ ! -f ./$STANDARD_NAME'_geant'$GEANTVER'.hddm' ]]; then
 		echo "An hddm file was not created by Geant.  Terminating MC production.  Please consult logs to diagnose"
 		exit 12
@@ -705,21 +735,34 @@ if [[ "$GENR" != "0" ]]; then
 	if [[ "$SMEAR" != "0" ]]; then
 	    echo "RUNNING MCSMEAR"
 	    
-	    if [[ "$BKGFOLDSTR" == "BeamPhotons" || "$BKGFOLDSTR" == "None" ]]; then
+	    if [[ "$BKGFOLDSTR" == "BeamPhotons" || "$BKGFOLDSTR" == "None" || "$BKGFOLDSTR" == "TagOnly" ]]; then
 		echo "running MCsmear without folding in random background"
 		mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm'
+		mcsmear_return_code=$?
 	    elif [[ "$BKGFOLDSTR" == "DEFAULT" || "$BKGFOLDSTR" == "Random" ]]; then
 		echo "mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
 		mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
+		mcsmear_return_code=$?
 		elif [[ "$bkgloc_pre" == "loc:" ]]; then
 		echo "mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
 		mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
+		mcsmear_return_code=$?
 		else
 		    #trust the user and use their string
 		    echo 'mcsmear -PTHREAD_TIMEOUT=300 -o'$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm'' '$STANDARD_NAME'_geant'$GEANTVER'.hddm'' '$BKGFOLDSTR
 		    mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm' $BKGFOLDSTR
+			mcsmear_return_code=$?
 
 	    fi
+		
+			if [[ $mcsmear_return_code != 0 ]]; then
+				echo
+				echo
+				echo "Something went wrong with mcsmear"
+				echo "status code: "$mcsmear_return_code
+				exit $mcsmear_return_code
+			fi
+
 	else
 			cp $STANDARD_NAME'_geant'$GEANTVER'.hddm' $STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm'
 	fi
@@ -736,6 +779,8 @@ if [[ "$GENR" != "0" ]]; then
 		elif [[ "$GENERATOR" == "gen_ee_hb" ]]; then
 				rm CFFs_DD_Feb2012.dat 
 				rm ee.ascii
+				rm cobrems.root
+				rm tcs_gen.root
 		fi
 		if [[ "$GENERATOR" != "particle_gun" && "$gen_pre" != "file" ]]; then
 			rm $STANDARD_NAME.hddm
@@ -753,16 +798,16 @@ if [[ "$GENR" != "0" ]]; then
 		if [[ "$recon_pre" == "file" ]]; then
 			echo "using config file: "$jana_config_file
 			hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' --config=jana_config.cfg -PNTHREADS=$NUMTHREADS
+			hd_root_return_code=$?
 			rm jana_config.cfg
 		else
 		
 			declare -a pluginlist=("danarest" "monitoring_hists")
-			echo ${pluginlist[@]}
-			echo $CUSTOM_PLUGINS
+			
             if [[ "$CUSTOM_PLUGINS" != "None" ]]; then
 				pluginlist=("${pluginlist[@]}" $CUSTOM_PLUGINS)
             fi
-			echo ${pluginlist[@]}
+
 
 			PluginStr=""
 		
@@ -771,15 +816,20 @@ if [[ "$GENR" != "0" ]]; then
             done
 		
 			PluginStr=`echo $PluginStr | sed -r 's/.{1}$//'`
-            echo "Running hd_root with:""$PluginStr"
+            echo "Running hd_root with: ""$PluginStr"
 			echo "hd_root ""$STANDARD_NAME"'_geant'"$GEANTVER"'_smeared.hddm'" -PPLUGINS=""$PluginStr ""-PNTHREADS=""$NUMTHREADS"
 			hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' -PPLUGINS=$PluginStr -PNTHREADS=$NUMTHREADS
+			hd_root_return_code=$?
 		fi
-		#if [[ hd_root_return_code != 0 ]]; then
-		#		echo "Something went wrong with hd_root"
-	#			exit hd_root_return_code
-	#	fi
-
+		
+		if [[ $hd_root_return_code != 0 ]]; then
+				echo
+				echo
+				echo "Something went wrong with hd_root"
+				echo "Status code: "$hd_root_return_code
+				exit $hd_root_return_code
+		fi
+		
 		if [[ -f dana_rest.hddm ]]; then
                     mv dana_rest.hddm dana_rest_$STANDARD_NAME.hddm
         fi
@@ -824,7 +874,7 @@ fi
 rm -rf ccdb.sqlite
 rm -rf rcdb.sqlite
 
-if [[ "$gen_pre" != "file" ]]; then
+if [[ "$gen_pre" != "file" && "$GENERATOR" != "gen_ee_hb" && "$GENERATOR" != "gen_ee" ]]; then
 	mv $PWD/*.conf $OUTDIR/configurations/generation/
 fi
 hddmfiles=$(ls | grep .hddm)

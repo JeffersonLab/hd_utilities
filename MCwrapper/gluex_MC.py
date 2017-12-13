@@ -195,8 +195,8 @@ def main(argv):
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         print "*********************************"
-        print "Welcome to v1.11 of the MCwrapper"
-        print "Thomas Britton 12/7/17"
+        print "Welcome to v1.12 of the MCwrapper"
+        print "Thomas Britton 12/12/17"
         print "*********************************"
 
 	#load all argument passed in and set default options
@@ -337,6 +337,8 @@ def main(argv):
                                         return
                                 if subparts[0].upper() == "TAGONLY":
                                         BGTAGONLY=1
+                                        if BGFOLD == "DEFAULT":
+                                                BGFOLD="TagOnly"
                                         if len(subparts)==2:
                                                 BGRATE=subparts[1]
 
