@@ -106,13 +106,13 @@ endif
 cd $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
 
 if ( "$ccdbSQLITEPATH" != "no_sqlite" ) then
-        #cp $ccdbSQLITEPATH ./ccdb.sqlite
+        cp $ccdbSQLITEPATH ./ccdb.sqlite
         setenv CCDB_CONNECTION sqlite:///$ccdbSQLITEPATH
         setenv JANA_CALIB_URL ${CCDB_CONNECTION}
 endif
 
 if ( "$rcdbSQLITEPATH" != "no_sqlite" ) then
-        #cp $rcdbSQLITEPATH ./rcdb.sqlite
+        cp $rcdbSQLITEPATH ./rcdb.sqlite
         setenv RCDB_CONNECTION sqlite:///$rcdbSQLITEPATH
 endif
 
@@ -419,6 +419,7 @@ if ( "$GENR" != "0" ) then
     if ( "$gen_pre" == "file" ) then
 		set gen_in_file=`echo $GENERATOR | sed -r 's/^.{5}//'`
 		echo "bypassing generation"
+		set generator_return_code=0
 		if ( -f $gen_in_file ) then
 	    	echo "using pre-generated file: "$gen_in_file
 	    	cp $gen_in_file ./$STANDARD_NAME.hddm
@@ -426,8 +427,9 @@ if ( "$GENR" != "0" ) then
 	    	echo "cannot find file: "$gen_in_file
 	    	exit 1
 		endif
-	else if ( "$GENERATOR" == "particle_gun") then
+	else if ( "$GENERATOR" == "particle_gun" ) then
 		echo "bypassing generation" 
+		set generator_return_code=0
     else 
 		if ( -f $CONFIG_FILE ) then
 		    echo "input file found"
