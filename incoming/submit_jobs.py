@@ -52,8 +52,10 @@ def build_file_dictionary(RUN_PERIOD, NUM_FILES_PER_RUN):
 		file_name = file_path[(file_path.rfind("/") + 1):] #hd_rawdata_<run_string>_<file_string>.evio"
 		run_string = file_name[11:17] #skip "hd_rawdata_" 
 		file_string = file_name[18:-5] #skip "hd_rawdata_run#_" and ".evio" on the end 
-		if(int(file_string) >= NUM_FILES_PER_RUN):
-			continue
+                if(len(file_string) != 3): # sometimes in 2018-01, there is a "_0" at the end 
+                        file_string = file_string[0:-2] # this will not produce these files, but also not crash
+                if(int(file_string) >= NUM_FILES_PER_RUN):
+                        continue
 		file_dictionary[run_string].add(file_string)
 		num_files += 1
 		if VERBOSE > 1:

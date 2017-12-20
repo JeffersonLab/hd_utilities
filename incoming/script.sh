@@ -288,6 +288,7 @@ Save_IDXA()
 
 Create_SQLite()
 {
+	echo "Creating ccdb.sqlite"
 	$CCDB_HOME/scripts/mysql2sqlite/mysql2sqlite.sh -hhallddb.jlab.org -uccdb_user ccdb | sqlite3 ccdb.sqlite
 }
 
