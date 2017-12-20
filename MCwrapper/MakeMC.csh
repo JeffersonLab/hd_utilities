@@ -744,12 +744,16 @@ if ( "$GENR" != "0" ) then
 				mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm'
 				set mcsmear_return_code=$status
 	    	else if ( "$BKGFOLDSTR" == "DEFAULT" || "$BKGFOLDSTR" == "Random" ) then
-				echo "mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
-				mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
+				set fold_skip_num=`echo "$FILE_NUMBER * $PER_FILE" | bc`
+				#set bkglocstring="/w/halld-scifs17exp/halld2/home/tbritton/MCwrapper_Development/converted.hddm"
+				echo "mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1""+"$fold_skip_num
+				mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1\+$fold_skip_num
 				set mcsmear_return_code=$status
 			else if ( "$bkgloc_pre" == "loc:" ) then
-				echo "mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
-				mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
+				set fold_skip_num=`echo "$FILE_NUMBER * $PER_FILE" | bc`
+				
+				echo "mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1""+"$fold_skip_num
+				mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1\+$fold_skip_num
 				set mcsmear_return_code=$status
 	    	else
 				#trust the user and use their string
@@ -805,7 +809,7 @@ if ( "$GENR" != "0" ) then
 				
 		   		hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' --config=jana_config.cfg -PNTHREADS=$NUMTHREADS
 				set hd_root_return_code=$status
-				echo "STATUS: " $hd_root_return_code
+				#echo "STATUS: " $hd_root_return_code
 				rm jana_config.cfg
 			else
 				

@@ -153,6 +153,42 @@ def  condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, 
         status = subprocess.call(add_command, shell=True)
         status = subprocess.call("rm MCcondor.submit", shell=True)
 
+def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE ):
+        STUBNAME = str(RUNNUM) + "_" + str(FILENUM)
+	JOBNAME = WORKFLOW + "_" + STUBNAME
+
+        f=open('MCOSG.submit','w')
+        f.write("universe = vanilla"+"\n")
+        f.write("Executable = osg-container.sh""\n") 
+        f.write("Arguments  = "+indir+" "+COMMAND+"\n")
+        f.write("Requirements = (HAS_SINGULARITY == TRUE) && (HAS_CVMFS_oasis_opensciencegrid_org == True)"+"\n") 
+        f.write('+SingularityImage = "/cvmfs/singularity.opensciencegrid.org/rjones30/gluex:latest"'+"\n") 
+        f.write('+SingularityBindCVMFS = True'+"\n") 
+        f.write('+SingularityAutoLoad = True'+"\n") 
+        f.write('should_transfer_files = IF_NEEDED'+"\n")
+        f.write('when_to_transfer_output = ON_EXIT'+"\n")
+        f.write('x509userproxy = /tmp/user_proxy'+"\n")
+        f.write('concurrency_limits = GluexProduction'+"\n")
+        f.write('on_exit_remove = true'+"\n")
+        f.write('on_exit_hold = false'+"\n")
+        f.write("Error      = "+DATA_OUTPUT_BASE_DIR+"/log/"+"error_"+JOBNAME+".log\n")
+        f.write("Log      = "+DATA_OUTPUT_BASE_DIR+"/log/"+"out_"+JOBNAME+".log\n")
+        f.write("output = <logdir>/$(CLUSTER).$(PROCESS).out\n")
+        f.write("initialdir = "+RUNNING_DIR+"\n")
+        f.write("transfer_input_files = "+ENVFILE+"\n")
+        f.write("transfer_output_files = "+DATA_OUTPUT_BASE_DIR+"\n")
+
+        f.write("queue\n")
+        f.close()
+        
+        add_command="condor_submit -name "+JOBNAME+" MCOSG.submit"
+        if add_command.find(';')!=-1 or add_command.find('&')!=-1 or mkdircom.find(';')!=-1 or mkdircom.find('&')!=-1:#THIS CHECK HELPS PROTEXT AGAINST A POTENTIAL HACK VIA CONFIG FILES
+                print "Nice try.....you cannot use ; or &"
+                exit(1)
+
+        status = subprocess.call(add_command, shell=True)
+        status = subprocess.call("rm MCOSG.submit", shell=True)
+
 
 def showhelp():
         helpstring= "variation=%s where %s is a valid jana_calib_context variation string (default is \"mc\")\n"
@@ -196,7 +232,7 @@ def main(argv):
 
         print "*********************************"
         print "Welcome to v1.12 of the MCwrapper"
-        print "Thomas Britton 12/12/17"
+        print "Thomas Britton 12/19/17"
         print "*********************************"
 
 	#load all argument passed in and set default options
@@ -594,6 +630,8 @@ def main(argv):
                                                 qsub_add_job(VERBOSE, WORKFLOW, runs[0], BASEFILENUM+FILENUM_this_run+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, RAM, QUEUENAME, LOG_DIR )
                                         elif BATCHSYS.upper()=="CONDOR":
                                                 condor_add_job(VERBOSE, WORKFLOW, runs[0], BASEFILENUM+FILENUM_this_run+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR )
+                                        elif BATCHSYS.upper()=="OSG":
+                                                condor_add_job(VERBOSE, WORKFLOW, runs[0], BASEFILENUM+FILENUM_this_run+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE )
                         #print "----------------"
                 
         else:
@@ -622,6 +660,8 @@ def main(argv):
                                         qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, BASEFILENUM+FILENUM+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, RAM, QUEUENAME, LOG_DIR )
                                 elif BATCHSYS.upper()=="CONDOR":
                                         condor_add_job(VERBOSE, WORKFLOW, RUNNUM, BASEFILENUM+FILENUM+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR )
+                                 elif BATCHSYS.upper()=="OSG":
+                                        condor_add_job(VERBOSE, WORKFLOW, RUNNUM, BASEFILENUM+FILENUM+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE )
 
                                         
         if BATCHRUN == 1 and BATCHSYS.upper() == "SWIF":
