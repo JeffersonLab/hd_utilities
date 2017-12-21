@@ -173,7 +173,7 @@ def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DAT
         f.write('on_exit_hold = false'+"\n")
         f.write("Error      = "+DATA_OUTPUT_BASE_DIR+"/log/"+"error_"+JOBNAME+".log\n")
         f.write("Log      = "+DATA_OUTPUT_BASE_DIR+"/log/"+"out_"+JOBNAME+".log\n")
-        f.write("output = <logdir>/$(CLUSTER).$(PROCESS).out\n")
+        f.write("output = "+DATA_OUTPUT_BASE_DIR+"/log/"+"OSGout_"+JOBNAME+".log\n")
         f.write("initialdir = "+RUNNING_DIR+"\n")
         f.write("transfer_input_files = "+ENVFILE+"\n")
         f.write("transfer_output_files = "+DATA_OUTPUT_BASE_DIR+"\n")
@@ -181,13 +181,13 @@ def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DAT
         f.write("queue\n")
         f.close()
         
-        add_command="condor_submit -name "+JOBNAME+" MCOSG.submit"
-        if add_command.find(';')!=-1 or add_command.find('&')!=-1 or mkdircom.find(';')!=-1 or mkdircom.find('&')!=-1:#THIS CHECK HELPS PROTEXT AGAINST A POTENTIAL HACK VIA CONFIG FILES
-                print "Nice try.....you cannot use ; or &"
-                exit(1)
+        #add_command="condor_submit -name "+JOBNAME+" MCOSG.submit"
+        #if add_command.find(';')!=-1 or add_command.find('&')!=-1 or mkdircom.find(';')!=-1 or mkdircom.find('&')!=-1:#THIS CHECK HELPS PROTEXT AGAINST A POTENTIAL HACK VIA CONFIG FILES
+        #        print "Nice try.....you cannot use ; or &"
+        #        exit(1)
 
-        status = subprocess.call(add_command, shell=True)
-        status = subprocess.call("rm MCOSG.submit", shell=True)
+        #status = subprocess.call(add_command, shell=True)
+        #status = subprocess.call("rm MCOSG.submit", shell=True)
 
 
 def showhelp():
@@ -631,7 +631,7 @@ def main(argv):
                                         elif BATCHSYS.upper()=="CONDOR":
                                                 condor_add_job(VERBOSE, WORKFLOW, runs[0], BASEFILENUM+FILENUM_this_run+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR )
                                         elif BATCHSYS.upper()=="OSG":
-                                                condor_add_job(VERBOSE, WORKFLOW, runs[0], BASEFILENUM+FILENUM_this_run+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE )
+                                                OSG_add_job(VERBOSE, WORKFLOW, runs[0], BASEFILENUM+FILENUM_this_run+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE )
                         #print "----------------"
                 
         else:
@@ -660,8 +660,8 @@ def main(argv):
                                         qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, BASEFILENUM+FILENUM+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, RAM, QUEUENAME, LOG_DIR )
                                 elif BATCHSYS.upper()=="CONDOR":
                                         condor_add_job(VERBOSE, WORKFLOW, RUNNUM, BASEFILENUM+FILENUM+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR )
-                                 elif BATCHSYS.upper()=="OSG":
-                                        condor_add_job(VERBOSE, WORKFLOW, RUNNUM, BASEFILENUM+FILENUM+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE )
+                                elif BATCHSYS.upper()=="OSG":
+                                        OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, BASEFILENUM+FILENUM+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE )
 
                                         
         if BATCHRUN == 1 and BATCHSYS.upper() == "SWIF":
