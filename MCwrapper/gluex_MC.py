@@ -196,7 +196,7 @@ def main(argv):
 
         print "*********************************"
         print "Welcome to v1.12 of the MCwrapper"
-        print "Thomas Britton 12/12/17"
+        print "Thomas Britton 12/29/17"
         print "*********************************"
 
 	#load all argument passed in and set default options
@@ -483,7 +483,7 @@ def main(argv):
 
 	indir=os.environ.get('MCWRAPPER_CENTRAL')
         
-        script_to_use = "/MakeMC.csh"
+        script_to_use = "/MakeMC.sh"
         if environ['SHELL']=="/bin/bash" :
                 script_to_use = "/MakeMC.sh"
         

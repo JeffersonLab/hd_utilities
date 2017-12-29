@@ -151,16 +151,16 @@ fi
 
 polarization_angle=`rcnd $RUN_NUMBER polarization_angle | awk '{print $1}'`
 
+
 if [[ "$polarization_angle" == "" ]]; then
-	set poldir=`rcnd $RUN_NUMBER polarization_direction | awk '{print $1}'`
+	poldir=`rcnd $RUN_NUMBER polarization_direction | awk '{print $1}'`
+	
 	if [[ "$poldir" == "PARA" ]]; then
-		set polarization_angle="0.0"
+		polarization_angle="0.0"
 	else
-		set polarization_angle="90.0"
+		polarization_angle="90.0"
 	fi
 fi
-
-
 
 elecE=0
 
@@ -358,6 +358,9 @@ if [[ ! -d "$OUTDIR/root/" ]]; then
     mkdir $OUTDIR/root/
 fi
 
+
+
+
 bkglocstring=""
 bkgloc_pre=`echo $BKGFOLDSTR | cut -c 1-4`
 if [[ "$BKGFOLDSTR" == "DEFAULT" || "$bkgloc_pre" == "loc:" || "$BKGFOLDSTR" == "Random" ]]; then
@@ -407,14 +410,16 @@ if [[ $recon_pre == "file" ]]; then
 fi
 gen_pre=""
 
+
 if [[ "$GENR" != "0" ]]; then
+
 	gen_pre=`echo $GENERATOR | cut -c1-4`
     if [[ "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" && "$GENERATOR" != "gen_omega_3pi" && "$GENERATOR" != "gen_2k" && "$GENERATOR" != "bggen_jpsi" && "$GENERATOR" != "gen_ee" && "$GENERATOR" != "gen_ee_hb" && "$GENERATOR" != "particle_gun" ]]; then
-	echo "NO VALID GENERATOR GIVEN"
-	echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0, gen_omega_3pi, gen_2k, bggen_jpsi, gen_ee, gen_ee_hb, particle_gun] are supported"
-	exit
+		echo "NO VALID GENERATOR GIVEN"
+		echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0, gen_omega_3pi, gen_2k, bggen_jpsi, gen_ee, gen_ee_hb, particle_gun] are supported"
+		exit 1
     fi
-    
+
 	if [[ "$gen_pre" == "file" ]]; then
 		gen_in_file=`echo $GENERATOR | sed -r 's/^.{5}//'`
 		echo "bypassing generation"
@@ -428,7 +433,7 @@ if [[ "$GENR" != "0" ]]; then
 		fi
 			generator_return_code=0	
 
-	else if [[ "$GENERATOR" == "particle_gun" ]]; then
+	elif [[ "$GENERATOR" == "particle_gun" ]]; then
 		echo "bypassing generation" 
 		generator_return_code=0
 	else 
@@ -442,55 +447,55 @@ if [[ "$GENR" != "0" ]]; then
     	fi
 
 	fi
-    
+
     if [[ "$GENERATOR" == "genr8" ]]; then
-	echo "configuring genr8"
-	STANDARD_NAME="genr8_"$STANDARD_NAME
-	cp $CONFIG_FILE ./$STANDARD_NAME.conf
+		echo "configuring genr8"
+		STANDARD_NAME="genr8_"$STANDARD_NAME
+		cp $CONFIG_FILE ./$STANDARD_NAME.conf
     elif [[ "$GENERATOR" == "bggen" ]]; then
-	echo "configuring bggen"
-	STANDARD_NAME="bggen_"$STANDARD_NAME
-	cp $MCWRAPPER_CENTRAL/Generators/bggen/particle.dat ./
-	cp $MCWRAPPER_CENTRAL/Generators/bggen/pythia.dat ./
-	cp $MCWRAPPER_CENTRAL/Generators/bggen/pythia-geant.map ./
-	cp $CONFIG_FILE ./$STANDARD_NAME.conf
+		echo "configuring bggen"
+		STANDARD_NAME="bggen_"$STANDARD_NAME
+		cp $MCWRAPPER_CENTRAL/Generators/bggen/particle.dat ./
+		cp $MCWRAPPER_CENTRAL/Generators/bggen/pythia.dat ./
+		cp $MCWRAPPER_CENTRAL/Generators/bggen/pythia-geant.map ./
+		cp $CONFIG_FILE ./$STANDARD_NAME.conf
 	
     elif [[ "$GENERATOR" == "genEtaRegge" ]]; then
-	echo "configuring genEtaRegge"
-	STANDARD_NAME="genEtaRegge_"$STANDARD_NAME
-	cp $CONFIG_FILE ./$STANDARD_NAME.conf
+		echo "configuring genEtaRegge"
+		STANDARD_NAME="genEtaRegge_"$STANDARD_NAME
+		cp $CONFIG_FILE ./$STANDARD_NAME.conf
     elif [[ "$GENERATOR" == "gen_2pi_amp" ]]; then
-	echo "configuring gen_2pi_amp"
-	STANDARD_NAME="gen_2pi_amp_"$STANDARD_NAME
-	cp $CONFIG_FILE ./$STANDARD_NAME.conf
+		echo "configuring gen_2pi_amp"
+		STANDARD_NAME="gen_2pi_amp_"$STANDARD_NAME
+		cp $CONFIG_FILE ./$STANDARD_NAME.conf
 	elif [[ "$GENERATOR" == "gen_omega_3pi" ]]; then
-	echo "configuring gen_omega_3pi"
-	STANDARD_NAME="gen_omega_3pi_"$STANDARD_NAME
-	cp $CONFIG_FILE ./$STANDARD_NAME.conf
+		echo "configuring gen_omega_3pi"
+		STANDARD_NAME="gen_omega_3pi_"$STANDARD_NAME
+		cp $CONFIG_FILE ./$STANDARD_NAME.conf
     elif [[ "$GENERATOR" == "gen_2pi_primakoff" ]]; then
-	echo "configuring gen_2pi_primakoff"
-	STANDARD_NAME="gen_2pi_primakoff_"$STANDARD_NAME
-	cp $CONFIG_FILE ./$STANDARD_NAME.conf
+		echo "configuring gen_2pi_primakoff"
+		STANDARD_NAME="gen_2pi_primakoff_"$STANDARD_NAME
+		cp $CONFIG_FILE ./$STANDARD_NAME.conf
     elif [[ "$GENERATOR" == "gen_pi0" ]]; then
-	echo "configuring gen_pi0"
-	STANDARD_NAME="gen_pi0_"$STANDARD_NAME
-	cp $CONFIG_FILE ./$STANDARD_NAME.conf
+		echo "configuring gen_pi0"
+		STANDARD_NAME="gen_pi0_"$STANDARD_NAME
+		cp $CONFIG_FILE ./$STANDARD_NAME.conf
 	elif [[ "$GENERATOR" == "gen_2k" ]]; then
-	echo "configuring gen_2k"
-	set STANDARD_NAME="gen_2k_"$STANDARD_NAME
-	cp $CONFIG_FILE ./$STANDARD_NAME.conf
+		echo "configuring gen_2k"
+		set STANDARD_NAME="gen_2k_"$STANDARD_NAME
+		cp $CONFIG_FILE ./$STANDARD_NAME.conf
 	elif [[ "$GENERATOR" == "bggen_jpsi" ]]; then
-	echo "configuring bggen_jpsi"
-	set STANDARD_NAME="bggen_jpsi_"$STANDARD_NAME
-	cp $MCWRAPPER_CENTRAL/Generators/bggen_jpsi/particle.dat ./
-	cp $MCWRAPPER_CENTRAL/Generators/bggen_jpsi/pythia.dat ./
-	cp $MCWRAPPER_CENTRAL/Generators/bggen_jpsi/pythia-geant.map ./
-	cp $CONFIG_FILE ./$STANDARD_NAME.conf
+		echo "configuring bggen_jpsi"
+		set STANDARD_NAME="bggen_jpsi_"$STANDARD_NAME
+		cp $MCWRAPPER_CENTRAL/Generators/bggen_jpsi/particle.dat ./
+		cp $MCWRAPPER_CENTRAL/Generators/bggen_jpsi/pythia.dat ./
+		cp $MCWRAPPER_CENTRAL/Generators/bggen_jpsi/pythia-geant.map ./
+		cp $CONFIG_FILE ./$STANDARD_NAME.conf
 	elif [[ "$GENERATOR" == "gen_ee" ]]; then
-	echo "configuring gen_ee"
-	set STANDARD_NAME="gen_ee_"$STANDARD_NAME
-	echo "note: this generator is run completely from command line, thus no config file will be made and/or modified"
-	cp $CONFIG_FILE ./cobrems.root
+		echo "configuring gen_ee"
+		set STANDARD_NAME="gen_ee_"$STANDARD_NAME
+		echo "note: this generator is run completely from command line, thus no config file will be made and/or modified"
+		cp $CONFIG_FILE ./cobrems.root
 	elif ( "$GENERATOR" == "gen_ee_hb" ) then
 		echo "configuring gen_ee_hb"
 		set STANDARD_NAME="gen_ee_hb_"$STANDARD_NAME
