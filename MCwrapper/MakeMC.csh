@@ -85,7 +85,7 @@ setenv BGRATE $1
 
 
 #necessary to run swif, uses local directory if swif=0 is used
-if ( "$BATCHRUN" != "0" ) then
+if ( "$BATCHRUN" != "0"  ) then
 # ENVIRONMENT
 	echo $ENVIRONMENT
     echo pwd=$PWD
@@ -107,13 +107,13 @@ cd $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
 
 if ( "$ccdbSQLITEPATH" != "no_sqlite" ) then
         cp $ccdbSQLITEPATH ./ccdb.sqlite
-        setenv CCDB_CONNECTION sqlite:///$ccdbSQLITEPATH
+        setenv CCDB_CONNECTION sqlite:///$PWD/ccdb.sqlite #$ccdbSQLITEPATH
         setenv JANA_CALIB_URL ${CCDB_CONNECTION}
 endif
 
 if ( "$rcdbSQLITEPATH" != "no_sqlite" ) then
         cp $rcdbSQLITEPATH ./rcdb.sqlite
-        setenv RCDB_CONNECTION sqlite:///$rcdbSQLITEPATH
+        setenv RCDB_CONNECTION sqlite:///$PWD/rcdb.sqlite #$rcdbSQLITEPATH
 endif
 
 echo ""

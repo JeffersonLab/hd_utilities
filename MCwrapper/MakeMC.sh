@@ -112,13 +112,13 @@ cd $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
 
 if [[ "$ccdbSQLITEPATH" != "no_sqlite" ]]; then
         cp $ccdbSQLITEPATH ./ccdb.sqlite
-        export CCDB_CONNECTION=sqlite:///$ccdbSQLITEPATH
+        export CCDB_CONNECTION=sqlite:///$PWD/ccdb.sqlite
         export JANA_CALIB_URL=$CCDB_CONNECTION
 fi
 
 if [[ "$rcdbSQLITEPATH" != "no_sqlite" ]]; then
         cp $rcdbSQLITEPATH ./rcdb.sqlite
-        export RCDB_CONNECTION=sqlite:///$rcdbSQLITEPATH
+        export RCDB_CONNECTION=sqlite:///$PWD/rcdb.sqlite
 fi
 
 echo ""
