@@ -20,22 +20,22 @@ userproxy=x509up_u$UID
 # define the container context for running on osg workers
 
 if [[ -f /environment ]]; then
-    echo "Job running on" `hostname`
-    [ -r .$userproxy ] && mv .$userproxy /tmp/$userproxy
-    source /environment
-    unset CCDB_CONNECTION
-    unset RCDB_CONNECTION
-    $* && retcode=$?
-    echo "Job finished with exit code" $retcode
-    rm -rf *.sqlite
-    exit $retcode
+    echo "Job running on" `hostname`
+    [ -r .$userproxy ] && mv .$userproxy /tmp/$userproxy
+    source /environment
+    unset CCDB_CONNECTION
+    unset RCDB_CONNECTION
+    eval $*; retcode=$?
+    echo "Job finished with exit code" $retcode
+    rm -rf *.sqlite
+    exit $retcode
 
 elif [[ -f $container/environment ]]; then
-    echo "Starting up container on" `hostname`
-    [ -r /tmp/$userproxy ] && cp /tmp/$userproxy .$userproxy
-    exec singularity exec --containall --bind ${oasismount} --home `pwd`:/srv --pwd /srv --scratch /tmp,/var/tmp ${container} \
-    bash $0 $*
+    echo "Starting up container on" `hostname`
+    [ -r /tmp/$userproxy ] && cp /tmp/$userproxy .$userproxy
+    exec singularity exec --containall --bind ${oasismount} --home `pwd`:/srv --pwd /srv --scratch /tmp,/var/tmp ${container} \
+    bash $0 $*
 
 else
-    echo "Job container not found on" `hostname`
+    echo "Job container not found on" `hostname`
 fi
