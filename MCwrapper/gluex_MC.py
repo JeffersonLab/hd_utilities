@@ -230,7 +230,7 @@ def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DAT
         f.write('on_exit_hold = false'+"\n")
         f.write("Error      = "+LOG_DIR+"/log/"+"error_"+JOBNAME+".log\n")
         f.write("Log      = "+LOG_DIR+"/log/"+"out_"+JOBNAME+".log\n")
-        f.write("output = "+LOG_DIR+"OSGout_"+JOBNAME+".log\n")
+        f.write("output = "+LOG_DIR+"/log/"+"OSGout_"+JOBNAME+".log\n")
         f.write("initialdir = "+RUNNING_DIR+"\n")
         #f.write("transfer_input_files = "+ENVFILE+"\n")
         f.write("transfer_input_files = "+indir+", "+ENVFILE+additional_passins+"\n")
@@ -292,7 +292,7 @@ def main(argv):
 
         print "*********************************"
         print "Welcome to v1.12 of the MCwrapper"
-        print "Thomas Britton 1/2/18"
+        print "Thomas Britton 1/3/18"
         print "*********************************"
 
 	#load all argument passed in and set default options
