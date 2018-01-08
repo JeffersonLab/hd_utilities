@@ -112,13 +112,13 @@ cd $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
 
 if [[ "$ccdbSQLITEPATH" != "no_sqlite" ]]; then
         cp $ccdbSQLITEPATH ./ccdb.sqlite
-        export CCDB_CONNECTION=sqlite:///$ccdbSQLITEPATH
+        export CCDB_CONNECTION=sqlite:///$PWD/ccdb.sqlite
         export JANA_CALIB_URL=$CCDB_CONNECTION
 fi
 
 if [[ "$rcdbSQLITEPATH" != "no_sqlite" ]]; then
         cp $rcdbSQLITEPATH ./rcdb.sqlite
-        export RCDB_CONNECTION=sqlite:///$rcdbSQLITEPATH
+        export RCDB_CONNECTION=sqlite:///$PWD/rcdb.sqlite
 fi
 
 echo ""
@@ -699,7 +699,7 @@ if [[ "$GENR" != "0" ]]; then
 	    sed -i 's/TEMPMINE/'$GEN_MIN_ENERGY'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	elif [[ "$BKGFOLDSTR" == "BeamPhotons" ]]; then
 		sed -i 's/TEMPMINE/0.0012/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
-	elif [[ "$BKGFOLDSTR" == "DEFAULT" || "$BKGFOLDSTR" == "Random" && "$BGTAGONLY_OPTION" == "0" ]]; then
+	elif [[ "$BKGFOLDSTR" == "DEFAULT" || "$BKGFOLDSTR" == "Random" ||  "$bkgloc_pre" == "loc:" ]]  && [[ "$BGTAGONLY_OPTION" == "0" ]]; then
 	    sed -i 's/BGRATE/cBGRATE/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	    sed -i 's/BGGATE/cBGGATE/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	    sed -i 's/TEMPMINE/'$GEN_MIN_ENERGY'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in

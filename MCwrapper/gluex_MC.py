@@ -153,6 +153,102 @@ def  condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, 
         status = subprocess.call(add_command, shell=True)
         status = subprocess.call("rm MCcondor.submit", shell=True)
 
+def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR ):
+        STUBNAME = str(RUNNUM) + "_" + str(FILENUM)
+	JOBNAME = WORKFLOW + "_" + STUBNAME
+
+        mkdircom="mkdir -p "+DATA_OUTPUT_BASE_DIR+"/log/"
+
+        indir_parts=indir.split("/")
+        script_to_use=indir_parts[len(indir_parts)-1]
+
+        ENVFILE_parts=ENVFILE.split("/")
+        envfile_to_source="/srv/"+ENVFILE_parts[len(ENVFILE_parts)-1]
+
+        
+        COMMAND_parts=COMMAND.split(" ")
+        COMMAND_parts[1]=envfile_to_source
+        
+        COMMAND_parts[3]="./"
+        COMMAND_parts[30]="./"
+
+        additional_passins=""
+        if COMMAND_parts[2][:5] == "file:":
+                gen_config_parts=COMMAND_parts[2].split("/")
+                gen_config_to_use=gen_config_parts[len(gen_config_parts)-1]
+                additional_passins+=COMMAND_parts[2][5:]+", "
+                COMMAND_parts[2]="file:/srv/"+gen_config_to_use
+        else:
+                gen_config_parts=COMMAND_parts[2].split("/")
+                gen_config_to_use=gen_config_parts[len(gen_config_parts)-1]
+                additional_passins+=COMMAND_parts[2]+", "
+                COMMAND_parts[2]="/srv/"+gen_config_to_use
+
+        if COMMAND_parts[28] != "None" and COMMAND_parts[28][:5]=="file:" :
+                janaconfig_parts=COMMAND_parts[28].split("/")
+                janaconfig_to_use=janaconfig_parts[len(janaconfig_parts)-1]
+                additional_passins+=COMMAND_parts[28][5:]+", "
+                COMMAND_parts[28]="file:/srv/"+janaconfig_to_use
+
+        if COMMAND_parts[31] != "no_sqlite" :
+                ccdbsqlite_parts=COMMAND_parts[31].split("/")
+                ccdbsqlite_to_use=ccdbsqlite_parts[len(ccdbsqlite_parts)-1]
+                additional_passins+=COMMAND_parts[31]+", "
+                COMMAND_parts[31]="/srv/"+ccdbsqlite_to_use
+
+        if COMMAND_parts[32] != "no_sqlite" :
+                rcdbsqlite_parts=COMMAND_parts[32].split("/")
+                rcdbsqlite_to_use=rcdbsqlite_parts[len(rcdbsqlite_parts)-1]
+                additional_passins+=COMMAND_parts[32]+", "
+                COMMAND_parts[32]="/srv/"+rcdbsqlite_to_use
+
+        if additional_passins != "":
+                additional_passins=", "+additional_passins
+                additional_passins=additional_passins[:-2]
+
+        modified_COMMAND=""
+
+        for com in COMMAND_parts:
+                modified_COMMAND=modified_COMMAND+com+" "
+        
+        modified_COMMAND=modified_COMMAND[:-1]
+
+        f=open('MCOSG.submit','w')
+        f.write("universe = vanilla"+"\n")
+        f.write("Executable = "+os.environ.get('MCWRAPPER_CENTRAL')+"/osg-container.sh"+"\n") 
+        #f.write("Arguments  = "+indir+" "+COMMAND+"\n")
+        f.write("Arguments  = "+"./"+script_to_use+" "+modified_COMMAND+"\n")
+        f.write("Requirements = (HAS_SINGULARITY == TRUE) && (HAS_CVMFS_oasis_opensciencegrid_org == True)"+"\n") 
+        f.write('+SingularityImage = "/cvmfs/singularity.opensciencegrid.org/rjones30/gluex:latest"'+"\n") 
+        f.write('+SingularityBindCVMFS = True'+"\n") 
+        f.write('+SingularityAutoLoad = True'+"\n") 
+        f.write('should_transfer_files = YES'+"\n")
+        f.write('when_to_transfer_output = ON_EXIT'+"\n")
+        
+        f.write('concurrency_limits = GluexProduction'+"\n")
+        f.write('on_exit_remove = true'+"\n")
+        f.write('on_exit_hold = false'+"\n")
+        f.write("Error      = "+LOG_DIR+"/log/"+"error_"+JOBNAME+".log\n")
+        f.write("output      = "+LOG_DIR+"/log/"+"out_"+JOBNAME+".log\n")
+        f.write("log = "+LOG_DIR+"/log/"+"OSG_"+JOBNAME+".log\n")
+        f.write("initialdir = "+RUNNING_DIR+"\n")
+        #f.write("transfer_input_files = "+ENVFILE+"\n")
+        f.write("transfer_input_files = "+indir+", "+ENVFILE+additional_passins+"\n")
+        f.write("transfer_output_files = "+RUNNUM+"_"+str(FILENUM)+"\n")
+        f.write("transfer_output_remaps = "+"\""+RUNNUM+"_"+str(FILENUM)+"="+DATA_OUTPUT_BASE_DIR+"\""+"\n")
+
+        f.write("queue\n")
+        f.close()
+        
+        add_command="condor_submit -name "+JOBNAME+" MCOSG.submit"
+        if add_command.find(';')!=-1 or add_command.find('&')!=-1 :#THIS CHECK HELPS PROTEXT AGAINST A POTENTIAL HACK VIA CONFIG FILES
+                print "Nice try.....you cannot use ; or &"
+                exit(1)
+
+        status = subprocess.call(mkdircom, shell=True)
+        status = subprocess.call(add_command, shell=True)
+        status = subprocess.call("rm MCOSG.submit", shell=True)
+
 
 def showhelp():
         helpstring= "variation=%s where %s is a valid jana_calib_context variation string (default is \"mc\")\n"
@@ -173,7 +269,7 @@ def showhelp():
 ########################################################## MAIN ##########################################################
 	
 def main(argv):
-	parser_usage = "gluex_MC.py config_file Run_Number num_events [all other options]\n\n where [all other options] are:\n\n "
+	parser_usage = "gluex_MC.py config_file Run_Number/Range num_events [all other options]\n\n where [all other options] are:\n\n "
         parser_usage += showhelp()
 	parser = OptionParser(usage = parser_usage)
 	(options, args) = parser.parse_args(argv)
@@ -196,7 +292,7 @@ def main(argv):
 
         print "*********************************"
         print "Welcome to v1.12 of the MCwrapper"
-        print "Thomas Britton 12/29/17"
+        print "Thomas Britton 1/3/18"
         print "*********************************"
 
 	#load all argument passed in and set default options
@@ -483,7 +579,9 @@ def main(argv):
 
 	indir=os.environ.get('MCWRAPPER_CENTRAL')
         
-        script_to_use = "/MakeMC.sh"
+        script_to_use = "/MakeMC.csh"
+        #script_to_use = "/MakeHelloWorld.csh"
+        
         if environ['SHELL']=="/bin/bash" :
                 script_to_use = "/MakeMC.sh"
         
@@ -594,6 +692,8 @@ def main(argv):
                                                 qsub_add_job(VERBOSE, WORKFLOW, runs[0], BASEFILENUM+FILENUM_this_run+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, RAM, QUEUENAME, LOG_DIR )
                                         elif BATCHSYS.upper()=="CONDOR":
                                                 condor_add_job(VERBOSE, WORKFLOW, runs[0], BASEFILENUM+FILENUM_this_run+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR )
+                                        elif BATCHSYS.upper()=="OSG":
+                                                OSG_add_job(VERBOSE, WORKFLOW, runs[0], BASEFILENUM+FILENUM_this_run+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR )
                         #print "----------------"
                 
         else:
@@ -622,6 +722,8 @@ def main(argv):
                                         qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, BASEFILENUM+FILENUM+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, RAM, QUEUENAME, LOG_DIR )
                                 elif BATCHSYS.upper()=="CONDOR":
                                         condor_add_job(VERBOSE, WORKFLOW, RUNNUM, BASEFILENUM+FILENUM+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR )
+                                elif BATCHSYS.upper()=="OSG":
+                                        OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, BASEFILENUM+FILENUM+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR )
 
                                         
         if BATCHRUN == 1 and BATCHSYS.upper() == "SWIF":

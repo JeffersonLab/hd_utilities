@@ -85,7 +85,7 @@ setenv BGRATE $1
 
 
 #necessary to run swif, uses local directory if swif=0 is used
-if ( "$BATCHRUN" != "0" ) then
+if ( "$BATCHRUN" != "0"  ) then
 # ENVIRONMENT
 	echo $ENVIRONMENT
     echo pwd=$PWD
@@ -107,13 +107,13 @@ cd $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
 
 if ( "$ccdbSQLITEPATH" != "no_sqlite" ) then
         cp $ccdbSQLITEPATH ./ccdb.sqlite
-        setenv CCDB_CONNECTION sqlite:///$ccdbSQLITEPATH
+        setenv CCDB_CONNECTION sqlite:///$PWD/ccdb.sqlite #$ccdbSQLITEPATH
         setenv JANA_CALIB_URL ${CCDB_CONNECTION}
 endif
 
 if ( "$rcdbSQLITEPATH" != "no_sqlite" ) then
         cp $rcdbSQLITEPATH ./rcdb.sqlite
-        setenv RCDB_CONNECTION sqlite:///$rcdbSQLITEPATH
+        setenv RCDB_CONNECTION sqlite:///$PWD/rcdb.sqlite #$rcdbSQLITEPATH
 endif
 
 echo ""
@@ -693,7 +693,7 @@ if ( "$GENR" != "0" ) then
 	    	sed -i 's/TEMPMINE/'$GEN_MIN_ENERGY'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 		else if ( "$BKGFOLDSTR" == "BeamPhotons" ) then
 	    	sed -i 's/TEMPMINE/0.0012/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
-		else if ( ("$BKGFOLDSTR" == "DEFAULT" || "$BKGFOLDSTR" == "Random") && "$BGTAGONLY_OPTION" == "0") then
+		else if ( ("$BKGFOLDSTR" == "DEFAULT" || "$BKGFOLDSTR" == "Random" || "$bkgloc_pre" == "loc:") && "$BGTAGONLY_OPTION" == "0") then
 	    	sed -i 's/BGRATE/cBGRATE/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	    	sed -i 's/BGGATE/cBGGATE/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	    	sed -i 's/TEMPMINE/'$GEN_MIN_ENERGY'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
@@ -744,12 +744,16 @@ if ( "$GENR" != "0" ) then
 				mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm'
 				set mcsmear_return_code=$status
 	    	else if ( "$BKGFOLDSTR" == "DEFAULT" || "$BKGFOLDSTR" == "Random" ) then
-				echo "mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
-				mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
+				set fold_skip_num=`echo "$FILE_NUMBER * $PER_FILE" | bc`
+				#set bkglocstring="/w/halld-scifs17exp/halld2/home/tbritton/MCwrapper_Development/converted.hddm"
+				echo "mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1""+"$fold_skip_num
+				mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1\+$fold_skip_num
 				set mcsmear_return_code=$status
 			else if ( "$bkgloc_pre" == "loc:" ) then
-				echo "mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
-				mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
+				set fold_skip_num=`echo "$FILE_NUMBER * $PER_FILE" | bc`
+				
+				echo "mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1""+"$fold_skip_num
+				mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1\+$fold_skip_num
 				set mcsmear_return_code=$status
 	    	else
 				#trust the user and use their string
@@ -805,7 +809,7 @@ if ( "$GENR" != "0" ) then
 				
 		   		hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' --config=jana_config.cfg -PNTHREADS=$NUMTHREADS
 				set hd_root_return_code=$status
-				echo "STATUS: " $hd_root_return_code
+				#echo "STATUS: " $hd_root_return_code
 				rm jana_config.cfg
 			else
 				
