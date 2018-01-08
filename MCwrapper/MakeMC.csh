@@ -164,11 +164,11 @@ if ( $CALIBTIME != "notime" ) then
 set variation=$variation":"$CALIBTIME
 endif
 
-set ccdbelece="`ccdb dump PHOTON_BEAM/endpoint_energy:${RUN_NUMBER}:${variation}`"
+set ccdbelece="`ccdb dump PHOTON_BEAM/endpoint_energy:${RUN_NUMBER}:${variation} | grep -v \#`"
 
-set ccdblist=($ccdbelece:as/ / /)
+#set ccdblist=($ccdbelece:as/ / /)
 
-set elecE_text=$ccdblist[$#ccdblist]
+set elecE_text="$ccdbelece" #$ccdblist[$#ccdblist]
 
 #echo "text: " $elecE_text
 
@@ -508,7 +508,7 @@ if ( "$GENR" != "0" ) then
     if ( "$GENERATOR" == "genr8" ) then
 		echo "RUNNING GENR8"
 		set RUNNUM=$formatted_runNumber+$formatted_fileNumber
-		sed -i 's/TEMPCOHERENT/'$COHERENT_PEAK'/' $STANDARD_NAME.conf
+		sed -i 's/TEMPMAXE/'$GEN_MAX_ENERGY'/' $STANDARD_NAME.conf
 		# RUN genr8 and convert
 		genr8 -r$formatted_runNumber -M$EVT_TO_GEN -A$STANDARD_NAME.ascii < $STANDARD_NAME.conf #$config_file_name
 		set generator_return_code=$status
