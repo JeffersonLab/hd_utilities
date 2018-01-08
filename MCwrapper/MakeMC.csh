@@ -179,7 +179,7 @@ else if ( $elecE_text == "Run" ) then
 else if ( $elecE_text == "-1.0" ) then
 	set elecE=12 #Should never happen
 else
-	set elecE=`echo $elecE_text`  #set elecE = `echo "$elecE_text / 1000" | bc -l ` #rcdb method
+	set elecE=`echo $elecE_text`  #set elecE = `echo "$elecE_text / 1000" | /usr/bin/bc -l ` #rcdb method
 endif
 
 set copeak = 0
@@ -192,11 +192,11 @@ else if ( $copeak_text == "Run" ) then
 else if ( $copeak_text == "-1.0" ) then
 	set copeak=0.0
 else
-	set copeak = `echo "$copeak_text / 1000" | bc -l `
+	set copeak = `echo "$copeak_text / 1000" | /usr/bin/bc -l `
 endif
 
 if ( "$polarization_angle" == "-1.0" ) then
-	#set copeak=`echo "$eBEAM_ENERGY + .5" | bc `
+	#set copeak=`echo "$eBEAM_ENERGY + .5" | /usr/bin/bc `
 	set copeak=0
 	setenv COHERENT_PEAK $copeak
 endif
@@ -233,7 +233,7 @@ if ( $beam_on_current == "" ) then
 	set beam_on_current=`rcnd $RUN_NUMBER beam_current | awk '{print $1}'`
 endif
 
-set beam_on_current=`echo "$beam_on_current / 1000." | bc -l`
+set beam_on_current=`echo "$beam_on_current / 1000." | /usr/bin/bc -l`
 
 if ( "$colsize" == "B" || "$colsize" == "R" || "$JANA_CALIB_CONTEXT" != "variation=mc" ) then
 	set colsize="50"
@@ -744,13 +744,13 @@ if ( "$GENR" != "0" ) then
 				mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm'
 				set mcsmear_return_code=$status
 	    	else if ( "$BKGFOLDSTR" == "DEFAULT" || "$BKGFOLDSTR" == "Random" ) then
-				set fold_skip_num=`echo "$FILE_NUMBER * $PER_FILE" | bc`
+				set fold_skip_num=`echo "$FILE_NUMBER * $PER_FILE" | /usr/bin/bc`
 				#set bkglocstring="/w/halld-scifs17exp/halld2/home/tbritton/MCwrapper_Development/converted.hddm"
 				echo "mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1""+"$fold_skip_num
 				mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1\+$fold_skip_num
 				set mcsmear_return_code=$status
 			else if ( "$bkgloc_pre" == "loc:" ) then
-				set fold_skip_num=`echo "$FILE_NUMBER * $PER_FILE" | bc`
+				set fold_skip_num=`echo "$FILE_NUMBER * $PER_FILE" | /usr/bin/bc`
 				
 				echo "mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1""+"$fold_skip_num
 				mcsmear -PTHREAD_TIMEOUT=300 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1\+$fold_skip_num

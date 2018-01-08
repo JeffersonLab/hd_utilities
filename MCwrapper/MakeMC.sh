@@ -197,7 +197,7 @@ elif [[ $copeak_text == "Run" ]]; then
 elif [[ $copeak_text == "-1.0" ]]; then
 	copeak=0.0 #for now add a smidge to the max electron e
 else
-	copeak=`echo "$copeak_text / 1000" | bc -l `
+	copeak=`echo "$copeak_text / 1000" | /usr/bin/bc -l `
 fi
 
 #echo $copeak
@@ -219,7 +219,7 @@ if [[ "$VERSION" != "mc" && "$eBEAM_ENERGY" == "rcdb" ]]; then
 fi
 
 if [[ "$polarization_angle" == "-1.0" ]]; then
-	copeak=`echo "$eBEAM_ENERGY + .5" | bc`
+	copeak=`echo "$eBEAM_ENERGY + .5" | /usr/bin/bc`
 	export COHERENT_PEAK=$copeak
 fi
 
@@ -230,7 +230,7 @@ echo "Run $RUN_NUMBER does not have a beam_on_current.  Defaulting to beam_curre
 beam_on_current=`rcnd $RUN_NUMBER beam_current | awk '{print $1}'`
 fi
 
-beam_on_current=`echo "$beam_on_current / 1000." | bc -l`
+beam_on_current=`echo "$beam_on_current / 1000." | /usr/bin/bc -l`
 
 colsize=`rcnd $RUN_NUMBER collimator_diameter | awk '{print $1}' | sed -r 's/.{2}$//' | sed -e 's/\.//g'`
 if [[ "$colsize" == "B" || "$colsize" == "R" || "$JANA_CALIB_CONTEXT" != "variation=mc" ]]; then
