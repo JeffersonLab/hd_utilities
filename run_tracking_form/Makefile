@@ -1,6 +1,6 @@
 RUN_ARG = $(shell echo $(RUN_START)+30\*\($*-1\) | bc)
 
-all: checklist_run
+all: clean checklist_run
 
 checklist_run: checklist_run_1.pdf checklist_run_2.pdf checklist_run_3.pdf \
 	checklist_run_4.pdf
