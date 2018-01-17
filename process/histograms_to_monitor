@@ -10,6 +10,7 @@ cdc_ped_vs_n
 cdc_windata_ped_vs_n
 # BCAL
 bcal_shower_plane
+deltaTVsCell
 # SC
 st_sec_adc_dhit
 st_pi_dhit
@@ -40,6 +41,9 @@ tagm_hit_seen
 tagm_hit_time
 tagm_adc_pint
 tagm_adc_mult
+tdc_adc_all
+t_adc_all
+adc_rf_all
 # TOF
 tofe
 toft
@@ -47,6 +51,7 @@ tofo1
 tofo2
 # RECONSTRUCTION
 NumGoodReconstructedParticles
+# LOW LEVEL
 f1tdc_unlocked
 f1tdc_bad_output_fifo
 f1tdc_bad_hit_fifo
