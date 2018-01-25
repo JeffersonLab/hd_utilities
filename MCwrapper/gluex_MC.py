@@ -610,7 +610,7 @@ def main(argv):
         if len(RunType) != 1 :
                 event_sum=0.
                 #Make python rcdb calls to form the vector
-                db = rcdb.RCDBProvider("mysql://rcdb@hallddb/rcdb")
+                db = rcdb.RCDBProvider("mysql://rcdb@hallddb.jlab.org/rcdb")
 
                 #dbhost = "hallddb.jlab.org"
                 #dbuser = 'datmon'
