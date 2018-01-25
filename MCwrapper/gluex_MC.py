@@ -291,8 +291,8 @@ def main(argv):
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         print "*********************************"
-        print "Welcome to v1.12 of the MCwrapper"
-        print "Thomas Britton 1/8/18"
+        print "Welcome to v1.13 of the MCwrapper"
+        print "Thomas Britton 1/25/18"
         print "*********************************"
 
 	#load all argument passed in and set default options
@@ -610,7 +610,7 @@ def main(argv):
         if len(RunType) != 1 :
                 event_sum=0.
                 #Make python rcdb calls to form the vector
-                db = rcdb.RCDBProvider("mysql://rcdb@hallddb/rcdb")
+                db = rcdb.RCDBProvider("mysql://rcdb@hallddb.jlab.org/rcdb")
 
                 #dbhost = "hallddb.jlab.org"
                 #dbuser = 'datmon'

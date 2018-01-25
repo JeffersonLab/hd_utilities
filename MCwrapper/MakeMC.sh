@@ -828,7 +828,7 @@ if [[ "$GENR" != "0" ]]; then
 			PluginStr=`echo $PluginStr | sed -r 's/.{1}$//'`
             echo "Running hd_root with: ""$PluginStr"
 			echo "hd_root ""$STANDARD_NAME"'_geant'"$GEANTVER"'_smeared.hddm'" -PPLUGINS=""$PluginStr ""-PNTHREADS=""$NUMTHREADS"
-			hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' -PPLUGINS=$PluginStr -PNTHREADS=$NUMTHREADS
+			hd_root ./$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' -PPLUGINS=$PluginStr -PNTHREADS=$NUMTHREADS -PTHREAD_TIMEOUT=300
 			hd_root_return_code=$?
 		fi
 		
