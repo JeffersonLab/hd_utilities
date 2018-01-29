@@ -518,7 +518,7 @@ if [[ "$GENR" != "0" ]]; then
 	# RUN genr8 and convert
 	genr8 -r$formatted_runNumber -M$EVT_TO_GEN -A$STANDARD_NAME.ascii < $STANDARD_NAME.conf #$config_file_name
 	generator_return_code=$?
-	genr8_2_hddm $STANDARD_NAME.ascii
+	genr8_2_hddm -V"0 0 50 80" $STANDARD_NAME.ascii
     elif [[ "$GENERATOR" == "bggen" ]]; then
 	RANDOMnum=`bash -c 'echo $RANDOM'`
 	echo "Random number used: "$RANDOMnum
