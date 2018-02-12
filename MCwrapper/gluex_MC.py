@@ -292,7 +292,7 @@ def main(argv):
 
         print "*********************************"
         print "Welcome to v1.13 of the MCwrapper"
-        print "Thomas Britton 1/29/18"
+        print "Thomas Britton 2/12/18"
         print "*********************************"
 
 	#load all argument passed in and set default options
@@ -364,8 +364,8 @@ def main(argv):
                 if line[0]=="#":
                        continue
 
-                parts=line.split("=")
-
+                parts=line.split("#")[0].split("=")
+                #print parts
                 if len(parts)==1:
                         #print "Warning! No Sets given"
                         continue
@@ -476,6 +476,8 @@ def main(argv):
                 elif str(parts[0]).upper()=="RUNNING_DIRECTORY" :
                         RUNNING_DIR=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="VARIATION":
+                        #print parts
+                        #print rm_comments
                         if ( len(parts)>2 ) :
                                 VERSION=str(parts[1]).split("calibtime")[0].split("#")[0].strip()
                                 CALIBTIME=str(parts[2]).split("#")[0].strip()

@@ -260,7 +260,8 @@ fi
 
 # PRINT INPUTS
 echo "Job started: " `date`
-echo "sqlite path: " $ccdbSQLITEPATH
+echo "ccdbsqlite path: " $ccdbSQLITEPATH $CCDB_CONNECTION
+echo "rcdbsqlite path: " $rcdbSQLITEPATH $RCDB_CONNECTION
 echo "Producing file number: "$FILE_NUMBER
 echo "Containing: " $EVT_TO_GEN"/""$PER_FILE"" events"
 echo "Running location:" $RUNNING_DIR

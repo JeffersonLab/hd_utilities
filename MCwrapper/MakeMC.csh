@@ -261,7 +261,8 @@ endif
 
 # PRINT INPUTS
 echo "Job started: " `date`
-echo "ccdb sqlite path: " $ccdbSQLITEPATH
+echo "ccdb sqlite path: " $ccdbSQLITEPATH $CCDB_CONNECTION
+echo "rcdb sqlite path: " $rcdbSQLITEPATH $RCDB_CONNECTION
 echo "Producing file number: "$FILE_NUMBER
 echo "Containing: " $EVT_TO_GEN"/""$PER_FILE"" events"
 echo "Running location:" $RUNNING_DIR
