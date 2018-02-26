@@ -140,10 +140,10 @@ else
 				radthick="30e-6"
 				break
 			else	
-			removedum=`echo $word | sed 's/um/ /g'`
-			if [[ $removedum != $word ]]; then
-				radthick=`echo "$removedum e-6" | tr -d '[:space:]'`
-			fi
+				removedum=`echo $word | sed 's/um/ /g'`
+				if [[ $removedum != $word ]]; then
+					radthick=`echo "$removedum e-6" | tr -d '[:space:]'`
+				fi
 			fi
 		fi
 	done
