@@ -11,9 +11,9 @@
 # Author: Richard.T.Jones at uconn.edu
 # Version: June 8, 2017
 
-container="/cvmfs/singularity.opensciencegrid.org/rjones30/gluex:latest"
+container="/cvmfs/singularity.opensciencegrid.org/markito3/gluex_docker_devel:latest"
 #oasismount="/cvmfs/oasis.opensciencegrid.org"
-oasismount="/cvmfs"
+oasismount="/cvmfs/oasis.opensciencegrid.org/gluex/group:/group"
 dockerimage="docker://rjones30/gluex:latest"
 userproxy=x509up_u$UID
 
