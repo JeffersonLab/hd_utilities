@@ -106,15 +106,20 @@ endif
 
 cd $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
 
-if ( "$ccdbSQLITEPATH" != "no_sqlite" ) then
-        cp $ccdbSQLITEPATH ./ccdb.sqlite
-        setenv CCDB_CONNECTION sqlite:///$PWD/ccdb.sqlite #$ccdbSQLITEPATH
-        setenv JANA_CALIB_URL ${CCDB_CONNECTION}
+if ( "$ccdbSQLITEPATH" != "no_sqlite" && "$ccdbSQLITEPATH" != "batch_default" ) then
+    cp $ccdbSQLITEPATH ./ccdb.sqlite
+    setenv CCDB_CONNECTION sqlite:///$PWD/ccdb.sqlite
+    setenv JANA_CALIB_URL ${CCDB_CONNECTION}
+else if ( "$ccdbSQLITEPATH" == "batch_default" ) then
+    setenv CCDB_CONNECTION sqlite:////group/halld/www/halldweb/html/dist/ccdb.sqlite
+    setenv JANA_CALIB_URL ${CCDB_CONNECTION}
 endif
 
-if ( "$rcdbSQLITEPATH" != "no_sqlite" ) then
-        cp $rcdbSQLITEPATH ./rcdb.sqlite
-        setenv RCDB_CONNECTION sqlite:///$PWD/rcdb.sqlite #$rcdbSQLITEPATH
+if ( "$rcdbSQLITEPATH" != "no_sqlite" && "$rcdbSQLITEPATH" != "batch_default" ) then
+    cp $rcdbSQLITEPATH ./rcdb.sqlite
+    setenv RCDB_CONNECTION sqlite:///$PWD/rcdb.sqlite
+else if ( "$rcdbSQLITEPATH" == "batch_default" ) then
+    setenv RCDB_CONNECTION sqlite:////group/halld/www/halldweb/html/dist/rcdb.sqlite 
 endif
 
 echo ""

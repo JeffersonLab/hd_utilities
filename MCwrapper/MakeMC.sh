@@ -110,15 +110,20 @@ fi
 
 cd $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
 
-if [[ "$ccdbSQLITEPATH" != "no_sqlite" ]]; then
-        cp $ccdbSQLITEPATH ./ccdb.sqlite
-        export CCDB_CONNECTION=sqlite:///$PWD/ccdb.sqlite
-        export JANA_CALIB_URL=$CCDB_CONNECTION
+if [[ "$ccdbSQLITEPATH" != "no_sqlite" && "$ccdbSQLITEPATH" != "batch_default" ]]; then
+    cp $ccdbSQLITEPATH ./ccdb.sqlite
+    export CCDB_CONNECTION=sqlite:///$PWD/ccdb.sqlite
+    export JANA_CALIB_URL=$CCDB_CONNECTION
+elif [[ "$ccdbSQLITEPATH" == "batch_default" ]]; then
+    export CCDB_CONNECTION sqlite:////group/halld/www/halldweb/html/dist/ccdb.sqlite
+    export JANA_CALIB_URL ${CCDB_CONNECTION}
 fi
 
-if [[ "$rcdbSQLITEPATH" != "no_sqlite" ]]; then
-        cp $rcdbSQLITEPATH ./rcdb.sqlite
-        export RCDB_CONNECTION=sqlite:///$PWD/rcdb.sqlite
+if [[ "$rcdbSQLITEPATH" != "no_sqlite" && "$rcdbSQLITEPATH" != "batch_default" ]]; then
+    cp $rcdbSQLITEPATH ./rcdb.sqlite
+    export RCDB_CONNECTION=sqlite:///$PWD/rcdb.sqlite
+elif [[ "$rcdbSQLITEPATH" == "batch_default" ]]; then
+    export RCDB_CONNECTION sqlite:////group/halld/www/halldweb/html/dist/rcdb.sqlite
 fi
 
 echo ""

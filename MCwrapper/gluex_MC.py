@@ -190,13 +190,13 @@ def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DAT
                 additional_passins+=COMMAND_parts[28][5:]+", "
                 COMMAND_parts[28]="file:/srv/"+janaconfig_to_use
 
-        if COMMAND_parts[31] != "no_sqlite" :
+        if COMMAND_parts[31] != "no_sqlite" and COMMAND_parts[31] != "batch_default":
                 ccdbsqlite_parts=COMMAND_parts[31].split("/")
                 ccdbsqlite_to_use=ccdbsqlite_parts[len(ccdbsqlite_parts)-1]
                 additional_passins+=COMMAND_parts[31]+", "
                 COMMAND_parts[31]="/srv/"+ccdbsqlite_to_use
 
-        if COMMAND_parts[32] != "no_sqlite" :
+        if COMMAND_parts[32] != "no_sqlite" and COMMAND_parts[32] != "batch_default":
                 rcdbsqlite_parts=COMMAND_parts[32].split("/")
                 rcdbsqlite_to_use=rcdbsqlite_parts[len(rcdbsqlite_parts)-1]
                 additional_passins+=COMMAND_parts[32]+", "
@@ -247,7 +247,8 @@ def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DAT
 
         status = subprocess.call(mkdircom, shell=True)
         status = subprocess.call(add_command, shell=True)
-        status = subprocess.call("rm MCOSG.submit", shell=True)
+        #status = subprocess.call("rm MCOSG.submit", shell=True)
+        exit(1)
 
 
 def showhelp():
@@ -582,7 +583,6 @@ def main(argv):
 	indir=os.environ.get('MCWRAPPER_CENTRAL')
         
         script_to_use = "/MakeMC.csh"
-        #script_to_use = "/MakeHelloWorld.csh"
         
         if environ['SHELL']=="/bin/bash" or ( BATCHSYS.upper() == "OSG" and int(BATCHRUN) != 0) :
                 script_to_use = "/MakeMC.sh"
@@ -591,6 +591,10 @@ def main(argv):
 
         if len(CUSTOM_MAKEMC)!= 0 and CUSTOM_MAKEMC != "DEFAULT":
                 indir=CUSTOM_MAKEMC
+
+        if (BATCHSYS.upper() == "OSG" or BATCHSYS.upper() == "SWIF") and int(BATCHRUN) != 0:
+                ccdbSQLITEPATH="batch_default"
+                rcdbSQLITEPATH="batch_default"
 
         if str(indir) == "None":
                 print "MCWRAPPER_CENTRAL not set"
