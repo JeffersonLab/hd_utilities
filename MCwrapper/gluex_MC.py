@@ -219,7 +219,7 @@ def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DAT
         #f.write("Arguments  = "+indir+" "+COMMAND+"\n")
         f.write("Arguments  = "+"./"+script_to_use+" "+modified_COMMAND+"\n")
         f.write("Requirements = (HAS_SINGULARITY == TRUE) && (HAS_CVMFS_oasis_opensciencegrid_org == True)"+"\n") 
-        f.write('+SingularityImage = "/cvmfs/singularity.opensciencegrid.org/rjones30/gluex:latest"'+"\n") 
+        f.write('+SingularityImage = "/cvmfs/singularity.opensciencegrid.org/markito3/gluex_docker_devel:latest"'+"\n") 
         f.write('+SingularityBindCVMFS = True'+"\n") 
         f.write('+SingularityAutoLoad = True'+"\n") 
         f.write('should_transfer_files = YES'+"\n")
@@ -292,7 +292,7 @@ def main(argv):
 
         print "*********************************"
         print "Welcome to v1.13 of the MCwrapper"
-        print "Thomas Britton 2/12/18"
+        print "Thomas Britton 3/01/18"
         print "*********************************"
 
 	#load all argument passed in and set default options
@@ -584,7 +584,7 @@ def main(argv):
         script_to_use = "/MakeMC.csh"
         #script_to_use = "/MakeHelloWorld.csh"
         
-        if environ['SHELL']=="/bin/bash" :
+        if environ['SHELL']=="/bin/bash" or ( BATCHSYS.upper() == "OSG" and int(BATCHRUN) != 0) :
                 script_to_use = "/MakeMC.sh"
         
         indir+=script_to_use
