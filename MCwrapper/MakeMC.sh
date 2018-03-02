@@ -82,6 +82,10 @@ shift
 export RADIATOR_THICKNESS=$1
 shift
 export BGRATE=$1
+shift
+export RANDBGTAG=$1
+shift
+export RECON_CALIBTIME=$1
 
 #printenv
 #necessary to run swif, uses local directory if swif=0 is used
@@ -273,6 +277,7 @@ echo "Running location:" $RUNNING_DIR
 echo "Output location: "$OUTDIR
 echo "Environment file: " $ENVIRONMENT
 echo "Context: "$JANA_CALIB_CONTEXT
+echo "Reconstruction calibtime: "$RECON_CALIBTIME
 echo "Run Number: "$RUN_NUMBER
 echo "Electron beam current to use: "$beam_on_current" uA"
 echo "Electron beam energy to use: "$eBEAM_ENERGY" GeV"
@@ -288,8 +293,9 @@ echo "Run geant step? "$GEANT"  Will be cleaned?" $CLEANGEANT
 echo "Using geant"$GEANTVER
 echo "Custom Gcontrol?" "$CUSTOM_GCONTROL"
 echo "Background to use: "$BKGFOLDSTR
+echo "Random trigger background to use: "$RANDBGTAG
 echo "BGRATE will be set to: "$BGRATE_toUse" GHz (if applicable)"
-echo "Run mcsmear ? "$SMEAR"  Will be cleaned?" $CLEANSMEAR
+echo "Run mcsmear? "$SMEAR"  Will be cleaned?" $CLEANSMEAR
 echo "----------------------------------------------"
 echo "Run reconstruction? "$RECON"  Will be cleaned?" $CLEANRECON
 echo "With additional plugins: "$CUSTOM_PLUGINS
@@ -835,6 +841,11 @@ if [[ "$GENR" != "0" ]]; then
 
 	    if [[ "$RECON" != "0" ]]; then
 		echo "RUNNING RECONSTRUCTION"
+
+		if [[ "$RECON_CALIBTIME" != "notime" ]]; then
+				reconwholecontext="variation=$VERSION calibtime=$RECON_CALIBTIME"
+				export JANA_CALIB_CONTEXT="$reconwholecontext"
+		fi
 
 		if [[ "$recon_pre" == "file" ]]; then
 			echo "using config file: "$jana_config_file

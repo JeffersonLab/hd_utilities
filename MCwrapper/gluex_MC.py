@@ -322,6 +322,7 @@ def main(argv):
 
         GEANTVER = 4        
         BGFOLD="DEFAULT"
+        RANDBGTAG="none"
 
         CUSTOM_MAKEMC="DEFAULT"
         CUSTOM_GCONTROL="0"
@@ -344,6 +345,7 @@ def main(argv):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         VERSION  = "mc"
         CALIBTIME="notime"
+        RECON_CALIBTIME="notime"
         BASEFILENUM=0
 	PERFILE=10000
 	GENR=1
@@ -446,6 +448,8 @@ def main(argv):
                                                 BGRATE=subparts[1]
                                 elif subparts[0].upper() == "RANDOM" or subparts[0].upper() == "DEFAULT":
                                         BGFOLD=subparts[0]
+                                        if len(subparts)==2:
+                                                RANDBGTAG=subparts[1]
                                 else:
                                         BGFOLD=part
 
@@ -476,6 +480,8 @@ def main(argv):
                                 QUEUENAME=batch_sys_parts[1]
                 elif str(parts[0]).upper()=="RUNNING_DIRECTORY" :
                         RUNNING_DIR=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="RECON_CALIBTIME" :
+                        RECON_CALIBTIME=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="VARIATION":
                         #print parts
                         #print rm_comments
@@ -687,7 +693,7 @@ def main(argv):
                                 if num_this_file == 0:
 			                continue
 
-		                COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(runs[0])+" "+str(BASEFILENUM+FILENUM_this_run+-1)+" "+str(num_this_file)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(ccdbSQLITEPATH)+" "+str(rcdbSQLITEPATH)+" "+str(BGTAGONLY)+" "+str(RADIATOR_THICKNESS)+" "+str(BGRATE)
+		                COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(runs[0])+" "+str(BASEFILENUM+FILENUM_this_run+-1)+" "+str(num_this_file)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(ccdbSQLITEPATH)+" "+str(rcdbSQLITEPATH)+" "+str(BGTAGONLY)+" "+str(RADIATOR_THICKNESS)+" "+str(BGRATE)+" "+str(RANDBGTAG)+" "+str(RECON_CALIBTIME)
                                 if BATCHRUN == 0 or BATCHSYS=="NULL":
                                         #print str(runs[0])+" "+str(BASEFILENUM+FILENUM_this_run+-1)+" "+str(num_this_file)
         			        os.system(str(indir)+" "+COMMAND)
@@ -715,7 +721,7 @@ def main(argv):
 		        if num == 0:
 			        continue
                 
-		        COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(RUNNUM)+" "+str(BASEFILENUM+FILENUM+-1)+" "+str(num)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(ccdbSQLITEPATH)+" "+str(rcdbSQLITEPATH)+" "+str(BGTAGONLY)+" "+str(RADIATOR_THICKNESS)+" "+str(BGRATE)
+		        COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(RUNNUM)+" "+str(BASEFILENUM+FILENUM+-1)+" "+str(num)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(ccdbSQLITEPATH)+" "+str(rcdbSQLITEPATH)+" "+str(BGTAGONLY)+" "+str(RADIATOR_THICKNESS)+" "+str(BGRATE)+" "+str(RANDBGTAG)+" "+str(RECON_CALIBTIME)
                
 	                #print COMMAND
 		        #either call MakeMC.csh or add a job depending on swif flag
