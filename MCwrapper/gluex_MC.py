@@ -153,7 +153,7 @@ def  condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, 
         status = subprocess.call(add_command, shell=True)
         status = subprocess.call("rm MCcondor.submit", shell=True)
 
-def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR ):
+def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR, RANDBGTAG ):
         STUBNAME = str(RUNNUM) + "_" + str(FILENUM)
 	JOBNAME = WORKFLOW + "_" + STUBNAME
 
@@ -183,6 +183,29 @@ def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DAT
                 gen_config_to_use=gen_config_parts[len(gen_config_parts)-1]
                 additional_passins+=COMMAND_parts[2]+", "
                 COMMAND_parts[2]="/srv/"+gen_config_to_use
+
+        if COMMAND_parts[21] == "Random" or COMMAND_parts[21][:4] == "loc:":
+                print "here"
+                print RANDBGTAG
+                formattedRUNNUM=""
+                for i in range(len(RUNNUM),6):
+                        formattedRUNNUM+="0"
+                formattedRUNNUM=formattedRUNNUM+RUNNUM
+                if COMMAND_parts[21] == "Random":
+                        #print "/cache/halld/Simulation/random_triggers/"+RANDBGTAG+"/run"+formattedRUNNUM+"_random.hddm"
+                        additional_passins+="/cache/halld/gluex_simulations/random_triggers/"+RANDBGTAG+"/run"+formattedRUNNUM+"_random.hddm"+", "
+                elif COMMAND_parts[21][:4] == "loc:":
+                        #print COMMAND_parts[21][4:]
+                        additional_passins+=COMMAND_parts[21][4:]+"/run"+formattedRUNNUM+"_random.hddm"+", "
+
+
+                #exit(1)
+                #BKG_parts=COMMAND_parts[21].split(":")
+                #if len(BKG_parts) == 2:
+                
+                #janaconfig_to_use=janaconfig_parts[len(janaconfig_parts)-1]
+                #additional_passins+="/cache/halld/Simulation/random_triggers/"+RANDBGTAG+"/run$formatted_runNumber""_random.hddm"+", "
+                #COMMAND_parts[28]="/srv/"+RandomBKGtouse
 
         if COMMAND_parts[28] != "None" and COMMAND_parts[28][:5]=="file:" :
                 janaconfig_parts=COMMAND_parts[28].split("/")
@@ -293,7 +316,7 @@ def main(argv):
 
         print "*********************************"
         print "Welcome to v1.13 of the MCwrapper"
-        print "Thomas Britton 3/01/18"
+        print "Thomas Britton 3/05/18"
         print "*********************************"
 
 	#load all argument passed in and set default options
@@ -705,7 +728,7 @@ def main(argv):
                                         elif BATCHSYS.upper()=="CONDOR":
                                                 condor_add_job(VERBOSE, WORKFLOW, runs[0], BASEFILENUM+FILENUM_this_run+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR )
                                         elif BATCHSYS.upper()=="OSG":
-                                                OSG_add_job(VERBOSE, WORKFLOW, runs[0], BASEFILENUM+FILENUM_this_run+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR )
+                                                OSG_add_job(VERBOSE, WORKFLOW, runs[0], BASEFILENUM+FILENUM_this_run+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR, RANDBGTAG )
                         #print "----------------"
                 
         else:
@@ -735,7 +758,7 @@ def main(argv):
                                 elif BATCHSYS.upper()=="CONDOR":
                                         condor_add_job(VERBOSE, WORKFLOW, RUNNUM, BASEFILENUM+FILENUM+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR )
                                 elif BATCHSYS.upper()=="OSG":
-                                        OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, BASEFILENUM+FILENUM+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR )
+                                        OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, BASEFILENUM+FILENUM+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR, RANDBGTAG )
 
                                         
         if BATCHRUN == 1 and BATCHSYS.upper() == "SWIF":

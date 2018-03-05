@@ -398,9 +398,14 @@ if ( "$BKGFOLDSTR" == "DEFAULT" || "$bkgloc_pre" == "loc:" || "$BKGFOLDSTR" == "
 	
 	if ( "$bkgloc_pre" == "loc:" ) then
 		set rand_bkg_loc=`echo $BKGFOLDSTR | cut -c 5-`
-    	set bkglocstring=$rand_bkg_loc"/run$formatted_runNumber""_random.hddm"
+    	set bkglocstring=$rand_bkg_loc"/$RANDBGTAG""/run$formatted_runNumber""_random.hddm"
 	else
-    	set bkglocstring="/cache/halld/""$runperiod""/sim/random_triggers/""run$formatted_runNumber""_random.hddm"
+		#set bkglocstring="/cache/halld/""$runperiod""/sim/random_triggers/""run$formatted_runNumber""_random.hddm"
+		if ( "$BATCHSYS" == "OSG )
+			set	bkglocstring="/srv/run$formatted_runNumber""_random.hddm"
+    	else
+			set bkglocstring="/cache/halld/gluex_simulations/random_triggers/""$RANDBGTAG""/run$formatted_runNumber""_random.hddm"
+		endif
 	endif
 	
     if ( ! -f $bkglocstring ) then
@@ -442,6 +447,17 @@ if ( "$GENR" != "0" ) then
 		endif
 	else if ( "$GENERATOR" == "particle_gun" ) then
 		echo "bypassing generation" 
+		if ( ! -f $CONFIG_FILE ) then
+			echo $CONFIG_FILE" not found"
+			exit 1
+		else
+			if ( `grep KINE $CONFIG_FILE | awk '{print $2}' ` < 100 && ` grep KINE $CONFIG_FILE | wc -w` > 3 ) then
+				echo "ERROR THETA AND PHI APPEAR TO BE SET BUT WILL BE IGNORED.  PLEASE REMOVE THESE SETTINGS FROM:"$CONFIG_FILE" AND RESUBMIT."
+				exit 1
+			else if ( `grep KINE $CONFIG_FILE | awk '{print $2}' ` > 100 && ` grep KINE $CONFIG_FILE | wc -w` < 8 ) then
+				echo "ERROR THETA AND PHI DON'T APPEAR TO BE SET BUT ARE GOING TO BE USED. PLEASE ADD THESE SETTINGS FROM: "$CONFIG_FILE" AND RESUBMIT."
+				exit 1
+			endif
 		set generator_return_code=0
     else 
 		if ( -f $CONFIG_FILE ) then
