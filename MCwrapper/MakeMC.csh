@@ -377,7 +377,7 @@ set bkglocstring=""
 set bkgloc_pre=`echo $BKGFOLDSTR | cut -c 1-4`
 echo $BKGFOLDSTR
 if ( "$BKGFOLDSTR" == "DEFAULT" || "$bkgloc_pre" == "loc:" || "$BKGFOLDSTR" == "Random" ) then
-   #find file and run:1
+    #find file and run:1
     echo "Finding the right file to fold in during MCsmear step"
     set runperiod="RunPeriod-2018-01"
 
@@ -401,10 +401,10 @@ if ( "$BKGFOLDSTR" == "DEFAULT" || "$bkgloc_pre" == "loc:" || "$BKGFOLDSTR" == "
     	set bkglocstring=$rand_bkg_loc"/$RANDBGTAG""/run$formatted_runNumber""_random.hddm"
 	else
 		#set bkglocstring="/cache/halld/""$runperiod""/sim/random_triggers/""run$formatted_runNumber""_random.hddm"
-		if ( "$BATCHSYS" == "OSG )
+		if ( "$BATCHSYS" == "OSG" && $BATCHRUN != 0 ) then
 			set	bkglocstring="/srv/run$formatted_runNumber""_random.hddm"
     	else
-			set bkglocstring="/cache/halld/gluex_simulations/random_triggers/""$RANDBGTAG""/run$formatted_runNumber""_random.hddm"
+			set bkglocstring="/cache/halld/gluex_simulations/random_triggers/"$RANDBGTAG"/run"$formatted_runNumber"_random.hddm"
 		endif
 	endif
 	
