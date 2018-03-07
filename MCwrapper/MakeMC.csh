@@ -375,7 +375,7 @@ endif
 
 set bkglocstring=""
 set bkgloc_pre=`echo $BKGFOLDSTR | cut -c 1-4`
-echo $BKGFOLDSTR
+
 if ( "$BKGFOLDSTR" == "DEFAULT" || "$bkgloc_pre" == "loc:" || "$BKGFOLDSTR" == "Random" ) then
     #find file and run:1
     echo "Finding the right file to fold in during MCsmear step"
@@ -427,6 +427,7 @@ endif
 set gen_pre=""
 
 if ( "$GENR" != "0" ) then
+
     set gen_pre=`echo $GENERATOR | cut -c1-4`
     if ( "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" && "$GENERATOR" != "gen_omega_3pi" && "$GENERATOR" != "gen_2k" && "$GENERATOR" != "bggen_jpsi" && "$GENERATOR" != "gen_ee" && "$GENERATOR" != "gen_ee_hb" && "$GENERATOR" != "particle_gun" && "$GENERATOR" != "bggen_phi_ee" ) then
 		echo "NO VALID GENERATOR GIVEN"
@@ -458,6 +459,7 @@ if ( "$GENR" != "0" ) then
 				echo "ERROR THETA AND PHI DON'T APPEAR TO BE SET BUT ARE GOING TO BE USED. PLEASE ADD THESE SETTINGS FROM: "$CONFIG_FILE" AND RESUBMIT."
 				exit 1
 			endif
+		endif
 		set generator_return_code=0
     else 
 		if ( -f $CONFIG_FILE ) then
@@ -469,7 +471,7 @@ if ( "$GENR" != "0" ) then
 	    	exit 1
     	endif
     endif
-
+	echo $GENERATOR
     if ( "$GENERATOR" == "genr8" ) then
 		echo "configuring genr8"
 		set STANDARD_NAME="genr8_"$STANDARD_NAME
