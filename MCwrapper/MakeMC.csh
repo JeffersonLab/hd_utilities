@@ -398,7 +398,11 @@ if ( "$BKGFOLDSTR" == "DEFAULT" || "$bkgloc_pre" == "loc:" || "$BKGFOLDSTR" == "
 	
 	if ( "$bkgloc_pre" == "loc:" ) then
 		set rand_bkg_loc=`echo $BKGFOLDSTR | cut -c 5-`
-    	set bkglocstring=$rand_bkg_loc"/$RANDBGTAG""/run$formatted_runNumber""_random.hddm"
+		 if ( "$BATCHSYS" == "OSG" && $BATCHRUN != 0 ) then
+                        set     bkglocstring="/srv/run$formatted_runNumber""_random.hddm"
+		 else
+		    set bkglocstring=$rand_bkg_loc"/$RANDBGTAG""/run$formatted_runNumber""_random.hddm"
+		 endif
 	else
 		#set bkglocstring="/cache/halld/""$runperiod""/sim/random_triggers/""run$formatted_runNumber""_random.hddm"
 		if ( "$BATCHSYS" == "OSG" && $BATCHRUN != 0 ) then

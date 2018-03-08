@@ -119,15 +119,15 @@ if [[ "$ccdbSQLITEPATH" != "no_sqlite" && "$ccdbSQLITEPATH" != "batch_default" ]
     export CCDB_CONNECTION=sqlite:///$PWD/ccdb.sqlite
     export JANA_CALIB_URL=$CCDB_CONNECTION
 elif [[ "$ccdbSQLITEPATH" == "batch_default" ]]; then
-    export CCDB_CONNECTION sqlite:////group/halld/www/halldweb/html/dist/ccdb.sqlite
-    export JANA_CALIB_URL ${CCDB_CONNECTION}
+    export CCDB_CONNECTION=sqlite:////group/halld/www/halldweb/html/dist/ccdb.sqlite
+    export JANA_CALIB_URL=${CCDB_CONNECTION}
 fi
 
 if [[ "$rcdbSQLITEPATH" != "no_sqlite" && "$rcdbSQLITEPATH" != "batch_default" ]]; then
     cp $rcdbSQLITEPATH ./rcdb.sqlite
     export RCDB_CONNECTION=sqlite:///$PWD/rcdb.sqlite
 elif [[ "$rcdbSQLITEPATH" == "batch_default" ]]; then
-    export RCDB_CONNECTION sqlite:////group/halld/www/halldweb/html/dist/rcdb.sqlite
+    export RCDB_CONNECTION=sqlite:////group/halld/www/halldweb/html/dist/rcdb.sqlite
 fi
 
 echo ""
@@ -198,13 +198,13 @@ fi
 
 copeak=0
 copeak_text=`rcnd $RUN_NUMBER coherent_peak | awk '{print $1}'`
-
+echo $copeak_text
 if [[ "$COHERENT_PEAK" != "rcdb" || "$VERSION" != "mc" ]]; then
     copeak=$COHERENT_PEAK
 elif [[ $copeak_text == "Run" ]]; then
 	copeak=9
 elif [[ $copeak_text == "-1.0" ]]; then
-	copeak=0.0 #for now add a smidge to the max electron e
+	copeak=0.0
 else
 	copeak=`echo "$copeak_text / 1000" | /usr/bin/bc -l `
 fi
@@ -228,8 +228,9 @@ if [[ "$VERSION" != "mc" && "$eBEAM_ENERGY" == "rcdb" ]]; then
 fi
 
 if [[ "$polarization_angle" == "-1.0" ]]; then
-	copeak=`echo "$eBEAM_ENERGY + .5" | /usr/bin/bc`
-	export COHERENT_PEAK=$copeak
+	#copeak=`echo "$eBEAM_ENERGY + .5" | /usr/bin/bc`
+    copeak=0
+    export COHERENT_PEAK=$copeak
 fi
 
 beam_on_current=`rcnd $RUN_NUMBER beam_on_current | awk '{print $1}'`
@@ -398,10 +399,14 @@ if [[ "$BKGFOLDSTR" == "DEFAULT" || "$bkgloc_pre" == "loc:" || "$BKGFOLDSTR" == 
 
 			if [[ "$bkgloc_pre" == "loc:" ]]; then
 			rand_bkg_loc=`echo $BKGFOLDSTR | cut -c 5-`
- 		   	bkglocstring=$rand_bkg_loc"/run$formatted_runNumber""_random.hddm"
+ 		   	if [[ "$BATCHSYS" == "OSG" && $BATCHRUN != 0 ]]; then
+					bkglocstring="/srv""/run$formatted_runNumber""_random.hddm"
+				else
+			    bkglocstring=$rand_bkg_loc"/run$formatted_runNumber""_random.hddm"
+			    fi
 			else
 		    #bkglocstring="/cache/halld/""$runperiod""/sim/random_triggers/""run$formatted_runNumber""_random.hddm"
-				if [[ "$BATCHSYS" == "OSG" && $BATCHRUN != 0 ]]; then
+			    if [[ "$BATCHSYS" == "OSG" && $BATCHRUN != 0 ]]; then
 					bkglocstring="/srv""/run$formatted_runNumber""_random.hddm"
 				else
 		    		bkglocstring="/cache/halld/gluex_simulations/random_triggers/"$RANDBGTAG"/run"$formatted_runNumber"_random.hddm"
@@ -459,7 +464,7 @@ if [[ "$GENR" != "0" ]]; then
 			if [[ `grep KINE $CONFIG_FILE | awk '{print $2}' ` < 100 && ` grep KINE $CONFIG_FILE | wc -w` > 3 ]]; then
 				echo "ERROR THETA AND PHI APPEAR TO BE SET BUT WILL BE IGNORED.  PLEASE REMOVE THESE SETTINGS FROM:"$CONFIG_FILE" AND RESUBMIT."
 				exit 1
-			else if [[ `grep KINE $CONFIG_FILE | awk '{print $2}' ` > 100 && ` grep KINE $CONFIG_FILE | wc -w` < 8 ]]; then
+			elif [[ `grep KINE $CONFIG_FILE | awk '{print $2}' ` > 100 && ` grep KINE $CONFIG_FILE | wc -w` < 8 ]]; then
 				echo "ERROR THETA AND PHI DON'T APPEAR TO BE SET BUT ARE GOING TO BE USED. PLEASE ADD THESE SETTINGS FROM: "$CONFIG_FILE" AND RESUBMIT."
 				exit 1
 			fi
