@@ -185,8 +185,6 @@ def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DAT
                 COMMAND_parts[2]="/srv/"+gen_config_to_use
 
         if COMMAND_parts[21] == "Random" or COMMAND_parts[21][:4] == "loc:":
-                print "here"
-                print RANDBGTAG
                 formattedRUNNUM=""
                 for i in range(len(RUNNUM),6):
                         formattedRUNNUM+="0"
@@ -270,8 +268,8 @@ def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DAT
 
         status = subprocess.call(mkdircom, shell=True)
         status = subprocess.call(add_command, shell=True)
-        #status = subprocess.call("rm MCOSG.submit", shell=True)
-        exit(1)
+        status = subprocess.call("rm MCOSG.submit", shell=True)
+        
 
 
 def showhelp():
@@ -746,7 +744,6 @@ def main(argv):
                 
 		        COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(RUNNUM)+" "+str(BASEFILENUM+FILENUM+-1)+" "+str(num)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(ccdbSQLITEPATH)+" "+str(rcdbSQLITEPATH)+" "+str(BGTAGONLY)+" "+str(RADIATOR_THICKNESS)+" "+str(BGRATE)+" "+str(RANDBGTAG)+" "+str(RECON_CALIBTIME)
                
-	                #print COMMAND
 		        #either call MakeMC.csh or add a job depending on swif flag
                         if BATCHRUN == 0 or BATCHSYS=="NULL":
         			os.system(str(indir)+" "+COMMAND)
