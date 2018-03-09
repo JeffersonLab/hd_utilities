@@ -153,7 +153,7 @@ def  condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, 
         status = subprocess.call(add_command, shell=True)
         status = subprocess.call("rm MCcondor.submit", shell=True)
 
-def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR ):
+def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR, RANDBGTAG ):
         STUBNAME = str(RUNNUM) + "_" + str(FILENUM)
 	JOBNAME = WORKFLOW + "_" + STUBNAME
 
@@ -184,19 +184,40 @@ def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DAT
                 additional_passins+=COMMAND_parts[2]+", "
                 COMMAND_parts[2]="/srv/"+gen_config_to_use
 
+        if COMMAND_parts[21] == "Random" or COMMAND_parts[21][:4] == "loc:":
+                formattedRUNNUM=""
+                for i in range(len(RUNNUM),6):
+                        formattedRUNNUM+="0"
+                formattedRUNNUM=formattedRUNNUM+RUNNUM
+                if COMMAND_parts[21] == "Random":
+                        #print "/cache/halld/Simulation/random_triggers/"+RANDBGTAG+"/run"+formattedRUNNUM+"_random.hddm"
+                        additional_passins+="/cache/halld/gluex_simulations/random_triggers/"+RANDBGTAG+"/run"+formattedRUNNUM+"_random.hddm"+", "
+                elif COMMAND_parts[21][:4] == "loc:":
+                        #print COMMAND_parts[21][4:]
+                        additional_passins+=COMMAND_parts[21][4:]+"/run"+formattedRUNNUM+"_random.hddm"+", "
+
+
+                #exit(1)
+                #BKG_parts=COMMAND_parts[21].split(":")
+                #if len(BKG_parts) == 2:
+                
+                #janaconfig_to_use=janaconfig_parts[len(janaconfig_parts)-1]
+                #additional_passins+="/cache/halld/Simulation/random_triggers/"+RANDBGTAG+"/run$formatted_runNumber""_random.hddm"+", "
+                #COMMAND_parts[28]="/srv/"+RandomBKGtouse
+
         if COMMAND_parts[28] != "None" and COMMAND_parts[28][:5]=="file:" :
                 janaconfig_parts=COMMAND_parts[28].split("/")
                 janaconfig_to_use=janaconfig_parts[len(janaconfig_parts)-1]
                 additional_passins+=COMMAND_parts[28][5:]+", "
                 COMMAND_parts[28]="file:/srv/"+janaconfig_to_use
 
-        if COMMAND_parts[31] != "no_sqlite" :
+        if COMMAND_parts[31] != "no_sqlite" and COMMAND_parts[31] != "batch_default":
                 ccdbsqlite_parts=COMMAND_parts[31].split("/")
                 ccdbsqlite_to_use=ccdbsqlite_parts[len(ccdbsqlite_parts)-1]
                 additional_passins+=COMMAND_parts[31]+", "
                 COMMAND_parts[31]="/srv/"+ccdbsqlite_to_use
 
-        if COMMAND_parts[32] != "no_sqlite" :
+        if COMMAND_parts[32] != "no_sqlite" and COMMAND_parts[32] != "batch_default":
                 rcdbsqlite_parts=COMMAND_parts[32].split("/")
                 rcdbsqlite_to_use=rcdbsqlite_parts[len(rcdbsqlite_parts)-1]
                 additional_passins+=COMMAND_parts[32]+", "
@@ -219,7 +240,7 @@ def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DAT
         #f.write("Arguments  = "+indir+" "+COMMAND+"\n")
         f.write("Arguments  = "+"./"+script_to_use+" "+modified_COMMAND+"\n")
         f.write("Requirements = (HAS_SINGULARITY == TRUE) && (HAS_CVMFS_oasis_opensciencegrid_org == True)"+"\n") 
-        f.write('+SingularityImage = "/cvmfs/singularity.opensciencegrid.org/rjones30/gluex:latest"'+"\n") 
+        f.write('+SingularityImage = "/cvmfs/singularity.opensciencegrid.org/markito3/gluex_docker_devel:latest"'+"\n") 
         f.write('+SingularityBindCVMFS = True'+"\n") 
         f.write('+SingularityAutoLoad = True'+"\n") 
         f.write('should_transfer_files = YES'+"\n")
@@ -248,6 +269,7 @@ def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DAT
         status = subprocess.call(mkdircom, shell=True)
         status = subprocess.call(add_command, shell=True)
         status = subprocess.call("rm MCOSG.submit", shell=True)
+        
 
 
 def showhelp():
@@ -291,8 +313,8 @@ def main(argv):
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         print "*********************************"
-        print "Welcome to v1.12 of the MCwrapper"
-        print "Thomas Britton 1/3/18"
+        print "Welcome to v1.13 of the MCwrapper"
+        print "Thomas Britton 3/08/18"
         print "*********************************"
 
 	#load all argument passed in and set default options
@@ -321,6 +343,7 @@ def main(argv):
 
         GEANTVER = 4        
         BGFOLD="DEFAULT"
+        RANDBGTAG="none"
 
         CUSTOM_MAKEMC="DEFAULT"
         CUSTOM_GCONTROL="0"
@@ -343,6 +366,7 @@ def main(argv):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         VERSION  = "mc"
         CALIBTIME="notime"
+        RECON_CALIBTIME="notime"
         BASEFILENUM=0
 	PERFILE=10000
 	GENR=1
@@ -364,8 +388,8 @@ def main(argv):
                 if line[0]=="#":
                        continue
 
-                parts=line.split("=")
-
+                parts=line.split("#")[0].split("=")
+                #print parts
                 if len(parts)==1:
                         #print "Warning! No Sets given"
                         continue
@@ -445,6 +469,8 @@ def main(argv):
                                                 BGRATE=subparts[1]
                                 elif subparts[0].upper() == "RANDOM" or subparts[0].upper() == "DEFAULT":
                                         BGFOLD=subparts[0]
+                                        if len(subparts)==2:
+                                                RANDBGTAG=subparts[1]
                                 else:
                                         BGFOLD=part
 
@@ -475,7 +501,11 @@ def main(argv):
                                 QUEUENAME=batch_sys_parts[1]
                 elif str(parts[0]).upper()=="RUNNING_DIRECTORY" :
                         RUNNING_DIR=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="RECON_CALIBTIME" :
+                        RECON_CALIBTIME=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="VARIATION":
+                        #print parts
+                        #print rm_comments
                         if ( len(parts)>2 ) :
                                 VERSION=str(parts[1]).split("calibtime")[0].split("#")[0].strip()
                                 CALIBTIME=str(parts[2]).split("#")[0].strip()
@@ -580,15 +610,18 @@ def main(argv):
 	indir=os.environ.get('MCWRAPPER_CENTRAL')
         
         script_to_use = "/MakeMC.csh"
-        #script_to_use = "/MakeHelloWorld.csh"
         
-        if environ['SHELL']=="/bin/bash" :
+        if environ['SHELL']=="/bin/bash" or ( BATCHSYS.upper() == "OSG" and int(BATCHRUN) != 0) :
                 script_to_use = "/MakeMC.sh"
         
         indir+=script_to_use
 
         if len(CUSTOM_MAKEMC)!= 0 and CUSTOM_MAKEMC != "DEFAULT":
                 indir=CUSTOM_MAKEMC
+
+        if (BATCHSYS.upper() == "OSG" or BATCHSYS.upper() == "SWIF") and int(BATCHRUN) != 0:
+                ccdbSQLITEPATH="batch_default"
+                rcdbSQLITEPATH="batch_default"
 
         if str(indir) == "None":
                 print "MCWRAPPER_CENTRAL not set"
@@ -681,7 +714,7 @@ def main(argv):
                                 if num_this_file == 0:
 			                continue
 
-		                COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(runs[0])+" "+str(BASEFILENUM+FILENUM_this_run+-1)+" "+str(num_this_file)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(ccdbSQLITEPATH)+" "+str(rcdbSQLITEPATH)+" "+str(BGTAGONLY)+" "+str(RADIATOR_THICKNESS)+" "+str(BGRATE)
+		                COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(runs[0])+" "+str(BASEFILENUM+FILENUM_this_run+-1)+" "+str(num_this_file)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(ccdbSQLITEPATH)+" "+str(rcdbSQLITEPATH)+" "+str(BGTAGONLY)+" "+str(RADIATOR_THICKNESS)+" "+str(BGRATE)+" "+str(RANDBGTAG)+" "+str(RECON_CALIBTIME)
                                 if BATCHRUN == 0 or BATCHSYS=="NULL":
                                         #print str(runs[0])+" "+str(BASEFILENUM+FILENUM_this_run+-1)+" "+str(num_this_file)
         			        os.system(str(indir)+" "+COMMAND)
@@ -693,7 +726,7 @@ def main(argv):
                                         elif BATCHSYS.upper()=="CONDOR":
                                                 condor_add_job(VERBOSE, WORKFLOW, runs[0], BASEFILENUM+FILENUM_this_run+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR )
                                         elif BATCHSYS.upper()=="OSG":
-                                                OSG_add_job(VERBOSE, WORKFLOW, runs[0], BASEFILENUM+FILENUM_this_run+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR )
+                                                OSG_add_job(VERBOSE, WORKFLOW, runs[0], BASEFILENUM+FILENUM_this_run+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR, RANDBGTAG )
                         #print "----------------"
                 
         else:
@@ -709,9 +742,8 @@ def main(argv):
 		        if num == 0:
 			        continue
                 
-		        COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(RUNNUM)+" "+str(BASEFILENUM+FILENUM+-1)+" "+str(num)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(ccdbSQLITEPATH)+" "+str(rcdbSQLITEPATH)+" "+str(BGTAGONLY)+" "+str(RADIATOR_THICKNESS)+" "+str(BGRATE)
+		        COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(RUNNUM)+" "+str(BASEFILENUM+FILENUM+-1)+" "+str(num)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(ccdbSQLITEPATH)+" "+str(rcdbSQLITEPATH)+" "+str(BGTAGONLY)+" "+str(RADIATOR_THICKNESS)+" "+str(BGRATE)+" "+str(RANDBGTAG)+" "+str(RECON_CALIBTIME)
                
-	                #print COMMAND
 		        #either call MakeMC.csh or add a job depending on swif flag
                         if BATCHRUN == 0 or BATCHSYS=="NULL":
         			os.system(str(indir)+" "+COMMAND)
@@ -723,7 +755,7 @@ def main(argv):
                                 elif BATCHSYS.upper()=="CONDOR":
                                         condor_add_job(VERBOSE, WORKFLOW, RUNNUM, BASEFILENUM+FILENUM+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR )
                                 elif BATCHSYS.upper()=="OSG":
-                                        OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, BASEFILENUM+FILENUM+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR )
+                                        OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, BASEFILENUM+FILENUM+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR, RANDBGTAG )
 
                                         
         if BATCHRUN == 1 and BATCHSYS.upper() == "SWIF":
