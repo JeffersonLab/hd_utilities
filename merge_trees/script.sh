@@ -26,7 +26,10 @@ Merge_Files()
 {
     # loop over trees and merge
     for TYPE in `ls $INPUTDIR` ; do 
-	if [ "$TYPE" == "hists" ] ; then 
+	if [ "$TYPE" == "log" ] ; then 
+	    local TEMP_FILE="log_${RUN}.root"
+	    continue
+	elif [ "$TYPE" == "hists" ] ; then 
 	    local TEMP_FILE="hd_root_${RUN}.root"
 	    continue
 	else
@@ -81,7 +84,10 @@ Save_Files()
     
     # SAVE MERGED TREES
     for TYPE in `ls $INPUTDIR` ; do 
-	if [ "$TYPE" == "hists" ] ; then 
+	if [ "$TYPE" == "log" ] ; then 
+	    local TEMP_FILE="log_${RUN}.root"
+	    continue
+	elif [ "$TYPE" == "hists" ] ; then 
 	    local TEMP_FILE="hd_root_${RUN}.root"
 	    continue
 	else
@@ -122,7 +128,10 @@ Delete_InputFiles()
     
     # SAVE MERGED TREES
     for TYPE in `ls $INPUTDIR` ; do 
-	if [ "$TYPE" == "hists" ] ; then 
+	if [ "$TYPE" == "log" ] ; then 
+	    local TEMP_FILE="log_${RUN}.root"
+	    continue
+	elif [ "$TYPE" == "hists" ] ; then 
 	    local TEMP_FILE="hd_root_${RUN}.root"
 	    continue
 	else
