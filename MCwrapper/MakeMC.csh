@@ -195,21 +195,26 @@ endif
 set copeak = 0
 set copeak_text = `rcnd $RUN_NUMBER coherent_peak | awk '{print $1}'`
 
-if ( "$COHERENT_PEAK" != "rcdb" || "$VERSION" != "mc" ) then
-    set copeak=$COHERENT_PEAK
-else if ( $copeak_text == "Run" ) then
-	set copeak=9
-else if ( $copeak_text == "-1.0" ) then
-	set copeak=0.0
+if ( "$COHERENT_PEAK" != "rcdb" && "$polarization_angle" == "-1.0" ) then
+	copeak=$COHERENT_PEAK
 else
-	set copeak = `echo "$copeak_text / 1000" | /usr/bin/bc -l `
+
+	if ( "$COHERENT_PEAK" != "rcdb" || "$VERSION" != "mc" ) then
+    	set copeak=$COHERENT_PEAK
+	else if ( $copeak_text == "Run" ) then
+		set copeak=9
+	else if ( $copeak_text == "-1.0" ) then
+		set copeak=0.0
+	else
+		set copeak = `echo "$copeak_text / 1000" | /usr/bin/bc -l `
+	endif
 endif
 
-if ( "$polarization_angle" == "-1.0" ) then
-	#set copeak=`echo "$eBEAM_ENERGY + .5" | /usr/bin/bc `
+if ( "$polarization_angle" == "-1.0" && "$COHERENT_PEAK" == "rcdb" ) then
 	set copeak=0
-	setenv COHERENT_PEAK $copeak
 endif
+
+setenv COHERENT_PEAK $copeak
 
 #echo $copeak
 #set copeak=`rcnd $RUN_NUMBER coherent_peak | awk '{print $1}' | sed 's/\.//g' #| awk -vFS="" -vOFS="" '{$1=$1"."}1' `
@@ -433,9 +438,9 @@ set gen_pre=""
 if ( "$GENR" != "0" ) then
 
     set gen_pre=`echo $GENERATOR | cut -c1-4`
-    if ( "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" && "$GENERATOR" != "gen_omega_3pi" && "$GENERATOR" != "gen_2k" && "$GENERATOR" != "bggen_jpsi" && "$GENERATOR" != "gen_ee" && "$GENERATOR" != "gen_ee_hb" && "$GENERATOR" != "particle_gun" && "$GENERATOR" != "bggen_phi_ee" ) then
+    if ( "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" && "$GENERATOR" != "gen_omega_3pi" && "$GENERATOR" != "gen_2k" && "$GENERATOR" != "bggen_jpsi" && "$GENERATOR" != "gen_ee" && "$GENERATOR" != "gen_ee_hb" && "$GENERATOR" != "particle_gun" && "$GENERATOR" != "bggen_phi_ee" && "$GENERATOR" != "genBH" ) then
 		echo "NO VALID GENERATOR GIVEN"
-		echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0, gen_omega_3pi, gen_2k, bggen_jpsi, gen_ee , gen_ee_hb, bggen_phi_ee, particle_gun] are supported"
+		echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0, gen_omega_3pi, gen_2k, bggen_jpsi, gen_ee , gen_ee_hb, bggen_phi_ee, particle_gun, genBH] are supported"
 		exit 1
     endif
 
@@ -540,6 +545,9 @@ if ( "$GENR" != "0" ) then
 		echo "configuring the particle gun"
 		set STANDARD_NAME="particle_gun_"$STANDARD_NAME
 		cp $CONFIG_FILE ./$STANDARD_NAME.conf
+	else if ( "$GENERATOR" == "genBH" ) then
+		echo "configuring genBH"
+		set STANDARD_NAME="genBH_"$STANDARD_NAME
     endif
 
     if ( "$gen_pre" != "file" ) then
@@ -684,6 +692,10 @@ if ( "$GENR" != "0" ) then
 		ee_mc_hb -N$RUN_NUMBER -n$EVT_TO_GEN
 		set generator_return_code=$status
 		mv genOut.hddm $STANDARD_NAME.hddm
+	else if ( "$GENERATOR" == "genBH" ) then
+		echo genBH -n$EVT_TO_GEN
+		genBH -n$EVT_TO_GEN -t$NUMTHREADS -E$COHERENT_PEAK -e$GEN_MAX_ENERGY $STANDARD_NAME.hddm
+		set generator_return_code=$status
 	endif
 
 
