@@ -313,13 +313,8 @@ def main(argv):
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         print "*********************************"
-<<<<<<< HEAD
-        print "Welcome to v1.13 of the MCwrapper"
-        print "Thomas Britton 3/08/18"
-=======
         print "Welcome to v1.14 of the MCwrapper"
         print "Thomas Britton 3/23/18"
->>>>>>> add genBH and retooled coherent peak position to fix rcdb with AMO and genr8/genBH
         print "*********************************"
 
 	#load all argument passed in and set default options
