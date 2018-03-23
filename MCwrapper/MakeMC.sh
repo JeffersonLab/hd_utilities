@@ -166,8 +166,10 @@ if [[ "$polarization_angle" == "" ]]; then
 	
 	if [[ "$poldir" == "PARA" ]]; then
 		polarization_angle="0.0"
+	elif [[ "$poldir" == "PERP" ]]; then
+		set polarization_angle="90.0"
 	else
-		polarization_angle="90.0"
+		set polarization_angle="-1.0"
 	fi
 fi
 
@@ -207,7 +209,7 @@ else
 	elif [[ $copeak_text == "Run" ]]; then
 		copeak=9
 	elif [[ $copeak_text == "-1.0" ]]; then
-		copeak=0.0
+		copeak=0
 	else
 		copeak=`echo "$copeak_text / 1000" | /usr/bin/bc -l `
 	fi
@@ -489,6 +491,14 @@ if [[ "$GENR" != "0" ]]; then
 		echo "configuring genr8"
 		STANDARD_NAME="genr8_"$STANDARD_NAME
 		cp $CONFIG_FILE ./$STANDARD_NAME.conf
+
+		replacementNum=`grep TEMPCOHERENT ./$STANDARD_NAME.conf | wc -l`
+		if [[ "$polarization_angle" == "-1.0" && "$COHERENT_PEAK" == "0." && $replacementNum != 0 ]]; then
+			echo "Running genr8 with an AMO run number without supplying the energy desired to COHERENT_PEAK causes an inifinite loop."
+			echo "Please specify the desired energy via the COHERENT_PEAK parameter and retry."
+			exit 1
+		fi
+
     elif [[ "$GENERATOR" == "bggen" ]]; then
 		echo "configuring bggen"
 		STANDARD_NAME="bggen_"$STANDARD_NAME

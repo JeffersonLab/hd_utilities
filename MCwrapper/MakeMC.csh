@@ -162,8 +162,10 @@ if ( "$polarization_angle" == "" ) then
 	set poldir=`rcnd $RUN_NUMBER polarization_direction | awk '{print $1}'`
 	if ( "$poldir" == "PARA" ) then
 		set polarization_angle="0.0"
-	else
+	else if ( "$poldir" == "PERP" ) then
 		set polarization_angle="90.0"
+	else
+		set polarization_angle="-1.0"
 	endif
 endif
 
@@ -204,7 +206,7 @@ else
 	else if ( $copeak_text == "Run" ) then
 		set copeak=9
 	else if ( $copeak_text == "-1.0" ) then
-		set copeak=0.0
+		set copeak=0
 	else
 		set copeak = `echo "$copeak_text / 1000" | /usr/bin/bc -l `
 	endif
@@ -481,8 +483,17 @@ if ( "$GENR" != "0" ) then
 	echo $GENERATOR
     if ( "$GENERATOR" == "genr8" ) then
 		echo "configuring genr8"
+
 		set STANDARD_NAME="genr8_"$STANDARD_NAME
 		cp $CONFIG_FILE ./$STANDARD_NAME.conf
+		set replacementNum=`grep TEMPCOHERENT ./$STANDARD_NAME.conf | wc -l`
+		
+		if ( "$polarization_angle" == "-1.0" && "$COHERENT_PEAK" == "0." && $replacementNum != 0 ) then
+			echo "Running genr8 with an AMO run number without supplying the energy desired to COHERENT_PEAK causes an inifinite loop."
+			echo "Please specify the desired energy via the COHERENT_PEAK parameter and retry."
+			exit 1
+		endif
+
     else if ( "$GENERATOR" == "bggen" ) then
 		echo "configuring bggen"
 		set STANDARD_NAME="bggen_"$STANDARD_NAME
@@ -556,7 +567,7 @@ if ( "$GENR" != "0" ) then
     if ( "$GENERATOR" == "genr8" ) then
 		echo "RUNNING GENR8"
 		set RUNNUM=$formatted_runNumber+$formatted_fileNumber
-		sed -i 's/TEMPMAXE/'$GEN_MAX_ENERGY'/' $STANDARD_NAME.conf
+		sed -i 's/TEMPCOHERENT/'$COHERENT_PEAK'/' $STANDARD_NAME.conf
 		# RUN genr8 and convert
 		genr8 -r$formatted_runNumber -M$EVT_TO_GEN -A$STANDARD_NAME.ascii < $STANDARD_NAME.conf #$config_file_name
 		set generator_return_code=$status
