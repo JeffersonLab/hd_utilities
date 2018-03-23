@@ -219,8 +219,6 @@ setenv COHERENT_PEAK $copeak
 #echo $copeak
 #set copeak=`rcnd $RUN_NUMBER coherent_peak | awk '{print $1}' | sed 's/\.//g' #| awk -vFS="" -vOFS="" '{$1=$1"."}1' `
 
-setenv COHERENT_PEAK $copeak
-
 if ( "$VERSION" != "mc" && "$COHERENT_PEAK" == "rcdb" ) then
 	echo "error in requesting rcdb for the coherent peak and not using variation=mc"
 	exit 1

@@ -198,19 +198,9 @@ fi
 
 copeak=0
 copeak_text=`rcnd $RUN_NUMBER coherent_peak | awk '{print $1}'`
-<<<<<<< HEAD
-echo $copeak_text
-if [[ "$COHERENT_PEAK" != "rcdb" || "$VERSION" != "mc" ]]; then
-    copeak=$COHERENT_PEAK
-elif [[ $copeak_text == "Run" ]]; then
-	copeak=9
-elif [[ $copeak_text == "-1.0" ]]; then
-	copeak=0.0
-=======
 
 if [[ "$COHERENT_PEAK" != "rcdb" && "$polarization_angle" == "-1.0" ]]; then
 copeak=$COHERENT_PEAK
->>>>>>> add genBH and retooled coherent peak position to fix rcdb with AMO and genr8/genBH
 else
 	if [[ "$COHERENT_PEAK" != "rcdb" || "$VERSION" != "mc" ]]; then
     	copeak=$COHERENT_PEAK
@@ -244,15 +234,6 @@ if [[ "$VERSION" != "mc" && "$eBEAM_ENERGY" == "rcdb" ]]; then
 	exit 1
 fi
 
-<<<<<<< HEAD
-if [[ "$polarization_angle" == "-1.0" ]]; then
-	#copeak=`echo "$eBEAM_ENERGY + .5" | /usr/bin/bc`
-    copeak=0
-    export COHERENT_PEAK=$copeak
-fi
-=======
-
->>>>>>> add genBH and retooled coherent peak position to fix rcdb with AMO and genr8/genBH
 
 beam_on_current=`rcnd $RUN_NUMBER beam_on_current | awk '{print $1}'`
 
