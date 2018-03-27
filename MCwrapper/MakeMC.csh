@@ -98,11 +98,14 @@ if ( "$BATCHRUN" != "0"  ) then
     mkdir -p $OUTDIR/log
 endif
 
-if ( ! -d $RUNNING_DIR ) then
-	mkdir $RUNNING_DIR
-endif
+if ( $BATCHSYS == "QSUB" ) then
+	if ( ! -d $RUNNING_DIR ) then
+		mkdir $RUNNING_DIR
+	endif
 
 cd $RUNNING_DIR
+
+endif
 
 if ( ! -d $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER} ) then
 	mkdir $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
@@ -487,7 +490,7 @@ if ( "$GENR" != "0" ) then
 		set STANDARD_NAME="genr8_"$STANDARD_NAME
 		cp $CONFIG_FILE ./$STANDARD_NAME.conf
 		set replacementNum=`grep TEMPCOHERENT ./$STANDARD_NAME.conf | wc -l`
-		
+
 		if ( "$polarization_angle" == "-1.0" && "$COHERENT_PEAK" == "0." && $replacementNum != 0 ) then
 			echo "Running genr8 with an AMO run number without supplying the energy desired to COHERENT_PEAK causes an inifinite loop."
 			echo "Please specify the desired energy via the COHERENT_PEAK parameter and retry."
