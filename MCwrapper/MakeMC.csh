@@ -236,8 +236,6 @@ if ( "$VERSION" != "mc" && "$eBEAM_ENERGY" == "rcdb" ) then
 	exit 1
 endif
 
-
-
 set colsize=`rcnd $RUN_NUMBER collimator_diameter | awk '{print $1}' | sed -r 's/.{2}$//'| sed -e 's/\.//g'`
 
 if ( "$colsize" == "B" || "$colsize" == "R" || "$JANA_CALIB_CONTEXT" != "variation=mc" ) then
