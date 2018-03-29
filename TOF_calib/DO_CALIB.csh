@@ -2,7 +2,7 @@
 
 set RUN = $1
 
-mkdir calibration$RUN
+#mkdir calibration$RUN
 
 # do walk correction
 root -b -q "src/walk1.C+($RUN)"

@@ -293,7 +293,7 @@ void timedifference(int Run, int REF, int REFPLANE){
 	    sprintf(fnam,"plots/paddleNumber_vs_deltatRefPad%d_plane%d_run%d.pdf",REFPAD,REFPLANE,RunNumber);
 	    gPad->SaveAs(fnam);
 	  }
-	  if (!(j%1)){
+	  if (!((j-3)%5)){
 	    hp->GetXaxis()->SetTitle("#Deltat [ns]");
 	    char hnam1[128];
 	    sprintf(hnam1,"Projection #Deltat to paddel %d REFPAD%d plane%d",j-2,REFPAD,REFPLANE);

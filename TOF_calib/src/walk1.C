@@ -417,8 +417,9 @@ double fithist(TH2F *hist, double *allp, int plane, int paddle, int side, int id
     AllFits[1][idx]->Draw("same");
 
     if (DEBUG>90){
-	sprintf(hnam,"plots/walk_correction_pl%d_pad%d_side%d_run%d.pdf",plane, paddle,side,RunNumber);
-	gPad->SaveAs(hnam);
+      if (!(idx%5))
+      sprintf(hnam,"plots/walk_correction_pl%d_pad%d_side%d_run%d.pdf",plane, paddle,side,RunNumber);
+      gPad->SaveAs(hnam);
     }
 
     if (DEBUG==99){
