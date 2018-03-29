@@ -92,9 +92,7 @@ export RECON_CALIBTIME=$1
 if [[ "$BATCHRUN" != "0" ]]; then
     # ENVIRONMENT
     echo $ENVIRONMENT
-	if [[ "$BATCHSYS" == "QSUB" ]]; then
-		cd $RUNNING_DIR
-	fi
+
     
     
     echo pwd=$PWD
@@ -105,9 +103,10 @@ if [[ "$BATCHSYS" == "QSUB" ]]; then
 	if [[ ! -d $RUNNING_DIR ]]; then
 		mkdir $RUNNING_DIR
 	fi
+	cd $RUNNING_DIR
 fi
 
-cd $RUNNING_DIR
+
 
 if [[ ! -d $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER} ]]; then
 mkdir $RUNNING_DIR/${RUN_NUMBER}_${FILE_NUMBER}
@@ -407,7 +406,7 @@ if [[ "$BKGFOLDSTR" == "DEFAULT" || "$bkgloc_pre" == "loc:" || "$BKGFOLDSTR" == 
  		   	if [[ "$BATCHSYS" == "OSG" && $BATCHRUN != 0 ]]; then
 					bkglocstring="/srv""/run$formatted_runNumber""_random.hddm"
 				else
-			    bkglocstring=$rand_bkg_loc"/run$formatted_runNumber""_random.hddm"
+			    	bkglocstring=$rand_bkg_loc"/run$formatted_runNumber""_random.hddm"
 			    fi
 			else
 		    #bkglocstring="/cache/halld/""$runperiod""/sim/random_triggers/""run$formatted_runNumber""_random.hddm"

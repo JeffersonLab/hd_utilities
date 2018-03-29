@@ -98,7 +98,7 @@ if ( "$BATCHRUN" != "0"  ) then
     mkdir -p $OUTDIR/log
 endif
 
-if ( $BATCHSYS == "QSUB" ) then
+if ( "$BATCHSYS" == "QSUB" ) then
 	if ( ! -d $RUNNING_DIR ) then
 		mkdir $RUNNING_DIR
 	endif
@@ -409,7 +409,7 @@ if ( "$BKGFOLDSTR" == "DEFAULT" || "$bkgloc_pre" == "loc:" || "$BKGFOLDSTR" == "
 		 if ( "$BATCHSYS" == "OSG" && $BATCHRUN != 0 ) then
                         set     bkglocstring="/srv/run$formatted_runNumber""_random.hddm"
 		 else
-		    set bkglocstring=$rand_bkg_loc"/$RANDBGTAG""/run$formatted_runNumber""_random.hddm"
+		    set bkglocstring=$rand_bkg_loc"/run$formatted_runNumber""_random.hddm"
 		 endif
 	else
 		#set bkglocstring="/cache/halld/""$runperiod""/sim/random_triggers/""run$formatted_runNumber""_random.hddm"
@@ -889,7 +889,7 @@ if ( "$GENR" != "0" ) then
 			echo "RUNNING RECONSTRUCTION"
 
 			if ( "$RECON_CALIBTIME" != "notime" ) then
-				set reconwholecontext = "variation=$VERSION calibtime=$RECON_CALIBTIME"
+				set reconwholecontext = "variation=default calibtime=$RECON_CALIBTIME"
 				setenv JANA_CALIB_CONTEXT "$reconwholecontext"
 			endif
 			if ( "$recon_pre" == "file" ) then
