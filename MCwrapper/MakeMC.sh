@@ -256,7 +256,7 @@ BGRATE_toUse=$BGRATE
 if [[ "$BGRATE" != "rcdb" || "$VERSION" != "mc" ]]; then
     BGRATE_toUse=$BGRATE
 else
-	if [[ $BGTAGONLY_OPTION == "1" || $BKGFOLDSTR=="BeamPhotons" ]]; then
+	if [[ $BGTAGONLY_OPTION == "1" || $BKGFOLDSTR == "BeamPhotons" ]]; then
 		echo "Calculating BGRate.  This process takes a minute..."
 		BGRATE_toUse=`BGRate_calc --runNo $RUN_NUMBER --coherent_peak $COHERENT_PEAK --beam_on_current $beam_on_current --beam_energy $eBEAM_ENERGY --collimator_diameter 0.00$colsize --radiator_thickness $radthick --endpoint_energy_low $GEN_MIN_ENERGY --endpoint_energy_high $GEN_MAX_ENERGY`
 
