@@ -440,9 +440,9 @@ gen_pre=""
 if [[ "$GENR" != "0" ]]; then
 
 	gen_pre=`echo $GENERATOR | cut -c1-4`
-    if [[ "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" && "$GENERATOR" != "gen_omega_3pi" && "$GENERATOR" != "gen_2k" && "$GENERATOR" != "bggen_jpsi" && "$GENERATOR" != "gen_ee" && "$GENERATOR" != "gen_ee_hb" && "$GENERATOR" != "particle_gun" && "$GENERATOR" != "bggen_phi_ee" && "$GENERATOR" != "genBH" ]]; then
+    if [[ "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" && "$GENERATOR" != "gen_omega_3pi" && "$GENERATOR" != "gen_2k" && "$GENERATOR" != "bggen_jpsi" && "$GENERATOR" != "gen_ee" && "$GENERATOR" != "gen_ee_hb" && "$GENERATOR" != "particle_gun" && "$GENERATOR" != "bggen_phi_ee" && "$GENERATOR" != "genBH" & "$GENERATOR" != "gen_omega_radiative" ]]; then
 		echo "NO VALID GENERATOR GIVEN"
-		echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0, gen_omega_3pi, gen_2k, bggen_jpsi, gen_ee, gen_ee_hb,  bggen_phi_ee, particle_gun, genBH] are supported"
+		echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0, gen_omega_3pi, gen_2k, bggen_jpsi, gen_ee, gen_ee_hb,  bggen_phi_ee, particle_gun, genBH, gen_omega_radiative] are supported"
 		exit 1
     fi
 
@@ -518,6 +518,10 @@ if [[ "$GENR" != "0" ]]; then
 	elif [[ "$GENERATOR" == "gen_omega_3pi" ]]; then
 		echo "configuring gen_omega_3pi"
 		STANDARD_NAME="gen_omega_3pi_"$STANDARD_NAME
+		cp $CONFIG_FILE ./$STANDARD_NAME.conf
+	elif [[ "$GENERATOR" == "gen_omega_radiative" ]]; then
+		echo "configuring gen_omega_radiative"
+		STANDARD_NAME="gen_omega_radiative_"$STANDARD_NAME
 		cp $CONFIG_FILE ./$STANDARD_NAME.conf
     elif [[ "$GENERATOR" == "gen_2pi_primakoff" ]]; then
 		echo "configuring gen_2pi_primakoff"
@@ -639,6 +643,22 @@ if [[ "$GENR" != "0" ]]; then
 	echo $optionals_line
 	echo gen_omega_3pi -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -m $eBEAM_ENERGY -p $COHERENT_PEAK $optionals_line
 	gen_omega_3pi -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -m $eBEAM_ENERGY -p $COHERENT_PEAK $optionals_line
+    generator_return_code=$?
+	elif [[ "$GENERATOR" == "gen_omega_radiative" ]]; then
+	echo "RUNNING GEN_OMEGA_RADIATIVE" 
+    optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
+
+		if [[ "$polarization_angle" == "-1.0" ]]; then
+			sed -i 's/TEMPPOLFRAC/'0'/' $STANDARD_NAME.conf
+			sed -i 's/TEMPPOLANGLE/'0'/' $STANDARD_NAME.conf
+		else
+			sed -i 's/TEMPPOLFRAC/'.4'/' $STANDARD_NAME.conf
+			sed -i 's/TEMPPOLANGLE/'$polarization_angle'/' $STANDARD_NAME.conf
+		fi
+
+	echo $optionals_line
+	echo gen_omega_radiative -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -m $eBEAM_ENERGY -p $COHERENT_PEAK $optionals_line
+	gen_omega_radiative -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -m $eBEAM_ENERGY -p $COHERENT_PEAK $optionals_line
     generator_return_code=$?
 	elif [[ "$GENERATOR" == "gen_2pi_primakoff" ]]; then
 	echo "RUNNING GEN_2PI_PRIMAKOFF" 
