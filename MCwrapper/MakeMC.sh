@@ -905,7 +905,7 @@ if [[ "$GENR" != "0" ]]; then
 		echo "RUNNING RECONSTRUCTION"
 
 		if [[ "$RECON_CALIBTIME" != "notime" ]]; then
-				reconwholecontext="variation=default calibtime=$RECON_CALIBTIME"
+				reconwholecontext="variation=$VERSION calibtime=$RECON_CALIBTIME"
 				export JANA_CALIB_CONTEXT="$reconwholecontext"
 		fi
 
