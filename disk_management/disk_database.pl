@@ -75,7 +75,7 @@ open (FINDDIR, $find_dir_command);
 $idebug = 0;
 $jdebug = 0;
 while ($dirname = <FINDDIR>) {
-    if (!($idebug%10)) {print "$idebug: dirname = $dirname";}
+    if (!($idebug%100)) {print "$idebug: dirname = $dirname";}
     chomp $dirname;
     @stat = stat($dirname);
     $sql = "insert into $dir_table set dirname = \"$dirname\", uid = $stat[4], size = $stat[7];";
@@ -95,7 +95,7 @@ while ($dirname = <FINDDIR>) {
     open (FINDFILE, "find $dirname -maxdepth 1 -type f |");
     while ($filename = <FINDFILE>) {
 	chomp $filename;
-	if (!($jdebug%100)) {print "$jdebug: $filename\n";}
+	if (!($jdebug%1000)) {print "$jdebug: $filename\n";}
 	@stat = stat($filename);
 	if (@stat) {
 	    @token = split(/\//, $filename);
