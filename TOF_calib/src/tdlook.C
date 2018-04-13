@@ -180,7 +180,7 @@ void gettime(int REFID, int PLANEID,
     gPad->SetGrid();
     gPad->Update();
     //if ((REFID==5) || (REFID==15) || (REFID==19)) {
-    if (1) {
+    if (!(REFID%5)|| (DEBUG>98)) {
       sprintf(tnam,"plots/velocity_refpad%d_plane%d_run%d.pdf",REFID,PLANEID,RunNumber);	
       gPad->SaveAs(tnam);
       

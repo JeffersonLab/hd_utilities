@@ -133,7 +133,7 @@ void meantime1(int Run, int REF, int RefPlane){
   t3->SetBranchAddress("PEAKR",PEAKR);
   
   unsigned int nentries = (unsigned int) t3->GetEntries();
-  cout<<"Number of Entries "<<nentries;
+  cout<<"Number of Entries "<<nentries<<endl;
   /*
   if (nentries>100000000){
     nentries = 100000000;
@@ -387,11 +387,12 @@ void findpeak(double *MTPosition, double *MTSigma){
       f1 = h->GetFunction("gaus");
       pos = f1->GetParameter(1);
       sig = f1->GetParameter(2);
-      hili = pos + 1.*sig;
-      loli = pos - 1.*sig;
+      hili = pos + 0.9*sig;
+      loli = pos - 0.9*sig;
       h->Fit("gaus","QR","",loli,hili);
       f1 = h->GetFunction("gaus");
       pos = f1->GetParameter(1);      
+      h->GetXaxis()->SetRangeUser(-5.,5.);
 
       if (DEBUG){
 	if (DEBUG>1){
@@ -411,7 +412,7 @@ void findpeak(double *MTPosition, double *MTSigma){
 	    gPad->SaveAs(exnam);
 	  }
 	  if (DEBUG>1){
-	    if (!((k-3)%10)){
+	    if (!((k-3)%10) || (DEBUG>98)){
 	      gPad->SetLogz(0);  
 	      h->Draw();
 	      sprintf(exnam,"Mean-Time-Difference Pad%d to Ref-Pad%d",k,REFPAD);
