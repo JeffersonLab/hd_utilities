@@ -457,5 +457,20 @@
   c2->SaveAs(nam);
   sprintf(nam,"b1pi_%s_XMass.gif",atr);
   c2->SaveAs(nam);
-   
+
+
+  ofstream outf("data.txt");
+  outf << pi0_mass->GetEntries() << endl;
+  outf << omega_mass->GetEntries() << endl;
+  outf << b1_mass->GetEntries() << endl;
+  outf << x_mass->GetEntries() << endl;
+  outf << g_theta_gen->GetEntries() << endl;
+  outf << prot_theta_gen->GetEntries() << endl;
+  outf << pip_theta_gen->GetEntries() << endl;
+  outf << pim_theta_gen->GetEntries() << endl;
+  outf << g_theta->GetEntries() << endl;
+  outf << prot_theta->GetEntries() << endl;
+  outf << pip_theta->GetEntries() << endl;
+  outf << pim_theta->GetEntries() << endl;
+  outf.close();
 }
