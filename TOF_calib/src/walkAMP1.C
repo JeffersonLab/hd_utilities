@@ -415,7 +415,7 @@ void fithist(TH2F *hist, double *allp, int plane, int paddle, int side, int idx)
     gPad->SetGrid();
     gPad->Update();
     if (DEBUG>1){
-      if (idx%2) {
+      if (!(idx%5)) {
 	sprintf(hnam,"plots/walk_correctionAMP_pl%d_pad%d_side%d_run%d.pdf",plane, paddle,side,RunNumber);
 	gPad->SaveAs(hnam);
       }

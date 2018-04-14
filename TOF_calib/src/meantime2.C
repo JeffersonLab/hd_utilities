@@ -133,14 +133,16 @@ double getmt(int p1, int p2, double *mtref,int RunNumber) {
   if (DEBUG) {
     char fnam[128];
     if (DEBUG>1){
-      sprintf(fnam,"Average MT-differences Paddle %d to Ref Paddle %d [ns]",REFPAD[1],REFPAD[0]);
-      histdt->GetXaxis()->SetTitle(fnam);
-      gStyle->SetOptFit(1);
-      histdt->Draw();
-      gPad->SetGrid();
-      gPad->Update();
-      sprintf(fnam,"plots/meantime_average_to_refpaddle%d.pdf",REFPAD[1]);
-      gPad->SaveAs(fnam);
+      if (!(REFPAD[1]%5)){
+	sprintf(fnam,"Average MT-differences Paddle %d to Ref Paddle %d [ns]",REFPAD[1],REFPAD[0]);
+	histdt->GetXaxis()->SetTitle(fnam);
+	gStyle->SetOptFit(1);
+	histdt->Draw();
+	gPad->SetGrid();
+	gPad->Update();
+	sprintf(fnam,"plots/meantime_average_to_refpaddle%d.pdf",REFPAD[1]);
+	gPad->SaveAs(fnam);
+      }
     }
     //histdt->Draw();
     //gPad->SetGrid();

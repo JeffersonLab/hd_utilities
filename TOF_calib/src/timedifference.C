@@ -106,7 +106,7 @@ void timedifference(int Run, int REF, int REFPLANE){
   t3->SetBranchAddress("PEAKR",PEAKR);
   
   unsigned int nentries = (unsigned int) t3->GetEntries();
-  cout<<"Number of Entries "<<nentries;
+  cout<<"Number of Entries "<<nentries<<endl;
   /*
   if (nentries>100000000){
     nentries = 100000000;
@@ -210,6 +210,9 @@ void timedifference(int Run, int REF, int REFPLANE){
     tpos[j-3] = p;
     dtpos[j-3] = dp;
     TH1D *hp = histTD->ProjectionY("hp",j,j);
+    char hnamx[128];
+    sprintf(hnamx,"Projection #Deltat to paddel %d REFPAD%d plane%d",j-2,REFPAD,REFPLANE);
+    hp->SetTitle(hnamx);
 
     if (hp->Integral(1,hp->GetNbinsX()-2)>100){
 
@@ -233,7 +236,7 @@ void timedifference(int Run, int REF, int REFPLANE){
       double *xpeaks = speaks->GetPositionX();
 
       // for paddles on the left of the center take left most peak
-      // for paddles on the right of the cneter take right most peak
+      // for paddles on the right of the center take right most peak
       double max = 100.;
       if (j>24){
 	max = -100.;
@@ -259,13 +262,14 @@ void timedifference(int Run, int REF, int REFPLANE){
       TF1 *f1 = hp->GetFunction("gaus");
       p = f1->GetParameter(1);
       double s = f1->GetParameter(2);
-      hili = p+s*1.6;
-      loli = p-s*1.6;
-      if ((j>19) && (j<23))
-	hili = p+s*1.2;
-      if ((j>23) && (j<26))
-	loli = p-s*1.2;
+      hili = p+s*1.2;
+      loli = p-s*1.2;
+      if ((j>19) && (j<24))
+	hili = p+s*0.7;
+      if ((j>23) && (j<30))
+	loli = p-s*0.7;
       
+
 
       hp->Fit("gaus","RQ","",loli,hili);
       f1 = hp->GetFunction("gaus");
@@ -293,7 +297,7 @@ void timedifference(int Run, int REF, int REFPLANE){
 	    sprintf(fnam,"plots/paddleNumber_vs_deltatRefPad%d_plane%d_run%d.pdf",REFPAD,REFPLANE,RunNumber);
 	    gPad->SaveAs(fnam);
 	  }
-	  if (!(j%1)){
+	  if (!((j-3)%5) || (DEBUG>2)){
 	    hp->GetXaxis()->SetTitle("#Deltat [ns]");
 	    char hnam1[128];
 	    sprintf(hnam1,"Projection #Deltat to paddel %d REFPAD%d plane%d",j-2,REFPAD,REFPLANE);

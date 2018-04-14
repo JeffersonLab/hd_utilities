@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------
 // Determine timing offsets for single ended paddles
-// crate root file adchists_runXXXX.root with root tree and histograms
+// create root file adchists_runXXXX.root with root tree and histograms
 // create full DB file for timing offsets
 // if in debug mode 10 quite at this point in the code otherwise continue
 // to fit the adc spectra.
@@ -568,7 +568,7 @@ void dofitall(int R , int dbgmode){
   t3->SetBranchAddress("TDCST",TDCST);
 
   unsigned int nentries = (unsigned int) t3->GetEntries();
-  cout<<"Number of Entries "<<nentries;
+  cout<<"Number of Entries "<<nentries<<endl;
   /*
   if (nentries>100000000){
     nentries = 100000000;

@@ -28,7 +28,7 @@ TF1 *AllFits[2][176];
 TGraphErrors *onedplots[176];
 
 
-int DEBUG = 91; // 2 = make plots, 99 = interupt
+int DEBUG = 2; // 2 = make plots, 99 = interupt
 
 double  fithist(TH2F*, double*, int , int, int, int);
 TGraphErrors *mkprof(TH2F*, int);
@@ -353,10 +353,14 @@ double fithist(TH2F *hist, double *allp, int plane, int paddle, int side, int id
     cout<<k<<"  "<<max<<endl;
     k++;
   }
-  double ConectPoint = response->GetBinCenter(k-1);
+  double ConectPoint = response->GetBinCenter(k+20);
   if (ConectPoint<300){
     ConectPoint = 300.;
   }
+
+  int NFits = 0;
+
+ StartOfFit:
 
   f1->SetParameter(0, 286.);
   f1->SetParameter(1, 100.);
@@ -373,8 +377,10 @@ double fithist(TH2F *hist, double *allp, int plane, int paddle, int side, int id
   f2->SetParLimits(0, 200., 300.);
   
 
-  TFitResultPtr r = grnew->Fit(f1, "S", "R", 150., ConectPoint);
-  grnew->GetYaxis()->SetRangeUser(270.,300.);
+  TFitResultPtr r = grnew->Fit(f1, "QS", "R", 150., ConectPoint+10.);
+  double *l = grnew->GetY();
+  double ll = *l;
+  grnew->GetYaxis()->SetRangeUser(ll-8., ll*1.01);
   TF1 *thefit = grnew->GetFunction("f1");
   char fitnam[128];
   sprintf(fitnam,"fit1hist%d",idx);
@@ -387,8 +393,9 @@ double fithist(TH2F *hist, double *allp, int plane, int paddle, int side, int id
     allp[2*k+1] = thefit->GetParError(k);
     //cout<< allp[2*k]<<"  "<<allp[2*k+1]<<endl;
   }
+  double P1 = thefit->Eval(ConectPoint);
 
-  r = grnew->Fit(f2, "S", "R", ConectPoint, 3900.);
+  r = grnew->Fit(f2, "SQ", "R", ConectPoint-10., 3900.);
   thefit = grnew->GetFunction("f2");
   sprintf(fitnam,"fit2hist%d",idx);
   thefit->SetName(fitnam);
@@ -403,6 +410,19 @@ double fithist(TH2F *hist, double *allp, int plane, int paddle, int side, int id
   }
   allp[16] = ConectPoint;
 
+  double P2 = thefit->Eval(ConectPoint); 
+  cout<<"Delta t at ConectPoint: "<<P1-P2<<endl;
+  if (TMath::Abs(P1-P2)>0.025){
+    cout<<"Missmatch > 25ps! shift Connectpoint and redo fit"<<endl;
+    if (NFits<6){
+      NFits++;
+      ConectPoint -= 50.;
+      goto StartOfFit;
+    }
+      
+  }
+
+
   if (DEBUG) {
     hist->Draw("colz");
     char hnam[128];
@@ -411,14 +431,16 @@ double fithist(TH2F *hist, double *allp, int plane, int paddle, int side, int id
     hist->GetXaxis()->SetTitle("ADC Amplitude");
     hist->GetYaxis()->SetTitle("Time Difference T_{TDC}-T_{ADC} [ns]");
     grnew->Draw("same AP");
+    grnew->GetXaxis()->SetRangeUser(20.,1200.);
     gPad->SetGrid();
     gPad->Update();
     AllFits[0][idx]->Draw("same");
     AllFits[1][idx]->Draw("same");
 
     if (DEBUG>90){
-	sprintf(hnam,"plots/walk_correction_pl%d_pad%d_side%d_run%d.pdf",plane, paddle,side,RunNumber);
-	gPad->SaveAs(hnam);
+      if (!(idx%5)||(DEBUG>98))
+      sprintf(hnam,"plots/walk_correction_pl%d_pad%d_side%d_run%d.pdf",plane, paddle,side,RunNumber);
+      gPad->SaveAs(hnam);
     }
 
     if (DEBUG==99){
@@ -453,13 +475,13 @@ TGraphErrors *mkprof(TH2F *h, int id){
     double maxold = max;
     double hili = max + 4.*p->GetBinWidth(mb);
     double loli = max - 4.*p->GetBinWidth(mb);
-    p->Fit("gaus","","R",loli,hili);
+    p->Fit("gaus","Q","R",loli,hili);
     TF1 *f = p->GetFunction("gaus");
     max = f->GetParameter(1);
     double sig = f->GetParameter(2);
     loli = max - 1.5*sig;
     hili = max + 1.5*sig;
-    p->Fit("gaus","","R",loli,hili);
+    p->Fit("gaus","Q","R",loli,hili);
     f = p->GetFunction("gaus");
 
     double fact =1.;

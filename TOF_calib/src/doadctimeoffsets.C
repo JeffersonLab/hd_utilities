@@ -178,7 +178,7 @@ void doadctimeoffsets(int RunNumber){
   t3->SetBranchAddress("TDCST",TDCST);
 
   unsigned int nentries = (unsigned int) t3->GetEntries();
-  cout<<"Number of Entries "<<nentries;
+  cout<<"Number of Entries "<<nentries<<endl;
   /*
   if (nentries>100000000){
     nentries = 100000000;
@@ -348,6 +348,12 @@ void doadctimeoffsets(int RunNumber){
     //cout<<"bin "<<k+1<<endl;
     TH1D *h = TDiff->ProjectionY("h",k+1,k+1);
     if (h->GetEntries()>100){
+
+      char hnam1[128];
+      sprintf(hnam1,"TDCtime - ADCtime (all corrected) PMT #%d ",k+1);
+      h->SetTitle(hnam1);
+      h->GetXaxis()->SetTitle("time difference [ns]");
+
       double pos = 0;
       double sig = 0;
       int maxbin = h->GetMaximumBin();
@@ -367,8 +373,8 @@ void doadctimeoffsets(int RunNumber){
       pos = func->GetParameter(1);
       sig = func->GetParameter(2);
 
-      lowlim = pos - 2.*sig;
-      higlim = pos + 2.*sig;
+      lowlim = pos - 1.2*sig;
+      higlim = pos + 1.2*sig;
       if (lowlim < LOLIM){
 	lowlim = LOLIM;
       }
