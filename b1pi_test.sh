@@ -125,3 +125,6 @@ hd_root -PJANA:BATCH_MODE=1 --nthreads=$NTHREADS -PPLUGINS=b1pi_hists,monitoring
 
 echo "Create plots"
 root -b -q mk_pics.C
+
+echo "Save test data"
+python update_db.py
