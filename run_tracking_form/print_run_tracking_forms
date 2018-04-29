@@ -1,0 +1,4 @@
+#/bin/bash
+cd /home/hdops/hd_utilities/run_tracking_form
+make RUN_START=$1
+lp -d halldchx1 checklist_run_*.pdf
