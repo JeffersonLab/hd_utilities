@@ -1,8 +1,12 @@
 # Accidental subtraction tutorial for Analysis How To's (JRS 4/18/18)
 
+# In this tutorial there 2 approaches to subtracting accidentals 
+#   1) Fill a weighted histogram in the DSelector, where the weights account for the accidental subtraction.
+#   2) Fill a histogram for "prompt" beam photons (in time with the RF bunch of the combo) and a separate histogram for "accidental" beam photosn (out of time with the RF bunch of the combo).  In this approach the accidental subtraction is performed in Step 3) below.
+
 # Important notes for writing your DSelector code (see example DSelector for more details):
-#   1) To fill weighted histograms in your DSelector they CANNOT be defined as TH1I (integer precision).   
-#   2) If you intend to fill unweighted histograms and do accidental subtraction in a second step outside your DSelector, you must set Sumw2() for your histograms to store the squared weights for correct error propagation.
+#   * To fill weighted histograms in your DSelector they CANNOT be defined as TH1I (integer precision).   
+#   * If you intend to fill unweighted histograms and do accidental subtraction in a second step outside your DSelector, you must set Sumw2() for your histograms to store the squared weights for correct error propagation.
 
 # Step 1) Open gp -> ggp ROOT tree 
 root -l -b tree_gg__B3.root
@@ -21,4 +25,4 @@ root -l plotAccidentalSubtracted.C
 #   -Top right: accidental subtracted MM^2 distribution using event weights applied in the DSelector (black)
 #   -Bottom left: MM^2 distribution for prompt peak (|DeltaT| < 2.004 ns, red) and accidental tags, weighted by 1/6 (|DeltaT| > 2.004, blue)
 #   -Bottom right accidental subtracted MM^2 distribution from subtracting the prompt and accidental histograms (magenta)
-#   Note: both the Top and Bottom right histograms contain the same contents, so the 2 procedures are equivalent in terms of accidental subtraction
+#   Note: both the Top and Bottom right histograms contain the same contents, so the 2 approaches are equivalent in terms of accidental subtraction
