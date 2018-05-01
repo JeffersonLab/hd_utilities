@@ -1,7 +1,7 @@
 # Accidental subtraction tutorial for Analysis How To's (JRS 4/18/18)
 
 # Important notes for writing your DSelector code (see example DSelector for more details):
-#   1) To fill weighted histograms in your DSelector they CANNOT be defined as TH1I (integer) precision.   
+#   1) To fill weighted histograms in your DSelector they CANNOT be defined as TH1I (integer precision).   
 #   2) If you intend to fill unweighted histograms and do accidental subtraction in a second step outside your DSelector, you must set Sumw2() for your histograms to store the squared weights for correct error propagation.
 
 # Step 1) Open gp -> ggp ROOT tree 
@@ -10,7 +10,8 @@ root -l -b tree_gg__B3.root
 # see /work/halld/home/jrsteven/AnalysisHowTo/tree_gg__B3.root for an example or files from analysis launch at /cache/halld/RunPeriod-2017-01/analysis/verNN/tree_gg__B3/merged/ (these may need to be pulled from tape)
 
 # Step 2) Run DSelector to fill histograms for accidental subtraction
-root [1] gg__B3_Tree->Process("DSelector_gg.C+")
+root [1] .x $ROOT_ANALYSIS_HOME/scripts/Load_DSelector.C
+root [2] gg__B3_Tree->Process("DSelector_gg.C+")
 
 # Step 3) Plot accidental subtracted MM^2 distribition from 2 approaches
 root -l plotAccidentalSubtracted.C
