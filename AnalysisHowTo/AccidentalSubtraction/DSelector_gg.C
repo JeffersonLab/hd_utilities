@@ -161,11 +161,15 @@ Bool_t DSelector_gg::Process(Long64_t locEntry)
 			locAccid = true;
 		}
 
-		/************************************ EXAMPLE: HISTOGRAM MASS ************************************/
+		/************************************ EXAMPLE: HISTOGRAM MISSING MASS ************************************/
 
 		//Missing Mass Squared
 		double locMissingMassSquared = loc_MissingP4_Measured.M2();
 
+		//Motivation for uniqueness tracking
+		//  * Since all 4 measured particles enter in the calculation of the MM^2 they should be tracked uniquely
+		//  * All beam photons are uniquely tracked, so both prompt and accidental photons are used to fill the histograms below (as described in Richard's slides).
+		
 		//Uniqueness tracking: Build the map of particles used for the missing mass
 			//For beam: Don't want to group with final-state photons. Instead use "Unknown" PID (not ideal, but it's easy).
 		map<Particle_t, set<Int_t> > locUsedThisCombo_MissingMassSquared;
@@ -173,7 +177,7 @@ Bool_t DSelector_gg::Process(Long64_t locEntry)
 		locUsedThisCombo_MissingMassSquared[Gamma].insert(locPhoton1NeutralID);
 		locUsedThisCombo_MissingMassSquared[Gamma].insert(locPhoton2NeutralID);
 		locUsedThisCombo_MissingMassSquared[Proton].insert(locProtonTrackID);
-
+		
 		//compare to what's been used so far
 		if(locUsedSoFar_MissingMassSquared.find(locUsedThisCombo_MissingMassSquared) == locUsedSoFar_MissingMassSquared.end())
 		{
