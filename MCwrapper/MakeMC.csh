@@ -137,7 +137,7 @@ set current_files=`find . -maxdepth 1 -type f`
 
 set radthick="50.e-6"
 
-if ( "$RADIATOR_THICKNESS" != "rcdb" || "$VERSION" != "mc" ) then
+if ( "$RADIATOR_THICKNESS" != "rcdb" || "$VERSION" != "mc" && "$VERSION" != "mc_workfest2018" ) then
     set radthick=$RADIATOR_THICKNESS
 else
 	set words = `rcnd $RUN_NUMBER radiator_type | sed 's/ / /g' `
@@ -187,7 +187,7 @@ set elecE_text="$ccdbelece" #$ccdblist[$#ccdblist]
 
 #echo "text: " $elecE_text
 
-if ( "$eBEAM_ENERGY" != "rcdb" || "$VERSION" != "mc" ) then
+if ( "$eBEAM_ENERGY" != "rcdb" || "$VERSION" != "mc" && "$VERSION" != "mc_workfest2018" ) then
     set elecE=$eBEAM_ENERGY
 else if ( $elecE_text == "Run" ) then
 	set elecE=12
@@ -204,7 +204,7 @@ if ( "$COHERENT_PEAK" != "rcdb" && "$polarization_angle" == "-1.0" ) then
 	copeak=$COHERENT_PEAK
 else
 
-	if ( "$COHERENT_PEAK" != "rcdb" || "$VERSION" != "mc" ) then
+	if ( "$COHERENT_PEAK" != "rcdb" || "$VERSION" != "mc" && "$VERSION" != "mc_workfest2018" ) then
     	set copeak=$COHERENT_PEAK
 	else if ( $copeak_text == "Run" ) then
 		set copeak=9
@@ -224,14 +224,14 @@ setenv COHERENT_PEAK $copeak
 #echo $copeak
 #set copeak=`rcnd $RUN_NUMBER coherent_peak | awk '{print $1}' | sed 's/\.//g' #| awk -vFS="" -vOFS="" '{$1=$1"."}1' `
 
-if ( "$VERSION" != "mc" && "$COHERENT_PEAK" == "rcdb" ) then
+if (   "$VERSION" != "mc" && "$VERSION" != "mc_workfest2018"  && "$COHERENT_PEAK" == "rcdb" ) then
 	echo "error in requesting rcdb for the coherent peak and not using variation=mc"
 	exit 1
 endif
 
 setenv eBEAM_ENERGY $elecE
 
-if ( "$VERSION" != "mc" && "$eBEAM_ENERGY" == "rcdb" ) then
+if ( ( "$VERSION" != "mc" && "$VERSION" != "mc_workfest2018" ) && "$eBEAM_ENERGY" == "rcdb" ) then
 	echo "error in requesting rcdb for the electron beam energy and not using variation=mc"
 	exit 1
 endif
@@ -257,7 +257,7 @@ endif
 
 set BGRATE_toUse=$BGRATE
 
-if ( "$BGRATE" != "rcdb" || "$VERSION" != "mc" ) then
+if ( "$BGRATE" != "rcdb" || "$VERSION" != "mc" && "$VERSION" != "mc_workfest2018" ) then
     set BGRATE_toUse=$BGRATE
 else
 	if ( $BGTAGONLY_OPTION == "1" || $BKGFOLDSTR == "BeamPhotons" ) then
