@@ -138,7 +138,7 @@ current_files=`find . -maxdepth 1 -type f`
 
 radthick="50.e-6"
 
-if [[ "$RADIATOR_THICKNESS" != "rcdb" || "$VERSION" != "mc" && "$VERSION" != "mc_workfest2018" ]]; then
+if [[ "$RADIATOR_THICKNESS" != "rcdb" || { "$VERSION" != "mc" && "$VERSION" != "mc_workfest2018" } ]]; then
 	radthick=$RADIATOR_THICKNESS
 else
 	words=`rcnd $RUN_NUMBER radiator_type | sed 's/ / /g' `
