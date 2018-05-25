@@ -849,12 +849,22 @@ if [[ "$GENR" != "0" ]]; then
 		mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm'
 		mcsmear_return_code=$?
 	    elif [[ "$BKGFOLDSTR" == "DEFAULT" || "$BKGFOLDSTR" == "Random" ]]; then
-		echo "mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
-		mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
+		rm -f count.py
+	    echo "import hddm_s" > count.py
+	    echo "print(sum(1 for r in hddm_s.istream('$bkglocstring')))" >>! count.py
+	    totalnum=`python count.py`
+		fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | /usr/bin/bc`
+		echo "mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1""+"$fold_skip_num
+		mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1\+$fold_skip_num
 		mcsmear_return_code=$?
 		elif [[ "$bkgloc_pre" == "loc:" ]]; then
-		echo "mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
-		mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
+		rm -f count.py
+	    echo "import hddm_s" > count.py
+	    echo "print(sum(1 for r in hddm_s.istream('$bkglocstring')))" >>! count.py
+	    totalnum=`python count.py`
+		fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | /usr/bin/bc`
+		echo "mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1""+"$fold_skip_num
+		mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1\+$fold_skip_num
 		mcsmear_return_code=$?
 		else
 		    #trust the user and use their string

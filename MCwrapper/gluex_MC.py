@@ -315,7 +315,7 @@ def main(argv):
 
         print "*********************************"
         print "Welcome to v1.14 of the MCwrapper"
-        print "Thomas Britton 5/10/18"
+        print "Thomas Britton 5/24/18"
         print "*********************************"
 
 	#load all argument passed in and set default options
