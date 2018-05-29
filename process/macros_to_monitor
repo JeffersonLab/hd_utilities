@@ -29,6 +29,7 @@
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/ST_online_lowlevel/ST_Monitoring_Multi.C 
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/ST_online_tracking/ST_Monitoring_Pid.C
 ##/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/ST_online_tracking/ST_Monitoring_Eff.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Calibration/ST_Tresolution/HistMacro_STResolution.C
 # TAGH
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/TAGH_online/TAGH_hit.C
 /work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/TAGH_online/TAGH_hit2.C
