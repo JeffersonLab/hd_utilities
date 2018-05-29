@@ -21,6 +21,13 @@ runningEfficiencyUnitsExpected = 'dl'
 timePeriodUnitsExpected = 'months'
 reconstructionRateUnitsExpected = 'Hz'
 coresUnitsExpected = 'dl'
+passesUnitsExpected = 'dl'
+eventsizeUnitsExpected = 'kB'
+RESTfractionUnitsExpected = 'dl'
+simulationRateUnitsExpected = 'Hz'
+simulationRateUnitsExpected = 'Hz'
+simulationpassesUnitsExpected = 'dl'
+simulatedPerRawEventUnitsExpected = 'dl'
 
 # inputs
 
@@ -39,7 +46,7 @@ for parameter in parameters:
 
 # calculations
 
-runningTime_s = runningTime_days*secondsPerDay
+runningTime_s = runningTime_days*secondsPerDay*runningEfficiency_dl
 numberEvents_dl = triggerRate_Hz*runningEfficiency_dl*runningTime_s
 numberEvents_billions = numberEvents_dl/oneBillion
 timePeriod_s = timePeriod_months*secondsPerMonth
@@ -48,4 +55,50 @@ reconstructionTime_s = numberEvents_dl/reconstructionRate_Hz
 reconstructionTime_years = reconstructionTime_s/secondsPerYear
 reconstructionTimeAllCores_s = reconstructionTime_s/cores
 reconstructionTimeAllCores_weeks = reconstructionTimeAllCores_s/secondsPerWeek
-print(triggerRate, triggerRateUnits, runningTime, runningTimeUnits, timePeriod, timePeriodUnits, numberEvents_billions, 'billion', averageEventRate_Hz, 'Hz', reconstructionTime_years, 'years', reconstructionTimeAllCores_weeks, 'weeks')
+reconstructionTimeAllCores_Mhr = reconstructionTime_s/3600.0/1000000.0
+eventsize_bytes = eventsize*1024
+rawDataVolume_PB = eventsize_bytes*triggerRate_Hz*runningTime_s/1.0E15
+rawDataRate_GBps = eventsize_bytes*triggerRate_Hz/1.0E9
+RESTDataVolume_PB = rawDataVolume_PB*RESTfraction*passes
+simulationDataVolume_PB = rawDataVolume_PB*RESTfraction*simulationpasses*simulatedPerRawEvent
+simulationTimeGeneration_Mhr = numberEvents_billions*1.0E9*simulationpasses*simulatedPerRawEvent/simulationRate/3600.0/1.0E6
+simulationTimeReconstruction_Mhr = simulationTimeGeneration_Mhr*simulationRate/reconstructionRate_Hz
+simulationTimeTotal_Mhr = simulationTimeGeneration_Mhr + simulationTimeReconstruction_Mhr
+
+TOTAL_CPU_Mhr = reconstructionTimeAllCores_Mhr + simulationTimeTotal_Mhr
+TOTAL_TAPE_PB = rawDataVolume_PB + RESTDataVolume_PB + simulationDataVolume_PB
+
+print ''
+print '          GlueX Computing Model'
+print '=========================================='
+print '         Trigger Rate: ' + str(triggerRate_Hz/1000.0) + ' kHz'
+print '         Running Time: ' + str(runningTime_days/7.0) + ' weeks'
+print '   Running Efficiency: ' + str(int(runningEfficiency_dl*100.0)) + '%'
+print '  --------------------------------------'
+print '  Reconstruction Rate: ' + str(reconstructionRate_Hz) + ' Hz/core'
+print '       Available CPUs: ' + str(cores) + ' cores (full)'
+print '      Time to process: ' + '%3.1f' % reconstructionTimeAllCores_weeks + ' weeks/pass'
+print '     Number of passes: ' + str(passes)
+print '   Reconstruction CPU: ' + '%3.1f' % reconstructionTimeAllCores_Mhr + ' Mcore-hr'
+print '  --------------------------------------'
+print '  Raw Data Event Size: ' + str(eventsize) + ' kB'
+print '        Raw Data Rate: ' + '%3.2f' % rawDataRate_GBps + ' GB/s'
+print '      Raw Data Volume: ' + '%3.1f' % rawDataVolume_PB + ' PB'
+print '  REST/Raw size frac.: ' + str(int(RESTfraction*100.0)) + '%'
+print '     REST Data Volume: ' + '%3.1f' % RESTDataVolume_PB + ' PB (for ' + str(passes) + ' passes)'
+print '  --------------------------------------'
+print '   MC generation Rate: ' + '%3.1f' % simulationRate + ' Hz/core'
+print '  MC Number of passes: ' + '%3.1f' % simulationpasses
+print '  MC events/raw event: ' + '%3.1f' % simulatedPerRawEvent
+print '       MC data volume: ' + '%3.1f' % simulationDataVolume_PB + ' PB  (REST only)'
+print '    MC Generation CPU: ' + '%3.1f' % simulationTimeGeneration_Mhr + ' Mcore-hr'
+print 'MC Reconstruction CPU: ' + '%3.1f' % simulationTimeReconstruction_Mhr + ' Mcore-hr'
+print '               MC CPU: ' + '%3.1f' % simulationTimeTotal_Mhr + ' Mcore-hr'
+print '  --------------------------------------'
+print '               TOTALS:'
+print '                  CPU: ' + '%3.1f' % TOTAL_CPU_Mhr + ' Mcore-hr'
+print '                 TAPE: ' + '%3.1f' % TOTAL_TAPE_PB + ' PB'
+print ''
+
+
+
