@@ -13,10 +13,11 @@ secondsPerMonth = secondsPerYear/12.
 weeksPerMonth = secondsPerMonth/secondsPerWeek
 daysPerMonth = secondsPerMonth/secondsPerDay
 oneBillion = 1.0e9
+floorDaysPerPacDay = 2
 
 # expected units
 triggerRateUnitsExpected = 'Hz'
-runningTimeUnitsExpected = 'days'
+runningTimeOnFloorUnitsExpected = 'days'
 runningEfficiencyUnitsExpected = 'dl'
 timePeriodUnitsExpected = 'months'
 reconstructionRateUnitsExpected = 'Hz'
@@ -46,8 +47,9 @@ for parameter in parameters:
 
 # calculations
 
-runningTime_s = runningTime_days*secondsPerDay*runningEfficiency_dl
-numberEvents_dl = triggerRate_Hz*runningEfficiency_dl*runningTime_s
+pacRunningTime_days = runningTimeOnFloor_days/floorDaysPerPacDay
+runningTimeOnFloor_s = runningTimeOnFloor_days*secondsPerDay
+numberEvents_dl = triggerRate_Hz*runningEfficiency_dl*runningTimeOnFloor_s
 numberEvents_billions = numberEvents_dl/oneBillion
 timePeriod_s = timePeriod_months*secondsPerMonth
 averageEventRate_Hz = numberEvents_dl/timePeriod_s
@@ -57,7 +59,7 @@ reconstructionTimeAllCores_s = reconstructionTime_s/cores
 reconstructionTimeAllCores_weeks = reconstructionTimeAllCores_s/secondsPerWeek
 reconstructionTimeAllCores_Mhr = reconstructionTime_s/3600.0/1000000.0
 eventsize_bytes = eventsize*1024
-rawDataVolume_PB = eventsize_bytes*triggerRate_Hz*runningTime_s/1.0E15
+rawDataVolume_PB = eventsize_bytes*triggerRate_Hz*runningTimeOnFloor_s/1.0E15
 rawDataRate_GBps = eventsize_bytes*triggerRate_Hz/1.0E9
 RESTDataVolume_PB = rawDataVolume_PB*RESTfraction*passes
 simulationDataVolume_PB = rawDataVolume_PB*RESTfraction*simulationpasses*simulatedPerRawEvent
@@ -72,7 +74,7 @@ print ''
 print '          GlueX Computing Model'
 print '=========================================='
 print '         Trigger Rate: ' + str(triggerRate_Hz/1000.0) + ' kHz'
-print '         Running Time: ' + str(runningTime_days/7.0) + ' weeks'
+print '         Running Time: ' + str(runningTimeOnFloor_days/7.0) + ' weeks'
 print '   Running Efficiency: ' + str(int(runningEfficiency_dl*100.0)) + '%'
 print '  --------------------------------------'
 print '  Reconstruction Rate: ' + str(reconstructionRate_Hz) + ' Hz/core'

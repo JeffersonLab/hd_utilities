@@ -1,6 +1,6 @@
 <compMod>
 <parameter name="triggerRate" value="90.0e3" units="Hz"/>
-<parameter name="runningTime" value="140.0" units="days"/>
+<parameter name="runningTimeOnFloor" value="140.0" units="days"/>
 <parameter name="runningEfficiency" value="0.5" units="dl"/>
 <parameter name="timePeriod" value="12.0" units="months"/>
 <parameter name="reconstructionRate" value="5.2" units="Hz"/>
