@@ -11,6 +11,7 @@ secondsPerYear = 365.25*secondsPerDay
 secondsPerWeek = 7.0*secondsPerDay
 secondsPerMonth = secondsPerYear/12.
 weeksPerMonth = secondsPerMonth/secondsPerWeek
+daysPerWeek = secondsPerWeek/secondsPerDay
 daysPerMonth = secondsPerMonth/secondsPerDay
 oneBillion = 1.0e9
 floorDaysPerPacDay = 2
@@ -47,7 +48,8 @@ for parameter in parameters:
 
 # calculations
 
-pacRunningTime_days = runningTimeOnFloor_days/floorDaysPerPacDay
+runningTimePac_days = runningTimeOnFloor_days/floorDaysPerPacDay
+runningTimePac_weeks = runningTimePac_days/daysPerWeek
 runningTimeOnFloor_s = runningTimeOnFloor_days*secondsPerDay
 numberEvents_dl = triggerRate_Hz*runningEfficiency_dl*runningTimeOnFloor_s
 numberEvents_billions = numberEvents_dl/oneBillion
@@ -74,6 +76,7 @@ print ''
 print '          GlueX Computing Model'
 print '=========================================='
 print '         Trigger Rate: ' + str(triggerRate_Hz/1000.0) + ' kHz'
+print '             PAC Time: ' + str(runningTimePac_weeks) + ' weeks'
 print '         Running Time: ' + str(runningTimeOnFloor_days/7.0) + ' weeks'
 print '   Running Efficiency: ' + str(int(runningEfficiency_dl*100.0)) + '%'
 print '  --------------------------------------'
