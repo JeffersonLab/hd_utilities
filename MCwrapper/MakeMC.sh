@@ -396,7 +396,7 @@ if [[ "$BKGFOLDSTR" == "DEFAULT" || "$bkgloc_pre" == "loc:" || "$BKGFOLDSTR" == 
 				runperiod="RunPeriod-2016-02"
 		    fi
 
-		    if [[ $RUN_NUMBER < 30000 ]]; then
+		    if [[ $RUN_NUMBER < 10000 ]]; then
 			echo "Warning: random triggers do not exist for this run number"
 			exit
 		    fi
