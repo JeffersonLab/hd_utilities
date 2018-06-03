@@ -8,7 +8,8 @@ manage input parameters for various RunPeriods separately from the model
 calculations. The older spreadsheets can be found in the ''Spreadsheets'' directory.
 
 To get a summary of the computing resources run the comp_mod.py script, giving
-it an input XML file. (See example below) 
+it an input XML file. (See example below). Model values can be changed in the 
+input XML file. 
 
 ```
 >./comp_mod.py RunPeriod-2017-01.xml 
