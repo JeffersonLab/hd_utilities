@@ -424,7 +424,6 @@ if ( "$BKGFOLDSTR" == "DEFAULT" || "$bkgloc_pre" == "loc:" || "$BKGFOLDSTR" == "
     endif
 endif
 
-
 set recon_pre=`echo $CUSTOM_PLUGINS | cut -c1-4`
 set jana_config_file=`echo $CUSTOM_PLUGINS | sed -r 's/^.{5}//'`
 
@@ -846,14 +845,26 @@ if ( "$GENR" != "0" ) then
 				mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm'
 				set mcsmear_return_code=$status
 	    	else if ( "$BKGFOLDSTR" == "DEFAULT" || "$BKGFOLDSTR" == "Random" ) then
-				set fold_skip_num=`echo "$FILE_NUMBER * $PER_FILE" | /usr/bin/bc`
+
+				rm -f count.py
+	    		echo "import hddm_s" > count.py
+	    		echo "print(sum(1 for r in hddm_s.istream('$bkglocstring')))" >>! count.py
+	    		set totalnum=`python count.py`
+	    		rm count.py
+				set fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | /usr/bin/bc`
 				#set bkglocstring="/w/halld-scifs17exp/halld2/home/tbritton/MCwrapper_Development/converted.hddm"
+				
 				echo "mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1""+"$fold_skip_num
+	
 				mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1\+$fold_skip_num
 				set mcsmear_return_code=$status
 			else if ( "$bkgloc_pre" == "loc:" ) then
-				set fold_skip_num=`echo "$FILE_NUMBER * $PER_FILE" | /usr/bin/bc`
-				
+				rm -f count.py
+	    		echo "import hddm_s" > count.py
+	    		echo "print(sum(1 for r in hddm_s.istream('$bkglocstring')))" >>! count.py
+	    		set totalnum=`python count.py`
+	    		rm count.py
+				set fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | /usr/bin/bc`
 				echo "mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1""+"$fold_skip_num
 				mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1\+$fold_skip_num
 				set mcsmear_return_code=$status

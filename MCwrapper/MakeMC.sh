@@ -396,7 +396,7 @@ if [[ "$BKGFOLDSTR" == "DEFAULT" || "$bkgloc_pre" == "loc:" || "$BKGFOLDSTR" == 
 				runperiod="RunPeriod-2016-02"
 		    fi
 
-		    if [[ $RUN_NUMBER < 30000 ]]; then
+		    if [[ $RUN_NUMBER < 10000 ]]; then
 			echo "Warning: random triggers do not exist for this run number"
 			exit
 		    fi
@@ -819,7 +819,7 @@ if [[ "$GENR" != "0" ]]; then
 	    #make run.mac then call it below
 	    rm -f run.mac
 	    echo "/run/beamOn $EVT_TO_GEN" > run.mac
-	    echo "exit" >>! run.mac
+	    echo "exit" >> run.mac
 	    hdgeant4 -t$NUMTHREADS run.mac
 		geant_return_code=$?
 	    rm run.mac
@@ -849,12 +849,23 @@ if [[ "$GENR" != "0" ]]; then
 		mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm'
 		mcsmear_return_code=$?
 	    elif [[ "$BKGFOLDSTR" == "DEFAULT" || "$BKGFOLDSTR" == "Random" ]]; then
-		echo "mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
-		mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
+		rm -f count.py
+	    echo "import hddm_s" > count.py
+	    echo "print(sum(1 for r in hddm_s.istream('$bkglocstring')))" >> count.py
+	    totalnum=$(python count.py)
+		fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | /usr/bin/bc`
+		echo "skipping: "$fold_skip_num
+		echo "mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1""+"$fold_skip_num
+		mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1\+$fold_skip_num
 		mcsmear_return_code=$?
 		elif [[ "$bkgloc_pre" == "loc:" ]]; then
-		echo "mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1"
-		mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1
+		rm -f count.py
+	    echo "import hddm_s" > count.py
+	    echo "print(sum(1 for r in hddm_s.istream('$bkglocstring')))" >> count.py
+	    totalnum=`python count.py`
+		fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | /usr/bin/bc`
+		echo "mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1""+"$fold_skip_num
+		mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1\+$fold_skip_num
 		mcsmear_return_code=$?
 		else
 		    #trust the user and use their string
