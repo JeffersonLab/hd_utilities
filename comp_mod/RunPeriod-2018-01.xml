@@ -2,7 +2,7 @@
 
 Spring 2018
 
-2018-05-31 : Initial version DL
+2018-06-04 : Initial version DL
 
 =====================================================================
 triggerRate
@@ -115,5 +115,5 @@ running. They are not based on actual values from 2017 data analysis
 <parameter name="RESTfraction" value="0.146" units="dl"/>
 <parameter name="simulationRate" value="25" units="Hz"/>
 <parameter name="simulationpasses" value="2" units="dl"/>
-<parameter name="simulatedPerRawEvent" value="0.60" units="dl"/>
+<parameter name="simulatedPerRawEvent" value="2.0" units="dl"/>
 </compMod>
