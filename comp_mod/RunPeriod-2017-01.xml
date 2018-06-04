@@ -1,0 +1,194 @@
+<!--
+
+Spring 2017
+
+2018-05-31 : Initial version DL
+
+=====================================================================
+triggerRate
+
+Some fraction of time was spent at 100nA (low intensity) and some at
+150nA (high intensity). The trigger rates for these was about 30kHz
+and 45kHz respectively. The value of 40kHz is a guess based on those
+two numbers, but leaning higher in order to give a total data volume
+closer to the 911TB recorded on the tape library for this run period.
+
+=====================================================================
+runningTimeOnFloor
+
+Total number of days (40) from Eugene's collab meeting talk:
+https://halldweb.jlab.org/DocDB/0035/003524/001/talk_coll_2018_feb.pdf
+
+Total number of days (35) from Alexandre's collab  meeting talk:
+https://halldweb.jlab.org/DocDB/0032/003299/001/Spring17_summary.pdf
+
+We use Eugene's number since it makes the total data volume
+closer to the known volume
+
+=====================================================================
+runningEfficiency
+
+Total running efficiency of 48% taken from Alexandre's slide here:
+https://halldweb.jlab.org/DocDB/0032/003299/001/Spring17_summary.pdf
+
+=====================================================================
+reconstructionRate
+
+Directly measured on gluons gives something close to 5.2Hz/core. The
+5.0 number is from memory of a calculation I did based on some numbers
+from one of the launces documented here:
+https://halldweb.jlab.org/data_monitoring/launch_analysis/index.html
+
+I assume the discrepancy is due to inclusion of hyperthreads in the
+farm number.
+
+=====================================================================
+cores
+
+The average number of cores available to us varied from the different
+launches/batches due to competition for the farm at the time. The
+number of threads per job was 24. The number of jobs active varied
+from 100-300 which would correspond to 2400 to 7200 cores. This would
+include some hyperthreading.
+
+The number of 4500 was based partially on the above and partially
+on an estimate of the time jobs were active in each batch. The
+following are taken from eyeballing the "active" curve on the plot:
+"Number of jobs in each stage since launch"
+
+410 + 350 + 350 + 320 = 1430 hr = 8.5 weeks
+
+=====================================================================
+passes
+
+The number of original jobs and total attempts taken from:
+https://halldweb.jlab.org/data_monitoring/launch_analysis/index.html
+
+ver01:
+   batch1: Njobs=22965  Nattempts=23337
+   batch2: Njobs=19209  Nattempts=22411
+
+ver02:
+   batch1: Njobs=22965  Nattempts=23262
+   batch2: Njobs=19209  Nattempts=19569
+
+Some jobs will have failed early, but some may have failed at the end.
+If we assume all failed at the end, then the additional jobs would
+be equivalent to an additional fraction of a pass making the total
+number of passes:
+
+23337 + 22411 + 23262 + 19569
+- - - - - - - - - - - - - - - -  = 2.1
+        22965 + 19209
+
+n.b. This number does not include Sean's full calibration/skim pass
+which does full tracking nor does it include the numerous "Offline
+Monitoring" or "Incoming Data" launches. The resource usage for those
+is not as well documented as the 2 full recon passes.
+
+=====================================================================
+eventsize
+
+Running hdevio_scan on a raw data file gives:
+
+> hdevio_scan /cache/halld/RunPeriod-2017-01/rawdata/Run031034/hd_rawdata_031034_000.evio
+Processing file 1/1 : /cache/halld/RunPeriod-2017-01/rawdata/Run031034/hd_rawdata_031034_000.evio
+Mapping EVIO file ...
+26500 blocks scanned (18904/19073 MB 99%)
+
+EVIO Statistics for /cache/halld/RunPeriod-2017-01/rawdata/Run031034/hd_rawdata_031034_000.evio :
+- - - - - - - - - - -
+    Nblocks: 26732
+    Nevents: 40372
+    Nerrors: 0
+Nbad_blocks: 0
+Nbad_events: 0
+
+EVIO file size: 19073 MB
+EVIO block map size: 3772 kB
+first event: 1
+last event: 1613960
+
+             block levels = 40
+         events per block = 1-3,13
+                    Nsync = 0
+                Nprestart = 1
+                      Ngo = 1
+                   Npause = 0
+                     Nend = 0
+                   Nepics = 20
+                     Nbor = 1
+                 Nphysics = 1613960
+                 Nunknown = 0
+ blocks with unknown tags = 0
+
+which gives for the avg. event size: 19073/1613960 = 0.01182 MB/event or 11.8kB
+For hd_rawdata_030981_001.evio the number is 13.5kB
+
+We use an average of 12.7kB
+
+=====================================================================
+RESTfraction
+
+This is based on looking at several REST file sizes on the cache disk
+e.g.
+2867323 /cache/halld/RunPeriod-2017-01/recon/ver02/REST/030739/dana_rest_030739_000.hddm
+2950430 /cache/halld/RunPeriod-2017-01/recon/ver02/REST/030749/dana_rest_030749_000.hddm
+2857726 /cache/halld/RunPeriod-2017-01/recon/ver02/REST/030769/dana_rest_030769_000.hddm
+2915293 /cache/halld/RunPeriod-2017-01/recon/ver02/REST/030787/dana_rest_030787_000.hddm
+2857342 /cache/halld/RunPeriod-2017-01/recon/ver02/REST/030788/dana_rest_030788_000.hddm
+2796538 /cache/halld/RunPeriod-2017-01/recon/ver02/REST/030823/dana_rest_030823_000.hddm
+
+The raws data files are all very similar in size to: 19570207
+
+thus:  2.86/19.57 = 14.6%
+
+=====================================================================
+Actual Farm CPU usage
+
+By way of comparison of the calculation to the actual farm usage for
+the recon launches, recon numbers are obtained from:
+https://halldweb.jlab.org/data_monitoring/launch_analysis/index.html
+
+Full Recon.
+ver01:  3.19Mcore-hr
+   batch1:  mean CPU/job=68.55hr  Njobs=23337
+   batch2:  mean CPU/job=71.16hr  Njobs=22411
+
+ver02:  3.37Mcore-hr
+   batch1:  mean CPU/job=76.95hr  Njobs=23262
+   batch2:  mean CPU/job=80.68hr  Njobs=19569
+
+Total: 6.56 Mcore-hr  n.b. this will include hyperthreads and failed jobs
+
+=====================================================================
+Actual Tape usage
+
+The total amount of raw data was 911TB (from memory since the scicomp
+page is down). This number includes special runs, including some
+tests by Sasha after the beam was gone. Other non-production running
+was also mixed in that would cause this number to be higher than the
+estimate calculated by the model.
+
+=====================================================================
+Simulation
+
+The simulation numbers are currently just estimates we use for furture
+running. They are not based on actual values from 2017 data analysis
+
+-->
+<compMod>
+<parameter name="triggerRate" value="40e3" units="Hz"/>
+<parameter name="runningTimeOnFloor" value="40.0" units="days"/>
+<parameter name="runningEfficiency" value="0.48" units="dl"/>
+<parameter name="timePeriod" value="12.0" units="months"/>
+<parameter name="reconstructionRate" value="5.0" units="Hz"/>
+<parameter name="cores" value="4500" units="dl"/>
+<parameter name="passes" value="2.1" units="dl"/>
+<parameter name="eventsize" value="12.7" units="kB"/>
+<parameter name="compressionFactor" value="1.0" units="dl"/>
+<parameter name="RESTfraction" value="0.146" units="dl"/>
+<parameter name="simulationRate" value="25" units="Hz"/>
+<parameter name="simulationpasses" value="2" units="dl"/>
+<parameter name="simulatedPerRawEvent" value="0.60" units="dl"/>
+</compMod>

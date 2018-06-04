@@ -1,0 +1,53 @@
+<!--
+Subject: 	GlueX CPU requirements
+Date: 	Wed, 16 May 2018 00:10:10 -0400
+From: 	David Lawrence <davidl@jlab.org>
+To: 	Mark M. Ito <marki@jlab.org>
+
+
+Hi Mark,
+
+  After the CLAS12 review and discussion this afternoon, it got me thinking about our numbers
+a little more. Sorry for the length of this, but I wanted to write it down while I was thinking of it.
+
+First off, I’m using some numbers from a recent recon launch of 2017 data found here:
+
+https://halldweb.jlab.org/data_monitoring/recon/summary_swif_output_recon_2017-01_ver02_batch01.html
+
+Time to complete 1 job: ~4hrs
+Number of events in file: ~1.8M
+Event rate for 24thread job: 1.8M/4hr = 125Hz  or  5.2Hz/core
+
+If we use 3k core allocation on farm, total recon rate is: 3k * 5.2 = 15.6kHz
+
+DAQ runs at ~45kHz now (high luminosity will be double). This means it will
+take us about 3x longer to reconstruct than to acquire data. 
+
+If we ran 10 weeks in 2017 with duty factor of 0.5, then it should take: (10 weeks) * 0.5 * 3 = 15 weeks
+to process full data set. According to above link, it took only 864hrs for batch1 and 350 hrs for batch 2
+which is 7 weeks. Maybe this is due to use having exclusive use of farm (~6k core equivalent)?
+
+If we double our rate for high lumi and really get just 3k cores of the farm since CLAS12 is running
+at same time, the time to process will go up a factor of 4. i.e. it will take 30 weeks to process a 10
+calendar week run. If we actually run 20 weeks a year (which is still less than what management 
+is pushing for), it will take 60 weeks to recon a single pass.
+
+Bottom line: our event processing rate may end up 2.5 times faster than CLAS12 (if they make their
+improvements), but our DAQ rate is going to be 6 times more. This would put us in worse shape
+than CLAS12.
+
+It would be great if you could double check me on this and then we can discuss it.
+
+Regards,
+-David
+-->
+
+<compMod>
+<parameter name="jobTime" value="4" units="hours"/>
+<parameter name="eventsPerFile" value="1.8" units="millions"/>
+<parameter name="coresPerJob" value="24" units="dl"/>
+<parameter name="cores" value="3000" units="dl"/>
+<parameter name="triggerRate" value="45" units="kHz"/>
+<parameter name="runningTime" value="10" units="weeks"/>
+<parameter name="runningEfficiency" value="0.5" units="dl"/>
+</compMod>
