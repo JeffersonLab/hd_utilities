@@ -62,6 +62,7 @@ numberEvents_dl = triggerRate_Hz*runningEfficiency_dl*runningTimeOnFloor_s
 numberEvents_billions = numberEvents_dl/oneBillion
 timePeriod_s = timePeriod_months*secondsPerMonth
 averageEventRate_Hz = numberEvents_dl/timePeriod_s
+reconstructionTimePerEvent_ms = 1000.0/reconstructionRate_Hz
 reconstructionTime_s = passes*numberEvents_dl/reconstructionRate_Hz
 reconstructionTime_years = reconstructionTime_s/secondsPerYear
 reconstructionTimeAllCores_s = reconstructionTime_s/cores
@@ -98,7 +99,7 @@ print '             PAC Time: ' + '%3.1f' % runningTimePac_weeks + ' weeks'
 print '         Running Time: ' + '%3.1f' % (runningTimeOnFloor_days/7.0) + ' weeks'
 print '   Running Efficiency: ' + str(int(runningEfficiency_dl*100.0)) + '%'
 print '  --------------------------------------'
-print '  Reconstruction Rate: ' + str(reconstructionRate_Hz) + ' Hz/core'
+print '    Recon. time/event: ' + '%3.0f' % reconstructionTimePerEvent_ms + ' ms (' + str(reconstructionRate_Hz) + ' Hz/core)'
 print '       Available CPUs: ' + str(cores) + ' cores (full)'
 print '      Time to process: ' + '%3.1f' % reconstructionTimeAllCores_weeks + ' weeks (all passes)'
 print '     Number of passes: ' + str(passes)
