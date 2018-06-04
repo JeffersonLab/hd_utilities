@@ -1,0 +1,119 @@
+<!--
+
+Spring 2018
+
+2018-05-31 : Initial version DL
+
+=====================================================================
+triggerRate
+
+Most of the time was spent at 150nA, but for the second half of
+the run we split the time between the 75um and 750um TPOL convertor.
+The trigger rate was 50kHz and 70kHz respectively. We estimate 3/4
+of the time spent at 50kHz and 1/4 at 70kHz giving a 56.25kHz average.
+
+=====================================================================
+runningTimeOnFloor
+
+Alexandre's slides from Feb. 22 indicated we were partway into a
+10 week run that would end on Mar. 21st. We actually ran until
+the morning of May 6. According to Curtis' spreadsheet, we had
+88 days = 12.6 weeks of running total. That likely takes into
+account all beam studies/rf recovery, and the actual longer down
+times during the run. (There was some extended downtime from
+Mar. 6-24).
+
+https://halldweb.jlab.org/DocDB/0035/003526/002/Fall18_Spring18_summary.pdf
+https://docs.google.com/spreadsheets/d/1NffTc4-S5PbTMSuH_pp7ZYsGRH4JC_WSVo770_iJYt0/edit#gid=1635471172
+
+We use the 88 days number.
+
+=====================================================================
+runningEfficiency
+
+This number (34%) was tuned to make the total production close to, but
+less than the 1910TB reported by the scicomp web page. Nominally, the
+acclerator runs at around 50%, but our overall running efficiency is
+supposed to represent production running only. Special runs and losses
+due to DAQ etc. count against this number.
+
+=====================================================================
+reconstructionRate
+
+Directly measured Spring 2018 run 42323 on gluon112 gives about 7.2Hz
+per full core based on an Amdahl fit. If I read off the 24 thread
+rate from the curve of the plot, it is about 160Hz which would be
+about 6.67Hz/core. I'm not sure I understand that discrepancy.
+For 2017 recon jobs, it looked closer to 5Hz/core. This would have
+included hyperthreads, but also writing of REST files.
+
+Another complication is that the CPU hours does not look like it matches
+perfectly with the wall hours. Specifically. looking at plots on the
+following page shows the peak in "time spent in active" to be at 4 hrs
+while the peak in the "cpu time" plot is at 90. 90/24=3.75hrs.
+https://halldweb.jlab.org/data_monitoring/recon/summary_swif_output_recon_2017-01_ver02_batch02.html
+
+For the purposes of this estimate, we'll assume 5.5Hz.
+
+=====================================================================
+cores
+
+Currently, farm is at 10564 CPUs total according to Ganglia. I assume
+half of these are hyperthreads. A recent purchase should add 1500 real
+cores to the farm increasing it to approx. 6500 full cores + 6500
+hyperthreads. Assume 5000 cores will be available to us on average
+since we won't need them all of the time and can assume other customers
+won't either.
+
+=====================================================================
+passes
+
+From the RunPeriod-2017-01 parameters, we used 2.1 passes. That did
+not count Sean's calibration/skim pass, the "incoming data" jobs,
+or the various small offline monitoring launches. Thus, we assume
+here that we will need 3.5 passes
+
+=====================================================================
+eventsize
+
+Multiple files from run 42323 have 1.52M events in them (some have more).
+Use an avg. event size of 19.1GB/1.52Mevents = 12.6kB/event
+
+=====================================================================
+RESTfraction
+
+This is based on looking at several REST file sizes from 2017 data on the cache disk
+e.g.
+2867323 /cache/halld/RunPeriod-2017-01/recon/ver02/REST/030739/dana_rest_030739_000.hddm
+2950430 /cache/halld/RunPeriod-2017-01/recon/ver02/REST/030749/dana_rest_030749_000.hddm
+2857726 /cache/halld/RunPeriod-2017-01/recon/ver02/REST/030769/dana_rest_030769_000.hddm
+2915293 /cache/halld/RunPeriod-2017-01/recon/ver02/REST/030787/dana_rest_030787_000.hddm
+2857342 /cache/halld/RunPeriod-2017-01/recon/ver02/REST/030788/dana_rest_030788_000.hddm
+2796538 /cache/halld/RunPeriod-2017-01/recon/ver02/REST/030823/dana_rest_030823_000.hddm
+
+The raws data files are all very similar in size to: 19570207
+
+thus:  2.86/19.57 = 14.6%
+
+=====================================================================
+Simulation
+
+The simulation numbers are currently just estimates we use for furture
+running. They are not based on actual values from 2017 data analysis
+
+-->
+<compMod>
+<parameter name="triggerRate" value="56.25e3" units="Hz"/>
+<parameter name="runningTimeOnFloor" value="88.0" units="days"/>
+<parameter name="runningEfficiency" value="0.34" units="dl"/>
+<parameter name="timePeriod" value="12.0" units="months"/>
+<parameter name="reconstructionRate" value="5.5" units="Hz"/>
+<parameter name="cores" value="5000" units="dl"/>
+<parameter name="passes" value="3.5" units="dl"/>
+<parameter name="eventsize" value="12.6" units="kB"/>
+<parameter name="compressionFactor" value="1.0" units="dl"/>
+<parameter name="RESTfraction" value="0.146" units="dl"/>
+<parameter name="simulationRate" value="25" units="Hz"/>
+<parameter name="simulationpasses" value="2" units="dl"/>
+<parameter name="simulatedPerRawEvent" value="0.60" units="dl"/>
+</compMod>
