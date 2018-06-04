@@ -196,7 +196,7 @@ void doadctimeoffsets(int RunNumber){
 
     float THESHIFT = TShift;
     
-    if (1) { // make offset 0: TEMPORARY FIX
+    if (0) { // make offset 0: TEMPORARY FIX
       int S = (int)TShift / (int)4;
       S -= 1;
       if (S<1)
