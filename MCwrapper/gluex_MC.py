@@ -186,9 +186,9 @@ def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DAT
 
         if COMMAND_parts[21] == "Random" or COMMAND_parts[21][:4] == "loc:":
                 formattedRUNNUM=""
-                for i in range(len(RUNNUM),6):
+                for i in range(len(str(RUNNUM)),6):
                         formattedRUNNUM+="0"
-                formattedRUNNUM=formattedRUNNUM+RUNNUM
+                formattedRUNNUM=formattedRUNNUM+str(RUNNUM)
                 if COMMAND_parts[21] == "Random":
                         #print "/cache/halld/Simulation/random_triggers/"+RANDBGTAG+"/run"+formattedRUNNUM+"_random.hddm"
                         additional_passins+="/cache/halld/gluex_simulations/random_triggers/"+RANDBGTAG+"/run"+formattedRUNNUM+"_random.hddm"+", "
@@ -255,8 +255,8 @@ def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DAT
         f.write("initialdir = "+RUNNING_DIR+"\n")
         #f.write("transfer_input_files = "+ENVFILE+"\n")
         f.write("transfer_input_files = "+indir+", "+ENVFILE+additional_passins+"\n")
-        f.write("transfer_output_files = "+RUNNUM+"_"+str(FILENUM)+"\n")
-        f.write("transfer_output_remaps = "+"\""+RUNNUM+"_"+str(FILENUM)+"="+DATA_OUTPUT_BASE_DIR+"\""+"\n")
+        f.write("transfer_output_files = "+str(RUNNUM)+"_"+str(FILENUM)+"\n")
+        f.write("transfer_output_remaps = "+"\""+str(RUNNUM)+"_"+str(FILENUM)+"="+DATA_OUTPUT_BASE_DIR+"\""+"\n")
 
         f.write("queue\n")
         f.close()
@@ -315,7 +315,7 @@ def main(argv):
 
         print "*********************************"
         print "Welcome to v1.14 of the MCwrapper"
-        print "Thomas Britton 5/24/18"
+        print "Thomas Britton 6/6/18"
         print "*********************************"
 
 	#load all argument passed in and set default options
@@ -689,7 +689,8 @@ def main(argv):
                                 break
                         event_sum = event_sum + runs[1]
 
-                #print event_sum
+                print event_sum
+                exit
                 sum2=0.
                 for runs in table: #do for each job
                         #print runs[0]
