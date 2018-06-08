@@ -1,4 +1,4 @@
-EXAMPLE_SPLIT_DIR = /work/halld/home/sdobbs/gluex_sim_migration/new-sim
+EXAMPLE_SPLIT_DIR = $(HD_UTILITIES_HOME)/split_sim-recon/example
 SIM_REPO_DIR = gluex_sim
 PWD=`pwd`
 

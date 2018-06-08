@@ -1,0 +1,72 @@
+
+README.sbms
+
+Oct. 9, 2013  David Lawrence
+
+This directory constains files for the scons based build
+system as implemented in the Hall-D code. Most of the heavy
+lifting is done by routines in the sbms.py file, though some
+important global setup is done in the top level SConstruct 
+file.
+
+This system is deisgned such that there is only one SConstruct
+file which sits inside the src directory. All subdirectories
+will have a SConscript file that gets included into a single,
+large dependency tree. This allows the scons system to do efficient
+builds in parallel as well as identify library dependencies
+so targets can be rebuilt when libraries are modified.
+
+To do a complete build, just run "scons" while in the src
+directory. To build a specific program, go the source directory
+for it and run "scons -u".
+
+Binaries are built in the src/.BMS_OSNAME directory where
+"BMS_OSNAME" is taken from the environment variable. When
+"scons install" is run, the files are installed into a deployment
+directory in src/../BMS_OSNAME (i.e. one directory up from src).
+The deployment directory structure has platform first with
+the bin, lib, include directories inside of that. (Note that
+this is different from how the original BMS installed things).
+
+Platform specific settings can be placed in files based on the
+uname or the BMS_OSNAME (though it must be modified. For example,
+both of these would be included on the appropriate machine and in
+this order:
+
+sbms_Darwin.py
+sbms_Darwin_macosx10-9-x86_64-llvm5-0.py
+
+
+
+To build with multiple threads, use the -j option like this:
+
+scons -j 4
+
+this will start the build with 4 threads.
+
+
+To show the compile and link commands while building:
+
+scons SHOWBUILD=1
+
+
+To build a single program, go to the programs source directory and:
+
+scons -u
+
+
+To clean up all binaries from a build:
+
+scons -c
+
+
+To clean up binaries in a single directory:
+
+scons -u -c
+
+n.b. this will clean up dependencies (e.g. libraries too!)
+
+
+To install the headers, libraries, and executables:
+
+scons install
