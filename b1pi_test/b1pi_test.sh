@@ -29,7 +29,7 @@ Example:
 EOF
 }
 
-while getopts "h?v:f:n:t:d:r:" opt; do
+while getopts "h?v:f:n:t:d:r:s:" opt; do
     case "$opt" in
     h|\?)
         show_help
@@ -46,6 +46,8 @@ while getopts "h?v:f:n:t:d:r:" opt; do
     d)  B1PI_TEST_DIR=$OPTARG
 	;;
     r)  RUN=$OPTARG
+	;;
+    s)  SEED=$OPTARG
     esac
 done
 
@@ -84,18 +86,27 @@ if [ -z "$RUN" ]
     RUN=$numrun
 fi
 
+if [ -z "$SEED" ]
+    then
+    echo "info: random number seed not defined, using genr8 default (different seed each run)"
+    SEED_OPTION=""
+else
+    SEED_OPTION="-s${SEED}"
+fi
+
 echo NEVENTS = $NEVENTS
 echo VERTEX = $VERTEX
 echo NTHREADS = $NTHREADS
 echo B1PI_TEST_DIR = $B1PI_TEST_DIR
 echo RUN = $RUN
+echo SEED = $SEED
 
 echo "Copying script files and macros ..."
 cp -pv $B1PI_TEST_DIR/* .
 cp -pv $B1PI_TEST_DIR/macros/* .
 
 echo "Running genr8 ..."
-genr8 -r${RUN} -M${NEVENTS} -Ab1_pi.ascii < b1_pi.input
+genr8 -r${RUN} -M${NEVENTS} -Ab1_pi.ascii ${SEED_OPTION} < b1_pi.input
 
 echo "Converting generated events to HDDM ..."
 genr8_2_hddm -V"${VERTEX}" b1_pi.ascii 
