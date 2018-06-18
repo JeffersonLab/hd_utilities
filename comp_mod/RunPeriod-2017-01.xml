@@ -32,61 +32,6 @@ Total running efficiency of 48% taken from Alexandre's slide here:
 https://halldweb.jlab.org/DocDB/0032/003299/001/Spring17_summary.pdf
 
 =====================================================================
-reconstructionRate
-
-Directly measured on gluons gives something close to 5.2Hz/core. The
-5.0 number is from memory of a calculation I did based on some numbers
-from one of the launces documented here:
-https://halldweb.jlab.org/data_monitoring/launch_analysis/index.html
-
-I assume the discrepancy is due to inclusion of hyperthreads in the
-farm number.
-
-=====================================================================
-cores
-
-The average number of cores available to us varied from the different
-launches/batches due to competition for the farm at the time. The
-number of threads per job was 24. The number of jobs active varied
-from 100-300 which would correspond to 2400 to 7200 cores. This would
-include some hyperthreading.
-
-The number of 4500 was based partially on the above and partially
-on an estimate of the time jobs were active in each batch. The
-following are taken from eyeballing the "active" curve on the plot:
-"Number of jobs in each stage since launch"
-
-410 + 350 + 350 + 320 = 1430 hr = 8.5 weeks
-
-=====================================================================
-passes
-
-The number of original jobs and total attempts taken from:
-https://halldweb.jlab.org/data_monitoring/launch_analysis/index.html
-
-ver01:
-   batch1: Njobs=22965  Nattempts=23337
-   batch2: Njobs=19209  Nattempts=22411
-
-ver02:
-   batch1: Njobs=22965  Nattempts=23262
-   batch2: Njobs=19209  Nattempts=19569
-
-Some jobs will have failed early, but some may have failed at the end.
-If we assume all failed at the end, then the additional jobs would
-be equivalent to an additional fraction of a pass making the total
-number of passes:
-
-23337 + 22411 + 23262 + 19569
-- - - - - - - - - - - - - - - -  = 2.1
-        22965 + 19209
-
-n.b. This number does not include Sean's full calibration/skim pass
-which does full tracking nor does it include the numerous "Offline
-Monitoring" or "Incoming Data" launches. The resource usage for those
-is not as well documented as the 2 full recon passes.
-
-=====================================================================
 eventsize
 
 Running hdevio_scan on a raw data file gives:
@@ -128,6 +73,15 @@ For hd_rawdata_030981_001.evio the number is 13.5kB
 We use an average of 12.7kB
 
 =====================================================================
+eventsPerRun
+
+Number of events (in millions) in a production run. Shift workers
+took runs based on number of events, thus integrating out any
+beam trips during the run. For 2017, runs at low intensity were
+taken at 150M event and for high intensity at 250M. We use an
+average of 200M events here.
+
+=====================================================================
 RESTfraction
 
 This is based on looking at several REST file sizes on the cache disk
@@ -142,6 +96,147 @@ e.g.
 The raws data files are all very similar in size to: 19570207
 
 thus:  2.86/19.57 = 14.6%
+
+=====================================================================
+goodRunFraction
+
+This represents the fraction of the full dataset considered good production
+runs. We get this from the ratio of the CPU used for the two recon passes
+from the record (https://halldweb.jlab.org/data_monitoring/launch_analysis/index.html)
+to that calculated assuming all beamtime was used to collect production
+data:
+
+   (1.5743+1.3669+1.7672+1.5498)/7.4 = 0.85
+
+=====================================================================
+reconstructionRate
+
+Directly measured on gluons gives something close to 5.2Hz/core. The
+5.0 number is from memory of a calculation I did based on some numbers
+from one of the launces documented here:
+https://halldweb.jlab.org/data_monitoring/launch_analysis/index.html
+
+I assume the discrepancy is due to inclusion of hyperthreads in the
+farm number.
+
+=====================================================================
+reconPasses
+
+Number of reconstruction passes. We did 2 full recon passes of the
+2017 data.
+
+https://halldweb.jlab.org/data_monitoring/launch_analysis/index.html
+
+=====================================================================
+analysisRate
+
+This is estimated by looking at the total CPU of the first analysis
+pass of 2017 data compared to the total CPU of the first recon pass
+and using that to scale the 5Hz recon rate:
+
+  (5Hz)*(1.5743+1.3669)/(0.1954) = 75Hz
+
+Note that this will depend on what channels are included in the pass.
+Some passes only added channels and therefore took less time. This
+number represents the rate for the first pass which would have been the
+slowest rate.
+
+=====================================================================
+analysisPasses
+
+For 2017 there were 8 versions, but only 5 had data at
+https://halldweb.jlab.org/data_monitoring/launch_analysis/index.html
+Presumably the other 3 were minor enough as to not warrant bookkeeping.
+
+As noted above, not all passes were the same. The first was the most
+inclusive, but others only added some channels and therefore used
+much less CPU. The final analysis launch looks to have taken the same
+amount of time as the first, but was only run on about half of the files.
+
+The value here is empirical to rpresent an equivalent number of passes
+to match the total CPU of the 5 recorded passes.
+
+   (0.551 Mhr)/(0.1954) = 2.82
+
+=====================================================================
+cores
+
+The average number of cores available to us varied from the different
+launches/batches due to competition for the farm at the time. The
+number of threads per job was 24. The number of jobs active varied
+from 100-300 which would correspond to 2400 to 7200 cores. This would
+include some hyperthreading.
+
+The number of 4500 was based partially on the above and partially
+on an estimate of the time jobs were active in each batch. The
+following are taken from eyeballing the "active" curve on the plot:
+"Number of jobs in each stage since launch"
+
+410 + 350 + 350 + 320 = 1430 hr = 8.5 weeks
+
+=====================================================================
+incomingData
+
+proportional to number of runs
+
+Number of files per run analyzed for the "incoming data" jobs. This
+is always 5.
+
+=====================================================================
+calibRate
+
+proportinal to time on floor
+
+This value represents the number of Mhr of CPU used per week of running
+to calibrate the detector. For 2017 data, the gxproj3 account (Sean)
+used 2Mhr. Additional time was used by individual accounts for
+calibration that is not as easy to categorize. Tegan B. was the biggest
+user with 7.4% of the 26.3Mhr, some fraction of this for calibration.
+For this value we assume 3Mhr/5.7 weeks = 0.526
+
+It should be noted that during the discussion on this at the Offline
+meeting on 2018-06-15 there was general thinking that we should be
+able to calibrate with far less CPU in the future. This number is
+higher partly because we were still developing technique and partly
+because the farm resource was not freely available at the time.
+
+=====================================================================
+offlineMonitoring
+
+proportional to number of runs
+
+A total of about 2.3 Mhr was used for Offline Monitoring jobs of 2017
+data. This consisted of a couple of dozen runs with various conditions
+and amounts of data for each. If we took 289 production runs (based
+on 0.893PB total data, 24TB/run, and 85% good run fraction) then the
+offline monitoring used about 0.00800Mhr per run.
+
+=====================================================================
+miscUserStudies
+
+proportional to time to process al files of single run
+
+This value is used to capture the CPU usage by all of the various users
+that is attributed to the gluex project. Some of this should probably
+go under calibRate, but it is very hard to categorize which parts of
+this should go there.
+
+It is assumed here that these are jobs that run over all files from a
+small number of runs in order to do special studies. The amount of CPU
+required is therefore proportional to the time it takes to process a
+single production run. This number is empirical based on 2017 CPU usage.
+There is about a 9 Mhr descrepency in the total usage (26.3MHr) and the
+shared account usage (16.4Mhr). We attribute 1Mhr of that to Teagan's
+calibrations in the calibrateRate value above.
+
+9Mhr/( (200M events)/(5Hz)/(3600s/hr) ) = 810
+
+Note that this is not to say that there were 810 studies, but rather,
+this is the proportionality constant for the CPU usage that is
+proportional to processing a single run.
+
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 =====================================================================
 Actual Farm CPU usage
@@ -171,24 +266,47 @@ was also mixed in that would cause this number to be higher than the
 estimate calculated by the model.
 
 =====================================================================
-Simulation
+simulationRate
 
-The simulation numbers are currently just estimates we use for furture
-running. They are not based on actual values from 2017 data analysis
+This is based on a very rough value Thomas B. gave of 40ms/event for
+bggen events with real data background mixed in. Note that adding the
+background this way significantly reduced the compute time required
+from previous models.
+
+=====================================================================
+simulationpasses
+
+Number of times we will need to repeat simulation. This value of
+2 is an old estimate.
+
+=====================================================================
+simulatedPerRawEvent
+
+Number of simulated events needed for each raw data event (production
+runs only) This value of 2 is an old estimate.
 
 -->
 <compMod>
 <parameter name="triggerRate" value="40e3" units="Hz"/>
 <parameter name="runningTimeOnFloor" value="40.0" units="days"/>
-<parameter name="runningEfficiency" value="0.48" units="dl"/>
-<parameter name="timePeriod" value="12.0" units="months"/>
-<parameter name="reconstructionRate" value="5.0" units="Hz"/>
-<parameter name="cores" value="4500" units="dl"/>
-<parameter name="passes" value="2.1" units="dl"/>
+<parameter name="runningEfficiency" value="0.48"/>
 <parameter name="eventsize" value="12.7" units="kB"/>
-<parameter name="compressionFactor" value="1.0" units="dl"/>
-<parameter name="RESTfraction" value="0.146" units="dl"/>
+<parameter name="eventsPerRun" value="200" units="Mevent"/>
+<parameter name="compressionFactor" value="1.0"/>
+<parameter name="RESTfraction" value="0.146"/>
+
+<parameter name="reconstructionRate" value="5.0" units="Hz"/>
+<parameter name="reconPasses" value="2.0"/>
+<parameter name="goodRunFraction" value="0.85"/>
+<parameter name="analysisRate" value="75.0" units="Hz"/>
+<parameter name="analysisPasses" value="2.82"/>
+<parameter name="cores" value="4500"/>
+<parameter name="incomingData" value="5" units="files"/>
+<parameter name="calibRate" value="0.530" units="Mhr/week"/>
+<parameter name="offlineMonitoring" value="0.00800" units="Mhr/run"/>
+<parameter name="miscUserStudies" value="810"/>
+
 <parameter name="simulationRate" value="25" units="Hz"/>
-<parameter name="simulationpasses" value="2" units="dl"/>
-<parameter name="simulatedPerRawEvent" value="0.60" units="dl"/>
+<parameter name="simulationpasses" value="2"/>
+<parameter name="simulatedPerRawEvent" value="2.0"/>
 </compMod>
