@@ -30,6 +30,7 @@ import ccdb.path_utils
 import mysql.connector
 import time
 import os
+import getpass
 import sys
 import re
 import subprocess
@@ -39,47 +40,47 @@ import glob
 def swif_add_job(WORKFLOW, RUNNO, FILENO,SCRIPT,COMMAND, VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR):
 
         
-	# PREPARE NAMES
-	STUBNAME = str(RUNNO) + "_" + str(FILENO)
-	JOBNAME = WORKFLOW + "_" + STUBNAME
+        # PREPARE NAMES
+        STUBNAME = str(RUNNO) + "_" + str(FILENO)
+        JOBNAME = WORKFLOW + "_" + STUBNAME
 
-	# CREATE ADD-JOB COMMAND
-	# job
+        # CREATE ADD-JOB COMMAND
+        # job
         #try removing the name specification
-	add_command = "swif add-job -workflow " + WORKFLOW #+ " -name " + JOBNAME
-	# project/track
-	add_command += " -project " + PROJECT + " -track " + TRACK
-	# resources
-	add_command += " -cores " + NCORES + " -disk " + DISK + " -ram " + RAM + " -time " + TIMELIMIT + " -os " + OS
-	# stdout
-	add_command += " -stdout " + DATA_OUTPUT_BASE_DIR + "/log/" + str(RUNNO) + "_stdout." + STUBNAME + ".out"
-	# stderr
-	add_command += " -stderr " + DATA_OUTPUT_BASE_DIR + "/log/" + str(RUNNO) + "_stderr." + STUBNAME + ".err"
-	# tags
-	add_command += " -tag run_number " + str(RUNNO)
-	# tags
-	add_command += " -tag file_number " + str(FILENO)
-	# script with options command
-	add_command += " "+SCRIPT  +" "+ COMMAND
+        add_command = "swif add-job -workflow " + WORKFLOW #+ " -name " + JOBNAME
+        # project/track
+        add_command += " -project " + PROJECT + " -track " + TRACK
+        # resources
+        add_command += " -cores " + NCORES + " -disk " + DISK + " -ram " + RAM + " -time " + TIMELIMIT + " -os " + OS
+        # stdout
+        add_command += " -stdout " + DATA_OUTPUT_BASE_DIR + "/log/" + str(RUNNO) + "_stdout." + STUBNAME + ".out"
+        # stderr
+        add_command += " -stderr " + DATA_OUTPUT_BASE_DIR + "/log/" + str(RUNNO) + "_stderr." + STUBNAME + ".err"
+        # tags
+        add_command += " -tag run_number " + str(RUNNO)
+        # tags
+        add_command += " -tag file_number " + str(FILENO)
+        # script with options command
+        add_command += " "+SCRIPT  +" "+ COMMAND
 
-	if(VERBOSE == True):
-		print "job add command is \n" + str(add_command)
+        if(VERBOSE == True):
+                print( "job add command is \n" + str(add_command))
 
         if(int(NCORES)==1 and int(RAM[:-2]) >= 10 and RAM[-2:]=="GB" ):
-                print "SciComp has a limit on RAM requested per thread, as RAM is the limiting factor."
-                print "This will likely cause an AUGER-SUBMIT error."
-                print "Please either increase NCORES or decrease RAM requested and try again."
+                print( "SciComp has a limit on RAM requested per thread, as RAM is the limiting factor.")
+                print( "This will likely cause an AUGER-SUBMIT error.")
+                print( "Please either increase NCORES or decrease RAM requested and try again.")
                 exit(1)
-	# ADD JOB
+        # ADD JOB
         if add_command.find(';')!=-1 or add_command.find('&')!=-1 :#THIS CHECK HELPS PROTECT AGAINST A POTENTIAL HACK VIA CONFIG FILES
-                print "Nice try.....you cannot use ; or &"
+                print( "Nice try.....you cannot use ; or &")
                 exit(1)
-	status = subprocess.call(add_command.split(" "))
+        status = subprocess.call(add_command.split(" "))
 
 def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, MEMLIMIT, QUEUENAME, LOG_DIR ):
         #name
         STUBNAME = str(RUNNUM) + "_" + str(FILENUM)
-	JOBNAME = WORKFLOW + "_" + STUBNAME
+        JOBNAME = WORKFLOW + "_" + STUBNAME
        
         sub_command="qsub MCqsub.submit"
        
@@ -131,7 +132,7 @@ def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DA
 
 def  condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR ):
         STUBNAME = str(RUNNUM) + "_" + str(FILENUM)
-	JOBNAME = WORKFLOW + "_" + STUBNAME
+        JOBNAME = WORKFLOW + "_" + STUBNAME
 
         mkdircom="mkdir -p "+DATA_OUTPUT_BASE_DIR+"/log/"
 
@@ -146,7 +147,7 @@ def  condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, 
         
         add_command="condor_submit -name "+JOBNAME+" MCcondor.submit"
         if add_command.find(';')!=-1 or add_command.find('&')!=-1 or mkdircom.find(';')!=-1 or mkdircom.find('&')!=-1:#THIS CHECK HELPS PROTEXT AGAINST A POTENTIAL HACK VIA CONFIG FILES
-                print "Nice try.....you cannot use ; or &"
+                print( "Nice try.....you cannot use ; or &")
                 exit(1)
 
         status = subprocess.call(mkdircom, shell=True)
@@ -155,7 +156,7 @@ def  condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, 
 
 def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR, RANDBGTAG ):
         STUBNAME = str(RUNNUM) + "_" + str(FILENUM)
-	JOBNAME = WORKFLOW + "_" + STUBNAME
+        JOBNAME = WORKFLOW + "_" + STUBNAME
 
         mkdircom="mkdir -p "+DATA_OUTPUT_BASE_DIR+"/log/"
 
@@ -263,7 +264,7 @@ def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DAT
         
         add_command="condor_submit -name "+JOBNAME+" MCOSG.submit"
         if add_command.find(';')!=-1 or add_command.find('&')!=-1 :#THIS CHECK HELPS PROTEXT AGAINST A POTENTIAL HACK VIA CONFIG FILES
-                print "Nice try.....you cannot use ; or &"
+                print( "Nice try.....you cannot use ; or &")
                 exit(1)
 
         status = subprocess.call(mkdircom, shell=True)
@@ -290,35 +291,35 @@ def showhelp():
         return helpstring
 
 ########################################################## MAIN ##########################################################
-	
+        
 def main(argv):
-	parser_usage = "gluex_MC.py config_file Run_Number/Range num_events [all other options]\n\n where [all other options] are:\n\n "
+        parser_usage = "gluex_MC.py config_file Run_Number/Range num_events [all other options]\n\n where [all other options] are:\n\n "
         parser_usage += showhelp()
-	parser = OptionParser(usage = parser_usage)
-	(options, args) = parser.parse_args(argv)
+        parser = OptionParser(usage = parser_usage)
+        (options, args) = parser.parse_args(argv)
 
-	#check if there are enough arguments
-	if(len(argv)<3):
-		parser.print_help()
-		return
+        #check if there are enough arguments
+        if(len(argv)<3):
+                parser.print_help()
+                return
 
-	#check if the needed arguments are valid
-	if len(args[1].split("="))>1 or len(args[2].split("="))>1:
-		parser.print_help()
-		return
+        #check if the needed arguments are valid
+        if len(args[1].split("="))>1 or len(args[2].split("="))>1:
+                parser.print_help()
+                return
 
         #!!!!!!!!!!!!!!!!!!REQUIRED COMMAND LINE ARGUMENTS!!!!!!!!!!!!!!!!!!!!!!!!
         CONFIG_FILE = args[0]
         RUNNUM = args[1]
-	EVTS = int(args[2])
+        EVTS = int(args[2])
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        print "*********************************"
-        print "Welcome to v1.14 of the MCwrapper"
-        print "Thomas Britton 6/6/18"
-        print "*********************************"
+        print( "*********************************")
+        print( "Welcome to v1.15 of the MCwrapper")
+        print( "Thomas Britton 6/25/18")
+        print( "*********************************")
 
-	#load all argument passed in and set default options
+        #load all argument passed in and set default options
         VERBOSE    = False
 
         TAGSTR="I_dont_have_one"
@@ -339,7 +340,7 @@ def main(argv):
         BGRATE="rcdb" #GHz
         BGTAGONLY="0"
         RUNNING_DIR="./"
-	ccdbSQLITEPATH="no_sqlite"
+        ccdbSQLITEPATH="no_sqlite"
         rcdbSQLITEPATH="no_sqlite"
 
         GEANTVER = 4        
@@ -369,15 +370,15 @@ def main(argv):
         CALIBTIME="notime"
         RECON_CALIBTIME="notime"
         BASEFILENUM=0
-	PERFILE=10000
-	GENR=1
-	GEANT=1
-	SMEAR=1
-	RECON=1
-	CLEANGENR=1
-	CLEANGEANT=1
-	CLEANSMEAR=1
-	CLEANRECON=0
+        PERFILE=10000
+        GENR=1
+        GEANT=1
+        SMEAR=1
+        RECON=1
+        CLEANGENR=1
+        CLEANGEANT=1
+        CLEANSMEAR=1
+        CLEANRECON=0
         BATCHRUN=0
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         #loop over config file and set the "parameters"
@@ -396,9 +397,9 @@ def main(argv):
                         continue
                 
                 if len(parts)>2 and str(parts[0]).upper() != "VARIATION":
-                        print "warning! I am going to have a really difficult time with:"
-                        print line
-                        print "I'm going to just ignore it and hope it isn't a problem...."
+                        print( "warning! I am going to have a really difficult time with:")
+                        print( line)
+                        print( "I'm going to just ignore it and hope it isn't a problem....")
                         continue
                         
                         
@@ -440,7 +441,7 @@ def main(argv):
                 elif str(parts[0]).upper()=="WORKFLOW_NAME" :
                         WORKFLOW=rm_comments[0].strip()
                         if WORKFLOW.find(';')!=-1 or WORKFLOW.find('&')!=-1 :#THIS CHECK HELPS PROTECT AGAINST A POTENTIAL HACK IN WORKFLOW NAMES
-                                print "Nice try.....you cannot use ; or & in the name"
+                                print( "Nice try.....you cannot use ; or & in the name")
                                 exit(1)
                 elif str(parts[0]).upper()=="GENERATOR_CONFIG" :
                         GENCONFIG=rm_comments[0].strip()
@@ -454,7 +455,7 @@ def main(argv):
                         for part in bkg_parts:
                                 subparts=part.split(":")
                                 if len(subparts)>2:
-                                        print "Error in BKG Parsing: "+part
+                                        print( "Error in BKG Parsing: "+part)
                                         return
                                 if subparts[0].upper() == "TAGONLY":
                                         BGTAGONLY=1
@@ -512,75 +513,75 @@ def main(argv):
                                 CALIBTIME=str(parts[2]).split("#")[0].strip()
                         else:
                                 VERSION=rm_comments[0].strip()
-		elif str(parts[0]).upper()=="CCDBSQLITEPATH" :
-			ccdbSQLITEPATH=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="CCDBSQLITEPATH" :
+                        ccdbSQLITEPATH=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="RCDBSQLITEPATH" :
-			rcdbSQLITEPATH=rm_comments[0].strip()
+                        rcdbSQLITEPATH=rm_comments[0].strip()
                 else:
-                        print "unknown config parameter!! "+str(parts[0])
-	#loop over command line arguments 
-	
+                        print( "unknown config parameter!! "+str(parts[0]))
+        #loop over command line arguments 
+        
         LOG_DIR = DATA_OUTPUT_BASE_DIR  #set LOG_DIR=DATA_OUTPUT_BASE_DIR
 
         for argu in args:
-		argfound=0
-		flag=argu.split("=")
-		#redundat check to jump over the first 4 arguments
-		if(len(flag)<2):
-			continue
-		else:#toggle the flags as user defines
-			if flag[0]=="variation":
-				argfound=1
+                argfound=0
+                flag=argu.split("=")
+                #redundat check to jump over the first 4 arguments
+                if(len(flag)<2):
+                        continue
+                else:#toggle the flags as user defines
+                        if flag[0]=="variation":
+                                argfound=1
 
-				VERSION=flag[1]
+                                VERSION=flag[1]
                                 CALIBTIME="notime"
  #                               for part in range(2,len(flag)):
   #                                      VERSION+="="+flag[part]
                         if flag[0]=="calibtime":
-				argfound=1
-                               	CALIBTIME=flag[1]
-			if flag[0]=="per_file":
-				argfound=1
-				PERFILE=int(flag[1])
+                                argfound=1
+                                CALIBTIME=flag[1]
+                        if flag[0]=="per_file":
+                                argfound=1
+                                PERFILE=int(flag[1])
                         if flag[0]=="base_file_number":
-				argfound=1
-				BASEFILENUM=int(flag[1])
-			if flag[0]=="generate":
-				argfound=1
-				GENR=int(flag[1])
-			if flag[0]=="geant":
-				argfound=1
-				GEANT=int(flag[1])
-			if flag[0]=="mcsmear":
-				argfound=1
-				SMEAR=int(flag[1])
-			if flag[0]=="recon":
-				argfound=1
-				RECON=int(flag[1])
-			if flag[0]=="cleangenerate":
-				argfound=1
-				CLEANGENR=int(flag[1])
-			if flag[0]=="cleangeant":
-				argfound=1
-				CLEANGEANT=int(flag[1])
-			if flag[0]=="cleanmcsmear":
-				argfound=1
-				CLEANSMEAR=int(flag[1])
-			if flag[0]=="cleanrecon":
-				argfound=1
-				CLEANRECON=int(flag[1])
-			if flag[0]=="batch":
-				argfound=1
-				BATCHRUN=int(flag[1])
-			if flag[0]=="numthreads":
-				argfound=1
-				NCORES=str(flag[1])
+                                argfound=1
+                                BASEFILENUM=int(flag[1])
+                        if flag[0]=="generate":
+                                argfound=1
+                                GENR=int(flag[1])
+                        if flag[0]=="geant":
+                                argfound=1
+                                GEANT=int(flag[1])
+                        if flag[0]=="mcsmear":
+                                argfound=1
+                                SMEAR=int(flag[1])
+                        if flag[0]=="recon":
+                                argfound=1
+                                RECON=int(flag[1])
+                        if flag[0]=="cleangenerate":
+                                argfound=1
+                                CLEANGENR=int(flag[1])
+                        if flag[0]=="cleangeant":
+                                argfound=1
+                                CLEANGEANT=int(flag[1])
+                        if flag[0]=="cleanmcsmear":
+                                argfound=1
+                                CLEANSMEAR=int(flag[1])
+                        if flag[0]=="cleanrecon":
+                                argfound=1
+                                CLEANRECON=int(flag[1])
+                        if flag[0]=="batch":
+                                argfound=1
+                                BATCHRUN=int(flag[1])
+                        if flag[0]=="numthreads":
+                                argfound=1
+                                NCORES=str(flag[1])
                         if flag[0]=="logdir":
-				argfound=1
-				LOG_DIR=str(flag[1])
-			if argfound==0:
-				print "WARNING OPTION: "+argu+" NOT FOUND!"
-	
+                                argfound=1
+                                LOG_DIR=str(flag[1])
+                        if argfound==0:
+                                print( "WARNING OPTION: "+argu+" NOT FOUND!")
+        
       #  if str(GEANTVER)=="3":
       #          print "!!!  Warning: Geant 3 detected! NumThreads has been set to 1"
       #          print "!!!  This is done to ensure efficient use of resources while running and should provide faster job starts."
@@ -588,27 +589,31 @@ def main(argv):
       #          print ""
                 
         if DATA_OUTPUT_BASE_DIR == "UNKNOWN_LOCATION":
-                print "I doubt that the system will find "+DATA_OUTPUT_BASE_DIR+" so I am saving you the embarassment and stopping this"
+                print( "I doubt that the system will find "+DATA_OUTPUT_BASE_DIR+" so I am saving you the embarassment and stopping this")
                 return
 
         name_breakdown=GENCONFIG.split("/")
         CHANNEL = name_breakdown[len(name_breakdown)-1].split(".")[0]
 
-	#print a line indicating SWIF or Local run
-	if BATCHRUN == 0 or BATCHSYS=="NULL":
-		print "Locally simulating "+args[2]+" "+CHANNEL+" Events"
-	else:
-		print "Creating "+WORKFLOW+" to simulate "+args[2]+" "+CHANNEL+" Events"
-	# CREATE WORKFLOW
+        #print a line indicating SWIF or Local run
+        if BATCHRUN == 0 or BATCHSYS=="NULL":
+                print( "Locally simulating "+args[2]+" "+CHANNEL+" Events")
+        else:
+                print( "Creating "+WORKFLOW+" to simulate "+args[2]+" "+CHANNEL+" Events")
+        # CREATE WORKFLOW
        
+        #username = getpass.getuser()
+        #print(username)
+        #exit
+
         if (BATCHSYS.upper() =="SWIF" and int(BATCHRUN) != 0):
-		status = subprocess.call(["swif", "create", "-workflow", WORKFLOW])
+                status = subprocess.call(["swif", "create", "-workflow", WORKFLOW])
 
-	#calculate files needed to gen
-	FILES_TO_GEN=EVTS/PERFILE
-	REMAINING_GEN=EVTS%PERFILE
+        #calculate files needed to gen
+        FILES_TO_GEN=EVTS/PERFILE
+        REMAINING_GEN=EVTS%PERFILE
 
-	indir=os.environ.get('MCWRAPPER_CENTRAL')
+        indir=os.environ.get('MCWRAPPER_CENTRAL')
         
         script_to_use = "/MakeMC.csh"
         
@@ -625,16 +630,16 @@ def main(argv):
                 rcdbSQLITEPATH="batch_default"
 
         if str(indir) == "None":
-                print "MCWRAPPER_CENTRAL not set"
+                print( "MCWRAPPER_CENTRAL not set")
                 return
 
-	outdir=DATA_OUTPUT_BASE_DIR
-	
+        outdir=DATA_OUTPUT_BASE_DIR
+        
         #if local run set out directory to cwd
-	if outdir[len(outdir)-1] != "/" :
+        if outdir[len(outdir)-1] != "/" :
                 outdir+= "/"
 
-	#for every needed file call the script with the right options
+        #for every needed file call the script with the right options
 
         #need two loops 1) for when RUNNUM is a number and 2) when it contains a "-" as in 11366-11555 or RunPeriod2017-02
         # for 2) use rcdb to get a list of the runs of a runperiod and amount of data.  Normalize number of events. Loop through list calling with the runnumbers from rcdb and their normalized num_events*requested events
@@ -676,10 +681,10 @@ def main(argv):
                         runRange = cursor.fetchall()
                         runlow=runRange[0][0]
                         runhigh=runRange[0][1]
-                        print runRange
+                        print( runRange)
                         #cursor.close()
                         #cnx.close()
-                        print str(runlow)+"-->"+str(runhigh)
+                        print( str(runlow)+"-->"+str(runhigh))
 
                 table = db.select_runs("@is_production and @status_approved",runlow,runhigh).get_values(['event_count'],True)
                 #print table
@@ -689,7 +694,7 @@ def main(argv):
                                 break
                         event_sum = event_sum + runs[1]
 
-                print event_sum
+                print( event_sum)
                 exit
                 sum2=0.
                 for runs in table: #do for each job
@@ -701,28 +706,28 @@ def main(argv):
                         #print num_events_this_run
                         
                         if num_events_this_run == 0:
-			        continue
+                                continue
 
                        #do for each file needed
                         FILES_TO_GEN_this_run=num_events_this_run/PERFILE
-	                REMAINING_GEN_this_run=num_events_this_run%PERFILE
+                        REMAINING_GEN_this_run=num_events_this_run%PERFILE
 
                         for FILENUM_this_run in range(1, FILES_TO_GEN_this_run + 2):
                                 num_this_file=PERFILE
 
                                 if FILENUM_this_run == FILES_TO_GEN_this_run +1:
-			                num_this_file=REMAINING_GEN_this_run
+                                        num_this_file=REMAINING_GEN_this_run
                                 
                                 if num_this_file == 0:
-			                continue
+                                        continue
 
-		                COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(runs[0])+" "+str(BASEFILENUM+FILENUM_this_run+-1)+" "+str(num_this_file)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(ccdbSQLITEPATH)+" "+str(rcdbSQLITEPATH)+" "+str(BGTAGONLY)+" "+str(RADIATOR_THICKNESS)+" "+str(BGRATE)+" "+str(RANDBGTAG)+" "+str(RECON_CALIBTIME)
+                                COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(runs[0])+" "+str(BASEFILENUM+FILENUM_this_run+-1)+" "+str(num_this_file)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(ccdbSQLITEPATH)+" "+str(rcdbSQLITEPATH)+" "+str(BGTAGONLY)+" "+str(RADIATOR_THICKNESS)+" "+str(BGRATE)+" "+str(RANDBGTAG)+" "+str(RECON_CALIBTIME)
                                 if BATCHRUN == 0 or BATCHSYS=="NULL":
                                         #print str(runs[0])+" "+str(BASEFILENUM+FILENUM_this_run+-1)+" "+str(num_this_file)
-        			        os.system(str(indir)+" "+COMMAND)
-	        	        else:
+                                        os.system(str(indir)+" "+COMMAND)
+                                else:
                                         if BATCHSYS.upper()=="SWIF":
-                        	                swif_add_job(WORKFLOW, runs[0], BASEFILENUM+FILENUM_this_run+-1,str(indir),COMMAND,VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR)
+                                                swif_add_job(WORKFLOW, runs[0], BASEFILENUM+FILENUM_this_run+-1,str(indir),COMMAND,VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR)
                                         elif BATCHSYS.upper()=="QSUB":
                                                 qsub_add_job(VERBOSE, WORKFLOW, runs[0], BASEFILENUM+FILENUM_this_run+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, RAM, QUEUENAME, LOG_DIR )
                                         elif BATCHSYS.upper()=="CONDOR":
@@ -733,25 +738,25 @@ def main(argv):
                 
         else:
                 if FILES_TO_GEN >= 500 and ( ccdbSQLITEPATH == "no_sqlite" or rcdbSQLITEPATH == "no_sqlite"):
-                        print "This job has >500 subjobs and risks ddosing the servers.  Please use sqlite or request again with a larger per file. "
+                        print( "This job has >500 subjobs and risks ddosing the servers.  Please use sqlite or request again with a larger per file. ")
                         return
-	        for FILENUM in range(1, FILES_TO_GEN + 2):
-		        num=PERFILE
-		        #last file gets the remainder
-		        if FILENUM == FILES_TO_GEN +1:
-			        num=REMAINING_GEN
-		        #if ever asked to generate 0 events....just don't
-		        if num == 0:
-			        continue
+                for FILENUM in range(1, FILES_TO_GEN + 2):
+                        num=PERFILE
+                        #last file gets the remainder
+                        if FILENUM == FILES_TO_GEN +1:
+                                num=REMAINING_GEN
+                        #if ever asked to generate 0 events....just don't
+                        if num == 0:
+                                continue
                 
-		        COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(RUNNUM)+" "+str(BASEFILENUM+FILENUM+-1)+" "+str(num)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS).upper()+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(ccdbSQLITEPATH)+" "+str(rcdbSQLITEPATH)+" "+str(BGTAGONLY)+" "+str(RADIATOR_THICKNESS)+" "+str(BGRATE)+" "+str(RANDBGTAG)+" "+str(RECON_CALIBTIME)
+                        COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(RUNNUM)+" "+str(BASEFILENUM+FILENUM+-1)+" "+str(num)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS).upper()+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(ccdbSQLITEPATH)+" "+str(rcdbSQLITEPATH)+" "+str(BGTAGONLY)+" "+str(RADIATOR_THICKNESS)+" "+str(BGRATE)+" "+str(RANDBGTAG)+" "+str(RECON_CALIBTIME)
                
-		        #either call MakeMC.csh or add a job depending on swif flag
+                        #either call MakeMC.csh or add a job depending on swif flag
                         if BATCHRUN == 0 or BATCHSYS=="NULL":
-        			os.system(str(indir)+" "+COMMAND)
-	        	else:
+                                os.system(str(indir)+" "+COMMAND)
+                        else:
                                 if BATCHSYS.upper()=="SWIF":
-                        	        swif_add_job(WORKFLOW, RUNNUM, BASEFILENUM+FILENUM+-1,str(indir),COMMAND,VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR)
+                                        swif_add_job(WORKFLOW, RUNNUM, BASEFILENUM+FILENUM+-1,str(indir),COMMAND,VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR)
                                 elif BATCHSYS.upper()=="QSUB":
                                         qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, BASEFILENUM+FILENUM+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, RAM, QUEUENAME, LOG_DIR )
                                 elif BATCHSYS.upper()=="CONDOR":
@@ -761,7 +766,7 @@ def main(argv):
 
                                         
         if BATCHRUN == 1 and BATCHSYS.upper() == "SWIF":
-                print "All Jobs created.  Please call \"swif run "+WORKFLOW+"\" to run"
+                print( "All Jobs created.  Please call \"swif run "+WORKFLOW+"\" to run")
         elif BATCHRUN == 2 and BATCHSYS.upper()=="SWIF":
                 swifrun = "swif run "+WORKFLOW
                 subprocess.call(swifrun.split(" "))
