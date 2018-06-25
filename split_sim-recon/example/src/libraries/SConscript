@@ -1,0 +1,13 @@
+
+import sbms
+
+import os
+
+Import('env osname')
+
+# Loop over libraries, building each
+subdirs = ['AMPTOOLS_AMPS', 'AMPTOOLS_DATAIO', 'AMPTOOLS_MCGEN']
+
+
+SConscript(dirs=subdirs, exports='env osname', duplicate=0)
+

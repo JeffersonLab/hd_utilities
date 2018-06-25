@@ -1,0 +1,10 @@
+
+import sbms
+
+Import('*')
+
+Import('env osname')
+
+subdirs = ['Simulation']
+SConscript(dirs=subdirs, exports='env osname', duplicate=0)
+
