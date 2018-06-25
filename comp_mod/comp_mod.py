@@ -11,7 +11,6 @@ if len(sys.argv) > 1 : INPUTFILE = sys.argv[1]
 
 
 # constants
-
 secondsPerDay = 24.*60.*60.
 secondsPerYear = 365.25*secondsPerDay
 secondsPerWeek = 7.0*secondsPerDay
@@ -23,63 +22,77 @@ oneBillion = 1.0e9
 floorDaysPerPacDay = 2
 
 # expected units
-triggerRateUnitsExpected = 'Hz'
-runningTimeOnFloorUnitsExpected = 'days'
-runningEfficiencyUnitsExpected = 'dl'
-timePeriodUnitsExpected = 'months'
-reconstructionRateUnitsExpected = 'Hz'
-coresUnitsExpected = 'dl'
-passesUnitsExpected = 'dl'
-eventsizeUnitsExpected = 'kB'
-compressionFactorUnitsExpected = 'dl'
-RESTfractionUnitsExpected = 'dl'
-simulationRateUnitsExpected = 'Hz'
-simulationRateUnitsExpected = 'Hz'
-simulationpassesUnitsExpected = 'dl'
-simulatedPerRawEventUnitsExpected = 'dl'
+UnitsExpected={}
+UnitsExpected['triggerRate']        = 'Hz'
+UnitsExpected['runningTimeOnFloor'] = 'days'
+UnitsExpected['eventsize']          = 'kB'
+UnitsExpected['eventsPerRun']       = 'Mevent'
+UnitsExpected['reconstructionRate'] = 'Hz'
+UnitsExpected['analysisRate'] = 'Hz'
+UnitsExpected['incomingData']       = 'files'
+UnitsExpected['calibRate']          = 'Mhr/week'
+UnitsExpected['offlineMonitoring']  = 'Mhr/run'
+UnitsExpected['simulationRate']     = 'Hz'
 
-# inputs
-
+# input values (with unit checks
 DOMTree = xml.dom.minidom.parse(INPUTFILE)
 compMod = DOMTree.documentElement
 parameters=compMod.getElementsByTagName("parameter")
 for parameter in parameters:
-    exec(parameter.getAttribute("name") + '=' + parameter.getAttribute("value"))
-    exec(parameter.getAttribute("name") + 'Units = "' + parameter.getAttribute("units") + '"')
-    name = parameter.getAttribute("name")
-    units = parameter.getAttribute("units")
-    value = parameter.getAttribute("value")
-    unitsExpected = eval(parameter.getAttribute("name") + 'UnitsExpected')
-    codeCheckUnits = "if %sUnitsExpected == '%s':\n %s_%s = %s\nelse:\n sys.exit('%s in %s not in %s')" % (name, units, name, units, value, name, units, unitsExpected)
-    exec(codeCheckUnits)
+
+	name  = parameter.getAttribute("name")
+	value = parameter.getAttribute("value")
+	units = parameter.getAttribute("units")
+	if not parameter.hasAttribute("units"): units = None
+
+	if name in UnitsExpected:
+		if units != UnitsExpected[name]:
+			sys.exit('%s in %s not in %s' % (name, units, UnitsExpected[name]))
+	elif units != None:
+		sys.exit('%s has units %s when none expected' % (name, units))
+
+	# Set variable with attribute name
+	exec(parameter.getAttribute("name") + '=' + parameter.getAttribute("value"))
+
 
 # calculations
-
-runningTimePac_days = runningTimeOnFloor_days/floorDaysPerPacDay
+runningTimePac_days = runningTimeOnFloor/floorDaysPerPacDay
 runningTimePac_weeks = runningTimePac_days/daysPerWeek
-runningTimeOnFloor_s = runningTimeOnFloor_days*secondsPerDay
-numberEvents_dl = triggerRate_Hz*runningEfficiency_dl*runningTimeOnFloor_s
-numberEvents_billions = numberEvents_dl/oneBillion
-timePeriod_s = timePeriod_months*secondsPerMonth
-averageEventRate_Hz = numberEvents_dl/timePeriod_s
-reconstructionTime_s = passes*numberEvents_dl/reconstructionRate_Hz
+runningTimeOnFloor_s = runningTimeOnFloor*secondsPerDay
+
+numberEvents = triggerRate*runningEfficiency*runningTimeOnFloor_s
+numberProductionEvents = numberEvents*goodRunFraction
+numberProductionEvents_billions = numberProductionEvents/oneBillion
+reconstructionTimePerEvent_ms = 1000.0/reconstructionRate
+reconstructionTime_s = reconPasses*numberProductionEvents/reconstructionRate
 reconstructionTime_years = reconstructionTime_s/secondsPerYear
 reconstructionTimeAllCores_s = reconstructionTime_s/cores
 reconstructionTimeAllCores_weeks = reconstructionTimeAllCores_s/secondsPerWeek
 reconstructionTimeAllCores_Mhr = reconstructionTime_s/3600.0/1000000.0
 eventsize_bytes = eventsize*1024/compressionFactor
-rawDataVolume_PB = eventsize_bytes*numberEvents_dl/1.0E15
-rawDataRateCompressed_GBps = eventsize_bytes*triggerRate_Hz/1.0E9
+rawDataVolume_PB = eventsize_bytes*numberEvents/1.0E15
+rawDataRateCompressed_GBps = eventsize_bytes*triggerRate/1.0E9
 rawDataRateUncompressed_GBps = rawDataRateCompressed_GBps*compressionFactor
 rawDataOffsite1month_MBps = rawDataVolume_PB*1.0E9/secondsPerMonth
 RESTfractionCompressed = RESTfraction*compressionFactor
-RESTDataVolume_PB = rawDataVolume_PB*RESTfractionCompressed*passes
+RESTDataVolume_PB = rawDataVolume_PB*RESTfractionCompressed*analysisPasses
 simulationDataVolume_PB = rawDataVolume_PB*RESTfractionCompressed*simulationpasses*simulatedPerRawEvent
-simulationTimeGeneration_Mhr = numberEvents_billions*1.0E9*simulationpasses*simulatedPerRawEvent/simulationRate/3600.0/1.0E6
-simulationTimeReconstruction_Mhr = simulationTimeGeneration_Mhr*simulationRate/reconstructionRate_Hz
+simulationTimeGeneration_Mhr = numberProductionEvents_billions*1.0E9*simulationpasses*simulatedPerRawEvent/simulationRate/3600.0/1.0E6
+simulationTimeReconstruction_Mhr = simulationTimeGeneration_Mhr*simulationRate/reconstructionRate
 simulationTimeTotal_Mhr = simulationTimeGeneration_Mhr + simulationTimeReconstruction_Mhr
 
-TOTAL_CPU_Mhr = reconstructionTimeAllCores_Mhr + simulationTimeTotal_Mhr
+analysisCPU_Mhr = analysisPasses*numberProductionEvents/analysisRate/3600.0/1.0E6
+calibCPU_Mhr = calibRate*runningTimeOnFloor/daysPerWeek
+numberRuns = numberProductionEvents/(eventsPerRun*1.0E6)
+offlineMonitoring_Mhr = offlineMonitoring*numberRuns
+cpuRun_Mhr = eventsPerRun*1.0E6/reconstructionRate/3600.0/1.0E6
+miscUserStudies_Mhr = miscUserStudies*cpuRun_Mhr
+eventsPerFile = 20.0E9/(eventsize*1.0E3)
+cpuFile_Mhr = eventsPerFile/reconstructionRate/3600.0/1.0E6
+incomingData_Mhr = incomingData*numberRuns*cpuFile_Mhr
+TOTAL_CPU_REAL_DATA = reconstructionTimeAllCores_Mhr + analysisCPU_Mhr + calibCPU_Mhr + offlineMonitoring_Mhr + miscUserStudies_Mhr + incomingData_Mhr
+
+TOTAL_CPU_Mhr = TOTAL_CPU_REAL_DATA + simulationTimeTotal_Mhr
 TOTAL_TAPE_PB = rawDataVolume_PB + RESTDataVolume_PB + simulationDataVolume_PB
 
 # This is just for pretty printing below
@@ -89,41 +102,52 @@ if compressionFactor == 1 :
 	compressed_str = ''
 	uncompressed_str =''
 
+# Print report
 print ''
-print '           GlueX Computing Model'
-print ' '*(21 - len(INPUTFILE)/2) + INPUTFILE
-print '=========================================='
-print '         Trigger Rate: ' + str(triggerRate_Hz/1000.0) + ' kHz'
-print '             PAC Time: ' + '%3.1f' % runningTimePac_weeks + ' weeks'
-print '         Running Time: ' + '%3.1f' % (runningTimeOnFloor_days/7.0) + ' weeks'
-print '   Running Efficiency: ' + str(int(runningEfficiency_dl*100.0)) + '%'
+print '               GlueX Computing Model'
+print ' '*(25 - len(INPUTFILE)/2) + INPUTFILE
+print '=============================================='
+print '                 PAC Time: ' + '%3.1f' % runningTimePac_weeks + ' weeks'
+print '             Running Time: ' + '%3.1f' % (runningTimeOnFloor/7.0) + ' weeks'
+print '       Running Efficiency: ' + str(int(runningEfficiency*100.0)) + '%'
 print '  --------------------------------------'
-print '  Reconstruction Rate: ' + str(reconstructionRate_Hz) + ' Hz/core'
-print '       Available CPUs: ' + str(cores) + ' cores (full)'
-print '      Time to process: ' + '%3.1f' % reconstructionTimeAllCores_weeks + ' weeks (all passes)'
-print '     Number of passes: ' + str(passes)
-print '   Reconstruction CPU: ' + '%3.1f' % reconstructionTimeAllCores_Mhr + ' Mcore-hr'
+print '             Trigger Rate: ' + str(triggerRate/1000.0) + ' kHz'
+print '     Raw Data Num. Events: ' + '%3.1f' % numberProductionEvents_billions + ' billion (good production runs only)'
+print '     Raw Data compression: ' + '%3.2f' % compressionFactor
+print '      Raw Data Event Size: ' + str(eventsize) + ' kB ' + uncompressed_str
+print '  Front End Raw Data Rate: ' + '%3.2f' % rawDataRateUncompressed_GBps + ' GB/s ' + uncompressed_str
+print '       Disk Raw Data Rate: ' + '%3.2f' % rawDataRateUncompressed_GBps + ' GB/s ' + compressed_str
+print '          Raw Data Volume: ' + '%3.3f' % rawDataVolume_PB + ' PB ' + compressed_str
+print '     Bandwidth to offsite: ' + '%3.0f' % rawDataOffsite1month_MBps + ' MB/s (all raw data in 1 month)'
+print '      REST/Raw size frac.: ' + '%3.2f' % (RESTfractionCompressed*100.0) + '%'
+print '         REST Data Volume: ' + '%3.3f' % RESTDataVolume_PB + ' PB (for ' + str(analysisPasses) + ' passes)'
+print '   Total Real Data Volume: ' + '%3.1f' % (rawDataVolume_PB + RESTDataVolume_PB) + ' PB'
 print '  --------------------------------------'
-print ' Raw Data Num. Events: ' + '%5.1f' % numberEvents_billions + ' billion'
-print ' Raw Data compression: ' + '%3.2f' % compressionFactor
-print '  Raw Data Event Size: ' + str(eventsize) + ' kB ' + compressed_str
-print '    Max Raw Data Rate: ' + '%3.2f' % rawDataRateUncompressed_GBps + ' GB/s ' + uncompressed_str
-print '      Raw Data Volume: ' + '%3.3f' % rawDataVolume_PB + ' PB ' + compressed_str
-print ' Bandwidth to offsite: ' + '%3.0f' % rawDataOffsite1month_MBps + ' MB/s (all raw data in 1 month)'
-print '  REST/Raw size frac.: ' + '%3.2f' % (RESTfractionCompressed*100.0) + '%'
-print '     REST Data Volume: ' + '%3.3f' % RESTDataVolume_PB + ' PB (for ' + str(passes) + ' passes)'
+print '        Recon. time/event: ' + '%3.0f' % reconstructionTimePerEvent_ms + ' ms (' + str(reconstructionRate) + ' Hz/core)'
+print '           Available CPUs: ' + str(cores) + ' cores (full)'
+print '          Time to process: ' + '%3.1f' % reconstructionTimeAllCores_weeks + ' weeks (all passes)'
+print '        Good run fraction: ' + str(goodRunFraction)
+print '   Number of recon passes: ' + str(reconPasses)
+print 'Number of analysis passes: ' + str(analysisPasses)
+print '       Reconstruction CPU: ' + '%3.1f' % reconstructionTimeAllCores_Mhr + ' Mhr'
+print '             Analysis CPU: ' + '%3.3f' % analysisCPU_Mhr + ' Mhr'
+print '          Calibration CPU: ' + '%3.1f' % calibCPU_Mhr + ' Mhr'
+print '   Offline Monitoring CPU: ' + '%3.1f' % offlineMonitoring_Mhr + ' Mhr'
+print '            Misc User CPU: ' + '%3.1f' % miscUserStudies_Mhr + ' Mhr'
+print '        Incoming Data CPU: ' + '%3.3f' % incomingData_Mhr + ' Mhr'
+print '      Total Real Data CPU: ' + '%3.1f' % TOTAL_CPU_REAL_DATA + ' Mhr'
 print '  --------------------------------------'
-print '   MC generation Rate: ' + '%3.1f' % simulationRate + ' Hz/core'
-print '  MC Number of passes: ' + '%3.1f' % simulationpasses
-print '  MC events/raw event: ' + '%3.2f' % simulatedPerRawEvent
-print '       MC data volume: ' + '%3.3f' % simulationDataVolume_PB + ' PB  (REST only)'
-print '    MC Generation CPU: ' + '%3.1f' % simulationTimeGeneration_Mhr + ' Mcore-hr'
-print 'MC Reconstruction CPU: ' + '%3.1f' % simulationTimeReconstruction_Mhr + ' Mcore-hr'
-print '               MC CPU: ' + '%3.1f' % simulationTimeTotal_Mhr + ' Mcore-hr'
-print '  --------------------------------------'
-print '               TOTALS:'
-print '                  CPU: ' + '%3.1f' % TOTAL_CPU_Mhr + ' Mcore-hr'
-print '                 TAPE: ' + '%3.1f' % TOTAL_TAPE_PB + ' PB'
+print '       MC generation Rate: ' + '%3.1f' % simulationRate + ' Hz/core'
+print '      MC Number of passes: ' + '%3.1f' % simulationpasses
+print '      MC events/raw event: ' + '%3.2f' % simulatedPerRawEvent
+print '           MC data volume: ' + '%3.3f' % simulationDataVolume_PB + ' PB  (REST only)'
+print '        MC Generation CPU: ' + '%3.1f' % simulationTimeGeneration_Mhr + ' Mhr'
+print '    MC Reconstruction CPU: ' + '%3.1f' % simulationTimeReconstruction_Mhr + ' Mhr'
+print '             Total MC CPU: ' + '%3.1f' % simulationTimeTotal_Mhr + ' Mhr'
+print '  ---------------------------------------'
+print '                   TOTALS:'
+print '                      CPU: ' + '%3.1f' % TOTAL_CPU_Mhr + ' Mhr'
+print '                     TAPE: ' + '%3.1f' % TOTAL_TAPE_PB + ' PB'
 print ''
 
 
