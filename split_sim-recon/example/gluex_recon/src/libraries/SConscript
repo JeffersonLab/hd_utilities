@@ -1,0 +1,16 @@
+
+import sbms
+
+import os
+
+Import('env osname')
+
+# Loop over libraries, building each
+subdirs = ['include', 'BCAL', 'FCAL', 'DANA', 'TAGGER', 'HDGEOMETRY', 'TRACKING']
+subdirs.extend(['CCAL', 'START_COUNTER', 'RF', 'TRIGGER', 'CDC', 'FDC', 'PID', 'KINFITTER', 'ANALYSIS'])
+subdirs.extend(['CERE', 'DIRC', 'HDDM', 'TOF', 'PAIR_SPECTROMETER', 'TPOL', 'FMWPC', 'TAC'])
+subdirs.extend(['DAQ', 'TTAB', 'EVENTSTORE'])
+
+
+SConscript(dirs=subdirs, exports='env osname', duplicate=0)
+

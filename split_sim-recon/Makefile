@@ -1,52 +1,59 @@
 EXAMPLE_SPLIT_DIR = $(HD_UTILITIES_HOME)/split_sim-recon/example
 SIM_REPO_DIR = gluex_sim
+RECON_REPO_DIR = gluex_recon
 PWD=`pwd`
-DIRECTORIES_TO_BE_MOVED = src/programs/Simulation src/plugins/Simulation \
+DIRECTORIES_TO_BE_MOVED = src/programs/Simulation \
+	src/programs/AmplitudeAnalysis src/plugins/Simulation \
 	src/libraries/AMPTOOLS_AMPS src/libraries/AMPTOOLS_DATAIO \
 	src/libraries/AMPTOOLS_MCGEN
 
-all: .recon_remove_dirs .sim_push_done
+all: .recon_push_done .sim_push_done
 
 .sim-recon_clone_done:
 	git clone --bare ssh://git@github.com/jeffersonlab/sim-recon
 	date >$@
 
-.recon_push_done: .sim-recon_clone_done
+.recon_bare_push_done: .sim-recon_clone_done
 	cd sim-recon.git ; \
 	    git push --mirror git@github.com:jeffersonlab/gluex_recon.git
 	date > $@
 
-.recon_remove_dirs: .recon_push_done
-	rm -rf gluex_recon
+.recon_clone_done: .recon_bare_push_done
+	rm -rf $(RECON_REPO_DIR)
 	git clone ssh://git@github.com/jeffersonlab/gluex_recon
-	cd gluex_recon ; git rm -r $(DIRECTORIES_TO_BE_MOVED)
-	cd gluex_recon ; git commit -m "sim directories removed"
-	cd gluex_recon ; git push
+
+.recon_modify_done: .recon_clone_done
+	cp -rv $(EXAMPLE_SPLIT_DIR)/gluex_recon/src gluex_recon
+	cd $(RECON_REPO_DIR) ; git rm -r $(DIRECTORIES_TO_BE_MOVED)
+
+.recon_commit_done: .recon_modify_done
+	cd $(RECON_REPO_DIR) ; git add .
+	cd $(RECON_REPO_DIR) ; \
+	    git commit -m "gluex_sim modified from sim-recon original"
+
+.recon_push_done: .recon_commit_done
+	cd $(RECON_REPO_DIR) ; git push
 	date > $@
 
 .sim_clone_done: .sim-recon_clone_done
 	git clone file://$(PWD)/sim-recon $(SIM_REPO_DIR)
 	date > $@
 
-.filter_done: .sim_clone_done
+.sim_filter_done: .sim_clone_done
 	pushd $(SIM_REPO_DIR) ; git filter-branch --index-filter 'git rm --cached -qr --ignore-unmatch -- . && git reset -q $(GIT_COMMIT) -- $(DIRECTORIES_TO_BE_MOVED)' --prune-empty -- --all
 	date > $@
 
-.copy_done: .filter_done
-	cp -v $(EXAMPLE_SPLIT_DIR)/gluex_sim/src/SConstruct $(SIM_REPO_DIR)/src
-	cp -rv $(EXAMPLE_SPLIT_DIR)/gluex_sim/src/SBMS $(SIM_REPO_DIR)/src
-	cp $(EXAMPLE_SPLIT_DIR)/gluex_sim/src/libraries/SConscript $(SIM_REPO_DIR)/src/libraries
-	cp $(EXAMPLE_SPLIT_DIR)/gluex_sim/src/programs/SConscript $(SIM_REPO_DIR)/src/programs
-	cp $(EXAMPLE_SPLIT_DIR)/gluex_sim/src/plugins/SConscript $(SIM_REPO_DIR)/src/plugins
+.sim_copy_done: .sim_filter_done
+	cp -rv $(EXAMPLE_SPLIT_DIR)/gluex_sim/src $(SIM_REPO_DIR)
 	date > $@
 
-.commit_done: .copy_done
+.sim_commit_done: .sim_copy_done
 	cd $(SIM_REPO_DIR) ; git add .
 	cd $(SIM_REPO_DIR) ; \
 	    git commit -m "commit files added from examples directory"
 	date > $@
 
-.sim_push_done: .commit_done
+.sim_push_done: .sim_commit_done
 	cd $(SIM_REPO_DIR) ; \
 	    git push --mirror git@github.com:jeffersonlab/gluex_sim.git
 	date > $@
