@@ -55,7 +55,7 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 		AddPluginPath(string(ptr) + "/" + sbms_osname + "/plugins");  // SBMS
 		AddPluginPath(string(ptr) + "/lib/" + sbms_osname);     // BMS
 	}
-	if(const char *ptr = getenv("HALLD_HOME")){
+	if(const char *ptr = getenv("GLUEX_RECON_HOME")){
 		AddPluginPath(string(ptr) + "/" + sbms_osname + "/plugins");  // SBMS
 		AddPluginPath(string(ptr) + "/lib/" + sbms_osname);     // BMS
 	}
@@ -252,7 +252,7 @@ DGeometry* DApplication::GetDGeometry(unsigned int run_number)
 		_DBG_<<"Make sure you JANA_GEOMETRY_URL environment variable is set."<<endl;
 		_DBG_<<"It should be set to something like:"<<endl;
 		_DBG_<<endl;
-		_DBG_<<"    xmlfile://${HALLD_HOME}/src/programs/Simulation/hdds/main_HDDS.xml"<<endl;
+		_DBG_<<"    xmlfile://${GLUEX_RECON_HOME}/src/programs/Simulation/hdds/main_HDDS.xml"<<endl;
 		_DBG_<<endl;
 		_DBG_<<"Exiting now."<<endl;
 		Quit();

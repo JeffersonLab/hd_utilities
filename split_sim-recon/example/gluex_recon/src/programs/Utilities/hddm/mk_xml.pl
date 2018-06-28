@@ -4,8 +4,8 @@
 #          and reaction.xml using schema-hddm
 #
 # Note:    in order for this script to work schema-hddm and schema-hddm.xsl
-#          are needed. Best run this script in ${HALLD_HOME}/src/programs/Utilities/hddm
-#          and copy the two output xml files to ${HALLD_HOME}/src/libraries/HDDM/
+#          are needed. Best run this script in ${GLUEX_RECON_HOME}/src/programs/Utilities/hddm
+#          and copy the two output xml files to ${GLUEX_RECON_HOME}/src/libraries/HDDM/
 #
 # author: B. Zihlmann
 #
@@ -14,7 +14,7 @@
 use strict;
 use FileHandle;
 
-my $schemafile = "$ENV{HALLD_HOME}/src/libraries/HDDM/event.xsd";
+my $schemafile = "$ENV{GLUEX_RECON_HOME}/src/libraries/HDDM/event.xsd";
 
 if ($#ARGV==0){
     print "Use default schema file: $schemafile\n";

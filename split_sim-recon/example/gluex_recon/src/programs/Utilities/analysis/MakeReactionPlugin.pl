@@ -68,7 +68,7 @@ close(FILE);
 print " - SConstruct\n";
 
 # Copy SConstruct from build
-#copy("${HALLD_HOME}/src/SBMS/SConstruct.plugin","${PluginName}/SConstruct") or die "Unable to copy SConstruct check HALLD_HOME is set correctly\r";
+#copy("${GLUEX_RECON_HOME}/src/SBMS/SConstruct.plugin","${PluginName}/SConstruct") or die "Unable to copy SConstruct check GLUEX_RECON_HOME is set correctly\r";
 #print " - SConstruct\n";
 
 
@@ -626,13 +626,13 @@ import sys
 import subprocess
 import glob
 
-# Get HALLD_HOME environment variable, verifying it is set
-halld_home = os.getenv('HALLD_HOME')
+# Get GLUEX_RECON_HOME environment variable, verifying it is set
+halld_home = os.getenv('GLUEX_RECON_HOME')
 if(halld_home == None):
-        print 'HALLD_HOME environment variable not set!'
+        print 'GLUEX_RECON_HOME environment variable not set!'
         exit(-1)
 
-# Get HALLD_MY if it exists. Otherwise use HALLD_HOME
+# Get HALLD_MY if it exists. Otherwise use GLUEX_RECON_HOME
 halld_my = os.getenv('HALLD_MY', halld_home)
 
 # Get plugin name
@@ -662,7 +662,7 @@ lib = \"%s/lib\" % (plugininstalldir)
 plugins = \"%s/%s/plugins\" % (plugininstalldir,osname)
 env = Environment(        ENV = os.environ,  # Bring in full environement, including PATH
                       CPPPATH = [include],
-                      LIBPATH = [\"%s/%s/lib\" %(halld_home, osname)],  # n.b. add HALLD_HOME here and prepend HALLD_MY below
+                      LIBPATH = [\"%s/%s/lib\" %(halld_home, osname)],  # n.b. add GLUEX_RECON_HOME here and prepend HALLD_MY below
                   variant_dir = \".%s\" % (osname))
 
 # Only add HALLD_MY library search path if it already exists
@@ -701,7 +701,7 @@ env.Replace( CXX = os.getenv('CXX', 'g++'),
 # Use C++11
 env.PrependUnique(    CXXFLAGS = ['-std=c++11'])
 
-# Add local directory, directories from HALLD_MY and HALLD_HOME to include search path
+# Add local directory, directories from HALLD_MY and GLUEX_RECON_HOME to include search path
 #env.PrependUnique(CPPPATH = ['#'])
 env.PrependUnique(CPPPATH = ['%s/src' % halld_my, '%s/src/libraries' % halld_my, '%s/src/libraries/include' % halld_my])
 env.PrependUnique(CPPPATH = ['%s/src' % halld_home, '%s/src/libraries' % halld_home, '%s/src/libraries/include' % halld_home])
