@@ -14,7 +14,12 @@ $hostname = "localhost";
 
 $seconds_per_year = 365.25*24*60*60;
 
-$dbh = DBI->connect("DBI:mysql:$database:$hostname", $user, $password);
+$dbh = DBI->connect("DBI:SQLite:dbname=diskManagement.sqlite");
+if (defined $dbh) {
+    print "Connection successful\n";
+} else {
+    die "Could not connect to the database server, exiting.\n";
+}
 
 $q = new CGI;                        # create new CGI object
 $title = "Disk Usage Report: $directory_label";
@@ -65,7 +70,7 @@ print "</table>\n";
 print $q->h2("Files with Greatest Size &times; Age"), "\n";
               ####################################
 
-$sql = "select ($file_table.size*1.e-9)*(unix_timestamp(now()) - unix_timestamp(atime)) as gby, filename, $file_table.size, atime, $dir_table.uid, dirname from $dir_table, $file_table where $dir_table.id = dirId order by gby desc limit 10;";
+$sql = "select ($file_table.size*1.e-9)*(strftime('%s') - strftime('%s', atime)) as gby, filename, $file_table.size, atime, $dir_table.uid, dirname from $dir_table, $file_table where $dir_table.id = dirId order by gby desc limit 10;";
 make_query($dbh, \$sth);
 print "<table border>\n";
 print "<tr><th>Rank<th>Size&times;Age (GB-years)<th>File<th>Size (GB)<th>Last Access Time<th>Owner<th>Directory\n";
@@ -197,6 +202,7 @@ exit;
 sub make_query {    
 
     my($dbh, $sth_ref) = @_;
+    print "sql = $sql\n";
     $$sth_ref = $dbh->prepare($sql)
         or die "Can't prepare $sql: $dbh->errstr\n";
     
