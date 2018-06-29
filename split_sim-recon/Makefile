@@ -2,12 +2,15 @@ EXAMPLE_SPLIT_DIR = $(HD_UTILITIES_HOME)/split_sim-recon/example
 SIM_REPO_DIR = gluex_sim
 RECON_REPO_DIR = gluex_recon
 PWD=`pwd`
+SETUP_GLUEX = source $(BUILD_SCRIPTS)/gluex_env_jlab.sh ; unset HALLD_HOME
 DIRECTORIES_TO_BE_MOVED = src/programs/Simulation \
 	src/programs/AmplitudeAnalysis src/plugins/Simulation \
 	src/libraries/AMPTOOLS_AMPS src/libraries/AMPTOOLS_DATAIO \
 	src/libraries/AMPTOOLS_MCGEN
 
-all: .recon_push_done .sim_push_done
+all: .sim_scons_done
+
+no_build: .recon_push_done .sim_push_done
 
 .sim-recon_clone_done:
 	git clone --bare ssh://git@github.com/jeffersonlab/sim-recon
@@ -21,18 +24,28 @@ all: .recon_push_done .sim_push_done
 .recon_clone_done: .recon_bare_push_done
 	rm -rf $(RECON_REPO_DIR)
 	git clone ssh://git@github.com/jeffersonlab/gluex_recon
+	date > $@
 
 .recon_modify_done: .recon_clone_done
-	cp -rv $(EXAMPLE_SPLIT_DIR)/gluex_recon/src gluex_recon
-	cd $(RECON_REPO_DIR) ; git rm -r $(DIRECTORIES_TO_BE_MOVED)
+	cp -r $(EXAMPLE_SPLIT_DIR)/gluex_recon/src gluex_recon
+	cd $(RECON_REPO_DIR) ; git rm -rq $(DIRECTORIES_TO_BE_MOVED)
+	date > $@
 
 .recon_commit_done: .recon_modify_done
 	cd $(RECON_REPO_DIR) ; git add .
 	cd $(RECON_REPO_DIR) ; \
-	    git commit -m "gluex_sim modified from sim-recon original"
+	    git commit -q -m "gluex_sim modified from sim-recon original"
+	date > $@
 
 .recon_push_done: .recon_commit_done
 	cd $(RECON_REPO_DIR) ; git push
+	date > $@
+
+.recon_scons_done: .recon_push_done
+	$(SETUP_GLUEX) ; \
+	    echo $(HALLD_HOME) ; \
+	    cd $(RECON_REPO_DIR)/src ; \
+	    scons install -j3
 	date > $@
 
 .sim_clone_done: .sim-recon_clone_done
@@ -58,9 +71,11 @@ all: .recon_push_done .sim_push_done
 	    git push --mirror git@github.com:jeffersonlab/gluex_sim.git
 	date > $@
 
-.scons_done: .copy_done
-	pushd $(SIM_REPO_DIR)/src ; scons install
+.sim_scons_done: .sim_push_done .recon_scons_done
+	$(SETUP_GLUEX) ; export GLUEX_RECON=$(RECON_REPO_DIR) \
+	    cd $(SIM_REPO_DIR)/src ; \
+	    scons install -j3
 	date > $@
 
 clean:
-	rm -rfv gluex_sim .*_done
+	rm -rf gluex_sim gluex_recon sim-recon.git .*_done
