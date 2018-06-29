@@ -97,13 +97,13 @@ def mk_setenv_csh(env):
 
 	# HALLD
 	str += '# HALLD\n'
-	str += 'setenv GLUEX_RECON_HOME %s\n' % halld_home
+	str += 'setenv HALLD_RECON_HOME %s\n' % halld_home
 	str += 'setenv BMS_OSNAME %s\n' % env['OSNAME']
-	str += 'setenv PATH ${GLUEX_RECON_HOME}/${BMS_OSNAME}/bin:${PATH}\n'
-	str += 'setenv JANA_PLUGIN_PATH ${GLUEX_RECON_HOME}/${BMS_OSNAME}/plugins:${JANA_PLUGIN_PATH}\n'
+	str += 'setenv PATH ${HALLD_RECON_HOME}/${BMS_OSNAME}/bin:${PATH}\n'
+	str += 'setenv JANA_PLUGIN_PATH ${HALLD_RECON_HOME}/${BMS_OSNAME}/plugins:${JANA_PLUGIN_PATH}\n'
 	# python support
-	str += 'setenv %s ${GLUEX_RECON_HOME}/${BMS_OSNAME}/lib:${%s}\n' %(LDLPV, LDLPV)
-	str += 'setenv PYTHONPATH ${GLUEX_RECON_HOME}/${BMS_OSNAME}/lib/python:${PYTHONPATH}\n'
+	str += 'setenv %s ${HALLD_RECON_HOME}/${BMS_OSNAME}/lib:${%s}\n' %(LDLPV, LDLPV)
+	str += 'setenv PYTHONPATH ${HALLD_RECON_HOME}/${BMS_OSNAME}/lib/python:${PYTHONPATH}\n'
 	str += '\n'
 
 	# CCDB
@@ -271,13 +271,13 @@ def mk_setenv_bash(env):
 
 	# HALLD
 	str += '# HALLD\n'
-	str += 'export GLUEX_RECON_HOME=%s\n' % halld_home
+	str += 'export HALLD_RECON_HOME=%s\n' % halld_home
 	str += 'export BMS_OSNAME=%s\n' % env['OSNAME']
-	str += 'export PATH=${GLUEX_RECON_HOME}/${BMS_OSNAME}/bin:${PATH}\n'
-	str += 'export JANA_PLUGIN_PATH=${GLUEX_RECON_HOME}/${BMS_OSNAME}/plugins:${JANA_PLUGIN_PATH}\n'
+	str += 'export PATH=${HALLD_RECON_HOME}/${BMS_OSNAME}/bin:${PATH}\n'
+	str += 'export JANA_PLUGIN_PATH=${HALLD_RECON_HOME}/${BMS_OSNAME}/plugins:${JANA_PLUGIN_PATH}\n'
 	# python support
-	str += 'export %s=${GLUEX_RECON_HOME}/${BMS_OSNAME}/lib:${%s}\n' %(LDLPV, LDLPV)
-	str += 'export PYTHONPATH=${GLUEX_RECON_HOME}/${BMS_OSNAME}/lib/python:${PYTHONPATH}\n'
+	str += 'export %s=${HALLD_RECON_HOME}/${BMS_OSNAME}/lib:${%s}\n' %(LDLPV, LDLPV)
+	str += 'export PYTHONPATH=${HALLD_RECON_HOME}/${BMS_OSNAME}/lib/python:${PYTHONPATH}\n'
 	str += '\n'
 
 	# CCDB

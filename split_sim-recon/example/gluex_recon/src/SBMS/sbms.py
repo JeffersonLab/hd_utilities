@@ -1038,7 +1038,7 @@ def AddAmpTools(env):
 		print 'is not set. Expect to see an error message below....'
 		print ''
 	else:
-		env.AppendUnique(CUDAFLAGS=['-I%s -I%s/src/libraries' % (AMPTOOLS, os.getenv('GLUEX_RECON_HOME',os.getcwd()))])
+		env.AppendUnique(CUDAFLAGS=['-I%s -I%s/src/libraries' % (AMPTOOLS, os.getenv('HALLD_RECON_HOME',os.getcwd()))])
 		AddCUDA(env)
 		AMPTOOLS_CPPPATH = "%s" % (AMPTOOLS)
 		AMPTOOLS_LIBPATH = "%s/lib" % (AMPTOOLS)
@@ -1070,7 +1070,7 @@ def AddAmpPlotter(env):
 ##################################
 def AddCobrems(env):
 	pyincludes = subprocess.Popen(["python-config", "--includes" ], stdout=subprocess.PIPE).communicate()[0]
-	cobrems_home = os.getenv('GLUEX_RECON_HOME', 'gluex_recon')
+	cobrems_home = os.getenv('HALLD_RECON_HOME', 'halld_recon')
 	env.AppendUnique(CPPPATH = ["%s/src/libraries/AMPTOOLS_MCGEN" % (cobrems_home)])
 	env.AppendUnique(LIBPATH = ["%s/%s/lib" % (cobrems_home, env['OSNAME'])])
 	env.AppendUnique(LIBS    = 'AMPTOOLS_MCGEN')

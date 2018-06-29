@@ -21,8 +21,8 @@ BUILDSWIG = ARGUMENTS.get('BUILDSWIG', 0)
 # Get platform-specific name
 osname = os.getenv('BMS_OSNAME', 'build')
 
-# Make sure GLUEX_RECON_HOME is set (needed for python module builds)
-if not os.getenv('GLUEX_RECON_HOME'): os.environ['GLUEX_RECON_HOME'] = Dir('#/..').abspath
+# Make sure HALLD_RECON_HOME is set (needed for python module builds)
+if not os.getenv('HALLD_RECON_HOME'): os.environ['HALLD_RECON_HOME'] = Dir('#/..').abspath
 
 # Get architecture name
 arch = ROOT_CFLAGS = subprocess.Popen(["uname"], stdout=subprocess.PIPE).communicate()[0].strip()

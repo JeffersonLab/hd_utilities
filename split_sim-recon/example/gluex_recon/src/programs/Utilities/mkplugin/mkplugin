@@ -28,10 +28,10 @@ if( $JANA_IMPLEMENTATION eq "N/A" ){
 	# Default JANA implementation package
 	$JANA_IMPLEMENTATION = "JANA";
 
-	# If GLUEX_RECON_HOME is defined, use DANA so user doesn't need to explicitly pass "-d"
-	if( length($ENV{"GLUEX_RECON_HOME"}) > 0 ){
+	# If HALLD_RECON_HOME is defined, use DANA so user doesn't need to explicitly pass "-d"
+	if( length($ENV{"HALLD_RECON_HOME"}) > 0 ){
 		$JANA_IMPLEMENTATION = "DANA";
-		print "GLUEX_RECON_HOME environment variable is set. Assuming DANA package.\n";
+		print "HALLD_RECON_HOME environment variable is set. Assuming DANA package.\n";
 		print "(to use JANA instead, pass the \"-j\" option)\n";
 	}
 }
@@ -233,7 +233,7 @@ sub CopySConstruct()
 	#$PACKAGES = $JANA_IMPLEMENTATION;
 	#if(!$NO_ROOT){ $PACKAGES .= ":ROOT"; }
 
-	$from = $ENV{"GLUEX_RECON_HOME"} . "/src/SBMS/SConstruct.plugin";
+	$from = $ENV{"HALLD_RECON_HOME"} . "/src/SBMS/SConstruct.plugin";
 	$to = "./${pluginname}/SConstruct";
 	copy($from, $to) or die ("copy failed $! -- $?");
 }
@@ -253,7 +253,7 @@ sub Usage()
 	print "  -b         Use \"BANA\" as base Makefile package in Makefile\n";
 	print "  -j         Use \"JANA\" as base Makefile package in Makefile\n";
 	print "  -d         Use \"DANA\" as base Makefile package in Makefile\n";
-	print "             (this will be set by default if GLUEX_RECON_HOME is set)\n";
+	print "             (this will be set by default if HALLD_RECON_HOME is set)\n";
 	print "  --no-root  Do not include \"ROOT\" in the PACKAGES line in Makefile\n";
 	print "\n";
 	print "This script superceeds some similar functionality in the mkprocessor\n";

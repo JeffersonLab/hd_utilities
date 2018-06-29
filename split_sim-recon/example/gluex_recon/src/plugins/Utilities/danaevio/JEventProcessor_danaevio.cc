@@ -19,7 +19,7 @@
 //  dana_evio_dict.xml is corresponding evio2xml dictionary
 //
 //  E.g. to run:
-//     $GLUEX_RECON_HOME/bin/Linux_CentOS5-x86_64-gcc4.1.2/hd_ana --plugin=danaevio -PEVIO:DANAEVIO="all" ../Event.hddm
+//     $HALLD_RECON_HOME/bin/Linux_CentOS5-x86_64-gcc4.1.2/hd_ana --plugin=danaevio -PEVIO:DANAEVIO="all" ../Event.hddm
 //
 //
 //  Elliott Wolin, 19-Jul-2010

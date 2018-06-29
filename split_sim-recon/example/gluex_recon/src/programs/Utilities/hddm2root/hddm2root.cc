@@ -183,13 +183,13 @@ int main(int narg, char *argv[])
 	ofs << endl;
 	
 	ofs << "copy_routines: hddm_root_CopyRoutines.cc hddm_root_CopyRoutines.h" << endl;
-	string cmd = "	c++ `root-config --cflags` -c -I${GLUEX_RECON_HOME}/${BMS_OSNAME}/include -I. hddm_root_CopyRoutines.cc" + CXXFLAGS;
+	string cmd = "	c++ `root-config --cflags` -c -I${HALLD_RECON_HOME}/${BMS_OSNAME}/include -I. hddm_root_CopyRoutines.cc" + CXXFLAGS;
 	ofs << cmd << endl;
 	ofs << "	ar -r libhddm_root.a hddm_root_CopyRoutines.o" << endl;
 	ofs << endl;
 
 	ofs << "tool: hddm2root_*.cc" << endl;
-	cmd = "	c++ `root-config --cflags --libs` -I${GLUEX_RECON_HOME}/${BMS_OSNAME}/include -I. hddm2root_" + HDDM_CLASS + ".cc -o hddm2root_" + HDDM_CLASS + CXXFLAGS + " ./libhddm_root.a -lbz2 -lz -L${GLUEX_RECON_HOME}/${BMS_OSNAME}/lib -lHDDM -lxstream";
+	cmd = "	c++ `root-config --cflags --libs` -I${HALLD_RECON_HOME}/${BMS_OSNAME}/include -I. hddm2root_" + HDDM_CLASS + ".cc -o hddm2root_" + HDDM_CLASS + CXXFLAGS + " ./libhddm_root.a -lbz2 -lz -L${HALLD_RECON_HOME}/${BMS_OSNAME}/lib -lHDDM -lxstream";
 	ofs << cmd << endl;
 	ofs << endl;
 	ofs << endl;
@@ -703,7 +703,7 @@ void Usage(void)
 	cout<<"   object type, just the first may be taken."<<endl;
 	cout<<endl;
 	cout<<"e.g."<<endl;
-	cout<<"    > hddm2root $GLUEX_RECON_HOME/src/libraries/HDDM/rest.xml"<<endl;
+	cout<<"    > hddm2root $HALLD_RECON_HOME/src/libraries/HDDM/rest.xml"<<endl;
 	cout<<"    > hddm2root_r file.hddm"<<endl;
 	cout<<endl;
 	

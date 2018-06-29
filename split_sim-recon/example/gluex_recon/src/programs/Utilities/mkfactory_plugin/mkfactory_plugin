@@ -294,7 +294,7 @@ sub CopySConstruct()
 	#$PACKAGES = $JANA_IMPLEMENTATION;
 	#if(!$NO_ROOT){ $PACKAGES .= ":ROOT"; }
 
-	$from = $ENV{"GLUEX_RECON_HOME"} . "/src/SBMS/SConstruct.plugin";
+	$from = $ENV{"HALLD_RECON_HOME"} . "/src/SBMS/SConstruct.plugin";
 	$to = "./${pluginname}/SConstruct";
 	copy($from, $to) or die ("copy failed $! -- $?");
 }
