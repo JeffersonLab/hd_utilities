@@ -45,24 +45,26 @@ make_query($dbh_db, \$sth);
 # re-create tables
 #
 $sql = "create table $dir_table (
-       id int primary key,
+       id integer primary key,
        dirname varchar(256),
-       size int,
+       size integer,
        uid smallint
 );";
 make_query($dbh_db, \$sth);
 $sql = "create table $file_table (
-       id int primary key,
+       id integer primary key,
        filename varchar(256),
-       dirId int,
+       dirId integer,
        atime datetime,
        size bigint,
        uid smallint
 );";
 make_query($dbh_db, \$sth);
 $sql = "create table $update_time_table (
-updateTime timestamp default current_timestamp not null
+updateTime timestamp
 );";
+make_query($dbh_db, \$sth);
+$sql = "insert into $update_time_table (updateTime) values (datetime('now'));";
 make_query($dbh_db, \$sth);
 #
 # collect the data
