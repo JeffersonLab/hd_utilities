@@ -76,8 +76,7 @@ no_build: .recon_push_done .sim_push_done
 	    export HALLD_RECON_HOME=$(RECON_REPO_DIR) ; \
 	    export HALLD_SIM_HOME=$(SIM_REPO_DIR) ; \
 	    cd $(SIM_REPO_DIR)/src ; \
-	    scons install SHOWBUILD=1
-#	    scons install -j3
+	    scons install -j3
 	date > $@
 
 clean:
