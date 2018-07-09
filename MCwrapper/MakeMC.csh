@@ -309,7 +309,6 @@ echo "With additional plugins: "$CUSTOM_PLUGINS
 echo "=============================================="
 echo ""
 echo ""
-
 echo "=======SOFTWARE USED======="
 echo `which $GENERATOR`
 if ( "$GEANTVER" == "3" ) then
@@ -319,7 +318,8 @@ else
 endif
 echo `which mcsmear`
 echo `which hd_root`
-
+echo ""
+echo ""
 
 
 if ( "$CUSTOM_GCONTROL" == "0" ) then
