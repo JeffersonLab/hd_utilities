@@ -37,7 +37,10 @@ import subprocess
 from subprocess import call
 import glob
 
-def swif_add_job(WORKFLOW, RUNNO, FILENO,SCRIPT,COMMAND, VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR):
+dbcnx = mysql.connector.connect(user='mcuser', database='gluex_mc', host='hallddb.jlab.org')
+dbcursor = dbcnx.cursor()
+
+def swif_add_job(WORKFLOW, RUNNO, FILENO,SCRIPT,COMMAND, VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR, PROJECT_ID):
 
         
         # PREPARE NAMES
@@ -76,8 +79,14 @@ def swif_add_job(WORKFLOW, RUNNO, FILENO,SCRIPT,COMMAND, VERBOSE,PROJECT,TRACK,N
                 print( "Nice try.....you cannot use ; or &")
                 exit(1)
         status = subprocess.call(add_command.split(" "))
+        
+        if PROJECT_ID != -1:
+                recordJob(PROJECT_ID,RUNNO,FILENO)
 
-def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, MEMLIMIT, QUEUENAME, LOG_DIR ):
+        
+
+
+def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, MEMLIMIT, QUEUENAME, LOG_DIR, PROJECT_ID ):
         #name
         STUBNAME = str(RUNNUM) + "_" + str(FILENUM)
         JOBNAME = WORKFLOW + "_" + STUBNAME
@@ -129,8 +138,11 @@ def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DA
         if ( VERBOSE == False ) :
                 status = subprocess.call("rm MCqsub.submit", shell=True)
         
+        if PROJECT_ID != -1:
+                recordJob(PROJECT_ID,RUNNO,FILENO)
+        
 
-def  condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR ):
+def  condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, PROJECT_ID ):
         STUBNAME = str(RUNNUM) + "_" + str(FILENUM)
         JOBNAME = WORKFLOW + "_" + STUBNAME
 
@@ -154,7 +166,11 @@ def  condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, 
         status = subprocess.call(add_command, shell=True)
         status = subprocess.call("rm MCcondor.submit", shell=True)
 
-def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR, RANDBGTAG ):
+        if PROJECT_ID != -1:
+                recordJob(PROJECT_ID,RUNNO,FILENO)
+
+
+def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR, RANDBGTAG, PROJECT_ID ):
         STUBNAME = str(RUNNUM) + "_" + str(FILENUM)
         JOBNAME = WORKFLOW + "_" + STUBNAME
 
@@ -271,7 +287,48 @@ def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DAT
         status = subprocess.call(add_command, shell=True)
         status = subprocess.call("rm MCOSG.submit", shell=True)
         
+        if PROJECT_ID != -1:
+                recordJob(PROJECT_ID,RUNNO,FILENO)
+        
+def  SLURM_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR, RANDBGTAG, PROJECT_ID ):
+        STUBNAME = str(RUNNUM) + "_" + str(FILENUM)
+        JOBNAME = WORKFLOW + "_" + STUBNAME
 
+        #mkdircom="mkdir -p "+DATA_OUTPUT_BASE_DIR+"/log/"
+
+        f=open('MCSLURM.submit','w')
+        f.write("#!/bin/bash -l"+"\n")
+        f.write("#SBATCH -J "+JOBNAME+"\n")
+        f.write("#SBATCH --image=docker:jeffersonlab/hdrecon:latest"+"\n")
+        f.write("#SBATCH --nodes=1"+"\n")
+        f.write("#SBATCH --time="+TIMELIMIT+"\n")
+        f.write("#SBATCH --tasks-per-node=1"+"\n")
+        f.write("#SBATCH --cpus-per-task="+NCORES+"\n")
+        f.write("#SBATCH --qos=regular"+"\n")
+        f.write("#SBATCH -C haswell"+"\n")
+        f.write("#SBATCH -L project"+"\n")
+        f.write("shifter $MCWRAPPER_CENTRAL/MakeMC.sh"+COMMAND+"\n")
+
+        f.close()
+        
+        exit(1)
+        
+        add_command="condor_submit -name "+JOBNAME+" MCOSG.submit"
+        if add_command.find(';')!=-1 or add_command.find('&')!=-1 :#THIS CHECK HELPS PROTEXT AGAINST A POTENTIAL HACK VIA CONFIG FILES
+                print( "Nice try.....you cannot use ; or &")
+                exit(1)
+
+        status = subprocess.call(mkdircom, shell=True)
+        status = subprocess.call(add_command, shell=True)
+        status = subprocess.call("rm MCOSG.submit", shell=True)
+
+        if PROJECT_ID != -1:
+                recordJob(PROJECT_ID,RUNNO,FILENO)
+
+def recordJob(PROJECT_ID,RUNNO,FILENO):
+
+        dbcursor.execute("INSERT INTO Jobs (Project_ID, RunNumber, FileNumber, Creation_Time, Status) VALUES ("+str(PROJECT_ID)+", "+str(RUNNO)+", "+str(FILENO)+", NOW(), 1)")
+        dbcnx.commit()
 
 def showhelp():
         helpstring= "variation=%s where %s is a valid jana_calib_context variation string (default is \"mc\")\n"
@@ -316,7 +373,7 @@ def main(argv):
 
         print( "*********************************")
         print( "Welcome to v1.15 of the MCwrapper")
-        print( "Thomas Britton 6/25/18")
+        print( "Thomas Britton 7/25/18")
         print( "*********************************")
 
         #load all argument passed in and set default options
@@ -365,6 +422,7 @@ def main(argv):
         TIMELIMIT  = "300minutes"      # Max walltime
         OS         = "centos7"        # Specify CentOS65 machines
 
+        PROJECT_ID=-1 #internally used when needed
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         VERSION  = "mc"
         CALIBTIME="notime"
@@ -579,8 +637,13 @@ def main(argv):
                         if flag[0]=="logdir":
                                 argfound=1
                                 LOG_DIR=str(flag[1])
+                        if flag[0]=="projid":
+                                argfound=1
+                                PROJECT_ID=str(flag[1])
                         if argfound==0:
                                 print( "WARNING OPTION: "+argu+" NOT FOUND!")
+        
+
         
       #  if str(GEANTVER)=="3":
       #          print "!!!  Warning: Geant 3 detected! NumThreads has been set to 1"
@@ -727,13 +790,15 @@ def main(argv):
                                         os.system(str(indir)+" "+COMMAND)
                                 else:
                                         if BATCHSYS.upper()=="SWIF":
-                                                swif_add_job(WORKFLOW, runs[0], BASEFILENUM+FILENUM_this_run+-1,str(indir),COMMAND,VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR)
+                                                swif_add_job(WORKFLOW, runs[0], BASEFILENUM+FILENUM_this_run+-1,str(indir),COMMAND,VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR, PROJECT_ID)
                                         elif BATCHSYS.upper()=="QSUB":
-                                                qsub_add_job(VERBOSE, WORKFLOW, runs[0], BASEFILENUM+FILENUM_this_run+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, RAM, QUEUENAME, LOG_DIR )
+                                                qsub_add_job(VERBOSE, WORKFLOW, runs[0], BASEFILENUM+FILENUM_this_run+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, RAM, QUEUENAME, LOG_DIR, PROJECT_ID )
                                         elif BATCHSYS.upper()=="CONDOR":
-                                                condor_add_job(VERBOSE, WORKFLOW, runs[0], BASEFILENUM+FILENUM_this_run+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR )
+                                                condor_add_job(VERBOSE, WORKFLOW, runs[0], BASEFILENUM+FILENUM_this_run+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, PROJECT_ID )
                                         elif BATCHSYS.upper()=="OSG":
-                                                OSG_add_job(VERBOSE, WORKFLOW, runs[0], BASEFILENUM+FILENUM_this_run+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR, RANDBGTAG )
+                                                OSG_add_job(VERBOSE, WORKFLOW, runs[0], BASEFILENUM+FILENUM_this_run+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR, RANDBGTAG, PROJECT_ID)
+                                        elif BATCHSYS.upper()=="SLURM":
+                                                SLURM_add_job(VERBOSE, WORKFLOW, runs[0], BASEFILENUM+FILENUM_this_run+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR, RANDBGTAG, PROJECT_ID )
                         #print "----------------"
                 
         else:
@@ -756,13 +821,15 @@ def main(argv):
                                 os.system(str(indir)+" "+COMMAND)
                         else:
                                 if BATCHSYS.upper()=="SWIF":
-                                        swif_add_job(WORKFLOW, RUNNUM, BASEFILENUM+FILENUM+-1,str(indir),COMMAND,VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR)
+                                        swif_add_job(WORKFLOW, RUNNUM, BASEFILENUM+FILENUM+-1,str(indir),COMMAND,VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR, PROJECT_ID)
                                 elif BATCHSYS.upper()=="QSUB":
-                                        qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, BASEFILENUM+FILENUM+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, RAM, QUEUENAME, LOG_DIR )
+                                        qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, BASEFILENUM+FILENUM+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, RAM, QUEUENAME, LOG_DIR, PROJECT_ID )
                                 elif BATCHSYS.upper()=="CONDOR":
-                                        condor_add_job(VERBOSE, WORKFLOW, RUNNUM, BASEFILENUM+FILENUM+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR )
+                                        condor_add_job(VERBOSE, WORKFLOW, RUNNUM, BASEFILENUM+FILENUM+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, PROJECT_ID )
                                 elif BATCHSYS.upper()=="OSG":
-                                        OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, BASEFILENUM+FILENUM+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR, RANDBGTAG )
+                                        OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, BASEFILENUM+FILENUM+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR, RANDBGTAG, PROJECT_ID )
+                                elif BATCHSYS.upper()=="SLURM":
+                                        SLURM_add_job(VERBOSE, WORKFLOW, RUNNUM, BASEFILENUM+FILENUM+-1, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR, RANDBGTAG, PROJECT_ID )
 
                                         
         if BATCHRUN == 1 and BATCHSYS.upper() == "SWIF":
@@ -770,6 +837,9 @@ def main(argv):
         elif BATCHRUN == 2 and BATCHSYS.upper()=="SWIF":
                 swifrun = "swif run "+WORKFLOW
                 subprocess.call(swifrun.split(" "))
+
+        
+        dbcnx.close()
                 
 if __name__ == "__main__":
    main(sys.argv[1:])
