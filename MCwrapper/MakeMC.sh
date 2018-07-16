@@ -913,7 +913,45 @@ if [[ "$GENR" != "0" ]]; then
 			fi
 
 	else
-			cp $STANDARD_NAME'_geant'$GEANTVER'.hddm' $STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm'
+			#cp $STANDARD_NAME'_geant'$GEANTVER'.hddm' $STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm'
+			if [[ "$BKGFOLDSTR" == "BeamPhotons" || "$BKGFOLDSTR" == "None" || "$BKGFOLDSTR" == "TagOnly" ]]; then
+		echo "running MCsmear without folding in random background"
+		mcsmear -s -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm'
+		mcsmear_return_code=$?
+	    elif [[ "$BKGFOLDSTR" == "DEFAULT" || "$BKGFOLDSTR" == "Random" ]]; then
+		rm -f count.py
+	    echo "import hddm_s" > count.py
+	    echo "print(sum(1 for r in hddm_s.istream('$bkglocstring')))" >> count.py
+	    totalnum=$(python count.py)
+		fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | /usr/bin/bc`
+		echo "skipping: "$fold_skip_num
+		echo "mcsmear -s -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1""+"$fold_skip_num
+		mcsmear -s -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1\+$fold_skip_num
+		mcsmear_return_code=$?
+		elif [[ "$bkgloc_pre" == "loc:" ]]; then
+		rm -f count.py
+	    echo "import hddm_s" > count.py
+	    echo "print(sum(1 for r in hddm_s.istream('$bkglocstring')))" >> count.py
+	    totalnum=`python count.py`
+		fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | /usr/bin/bc`
+		echo "mcsmear -s -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1""+"$fold_skip_num
+		mcsmear -s -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1\+$fold_skip_num
+		mcsmear_return_code=$?
+		else
+		    #trust the user and use their string
+		    echo 'mcsmear -s -PTHREAD_TIMEOUT=500 -o'$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm'' '$STANDARD_NAME'_geant'$GEANTVER'.hddm'' '$BKGFOLDSTR
+		    mcsmear -s -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm' $BKGFOLDSTR
+			mcsmear_return_code=$?
+
+	    fi
+		
+			if [[ $mcsmear_return_code != 0 ]]; then
+				echo
+				echo
+				echo "Something went wrong with mcsmear"
+				echo "status code: "$mcsmear_return_code
+				exit $mcsmear_return_code
+			fi
 	fi
 	    #run reconstruction
 	    if [[ "$CLEANGENR" == "1" ]]; then

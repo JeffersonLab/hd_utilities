@@ -78,10 +78,16 @@ def swif_add_job(WORKFLOW, RUNNO, FILENO,SCRIPT,COMMAND, VERBOSE,PROJECT,TRACK,N
         if add_command.find(';')!=-1 or add_command.find('&')!=-1 :#THIS CHECK HELPS PROTECT AGAINST A POTENTIAL HACK VIA CONFIG FILES
                 print( "Nice try.....you cannot use ; or &")
                 exit(1)
-        status = subprocess.call(add_command.split(" "))
-        
+        #status = subprocess.call(add_command.split(" "))
+        jobSubout=subprocess.check_output(add_command.split(" "))
+        print jobSubout
+        idnumline=jobSubout.split("\n")[0].strip().split("=")
+        SWIF_ID_NUM="-1"
+        if(len(idnumline) == 2 ):
+                SWIF_ID_NUM=str(idnumline[1])
+
         if PROJECT_ID != -1:
-                recordJob(PROJECT_ID,RUNNO,FILENO)
+                recordJob(PROJECT_ID,RUNNO,FILENO,SWIF_ID_NUM,COMMAND.split(" ")[6])
 
         
 
@@ -139,7 +145,7 @@ def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DA
                 status = subprocess.call("rm MCqsub.submit", shell=True)
         
         if PROJECT_ID != -1:
-                recordJob(PROJECT_ID,RUNNO,FILENO)
+                recordJob(PROJECT_ID,RUNNO,FILENO,SWIF_ID_NUM,COMMAND.split(" ")[6])
         
 
 def  condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, PROJECT_ID ):
@@ -167,7 +173,7 @@ def  condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, 
         status = subprocess.call("rm MCcondor.submit", shell=True)
 
         if PROJECT_ID != -1:
-                recordJob(PROJECT_ID,RUNNO,FILENO)
+                recordJob(PROJECT_ID,RUNNO,FILENO,SWIF_ID_NUM,COMMAND.split(" ")[6])
 
 
 def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR, RANDBGTAG, PROJECT_ID ):
@@ -288,7 +294,7 @@ def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DAT
         status = subprocess.call("rm MCOSG.submit", shell=True)
         
         if PROJECT_ID != -1:
-                recordJob(PROJECT_ID,RUNNO,FILENO)
+                recordJob(PROJECT_ID,RUNNO,FILENO,SWIF_ID_NUM,COMMAND.split(" ")[6])
         
 def  SLURM_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR, RANDBGTAG, PROJECT_ID ):
         STUBNAME = str(RUNNUM) + "_" + str(FILENUM)
@@ -323,11 +329,11 @@ def  SLURM_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, D
         status = subprocess.call("rm MCOSG.submit", shell=True)
 
         if PROJECT_ID != -1:
-                recordJob(PROJECT_ID,RUNNO,FILENO)
+                recordJob(PROJECT_ID,RUNNO,FILENO,SWIF_ID_NUM,COMMAND.split(" ")[6])
 
-def recordJob(PROJECT_ID,RUNNO,FILENO):
+def recordJob(PROJECT_ID,RUNNO,FILENO,BatchJobID, NUMEVTS):
 
-        dbcursor.execute("INSERT INTO Jobs (Project_ID, RunNumber, FileNumber, Creation_Time, Status) VALUES ("+str(PROJECT_ID)+", "+str(RUNNO)+", "+str(FILENO)+", NOW(), 1)")
+        dbcursor.execute("INSERT INTO Jobs (Project_ID, RunNumber, FileNumber, Creation_Time, Status, BatchJobID, NumEvts) VALUES ("+str(PROJECT_ID)+", "+str(RUNNO)+", "+str(FILENO)+", NOW(), 0, "+str(BatchJobID)+", "+str(NUMEVTS)+")")
         dbcnx.commit()
 
 def showhelp():
@@ -372,8 +378,8 @@ def main(argv):
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         print( "*********************************")
-        print( "Welcome to v1.15 of the MCwrapper")
-        print( "Thomas Britton 7/25/18")
+        print( "Welcome to v1.16 of the MCwrapper")
+        print( "Thomas Britton 7/16/18")
         print( "*********************************")
 
         #load all argument passed in and set default options
