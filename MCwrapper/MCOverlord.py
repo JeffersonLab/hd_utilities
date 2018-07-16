@@ -37,69 +37,66 @@ import json
 dbcnx = mysql.connector.connect(user='mcuser', database='gluex_mc', host='hallddb.jlab.org')
 dbcursor = dbcnx.cursor()
 
-
-########################################################## MAIN ##########################################################
-        
-def main(argv):
-        queryswifjobs="SELECT OutputLocation FROM Project WHERE Is_Dispatched='SWIF'"
+def checkSWIF():
+        print "CHECKING SWIF JOBS"
+        queryswifjobs="SELECT OutputLocation,ID,NumEvents,Completed_Time FROM Project WHERE Is_Dispatched='SWIF'"
         dbcursor.execute(queryswifjobs)
         AllWkFlows = dbcursor.fetchall()
-        sum=0
+
+        TOTCompletedEvtsquery="SELECT Project_ID,SUM(NumEvts) FROM Jobs WHERE Status='succeeded' GROUP BY Project_ID;"
+        dbcursor.execute(TOTCompletedEvtsquery)
+        TOTCompletedEvt=dbcursor.fetchall()
+        index=-1
         for workflow in AllWkFlows:
+                index+=1
+                ProjID=workflow[1]
                 splitnames=workflow[0].split("/")
                 wkflowname=splitnames[len(splitnames)-2]
                 statuscommand="swif status -workflow "+str(wkflowname)+" -jobs -display json"
                 jsonOutputstr=subprocess.check_output(statuscommand.split(" "))
                 RETURNEDOBJECT=json.loads(jsonOutputstr)
-                #print json.dumps(RETURNEDOBJECT,indent=4,sort_keys=True)
-                sum=0
-                alldone=True
-                ProjID=-1
+                
                 for job in RETURNEDOBJECT["jobs"]:
-                        numevtquery="SELECT Project_ID, NumEvts FROM Jobs WHERE BatchJobID="+str(job["id"])+";"
-                        
-                        dbcursor.execute(numevtquery)
-                        Thejob=dbcursor.fetchall()
-                        if Thejob != []:
-                                print Thejob
-                                sum+= Thejob[0][1]
-                                ProjID=Thejob[0][0]
-                        
 
                         print str(job["id"]) + " | " + job["status"]
-                        if(job["status"] != "succeeded"):
-                                alldone=False
 
                         updatejobstatus="UPDATE Jobs SET Status=\""+str(job["status"])+"\" WHERE BatchJobID="+str(job["id"])
                         #print updatejobstatus
                         dbcursor.execute(updatejobstatus)
                         dbcnx.commit()
                         #print "---------------------------------"
-                print "=================================="
-                totevtquery="SELECT NumEvents,Completed_Time FROM Project WHERE ID="+str(ProjID)+";"
-                dbcursor.execute(totevtquery)
-                TOTALEVTS=dbcursor.fetchall()
-                UNMON=False
-                TOTCOMP=False
-                if TOTALEVTS != [] :
-
-                        if(alldone and sum == TOTALEVTS[0][0] and not TOTALEVTS[0][1]):
-                                print "COMPLETED"
-                                TOTCOMP=True
-                        else:
-                                print str(alldone)+" "+str(sum)+" "+str(TOTALEVTS[0][0])
-                else:
-                        print "UNMONITORED"
-                        UNMON=True
-
-                if (UNMON or TOTCOMP):
+                #print "=================================="
+               
+                if(int(TOTCompletedEvt[index][1]) == workflow[2] and not workflow[3]):
+                        print "COMPLETE"
                         updateProjectstatus="UPDATE Project SET Completed_Time=NOW() WHERE ID="+str(ProjID)+"&& Completed_Time IS NULL;"
                         #print updatejobstatus
                         dbcursor.execute(updateProjectstatus)
                         dbcnx.commit() 
-                print "=================================="
-       #subprocess.check_output("swif status -workflow")
+        
+def checkOSG():
+        print "CHECKING OSG JOBS"
+        queryosgjobs="SELECT ID,NumEvents,Completed_Time FROM Project WHERE Is_Dispatched='OSG'"
+        dbcursor.execute(queryosgjobs)
+        AllWkFlows = dbcursor.fetchall()
 
+        for wkflow in AllWkFlows:
+                getosgjobs="SELECT ID,BatchJobID,NumEvts, FROM Jobs WHERE Project_ID="+str(wkflow[0])
+                dbcursor.execute(getosgjobs)
+                Allwkflow_jobs = dbcursor.fetchall()
+                for job in Allwkflow_jobs:
+                        statuscommand=" condor_q "+str(job[1])+" -json"
+                        jsonOutputstr=subprocess.check_output(statuscommand.split(" "))
+                        RETURNEDOBJECT=json.loads(jsonOutputstr)
+                        print job[1]+" | "+RETURNEDOBJECT["JobStatus"]
+
+       #subprocess.check_output("swif status -workflow")
+########################################################## MAIN ##########################################################
+        
+def main(argv):
+
+        #checkSWIF()
+        checkOSG()
         
         dbcnx.close()
                 

@@ -290,7 +290,13 @@ def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DAT
                 exit(1)
 
         status = subprocess.call(mkdircom, shell=True)
-        status = subprocess.call(add_command, shell=True)
+        jobSubout=subprocess.check_output(add_command.split(" "))
+        print jobSubout
+        idnumline=jobSubout.split(".")[0].split(" ")
+        SWIF_ID_NUM="-1"
+        if(len(idnumline) == 5 ):
+                SWIF_ID_NUM=str(idnumline[5])+".0"
+        #1 job(s) submitted to cluster 425013.
         status = subprocess.call("rm MCOSG.submit", shell=True)
         
         if PROJECT_ID != -1:
