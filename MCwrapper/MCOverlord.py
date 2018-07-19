@@ -20,6 +20,8 @@
 # https://scicomp.jlab.org/help/swif/add-job.txt #consider phase!
 #
 ##########################################################################################################################
+import MySQLdb
+import MySQLdb.cursors
 from os import environ
 from optparse import OptionParser
 import os.path
@@ -35,17 +37,20 @@ import glob
 import json
 
 dbcnx = mysql.connector.connect(user='mcuser', database='gluex_mc', host='hallddb.jlab.org')
-dbcursor = dbcnx.cursor()
+dbcursor = dbcnx.cursor(MySQLdb.cursors.DictCursor)
+
 
 def checkSWIF():
         print "CHECKING SWIF JOBS"
-        queryswifjobs="SELECT OutputLocation,ID,NumEvents,Completed_Time FROM Project WHERE Is_Dispatched='SWIF'"
+        queryswifjobs="SELECT OutputLocation,ID,NumEvents,Completed_Time FROM Project WHERE ID IN (SELECT Project_ID FROM Jobs WHERE Status_Bits=1 && ID IN (SELECT Job_ID FROM Attempts WHERE BatchSystem= 'SWIF') )"
         dbcursor.execute(queryswifjobs)
         AllWkFlows = dbcursor.fetchall()
 
-        TOTCompletedEvtsquery="SELECT Project_ID,SUM(NumEvts) FROM Jobs WHERE Status='succeeded' GROUP BY Project_ID;"
+        #TOTCompletedEvtsquery="SELECT Project_ID,SUM(NumEvts) FROM Jobs WHERE Status='succeeded' GROUP BY Project_ID;"
+        TOTCompletedEvtsquery="SELECT Project_ID,SUM(NumEvts) FROM Jobs WHERE ID IN (SELECT Job_ID FROM Attempts WHERE Status='succeeded')"
         dbcursor.execute(TOTCompletedEvtsquery)
         TOTCompletedEvt=dbcursor.fetchall()
+       
         index=-1
         for workflow in AllWkFlows:
                 index+=1
@@ -57,17 +62,26 @@ def checkSWIF():
                 RETURNEDOBJECT=json.loads(jsonOutputstr)
                 
                 for job in RETURNEDOBJECT["jobs"]:
+                        
+                        print str(job["id"]) + " | " + job["status"]+ " | "+str(job["attempts"][0]["exitcode"])
+                        print job["attempts"][0]
 
-                        print str(job["id"]) + " | " + job["status"]
-
-                        updatejobstatus="UPDATE Jobs SET Status=\""+str(job["status"])+"\" WHERE BatchJobID="+str(job["id"])
-                        #print updatejobstatus
+                        updatejobstatus="UPDATE Attempts SET Status=\""+str(job["status"])+"\", ExitCode="+str(job["attempts"][0]["exitcode"]) +", RunningLocation="+"'"+str(job["attempts"][0]["auger_node"])+"'"+" WHERE BatchJobID="+str(job["id"])
+                        print updatejobstatus
                         dbcursor.execute(updatejobstatus)
                         dbcnx.commit()
                         #print "---------------------------------"
                 #print "=================================="
-               
-                if(int(TOTCompletedEvt[index][1]) == workflow[2] and not workflow[3]):
+                #print workflow
+
+                TotalCompletedNum=0
+                for proj in TOTCompletedEvt:
+                        if str(proj[0]) == str(ProjID):
+                                TotalCompletedNum=int(proj[1])
+                                break
+
+
+                if(int(TotalCompletedNum) == workflow[2] and not workflow[3]):
                         print "COMPLETE"
                         updateProjectstatus="UPDATE Project SET Completed_Time=NOW() WHERE ID="+str(ProjID)+"&& Completed_Time IS NULL;"
                         #print updatejobstatus
@@ -81,22 +95,46 @@ def checkOSG():
         AllWkFlows = dbcursor.fetchall()
 
         for wkflow in AllWkFlows:
-                getosgjobs="SELECT ID,BatchJobID,NumEvts, FROM Jobs WHERE Project_ID="+str(wkflow[0])
+                #print wkflow
+                getosgjobs="SELECT ID,BatchJobID,NumEvts FROM Jobs WHERE Project_ID="+str(wkflow[0])+";"
                 dbcursor.execute(getosgjobs)
                 Allwkflow_jobs = dbcursor.fetchall()
                 for job in Allwkflow_jobs:
-                        statuscommand=" condor_q "+str(job[1])+" -json"
+                        #print job
+                        statuscommand="condor_q "+str(job[1])+" -json"
+                        #print statuscommand
                         jsonOutputstr=subprocess.check_output(statuscommand.split(" "))
-                        RETURNEDOBJECT=json.loads(jsonOutputstr)
-                        print job[1]+" | "+RETURNEDOBJECT["JobStatus"]
+                        #print jsonOutputstr
+                        if(jsonOutputstr != ""):
+                                RETURNEDOBJECT=json.loads(jsonOutputstr)
+                                print job[1]+" | "+str(RETURNEDOBJECT[0]["JobStatus"])+" | "+str(RETURNEDOBJECT[0]["ExitCode"])
+                                updatejobstatus="UPDATE Jobs SET Status=\""+str(RETURNEDOBJECT[0]["JobStatus"])+"."+str(RETURNEDOBJECT[0]["ExitCode"])+"\" WHERE BatchJobID="+str(job[1])
+                                #print updatejobstatus
+                                dbcursor.execute(updatejobstatus)
+                                dbcnx.commit()
+
+                        else:
+                                historystatuscommand="condor_history "+str(job[1])+" -json"
+                                #print historystatuscommand
+                                Outputstr=subprocess.check_output(historystatuscommand.split(" "))
+                                #print Outputstr
+                                RETURNEDHISTOBJECT=json.loads(Outputstr)
+                                print job[1]+" | "+str(RETURNEDHISTOBJECT[0]["JobStatus"])+" | "+str(RETURNEDHISTOBJECT[0]["ExitCode"])
+                                #print RETURNEDHISTOBJECT[0]['JobStartDate']
+                                updatejobstatus="UPDATE Jobs SET Status=\""+str(RETURNEDHISTOBJECT[0]["JobStatus"])+"."+str(RETURNEDHISTOBJECT[0]["ExitCode"])+"\" WHERE BatchJobID="+str(job[1])
+                                #print updatejobstatus
+                                dbcursor.execute(updatejobstatus)
+                                dbcnx.commit()
+                                
+                                
 
        #subprocess.check_output("swif status -workflow")
 ########################################################## MAIN ##########################################################
         
 def main(argv):
 
-        #checkSWIF()
-        checkOSG()
+        checkSWIF()
+        #checkOSG()
         
         dbcnx.close()
                 
