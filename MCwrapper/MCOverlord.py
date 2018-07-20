@@ -41,7 +41,7 @@ from datetime import datetime
 dbhost = "hallddb.jlab.org"
 dbuser = 'mcuser'
 dbpass = ''
-dbname = 'gluex_mc_test'
+dbname = 'gluex_mc'
 
 dbcnx=MySQLdb.connect(host=dbhost, user=dbuser, db=dbname)
 dbcursor=dbcnx.cursor(MySQLdb.cursors.DictCursor)
