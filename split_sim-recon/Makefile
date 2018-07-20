@@ -38,7 +38,7 @@ no_build: .recon_push_done .sim_push_done
 	date > $@
 
 .recon_push_done: .recon_commit_done
-	cd $(RECON_REPO_DIR) ; git push
+	#cd $(RECON_REPO_DIR) ; git push
 	date > $@
 
 .recon_scons_done: .recon_push_done
@@ -48,33 +48,34 @@ no_build: .recon_push_done .sim_push_done
 	    scons install -j3
 	date > $@
 
-.sim_clone_done: .sim-recon_clone_done
-	git clone file://$(PWD)/sim-recon $(SIM_REPO_DIR)
-	date > $@
-
-.sim_filter_done: .sim_clone_done
-	pushd $(SIM_REPO_DIR) ; git filter-branch --index-filter 'git rm --cached -qr --ignore-unmatch -- . && git reset -q $(GIT_COMMIT) -- $(DIRECTORIES_TO_BE_MOVED)' --prune-empty -- --all
-	date > $@
-
-.sim_copy_done: .sim_filter_done
-	cp -rv $(EXAMPLE_SPLIT_DIR)/halld_sim/src $(SIM_REPO_DIR)
-	date > $@
-
-.sim_commit_done: .sim_copy_done
-	cd $(SIM_REPO_DIR) ; git add .
-	cd $(SIM_REPO_DIR) ; \
-	    git commit -m "commit files added from examples directory"
-	date > $@
-
-.sim_push_done: .sim_commit_done
-	cd $(SIM_REPO_DIR) ; \
+.sim_bare_push_done: .sim-recon_clone_done
+	cd sim-recon.git ; \
 	    git push --mirror git@github.com:jeffersonlab/halld_sim.git
 	date > $@
 
-.sim_scons_done: .sim_push_done .recon_scons_done
+.sim_clone_done: .sim_bare_push_done
+	rm -rf $(SIM_REPO_DIR)
+	git clone ssh://git@github.com/jeffersonlab/halld_sim
+	date > $@
+
+.sim_modify_done: .sim_clone_done
+	cp -r $(EXAMPLE_SPLIT_DIR)/halld_sim/src halld_sim
+	cd $(SIM_REPO_DIR) ; rm src ; git checkout $(DIRECTORIES_TO_BE_MOVED)
+	date > $@
+
+.sim_commit_done: .sim_modify_done
+	cd $(SIM_REPO_DIR) ; git add .
+	cd $(SIM_REPO_DIR) ; \
+	    git commit -q -m "halld_sim modified from sim-recon original"
+	date > $@
+
+.sim_push_done: .sim_commit_done
+	#cd $(SIM_REPO_DIR) ; git push
+	date > $@
+
+.sim_scons_done: .sim_push_done
 	$(SETUP_GLUEX) ; \
-	    export HALLD_RECON_HOME=$(RECON_REPO_DIR) ; \
-	    export HALLD_SIM_HOME=$(SIM_REPO_DIR) ; \
+	    echo $(HALLD_HOME) ; \
 	    cd $(SIM_REPO_DIR)/src ; \
 	    scons install -j3
 	date > $@
