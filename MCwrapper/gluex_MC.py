@@ -36,9 +36,11 @@ import re
 import subprocess
 from subprocess import call
 import glob
-
-dbcnx = mysql.connector.connect(user='mcuser', database='gluex_mc', host='hallddb.jlab.org')
-dbcursor = dbcnx.cursor()
+try:
+        dbcnx = mysql.connector.connect(user='mcuser', database='gluex_mc', host='hallddb.jlab.org')
+        dbcursor = dbcnx.cursor()
+except:
+        pass
 
 def swif_add_job(WORKFLOW, RUNNO, FILENO,SCRIPT,COMMAND, VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR, PROJECT_ID):
 
