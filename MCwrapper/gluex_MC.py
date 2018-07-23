@@ -881,8 +881,9 @@ def main(argv):
                 swifrun = "swif run "+WORKFLOW
                 subprocess.call(swifrun.split(" "))
 
-        
-        dbcnx.close()
-                
+        try:
+                dbcnx.close()
+        except:
+                pass        
 if __name__ == "__main__":
    main(sys.argv[1:])
