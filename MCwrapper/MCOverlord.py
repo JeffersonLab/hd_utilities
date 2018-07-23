@@ -69,7 +69,7 @@ def checkSWIF():
             projIDs.append(ProjID)
             #statuscommand="swif status -workflow "+str("pim_g3_1_70_v2_20180718011203pm")+" -jobs -display json"
             statuscommand="swif status -workflow "+str(wkflowname)+" -jobs -display json"
-            print statuscommand
+            #print statuscommand
             jsonOutputstr=subprocess.check_output(statuscommand.split(" "))
             ReturnedJobs=json.loads(jsonOutputstr)
             #print "*******************"
@@ -111,7 +111,7 @@ def checkSWIF():
 
                         if(job["status"]=="problem" or job["status"]=="succeeded"):
                             Completed_Time=attempt["auger_ts_complete"]
-                            print datetime.fromtimestamp(float(attempt["auger_ts_complete"])/float(1000))
+                            #print datetime.fromtimestamp(float(attempt["auger_ts_complete"])/float(1000))
 
                         if(attempt["auger_wall_sec"]):
                             WallTime=timedelta(seconds=attempt["auger_wall_sec"])
@@ -150,8 +150,8 @@ def checkSWIF():
                             LoggedSWIFAttemps=dbcursor.fetchall()
                             #print len(LoggedSWIFAttemps)
 
-                        print "UPDATING ATTEMPT"
-                        print str(ExitCode)
+                        #print "UPDATING ATTEMPT"
+                        #print str(ExitCode)
                         #UPDATE THE SATUS
                         
                         updatejobstatus="UPDATE Attempts SET Status=\""+str(job["status"])+"\", ExitCode="+str(ExitCode)+", RunningLocation="+"'"+str(attempt["auger_node"])+"'"+", WallTime="+"'"+time.strftime("%H:%M:%S",time.gmtime(WallTime.seconds))+"'"+", Start_Time="+"'"+str(Start_Time)+"'"+", CPUTime="+"'"+time.strftime("%H:%M:%S",time.gmtime(CpuTime.seconds))+"'"+", RAMUsed="+"'"+RAMUsed+"'"+" WHERE BatchJobID="+str(job["id"])+" && ID="+str(LoggedSWIFAttemps[loggedindex]["ID"])
@@ -294,7 +294,7 @@ def checkOSG():
                             dbcursor.execute(getFinalCompleteTime)
                             finalTimeRes=dbcursor.fetchall()
                             updateProjectstatus="UPDATE Project SET Completed_Time="+"'"+str(finalTimeRes[0]["MAX(Completed_Time)"])+"'"+" WHERE ID="+str(order["ID"])+"&& Completed_Time IS NULL;"
-                            print updatejobstatus
+                            #print updatejobstatus
                             dbcursor.execute(updateProjectstatus)
                             dbcnx.commit()
 
