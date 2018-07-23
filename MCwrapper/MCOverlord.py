@@ -60,14 +60,16 @@ def checkSWIF():
 
         #LOOP OVER SWIF WORKFLOWS
         #print AllWkFlows
+        projIDs=[]
         for workflow in AllWkFlows:
             splitnames=workflow["OutputLocation"].split("/")
             wkflowname=splitnames[len(splitnames)-2]
             #print wkflowname
             ProjID=workflow["ID"]
+            projIDs.append(ProjID)
             #statuscommand="swif status -workflow "+str("pim_g3_1_70_v2_20180718011203pm")+" -jobs -display json"
             statuscommand="swif status -workflow "+str(wkflowname)+" -jobs -display json"
-            #print statuscommand
+            print statuscommand
             jsonOutputstr=subprocess.check_output(statuscommand.split(" "))
             ReturnedJobs=json.loads(jsonOutputstr)
             #print "*******************"
@@ -94,7 +96,7 @@ def checkSWIF():
     
                         WallTime=timedelta(seconds=0)
                         CpuTime=timedelta(seconds=0)
-                        Start_Time=timedelta(seconds=0)
+                        Start_Time=datetime.fromtimestamp(float(0.0)/float(1000))
                         RAMUsed="0MB"
                         ExitCode=0
                         #print attempt
@@ -109,11 +111,13 @@ def checkSWIF():
 
                         if(job["status"]=="problem" or job["status"]=="succeeded"):
                             Completed_Time=attempt["auger_ts_complete"]
+                            print datetime.fromtimestamp(float(attempt["auger_ts_complete"])/float(1000))
 
                         if(attempt["auger_wall_sec"]):
                             WallTime=timedelta(seconds=attempt["auger_wall_sec"])
                         if(attempt["auger_ts_active"]):
-                            Start_Time=timedelta(seconds=attempt["auger_ts_active"])
+                            Start_Time=datetime.fromtimestamp(float(attempt["auger_ts_active"])/float(1000))
+                            
                         if(attempt["auger_cpu_sec"]):
                             CpuTime=timedelta(seconds=attempt["auger_cpu_sec"])
                         if attempt["auger_vmem_kb"]:
@@ -136,7 +140,7 @@ def checkSWIF():
                             #print LinkToJob
                             #print datetime.fromtimestamp(float(attempt["auger_ts_submitted"])/float(1000))
                             
-                            addFoundAttempt="INSERT INTO Attempts (Job_ID,Creation_Time,BatchSystem,BatchJobID, ThreadsRequested, RAMRequested,Start_Time) VALUES (%s,'%s','SWIF',%s,%s,%s,%s)" % (LinkToJob[0]["Job_ID"],datetime.fromtimestamp(float(attempt["auger_ts_submitted"])/float(1000)),attempt["job_id"],attempt["cpu_cores"], "'"+str(float(attempt["ram_bytes"])/float(1000000000))+"GB"+"'",datetime.fromtimestamp(float(attempt["auger_ts_active"])/float(1000)))
+                            addFoundAttempt="INSERT INTO Attempts (Job_ID,Creation_Time,BatchSystem,BatchJobID, ThreadsRequested, RAMRequested,Start_Time) VALUES (%s,'%s','SWIF',%s,%s,%s,%s)" % (LinkToJob[0]["Job_ID"],datetime.fromtimestamp(float(attempt["auger_ts_submitted"])/float(1000)),attempt["job_id"],attempt["cpu_cores"], "'"+str(float(attempt["ram_bytes"])/float(1000000000))+"GB"+"'",Start_Time)
                             #print addFoundAttempt
                             dbcursor.execute(addFoundAttempt)
                             dbcnx.commit()
@@ -146,38 +150,45 @@ def checkSWIF():
                             LoggedSWIFAttemps=dbcursor.fetchall()
                             #print len(LoggedSWIFAttemps)
 
-                        #print "UPDATING ATTEMPT"
-                        #print str(ExitCode)
+                        print "UPDATING ATTEMPT"
+                        print str(ExitCode)
                         #UPDATE THE SATUS
                         
-                        updatejobstatus="UPDATE Attempts SET Status=\""+str(job["status"])+"\", ExitCode="+str(ExitCode)+", RunningLocation="+"'"+str(attempt["auger_node"])+"'"+", WallTime="+"'"+time.strftime("%H:%M:%S",time.gmtime(WallTime.seconds))+"'"+", Start_Time="+"'"+time.strftime("%H:%M:%S",time.gmtime(Start_Time.seconds))+"'"+", CPUTime="+"'"+time.strftime("%H:%M:%S",time.gmtime(CpuTime.seconds))+"'"+", RAMUsed="+"'"+RAMUsed+"'"+" WHERE BatchJobID="+str(job["id"])+" && ID="+str(LoggedSWIFAttemps[loggedindex]["ID"])
+                        updatejobstatus="UPDATE Attempts SET Status=\""+str(job["status"])+"\", ExitCode="+str(ExitCode)+", RunningLocation="+"'"+str(attempt["auger_node"])+"'"+", WallTime="+"'"+time.strftime("%H:%M:%S",time.gmtime(WallTime.seconds))+"'"+", Start_Time="+"'"+str(Start_Time)+"'"+", CPUTime="+"'"+time.strftime("%H:%M:%S",time.gmtime(CpuTime.seconds))+"'"+", RAMUsed="+"'"+RAMUsed+"'"+" WHERE BatchJobID="+str(job["id"])+" && ID="+str(LoggedSWIFAttemps[loggedindex]["ID"])
                         if Completed_Time != 'NULL':
-                                updatejobstatus="UPDATE Attempts SET Status=\""+str(job["status"])+"\", ExitCode="+str(ExitCode)+", Completed_Time='"+time.strftime("%H:%M:%S",time.gmtime(timedelta(seconds=Completed_Time)))+"'"+", RunningLocation="+"'"+str(attempt["auger_node"])+"'"+", WallTime="+"'"+time.strftime("%H:%M:%S",time.gmtime(WallTime.seconds))+"'"+", Start_Time="+"'"+time.strftime("%H:%M:%S",time.gmtime(Start_Time.seconds))+"'"+", CPUTime="+"'"+time.strftime("%H:%M:%S",time.gmtime(CpuTime.seconds))+"'"+", RAMUsed="+"'"+RAMUsed+"'"+" WHERE BatchJobID="+str(job["id"])+" && ID="+str(LoggedSWIFAttemps[loggedindex]["ID"])
+                                updatejobstatus="UPDATE Attempts SET Status=\""+str(job["status"])+"\", ExitCode="+str(ExitCode)+", Completed_Time='"+str(datetime.fromtimestamp(float(attempt["auger_ts_complete"])/float(1000)))+"'"+", RunningLocation="+"'"+str(attempt["auger_node"])+"'"+", WallTime="+"'"+time.strftime("%H:%M:%S",time.gmtime(WallTime.seconds))+"'"+", Start_Time="+"'"+str(Start_Time)+"'"+", CPUTime="+"'"+time.strftime("%H:%M:%S",time.gmtime(CpuTime.seconds))+"'"+", RAMUsed="+"'"+RAMUsed+"'"+" WHERE BatchJobID="+str(job["id"])+" && ID="+str(LoggedSWIFAttemps[loggedindex]["ID"])
                        
 
-                        #print updatejobstatus
+                        print updatejobstatus
                         dbcursor.execute(updatejobstatus)
                         dbcnx.commit()
                         loggedindex+=1
 
 
         #CHECK IF ORDER IS DONE NOW
-        TOTCompletedEvt=0
-        if TOTCompletedEvtret:
-            for proj in TOTCompletedEvtret:
-                if str(proj["Project_ID"]) == str(ProjID):
-                    TOTCompletedEvt=int(proj["SUM(NumEvts)"])
-                    break
+        for ID in projIDs:
+                TOTCompletedEvt=0
+                if TOTCompletedEvtret:
+                        for proj in TOTCompletedEvtret:
+                                if str(proj["Project_ID"]) == str(ProjID):
+                                        TOTCompletedEvt=int(proj["SUM(NumEvts)"])
+                                        break
         
 
             #FIND THE RIGHT PROJECT AND IF APPLICABLE MARKE AS COMPLETED
-            for workflow in AllWkFlows:
+                for workflow in AllWkFlows:
                 #print str(ProjID) + " | "+workflow["ID"]
-                if ProjID == workflow["ID"] and workflow["NumEvents"] == TOTCompletedEvt:
-                    updateProjectstatus="UPDATE Project SET Completed_Time=NOW() WHERE ID="+str(ProjID)+"&& Completed_Time IS NULL;"
-                    #print updatejobstatus
-                    dbcursor.execute(updateProjectstatus)
-                    dbcnx.commit()
+                        if ProjID == workflow["ID"] and workflow["NumEvents"] == TOTCompletedEvt:
+                                getFinalCompleteTime="SELECT MAX(Completed_Time) FROM Attempts WHERE Job_ID IN (SELECT ID FROM Jobs WHERE Project_ID="+str(ProjID)+");"
+                                #print getFinalCompleteTime
+                                dbcursor.execute(getFinalCompleteTime)
+                                finalTimeRes=dbcursor.fetchall()
+                                #print "============"
+                                #print finalTimeRes[0]["MAX(Completed_Time)"]
+                                updateProjectstatus="UPDATE Project SET Completed_Time="+"'"+str(finalTimeRes[0]["MAX(Completed_Time)"])+"'"+ "WHERE ID="+str(ProjID)+" && Completed_Time IS NULL;"
+                                #print updatejobstatus
+                                dbcursor.execute(updateProjectstatus)
+                                dbcnx.commit()
 
        
         
@@ -278,7 +289,11 @@ def checkOSG():
                     if str(proj["Project_ID"]) == str(order["ID"]):
                         TOTCompletedEvt=int(proj["SUM(NumEvts)"])
                         if( order["NumEvents"] == TOTCompletedEvt):
-                            updateProjectstatus="UPDATE Project SET Completed_Time=NOW() WHERE ID="+str(ProjID)+"&& Completed_Time IS NULL;"
+                            getFinalCompleteTime="SELECT MAX(Completed_Time) FROM Attempts WHERE Job_ID IN (SELECT ID FROM Jobs WHERE Project_ID="+str(order["ID"])+");"
+                            #print getFinalCompleteTime
+                            dbcursor.execute(getFinalCompleteTime)
+                            finalTimeRes=dbcursor.fetchall()
+                            updateProjectstatus="UPDATE Project SET Completed_Time="+"'"+str(finalTimeRes[0]["MAX(Completed_Time)"])+"'"+" WHERE ID="+str(order["ID"])+"&& Completed_Time IS NULL;"
                             print updatejobstatus
                             dbcursor.execute(updateProjectstatus)
                             dbcnx.commit()
