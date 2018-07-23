@@ -36,9 +36,11 @@ import re
 import subprocess
 from subprocess import call
 import glob
-
-dbcnx = mysql.connector.connect(user='mcuser', database='gluex_mc', host='hallddb.jlab.org')
-dbcursor = dbcnx.cursor()
+try:
+        dbcnx = mysql.connector.connect(user='mcuser', database='gluex_mc', host='hallddb.jlab.org')
+        dbcursor = dbcnx.cursor()
+except:
+        pass
 
 def swif_add_job(WORKFLOW, RUNNO, FILENO,SCRIPT,COMMAND, VERBOSE,PROJECT,TRACK,NCORES,DISK,RAM,TIMELIMIT,OS,DATA_OUTPUT_BASE_DIR, PROJECT_ID):
 
@@ -78,10 +80,17 @@ def swif_add_job(WORKFLOW, RUNNO, FILENO,SCRIPT,COMMAND, VERBOSE,PROJECT,TRACK,N
         if add_command.find(';')!=-1 or add_command.find('&')!=-1 :#THIS CHECK HELPS PROTECT AGAINST A POTENTIAL HACK VIA CONFIG FILES
                 print( "Nice try.....you cannot use ; or &")
                 exit(1)
-        status = subprocess.call(add_command.split(" "))
-        
+        #status = subprocess.call(add_command.split(" "))
+        jobSubout=subprocess.check_output(add_command.split(" "))
+        print jobSubout
+        idnumline=jobSubout.split("\n")[0].strip().split("=")
+        SWIF_ID_NUM="-1"
+        if(len(idnumline) == 2 ):
+                SWIF_ID_NUM=str(idnumline[1])
+
         if PROJECT_ID != -1:
-                recordJob(PROJECT_ID,RUNNO,FILENO)
+                recordJob(PROJECT_ID,RUNNO,FILENO,SWIF_ID_NUM,COMMAND.split(" ")[6])
+                recordFirstAttempt(PROJECT_ID,RUNNO,FILENO,"SWIF",SWIF_ID_NUM,COMMAND.split(" ")[6],NCORES,RAM)
 
         
 
@@ -139,7 +148,8 @@ def  qsub_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DA
                 status = subprocess.call("rm MCqsub.submit", shell=True)
         
         if PROJECT_ID != -1:
-                recordJob(PROJECT_ID,RUNNO,FILENO)
+                recordJob(PROJECT_ID,RUNNO,FILENO,SWIF_ID_NUM,COMMAND.split(" ")[6])
+                recordFirstAttempt(PROJECT_ID,RUNNO,FILENO,"QSUB",SWIF_ID_NUM,COMMAND.split(" ")[6],NCORES,MEMLIMIT)
         
 
 def  condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, PROJECT_ID ):
@@ -152,7 +162,8 @@ def  condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, 
         f.write("Executable = "+indir+"\n") 
         f.write("Arguments  = "+COMMAND+"\n")
         f.write("Error      = "+DATA_OUTPUT_BASE_DIR+"/log/"+"error_"+JOBNAME+".log\n")
-        f.write("Log      = "+DATA_OUTPUT_BASE_DIR+"/log/"+"out_"+JOBNAME+".log\n")
+        f.write("Output      = "+DATA_OUTPUT_BASE_DIR+"/log/"+"out_"+JOBNAME+".log\n")
+        f.write("Log = "+DATA_OUTPUT_BASE_DIR+"/log/"+"CONDOR_"+JOBNAME+".log\n")
         f.write("RequestCpus = "+NCORES+"\n")
         f.write("Queue 1\n")
         f.close()
@@ -167,7 +178,8 @@ def  condor_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, 
         status = subprocess.call("rm MCcondor.submit", shell=True)
 
         if PROJECT_ID != -1:
-                recordJob(PROJECT_ID,RUNNO,FILENO)
+                recordJob(PROJECT_ID,RUNNO,FILENO,SWIF_ID_NUM,COMMAND.split(" ")[6])
+                recordFirstAttempt(PROJECT_ID,RUNNO,FILENO,"Condor",SWIF_ID_NUM,COMMAND.split(" ")[6],NCORES,"UnSet")
 
 
 def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR, RANDBGTAG, PROJECT_ID ):
@@ -284,11 +296,18 @@ def  OSG_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DAT
                 exit(1)
 
         status = subprocess.call(mkdircom, shell=True)
-        status = subprocess.call(add_command, shell=True)
+        jobSubout=subprocess.check_output(add_command.split(" "))
+        print jobSubout
+        idnumline=jobSubout.split("\n")[1].split(".")[0].split(" ")
+        SWIF_ID_NUM="-1"
+        if(len(idnumline) == 6 ):
+                SWIF_ID_NUM=str(idnumline[5])+".0"
+        #1 job(s) submitted to cluster 425013.
         status = subprocess.call("rm MCOSG.submit", shell=True)
         
         if PROJECT_ID != -1:
-                recordJob(PROJECT_ID,RUNNO,FILENO)
+                recordJob(PROJECT_ID,RUNNUM,FILENUM,SWIF_ID_NUM,COMMAND.split(" ")[6])
+                recordFirstAttempt(PROJECT_ID,RUNNUM,FILENUM,"OSG",SWIF_ID_NUM,COMMAND.split(" ")[6],NCORES,"Unset")
         
 def  SLURM_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, DATA_OUTPUT_BASE_DIR, TIMELIMIT, RUNNING_DIR, ENVFILE, LOG_DIR, RANDBGTAG, PROJECT_ID ):
         STUBNAME = str(RUNNUM) + "_" + str(FILENUM)
@@ -318,17 +337,37 @@ def  SLURM_add_job(VERBOSE, WORKFLOW, RUNNUM, FILENUM, indir, COMMAND, NCORES, D
                 print( "Nice try.....you cannot use ; or &")
                 exit(1)
 
+        if PROJECT_ID != -1:
+                recordJob(PROJECT_ID,RUNNO,FILENO,SWIF_ID_NUM,COMMAND.split(" ")[6])
+                recordFirstAttempt(PROJECT_ID,RUNNO,FILENO,"SLURM",SWIF_ID_NUM,COMMAND.split(" ")[6],NCORES, "NotSet")
+
         status = subprocess.call(mkdircom, shell=True)
         status = subprocess.call(add_command, shell=True)
         status = subprocess.call("rm MCOSG.submit", shell=True)
 
-        if PROJECT_ID != -1:
-                recordJob(PROJECT_ID,RUNNO,FILENO)
+        
 
-def recordJob(PROJECT_ID,RUNNO,FILENO):
 
-        dbcursor.execute("INSERT INTO Jobs (Project_ID, RunNumber, FileNumber, Creation_Time, Status) VALUES ("+str(PROJECT_ID)+", "+str(RUNNO)+", "+str(FILENO)+", NOW(), 1)")
+def recordJob(PROJECT_ID,RUNNO,FILENO,BatchJobID, NUMEVTS):
+
+        dbcursor.execute("INSERT INTO Jobs (Project_ID, RunNumber, FileNumber, Creation_Time, IsActive, NumEvts) VALUES ("+str(PROJECT_ID)+", "+str(RUNNO)+", "+str(FILENO)+", NOW(), 1, "+str(NUMEVTS)+")")
         dbcnx.commit()
+def recordFirstAttempt(PROJECT_ID,RUNNO,FILENO,BatchSYS,BatchJobID, NUMEVTS,NCORES, RAM):
+        findmyjob="SELECT ID FROM Jobs WHERE Project_ID="+str(PROJECT_ID)+" && RunNumber="+str(RUNNO)+" && FileNumber="+str(FILENO)+" && NumEvts="+str(NUMEVTS)+";"
+        dbcursor.execute(findmyjob)
+        MYJOB = dbcursor.fetchall()
+
+        if len(MYJOB) != 1:
+                print "I either can't find a job or too many jobs might be mine"
+                exit(1)
+
+        Job_ID=MYJOB[0][0]
+
+        addAttempt="INSERT INTO Attempts (Job_ID,Creation_Time,BatchSystem,BatchJobID,Status,WallTime,CPUTime,ThreadsRequested,RAMRequested, RAMUsed) VALUES ("+str(Job_ID)+", NOW(), "+str("'"+BatchSYS+"'")+", "+str(BatchJobID)+", 'Created', 0, 0, "+str(NCORES)+", "+str("'"+RAM+"'")+", '0'"+");"
+        print addAttempt
+        dbcursor.execute(addAttempt)
+        dbcnx.commit()
+        
 
 def showhelp():
         helpstring= "variation=%s where %s is a valid jana_calib_context variation string (default is \"mc\")\n"
@@ -372,8 +411,8 @@ def main(argv):
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         print( "*********************************")
-        print( "Welcome to v1.15 of the MCwrapper")
-        print( "Thomas Britton 7/25/18")
+        print( "Welcome to v1.16 of the MCwrapper")
+        print( "Thomas Britton 7/23/18")
         print( "*********************************")
 
         #load all argument passed in and set default options
@@ -680,7 +719,12 @@ def main(argv):
         
         script_to_use = "/MakeMC.csh"
         
-        if environ['SHELL']=="/bin/bash" or ( BATCHSYS.upper() == "OSG" and int(BATCHRUN) != 0) :
+        loginSHELL=environ['SHELL'].split("/")
+
+
+        if loginSHELL[len(loginSHELL)-1]=="bash" or ( BATCHSYS.upper() == "OSG" and int(BATCHRUN) != 0) :
+                script_to_use = "/MakeMC.sh"
+        elif loginSHELL[len(loginSHELL)-1]=="zsh":
                 script_to_use = "/MakeMC.sh"
         
         indir+=script_to_use
@@ -838,8 +882,9 @@ def main(argv):
                 swifrun = "swif run "+WORKFLOW
                 subprocess.call(swifrun.split(" "))
 
-        
-        dbcnx.close()
-                
+        try:
+                dbcnx.close()
+        except:
+                pass        
 if __name__ == "__main__":
    main(sys.argv[1:])
