@@ -409,7 +409,7 @@ def main(argv):
 
         print( "*********************************")
         print( "Welcome to v1.16 of the MCwrapper")
-        print( "Thomas Britton 7/20/18")
+        print( "Thomas Britton 7/23/18")
         print( "*********************************")
 
         #load all argument passed in and set default options
@@ -716,7 +716,12 @@ def main(argv):
         
         script_to_use = "/MakeMC.csh"
         
-        if environ['SHELL']=="/bin/bash" or ( BATCHSYS.upper() == "OSG" and int(BATCHRUN) != 0) :
+        loginSHELL=environ['SHELL'].split("/")
+
+
+        if loginSHELL[len(loginSHELL)-1]=="bash" or ( BATCHSYS.upper() == "OSG" and int(BATCHRUN) != 0) :
+                script_to_use = "/MakeMC.sh"
+        elif loginSHELL[len(loginSHELL)-1]=="zsh":
                 script_to_use = "/MakeMC.sh"
         
         indir+=script_to_use
