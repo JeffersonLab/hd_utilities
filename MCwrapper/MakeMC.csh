@@ -87,7 +87,10 @@ shift
 setenv RANDBGTAG $1
 shift
 setenv RECON_CALIBTIME $1
+shift
+setenv GEANT_NOSECONDARIES $1
 
+setenv USER_BC `which bc`
 
 #necessary to run swif, uses local directory if swif=0 is used
 if ( "$BATCHRUN" != "0"  ) then
@@ -194,7 +197,7 @@ else if ( $elecE_text == "Run" ) then
 else if ( $elecE_text == "-1.0" ) then
 	set elecE=12 #Should never happen
 else
-	set elecE=`echo $elecE_text`  #set elecE = `echo "$elecE_text / 1000" | /usr/bin/bc -l ` #rcdb method
+	set elecE=`echo $elecE_text`  #set elecE = `echo "$elecE_text / 1000" | $USER_BC -l ` #rcdb method
 endif
 
 set copeak = 0
@@ -211,7 +214,7 @@ else
 	else if ( $copeak_text == "-1.0" ) then
 		set copeak=0
 	else
-		set copeak = `echo "$copeak_text / 1000" | /usr/bin/bc -l `
+		set copeak = `echo "$copeak_text / 1000" | $USER_BC -l `
 	endif
 endif
 
@@ -249,7 +252,7 @@ if ( $beam_on_current == "" ) then
 	set beam_on_current=`rcnd $RUN_NUMBER beam_current | awk '{print $1}'`
 endif
 
-set beam_on_current=`echo "$beam_on_current / 1000." | /usr/bin/bc -l`
+set beam_on_current=`echo "$beam_on_current / 1000." | $USER_BC -l`
 
 if ( "$colsize" == "B" || "$colsize" == "R" || "$JANA_CALIB_CONTEXT" != "variation=mc" ) then
 	set colsize="50"
@@ -804,6 +807,7 @@ if ( "$GENR" != "0" ) then
 		sed -i 's/TEMPRADTHICK/'"$radthick"'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 		sed -i 's/TEMPBGTAGONLY/'$BGTAGONLY_OPTION'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 		sed -i 's/TEMPBGRATE/'$BGRATE_toUse'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+		sed -i 's/TEMPNOSECONDARIES/'$GEANT_NOSECONDARIES'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 
 		if ( "$gen_pre" == "file" ) then
 			@ skip_num = $FILE_NUMBER * $PER_FILE
@@ -882,7 +886,7 @@ if ( "$GENR" != "0" ) then
 	    		echo "print(sum(1 for r in hddm_s.istream('$bkglocstring')))" >>! count.py
 	    		set totalnum=`python count.py`
 	    		rm count.py
-				set fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | /usr/bin/bc`
+				set fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | $USER_BC`
 				#set bkglocstring="/w/halld-scifs17exp/halld2/home/tbritton/MCwrapper_Development/converted.hddm"
 				
 				echo "mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1""+"$fold_skip_num
@@ -895,7 +899,7 @@ if ( "$GENR" != "0" ) then
 	    		echo "print(sum(1 for r in hddm_s.istream('$bkglocstring')))" >>! count.py
 	    		set totalnum=`python count.py`
 	    		rm count.py
-				set fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | /usr/bin/bc`
+				set fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | $USER_BC`
 				echo "mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1""+"$fold_skip_num
 				mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1\+$fold_skip_num
 				set mcsmear_return_code=$status
@@ -927,7 +931,7 @@ if ( "$GENR" != "0" ) then
 	    		echo "print(sum(1 for r in hddm_s.istream('$bkglocstring')))" >>! count.py
 	    		set totalnum=`python count.py`
 	    		rm count.py
-				set fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | /usr/bin/bc`
+				set fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | $USER_BC`
 				#set bkglocstring="/w/halld-scifs17exp/halld2/home/tbritton/MCwrapper_Development/converted.hddm"
 				
 				echo "mcsmear -s -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1""+"$fold_skip_num
@@ -940,7 +944,7 @@ if ( "$GENR" != "0" ) then
 	    		echo "print(sum(1 for r in hddm_s.istream('$bkglocstring')))" >>! count.py
 	    		set totalnum=`python count.py`
 	    		rm count.py
-				set fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | /usr/bin/bc`
+				set fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | $USER_BC`
 				echo "mcsmear -s -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1""+"$fold_skip_num
 				mcsmear -s -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1\+$fold_skip_num
 				set mcsmear_return_code=$status

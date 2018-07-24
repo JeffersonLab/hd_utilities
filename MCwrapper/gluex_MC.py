@@ -411,8 +411,8 @@ def main(argv):
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         print( "*********************************")
-        print( "Welcome to v1.16 of the MCwrapper")
-        print( "Thomas Britton 7/23/18")
+        print( "Welcome to v2.0 of the MCwrapper")
+        print( "Thomas Britton 7/24/18")
         print( "*********************************")
 
         #load all argument passed in and set default options
@@ -477,6 +477,8 @@ def main(argv):
         CLEANSMEAR=1
         CLEANRECON=0
         BATCHRUN=0
+        NOSECONDARIES=0
+        SHELL_TO_USE="csh"
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         #loop over config file and set the "parameters"
         f = open(CONFIG_FILE,"r")
@@ -614,6 +616,8 @@ def main(argv):
                         ccdbSQLITEPATH=rm_comments[0].strip()
                 elif str(parts[0]).upper()=="RCDBSQLITEPATH" :
                         rcdbSQLITEPATH=rm_comments[0].strip()
+                elif str(parts[0]).upper()=="NOSECONDARIES" :
+                        NOSECONDARIES=rm_comments[0].strip()
                 else:
                         print( "unknown config parameter!! "+str(parts[0]))
         #loop over command line arguments 
@@ -679,6 +683,9 @@ def main(argv):
                         if flag[0]=="projid":
                                 argfound=1
                                 PROJECT_ID=str(flag[1])
+                        if flag[0]=="shell":
+                                argfound=1
+                                SHELL_TO_USE=str(flag[1])
                         if argfound==0:
                                 print( "WARNING OPTION: "+argu+" NOT FOUND!")
         
@@ -722,9 +729,9 @@ def main(argv):
         loginSHELL=environ['SHELL'].split("/")
 
 
-        if loginSHELL[len(loginSHELL)-1]=="bash" or ( BATCHSYS.upper() == "OSG" and int(BATCHRUN) != 0) :
+        if loginSHELL[len(loginSHELL)-1]=="bash" or ( BATCHSYS.upper() == "OSG" and int(BATCHRUN) != 0) or SHELL_TO_USE=="bash" :
                 script_to_use = "/MakeMC.sh"
-        elif loginSHELL[len(loginSHELL)-1]=="zsh":
+        elif loginSHELL[len(loginSHELL)-1]=="zsh" or SHELL_TO_USE=="zcsh":
                 script_to_use = "/MakeMC.sh"
         
         indir+=script_to_use
@@ -828,7 +835,7 @@ def main(argv):
                                 if num_this_file == 0:
                                         continue
 
-                                COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(runs[0])+" "+str(BASEFILENUM+FILENUM_this_run+-1)+" "+str(num_this_file)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(ccdbSQLITEPATH)+" "+str(rcdbSQLITEPATH)+" "+str(BGTAGONLY)+" "+str(RADIATOR_THICKNESS)+" "+str(BGRATE)+" "+str(RANDBGTAG)+" "+str(RECON_CALIBTIME)
+                                COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(runs[0])+" "+str(BASEFILENUM+FILENUM_this_run+-1)+" "+str(num_this_file)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS)+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(ccdbSQLITEPATH)+" "+str(rcdbSQLITEPATH)+" "+str(BGTAGONLY)+" "+str(RADIATOR_THICKNESS)+" "+str(BGRATE)+" "+str(RANDBGTAG)+" "+str(RECON_CALIBTIME)+" "+str(NOSECONDARIES)
                                 if BATCHRUN == 0 or BATCHSYS=="NULL":
                                         #print str(runs[0])+" "+str(BASEFILENUM+FILENUM_this_run+-1)+" "+str(num_this_file)
                                         os.system(str(indir)+" "+COMMAND)
@@ -858,7 +865,7 @@ def main(argv):
                         if num == 0:
                                 continue
                 
-                        COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(RUNNUM)+" "+str(BASEFILENUM+FILENUM+-1)+" "+str(num)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS).upper()+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(ccdbSQLITEPATH)+" "+str(rcdbSQLITEPATH)+" "+str(BGTAGONLY)+" "+str(RADIATOR_THICKNESS)+" "+str(BGRATE)+" "+str(RANDBGTAG)+" "+str(RECON_CALIBTIME)
+                        COMMAND=str(BATCHRUN)+" "+ENVFILE+" "+GENCONFIG+" "+str(outdir)+" "+str(RUNNUM)+" "+str(BASEFILENUM+FILENUM+-1)+" "+str(num)+" "+str(VERSION)+" "+str(CALIBTIME)+" "+str(GENR)+" "+str(GEANT)+" "+str(SMEAR)+" "+str(RECON)+" "+str(CLEANGENR)+" "+str(CLEANGEANT)+" "+str(CLEANSMEAR)+" "+str(CLEANRECON)+" "+str(BATCHSYS).upper()+" "+str(NCORES).split(':')[-1]+" "+str(GENERATOR)+" "+str(GEANTVER)+" "+str(BGFOLD)+" "+str(CUSTOM_GCONTROL)+" "+str(eBEAM_ENERGY)+" "+str(COHERENT_PEAK)+" "+str(MIN_GEN_ENERGY)+" "+str(MAX_GEN_ENERGY)+" "+str(TAGSTR)+" "+str(CUSTOM_PLUGINS)+" "+str(PERFILE)+" "+str(RUNNING_DIR)+" "+str(ccdbSQLITEPATH)+" "+str(rcdbSQLITEPATH)+" "+str(BGTAGONLY)+" "+str(RADIATOR_THICKNESS)+" "+str(BGRATE)+" "+str(RANDBGTAG)+" "+str(RECON_CALIBTIME)+" "+str(NOSECONDARIES)
                
                         #either call MakeMC.csh or add a job depending on swif flag
                         if BATCHRUN == 0 or BATCHSYS=="NULL":
