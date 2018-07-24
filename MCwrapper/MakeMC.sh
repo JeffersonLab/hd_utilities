@@ -89,6 +89,8 @@ export RECON_CALIBTIME=$1
 shift
 export GEANT_NOSCONDARIES=$1
 
+export USER_BC=`which bc`
+
 #printenv
 #necessary to run swif, uses local directory if swif=0 is used
 if [[ "$BATCHRUN" != "0" ]]; then
@@ -213,7 +215,7 @@ else
 	elif [[ $copeak_text == "-1.0" ]]; then
 		copeak=0
 	else
-		copeak=`echo "$copeak_text / 1000" | /usr/bin/bc -l `
+		copeak=`echo "$copeak_text / 1000" | $USER_BC -l `
 	fi
 fi
 
@@ -246,7 +248,7 @@ echo "Run $RUN_NUMBER does not have a beam_on_current.  Defaulting to beam_curre
 beam_on_current=`rcnd $RUN_NUMBER beam_current | awk '{print $1}'`
 fi
 
-beam_on_current=`echo "$beam_on_current / 1000." | /usr/bin/bc -l`
+beam_on_current=`echo "$beam_on_current / 1000." | $USER_BC -l`
 
 colsize=`rcnd $RUN_NUMBER collimator_diameter | awk '{print $1}' | sed -r 's/.{2}$//' | sed -e 's/\.//g'`
 if [[ "$colsize" == "B" || "$colsize" == "R" || "$JANA_CALIB_CONTEXT" != "variation=mc" ]]; then
@@ -885,7 +887,7 @@ if [[ "$GENR" != "0" ]]; then
 	    echo "import hddm_s" > count.py
 	    echo "print(sum(1 for r in hddm_s.istream('$bkglocstring')))" >> count.py
 	    totalnum=$(python count.py)
-		fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | /usr/bin/bc`
+		fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | $USER_BC`
 		echo "skipping: "$fold_skip_num
 		echo "mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1""+"$fold_skip_num
 		mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1\+$fold_skip_num
@@ -895,7 +897,7 @@ if [[ "$GENR" != "0" ]]; then
 	    echo "import hddm_s" > count.py
 	    echo "print(sum(1 for r in hddm_s.istream('$bkglocstring')))" >> count.py
 	    totalnum=`python count.py`
-		fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | /usr/bin/bc`
+		fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | $USER_BC`
 		echo "mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1""+"$fold_skip_num
 		mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1\+$fold_skip_num
 		mcsmear_return_code=$?
@@ -926,7 +928,7 @@ if [[ "$GENR" != "0" ]]; then
 	    echo "import hddm_s" > count.py
 	    echo "print(sum(1 for r in hddm_s.istream('$bkglocstring')))" >> count.py
 	    totalnum=$(python count.py)
-		fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | /usr/bin/bc`
+		fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | $USER_BC`
 		echo "skipping: "$fold_skip_num
 		echo "mcsmear -s -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1""+"$fold_skip_num
 		mcsmear -s -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1\+$fold_skip_num
@@ -936,7 +938,7 @@ if [[ "$GENR" != "0" ]]; then
 	    echo "import hddm_s" > count.py
 	    echo "print(sum(1 for r in hddm_s.istream('$bkglocstring')))" >> count.py
 	    totalnum=`python count.py`
-		fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | /usr/bin/bc`
+		fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | $USER_BC`
 		echo "mcsmear -s -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1""+"$fold_skip_num
 		mcsmear -s -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1\+$fold_skip_num
 		mcsmear_return_code=$?

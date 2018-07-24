@@ -478,6 +478,7 @@ def main(argv):
         CLEANRECON=0
         BATCHRUN=0
         NOSECONDARIES=0
+        SHELL_TO_USE="csh"
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         #loop over config file and set the "parameters"
         f = open(CONFIG_FILE,"r")
@@ -682,6 +683,9 @@ def main(argv):
                         if flag[0]=="projid":
                                 argfound=1
                                 PROJECT_ID=str(flag[1])
+                        if flag[0]=="shell":
+                                argfound=1
+                                SHELL_TO_USE=str(flag[1])
                         if argfound==0:
                                 print( "WARNING OPTION: "+argu+" NOT FOUND!")
         
@@ -725,9 +729,9 @@ def main(argv):
         loginSHELL=environ['SHELL'].split("/")
 
 
-        if loginSHELL[len(loginSHELL)-1]=="bash" or ( BATCHSYS.upper() == "OSG" and int(BATCHRUN) != 0) :
+        if loginSHELL[len(loginSHELL)-1]=="bash" or ( BATCHSYS.upper() == "OSG" and int(BATCHRUN) != 0) or SHELL_TO_USE=="bash" :
                 script_to_use = "/MakeMC.sh"
-        elif loginSHELL[len(loginSHELL)-1]=="zsh":
+        elif loginSHELL[len(loginSHELL)-1]=="zsh" or SHELL_TO_USE=="zcsh":
                 script_to_use = "/MakeMC.sh"
         
         indir+=script_to_use
