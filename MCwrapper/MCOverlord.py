@@ -43,8 +43,12 @@ dbuser = 'mcuser'
 dbpass = ''
 dbname = 'gluex_mc'
 
-dbcnx=MySQLdb.connect(host=dbhost, user=dbuser, db=dbname)
-dbcursor=dbcnx.cursor(MySQLdb.cursors.DictCursor)
+try:
+        dbcnx=MySQLdb.connect(host=dbhost, user=dbuser, db=dbname)
+        dbcursor=dbcnx.cursor(MySQLdb.cursors.DictCursor)
+except:
+        print "WARNING: CANNOT CONNECT TO DATABASE.  JOBS WILL NOT BE CONTROLLED OR MONITORED"
+        pass
 
 
 def checkSWIF():

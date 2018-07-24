@@ -87,6 +87,8 @@ shift
 setenv RANDBGTAG $1
 shift
 setenv RECON_CALIBTIME $1
+shift
+setenv GEANT_NOSECONDARIES $1
 
 
 #necessary to run swif, uses local directory if swif=0 is used
@@ -804,6 +806,7 @@ if ( "$GENR" != "0" ) then
 		sed -i 's/TEMPRADTHICK/'"$radthick"'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 		sed -i 's/TEMPBGTAGONLY/'$BGTAGONLY_OPTION'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 		sed -i 's/TEMPBGRATE/'$BGRATE_toUse'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+		sed -i 's/TEMPNOSECONDARIES/'$GEANT_NOSECONDARIES'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 
 		if ( "$gen_pre" == "file" ) then
 			@ skip_num = $FILE_NUMBER * $PER_FILE
