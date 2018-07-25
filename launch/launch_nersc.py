@@ -63,7 +63,7 @@ TESTMODE  = True  # True=only print commands, but don't actually submit jobs
 WORKFLOW     = 'nersc_test_01'
 NAME         = 'GLUEX_RECON'
 PROJECT      = 'm3120'
-TIMELIMIT    = '3:30:00'  # Set 3.5hr time limit
+TIMELIMIT    = '3:15:00'  # Set 3.25hr time limit
 QOS          = 'regular'  # debug, regular, premium
 NODETYPE     = 'haswell'  # haswell, knl  (quad,cache)
 
@@ -147,8 +147,8 @@ def MakeJob(RUN,FILE):
 	CMD += [SCRIPTFILE]
 	CMD += [CONFIG]           # arg 1:  JANA config file
 	CMD += [RECONVERSION]     # arg 2:  sim-recon version
-	CMD += [RUN]              # arg 3:  run     <--+ run and file number used to name job_info
-	CMD += [FILE]             # arg 4:  file    <--+ directory only.
+	CMD += [str(RUN)]         # arg 3:  run     <--+ run and file number used to name job_info
+	CMD += [str(FILE)]        # arg 4:  file    <--+ directory only.
 
 	# Make swif2 command
 	SWIF2_CMD  = ['swif2']
