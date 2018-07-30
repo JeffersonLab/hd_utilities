@@ -2,7 +2,7 @@ EXAMPLE_SPLIT_DIR = $(HD_UTILITIES_HOME)/split_sim-recon/example
 PWD=`pwd`
 SIM_REPO_DIR = $(PWD)/halld_sim
 RECON_REPO_DIR = $(PWD)/halld_recon
-SETUP_GLUEX = source $(BUILD_SCRIPTS)/gluex_env_jlab.sh ; unset HALLD_HOME
+SETUP_GLUEX = source $(BUILD_SCRIPTS)/gluex_env_jlab.sh ; unset HALLD_HOME ; export HALLD_RECON_HOME=$(PWD)/halld_recon ; export HALLD_SIM_HOME=$(PWD)/halld_sim
 DIRECTORIES_TO_BE_MOVED = src/programs/Simulation \
 	src/programs/AmplitudeAnalysis src/plugins/Simulation \
 	src/libraries/AMPTOOLS_AMPS src/libraries/AMPTOOLS_DATAIO \
@@ -45,38 +45,40 @@ no_build: .recon_push_done .sim_push_done
 	$(SETUP_GLUEX) ; \
 	    echo $(HALLD_HOME) ; \
 	    cd $(RECON_REPO_DIR)/src ; \
-	    scons install -j3
+	    scons install -j3 SHOWBUILD=1
 	date > $@
 
-.sim_clone_done: .sim-recon_clone_done
-	git clone file://$(PWD)/sim-recon $(SIM_REPO_DIR)
+.sim_bare_push_done: .sim-recon_clone_done
+	cd sim-recon.git ; \
+	    git push --mirror git@github.com:jeffersonlab/halld_sim.git
 	date > $@
 
-.sim_filter_done: .sim_clone_done
-	pushd $(SIM_REPO_DIR) ; git filter-branch --index-filter 'git rm --cached -qr --ignore-unmatch -- . && git reset -q $(GIT_COMMIT) -- $(DIRECTORIES_TO_BE_MOVED)' --prune-empty -- --all
+.sim_clone_done: .sim_bare_push_done
+	rm -rf $(SIM_REPO_DIR)
+	git clone ssh://git@github.com/jeffersonlab/halld_sim
 	date > $@
 
-.sim_copy_done: .sim_filter_done
-	cp -rv $(EXAMPLE_SPLIT_DIR)/halld_sim/src $(SIM_REPO_DIR)
+.sim_modify_done: .sim_clone_done
+	cd $(SIM_REPO_DIR) ; rm -rf src
+	cd $(SIM_REPO_DIR) ; git checkout $(DIRECTORIES_TO_BE_MOVED) src/SBMS
+	cp -r $(EXAMPLE_SPLIT_DIR)/halld_sim/src halld_sim
 	date > $@
 
-.sim_commit_done: .sim_copy_done
+.sim_commit_done: .sim_modify_done
 	cd $(SIM_REPO_DIR) ; git add .
 	cd $(SIM_REPO_DIR) ; \
-	    git commit -m "commit files added from examples directory"
+	    git commit -q -m "halld_sim modified from sim-recon original"
 	date > $@
 
 .sim_push_done: .sim_commit_done
-	cd $(SIM_REPO_DIR) ; \
-	    git push --mirror git@github.com:jeffersonlab/halld_sim.git
+	cd $(SIM_REPO_DIR) ; git push
 	date > $@
 
 .sim_scons_done: .sim_push_done .recon_scons_done
 	$(SETUP_GLUEX) ; \
-	    export HALLD_RECON_HOME=$(RECON_REPO_DIR) ; \
-	    export HALLD_SIM_HOME=$(SIM_REPO_DIR) ; \
+	    echo $(HALLD_HOME) ; \
 	    cd $(SIM_REPO_DIR)/src ; \
-	    scons install -j3
+	    scons install -j3 SHOWBUILD=1
 	date > $@
 
 clean:
