@@ -138,11 +138,11 @@ Save_JANADot()
 Make_Plots()
 {
 	cp $MONITORING_HOME/recon_test/Make_Plots.C .
-	root -b -q hd_root.root 'Make_Plots.C("$HALLD_HOME/src/plugins/Analysis/monitoring_hists/HistMacro_NumHighLevelObjects.C", "HistMacro_NumHighLevelObjects.png")'
-	root -b -q hd_root.root 'Make_Plots.C("$HALLD_HOME/src/plugins/Analysis/monitoring_hists/HistMacro_EventInfo.C", "HistMacro_EventInfo.png")'
-	root -b -q hd_root.root 'Make_Plots.C("$HALLD_HOME/src/plugins/monitoring/highlevel_online/HistMacro_Kinematics.C", "HistMacro_Kinematics.png")'
-	root -b -q hd_root.root 'Make_Plots.C("$HALLD_HOME/src/plugins/Analysis/p2pi_hists/HistMacro_p2pi.C", "HistMacro_p2pi.png")'
-	root -b -q hd_root.root 'Make_Plots.C("$HALLD_HOME/src/plugins/Analysis/p3pi_hists/HistMacro_p3pi.C", "HistMacro_p3pi.png")'
+	root -b -q hd_root.root 'Make_Plots.C("$HALLD_RECON_HOME/src/plugins/Analysis/monitoring_hists/HistMacro_NumHighLevelObjects.C", "HistMacro_NumHighLevelObjects.png")'
+	root -b -q hd_root.root 'Make_Plots.C("$HALLD_RECON_HOME/src/plugins/Analysis/monitoring_hists/HistMacro_EventInfo.C", "HistMacro_EventInfo.png")'
+	root -b -q hd_root.root 'Make_Plots.C("$HALLD_RECON_HOME/src/plugins/monitoring/highlevel_online/HistMacro_Kinematics.C", "HistMacro_Kinematics.png")'
+	root -b -q hd_root.root 'Make_Plots.C("$HALLD_RECON_HOME/src/plugins/Analysis/p2pi_hists/HistMacro_p2pi.C", "HistMacro_p2pi.png")'
+	root -b -q hd_root.root 'Make_Plots.C("$HALLD_RECON_HOME/src/plugins/Analysis/p3pi_hists/HistMacro_p3pi.C", "HistMacro_p3pi.png")'
 
 	# setup output dir
 	local OUTDIR_THIS=${WEBDIR_SMALL}/${RUN_NUMBER}/
