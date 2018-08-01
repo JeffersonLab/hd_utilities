@@ -21,6 +21,7 @@ import multiprocessing
 import logging
 import pickle
 import rcdb
+import hddm_s
 
 from ROOT import gROOT,gSystem
 
@@ -85,6 +86,7 @@ class ProcessMonDataConfig:
 
         self.EVIO_SKIMS_TO_MERGE = []
         self.ROOT_TREES_TO_MERGE = []
+        self.HDDM_FILES_TO_MERGE = []
 
     def ProcessCommandline(self,args,options,db):
         """
@@ -190,6 +192,8 @@ class ProcessMonDataConfig:
             self.ROOT_TREES_TO_MERGE = options.root_trees_to_merge.split(",")
         if options.evio_skims_to_merge:
             self.EVIO_SKIMS_TO_MERGE = options.evio_skims_to_merge.split(",")
+        if options.hddm_files_to_merge:
+            self.HDDM_FILES_TO_MERGE = options.hddm_files_to_merge.split(",")
 
 
     def BuildEnvironment(self):
@@ -502,6 +506,27 @@ def ProcessOfflineData(args):
             os.system("jcache put %s/%s"%(tree_dir,merged_skim_file))
             os.system("jcache unpin %s/*.root"%(tree_dir))
     """
+    # merge hddm files
+    if len(config.HDDM_FILES_TO_MERGE) > 0:
+        for file in config.HDDM_FILES_TO_MERGE:
+            #if config.VERBOSE>2:
+            print "  merging %s ..."%file
+            hddm_dir = join(config.INPUT_DIRECTORY,config.REVISION,file,"%06d"%run)
+            merged_hddm_dir = join(config.INPUT_DIRECTORY,config.REVISION,file,"merged")
+            if not isdir(merged_hddm_dir):
+                os.system("mkdir -m"+config.NEWDIR_MODE+" -p " + merged_hddm_dir)
+
+            merged_hddm_file = "%s_%06d.hddm"%(file,run)
+            os.system("rm -f %s/%s"%(merged_hddm_dir,merged_hddm_file))
+            if config.VERBOSE>0:
+                print "merging into %s/%s ..."%(merged_hddm_dir,merged_hddm_file)
+            fout=hddm_s.ostream(os.path.join(merged_hddm_dir,merged_hddm_file))
+            fout.compression = hddm_s.k_z_compression
+            for fin in os.listdir(hddm_dir):
+                for rec in hddm_s.istream(os.path.join(hddm_dir,fin)):
+                    fout.write(rec)
+            os.system("jcache put %s/%s"%(merged_hddm_dir,merged_hddm_file))
+            os.system("jcache unpin %s/*.root"%(hddm_dir))
 
     # CLEANUP
     ## save some information about what has been processed so far
@@ -571,6 +596,8 @@ def main():
                       help="Merge these ROOT trees.")
     parser.add_option("--merge-skims", dest="evio_skims_to_merge",
                       help="Merge these EVIO skims.")
+    parser.add_option("--merge-hddms", dest="hddm_files_to_merge",
+                      help="Merge these HDDM files.")
     parser.add_option("-T","--merged-root-output-dir", dest="root_output_dir",
                       help="Directory to save merged ROOT files")
     parser.add_option("-B","--batchfarm-tempdir", dest="batch_tempdir", action="store_true",
