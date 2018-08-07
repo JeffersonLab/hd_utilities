@@ -46,8 +46,8 @@ if __name__ == "__main__":
     hdmon_root_utils.load_calibration_library()
 
     # run the actual command
-    if "HALLD_HOME" not in os.environ:
-        print "HALLD_HOME not set!"
+    if "HALLD_RECON_HOME" not in os.environ:
+        print "HALLD_RECON_HOME not set!"
     else:
         print "Running commmand = " + root_command
         hdmon_root_utils.run_root_commands([ root_command ])
