@@ -53,30 +53,35 @@
 #
 
 import subprocess
-import mysql.connector
 import sys
+import os
+
+# mysql.connector not available via system and must come via PYTHONPATH
+if not os.getenv('PYTHONPATH') : sys.path.append('/group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5/ccdb/ccdb_1.06.06/python')
+import mysql.connector
 
 
-TESTMODE  = True  # True=only print commands, but don't actually submit jobs
+TESTMODE  = False  # True=only print commands, but don't actually submit jobs
 
 
-WORKFLOW     = 'nersc_test_01'
-NAME         = 'GLUEX_RECON'
+WORKFLOW     = 'nersc_test_03'
+NAME         = 'GLUEX_OFFMON'
 PROJECT      = 'm3120'
 TIMELIMIT    = '3:15:00'  # Set 3.25hr time limit
 QOS          = 'regular'  # debug, regular, premium
 NODETYPE     = 'haswell'  # haswell, knl  (quad,cache)
 
 IMAGE        = 'docker:markito3/gluex_docker_devel'
-RECONVERSION = 'sim-recon-2.27.0'
+RECONVERSION = 'sim-recon/sim-recon-recon-2017_01-ver03'
+#RECONVERSION = 'halld_recon/recon-2017_01-ver03_2018patches'
 SCRIPTFILE   = '/launch/script_nersc.sh'
-CONFIG       = '/launch/jana_recon_nersc.config'
-OUTPUTTOP    = 'mss:/mss/halld/halld-scratch/RunPeriod-2018-01/recon/ver00'  # prefix with mss: for tape or file: for filesystem
+CONFIG       = '/launch/jana_offmon_nersc.config'
+OUTPUTTOP    = 'mss:/mss/halld/halld-scratch/RunPeriod-2018-01/recon/ver01'  # prefix with mss: for tape or file: for filesystem
 
 RUNPERIOD = 'RunPeriod-2018-01'
-RUNS      = [41137]    # List of runs to process (TODO: replace with user provided range + RCDB lookup)
+RUNS      = [41136]    # List of runs to process (TODO: replace with user provided range + RCDB lookup)
 MINFILENO = 0          # Min file number to process for given run (n.b. file numbers start at 0!)
-MAXFILENO = 1000       # Max file number to process for given run (n.b. file numbers start at 0!)
+MAXFILENO = 0          # Max file number to process for given run (n.b. file numbers start at 0!)
 
 RCDB_HOST = 'hallddb'
 RCDB_USER = 'rcdb'
@@ -126,6 +131,7 @@ def MakeJob(RUN,FILE):
 	outfiles['tree_tof_eff.root'                      ] = 'tree_tof_eff/%06d/tree_tof_eff_%s.root' % (RUN, RFSTR)
 	outfiles['tree_trackeff.root'                     ] = 'tree_trackeff/%06d/tree_trackeff_%s.root' % (RUN, RFSTR)
 	outfiles['tree_TS_scaler.root'                    ] = 'tree_TS_scaler/%06d/tree_TS_scaler_%s.root' % (RUN, RFSTR)
+	outfiles['hd_rawdata_%s.cal_high_energy_skim.evio' % RFSTR] = 'cal_high_energy_skim/%06d/cal_high_energy_skim_%s.evio'% (RUN, RFSTR)
 
 	# SLURM options
 	SBATCH  = ['-sbatch']

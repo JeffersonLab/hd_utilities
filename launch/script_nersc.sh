@@ -16,12 +16,12 @@
 # arg 4:  file    <--+ directory only.
 
 JANA_CONFIG=$1
-SIM_RECON_VERSION=$2
+HALLD_RECON_VERSION=$2
 RUN=$3
 FILE=$4
 
 # Setup environment for the specified sim-recon version
-setenv_file=/cvmfs/oasis.opensciencegrid.org/gluex/group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5-cntr/sim-recon/${SIM_RECON_VERSION}/Linux_CentOS7-x86_64-gcc4.8.5-cntr/setenv.sh
+setenv_file=/cvmfs/oasis.opensciencegrid.org/gluex/group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5-cntr/${HALLD_RECON_VERSION}/Linux_CentOS7-x86_64-gcc4.8.5-cntr/setenv.sh
 source $setenv_file
 
 # Use CCDB and RCDB from CVMFS. Make a temporary local
