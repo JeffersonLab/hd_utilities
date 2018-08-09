@@ -67,7 +67,7 @@ TESTMODE  = False  # True=only print commands, but don't actually submit jobs
 WORKFLOW     = 'nersc_test_03'
 NAME         = 'GLUEX_OFFMON'
 PROJECT      = 'm3120'
-TIMELIMIT    = '3:15:00'  # Set 3.25hr time limit
+TIMELIMIT    = '4:45:00'  # Set time limit (~3.25hr for recon. ~4.5hr for monitoring)
 QOS          = 'regular'  # debug, regular, premium
 NODETYPE     = 'haswell'  # haswell, knl  (quad,cache)
 
