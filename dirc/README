@@ -2,7 +2,8 @@
 
 Use 2018-dirc-commissioning branch for: 
 	-HDDS (https://github.com/JeffersonLab/hdds)
-	-sim-recon (https://github.com/JeffersonLab/sim-recon)
+	-halld_recon (https://github.com/JeffersonLab/halld_recon)
+	-halld_sim (https://github.com/JeffersonLab/halld_sim)
 	-HDGeant4 (https://github.com/JeffersonLab/HDGeant4)
 
 To setup your own builds of with these branches use the following commands:
@@ -10,14 +11,17 @@ To setup your own builds of with these branches use the following commands:
 > setenv BUILD_SCRIPTS /group/halld/Software/build_scripts
 > mkdir builds
 > cd builds
-> $BUILD_SCRIPTS/my_sim-recon_jlab.sh
+> $BUILD_SCRIPTS/my_halld_jlab.sh
 
 This will pull the master of each repository and build it, after this you'll need to switch to the proper branch
 
 > cd hdds/
 > git checkout dirc_commissioning_2018
 > scons -u install
-> cd ../sim-recon/src/
+> cd ../halld_recon/src/
+> git checkout dirc_commissioning_2018
+> scons -u install -j8
+> cd ../halld_sim/src/
 > git checkout dirc_commissioning_2018
 > scons -u install -j8
 > cd ../../hdgeant4/
@@ -46,10 +50,11 @@ hdgeant4 run.mac
 mcsmear out.hddm
 
 #3) Analyze smeared .hddm output with several plugins (Note: use -PTRIG:BYPASS=1 to skip trigger simulation)
-#	pid_dirc: convert DIRC hits into custom .root format for LUT algorithm
+#	pid_dirc: convert DIRC hits into custom .root format for standalone LUT macro (see below)
 #	truth_dirc: make diagnostic truth histograms from DIRC hits
+#	dirc_hists: make diagnostic histograms of LUT algorithm internal to halld_recon
 #	monitoring_hists: make diagnostic histograms for other detectors (eg. check tracking is working)
-hd_root -o drc.root -PPLUGINS=pid_dirc,truth_dirc,monitoring_hists -PTRIG:BYPASS=1 out_smeared.hddm
+hd_root -o drc.root -PPLUGINS=pid_dirc,truth_dirc,monitoring_hists,dirc_hists -PTRIG:BYPASS=1 out_smeared.hddm
 
 #4) Plot DIRC's hit pattern:
 root loadlib.C drawHP.C'("drc.root")'
@@ -76,12 +81,20 @@ root loadlib.C glxlut_add.C+'("lut/loopLut/lut_avr_*.root")'
 
 ####### LUT reconstruction (standalone macro) #######
 
-#1) Simulate pion and kaon samples with fixed momentum and anglues (see example simulation workflow above).  Then combine into a single ROOT file with hadd.
+#1) Simulate pion and kaon samples with fixed momentum and angles (see example simulation workflow above).  Then combine into a single ROOT file with hadd.
 
 #2) Run the LUT reconstruction macro to show the pi/K separation power
 root loadlib.C reco_lut.C'("drc_kaon_pion.root")'
 
 ####### LUT reconstruction (JANA factory) #######
 
-Work in progress...
+#1) Simulate any event sample you like (see example simulation workflow above).  Use dirc_hists plugin to run LUT algorithm in PID library.  
+# Some example event samples are located at 
+## /volatile/halld/home/jrsteven/2018-dirc/bggen_Ee10.3_Eg7.7
+## /volatile/halld/home/jrsteven/2018-dirc/particle_gun/kp_p4_theta4.cfg/ (fixed p=4 GeV and theta=4 deg)
+## /volatile/halld/home/jrsteven/2018-dirc/particle_gun/kp_flat.cfg/ (flat in p and theta)
+## the above to directories are for kaons, and there are similar directories for pions
+
+#2) View the histograms for thetaC, likelihood differences etc. in the hd_root.root file
+
 

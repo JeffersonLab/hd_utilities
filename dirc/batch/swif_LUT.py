@@ -42,10 +42,10 @@ DATA_OUTPUT_BASE_DIR    = "/volatile/halld/home/%s/2018-dirc/"%(os.environ['USER
 
 
 # JOB EXECUTION
-SCRIPTFILE        = "/work/halld2/home/jrsteven/2018-dirc/batch/script_LUT.sh"
+SCRIPTFILE        = "/work/halld2/home/jrsteven/2018-dirc/builds/hd_utilities/dirc/batch/script_LUT.sh"
 ENVFILE           = "/work/halld2/home/jrsteven/2018-dirc/builds/setup_gluex.csh"
-CONFIG_FILE_PATH  = "/work/halld2/home/jrsteven/2018-dirc/batch/"
-MAC_FILE     = "/work/halld2/home/jrsteven/2018-dirc/batch/run.mac"
+CONFIG_FILE_PATH  = "/work/halld2/home/jrsteven/2018-dirc/builds/hd_utilities/dirc/batch/"
+MAC_FILE     = "/work/halld2/home/jrsteven/2018-dirc/builds/hd_utilities/dirc/batch/run.mac"
 
 ################################################## GENERATE CONTROL.IN FILE ##################################################
 

@@ -26,7 +26,7 @@ cp $CONFIG_FILE control.in
 hdgeant4 $MAC_FILE
 
 # RUN JANA
-hd_root out.hddm -o lut.root -PPLUGINS=lut_dirc
+#hd_root out.hddm -o lut.root -PPLUGINS=lut_dirc
 
 # RETURN CODE
 set RETURN_CODE = $?
@@ -36,11 +36,11 @@ if ($RETURN_CODE != 0) then
 endif
 
 # save output histograms
-mkdir -p -m 775 ${OUTDIR}/root/
-if (-e lut.root) then
-	cp -v lut.root ${OUTDIR}/root/lut_${BAR}.root
-	chmod 664 ${OUTDIR}/root/lut_${BAR}.root
-endif
+#mkdir -p -m 775 ${OUTDIR}/root/
+#if (-e lut.root) then
+#	cp -v lut.root ${OUTDIR}/root/lut_${BAR}.root
+#	chmod 664 ${OUTDIR}/root/lut_${BAR}.root
+#endif
 
 # save output hddm
 mkdir -p -m 775 ${OUTDIR}/hddm/
