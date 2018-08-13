@@ -61,7 +61,7 @@ if not os.getenv('PYTHONPATH') : sys.path.append('/group/halld/Software/builds/L
 import mysql.connector
 
 
-TESTMODE  = False  # True=only print commands, but don't actually submit jobs
+TESTMODE  = True  # True=only print commands, but don't actually submit jobs
 
 
 WORKFLOW     = 'nersc_test_03'
@@ -76,14 +76,14 @@ RECONVERSION = 'sim-recon/sim-recon-recon-2017_01-ver03'
 #RECONVERSION = 'halld_recon/recon-2017_01-ver03_2018patches'
 SCRIPTFILE   = '/launch/script_nersc.sh'
 CONFIG       = '/launch/jana_offmon_nersc.config'
-OUTPUTTOP    = 'mss:/mss/halld/halld-scratch/RunPeriod-2018-01/recon/ver01'  # prefix with mss: for tape or file: for filesystem
+OUTPUTTOP    = 'mss:/mss/halld/halld-scratch/RunPeriod-2018-01/offmon/verN00'  # prefix with mss: for tape or file: for filesystem
 
 RUNPERIOD = 'RunPeriod-2018-01'
 RUNS      = [41136]    # List of runs to process (TODO: replace with user provided range + RCDB lookup)
 MINFILENO = 0          # Min file number to process for given run (n.b. file numbers start at 0!)
 MAXFILENO = 0          # Max file number to process for given run (n.b. file numbers start at 0!)
 
-RCDB_HOST = 'hallddb'
+RCDB_HOST = 'hallddb.jlab.org'
 RCDB_USER = 'rcdb'
 RCDB      = None
 
@@ -94,44 +94,17 @@ def MakeJob(RUN,FILE):
 	MSSFILE   = '/mss/halld/%s/rawdata/Run%06d/%s' % (RUNPERIOD, RUN, EVIOFILE)
 	OUTPUTDIR = OUTPUTTOP.split(':',1)[1]  # just directory part
 	
-	# Make list of output directories. Normally, we wouldn't have
-	# to make these, but if using a Globus account with a different
-	# user than the one running swif2, the directories must be premade
-	# with appropriate permissions
-	outdirs = []
-	outdirs += ['job_info']
-	outdirs += ['dana_rest_coherent_peak/%06d' % RUN]
-	outdirs += ['REST/%06d' % RUN]
-	outdirs += ['exclusivepi0/%06d' % RUN]
-	outdirs += ['omega/%06d' % RUN]
-	outdirs += ['hists/%06d' % RUN]
-	outdirs += ['p3pi_excl_skim/%06d' % RUN]
-	outdirs += ['tree_bcal_hadronic_eff/%06d' % RUN]
-	outdirs += ['tree_fcal_hadronic_eff/%06d' % RUN]
-	outdirs += ['tree_PSFlux/%06d' % RUN]
-	outdirs += ['tree_sc_eff/%06d' % RUN]
-	outdirs += ['tree_tof_eff/%06d' % RUN]
-	outdirs += ['tree_trackeff/%06d' % RUN]
-	outdirs += ['tree_TS_scaler/%06d' % RUN]
-
-	# Make map of local file(key) to output file(value)
-	RFSTR = '%06d_%03d' % (RUN, FILE)
-	outfiles = {}
-	outfiles['job_info_%s.tgz'  % RFSTR               ] = 'job_info/%06d/job_info_%s.tgz' % (RUN, RFSTR)
-	outfiles['dana_rest_coherent_peak.hddm'           ] = 'dana_rest_coherent_peak/%06d/dana_rest_coherent_peak_%s.hddm' % (RUN, RFSTR)
-	outfiles['dana_rest.hddm'                         ] = 'REST/%06d/dana_rest_%s.hddm' % (RUN, RFSTR)
-	outfiles['hd_rawdata_%s.exclusivepi0.evio' % RFSTR] = 'exclusivepi0/%06d/exclusivepi0_%s.evio' % (RUN, RFSTR)
-	outfiles['hd_rawdata_%s.omega.evio' % RFSTR       ] = 'omega/%06d/omega_%s.evio' % (RUN, RFSTR)
-	outfiles['hd_root.root'                           ] = 'hists/%06d/hd_root_%s.root' % (RUN, RFSTR)
-	outfiles['p3pi_excl_skim.root'                    ] = 'p3pi_excl_skim/%06d/p3pi_excl_skim_%s.root' % (RUN, RFSTR)
-	outfiles['tree_bcal_hadronic_eff.root'            ] = 'tree_bcal_hadronic_eff/%06d/tree_bcal_hadronic_eff_%s.root' % (RUN, RFSTR)
-	outfiles['tree_fcal_hadronic_eff.root'            ] = 'tree_fcal_hadronic_eff/%06d/tree_fcal_hadronic_eff_%s.root' % (RUN, RFSTR)
-	outfiles['tree_PSFlux.root'                       ] = 'tree_PSFlux/%06d/tree_PSFlux_%s.root' % (RUN, RFSTR)
-	outfiles['tree_sc_eff.root'                       ] = 'tree_sc_eff/%06d/tree_sc_eff_%s.root' % (RUN, RFSTR)
-	outfiles['tree_tof_eff.root'                      ] = 'tree_tof_eff/%06d/tree_tof_eff_%s.root' % (RUN, RFSTR)
-	outfiles['tree_trackeff.root'                     ] = 'tree_trackeff/%06d/tree_trackeff_%s.root' % (RUN, RFSTR)
-	outfiles['tree_TS_scaler.root'                    ] = 'tree_TS_scaler/%06d/tree_TS_scaler_%s.root' % (RUN, RFSTR)
-	outfiles['hd_rawdata_%s.cal_high_energy_skim.evio' % RFSTR] = 'cal_high_energy_skim/%06d/cal_high_energy_skim_%s.evio'% (RUN, RFSTR)
+	# Get list of output directories and files.
+	# Normally, we wouldn't have to make the directories, but if using
+	# a Globus account with a different user than the one running swif2,
+	# the directories must be premade with appropriate permissions.
+	# The outfiles variable is a map of local file(key) to output file(value)
+	if 'recon' in CONFIG:
+		(outdirs, outfiles) = ReconOutFiles(RUN, FILE)
+	elif 'offmon' in CONFIG:
+		(outdirs, outfiles) = OffmonOutFiles(RUN, FILE)
+	else:
+		print 'Unknown config type! Unable to form output file list'
 
 	# SLURM options
 	SBATCH  = ['-sbatch']
@@ -176,6 +149,97 @@ def MakeJob(RUN,FILE):
 			for d in outdirs: subprocess.check_call(['mkdir', '-p', OUTPUTDIR + '/' + d])
 			subprocess.check_call(['chmod', '-R', '777', OUTPUTDIR])
 		subprocess.check_call(SWIF2_CMD)
+
+#----------------------------------------------------
+def OffmonOutFiles(RUN, FILE):
+
+	# Return list of output directories and file mappings for a
+	# offline monitoring job.
+
+	# List of output directories.
+	outdirs = []
+	outdirs += ['job_info']
+	outdirs += ['dana_rest_coherent_peak/%06d' % RUN]
+	outdirs += ['REST/%06d' % RUN]
+	outdirs += ['omega/%06d' % RUN]
+	outdirs += ['hists/%06d' % RUN]
+	outdirs += ['p3pi_excl_skim/%06d' % RUN]
+	outdirs += ['tree_bcal_hadronic_eff/%06d' % RUN]
+	outdirs += ['tree_PSFlux/%06d' % RUN]
+	outdirs += ['tree_trackeff/%06d' % RUN]
+	outdirs += ['TOF_TDC_shift/%06d' % RUN]
+	outdirs += ['tofcalib/%06d' % RUN]
+	outdirs += ['random/%06d' % RUN]
+	outdirs += ['BCAL-LED/%06d' % RUN]
+	outdirs += ['FCAL-LED/%06d' % RUN]
+	outdirs += ['sync/%06d' % RUN]
+	outdirs += ['TPOL/%06d' % RUN]
+
+	# Map of local file(key) to output file(value)
+	RFSTR = '%06d_%03d' % (RUN, FILE)
+	outfiles = {}
+	outfiles['job_info_%s.tgz'  % RFSTR               ] = 'job_info/%06d/job_info_%s.tgz' % (RUN, RFSTR)
+	outfiles['dana_rest_coherent_peak.hddm'           ] = 'dana_rest_coherent_peak/%06d/dana_rest_coherent_peak_%s.hddm' % (RUN, RFSTR)
+	outfiles['dana_rest.hddm'                         ] = 'REST/%06d/dana_rest_%s.hddm' % (RUN, RFSTR)
+	outfiles['hd_rawdata_%s.omega.evio' % RFSTR       ] = 'omega/%06d/omega_%s.evio' % (RUN, RFSTR)
+	outfiles['hd_root.root'                           ] = 'hists/%06d/hd_root_%s.root' % (RUN, RFSTR)
+	outfiles['p3pi_excl_skim.root'                    ] = 'p3pi_excl_skim/%06d/p3pi_excl_skim_%s.root' % (RUN, RFSTR)
+	outfiles['tree_bcal_hadronic_eff.root'            ] = 'tree_bcal_hadronic_eff/%06d/tree_bcal_hadronic_eff_%s.root' % (RUN, RFSTR)
+	outfiles['tree_PSFlux.root'                       ] = 'tree_PSFlux/%06d/tree_PSFlux_%s.root' % (RUN, RFSTR)
+	outfiles['tree_trackeff.root'                     ] = 'tree_trackeff/%06d/tree_trackeff_%s.root' % (RUN, RFSTR)
+	outfiles['TOF_TDC_shift_%06d.txt' % RUN           ] = 'TOF_TDC_shift/%06d/TOF_TDC_shift_%s.txt' % (RUN, RFSTR)
+	outfiles['hd_root_tofcalib.root'                  ] = 'tofcalib/%06d/hd_root_tofcalib_%s.root' % (RUN, RFSTR)
+	outfiles['hd_rawdata_%s.random.evio' % RFSTR      ] = 'random/%06d/hd_rawdata_%s.random.evio' % (RUN, RFSTR)
+	outfiles['hd_rawdata_%s.BCAL-LED.evio' % RFSTR    ] = 'BCAL-LED/%06d/hd_rawdata_%s.BCAL-LED.evio' % (RUN, RFSTR)
+	outfiles['hd_rawdata_%s.FCAL-LED.evio' % RFSTR    ] = 'FCAL-LED/%06d/hd_rawdata_%s.FCAL-LED.evio' % (RUN, RFSTR)
+	outfiles['hd_rawdata_%s.sync.evio' % RFSTR        ] = 'sync/%06d/hd_rawdata_%s.sync' % (RUN, RFSTR)
+	outfiles['tree_TPOL.root'                         ] = 'TPOL/%06d/tree_TPOL_%s.root' % (RUN, RFSTR)
+
+	return (outdirs, outfiles)
+
+#----------------------------------------------------
+def ReconOutFiles(RUN, FILE):
+
+	# Return list of output directories and file mappings for a
+	# reconstruction job.
+
+	# List of output directories.
+	outdirs = []
+	outdirs += ['job_info']
+	outdirs += ['dana_rest_coherent_peak/%06d' % RUN]
+	outdirs += ['REST/%06d' % RUN]
+	outdirs += ['exclusivepi0/%06d' % RUN]
+	outdirs += ['omega/%06d' % RUN]
+	outdirs += ['hists/%06d' % RUN]
+	outdirs += ['p3pi_excl_skim/%06d' % RUN]
+	outdirs += ['tree_bcal_hadronic_eff/%06d' % RUN]
+	outdirs += ['tree_fcal_hadronic_eff/%06d' % RUN]
+	outdirs += ['tree_PSFlux/%06d' % RUN]
+	outdirs += ['tree_sc_eff/%06d' % RUN]
+	outdirs += ['tree_tof_eff/%06d' % RUN]
+	outdirs += ['tree_trackeff/%06d' % RUN]
+	outdirs += ['tree_TS_scaler/%06d' % RUN]
+
+	# Map of local file(key) to output file(value)
+	RFSTR = '%06d_%03d' % (RUN, FILE)
+	outfiles = {}
+	outfiles['job_info_%s.tgz'  % RFSTR               ] = 'job_info/%06d/job_info_%s.tgz' % (RUN, RFSTR)
+	outfiles['dana_rest_coherent_peak.hddm'           ] = 'dana_rest_coherent_peak/%06d/dana_rest_coherent_peak_%s.hddm' % (RUN, RFSTR)
+	outfiles['dana_rest.hddm'                         ] = 'REST/%06d/dana_rest_%s.hddm' % (RUN, RFSTR)
+	outfiles['hd_rawdata_%s.exclusivepi0.evio' % RFSTR] = 'exclusivepi0/%06d/exclusivepi0_%s.evio' % (RUN, RFSTR)
+	outfiles['hd_rawdata_%s.omega.evio' % RFSTR       ] = 'omega/%06d/omega_%s.evio' % (RUN, RFSTR)
+	outfiles['hd_root.root'                           ] = 'hists/%06d/hd_root_%s.root' % (RUN, RFSTR)
+	outfiles['p3pi_excl_skim.root'                    ] = 'p3pi_excl_skim/%06d/p3pi_excl_skim_%s.root' % (RUN, RFSTR)
+	outfiles['tree_bcal_hadronic_eff.root'            ] = 'tree_bcal_hadronic_eff/%06d/tree_bcal_hadronic_eff_%s.root' % (RUN, RFSTR)
+	outfiles['tree_fcal_hadronic_eff.root'            ] = 'tree_fcal_hadronic_eff/%06d/tree_fcal_hadronic_eff_%s.root' % (RUN, RFSTR)
+	outfiles['tree_PSFlux.root'                       ] = 'tree_PSFlux/%06d/tree_PSFlux_%s.root' % (RUN, RFSTR)
+	outfiles['tree_sc_eff.root'                       ] = 'tree_sc_eff/%06d/tree_sc_eff_%s.root' % (RUN, RFSTR)
+	outfiles['tree_tof_eff.root'                      ] = 'tree_tof_eff/%06d/tree_tof_eff_%s.root' % (RUN, RFSTR)
+	outfiles['tree_trackeff.root'                     ] = 'tree_trackeff/%06d/tree_trackeff_%s.root' % (RUN, RFSTR)
+	outfiles['tree_TS_scaler.root'                    ] = 'tree_TS_scaler/%06d/tree_TS_scaler_%s.root' % (RUN, RFSTR)
+	outfiles['hd_rawdata_%s.cal_high_energy_skim.evio' % RFSTR] = 'cal_high_energy_skim/%06d/cal_high_energy_skim_%s.evio'% (RUN, RFSTR)
+
+	return (outdirs, outfiles)
 
 #----------------------------------------------------
 def GetNumEVIOFiles(RUN):
