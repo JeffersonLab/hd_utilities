@@ -79,9 +79,9 @@ CONFIG       = '/launch/jana_offmon_nersc.config'
 OUTPUTTOP    = 'mss:/mss/halld/halld-scratch/RunPeriod-2018-01/offmon/verN00'  # prefix with mss: for tape or file: for filesystem
 
 RUNPERIOD = 'RunPeriod-2018-01'
-RUNS      = [41136]    # List of runs to process (TODO: replace with user provided range + RCDB lookup)
-MINFILENO = 0          # Min file number to process for given run (n.b. file numbers start at 0!)
-MAXFILENO = 0          # Max file number to process for given run (n.b. file numbers start at 0!)
+RUNS      = [41136,41137,41138]    # List of runs to process (TODO: replace with user provided range + RCDB lookup)
+MINFILENO = 0            # Min file number to process for given run (n.b. file numbers start at 0!)
+MAXFILENO = 100          # Max file number to process for given run (n.b. file numbers start at 0!)
 
 RCDB_HOST = 'hallddb.jlab.org'
 RCDB_USER = 'rcdb'
