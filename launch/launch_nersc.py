@@ -92,7 +92,13 @@ def MakeJob(RUN,FILE):
 	JOB_STR   = '%s_%06d_%03d' % (NAME, RUN, FILE)
 	EVIOFILE  = 'hd_rawdata_%06d_%03d.evio' % (RUN, FILE)
 	MSSFILE   = '/mss/halld/%s/rawdata/Run%06d/%s' % (RUNPERIOD, RUN, EVIOFILE)
+	
+	# The OUTPUTDIR variable is a fully qualified path used to pre-create
+	# the output directories for the job files. If the files are going to
+	# /mss, then we must replace the mss:/mss part at the beginning with
+	# /lustre/expphy/cache. Otherwise, just use the path as given in OUTPUTTOP
 	OUTPUTDIR = OUTPUTTOP.split(':',1)[1]  # just directory part
+	if OUTPUTTOP.startswith('mss:/mss'): OUTPUTDIR = OUTPUTDIR.replace('/mss','/lustre/expphy/cache')
 	
 	# Get list of output directories and files.
 	# Normally, we wouldn't have to make the directories, but if using
