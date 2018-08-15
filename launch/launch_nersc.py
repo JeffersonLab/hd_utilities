@@ -72,16 +72,19 @@ QOS          = 'regular'  # debug, regular, premium
 NODETYPE     = 'haswell'  # haswell, knl  (quad,cache)
 
 IMAGE        = 'docker:markito3/gluex_docker_devel'
-RECONVERSION = 'sim-recon/sim-recon-recon-2017_01-ver03'
-#RECONVERSION = 'halld_recon/recon-2017_01-ver03_2018patches'
+#RECONVERSION = 'sim-recon/sim-recon-recon-2017_01-ver03'
+RECONVERSION = 'halld_recon/halld_recon-recon-2017_01-ver03.1'
 SCRIPTFILE   = '/launch/script_nersc.sh'
 CONFIG       = '/launch/jana_offmon_nersc.config'
 OUTPUTTOP    = 'mss:/mss/halld/halld-scratch/RunPeriod-2018-01/offmon/verN00'  # prefix with mss: for tape or file: for filesystem
 
 RUNPERIOD = 'RunPeriod-2018-01'
-RUNS      = [41136,41137,41138]    # List of runs to process (TODO: replace with user provided range + RCDB lookup)
-MINFILENO = 0            # Min file number to process for given run (n.b. file numbers start at 0!)
-MAXFILENO = 100          # Max file number to process for given run (n.b. file numbers start at 0!)
+RCDB_QUERY = '@is_2018production and @status_approved'  # Comment out for all runs in range MINRUN-MAXRUN
+RUNS      = []      # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
+MINRUN    = 40949   # If RUNS is empty, then RCDB queried for this range
+MAXRUN    = 49999   # If RUNS is empty, then RCDB queried for this range
+MINFILENO = 0       # Min file number to process for each run (n.b. file numbers start at 0!)
+MAXFILENO = 100     # Max file number to process for each run (n.b. file numbers start at 0!)
 
 RCDB_HOST = 'hallddb.jlab.org'
 RCDB_USER = 'rcdb'
@@ -248,6 +251,44 @@ def ReconOutFiles(RUN, FILE):
 	return (outdirs, outfiles)
 
 #----------------------------------------------------
+def GetRunInfo():
+
+	# Get the list of runs to process and the number of EVIO files for each.
+	# The list is returned in the form of a dictionary with the run numbers
+	# as keys and the maximum evio file number for that run as values.
+	# Which runs show up in the list depends on how the RUNS and RCDB_QUERY
+	# globals are set:
+	#
+	# RUNS is not None: All runs in the list are included
+	# RUNS is empty and RCDB_QUERY is None: All runs in the range MINRUN-MAXRUN inclusive are included
+	# RUNS is empty and RCDB_QUERY is not None: RCDB is queried for the list of runs.
+	#
+	# n.b. that for the first 2 options above, the GetNumEVIOFiles routine
+	# below is called which queries the RCDB via mysql directly so the RCDB
+	# python module does not actually need to be in PYTHONPATH. For the 3rd
+	# option, the RCDB python API is used so it is needed.
+
+	global RUNS, MINRUN, MAXRUN, RCDB_QUERY
+
+	# Query through RCDB API
+	if len(RUNS)==0 and RCDB_QUERY!=None:
+		print 'Querying RCDB for run list ....'
+		import rcdb
+		db = rcdb.RCDBProvider('mysql://' + RCDB_USER + '@' + RCDB_HOST + '/rcdb')
+		good_runs = {}
+		print 'RCDB_QUERY = ' + RCDB_QUERY
+		for r in db.select_runs(RCDB_QUERY, MINRUN, MAXRUN):
+			good_runs[r.number] = int(r.get_condition_value('evio_files_count'))
+	elif len(RUNS)==0 :
+		print 'Getting info for all runs in range ' + str(MINRUN) + '-' + str(MAXRUN) + ' ....'
+		for RUN in range(MINRUN, MAXRUN+1): good_runs[RUN] = GetNumEVIOFiles(RUN)
+	else:
+		print 'Getting info for runs : ' + ' '.join([str(x) for x in RUNS])
+		for RUN in RUNS: good_runs[RUN] = GetNumEVIOFiles(RUN)
+
+	return good_runs
+
+#----------------------------------------------------
 def GetNumEVIOFiles(RUN):
 
 	# Access RCDB to get the number of EVIO files for this run.
@@ -277,12 +318,15 @@ def GetNumEVIOFiles(RUN):
 
 # --------------- MAIN --------------------
 
+# Get list of runs with number of evio files for each.
+# (parameters for search set at top of file)
+good_runs = GetRunInfo()
+
 # Loop over runs
-for RUN in RUNS:
+for (RUN, Nfiles) in good_runs.iteritems:
 
 	# Limit max file number to how many there are for this run according to RCDB
 	maxfile = MAXFILENO+1
-	Nfiles = GetNumEVIOFiles(RUN)
 	if Nfiles < maxfile : maxfile = Nfiles
 	
 	# Loop over files, creating job for each
