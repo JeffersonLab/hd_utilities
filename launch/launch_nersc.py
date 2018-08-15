@@ -61,11 +61,22 @@ if not os.getenv('PYTHONPATH') : sys.path.append('/group/halld/Software/builds/L
 import mysql.connector
 
 
-TESTMODE  = True  # True=only print commands, but don't actually submit jobs
+TESTMODE     = True  # True=only print commands, but don't actually submit jobs
+VERBOSE      = 1     # 1 is default
 
+RUNPERIOD    = '2018-01'
+LAUNCHTYPE   = 'offmon'
+VER          = '00N'
+WORKFLOW     = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER
+NAME         = 'GLUEX_' + LAUNCHTYPE
 
-WORKFLOW     = 'nersc_test_03'
-NAME         = 'GLUEX_OFFMON'
+RCDB_QUERY   = '@is_2018production and @status_approved'  # Comment out for all runs in range MINRUN-MAXRUN
+RUNS         = []      # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
+MINRUN       = 41000   # If RUNS is empty, then RCDB queried for this range
+MAXRUN       = 41010   # If RUNS is empty, then RCDB queried for this range
+MINFILENO    = 0       # Min file number to process for each run (n.b. file numbers start at 0!)
+MAXFILENO    = 9       # Max file number to process for each run (n.b. file numbers start at 0!)
+
 PROJECT      = 'm3120'
 TIMELIMIT    = '4:45:00'  # Set time limit (~3.25hr for recon. ~4.5hr for monitoring)
 QOS          = 'regular'  # debug, regular, premium
@@ -75,26 +86,22 @@ IMAGE        = 'docker:markito3/gluex_docker_devel'
 #RECONVERSION = 'sim-recon/sim-recon-recon-2017_01-ver03'
 RECONVERSION = 'halld_recon/halld_recon-recon-2017_01-ver03.1'
 SCRIPTFILE   = '/launch/script_nersc.sh'
-CONFIG       = '/launch/jana_offmon_nersc.config'
-OUTPUTTOP    = 'mss:/mss/halld/halld-scratch/RunPeriod-2018-01/offmon/verN00'  # prefix with mss: for tape or file: for filesystem
+CONFIG       = '/launch/jana_'+LAUNCHTYPE+'_nersc.config'
+OUTPUTTOP    = 'mss:/mss/halld/halld-scratch/RunPeriod-'+RUNPERIOD+'/'+LAUNCHTYPE+'/ver'+VER  # prefix with mss: for tape or file: for filesystem
+#OUTPUTTOP = 'file:/u/home/gxproj4/NERSC/2018.08.15.offmon_ver00N/tmp'
 
-RUNPERIOD = 'RunPeriod-2018-01'
-RCDB_QUERY = '@is_2018production and @status_approved'  # Comment out for all runs in range MINRUN-MAXRUN
-RUNS      = []      # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
-MINRUN    = 40949   # If RUNS is empty, then RCDB queried for this range
-MAXRUN    = 49999   # If RUNS is empty, then RCDB queried for this range
-MINFILENO = 0       # Min file number to process for each run (n.b. file numbers start at 0!)
-MAXFILENO = 100     # Max file number to process for each run (n.b. file numbers start at 0!)
-
-RCDB_HOST = 'hallddb.jlab.org'
-RCDB_USER = 'rcdb'
-RCDB      = None
+RCDB_HOST    = 'hallddb.jlab.org'
+RCDB_USER    = 'rcdb'
+RCDB         = None
 
 #----------------------------------------------------
 def MakeJob(RUN,FILE):
+
+	global NJOBS_SUBMITTED, DIRS_CREATED
+
 	JOB_STR   = '%s_%06d_%03d' % (NAME, RUN, FILE)
 	EVIOFILE  = 'hd_rawdata_%06d_%03d.evio' % (RUN, FILE)
-	MSSFILE   = '/mss/halld/%s/rawdata/Run%06d/%s' % (RUNPERIOD, RUN, EVIOFILE)
+	MSSFILE   = '/mss/halld/RunPeriod-%s/rawdata/Run%06d/%s' % (RUNPERIOD, RUN, EVIOFILE)
 	
 	# The OUTPUTDIR variable is a fully qualified path used to pre-create
 	# the output directories for the job files. If the files are going to
@@ -103,17 +110,22 @@ def MakeJob(RUN,FILE):
 	OUTPUTDIR = OUTPUTTOP.split(':',1)[1]  # just directory part
 	if OUTPUTTOP.startswith('mss:/mss'): OUTPUTDIR = OUTPUTDIR.replace('/mss','/lustre/expphy/cache')
 	
-	# Get list of output directories and files.
-	# Normally, we wouldn't have to make the directories, but if using
-	# a Globus account with a different user than the one running swif2,
-	# the directories must be premade with appropriate permissions.
-	# The outfiles variable is a map of local file(key) to output file(value)
-	if 'recon' in CONFIG:
-		(outdirs, outfiles) = ReconOutFiles(RUN, FILE)
-	elif 'offmon' in CONFIG:
-		(outdirs, outfiles) = OffmonOutFiles(RUN, FILE)
+	# Get list of output file names and mappings to final directory and file name.
+	# The outfiles variable is a map of local file(key) to output file with path(value)
+	# The path is relative to the OUTPUTDIR directory.
+	if LAUNCHTYPE == 'recon':
+		outfiles = ReconOutFiles(RUN, FILE)
+	elif LAUNCHTYPE == 'offmon':
+		outfiles = OffmonOutFiles(RUN, FILE)
 	else:
-		print 'Unknown config type! Unable to form output file list'
+		print 'Unknown launch type (' + LAUNCHTYPE + ')! Unable to form output file list'
+
+	# Get list of output directories so we can pre-create them with proper 
+	# permissions. Normally, we wouldn't have to make the directories, but if using
+	# a Globus account with a different user than the one running swif2,
+	# there will be permissions errors otherwise.
+	outdirs = []
+	for (infile, outpath) in outfiles.iteritems(): outdirs.append(os.path.dirname(outpath))
 
 	# SLURM options
 	SBATCH  = ['-sbatch']
@@ -147,42 +159,30 @@ def MakeJob(RUN,FILE):
 	for src,dest in outfiles.iteritems(): SWIF2_CMD += ['-output', src, OUTPUTTOP + '/' + dest]
 	SWIF2_CMD += SBATCH + ['::'] + CMD
 
+	# Pare down list of outdirs to only those that don't already exist
+	new_outdirs = [x for x in outdirs if x not in DIRS_CREATED]
+	
+	# Set umask to make directories group writable (but not world writable)
+	os.umask(0002)
+	
 	# Print commands
-	if OUTPUTTOP.startswith('file:') :
-		for d in outdirs: print 'mkdir -p ' + OUTPUTDIR + '/' + d
-		print 'chmod -R 777 ' + OUTPUTDIR
-	print ' '.join(SWIF2_CMD)
+	if VERBOSE > 1:
+		for d in new_outdirs: print 'mkdir -p ' + OUTPUTDIR + '/' + d
+		if VERBOSE > 2 : print ' '.join(SWIF2_CMD)
 	
 	if not TESTMODE:
-		if OUTPUTTOP.startswith('file:') :
-			for d in outdirs: subprocess.check_call(['mkdir', '-p', OUTPUTDIR + '/' + d])
-			subprocess.check_call(['chmod', '-R', '777', OUTPUTDIR])
+		for d in new_outdirs:
+			if not os.path.exists(OUTPUTDIR + '/' + d) :
+				os.makedirs(OUTPUTDIR + '/' + d)
+				DIRS_CREATED.append(OUTPUTDIR + '/' + d)
 		subprocess.check_call(SWIF2_CMD)
+		NJOBS_SUBMITTED += 1
 
 #----------------------------------------------------
 def OffmonOutFiles(RUN, FILE):
 
-	# Return list of output directories and file mappings for a
+	# Return list of output directory/filename mappings for a
 	# offline monitoring job.
-
-	# List of output directories.
-	outdirs = []
-	outdirs += ['job_info']
-	outdirs += ['dana_rest_coherent_peak/%06d' % RUN]
-	outdirs += ['REST/%06d' % RUN]
-	outdirs += ['omega/%06d' % RUN]
-	outdirs += ['hists/%06d' % RUN]
-	outdirs += ['p3pi_excl_skim/%06d' % RUN]
-	outdirs += ['tree_bcal_hadronic_eff/%06d' % RUN]
-	outdirs += ['tree_PSFlux/%06d' % RUN]
-	outdirs += ['tree_trackeff/%06d' % RUN]
-	outdirs += ['TOF_TDC_shift/%06d' % RUN]
-	outdirs += ['tofcalib/%06d' % RUN]
-	outdirs += ['random/%06d' % RUN]
-	outdirs += ['BCAL-LED/%06d' % RUN]
-	outdirs += ['FCAL-LED/%06d' % RUN]
-	outdirs += ['sync/%06d' % RUN]
-	outdirs += ['TPOL/%06d' % RUN]
 
 	# Map of local file(key) to output file(value)
 	RFSTR = '%06d_%03d' % (RUN, FILE)
@@ -197,37 +197,20 @@ def OffmonOutFiles(RUN, FILE):
 	outfiles['tree_PSFlux.root'                       ] = 'tree_PSFlux/%06d/tree_PSFlux_%s.root' % (RUN, RFSTR)
 	outfiles['tree_trackeff.root'                     ] = 'tree_trackeff/%06d/tree_trackeff_%s.root' % (RUN, RFSTR)
 	outfiles['TOF_TDC_shift_%06d.txt' % RUN           ] = 'TOF_TDC_shift/%06d/TOF_TDC_shift_%s.txt' % (RUN, RFSTR)
-	outfiles['hd_root_tofcalib.root'                  ] = 'tofcalib/%06d/hd_root_tofcalib_%s.root' % (RUN, RFSTR)
+	outfiles['hd_root_tofcalib.root'                  ] = 'hd_root_tofcalib/%06d/hd_root_tofcalib_%s.root' % (RUN, RFSTR)
 	outfiles['hd_rawdata_%s.random.evio' % RFSTR      ] = 'random/%06d/hd_rawdata_%s.random.evio' % (RUN, RFSTR)
 	outfiles['hd_rawdata_%s.BCAL-LED.evio' % RFSTR    ] = 'BCAL-LED/%06d/hd_rawdata_%s.BCAL-LED.evio' % (RUN, RFSTR)
 	outfiles['hd_rawdata_%s.FCAL-LED.evio' % RFSTR    ] = 'FCAL-LED/%06d/hd_rawdata_%s.FCAL-LED.evio' % (RUN, RFSTR)
 	outfiles['hd_rawdata_%s.sync.evio' % RFSTR        ] = 'sync/%06d/hd_rawdata_%s.sync' % (RUN, RFSTR)
 	outfiles['tree_TPOL.root'                         ] = 'TPOL/%06d/tree_TPOL_%s.root' % (RUN, RFSTR)
 
-	return (outdirs, outfiles)
+	return outfiles
 
 #----------------------------------------------------
 def ReconOutFiles(RUN, FILE):
 
-	# Return list of output directories and file mappings for a
+	# Return list of output directory/filename mappings for a
 	# reconstruction job.
-
-	# List of output directories.
-	outdirs = []
-	outdirs += ['job_info']
-	outdirs += ['dana_rest_coherent_peak/%06d' % RUN]
-	outdirs += ['REST/%06d' % RUN]
-	outdirs += ['exclusivepi0/%06d' % RUN]
-	outdirs += ['omega/%06d' % RUN]
-	outdirs += ['hists/%06d' % RUN]
-	outdirs += ['p3pi_excl_skim/%06d' % RUN]
-	outdirs += ['tree_bcal_hadronic_eff/%06d' % RUN]
-	outdirs += ['tree_fcal_hadronic_eff/%06d' % RUN]
-	outdirs += ['tree_PSFlux/%06d' % RUN]
-	outdirs += ['tree_sc_eff/%06d' % RUN]
-	outdirs += ['tree_tof_eff/%06d' % RUN]
-	outdirs += ['tree_trackeff/%06d' % RUN]
-	outdirs += ['tree_TS_scaler/%06d' % RUN]
 
 	# Map of local file(key) to output file(value)
 	RFSTR = '%06d_%03d' % (RUN, FILE)
@@ -248,7 +231,7 @@ def ReconOutFiles(RUN, FILE):
 	outfiles['tree_TS_scaler.root'                    ] = 'tree_TS_scaler/%06d/tree_TS_scaler_%s.root' % (RUN, RFSTR)
 	outfiles['hd_rawdata_%s.cal_high_energy_skim.evio' % RFSTR] = 'cal_high_energy_skim/%06d/cal_high_energy_skim_%s.evio'% (RUN, RFSTR)
 
-	return (outdirs, outfiles)
+	return outfiles
 
 #----------------------------------------------------
 def GetRunInfo():
@@ -268,21 +251,33 @@ def GetRunInfo():
 	# python module does not actually need to be in PYTHONPATH. For the 3rd
 	# option, the RCDB python API is used so it is needed.
 
-	global RUNS, MINRUN, MAXRUN, RCDB_QUERY
+	global RUNS, MINRUN, MAXRUN, RCDB_QUERY, RUN_LIST_SOURCE
+	good_runs = {}
+	
+	# If RCDB_QUERY is not defined, define with value None
+	try: RCDB_QUERY
+	except : RCDB_QUERY = None
 
 	# Query through RCDB API
 	if len(RUNS)==0 and RCDB_QUERY!=None:
+		RUN_LIST_SOURCE = 'RCDB ' + str(MINRUN) + '-' + str(MAXRUN) + ' (query="' + RCDB_QUERY + '")'
 		print 'Querying RCDB for run list ....'
+
+		# Import RCDB python module. Add a path on the CUE just in case
+		# PYTHONPATH is not already set
+		sys.path.append('/group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5/rcdb/rcdb_0.03/python')
 		import rcdb
+
 		db = rcdb.RCDBProvider('mysql://' + RCDB_USER + '@' + RCDB_HOST + '/rcdb')
-		good_runs = {}
 		print 'RCDB_QUERY = ' + RCDB_QUERY
 		for r in db.select_runs(RCDB_QUERY, MINRUN, MAXRUN):
 			good_runs[r.number] = int(r.get_condition_value('evio_files_count'))
 	elif len(RUNS)==0 :
+		RUN_LIST_SOURCE = 'All runs in range ' + str(MINRUN) + '-' + str(MAXRUN)
 		print 'Getting info for all runs in range ' + str(MINRUN) + '-' + str(MAXRUN) + ' ....'
 		for RUN in range(MINRUN, MAXRUN+1): good_runs[RUN] = GetNumEVIOFiles(RUN)
 	else:
+		RUN_LIST_SOURCE = 'Custom list: ' + ' '.join([str(x) for x in RUNS])
 		print 'Getting info for runs : ' + ' '.join([str(x) for x in RUNS])
 		for RUN in RUNS: good_runs[RUN] = GetNumEVIOFiles(RUN)
 
@@ -294,7 +289,7 @@ def GetNumEVIOFiles(RUN):
 	# Access RCDB to get the number of EVIO files for this run.
 	# n.b. the file numbers start from 0 so the last valid file
 	# number will be one less than the value returned
-	global RCDB
+	global RCDB, cnx, cur
 	if not RCDB :
 		try:
 			RCDB = 'mysql://' + RCDB_USER + '@' + RCDB_HOST + '/rcdb'
@@ -322,16 +317,43 @@ def GetNumEVIOFiles(RUN):
 # (parameters for search set at top of file)
 good_runs = GetRunInfo()
 
+# Print some info before doing anything
+Njobs = 0
+for n in [x for (y,x) in good_runs.iteritems()]:
+	if n<MAXFILENO : Njobs +=  (n-MINFILENO+1)
+	else: Njobs += (MAXFILENO-MINFILENO+1)
+if VERBOSE > 0:
+	print '================================================='
+	print 'Launch Summary  ' + ('**** TEST MODE ****' if TESTMODE else '')
+	print '-----------------------------------------------'
+	print '             RunPeriod: ' + RUNPERIOD
+	print '           Launch type: ' + LAUNCHTYPE
+	print '               Version: ' + VER
+	print '              WORKFLOW: ' + WORKFLOW
+	print '    Origin of run list: ' + RUN_LIST_SOURCE
+	print '        Number of runs: ' + str(len(good_runs))
+	print '        Number of jobs: ' + str(Njobs) + ' (maximum ' + str(MAXFILENO-MINFILENO+1) + ' files/run)'
+	print '         Min. file no.: ' + str(MINFILENO)
+	print '         Max. file no.: ' + str(MAXFILENO)
+	print '         NERSC project: ' + PROJECT
+	print '    Time limit per job: ' + TIMELIMIT
+	print '  Shifter/Docker image: ' + IMAGE
+	print '   halld_recon version: ' + RECONVERSION + ' (from CVMFS)'
+	print '      Output directory: ' + OUTPUTTOP
+	print '================================================='
+
 # Loop over runs
-for (RUN, Nfiles) in good_runs.iteritems:
+NJOBS_SUBMITTED = 0
+DIRS_CREATED = []   # keeps track of local directories we create so we don't create them twice
+for (RUN, Nfiles) in good_runs.iteritems():
 
 	# Limit max file number to how many there are for this run according to RCDB
 	maxfile = MAXFILENO+1
-	if Nfiles < maxfile : maxfile = Nfiles
+	if Nfiles < maxfile : maxfile = Nfiles+1
 	
 	# Loop over files, creating job for each
 	for FILE in range(MINFILENO, maxfile):
 		MakeJob(RUN, FILE)
 
-
+print str(NJOBS_SUBMITTED) + ' jobs submitted. ' + str(len(DIRS_CREATED)) + ' directories created for output'
 
