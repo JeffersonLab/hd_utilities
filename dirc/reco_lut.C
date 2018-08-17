@@ -123,7 +123,7 @@ void reco_lut(TString infile="out.root",TString inlut="lut_all_avr.root",double 
 
 	if(reflected) lenz = 2*radiatorL - lenz;
 	
-	int sensorId = 100*pmt + pix;
+	int sensorId = hit.GetChannel();
 	bool isGood(false);
 
 	double p1,p2;

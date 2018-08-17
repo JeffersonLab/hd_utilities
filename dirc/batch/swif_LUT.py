@@ -33,12 +33,12 @@ TRACK      = "simulation"		   # https://scicomp.jlab.org/docs/batch_job_tracks
 # RESOURCES
 NCORES     = "1"               # Number of CPU cores
 DISK       = "10GB"            # Max Disk usage
-RAM        = "4GB"            # Max RAM usage
+RAM        = "2GB"            # Max RAM usage
 TIMELIMIT  = "360minutes"      # Max walltime
 OS         = "centos7"        # Specify CentOS65 machines
 
 # OUTPUT DATA LOCATION
-DATA_OUTPUT_BASE_DIR    = "/volatile/halld/home/%s/2018-dirc/"%(os.environ['USER'])   ## CHANGE IF YOU WANT TO
+DATA_OUTPUT_BASE_DIR    = "/volatile/halld/home/%s/2018-dirc/dircsim-2018_08-ver01/lut/"%(os.environ['USER'])   ## CHANGE IF YOU WANT TO
 
 
 # JOB EXECUTION
@@ -54,7 +54,7 @@ def generate_config(CONFIG_FILE, BAR):
         config_file = open(CONFIG_FILE, 'w')
         config_file.truncate() #wipe it out
 
-	config_file.write("RUNG 40000 \n")
+	config_file.write("RUNG 50000 \n")
 	config_file.write("OUTFILE 'out.hddm' \n")
 	config_file.write("DIRCLUT %d \n" % BAR)
 	config_file.write("HADR 1 \n")
@@ -64,8 +64,6 @@ def generate_config(CONFIG_FILE, BAR):
 	config_file.write("ABAN 0 \n")
 	config_file.write("DEBU 1 10 1000 \n")
 	config_file.write("NOSECONDARIES 0 \n\n")
-
-	config_file.write("BFIELDMAP 'Magnets/Solenoid/solenoid_1200A_poisson_20140520' \n\n")
 
 	config_file.write("SAVEHITS  0 \n")
 	config_file.write("SHOWERSINCOL 0 \n")
