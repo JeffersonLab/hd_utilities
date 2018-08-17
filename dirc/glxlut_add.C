@@ -6,7 +6,7 @@
 #include <TSystem.h>
 #include <TSystemDirectory.h>
 
-#include "/work/halld2/home/jrsteven/2018-dirc/builds/sim-recon/src/plugins/Analysis/lut_dirc/DrcLutNode.h"
+#include "/work/halld2/home/jrsteven/2018-dirc/builds/halld_recon/src/plugins/Analysis/lut_dirc/DrcLutNode.h"
 
 TClonesArray *fLutSum[48];
 
