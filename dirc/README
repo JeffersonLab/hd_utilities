@@ -101,9 +101,8 @@ root loadlib.C reco_lut.C'("drc_kaon_pion.root")'
 
 ####### LUT reconstruction (JANA factory) #######
 
-#1) Simulate any event sample you like (see example simulation workflow above).  Use dirc_hists plugin to run LUT algorithm in PID library.  
+#1) Simulate any event sample you like (see example simulation workflow above).  Use dirc_hists, dirc_reactions, and truth_dirc plugin to run LUT algorithm in PID library.  
 # Some example event samples are located at 
-## /volatile/halld/home/jrsteven/2018-dirc/bggen_Ee10.3_Eg7.7
 ## /volatile/halld/home/jrsteven/2018-dirc/dircsim-2018_08-ver01/bggen_Ee10.3_Eg7.7
 ## /volatile/halld/home/jrsteven/2018-dirc/dircsim-2018_08-ver01/kp_p4_theta4/ (fixed p=4 GeV and theta=4 deg)
 ## /volatile/halld/home/jrsteven/2018-dirc/dircsim-2018_08-ver01/kp_flat/ (flat in p and theta)
