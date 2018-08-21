@@ -62,20 +62,21 @@ import mysql.connector
 
 
 TESTMODE     = True  # True=only print commands, but don't actually submit jobs
-VERBOSE      = 1     # 1 is default
+VERBOSE      = 3     # 1 is default
 
 RUNPERIOD    = '2018-01'
 LAUNCHTYPE   = 'offmon'
-VER          = '00N'
+VER          = '17'
 WORKFLOW     = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER
 NAME         = 'GLUEX_' + LAUNCHTYPE
 
 RCDB_QUERY   = '@is_2018production and @status_approved'  # Comment out for all runs in range MINRUN-MAXRUN
 RUNS         = []      # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
-MINRUN       = 41000   # If RUNS is empty, then RCDB queried for this range
-MAXRUN       = 41010   # If RUNS is empty, then RCDB queried for this range
+MINRUN       = 40000   # If RUNS is empty, then RCDB queried for this range
+MAXRUN       = 49999   # If RUNS is empty, then RCDB queried for this range
 MINFILENO    = 0       # Min file number to process for each run (n.b. file numbers start at 0!)
 MAXFILENO    = 9       # Max file number to process for each run (n.b. file numbers start at 0!)
+MAX_CONCURRENT_JOBS = '1000'  # Miximum number of jobs swif2 will have in flight at once
 
 PROJECT      = 'm3120'
 TIMELIMIT    = '4:45:00'  # Set time limit (~3.25hr for recon. ~4.5hr for monitoring)
@@ -87,7 +88,7 @@ IMAGE        = 'docker:markito3/gluex_docker_devel'
 RECONVERSION = 'halld_recon/halld_recon-recon-2017_01-ver03.1'
 SCRIPTFILE   = '/launch/script_nersc.sh'
 CONFIG       = '/launch/jana_'+LAUNCHTYPE+'_nersc.config'
-OUTPUTTOP    = 'mss:/mss/halld/halld-scratch/RunPeriod-'+RUNPERIOD+'/'+LAUNCHTYPE+'/ver'+VER  # prefix with mss: for tape or file: for filesystem
+OUTPUTTOP    = 'mss:/mss/halld/offline_monitoring/RunPeriod-'+RUNPERIOD+'/ver'+VER  # prefix with mss: for tape or file: for filesystem
 #OUTPUTTOP = 'file:/u/home/gxproj4/NERSC/2018.08.15.offmon_ver00N/tmp'
 
 RCDB_HOST    = 'hallddb.jlab.org'
@@ -342,9 +343,39 @@ if VERBOSE > 0:
 	print '      Output directory: ' + OUTPUTTOP
 	print '================================================='
 
+# Create workflow
+cmd =  ['swif2', 'create', '-workflow', WORKFLOW]
+cmd += ['-site', 'nersc/cori', '-site-storage', 'nersc:'+PROJECT]
+cmd += ['-max-concurrent', MAX_CONCURRENT_JOBS]
+if VERBOSE>0 : print 'Workflow creation command: ' + ' '.join(cmd)
+if TESTMODE:
+	print '(TEST MODE so command will not be run)'
+else:
+	(cmd_out, cmd_err) = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+	if VERBOSE>0:
+		if len(cmd_err)>0 :
+			if VERBOSE>1 : print cmd_err
+			print 'Command returned error message. Assuming workflow already exists'
+		else:
+			print cmd_out
+
+# Run workflow
+cmd =  ['swif2', 'run', '-workflow', WORKFLOW]
+if VERBOSE>0 : print 'Command to start workflow: ' + ' '.join(cmd)
+if TESTMODE:
+	print '(TEST MODE so command will not be run)'
+else:
+	(cmd_out, cmd_err) = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+	if VERBOSE>0:
+		print cmd_out
+		print cmd_err
+
 # Loop over runs
 NJOBS_SUBMITTED = 0
 DIRS_CREATED = []   # keeps track of local directories we create so we don't create them twice
+if VERBOSE>0 :
+	print 'Submitting jobs ....'
+	print '-----------------------------------------------'
 for (RUN, Nfiles) in good_runs.iteritems():
 
 	# Limit max file number to how many there are for this run according to RCDB
