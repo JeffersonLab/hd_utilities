@@ -1,0 +1,342 @@
+#!/usr/bin/env perl
+
+use File::Copy;
+
+# Get Plugin name or print Usage statement if no arguments
+if($#ARGV < 0){
+	&Usage();
+	exit;
+}else{
+	$pluginname = $ARGV[0];
+}
+
+print "\n";
+print "Generating files for factory plugin $pluginname ";
+
+# Get Data class name
+if($#ARGV >= 1){
+	$classname = $ARGV[1];
+	print "with class $classname ";
+}else{
+	$classname = $pluginname;
+}
+
+# Get tag (if any)
+$USE_TAG = 0;
+if($#ARGV >= 2){
+	$tag = $ARGV[2];
+	$USE_TAG = 1;
+	$tag_suffix = "_${tag}";
+	print "with tag $tag ";
+}
+print "....\n";
+
+# Create directory to hold source
+mkdir($pluginname);
+
+# Create C++ Header File for Data Class
+$dhfile = $fname = "${classname}.h";
+open(FILE,">$pluginname/$dhfile");
+&PrintFileHeader();
+&PrintDataClass();
+close(FILE);
+print " - $dhfile\n";
+
+# Create C++ Header File for Factory Class
+$dhfile = $fname = "${classname}_factory${tag_suffix}.h";
+open(FILE,">$pluginname/$dhfile");
+&PrintFileHeader();
+&PrintFactoryClass();
+close(FILE);
+print " - $dhfile\n";
+
+# Create C++ Implementation file for Factory Class
+$ccfile = $fname = "${classname}_factory${tag_suffix}.cc";
+open(FILE,">$pluginname/$ccfile");
+&PrintFileHeader();
+&PrintFactoryMethods();
+close(FILE);
+print " - $ccfile\n";
+
+# Create C++ Header File for Factory Generator Class
+$dhfile = $fname = "JFactoryGenerator_${classname}${tag_suffix}.h";
+open(FILE,">$pluginname/$dhfile");
+&PrintFileHeader();
+&PrintFactoryGeneratorClass();
+close(FILE);
+print " - $dhfile\n";
+
+# Copy SConstruct file
+&CopySConstruct();
+print " - SConstruct\n";
+
+###############
+# PrintFileHeader
+###############
+sub PrintFileHeader()
+{
+	# print a few lines at the very top of the file
+	$uname = `uname -nprs`;
+	chomp($uname);
+	print FILE "// \$Id\$\n";
+	print FILE "//\n";
+	print FILE "//    File: $fname\n";
+	print FILE "// Created: ".`date`;
+	print FILE "// Creator: ".$ENV{"USER"}." (on $uname)\n";
+	print FILE "//\n";
+}
+
+
+###############
+# PrintDataClass
+###############
+sub PrintDataClass()
+{
+	# perl doesn't respect scope unless explicitly told to. Hence,
+	# all variables (like FILE and $classname) are global.
+
+	$content = "
+\#ifndef _${classname}_
+\#define _${classname}_
+
+\#include <JANA/JObject.h>
+\#include <JANA/JFactory.h>
+
+class ${classname}:public jana::JObject{
+	public:
+		JOBJECT_PUBLIC(${classname});
+		
+		// Add data members here. For example:
+		// int id;
+		// double E;
+		
+		// This method is used primarily for pretty printing
+		// the second argument to AddString is printf style format
+		void toStrings(vector<pair<string,string> > &items)const{
+			// AddString(items, \"id\", \"%4d\", id);
+			// AddString(items, \"E\", \"%f\", E);
+		}
+		
+};
+
+\#endif // _${classname}_
+
+";
+	print FILE $content;
+	
+}
+
+###############
+# PrintFactoryClass
+###############
+sub PrintFactoryClass()
+{
+	$content = "
+\#ifndef _${classname}_factory${tag_suffix}_
+\#define _${classname}_factory${tag_suffix}_
+
+\#include <JANA/JFactory.h>
+\#include \"${classname}.h\"
+
+class ${classname}_factory${tag_suffix}:public jana::JFactory<${classname}>{
+	public:
+		${classname}_factory${tag_suffix}(){};
+		~${classname}_factory${tag_suffix}(){};
+";
+
+	if($USE_TAG){
+		$content .= "		const char* Tag(void){return \"$tag\";}";
+	}
+
+	$content .=	"
+
+	private:
+		jerror_t init(void);						///< Called once at program start.
+		jerror_t brun(jana::JEventLoop *eventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
+		jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber);	///< Called every event.
+		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
+		jerror_t fini(void);						///< Called after last event of last event source has been processed.
+};
+
+\#endif // _${classname}_factory${tag_suffix}_
+
+";
+	print FILE $content;
+	
+}
+
+###############
+# PrintFactoryMethods
+###############
+sub PrintFactoryMethods()
+{
+	$content = "
+
+\#include <iostream>
+\#include <iomanip>
+using namespace std;
+
+\#include \"${classname}_factory${tag_suffix}.h\"
+\#include \"JFactoryGenerator_${classname}${tag_suffix}.h\"
+using namespace jana;
+
+// Routine used to create our JEventProcessor
+\#include \<JANA/JApplication.h\>
+extern \"C\"{
+void InitPlugin(JApplication *app){
+	InitJANAPlugin(app);
+	app->AddFactoryGenerator(new JFactoryGenerator_${classname}${tag_suffix}());
+}
+} // \"C\"
+
+//------------------
+// init
+//------------------
+jerror_t ${classname}_factory${tag_suffix}::init(void)
+{
+	return NOERROR;
+}
+
+//------------------
+// brun
+//------------------
+jerror_t ${classname}_factory${tag_suffix}::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
+{
+	return NOERROR;
+}
+
+//------------------
+// evnt
+//------------------
+jerror_t ${classname}_factory${tag_suffix}::evnt(JEventLoop *loop, uint64_t eventnumber)
+{
+
+	// Code to generate factory data goes here. Add it like:
+	//
+	// ${classname} *my${classname} = new ${classname};
+	// my${classname}->x = x;
+	// my${classname}->y = y;
+	// ...
+	// _data.push_back(my${classname});
+	//
+	// Note that the objects you create here will be deleted later
+	// by the system and the _data vector will be cleared automatically.
+
+	return NOERROR;
+}
+
+//------------------
+// erun
+//------------------
+jerror_t ${classname}_factory${tag_suffix}::erun(void)
+{
+	return NOERROR;
+}
+
+//------------------
+// fini
+//------------------
+jerror_t ${classname}_factory${tag_suffix}::fini(void)
+{
+	return NOERROR;
+}
+
+";
+	print FILE $content;
+	
+}
+
+###############
+# PrintFactoryGeneratorClass
+###############
+sub PrintFactoryGeneratorClass()
+{
+	$content = "
+\#ifndef _JFactoryGenerator_${classname}${tag_suffix}_
+\#define _JFactoryGenerator_${classname}${tag_suffix}_
+
+\#include <JANA/jerror.h>
+\#include <JANA/JFactoryGenerator.h>
+
+\#include \"${classname}_factory${tag_suffix}.h\"
+
+class JFactoryGenerator_${classname}${tag_suffix}: public jana::JFactoryGenerator{
+	public:
+		JFactoryGenerator_${classname}${tag_suffix}(){}
+		virtual ~JFactoryGenerator_${classname}${tag_suffix}(){}
+		virtual const char* className(void){return static_className();}
+		static const char* static_className(void){return \"JFactoryGenerator_${classname}${tag_suffix}\";}
+		
+		jerror_t GenerateFactories(jana::JEventLoop *loop){
+			loop->AddFactory(new ${classname}_factory${tag_suffix}());
+			return NOERROR;
+		}
+
+};
+
+\#endif // _JFactoryGenerator_${classname}${tag_suffix}_
+
+";
+	print FILE $content;
+	
+}
+
+
+###############
+# CopySConstruct
+###############
+sub CopySConstruct()
+{
+	# For now, just make a straight copy. In the future
+	# the ability to remove ROOT and/or use a JANA
+	# installed version of may be added back.
+
+	#$PACKAGES = $JANA_IMPLEMENTATION;
+	#if(!$NO_ROOT){ $PACKAGES .= ":ROOT"; }
+
+	$from = $ENV{"HALLD_RECON_HOME"} . "/src/SBMS/SConstruct.plugin";
+	$to = "./${pluginname}/SConstruct";
+	copy($from, $to) or die ("copy failed $! -- $?");
+}
+
+###############
+# Usage
+###############
+sub Usage()
+{
+	print "\n";
+	print "Usage:\n\t mkfactory_plugin plugin_name [class [tag]]\n";
+	print "\n";
+	print "Generate the C++ source and header files to implement a new\n";
+	print "plugin for use with the JANA framework. The plugin will implement\n";
+	print "a factory (complete with factory generator). To generate a similar\n";
+	print "skeleton plugin, but with a JEventProcessor instead of a JFactory,\n";
+	print "then see \"mkplugin\".\n";
+	print "\n";
+	print "This will create a directory and generate a few files in it, including\n";
+	print "a default Makefile so that one can use to immediately compile the new plugin.\n";
+	print "\n";
+	print "The C++ files generated will define classes based on JFactory,\n";
+	print "JFactoryGenerator, and JObject. The \"plugin_name\" parameter specifies\n";
+	print "the plugin name (which is also used as the name of the directory created).\n";
+	print "\n";	
+	print "If the \"class\" parameter is supplied, it will be\n";
+	print "used as the name of the data class supplied by the\n";
+	print "factory. Otherwise, the plugin name is used. If the\n";
+	print "\"tag\" parameter is supplied, then it is used as the\n";
+	print "factory tag. Otherwise, no tag is used.\n";
+	print "\n";
+	print "Other scripts are available for producing templates of\n";
+	print "other types of JANA classes including:\n";
+	print "\n";
+	print "	mkclass\n";
+	print "	mkprocessor\n";
+	print "	mkfactory\n";
+	print "	mkfactory_generator\n";
+	print "	mkeventsource\n";
+	print "	mkplugin\n";
+	print "	mkfactory_plugin\n";
+	print "\n";
+	print "\n";
+	print "\n";
+}

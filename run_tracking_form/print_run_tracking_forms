@@ -1,4 +1,41 @@
-#/bin/bash
-cd /home/hdops/hd_utilities/run_tracking_form
-make RUN_START=$1
-lp -d halldchx1 checklist_run_*.pdf
+#!/bin/bash
+runs_per_sheet="20"
+nsheets_default="10"
+printer_default="halldchx1"
+prompt="Enter first run number of first sheet (required): "
+read -p "$prompt" first_run
+if [ -z "$first_run" ]
+   then echo "You must enter a run number to start with, exiting"
+   exit
+fi
+prompt="Enter number of sheets (default = $nsheets_default): "
+read -p "$prompt" nsheets
+if [ -z "$nsheets" ]
+   then nsheets="$nsheets_default"
+fi
+prompt="Enter printer (default = $printer_default):"
+read -p "$prompt" printer
+if [ -z "$printer" ]
+   then printer="$printer_default"
+fi
+prompt="Will print $nsheets sheets starting with run $first_run on $printer
+Is this OK? "
+while true; do
+    read -p "$prompt" yn
+    case $yn in
+        [Yy]* ) break;;
+        [Nn]* ) exit;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+rm -f checklist_run_*.pdf
+run_start="$first_run"
+for i in `seq 1 "$nsheets"`;
+do
+    rm -f temp.tex
+    incr_runs.perl "$run_start" > temp.tex
+    pdflatex temp.tex > /dev/null
+    mv temp.pdf "checklist_run_$i.pdf"
+    let "run_start = $run_start + $runs_per_sheet"
+done
+lp -d "$printer" checklist_run_*.pdf

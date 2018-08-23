@@ -335,7 +335,7 @@ DEBU 1 10 1000
 
 c The following card can be used to turn off generation of secondary
 c particles in the simulation, ordinarily it should be 0 (or omitted).
-NOSECONDARIES 0
+NOSECONDARIES TEMPNOSECONDARIES
 
 c The following card tells the simulation to store particle trajectories
 c in the event output stream.  This output can be verbose, use with caution.

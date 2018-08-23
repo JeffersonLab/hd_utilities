@@ -1,0 +1,199 @@
+
+import os
+import sys
+import subprocess
+import glob
+
+# Add SBMS directory to PYTHONPATH
+sbmsdir = "%s/SBMS" % (os.getcwd())
+sys.path.append(sbmsdir)
+
+import sbms
+
+# Get command-line options
+SHOWBUILD = ARGUMENTS.get('SHOWBUILD', 0)
+SHOWPROGRESS = ARGUMENTS.get('SHOWPROGRESS', 1)
+OPTIMIZATION = ARGUMENTS.get('OPTIMIZATION', 2)
+DEBUG = ARGUMENTS.get('DEBUG', 1)
+PROFILE = ARGUMENTS.get('PROFILE', 0)
+BUILDSWIG = ARGUMENTS.get('BUILDSWIG', 0)
+
+# Get platform-specific name
+osname = os.getenv('BMS_OSNAME', 'build')
+
+# Get architecture name
+arch = ROOT_CFLAGS = subprocess.Popen(["uname"], stdout=subprocess.PIPE).communicate()[0].strip()
+
+# Setup initial environment
+installdir = "#../%s" %(osname)
+include = "%s/include" % (installdir)
+bin = "%s/bin" % (installdir)
+lib = "%s/lib" % (installdir)
+plugins = "%s/plugins" % (installdir)
+python2 = "%s/python2" % (installdir)
+python3 = "%s/python3" % (installdir)
+env = Environment(        ENV = os.environ,  # Bring in full environement, including PATH
+                      CPPPATH = [include],
+                      LIBPATH = [lib],
+                  variant_dir = ".%s" % (osname))
+
+# These are SBMS-specific variables (i.e. not default scons ones)
+env.Replace(INSTALLDIR    = installdir,
+				OSNAME        = osname,
+				INCDIR        = include,
+				BINDIR        = bin,
+				LIBDIR        = lib,
+				PLUGINSDIR    = plugins,
+				PYTHON2DIR    = python2,
+				PYTHON3DIR    = python3,
+				ALL_SOURCES   = [],        # used so we can add generated sources
+				MISC_OBJECTS  = [],        # used so we can add custom built objects
+				SHOWBUILD     = SHOWBUILD,
+				OPTIMIZATION  = OPTIMIZATION,
+				DEBUG         = DEBUG,
+				BUILDSWIG     = BUILDSWIG,
+		  		COMMAND_LINE_TARGETS = COMMAND_LINE_TARGETS)
+
+# Use terse output unless otherwise specified
+if SHOWBUILD==0:
+	env.Replace(CCCOMSTR       = "Compiling  [$SOURCE]",
+				  CXXCOMSTR       = "Compiling  [$SOURCE]",
+				  FORTRANPPCOMSTR = "Compiling  [$SOURCE]",
+				  FORTRANCOMSTR   = "Compiling  [$SOURCE]",
+				  SHCCCOMSTR      = "Compiling  [$SOURCE]",
+				  SHCXXCOMSTR     = "Compiling  [$SOURCE]",
+				  LINKCOMSTR      = "Linking    [$TARGET]",
+				  SHLINKCOMSTR    = "Linking    [$TARGET]",
+				  INSTALLSTR      = "Installing [$TARGET]",
+				  ARCOMSTR        = "Archiving  [$TARGET]",
+				  RANLIBCOMSTR    = "Ranlib     [$TARGET]")  # nb RANLIBCOMSTR modified in progress functions below
+
+# Ranlib is special since it displays right after archiving without
+# calling the progress_function
+if int(SHOWPROGRESS) == 1 : env.Replace(RANLIBCOMSTR = "[ -- ] Ranlib     [$TARGET]")
+
+
+# Get compiler from environment variables (if set)
+env.Replace( CXX = os.getenv('CXX', 'c++'),
+             CC  = os.getenv('CC' , 'cc'),
+             FC  = os.getenv('FC' , 'gfortran') )
+
+# Get compiler name
+compiler = 'unknown'
+compiler_string = subprocess.Popen([env['CC'],"-v"], stderr=subprocess.PIPE).communicate()[1]
+if 'clang' in compiler_string:
+	compiler = 'clang'
+if 'gcc' in compiler_string and 'clang' not in compiler_string:
+	compiler = 'gcc'
+env.Replace(COMPILER = compiler)
+
+# Add libraries and libraries/include to include search path
+env.PrependUnique(CPPPATH = ['#', '#libraries', '#libraries/include'])
+
+# Use C++11
+env.PrependUnique(    CXXFLAGS = ['-std=c++11'])
+
+# Standard flags (optimization level and warnings)
+env.PrependUnique(      CFLAGS = ['-O%s' % OPTIMIZATION, '-fPIC', '-Wall'])
+env.PrependUnique(    CXXFLAGS = ['-O%s' % OPTIMIZATION, '-fPIC', '-Wall'])
+env.PrependUnique(FORTRANFLAGS = ['-O%s' % OPTIMIZATION, '-fPIC', '-Wall'])
+
+# Turn on debug symbols unless user told us not to
+if not DEBUG=='0':
+	env.PrependUnique(      CFLAGS = ['-g'])
+	env.PrependUnique(    CXXFLAGS = ['-g'])
+	env.PrependUnique(FORTRANFLAGS = ['-g'])
+
+# Turn on profiling if user asked for it
+if PROFILE=='1':
+	env.PrependUnique(      CFLAGS = ['-pg'])
+	env.PrependUnique(    CXXFLAGS = ['-pg'])
+	env.PrependUnique(FORTRANFLAGS = ['-pg'])
+	env.PrependUnique(   LINKFLAGS = ['-pg'])
+
+# Apply any platform/architecture specific settings
+sbms.ApplyPlatformSpecificSettings(env, arch)
+sbms.ApplyPlatformSpecificSettings(env, osname)
+
+
+
+# build libraries
+SConscript('libraries/SConscript', variant_dir=".%s/libraries" % (osname), exports='env osname', duplicate=0)
+
+# build programs
+program_subdirs = ['programs']
+SConscript(dirs=program_subdirs, variant_dir=".%s/programs" % (osname), exports='env osname', duplicate=0)
+
+# build plugins
+program_subdirs = ['plugins']
+SConscript(dirs=program_subdirs, variant_dir=".%s/plugins" % (osname), exports='env osname', duplicate=0)
+
+# Make install target
+env.Alias('install', installdir)
+
+# Create setenv if user explicitly specified "install" target
+build_targets = map(str,BUILD_TARGETS)
+if len(build_targets)>0 and not env.GetOption('clean'):
+	if 'install' in build_targets:
+		import sbms_setenv
+		sbms_setenv.mk_setenv_csh(env)
+		sbms_setenv.mk_setenv_bash(env)
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+# The following is used to print the percent done on each line
+# if requested by the user. This is not a perfect system since
+# it requires the total number of nodes to calculate percentage.
+# That is not available from scons directly and must be remembered
+# from a previous build. We write this to a file named ".scons_node_count"
+# in the platform specfic build directory. This is a combination
+# of info found in scons documentaion on the Progress() function
+# and a StackOverflow post (16568673) describing the technique and
+# a second StackOverflow post (8901296) describing how to implement
+# a "finish" routine.
+screen = None
+try:
+	screen = open('/dev/tty', 'w')
+except: pass
+node_count = 0
+node_count_max = 0
+node_count_interval = 1
+node_count_fname = str(env.Dir('#.%s' % osname)) + '/.scons_node_count'
+
+def progress_function(node):
+	global node_count, node_count_max, node_count_interval, node_count_fname
+	node_count += node_count_interval
+	if node_count > node_count_max: node_count_max = 0
+	if node_count_max>0 and screen:
+		screen.write('\r[%3d%%] ' % (node_count*100/node_count_max))
+		screen.flush()
+
+def build_complete(target, source, env):
+	global node_count
+	with open(node_count_fname, 'w') as f: f.write('%d\n' % node_count)
+
+# Build behavior is not as expected if no other targets are specified
+# and we add the build_complete target. Similar to when cleaning
+# except that doesn't show up in the build targets, but as an option.
+# Check that we building something and not cleaning and that the user
+# did not specify no progress before setting this up.
+show_ticker  = int(SHOWPROGRESS) == 1
+show_ticker &= not env.GetOption('clean')
+show_ticker &= len(BUILD_TARGETS)>0
+if show_ticker :
+	# Open file (if available) and read node count from last build
+	try:
+		with open(node_count_fname) as f: node_count_max = int(f.readline())
+	except: pass
+	
+	# Register progress function
+	Progress(progress_function, interval=node_count_interval)
+
+	# Add command to execute at end of build that writes node count to file
+	progress_finish_loc = str(env.Dir('#/..'))+'/sbms_build_complete'
+	progress_finish_command = Command(progress_finish_loc, [], build_complete)
+	Depends(progress_finish_command, BUILD_TARGETS)
+	if progress_finish_loc not in BUILD_TARGETS: BUILD_TARGETS.append(progress_finish_loc)
+
+
+# end section on progress counter
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
