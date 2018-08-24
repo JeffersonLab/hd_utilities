@@ -33,6 +33,9 @@ export JANA_CALIB_URL=sqlite:////tmp/ccdb.sqlite
 export CCDB_CONNECTION=$JANA_CALIB_URL
 export RCDB_CONNECTION=sqlite:////tmp/rcdb.sqlite
 
+# Use JANA_RESOURCE_DIR from CVMFS
+export JANA_RESOURCE_DIR=/cvmfs/oasis.opensciencegrid.org/gluex/group/halld/www/halldweb/html/resources
+
 # Record some info about the node and environment
 rm -f top.out
 top -b -n 1 > top.out
