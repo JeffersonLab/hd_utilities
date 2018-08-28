@@ -89,10 +89,15 @@ Save_OutputFiles()
 
 	# CALL SAVE FUNCTIONS
 	Save_Histograms
+	Save_Histograms
+	Save_REST
 	Save_REST
 	Save_JANADot
 	Save_EVIOSkims
+	Save_EVIOSkims
 	Save_HDDMSkims
+	Save_HDDMSkims
+	Save_ROOTFiles
 	Save_ROOTFiles
 	Save_IDXA
 
@@ -115,6 +120,12 @@ Save_Histograms()
 		local OUTPUT_FILE=${OUTDIR_THIS}/hd_root_${RUN_NUMBER}_${FILE_NUMBER}.root
 		mv -v hd_root.root $OUTPUT_FILE
 		chmod 644 $OUTPUT_FILE
+		
+		# check if the target file is empty, if yes try again
+		if [ ! -s $OUTPUT_FILE ] ; then 
+		    mv -v hd_root.root $OUTPUT_FILE
+		    chmod 644 $OUTPUT_FILE
+		fi
 
 		# force save to tape & pin
 		if [ "$TAPEDIR" != "" ]; then
@@ -140,6 +151,12 @@ Save_REST()
 		local OUTPUT_FILE=${OUTDIR_THIS}/dana_rest_${RUN_NUMBER}_${FILE_NUMBER}.hddm
 		mv -v dana_rest.hddm $OUTPUT_FILE
 		chmod 644 $OUTPUT_FILE
+
+		# check if the target file is empty, if yes try again
+		if [ ! -s $OUTPUT_FILE ] ; then 
+		    mv -v dana_rest $OUTPUT_FILE
+		    chmod 644 $OUTPUT_FILE
+		fi
 
 		# force save to tape & pin
 		if [ "$TAPEDIR" != "" ]; then
@@ -191,6 +208,12 @@ Save_EVIOSkims()
 		local OUTPUT_FILE=${OUTDIR_THIS}/${SKIM_NAME}_${RUN_NUMBER}_${FILE_NUMBER}.evio
 		mv -v $EVIO_FILE $OUTPUT_FILE
 		chmod 644 $OUTPUT_FILE
+		
+		# check if the target file is empty, if yes try again
+		if [ ! -s $OUTPUT_FILE ] ; then 
+		    mv -v $EVIO_FILE $OUTPUT_FILE
+		    chmod 644 $OUTPUT_FILE
+		fi
 
 		# force save to tape & pin
 		if [ "$TAPEDIR" != "" ]; then
@@ -222,6 +245,11 @@ Save_HDDMSkims()
 		mv -v $HDDM_FILE $OUTPUT_FILE
 		chmod 644 $OUTPUT_FILE
 
+		# check if the target file is empty, if yes try again
+		if [ ! -s $OUTPUT_FILE ] ; then 
+		    mv -v $HDDM_FILE $OUTPUT_FILE
+		    chmod 644 $OUTPUT_FILE
+		fi
 		# force save to tape & pin
 		if [ "$TAPEDIR" != "" ]; then
 			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
@@ -251,6 +279,12 @@ Save_ROOTFiles()
 		local OUTPUT_FILE=${OUTDIR_THIS}/${BASE_NAME}_${RUN_NUMBER}_${FILE_NUMBER}.root
 		mv -v $ROOT_FILE $OUTPUT_FILE
 		chmod 644 $OUTPUT_FILE
+
+		# check if the target file is empty, if yes try again
+		if [ ! -s $OUTPUT_FILE ] ; then 
+		    mv -v $ROOT_FILE $OUTPUT_FILE
+		    chmod 644 $OUTPUT_FILE
+		fi
 
 		# force save to tape & pin
 		if [ "$TAPEDIR" != "" ]; then
