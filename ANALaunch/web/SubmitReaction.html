@@ -14,7 +14,7 @@ Use add/remove particle to add/remove a partical from the products side of the r
 <br>
 Each product comes as a set of three objects:<br>
 1) the main selector where you can select the product.<br>
-2) a tri-state button to let you flag the particle as "m" (missing) or "M" (Mass constrained) as desired.
+2) a tri-state button to let you flag the particle as "m" (missing) or "M" (NOT Mass constrained) as desired.
 <br>3) a checkbox to indicate the product decays
 <br>
 <br>
@@ -261,7 +261,7 @@ function RemoveSelector(level,parent)
 
         }
 
-        CheckReaction()
+        //CheckReaction()
 
 
     }
@@ -668,9 +668,24 @@ function RemoveSelector(level,parent)
 
         if(jsonOBJ.Reaction.split("__").length < 2)
         {
+            alert("MAIN REACTION HAS NO PRODUCTS.  LINE WILL NOT BE SUBMITTED.")
             return false;
         }
 
+        var mButtons=document.querySelectorAll('[id*='+'"'+"mM"+'"]')
+        var mCount=0;
+        for(var i=0; i<mButtons.length;i++)
+        {
+            if(mButtons[i].value=="m")
+            {
+                mCount++;
+            }
+            if(mCount>1)
+            {
+                alert("MORE THAN 1 MISSING PARTICLES REQUESTED. LINE WILL NOT BE SUBMITTED.")
+                return false;
+            }
+        }
 
         return true;
     }

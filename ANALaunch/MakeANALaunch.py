@@ -53,8 +53,9 @@ def WriteLinesToFile(ReactionNum,jobj,configF):
 def FilterFiles(Files):
     toUse=[]
     for f in Files:
-        if not f in toUse:
+        if f not in toUse:
             toUse.append(f)
+
     return toUse
 
 def main(argv):
@@ -108,8 +109,7 @@ def main(argv):
         with open(dir+f) as tf:
             ReactionNum=ReactionNum+1
             data = json.load(tf)
-            jobj=json.loads(data)
-            WriteLinesToFile(ReactionNum,jobj,configF)
+            WriteLinesToFile(ReactionNum,data,configF)
             ##print data["Reaction"]
                 
 if __name__ == "__main__":
