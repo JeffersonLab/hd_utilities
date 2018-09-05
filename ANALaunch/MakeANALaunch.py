@@ -34,14 +34,29 @@ def WriteLinesToFile(ReactionNum,jobj,configF):
     configF.write("\n")
     flagstr="Reaction"+str(ReactionNum)+":Flags "
 
-    flagstr+="B"+jobj["B"]+"_F"+jobj["F"]+"_T"+jobj["T"]
+   
+    if(jobj["B"] != "1"):
+        flagstr+="B"+jobj["B"]+"_"
+    if(jobj["F"] != "4"):
+        flagstr+="F"+jobj["F"]+"_"
+    if(jobj["T"] != "3"):
+        flagstr+="T"+jobj["T"]+"_"
+    
+    flagstr=flagstr[:-1]
 
     for M in jobj["Marray"]:
         flagstr+="_M"+str(M)
 
     configF.write(flagstr)
 ########################################################## MAIN ##########################################################
-        
+
+def FilterFiles(Files):
+    toUse=[]
+    for f in Files:
+        if not f in toUse:
+            toUse.append(f)
+    return toUse
+
 def main(argv):
 
     ananameSTR=""
@@ -87,7 +102,9 @@ def main(argv):
 
     
     #Make an array of files to include in a seperate function.  Do below only for those files in that array.  Not directory
-    for f in Files:
+    FilesToUse=FilterFiles(Files)
+
+    for f in FilesToUse:
         with open(dir+f) as tf:
             ReactionNum=ReactionNum+1
             data = json.load(tf)

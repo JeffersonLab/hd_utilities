@@ -14,12 +14,12 @@ Use add/remove particle to add/remove a partical from the products side of the r
 <br>
 Each product comes as a set of three objects:<br>
 1) the main selector where you can select the product.<br>
-2) a tri-state button to let you flag the particle as "m" or "M" as desired.
+2) a tri-state button to let you flag the particle as "m" (missing) or "M" (Mass constrained) as desired.
 <br>3) a checkbox to indicate the product decays
 <br>
 <br>
 <div id="GlobalFlags">
-B:<input id="BFlag" type="number" min="0" max="1000" value="1" onchange="MakeConfigLines()">&emsp;T:<input id="TFlag" type="number" min="0" max="1000" value="3" onchange="MakeConfigLines()">&emsp;F:<input id="FFlag" type="number" min="0" max="5"  value="4" onchange="MakeConfigLines()">&emsp;U:<input id="UFlag" type="checkbox" onchange="MakeConfigLines()">
+B (Beam Bunches):<input id="BFlag" type="number" min="0" max="1000" value="1" onchange="MakeConfigLines()">&emsp;T (Extra Charged Tracks):<input id="TFlag" type="number" min="0" max="1000" value="3" onchange="MakeConfigLines()">&emsp;F (Fit Type):<input id="FFlag" type="number" min="0" max="5"  value="4" onchange="MakeConfigLines()">&emsp;U (unused tracks):<input id="UFlag" type="checkbox" onchange="MakeConfigLines()">
 
 </div>
 <br>
