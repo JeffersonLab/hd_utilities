@@ -27,7 +27,7 @@ $file=$file . "-F" . $F;
 //echo "<br>" . $file;
 foreach ($Mlist as $M)
 {
-    $file=$file . "_M" . $$M;
+    $file=$file . "_M" . $M;
 }
 $newlB=true;
 $newlT=true;
