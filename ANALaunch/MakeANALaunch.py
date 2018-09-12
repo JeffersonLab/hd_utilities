@@ -21,20 +21,23 @@ from datetime import datetime
 
 def WriteLinesToFile(ReactionNum,jobj,configF):
     #print "Reaction"+str(ReactionNum)+" "+jobj["Reaction"]
+    print "\n"
     configF.write("\n\n")
+    print "#"+jobj["Name"]
     configF.write("#"+jobj["Name"]+"\n")
+    print "Reaction"+str(ReactionNum)+" "+jobj["Reaction"]
     configF.write("Reaction"+str(ReactionNum)+" "+jobj["Reaction"])
     decnum=0
     for dec in jobj["Decays"]:
         decnum=decnum+1
         #print "Reaction"+str(ReactionNum)+":Decay"+str(decnum)+" "+dec
         configF.write("\n")
+        print "Reaction"+str(ReactionNum)+":Decay"+str(decnum)+" "+dec
         configF.write("Reaction"+str(ReactionNum)+":Decay"+str(decnum)+" "+dec)
-    
     configF.write("\n")
-    flagstr="Reaction"+str(ReactionNum)+":Flags "
+    flagstrpre="Reaction"+str(ReactionNum)+":Flags "
 
-   
+    flagstr=""
     if(jobj["B"] != "1"):
         flagstr+="B"+jobj["B"]+"_"
     if(jobj["F"] != "4"):
@@ -47,7 +50,9 @@ def WriteLinesToFile(ReactionNum,jobj,configF):
     for M in jobj["Marray"]:
         flagstr+="_M"+str(M)
 
-    configF.write(flagstr)
+    if len(flagstr) > 0:
+        print flagstrpre+flagstr
+        configF.write(flagstrpre+flagstr)
 ########################################################## MAIN ##########################################################
 
 def FilterFiles(Files):
@@ -59,7 +64,6 @@ def FilterFiles(Files):
     return toUse
 
 def main(argv):
-
     ananameSTR=""
     restnameSTR=""
     numThread="12"
@@ -81,7 +85,7 @@ def main(argv):
         
         else:
             print "argument: "+splitArg[0]+" not found"
-            exit(1)
+            #exit(1)
 
 
     dir="/u/group/halld/www/halldweb/data/webdata/analysis/newlines/"
@@ -90,14 +94,19 @@ def main(argv):
     ReactionNum=0
 
     configF=open("ANALaunch.config","w+")
+    print "PLUGINS monitoring_hists,ReactionFilter"
     configF.write("PLUGINS monitoring_hists,ReactionFilter")
     
     if(isMC != 0):
         configF.write(",mcthrown_tree")
 
+    print "\nNTHREADS "+str(numThread)+"\n"
     configF.write("\n\nNTHREADS "+str(numThread)+"\n\n")
+    print "COMBO:MAX_NEUTRALS 15\n"
     configF.write("COMBO:MAX_NEUTRALS 15\n\n")
 
+    print "REST:DATAVERSIONSTRING recon_"+restnameSTR
+    print "ANALYSIS:DATAVERSIONSTRING analysis_"+ananameSTR
     configF.write("REST:DATAVERSIONSTRING recon_"+restnameSTR+"\n")
     configF.write("ANALYSIS:DATAVERSIONSTRING analysis_"+ananameSTR)
 
