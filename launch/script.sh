@@ -15,6 +15,12 @@ Setup_Script()
 	echo "PERL INCLUDES: "
 	perl -e "print qq(@INC)"
 
+	# COPY CCDB SQLITE FILE
+	cp -v ${CCDB_CONNECTION:10} $PWD
+	#export CCDB_CONNECTION=sqlite://ccdb_monitoring_launch.sqlite
+	export JANA_CALIB_URL=sqlite://ccdb_monitoring_launch.sqlite
+	echo "JANA_CALIB_URL: " $JANA_CALIB_URL
+
 	# COPY INPUT FILE TO WORKING DIRECTORY
 	# This step is necessary since the cache files will be created as soft links in the current directory, and we want to avoid large I/O processes.
 	# We first copy the input file to the current directory, then remove the link.
