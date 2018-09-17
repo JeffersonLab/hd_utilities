@@ -11,7 +11,7 @@ Usage:
 
   my_b1pi_test.sh [-n <number of events>] [-t <number of threads>] \\
     [-v <vertex string>] [-d <b1pi_test script directory>] \\
-    [-v <version.xml file>]
+    [-f <version.xml file>]
 
 Example:
 
