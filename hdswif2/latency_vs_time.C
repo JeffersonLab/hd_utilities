@@ -1,16 +1,21 @@
 
 #include "StandardLabels.C"
 
-void latency_vs_time(void)
+void latency_vs_time(const char *start_tstr)
 {
-	// "Start" time of launch
-	TDatime da(2018,8,21,14,00,00);
-	auto da_sec = da.Convert();
+	// "Start" time of launch 
+	// should match plot_start in regenerate_plots.csh for California
+	// time or that +3hrs for Virginia time
+	int y,m,d,h,M,s;
+	sscanf(start_tstr, "%d-%d-%dT%d:%d:%d", &y, &m, &d, &h, &M, &s);
+	TDatime da(y,m,d,h,M,s);
+	//TDatime da(2018,9,20,16,20,00);
+	auto da_sec = da.Convert() + 3*3600; // convert to seconds in Virginia time
 	gStyle->SetTimeOffset(da_sec);
 
 
 	TTree *t = new TTree("slurminfo", "SLURM Info.");
-	t->ReadFile("slurm.csv", "tsubmit/F:tstart:tend:cpu:latency");
+	t->ReadFile("slurm.csv", "tsubmit/F:tstart:tend:cpu:latency:ncpus");
 
 	TCanvas *c1 = new TCanvas("c1", "", 1600,600);
 	c1->SetGrid();
@@ -27,7 +32,8 @@ void latency_vs_time(void)
 	if(tstart_max > tmax) tmax = tstart_max;
 	if(tend_max   > tmax) tmax = tend_max;
 
-	double ymax = 40.0;
+	double ymax = 1.05*t->GetMaximum("latency")/3600.0;
+	//double ymax = 1.05*t->GetMaximum("tstart-tsubmit")/3600.0;
 	TH2D *axes = new TH2D("axes", "NERSC Job Start Latency vs. Submit Time (completed jobs only);;Latency (hrs)", 100, 0.0, tmax, 100, 0.0, ymax);
 	axes->SetStats(0);
 	axes->GetYaxis()->SetTitleSize(0.07);
@@ -35,13 +41,12 @@ void latency_vs_time(void)
 	axes->GetXaxis()->SetTimeDisplay(1);
 	axes->GetXaxis()->SetTimeFormat("%m/%d/%Y %H:%M");
 	axes->GetXaxis()->SetLabelOffset(0.1);
+	axes->GetXaxis()->SetNdivisions(610, kFALSE);
 	for(auto i=1; i<=40; i++) axes->GetXaxis()->ChangeLabel(i, 270.0);
 	axes->Draw();
 	
-	// Draw lines at midnight to help visually distinguish days
-	for(auto d=22; d< 31; d++){
-		TDatime da(2018,8,d,0,0,00);
-		double x = da.Convert() - da_sec;
+	// Draw lines every 24hrs to help visually distinguish days
+	for(uint64_t x=0; x<tmax; x+=24*3600){
 		TLine *lin = new TLine(x, 0.0, x, ymax);
 		lin->SetLineColor(kBlack);
 		lin->SetLineWidth(2);
@@ -51,6 +56,7 @@ void latency_vs_time(void)
 	t->SetMarkerStyle(20);
 	t->SetMarkerColor(kBlue);
 	t->Draw("latency/3600.0:tsubmit", "", "same");
+	//t->Draw("(tstart-tsubmit)/3600.0:tsubmit", "", "same");
 
 	// Draw box shading unreliable region
 	TBox *b = new TBox(tmax - 4.5*3600.0,0.0, tmax, axes->GetYaxis()->GetXmax());

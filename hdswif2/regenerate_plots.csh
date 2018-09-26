@@ -53,9 +53,30 @@
 
 # A defaults
 set workflow="offmon_2018-01_ver17"
-set uploaddir="gxproj5@ifarm:/group/halld/www/halldweb/html/data_monitoring/launch_analysis/2018_01/launches/offline_monitoring_RunPeriod2018_01_ver17"
-#set start_date="2018-08-21 11:00"
+#set uploaddir="gxproj5@ifarm:/group/halld/www/halldweb/html/data_monitoring/launch_analysis/2018_01/launches/offline_monitoring_RunPeriod2018_01_ver17"
 
+# Initial testing
+#set start_date="2018-07-19T11:00:00" # n.b. California time
+#set   plot_end="2018-07-22T12:00:00" # n.b. California time
+
+# Monitoring launch ver 17
+#set start_date="2018-08-21T11:00:00" # n.b. California time
+#set   plot_end="2018-09-02T12:00:00" # n.b. California time
+
+# Haswell 14TB test
+#set start_date="2018-09-10T00:00:00" # n.b. California time
+#set   plot_end="2018-09-16T00:00:00" # n.b. California time
+
+# KNL 14TB test
+#set start_date="2018-09-20T13:20:00" # n.b. California time
+#set plot_end  ="" # Use this for "now"
+
+# Dual Haswell + KNL 14TB test
+set start_date="2018-09-26T06:00:00" # n.b. California time
+set plot_end  ="" # Use this for "now"
+
+
+set plot_start=$start_date 
 
 # Loop over command line args
 foreach arg ($*)
@@ -95,6 +116,8 @@ endif
 
 echo "  workflow: "$workflow
 echo "start time: "$start_date
+echo "plot start: "$plot_start
+echo "plot  end : "$plot_end
 
 # Run sacct on cori to get info from slurm in form of text
 # file and copy it back to local directory.
@@ -103,12 +126,12 @@ ssh cori.nersc.gov "cd builds/accounting ; sacct --format=JobID%15,Submit,Start,
 scp cori.nersc.gov:builds/accounting/slurm.dat .
 
 # Convert ascii file to SQLite DB and CSV formats
-./slurm2sqlite.py
+./slurm2sqlite.py $plot_start $plot_end
 
 # Run all macros to create plots
 foreach m ( Njobs_vs_time.C latency_vs_time.C cpu_vs_time.C )
 	echo "Running ROOT macro $m ..."
-	root -l -q -b $m
+	root -l -q -b $m'("'$plot_start'")'
 end
 
 # Optionally open window to display plots on local machine
