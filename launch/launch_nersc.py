@@ -61,7 +61,7 @@ if not os.getenv('PYTHONPATH') : sys.path.append('/group/halld/Software/builds/L
 import mysql.connector
 
 
-TESTMODE     = False  # True=only print commands, but don't actually submit jobs
+TESTMODE     = True  # True=only print commands, but don't actually submit jobs
 VERBOSE      = 1     # 1 is default
 
 RUNPERIOD    = '2018-01'
