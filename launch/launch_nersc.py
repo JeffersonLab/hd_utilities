@@ -61,34 +61,35 @@ if not os.getenv('PYTHONPATH') : sys.path.append('/group/halld/Software/builds/L
 import mysql.connector
 
 
-TESTMODE     = True  # True=only print commands, but don't actually submit jobs
-VERBOSE      = 1     # 1 is default
+TESTMODE     = False  # True=only print commands, but don't actually submit jobs
+VERBOSE      = 3     # 1 is default
 
 RUNPERIOD    = '2018-01'
-LAUNCHTYPE   = 'offmon'
-VER          = '17'
+LAUNCHTYPE   = 'offmon'  # 'offmon' or 'recon' 
+VER          = '18'
 WORKFLOW     = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER
 NAME         = 'GLUEX_' + LAUNCHTYPE
 
 RCDB_QUERY   = '@is_2018production and @status_approved'  # Comment out for all runs in range MINRUN-MAXRUN
-RUNS         = []      # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
+RUNS         = [40951]      # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
 MINRUN       = 40000   # If RUNS is empty, then RCDB queried for this range
 MAXRUN       = 49999   # If RUNS is empty, then RCDB queried for this range
 MINFILENO    = 0       # Min file number to process for each run (n.b. file numbers start at 0!)
 MAXFILENO    = 9       # Max file number to process for each run (n.b. file numbers start at 0!)
-MAX_CONCURRENT_JOBS = '1000'  # Miximum number of jobs swif2 will have in flight at once
+MAX_CONCURRENT_JOBS = '2000'  # Miximum number of jobs swif2 will have in flight at once
 
 PROJECT      = 'm3120'
-TIMELIMIT    = '4:45:00'  # Set time limit (~3.25hr for recon. ~4.5hr for monitoring)
+TIMELIMIT    = '9:00:00'  # Set time limit (2.4 timeslonger for KNL than haswell)
 QOS          = 'regular'  # debug, regular, premium
-NODETYPE     = 'haswell'  # haswell, knl  (quad,cache)
+NODETYPE     = 'knl'  # haswell, knl  (quad,cache)
 
 IMAGE        = 'docker:markito3/gluex_docker_devel'
 #RECONVERSION = 'sim-recon/sim-recon-recon-2017_01-ver03'
-RECONVERSION = 'halld_recon/halld_recon-recon-2017_01-ver03.1'
+RECONVERSION = 'halld_recon/halld_recon-recon-ver03.2'  # must exist in /group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5-cntr
 SCRIPTFILE   = '/launch/script_nersc.sh'
 CONFIG       = '/launch/jana_'+LAUNCHTYPE+'_nersc.config'
-OUTPUTTOP    = 'mss:/mss/halld/offline_monitoring/RunPeriod-'+RUNPERIOD+'/ver'+VER  # prefix with mss: for tape or file: for filesystem
+#OUTPUTTOP    = 'mss:/mss/halld/offline_monitoring/RunPeriod-'+RUNPERIOD+'/ver'+VER  # prefix with mss: for tape or file: for filesystem
+OUTPUTTOP    = 'mss:/mss/halld/halld-scratch/offline_monitoring/RunPeriod-'+RUNPERIOD+'/ver'+VER  # prefix with mss: for tape or file: for filesystem
 #OUTPUTTOP = 'file:/u/home/gxproj4/NERSC/2018.08.15.offmon_ver00N/tmp'
 
 RCDB_HOST    = 'hallddb.jlab.org'
@@ -189,21 +190,22 @@ def OffmonOutFiles(RUN, FILE):
 	RFSTR = '%06d_%03d' % (RUN, FILE)
 	outfiles = {}
 	outfiles['job_info_%s.tgz'  % RFSTR               ] = 'job_info/%06d/job_info_%s.tgz' % (RUN, RFSTR)
-	outfiles['dana_rest_coherent_peak.hddm'           ] = 'dana_rest_coherent_peak/%06d/dana_rest_coherent_peak_%s.hddm' % (RUN, RFSTR)
+	#outfiles['dana_rest_coherent_peak.hddm'           ] = 'dana_rest_coherent_peak/%06d/dana_rest_coherent_peak_%s.hddm' % (RUN, RFSTR)
 	outfiles['dana_rest.hddm'                         ] = 'REST/%06d/dana_rest_%s.hddm' % (RUN, RFSTR)
-	outfiles['hd_rawdata_%s.omega.evio' % RFSTR       ] = 'omega/%06d/omega_%s.evio' % (RUN, RFSTR)
+	#outfiles['hd_rawdata_%s.omega.evio' % RFSTR       ] = 'omega/%06d/omega_%s.evio' % (RUN, RFSTR)
 	outfiles['hd_root.root'                           ] = 'hists/%06d/hd_root_%s.root' % (RUN, RFSTR)
-	outfiles['p3pi_excl_skim.root'                    ] = 'p3pi_excl_skim/%06d/p3pi_excl_skim_%s.root' % (RUN, RFSTR)
+	#outfiles['p3pi_excl_skim.root'                    ] = 'p3pi_excl_skim/%06d/p3pi_excl_skim_%s.root' % (RUN, RFSTR)
 	outfiles['tree_bcal_hadronic_eff.root'            ] = 'tree_bcal_hadronic_eff/%06d/tree_bcal_hadronic_eff_%s.root' % (RUN, RFSTR)
+	outfiles['tree_fcal_hadronic_eff.root'            ] = 'tree_fcal_hadronic_eff/%06d/tree_fcal_hadronic_eff_%s.root' % (RUN, RFSTR)
 	outfiles['tree_PSFlux.root'                       ] = 'tree_PSFlux/%06d/tree_PSFlux_%s.root' % (RUN, RFSTR)
 	outfiles['tree_trackeff.root'                     ] = 'tree_trackeff/%06d/tree_trackeff_%s.root' % (RUN, RFSTR)
 	outfiles['TOF_TDC_shift_%06d.txt' % RUN           ] = 'TOF_TDC_shift/%06d/TOF_TDC_shift_%s.txt' % (RUN, RFSTR)
 	outfiles['hd_root_tofcalib.root'                  ] = 'hd_root_tofcalib/%06d/hd_root_tofcalib_%s.root' % (RUN, RFSTR)
-	outfiles['hd_rawdata_%s.random.evio' % RFSTR      ] = 'random/%06d/hd_rawdata_%s.random.evio' % (RUN, RFSTR)
-	outfiles['hd_rawdata_%s.BCAL-LED.evio' % RFSTR    ] = 'BCAL-LED/%06d/hd_rawdata_%s.BCAL-LED.evio' % (RUN, RFSTR)
-	outfiles['hd_rawdata_%s.FCAL-LED.evio' % RFSTR    ] = 'FCAL-LED/%06d/hd_rawdata_%s.FCAL-LED.evio' % (RUN, RFSTR)
-	outfiles['hd_rawdata_%s.sync.evio' % RFSTR        ] = 'sync/%06d/hd_rawdata_%s.sync' % (RUN, RFSTR)
-	outfiles['tree_TPOL.root'                         ] = 'TPOL/%06d/tree_TPOL_%s.root' % (RUN, RFSTR)
+	#outfiles['hd_rawdata_%s.random.evio' % RFSTR      ] = 'random/%06d/hd_rawdata_%s.random.evio' % (RUN, RFSTR)
+	#outfiles['hd_rawdata_%s.BCAL-LED.evio' % RFSTR    ] = 'BCAL-LED/%06d/hd_rawdata_%s.BCAL-LED.evio' % (RUN, RFSTR)
+	#outfiles['hd_rawdata_%s.FCAL-LED.evio' % RFSTR    ] = 'FCAL-LED/%06d/hd_rawdata_%s.FCAL-LED.evio' % (RUN, RFSTR)
+	#outfiles['hd_rawdata_%s.sync.evio' % RFSTR        ] = 'sync/%06d/hd_rawdata_%s.sync' % (RUN, RFSTR)
+	outfiles['tree_TPOL.root'                         ] = 'TPOL_tree/%06d/tree_TPOL_%s.root' % (RUN, RFSTR)
 
 	return outfiles
 
