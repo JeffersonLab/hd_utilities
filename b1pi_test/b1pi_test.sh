@@ -101,6 +101,8 @@ echo B1PI_TEST_DIR = $B1PI_TEST_DIR
 echo RUN = $RUN
 echo SEED = $SEED
 
+export JANA_CALIB_CONTEXT="variation=mc"
+
 echo "Copying script files and macros ..."
 cp -pv $B1PI_TEST_DIR/* .
 cp -pv $B1PI_TEST_DIR/macros/* .
@@ -123,19 +125,31 @@ HADR 1
 EOF
 
 echo "Running hdgeant ..."
-hdgeant
+command="hdgeant"
+echo $command
+$command
 
 echo "Running mcsmear ..."
-mcsmear -PJANA:BATCH_MODE=1 hdgeant.hddm
+command="mcsmear -PJANA:BATCH_MODE=1 -PTHREAD_TIMEOUT=500 hdgeant.hddm"
+echo $command
+$command
 
 echo "Running hd_root with danarest ..."
-hd_root -PJANA:BATCH_MODE=1 --nthreads=$NTHREADS -PPLUGINS=danarest hdgeant_smeared.hddm
+command="hd_root -PJANA:BATCH_MODE=1 --nthreads=$NTHREADS -PTHREAD_TIMEOUT=500 -PPLUGINS=danarest hdgeant_smeared.hddm"
+echo $command
+$command
 
 echo "Running hd_root with b1pi_hists & monitoring_hists ..."
-hd_root -PJANA:BATCH_MODE=1 --nthreads=$NTHREADS -PPLUGINS=b1pi_hists,monitoring_hists dana_rest.hddm
+command="hd_root -PJANA:BATCH_MODE=1 --nthreads=$NTHREADS -PTHREAD_TIMEOUT=500 -PPLUGINS=b1pi_hists,monitoring_hists dana_rest.hddm"
+echo $command
+$command
 
 echo "Create plots"
-root -b -q mk_pics.C
+command="root -b -q mk_pics.C"
+echo $command
+$command
 
 echo "Save test data"
-python update_db.py
+command="python update_db.py"
+echo $command
+$command
