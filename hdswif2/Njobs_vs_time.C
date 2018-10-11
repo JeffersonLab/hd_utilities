@@ -37,7 +37,8 @@ void Njobs_vs_time(const char *start_tstr)
 	if(tend_max   > tmax) tmax = tend_max;
 
 	double ymax = 1.10*nqueued_vs_time->GetMaximum();
-	TH2D *axes = new TH2D("axes", "NERSC Num. Jobs vs. Time;;Number of jobs", 100, 0.0, tmax, 100, 0.0, ymax);
+	if( njobs_vs_time->GetMaximum() > nqueued_vs_time->GetMaximum() ) ymax = 1.10*njobs_vs_time->GetMaximum();
+	TH2D *axes = new TH2D("axes", "NERSC Instantaneous Num. Jobs vs. Time;;Number of jobs", 100, 0.0, tmax, 100, 0.0, ymax);
 	axes->SetStats(0);
 	axes->GetYaxis()->SetTitleSize(0.07);
 	axes->GetYaxis()->SetTitleOffset(0.4);

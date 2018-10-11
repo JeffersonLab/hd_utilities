@@ -32,7 +32,7 @@ void cpu_vs_time(const char *start_tstr)
 	if(tstart_max > tmax) tmax = tstart_max;
 	if(tend_max   > tmax) tmax = tend_max;
 
-	double ymax = 8.0; // hrs
+	double ymax = 10.0; // hrs
 	TH2D *axes = new TH2D("axes", "NERSC Wall time vs. Start Time (completed jobs only);;Wall time per job (hrs)", 100, 0.0, tmax, 100, 0.0, ymax);
 	axes->SetStats(0);
 	axes->GetYaxis()->SetTitleSize(0.05);

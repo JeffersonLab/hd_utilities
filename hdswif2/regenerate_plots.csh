@@ -52,8 +52,9 @@
 #
 
 # A defaults
-set workflow="offmon_2018-01_ver17"
-#set uploaddir="gxproj5@ifarm:/group/halld/www/halldweb/html/data_monitoring/launch_analysis/2018_01/launches/offline_monitoring_RunPeriod2018_01_ver17"
+set workflow="offmon_2018-01_ver18"
+set uploaddir="gxproj5@ifarm:/group/halld/www/halldweb/html/data_monitoring/launch_analysis/2018_01/launches/offline_monitoring_RunPeriod2018_01_ver18"
+set njobs=0
 
 # Initial testing
 #set start_date="2018-07-19T11:00:00" # n.b. California time
@@ -69,11 +70,23 @@ set workflow="offmon_2018-01_ver17"
 
 # KNL 14TB test
 #set start_date="2018-09-20T13:20:00" # n.b. California time
-#set plot_end  ="" # Use this for "now"
+#set   plot_end="2018-09-22T12:00:00" # Use this for "now"
 
 # Dual Haswell + KNL 14TB test
-set start_date="2018-09-26T06:00:00" # n.b. California time
-set plot_end  ="" # Use this for "now"
+#set start_date="2018-09-26T06:00:00" # n.b. California time
+#set   plot_end="" # Use this for "now"
+
+# Quad Haswell + KNL 14TB test
+#set start_date="2018-09-27T10:00:00" # n.b. California time
+#set   plot_end="2018-10-01T16:00:00" # Use this for "now"
+
+# Hex Haswell + KNL 14TB test
+#set start_date="2018-10-01T18:00:00" # n.b. California time
+#set   plot_end="" # Use this for "now"
+
+# offmon-2018_01_ver18
+set start_date="2018-10-07T06:30:00" # n.b. California time
+set   plot_end="" # Use this for "now"
 
 
 set plot_start=$start_date 
@@ -94,6 +107,15 @@ foreach arg ($*)
 			shift
 			set workflow=$argv[1]
 			breaksw
+		case '-n':
+		case '-njobs':
+			shift
+			set njobs=$argv[1]
+			breaksw
+		case '-N':
+			shift
+			set get_njobs_from_workflow='1'
+			breaksw
 		case '-p':
 		case '-post':
 			set post_to_web=1
@@ -112,6 +134,11 @@ end
 # then get it from the workflow.
 if ( ! $?start_date ) then
 	set start_date=`ssh gxproj4@ifarm swif2 status -workflow $workflow | grep create_ts | awk '{print $3" "$4}' | sed 's/..$//'`  # sed is to chop off last ".0" that sacct doesn't like
+endif
+
+# Optionally get the number of jobs from workflow
+if ( $?get_njobs_from_workflow ) then
+	set njobs=`ssh gxproj4@ifarm swif2 status -workflow $workflow | grep jobs | awk '{print $3" "$4}'`
 endif
 
 echo "  workflow: "$workflow
@@ -134,6 +161,8 @@ foreach m ( Njobs_vs_time.C latency_vs_time.C cpu_vs_time.C )
 	root -l -q -b $m'("'$plot_start'")'
 end
 
+root -l -q -b 'iNjobs_vs_time.C("'$plot_start'",'$njobs')'
+
 # Optionally open window to display plots on local machine
 if ( $?display_plots ) then
 	if ( $OSTYPE == 'darwin' ) then
@@ -146,7 +175,7 @@ endif
 # Optionally upload files to web
 if ( $?post_to_web ) then
 	echo "uploading to $uploaddir"
-	scp *.png $uploaddir
+	scp index.html *.png $uploaddir
 endif
 
 
