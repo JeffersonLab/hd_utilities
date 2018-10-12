@@ -113,7 +113,6 @@ foreach arg ($*)
 			set njobs=$argv[1]
 			breaksw
 		case '-N':
-			shift
 			set get_njobs_from_workflow='1'
 			breaksw
 		case '-p':
@@ -128,6 +127,7 @@ foreach arg ($*)
 			breaksw
 			
 	endsw
+	if ( $#argv > 0 ) shift
 end
 
 # If user did not specify start date/time of the launch
@@ -145,6 +145,7 @@ echo "  workflow: "$workflow
 echo "start time: "$start_date
 echo "plot start: "$plot_start
 echo "plot  end : "$plot_end
+echo "     njobs: "$njobs
 
 # Run sacct on cori to get info from slurm in form of text
 # file and copy it back to local directory.
