@@ -37,8 +37,8 @@ void njobs::Begin(TTree * /*tree*/)
 
    TString option = GetOption();
 	
-   njobs_vs_time   = new TH1D("njobs_vs_time",   "", 1000E1, 0.0, 1000.0E3);
-   nqueued_vs_time = new TH1D("nqueued_vs_time", "", 1000E1, 0.0, 1000.0E3);
+   njobs_vs_time   = new TH1D("njobs_vs_time",   "", 5000E1, 0.0, 5000.0E3);
+   nqueued_vs_time = new TH1D("nqueued_vs_time", "", 5000E1, 0.0, 5000.0E3);
 }
 
 void njobs::SlaveBegin(TTree * /*tree*/)

@@ -22,7 +22,7 @@ void DrawValue( double x, double y, double tsize, const char *lab, int val, int 
 
 //----------------
 // iNjobs_vs_time
-void iNjobs_vs_time(const char *start_tstr, int NJOBS_TOTAL=0)
+void iNjobs_vs_time(const char *start_tstr, int NJOBS_TOTAL=0, int NJOBS_SUCCEEDED=0)
 {
 	// "Start" time of launch 
 	// should match plot_start in regenerate_plots.csh for California
@@ -44,7 +44,7 @@ void iNjobs_vs_time(const char *start_tstr, int NJOBS_TOTAL=0)
 	gPad->SetBottomMargin(0.3);
 	gPad->SetRightMargin(0.02);
 
-	TH1D *nsubmitted_vs_time = new TH1D("nsubmitted_vs_time",   "", 1000E1, 0.0, 1000.0E3);
+	TH1D *nsubmitted_vs_time = new TH1D("nsubmitted_vs_time",   "", 5000E1, 0.0, 5000.0E3);
 	TH1D *nstarted_vs_time = (TH1D*)nsubmitted_vs_time->Clone("nstarted_vs_time");
 	TH1D *nended_vs_time = (TH1D*)nsubmitted_vs_time->Clone("nended_vs_time");
 	t->Project("nsubmitted_vs_time", "tsubmit");
@@ -138,8 +138,9 @@ void iNjobs_vs_time(const char *start_tstr, int NJOBS_TOTAL=0)
 		DrawValue( x, 0.85*ymax, 0.04, "Jobs in workflow:", NJOBS_TOTAL);
 	}
 	DrawValue( x, 0.78*ymax, 0.04, "Jobs submitted:", nsubmitted_vs_time->GetMaximum(), NJOBS_TOTAL);
-	DrawValue( x, 0.71*ymax, 0.04, "Jobs started:", nstarted_vs_time->GetMaximum(), NJOBS_TOTAL);
-	DrawValue( x, 0.64*ymax, 0.04, "Jobs ended:", nended_vs_time->GetMaximum(), NJOBS_TOTAL);
+	DrawValue( x, 0.71*ymax, 0.04, "Jobs succeeded:", NJOBS_SUCCEEDED, NJOBS_TOTAL);
+	DrawValue( x, 0.64*ymax, 0.04, "Jobs started:", nstarted_vs_time->GetMaximum(), NJOBS_TOTAL);
+	DrawValue( x, 0.57*ymax, 0.04, "Jobs ended:", nended_vs_time->GetMaximum(), NJOBS_TOTAL);
 	
 	StandardLabels(axes);
 
