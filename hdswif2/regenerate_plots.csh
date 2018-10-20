@@ -36,6 +36,13 @@
 #                              use eog if it is in your path. On Mac
 #                              OS X it will just use "open".
 #
+#  -n, -njobs                  Set the number of jobs used for normalization
+#                              in the iNjobs_vs_time plot. Superceeded
+#                              by -N option if present.
+#
+#  -N                          Get the number of jobs used for the
+#                              iNjobs_vs_time plot from the workflow.
+#                              This will superceed any setting from -n.
 #
 # Example:  Regenerate plots locally for specified workflow
 #
@@ -55,6 +62,7 @@
 set workflow="offmon_2018-01_ver18"
 set uploaddir="gxproj5@ifarm:/group/halld/www/halldweb/html/data_monitoring/launch_analysis/2018_01/launches/offline_monitoring_RunPeriod2018_01_ver18"
 set njobs=0
+set nsucceeded=0
 
 # Initial testing
 #set start_date="2018-07-19T11:00:00" # n.b. California time
@@ -139,6 +147,7 @@ endif
 # Optionally get the number of jobs from workflow
 if ( $?get_njobs_from_workflow ) then
 	set njobs=`ssh gxproj4@ifarm swif2 status -workflow $workflow | grep jobs | awk '{print $3" "$4}'`
+	set nsucceeded=`ssh gxproj4@ifarm swif2 status -workflow $workflow | grep succeeded | awk '{print $3" "$4}'`
 endif
 
 echo "  workflow: "$workflow
@@ -162,7 +171,7 @@ foreach m ( Njobs_vs_time.C latency_vs_time.C cpu_vs_time.C )
 	root -l -q -b $m'("'$plot_start'")'
 end
 
-root -l -q -b 'iNjobs_vs_time.C("'$plot_start'",'$njobs')'
+root -l -q -b 'iNjobs_vs_time.C("'$plot_start'",'$njobs','$nsucceeded')'
 
 # Optionally open window to display plots on local machine
 if ( $?display_plots ) then
