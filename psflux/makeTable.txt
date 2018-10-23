@@ -1,0 +1,25 @@
+Make and fill TAGM flux values
+
+mktbl PHOTON_BEAM/pair_spectrometer/lumi/tagm/tagged -r 102 column flux err_flux
+mktbl PHOTON_BEAM/pair_spectrometer/lumi/tagm/untagged -r 102 column flux err_flux
+
+loop: 
+	add PHOTON_BEAM/pair_spectrometer/lumi/tagm/tagged -r $run-$run /work/halld2/home/jrsteven/tables/RunPeriod-2017-01/ver02/tagmTaggedFluxRun$run.txt
+	add PHOTON_BEAM/pair_spectrometer/lumi/tagm/untagged -r $run-$run /work/halld2/home/jrsteven/tables/RunPeriod-2017-01/ver02/tagmUntaggedFluxRun$run.txt
+
+-------------------------------------------------------------------------
+Make and fill TAGH flux values
+
+mktbl PHOTON_BEAM/pair_spectrometer/lumi/tagh/tagged -r 274 counter flux err_flux
+mktbl PHOTON_BEAM/pair_spectrometer/lumi/tagh/untagged -r 274 counter flux err_flux
+
+loop: 
+	add PHOTON_BEAM/pair_spectrometer/lumi/tagh/tagged -r $run-$run /work/halld2/home/jrsteven/tables/RunPeriod-2017-01/ver02/taghTaggedFluxRun$run.txt
+	add PHOTON_BEAM/pair_spectrometer/lumi/tagh/untagged -r $run-$run /work/halld2/home/jrsteven/tables/RunPeriod-2017-01/ver02/taghUntaggedFluxRun$run.txt	
+
+-------------------------------------------------------------------------
+Make and fill livetime tables for trigger bits
+
+mktbl PHOTON_BEAM/pair_spectrometer/lumi/trig_live -r 32 trigbit livetime
+loop:
+        add PHOTON_BEAM/pair_spectrometer/lumi/trig_live -r $run-$run /work/halld2/home/jrsteven/tables/RunPeriod-2017-01/ver03/livetimeRun$run.txt
