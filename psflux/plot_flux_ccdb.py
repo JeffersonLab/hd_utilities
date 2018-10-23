@@ -13,10 +13,10 @@ import ccdb
 from ccdb import Directory, TypeTable, Assignment, ConstantSet
 
 def LoadCCDB():
-    sqlite_connect_str = "sqlite:////work/halld2/home/jrsteven/tables/ccdb.sqlite"
-    provider = ccdb.AlchemyProvider()                        # this class has all CCDB manipulation functions
-    provider.connect(sqlite_connect_str)                     # use usual connection string to connect to database
-    provider.authentication.current_user_name = "jrsteven"     # to have a name in logs
+    sqlite_connect_str = "mysql://ccdb_user@hallddb.jlab.org/ccdb"
+    provider = ccdb.AlchemyProvider()                           # this class has all CCDB manipulation functions
+    provider.connect(sqlite_connect_str)                        # use usual connection string to connect to database
+    provider.authentication.current_user_name = "psflux_user"   # to have a name in logs
 
     return provider
 
@@ -123,8 +123,8 @@ def main():
 	else: # if bad livetime assume ratio is 1
 		livetime_ratio = 1.0
 	# printout for livetimes different from unity
-	if livetime_ratio > 1.0 or livetime_ratio < 0.9:
-		print livetime_ratio
+	#if livetime_ratio > 1.0 or livetime_ratio < 0.9:
+	#	print livetime_ratio
 	
 	# Conversion factors for total flux
 	converterThickness = run.get_condition('polarimeter_converter').value # 75 or 750 micron
@@ -157,10 +157,6 @@ def main():
         # fill tagm histogram
 	for tagm_flux, tagm_scaled_energy in zip(tagm_tagged_flux, tagm_scaled_energy):
             tagm_energy = float(photon_endpoint[0][0])*(float(tagm_scaled_energy[1])+float(tagm_scaled_energy[2]))/2.
-	    #if tagm_energy > 8.9 and tagm_energy < 8.91:
-            #    print tagm_flux
-            #    print tagm_scaled_energy
-            #    print tagm_energy
             bin_energy = htagged_fluxErr.FindBin(tagm_energy)
             previous_bincontent = htagged_fluxErr.GetBinContent(bin_energy)
             previous_binerror = math.sqrt(htagged_fluxErr.GetBinError(bin_energy)) # error^2 stored in histogram
@@ -172,10 +168,6 @@ def main():
         # fill tagh histogram
 	for tagh_flux, tagh_scaled_energy in zip(tagh_tagged_flux, tagh_scaled_energy):
             tagh_energy = float(photon_endpoint[0][0])*(float(tagh_scaled_energy[1])+float(tagh_scaled_energy[2]))/2.
-	    #if tagm_energy > 8.9 and tagm_energy < 8.91:
-	    #	print tagh_flux
-	    #	print tagh_scaled_energy
-	    #	print tagh_energy
 	    bin_energy = htagged_fluxErr.FindBin(tagh_energy)
 	    previous_bincontent = htagged_fluxErr.GetBinContent(bin_energy)
 	    previous_binerror = math.sqrt(htagged_fluxErr.GetBinError(bin_energy)) # error^2 stored in histogram
