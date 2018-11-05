@@ -31,7 +31,7 @@ We use the 88 days number.
 =====================================================================
 runningEfficiency
 
-This number (34%) was tuned to make the total production close to, but
+This number (39%) was tuned to make the total production close to, but
 less than the 1910TB reported by the scicomp web page. Nominally, the
 acclerator runs at around 50%, but our overall running efficiency is
 supposed to represent production running only. Special runs and losses
@@ -76,8 +76,10 @@ here that we will need 3.5 passes
 =====================================================================
 eventsize
 
-Multiple files from run 42323 have 1.52M events in them (some have more).
-Use an avg. event size of 19.1GB/1.52Mevents = 12.6kB/event
+Multiple files from run 42323 have 1.7M events in them (some have more).
+Use an avg. event size of 19.1GB/1.7Mevents = 11.2kB/event. Some files
+have fewer event so we increase this to 11.5kB/event. This matches the
+number the hdevio_scan histogram reports for file 001.
 
 =====================================================================
 RESTfraction
@@ -105,12 +107,12 @@ running. They are not based on actual values from 2017 data analysis
 <compMod>
 <parameter name="triggerRate" value="56.25e3" units="Hz"/>
 <parameter name="runningTimeOnFloor" value="88.0" units="days"/>
-<parameter name="runningEfficiency" value="0.34" units="dl"/>
+<parameter name="runningEfficiency" value="0.39" units="dl"/>
 <parameter name="timePeriod" value="12.0" units="months"/>
 <parameter name="reconstructionRate" value="5.5" units="Hz"/>
 <parameter name="cores" value="5000" units="dl"/>
 <parameter name="passes" value="3.5" units="dl"/>
-<parameter name="eventsize" value="12.6" units="kB"/>
+<parameter name="eventsize" value="11.5" units="kB"/>
 <parameter name="compressionFactor" value="1.0" units="dl"/>
 <parameter name="RESTfraction" value="0.146" units="dl"/>
 <parameter name="simulationRate" value="25" units="Hz"/>
