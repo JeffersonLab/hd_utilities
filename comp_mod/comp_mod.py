@@ -116,7 +116,7 @@ print '     Raw Data Num. Events: ' + '%3.1f' % numberProductionEvents_billions 
 print '     Raw Data compression: ' + '%3.2f' % compressionFactor
 print '      Raw Data Event Size: ' + str(eventsize) + ' kB ' + uncompressed_str
 print '  Front End Raw Data Rate: ' + '%3.2f' % rawDataRateUncompressed_GBps + ' GB/s ' + uncompressed_str
-print '       Disk Raw Data Rate: ' + '%3.2f' % rawDataRateUncompressed_GBps + ' GB/s ' + compressed_str
+print '       Disk Raw Data Rate: ' + '%3.2f' % rawDataRateCompressed_GBps + ' GB/s ' + compressed_str
 print '          Raw Data Volume: ' + '%3.3f' % rawDataVolume_PB + ' PB ' + compressed_str
 print '     Bandwidth to offsite: ' + '%3.0f' % rawDataOffsite1month_MBps + ' MB/s (all raw data in 1 month)'
 print '      REST/Raw size frac.: ' + '%3.2f' % (RESTfractionCompressed*100.0) + '%'
