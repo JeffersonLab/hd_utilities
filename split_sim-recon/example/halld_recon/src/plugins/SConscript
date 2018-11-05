@@ -1,0 +1,10 @@
+
+import sbms
+
+Import('*')
+
+Import('env osname')
+
+subdirs = ['Analysis', 'Utilities', 'monitoring', 'Calibration', 'include', 'Alignment']
+SConscript(dirs=subdirs, exports='env osname', duplicate=0)
+

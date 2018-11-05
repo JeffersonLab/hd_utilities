@@ -11,7 +11,7 @@ Usage:
 
   my_b1pi_test.sh [-n <number of events>] [-t <number of threads>] \\
     [-v <vertex string>] [-d <b1pi_test script directory>] \\
-    [-v <version.xml file>]
+    [-f <version.xml file>]
 
 Example:
 
@@ -30,7 +30,7 @@ EOF
 
 b1pi_test_options=""
 
-while getopts "h?v:f:n:t:d:" opt; do
+while getopts "h?v:f:n:t:d:s:" opt; do
     case "$opt" in
     h|\?)
         show_help
@@ -46,6 +46,8 @@ while getopts "h?v:f:n:t:d:" opt; do
 	;;
     d)  B1PI_TEST_DIR=$OPTARG
         b1pi_test_options="$b1pi_test_options -d $B1PI_TEST_DIR"
+	;;
+    s)  SEED=$OPTARG
     esac
 done
 
@@ -91,6 +93,11 @@ else
 	exit 2
     fi
     source $BUILD_SCRIPTS/gluex_env_version.sh $version_file    
+fi
+
+if [ ! -z "$SEED" ]
+    then
+    b1pi_test_options="$b1pi_test_options -s $SEED"
 fi
 
 if ! which genr8

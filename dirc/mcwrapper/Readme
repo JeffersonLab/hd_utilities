@@ -1,0 +1,28 @@
+# general MCWapper command
+gluex_MC.py config_file run_number total_events
+# per_file specifies how many events in each job
+# recon=0 : don't run hd_root since you DIRC requires smeared hddm
+# cleanmcsmear=0 : don't delete smeared hddm file needed for DIRC analysis
+# batch=2 : automatically run swif workflow after jobs are submitted
+
+# command for generating bggen simulations
+gluex_MC.py bggen.config 50000 1000000 per_file=5000 recon=0 cleanmcsmear=0 batch=2
+
+# command for generating gp -> phi p, phi -> K+K- simulations
+gluex_MC.py gen_2k.config 50000 500000 per_file=5000 recon=0 cleanmcsmear=0 batch=2
+
+# command for generating gp -> rho p, rho -> pi+pi- simulations
+gluex_MC.py gen_2pi_amp.config 50000 500000 per_file=5000 recon=0 cleanmcsmear=0 batch=2
+
+# command for generating single particle simulations
+# note: need to modify 
+##	pip_pMomentum_thetaTheta.cfg or pip_flat.cfg and
+## 	particle_gun.config 
+## 	files to change Momentum and Theta of particle gun in hdgeant4
+
+# flat MC generate bigger sample: 100k events
+gluex_MC.py particle_gun.config 50000 100000 per_file=5000 recon=0 cleanmcsmear=0 batch=2
+
+# fixed p, theta only need 10k events
+gluex_MC.py particle_gun.config 50000 10000 per_file=1000 recon=0 cleanmcsmear=0 batch=2
+

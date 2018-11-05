@@ -86,6 +86,10 @@ shift
 export RANDBGTAG=$1
 shift
 export RECON_CALIBTIME=$1
+shift
+export GEANT_NOSCONDARIES=$1
+
+export USER_BC=`which bc`
 
 #printenv
 #necessary to run swif, uses local directory if swif=0 is used
@@ -211,7 +215,7 @@ else
 	elif [[ $copeak_text == "-1.0" ]]; then
 		copeak=0
 	else
-		copeak=`echo "$copeak_text / 1000" | /usr/bin/bc -l `
+		copeak=`echo "$copeak_text / 1000" | $USER_BC -l `
 	fi
 fi
 
@@ -244,7 +248,7 @@ echo "Run $RUN_NUMBER does not have a beam_on_current.  Defaulting to beam_curre
 beam_on_current=`rcnd $RUN_NUMBER beam_current | awk '{print $1}'`
 fi
 
-beam_on_current=`echo "$beam_on_current / 1000." | /usr/bin/bc -l`
+beam_on_current=`echo "$beam_on_current / 1000." | $USER_BC -l`
 
 colsize=`rcnd $RUN_NUMBER collimator_diameter | awk '{print $1}' | sed -r 's/.{2}$//' | sed -e 's/\.//g'`
 if [[ "$colsize" == "B" || "$colsize" == "R" || "$JANA_CALIB_CONTEXT" != "variation=mc" ]]; then
@@ -307,7 +311,17 @@ echo "With additional plugins: "$CUSTOM_PLUGINS
 echo "=============================================="
 echo ""
 echo ""
-
+echo "=======SOFTWARE USED======="
+echo `which $GENERATOR`
+if [[ "$GEANTVER" == "3" ]]; then
+	echo `which hdgeant`
+else
+	echo `which hdgeant4`
+fi
+echo `which mcsmear`
+echo `which hd_root`
+echo ""
+echo ""
 
 if [[ "$CUSTOM_GCONTROL" == "0" ]]; then
     cp $MCWRAPPER_CENTRAL/Gcontrol.in ./temp_Gcontrol.in
@@ -440,9 +454,9 @@ gen_pre=""
 if [[ "$GENR" != "0" ]]; then
 
 	gen_pre=`echo $GENERATOR | cut -c1-4`
-    if [[ "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" && "$GENERATOR" != "gen_omega_3pi" && "$GENERATOR" != "gen_2k" && "$GENERATOR" != "bggen_jpsi" && "$GENERATOR" != "gen_ee" && "$GENERATOR" != "gen_ee_hb" && "$GENERATOR" != "particle_gun" && "$GENERATOR" != "bggen_phi_ee" && "$GENERATOR" != "genBH" && "$GENERATOR" != "gen_omega_radiative" ]]; then
+    if [[ "$gen_pre" != "file" && "$GENERATOR" != "genr8" && "$GENERATOR" != "bggen" && "$GENERATOR" != "genEtaRegge" && "$GENERATOR" != "gen_2pi_amp" && "$GENERATOR" != "gen_pi0" && "$GENERATOR" != "gen_2pi_primakoff" && "$GENERATOR" != "gen_omega_3pi" && "$GENERATOR" != "gen_2k" && "$GENERATOR" != "bggen_jpsi" && "$GENERATOR" != "gen_ee" && "$GENERATOR" != "gen_ee_hb" && "$GENERATOR" != "particle_gun" && "$GENERATOR" != "bggen_phi_ee" && "$GENERATOR" != "genBH" && "$GENERATOR" != "gen_omega_radiative" && "$GENERATOR" != "gen_amp" ]]; then
 		echo "NO VALID GENERATOR GIVEN"
-		echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0, gen_omega_3pi, gen_2k, bggen_jpsi, gen_ee, gen_ee_hb,  bggen_phi_ee, particle_gun, genBH, gen_omega_radiative] are supported"
+		echo "only [genr8, bggen, genEtaRegge, gen_2pi_amp, gen_pi0, gen_omega_3pi, gen_2k, bggen_jpsi, gen_ee, gen_ee_hb,  bggen_phi_ee, particle_gun, genBH, gen_omega_radiative, gen_amp] are supported"
 		exit 1
     fi
 
@@ -510,6 +524,10 @@ if [[ "$GENR" != "0" ]]; then
     elif [[ "$GENERATOR" == "genEtaRegge" ]]; then
 		echo "configuring genEtaRegge"
 		STANDARD_NAME="genEtaRegge_"$STANDARD_NAME
+		cp $CONFIG_FILE ./$STANDARD_NAME.conf
+	elif [[ "$GENERATOR" == "gen_amp" ]]; then
+		echo "configuring gen_amp"
+		STANDARD_NAME="gen_amp_"$STANDARD_NAME
 		cp $CONFIG_FILE ./$STANDARD_NAME.conf
     elif [[ "$GENERATOR" == "gen_2pi_amp" ]]; then
 		echo "configuring gen_2pi_amp"
@@ -613,6 +631,21 @@ if [[ "$GENR" != "0" ]]; then
 	sed -i 's/TEMPMAXGENE/'$GEN_MAX_ENERGY'/' $STANDARD_NAME.conf
 	genEtaRegge -N$EVT_TO_GEN -O$STANDARD_NAME.hddm -I$STANDARD_NAME.conf
     generator_return_code=$?
+	elif [[ "$GENERATOR" == "gen_amp" ]]; then
+	echo "RUNNING GEN_2PI_AMP" 
+    optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
+	echo $optionals_line
+		if [[ "$polarization_angle" == "-1.0" ]]; then
+			sed -i 's/TEMPPOLFRAC/'0'/' $STANDARD_NAME.conf
+			sed -i 's/TEMPPOLANGLE/'0'/' $STANDARD_NAME.conf
+		else
+			sed -i 's/TEMPPOLFRAC/'.4'/' $STANDARD_NAME.conf
+			sed -i 's/TEMPPOLANGLE/'$polarization_angle'/' $STANDARD_NAME.conf
+		fi
+		
+	echo gen_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY  $optionals_line
+	gen_amp -c $STANDARD_NAME.conf -hd $STANDARD_NAME.hddm -o $STANDARD_NAME.root -n $EVT_TO_GEN -r $RUN_NUMBER -a $GEN_MIN_ENERGY -b $GEN_MAX_ENERGY -p $COHERENT_PEAK -m $eBEAM_ENERGY $optionals_line
+	generator_return_code=$?
 	elif [[ "$GENERATOR" == "gen_2pi_amp" ]]; then
 	echo "RUNNING GEN_2PI_AMP" 
     optionals_line=`head -n 1 $STANDARD_NAME.conf | sed -r 's/.//'`
@@ -778,6 +811,7 @@ if [[ "$GENR" != "0" ]]; then
 	sed -i 's/TEMPRADTHICK/'"$radthick"'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	sed -i 's/TEMPBGTAGONLY/'$BGTAGONLY_OPTION'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 	sed -i 's/TEMPBGRATE/'$BGRATE_toUse'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
+	sed -i 's/TEMPNOSECONDARIES/'$GEANT_NOSCONDARIES'/' control'_'$formatted_runNumber'_'$formatted_fileNumber.in
 
 	if [[ "$gen_pre" == "file" ]]; then
 			skip_num=$((FILE_NUMBER * PER_FILE))
@@ -853,7 +887,7 @@ if [[ "$GENR" != "0" ]]; then
 	    echo "import hddm_s" > count.py
 	    echo "print(sum(1 for r in hddm_s.istream('$bkglocstring')))" >> count.py
 	    totalnum=$(python count.py)
-		fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | /usr/bin/bc`
+		fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | $USER_BC`
 		echo "skipping: "$fold_skip_num
 		echo "mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1""+"$fold_skip_num
 		mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1\+$fold_skip_num
@@ -863,7 +897,7 @@ if [[ "$GENR" != "0" ]]; then
 	    echo "import hddm_s" > count.py
 	    echo "print(sum(1 for r in hddm_s.istream('$bkglocstring')))" >> count.py
 	    totalnum=`python count.py`
-		fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | /usr/bin/bc`
+		fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | $USER_BC`
 		echo "mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1""+"$fold_skip_num
 		mcsmear -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1\+$fold_skip_num
 		mcsmear_return_code=$?
@@ -884,7 +918,45 @@ if [[ "$GENR" != "0" ]]; then
 			fi
 
 	else
-			cp $STANDARD_NAME'_geant'$GEANTVER'.hddm' $STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm'
+			#cp $STANDARD_NAME'_geant'$GEANTVER'.hddm' $STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm'
+			if [[ "$BKGFOLDSTR" == "BeamPhotons" || "$BKGFOLDSTR" == "None" || "$BKGFOLDSTR" == "TagOnly" ]]; then
+		echo "running MCsmear without folding in random background"
+		mcsmear -s -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm'
+		mcsmear_return_code=$?
+	    elif [[ "$BKGFOLDSTR" == "DEFAULT" || "$BKGFOLDSTR" == "Random" ]]; then
+		rm -f count.py
+	    echo "import hddm_s" > count.py
+	    echo "print(sum(1 for r in hddm_s.istream('$bkglocstring')))" >> count.py
+	    totalnum=$(python count.py)
+		fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | $USER_BC`
+		echo "skipping: "$fold_skip_num
+		echo "mcsmear -s -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1""+"$fold_skip_num
+		mcsmear -s -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1\+$fold_skip_num
+		mcsmear_return_code=$?
+		elif [[ "$bkgloc_pre" == "loc:" ]]; then
+		rm -f count.py
+	    echo "import hddm_s" > count.py
+	    echo "print(sum(1 for r in hddm_s.istream('$bkglocstring')))" >> count.py
+	    totalnum=`python count.py`
+		fold_skip_num=`echo "($FILE_NUMBER * $PER_FILE)%$totalnum" | $USER_BC`
+		echo "mcsmear -s -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME"\_"geant$GEANTVER"\_"smeared.hddm $STANDARD_NAME"\_"geant$GEANTVER.hddm $bkglocstring"\:"1""+"$fold_skip_num
+		mcsmear -s -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME\_geant$GEANTVER\_smeared.hddm $STANDARD_NAME\_geant$GEANTVER.hddm $bkglocstring\:1\+$fold_skip_num
+		mcsmear_return_code=$?
+		else
+		    #trust the user and use their string
+		    echo 'mcsmear -s -PTHREAD_TIMEOUT=500 -o'$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm'' '$STANDARD_NAME'_geant'$GEANTVER'.hddm'' '$BKGFOLDSTR
+		    mcsmear -s -PTHREAD_TIMEOUT=500 -o$STANDARD_NAME'_geant'$GEANTVER'_smeared.hddm' $STANDARD_NAME'_geant'$GEANTVER'.hddm' $BKGFOLDSTR
+			mcsmear_return_code=$?
+
+	    fi
+		
+			if [[ $mcsmear_return_code != 0 ]]; then
+				echo
+				echo
+				echo "Something went wrong with mcsmear"
+				echo "status code: "$mcsmear_return_code
+				exit $mcsmear_return_code
+			fi
 	fi
 	    #run reconstruction
 	    if [[ "$CLEANGENR" == "1" ]]; then

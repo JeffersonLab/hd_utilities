@@ -29,7 +29,7 @@ Example:
 EOF
 }
 
-while getopts "h?v:f:n:t:d:r:" opt; do
+while getopts "h?v:f:n:t:d:r:s:" opt; do
     case "$opt" in
     h|\?)
         show_help
@@ -46,6 +46,8 @@ while getopts "h?v:f:n:t:d:r:" opt; do
     d)  B1PI_TEST_DIR=$OPTARG
 	;;
     r)  RUN=$OPTARG
+	;;
+    s)  SEED=$OPTARG
     esac
 done
 
@@ -84,18 +86,29 @@ if [ -z "$RUN" ]
     RUN=$numrun
 fi
 
+if [ -z "$SEED" ]
+    then
+    echo "info: random number seed not defined, using genr8 default (different seed each run)"
+    SEED_OPTION=""
+else
+    SEED_OPTION="-s${SEED}"
+fi
+
 echo NEVENTS = $NEVENTS
 echo VERTEX = $VERTEX
 echo NTHREADS = $NTHREADS
 echo B1PI_TEST_DIR = $B1PI_TEST_DIR
 echo RUN = $RUN
+echo SEED = $SEED
+
+export JANA_CALIB_CONTEXT="variation=mc"
 
 echo "Copying script files and macros ..."
 cp -pv $B1PI_TEST_DIR/* .
 cp -pv $B1PI_TEST_DIR/macros/* .
 
 echo "Running genr8 ..."
-genr8 -r${RUN} -M${NEVENTS} -Ab1_pi.ascii < b1_pi.input
+genr8 -r${RUN} -M${NEVENTS} -Ab1_pi.ascii ${SEED_OPTION} < b1_pi.input
 
 echo "Converting generated events to HDDM ..."
 genr8_2_hddm -V"${VERTEX}" b1_pi.ascii 
@@ -112,19 +125,31 @@ HADR 1
 EOF
 
 echo "Running hdgeant ..."
-hdgeant
+command="hdgeant"
+echo $command
+$command
 
 echo "Running mcsmear ..."
-mcsmear -PJANA:BATCH_MODE=1 hdgeant.hddm
+command="mcsmear -PJANA:BATCH_MODE=1 -PTHREAD_TIMEOUT=500 hdgeant.hddm"
+echo $command
+$command
 
 echo "Running hd_root with danarest ..."
-hd_root -PJANA:BATCH_MODE=1 --nthreads=$NTHREADS -PPLUGINS=danarest hdgeant_smeared.hddm
+command="hd_root -PJANA:BATCH_MODE=1 --nthreads=$NTHREADS -PTHREAD_TIMEOUT=500 -PPLUGINS=danarest hdgeant_smeared.hddm"
+echo $command
+$command
 
 echo "Running hd_root with b1pi_hists & monitoring_hists ..."
-hd_root -PJANA:BATCH_MODE=1 --nthreads=$NTHREADS -PPLUGINS=b1pi_hists,monitoring_hists dana_rest.hddm
+command="hd_root -PJANA:BATCH_MODE=1 --nthreads=$NTHREADS -PTHREAD_TIMEOUT=500 -PPLUGINS=b1pi_hists,monitoring_hists dana_rest.hddm"
+echo $command
+$command
 
 echo "Create plots"
-root -b -q mk_pics.C
+command="root -b -q mk_pics.C"
+echo $command
+$command
 
 echo "Save test data"
-python update_db.py
+command="python update_db.py"
+echo $command
+$command

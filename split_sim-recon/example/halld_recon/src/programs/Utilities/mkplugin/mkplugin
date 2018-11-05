@@ -1,0 +1,284 @@
+#!/usr/bin/env perl
+
+use File::Copy;
+
+if($#ARGV < 0){&Usage();exit;}
+
+$pluginname = "__nada__";
+$NO_ROOT = 0;
+$JANA_IMPLEMENTATION = "N/A"; # Initialize to N/A value
+
+foreach $arg (@ARGV){
+	if($arg eq "--no-root"){
+		$NO_ROOT = 1;
+	}elsif($arg eq "-d"){
+		$JANA_IMPLEMENTATION = "DANA";
+	}elsif($arg eq "-b"){
+		$JANA_IMPLEMENTATION = "BANA";
+	}elsif($arg eq "-j"){
+		$JANA_IMPLEMENTATION = "JANA";
+	}else{
+		$pluginname = $arg;
+	}
+}
+
+# If specific JANA implementation is not defined, then set it
+if( $JANA_IMPLEMENTATION eq "N/A" ){
+
+	# Default JANA implementation package
+	$JANA_IMPLEMENTATION = "JANA";
+
+	# If HALLD_RECON_HOME is defined, use DANA so user doesn't need to explicitly pass "-d"
+	if( length($ENV{"HALLD_RECON_HOME"}) > 0 ){
+		$JANA_IMPLEMENTATION = "DANA";
+		print "HALLD_RECON_HOME environment variable is set. Assuming DANA package.\n";
+		print "(to use JANA instead, pass the \"-j\" option)\n";
+	}
+}
+
+if($pluginname eq "__nada__"){&Usage();exit;}
+
+print "\n";
+print "Generating files for plugin $pluginname ....\n";
+if($NO_ROOT){
+	print "(default ROOT features will *not* be added)\n";
+}
+print "\n";
+
+# Create directory to hold source
+mkdir($pluginname);
+
+# Create C++ Header File
+$dhfile = $fname = "JEventProcessor_${pluginname}.h";
+open(FILE,">$pluginname/$dhfile");
+&PrintFileHeader();
+&PrintClass();
+close(FILE);
+print " - $dhfile\n";
+
+# Create C++ Implementation file
+$ccfile = $fname = "JEventProcessor_${pluginname}.cc";
+open(FILE,">$pluginname/$ccfile");
+&PrintFileHeader();
+&PrintMethods();
+close(FILE);
+print " - $ccfile\n";
+
+# Copy SConstruct file
+&CopySConstruct();
+print " - SConstruct\n";
+
+###############
+# PrintFileHeader
+###############
+sub PrintFileHeader()
+{
+	# print a few lines at the very top of the file
+	$uname = `uname -nprs`;
+	chomp($uname);
+	print FILE "// \$Id\$\n";
+	print FILE "//\n";
+	print FILE "//    File: $fname\n";
+	print FILE "// Created: ".`date`;
+	print FILE "// Creator: ".$ENV{"USER"}." (on $uname)\n";
+	print FILE "//\n";
+}
+
+
+###############
+# PrintClass
+###############
+sub PrintClass()
+{
+	$content = "
+\#ifndef _JEventProcessor_${pluginname}_
+\#define _JEventProcessor_${pluginname}_
+
+\#include <JANA/JEventProcessor.h>
+
+class JEventProcessor_${pluginname}:public jana::JEventProcessor{
+	public:
+		JEventProcessor_${pluginname}();
+		~JEventProcessor_${pluginname}();
+		const char* className(void){return \"JEventProcessor_${pluginname}\";}
+
+	private:
+		jerror_t init(void);						///< Called once at program start.
+		jerror_t brun(jana::JEventLoop *eventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
+		jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber);	///< Called every event.
+		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
+		jerror_t fini(void);						///< Called after last event of last event source has been processed.
+};
+
+\#endif // _JEventProcessor_${pluginname}_
+
+";
+	print FILE $content;
+	
+}
+
+###############
+# PrintMethods
+###############
+sub PrintMethods
+{
+	$content = "
+\#include \"JEventProcessor_${pluginname}.h\"
+using namespace jana;
+
+
+// Routine used to create our JEventProcessor
+\#include \<JANA/JApplication.h\>
+\#include \<JANA/JFactory.h\>
+extern \"C\"{
+void InitPlugin(JApplication *app){
+	InitJANAPlugin(app);
+	app->AddProcessor(new JEventProcessor_${pluginname}());
+}
+} // \"C\"
+
+
+//------------------
+// JEventProcessor_${pluginname} (Constructor)
+//------------------
+JEventProcessor_${pluginname}::JEventProcessor_${pluginname}()
+{
+
+}
+
+//------------------
+// ~JEventProcessor_${pluginname} (Destructor)
+//------------------
+JEventProcessor_${pluginname}::~JEventProcessor_${pluginname}()
+{
+
+}
+
+//------------------
+// init
+//------------------
+jerror_t JEventProcessor_${pluginname}::init(void)
+{
+	// This is called once at program startup. 
+
+	return NOERROR;
+}
+
+//------------------
+// brun
+//------------------
+jerror_t JEventProcessor_${pluginname}::brun(JEventLoop *eventLoop, int32_t runnumber)
+{
+	// This is called whenever the run number changes
+	return NOERROR;
+}
+
+//------------------
+// evnt
+//------------------
+jerror_t JEventProcessor_${pluginname}::evnt(JEventLoop *loop, uint64_t eventnumber)
+{
+	// This is called for every event. Use of common resources like writing
+	// to a file or filling a histogram should be mutex protected. Using
+	// loop->Get(...) to get reconstructed objects (and thereby activating the
+	// reconstruction algorithm) should be done outside of any mutex lock
+	// since multiple threads may call this method at the same time.
+	// Here\'s an example:
+	//
+	// vector<const MyDataClass*> mydataclasses;
+	// loop->Get(mydataclasses);
+	//
+	// japp->RootFillLock(this);
+	//  ... fill historgrams or trees ...
+	// japp->RootFillUnLock(this);
+
+
+	return NOERROR;
+}
+
+//------------------
+// erun
+//------------------
+jerror_t JEventProcessor_${pluginname}::erun(void)
+{
+	// This is called whenever the run number changes, before it is
+	// changed to give you a chance to clean up before processing
+	// events from the next run number.
+	return NOERROR;
+}
+
+//------------------
+// fini
+//------------------
+jerror_t JEventProcessor_${pluginname}::fini(void)
+{
+	// Called before program exit after event processing is finished.
+	return NOERROR;
+}
+
+";
+	print FILE $content;
+	
+}
+
+###############
+# CopySConstruct
+###############
+sub CopySConstruct()
+{
+	# For now, just make a straight copy. In the future
+	# the ability to remove ROOT and/or use a JANA
+	# installed version of may be added back.
+
+	#$PACKAGES = $JANA_IMPLEMENTATION;
+	#if(!$NO_ROOT){ $PACKAGES .= ":ROOT"; }
+
+	$from = $ENV{"HALLD_RECON_HOME"} . "/src/SBMS/SConstruct.plugin";
+	$to = "./${pluginname}/SConstruct";
+	copy($from, $to) or die ("copy failed $! -- $?");
+}
+
+###############
+# Usage
+###############
+sub Usage()
+{
+	print "\n";
+	print "Usage:\n\t mkplugin [-b -j -d --no-root] name\n";
+	print "\n";
+	print "Generate the C++ source and header files to implement a new\n";
+	print "plugin for use with the JANA framework.\n";
+	print "\n";
+	print "Options:\n";
+	print "  -b         Use \"BANA\" as base Makefile package in Makefile\n";
+	print "  -j         Use \"JANA\" as base Makefile package in Makefile\n";
+	print "  -d         Use \"DANA\" as base Makefile package in Makefile\n";
+	print "             (this will be set by default if HALLD_RECON_HOME is set)\n";
+	print "  --no-root  Do not include \"ROOT\" in the PACKAGES line in Makefile\n";
+	print "\n";
+	print "This script superceeds some similar functionality in the mkprocessor\n";
+	print "script. Unlike mkprocessor, the mkplugin script will create a directory\n";
+	print "for the files and write the files to it. In addition, it will create\n";
+	print "a default Makefile so that one can immediately compile the new plugin.\n";
+	print "\n";
+	print "The C++ files generated will define a class based on JEventProcessor.\n";
+	print "The \"name\" parameter specifies a unique name for the class.\n";
+	print "The class will, by default, be called JEventProcessor_name.\n";
+	print "This can lead to long names, but at least it is clear.\n";
+	print "what they are.\n";
+	print "\n";
+	print "Event processors are starting (or end) points in the analysis\n";
+	print "chain. They are typically used for creating histograms and trees.\n";
+	print "Only one (of each type) of event processor object is created\n";
+	print "in a program which is then used by all threads. This is in\n";
+	print "contrast to factories which are created for each thread.\n";
+	print "If you wish to generate data visible by other factories and\n";
+	print "event processors, then see mkfactory.\n";
+	print "\n";
+	print "It should be noted that plugins do not require and are not limited\n";
+	print "to implementing JEventProcessor objects. This is just forseen as the\n";
+	print "most common use and so a skeleton implementation is provided here.\n";
+	print "\n";
+	print "\n";
+	print "\n";
+}
