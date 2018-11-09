@@ -8,7 +8,7 @@ if [ -z "$first_run" ]
    then echo "You must enter a run number to start with, exiting"
    exit
 fi
-prompt="Enter number of sheets (default = $nsheets_default): "
+prompt="Enter number of sheets ($runs_per_sheet runs per sheet, default = $nsheets_default sheets): "
 read -p "$prompt" nsheets
 if [ -z "$nsheets" ]
    then nsheets="$nsheets_default"
