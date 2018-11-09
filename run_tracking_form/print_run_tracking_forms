@@ -35,7 +35,9 @@ do
     rm -f temp.tex
     incr_runs.perl "$run_start" > temp.tex
     pdflatex temp.tex > /dev/null
-    mv temp.pdf "checklist_run_$i.pdf"
+    file="checklist_run_$i.pdf"
+    mv temp.pdf $file
+    echo printing $file
+    lp -d "$printer" $file
     let "run_start = $run_start + $runs_per_sheet"
 done
-lp -d "$printer" checklist_run_*.pdf
