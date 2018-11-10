@@ -53,6 +53,7 @@
 #
 
 import subprocess
+import math
 import sys
 import os
 
@@ -61,36 +62,37 @@ if not os.getenv('PYTHONPATH') : sys.path.append('/group/halld/Software/builds/L
 import mysql.connector
 
 
-TESTMODE     = False  # True=only print commands, but don't actually submit jobs
-VERBOSE      = 3     # 1 is default
+TESTMODE       = True  # True=only print commands, but don't actually submit jobs
+VERBOSE        = 3     # 1 is default
 
-RUNPERIOD    = '2018-01'
-LAUNCHTYPE   = 'offmon'  # 'offmon' or 'recon' 
-VER          = '18'
-WORKFLOW     = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER
-NAME         = 'GLUEX_' + LAUNCHTYPE
+RUNPERIOD      = '2018-01'
+LAUNCHTYPE     = 'offmon'  # 'offmon' or 'recon' 
+VER            = '19'
+WORKFLOW       = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER
+NAME           = 'GLUEX_' + LAUNCHTYPE
 
-RCDB_QUERY   = '@is_2018production and @status_approved'  # Comment out for all runs in range MINRUN-MAXRUN
-RUNS         = [40951]      # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
-MINRUN       = 40000   # If RUNS is empty, then RCDB queried for this range
-MAXRUN       = 49999   # If RUNS is empty, then RCDB queried for this range
-MINFILENO    = 0       # Min file number to process for each run (n.b. file numbers start at 0!)
-MAXFILENO    = 9       # Max file number to process for each run (n.b. file numbers start at 0!)
+RCDB_QUERY     = '@is_2018production and @status_approved'  # Comment out for all runs in range MINRUN-MAXRUN
+RUNS           = [40951]      # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
+MINRUN         = 40000   # If RUNS is empty, then RCDB queried for this range
+MAXRUN         = 49999   # If RUNS is empty, then RCDB queried for this range
+MINFILENO      = 0       # Min file number to process for each run (n.b. file numbers start at 0!)
+MAXFILENO      = 1000    # Max file number to process for each run (n.b. file numbers start at 0!)
+FILE_FRACTION  = 0.05     # Fraction of files to process for each run in specified range (see GetFileNumbersToProcess)
 MAX_CONCURRENT_JOBS = '2000'  # Miximum number of jobs swif2 will have in flight at once
 
-PROJECT      = 'm3120'
-TIMELIMIT    = '9:00:00'  # Set time limit (2.4 timeslonger for KNL than haswell)
-QOS          = 'regular'  # debug, regular, premium
-NODETYPE     = 'knl'  # haswell, knl  (quad,cache)
+PROJECT        = 'm3120'
+TIMELIMIT      = '9:00:00'  # Set time limit (2.4 timeslonger for KNL than haswell)
+QOS            = 'regular'  # debug, regular, premium
+NODETYPE       = 'knl'  # haswell, knl  (quad,cache)
 
-IMAGE        = 'docker:markito3/gluex_docker_devel'
-#RECONVERSION = 'sim-recon/sim-recon-recon-2017_01-ver03'
-RECONVERSION = 'halld_recon/halld_recon-recon-ver03.2'  # must exist in /group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5-cntr
-SCRIPTFILE   = '/launch/script_nersc.sh'
-CONFIG       = '/launch/jana_'+LAUNCHTYPE+'_nersc.config'
-#OUTPUTTOP    = 'mss:/mss/halld/offline_monitoring/RunPeriod-'+RUNPERIOD+'/ver'+VER  # prefix with mss: for tape or file: for filesystem
-OUTPUTTOP    = 'mss:/mss/halld/halld-scratch/offline_monitoring/RunPeriod-'+RUNPERIOD+'/ver'+VER  # prefix with mss: for tape or file: for filesystem
-#OUTPUTTOP = 'file:/u/home/gxproj4/NERSC/2018.08.15.offmon_ver00N/tmp'
+IMAGE          = 'docker:markito3/gluex_docker_devel'
+#RECONVERSION   = 'sim-recon/sim-recon-recon-2017_01-ver03'
+RECONVERSION   = 'halld_recon/halld_recon-recon-ver03.2'  # must exist in /group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5-cntr
+SCRIPTFILE     = '/launch/script_nersc.sh'
+CONFIG         = '/launch/jana_'+LAUNCHTYPE+'_nersc.config'
+#OUTPUTTOP      = 'mss:/mss/halld/offline_monitoring/RunPeriod-'+RUNPERIOD+'/ver'+VER  # prefix with mss: for tape or file: for filesystem
+OUTPUTTOP      = 'mss:/mss/halld/halld-scratch/offline_monitoring/RunPeriod-'+RUNPERIOD+'/ver'+VER  # prefix with mss: for tape or file: for filesystem
+#OUTPUTTOP      = 'file:/u/home/gxproj4/NERSC/2018.08.15.offmon_ver00N/tmp'
 
 RCDB_HOST    = 'hallddb.jlab.org'
 RCDB_USER    = 'rcdb'
@@ -171,6 +173,7 @@ def MakeJob(RUN,FILE):
 	if VERBOSE > 1:
 		for d in new_outdirs: print 'mkdir -p ' + OUTPUTDIR + '/' + d
 		if VERBOSE > 2 : print ' '.join(SWIF2_CMD)
+		elif VERBOSE > 1 : print ' --- Job will be created for run:' + str(RUN) + ' file:' + str(FILE)
 	
 	if not TESTMODE:
 		for d in new_outdirs:
@@ -313,6 +316,58 @@ def GetNumEVIOFiles(RUN):
 	return Nfiles
 
 #----------------------------------------------------
+def GetFileNumbersToProcess(Nfiles):
+
+	# This will return a list of file numbers to process for a run
+	# given the number of files given by Nfiles. The list is determined
+	# by the values MINFILENO, MAXFILENO and FILE_FRACTION.
+	# First, the actual range of file numbers for the run is determined
+	# by MINFILENO-MAXFILENO, but clipped if necessary to Nfiles.
+	# Next, a list of files in that range representing FILE_FRACTION
+	# of the range is formed and returned.
+	#
+	# Example 1: Process first 10 files of each run:
+	#             MINFILENO = 0
+	#             MAXFILENO = 9
+	#         FILE_FRACTION = 1.0
+	#
+	# Example 2: Process first 5% of files of each run of
+	#            files distributed throughout run:
+	#             MINFILENO = 0
+	#             MAXFILENO = 1000    n.b. set this to something really big
+	#         FILE_FRACTION = 0.05
+	#
+	
+	global MINFILENO, MAXFILENO, FILE_FRACTION
+	
+	# Make sure MINFILENO is not greater than max file number for the run
+	if MINFILENO >= Nfiles : return []
+
+	# Limit max file number to how many there are for this run according to RCDB
+	maxfile = MAXFILENO+1  # set to 1 past the actual last file number we want to process
+	if Nfiles < maxfile : maxfile = Nfiles
+	
+	# If FILE_FRACTION is 1.0 then we want all files in the range. 
+	if FILE_FRACTION == 1.0: return range( MINFILENO, maxfile)
+	
+	# At this point, maxfile should be one greater than the last file
+	# number we want to process. If the last file we want to process
+	# is the last file in the run, then it could be a short file. Thus,
+	# use the next to the last file in the run to determine the range.
+	if Nfiles < MAXFILENO : maxfile -= 1
+	
+	# Number of files in run to process
+	Nrange = float(maxfile-1) - float(MINFILENO)
+	N = math.ceil(FILE_FRACTION * Nrange)
+	if N<2 : return [MINFILENO]
+	nskip = Nrange/(N-1)
+	filenos = []
+	for i in range(0, int(N)): filenos.append(int(i*nskip))
+#	print 'Nrange=%f N=%f nskip=%f ' % (Nrange, N, nskip)
+	
+	return filenos
+
+#----------------------------------------------------
 
 # --------------- MAIN --------------------
 
@@ -323,8 +378,9 @@ good_runs = GetRunInfo()
 # Print some info before doing anything
 Njobs = 0
 for n in [x for (y,x) in good_runs.iteritems()]:
-	if n<MAXFILENO : Njobs +=  (n-MINFILENO+1)
-	else: Njobs += (MAXFILENO-MINFILENO+1)
+	Njobs += len(GetFileNumbersToProcess(n))
+#	if n<MAXFILENO : Njobs +=  (n-MINFILENO+1)
+#	else: Njobs += (MAXFILENO-MINFILENO+1)
 if VERBOSE > 0:
 	print '================================================='
 	print 'Launch Summary  ' + ('**** TEST MODE ****' if TESTMODE else '')
@@ -380,12 +436,11 @@ if VERBOSE>0 :
 	print '-----------------------------------------------'
 for (RUN, Nfiles) in good_runs.iteritems():
 
-	# Limit max file number to how many there are for this run according to RCDB
-	maxfile = MAXFILENO+1
-	if Nfiles < maxfile : maxfile = Nfiles+1
-	
+	# Get list of files to process
+	files_to_process = GetFileNumbersToProcess( Nfiles )
+
 	# Loop over files, creating job for each
-	for FILE in range(MINFILENO, maxfile):
+	for FILE in files_to_process:
 		MakeJob(RUN, FILE)
 		if VERBOSE>0:
 			sys.stdout.write('  ' + str(NJOBS_SUBMITTED) + '/' + str(Njobs) + ' jobs \r')
