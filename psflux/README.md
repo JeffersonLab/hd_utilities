@@ -8,31 +8,24 @@ The tagged and untagged pair spectrometer flux and acceptance are stored in CCDB
 
 If you run the script without any arguments you'll receive this message with a list of required and optional arguments
 
+```
+Usage: plot_flux_ccdb.py --begin-run beginRun --end-run endRun
+
 Options:
   -b BEGIN_RUN, --begin-run=BEGIN_RUN
-  
                         Starting run for output
-                        
   -e END_RUN, --end-run=END_RUN
-  
                         Ending run for output
-                        
   -p POL, --pol=POL     Polarization in RCDB
   -a ANGLE, --angle=ANGLE
-  
                         Polarization angle in RCDB
-                        
   -n NBINS, --num-bins=NBINS
-  
                         Number of histogram bins
-                        
   -m EMIN, --energy-min=EMIN
-  
                         Minimum energy for flux histogram
-                        
   -x EMAX, --energy-max=EMAX
-  
                         Maximum energy for flux histogram
+```
 
 Here beginRun is the beginning of your run range and endRun is the end of your run range.  For example for RunPeriod-2016-02 "golden period" beginRun=11366 and endRun=11555
 
