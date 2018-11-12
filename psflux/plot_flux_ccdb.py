@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Tool for creating flux histograms from CCDB (ver 0.2)
 # Author: Justin Stevens (jrsteven@jlab.org)
 
@@ -49,7 +51,7 @@ def main():
     pp = pprint.PrettyPrinter(indent=4)
 
     # Define command line options
-    parser = OptionParser(usage = "plot_flux_ccdb.py")
+    parser = OptionParser(usage = "plot_flux_ccdb.py --begin-run beginRun --end-run endRun")
     parser.add_option("-b","--begin-run", dest="begin_run",
                      help="Starting run for output")
     parser.add_option("-e","--end-run", dest="end_run",
@@ -58,10 +60,16 @@ def main():
                      help="Polarization in RCDB")
     parser.add_option("-a","--angle", dest="angle",
                      help="Polarization angle in RCDB")
+    parser.add_option("-n","--num-bins", dest="nbins",
+		     help="Number of histogram bins")
+    parser.add_option("-m","--energy-min", dest="emin",
+		     help="Minimum energy for flux histogram")
+    parser.add_option("-x","--energy-max", dest="emax",
+                     help="Maximum energy for flux histogram")
 
     (options, args) = parser.parse_args(sys.argv)
 
-    if(len(args) < 1):
+    if(not options.begin_run or not options.end_run):
         parser.print_help()
         sys.exit(0)
 
@@ -73,6 +81,12 @@ def main():
         RCDB_POLARIZATION = options.pol
     if options.angle:
         RCDB_POL_ANGLE = options.angle
+    if options.nbins:
+	NBINS = int(options.nbins)
+    if options.emin:
+        EMIN = float(options.emin)
+    if options.emax:
+        EMAX = float(options.emax)
 
     # Load CCDB
     ccdb_conn = LoadCCDB()
