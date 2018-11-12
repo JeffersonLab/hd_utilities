@@ -41,11 +41,14 @@ CCDB_HOME
 
 and for simplicity you can use the standard build_scripts procedure to set these for you or one of the nightly builds with this command (with the date replaced)
 
+```
 source /group/halld/Software/build_scripts/gluex_env_nightly.csh 2018-11-11
+```
 
 ## Notes:
 
 The flux values in the MySQL CCDB are from:
 
 RunPeriod-2017-01: REST ver03 production
+
 RunPeriod-2016-02: REST ver06 production
