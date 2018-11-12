@@ -2,7 +2,9 @@ Python script for creating histograms of tagged and untagged PS flux: Justin Ste
 
 The tagged and untagged pair spectrometer flux and acceptance are stored in CCDB.  The command to obtain histograms of the flux is:
 
-```plot_flux_ccdb.py --begin-run beginRun --end-run endRun --num-bins 100 --energy-min 6.0 --energy-max 12.0```
+```
+plot_flux_ccdb.py --begin-run beginRun --end-run endRun --num-bins 100 --energy-min 6.0 --energy-max 12.0
+```
 
 ## Command line options:
 
