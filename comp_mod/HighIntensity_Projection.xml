@@ -18,8 +18,10 @@ Assume 90kHz entire time
 =====================================================================
 runningTimeOnFloor
 
-Use 28 weeks corresponding to the guidance given by management for
+Use 32 weeks corresponding to the guidance given by management for
 the number of weeks of running per year anticipated.
+
+     32 * 7 = 224
 
 =====================================================================
 runningEfficiency
@@ -143,13 +145,16 @@ Number of times we will need to repeat simulation. This value of
 simulatedPerRawEvent
 
 Number of simulated events needed for each raw data event (production
-runs only) This value of 2 is an old estimate.
+runs only) This is assumed to be 2 simulated events for each signal
+event in the raw data stream. We estimate about 20% of the raw data
+is reconstructable (see "GlueX at High Intensity" talk slide 10
+here:  https://halldweb.jlab.org/wiki/index.php/GlueX-II_and_DIRC_ERR )
 
 
 -->
 <compMod>
 <parameter name="triggerRate" value="90e3" units="Hz"/>
-<parameter name="runningTimeOnFloor" value="196.0" units="days"/>
+<parameter name="runningTimeOnFloor" value="224.0" units="days"/>
 <parameter name="runningEfficiency" value="0.50"/>
 <parameter name="eventsize" value="13.0" units="kB"/>
 <parameter name="eventsPerRun" value="400" units="Mevent"/>
@@ -169,6 +174,6 @@ runs only) This value of 2 is an old estimate.
 
 <parameter name="simulationRate" value="25" units="Hz"/>
 <parameter name="simulationpasses" value="2"/>
-<parameter name="simulatedPerRawEvent" value="2.0"/>
+<parameter name="simulatedPerRawEvent" value="0.4"/>
 </compMod>
 
