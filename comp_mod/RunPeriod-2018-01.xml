@@ -82,7 +82,7 @@ For the purposes of this estimate, we'll assume 5.5Hz.
 =====================================================================
 reconPasses
 
-Expect 2 full reconstruction passes.
+Expect equivalent of 2.5 full reconstruction passes.
 
 =====================================================================
 goodRunFraction
@@ -97,7 +97,9 @@ We use the rate for RunPeriod-2017-01 of 75Hz
 =====================================================================
 analysisPasses
 
-We use the empirical value for RunPeriod-2017-01 of 2.82
+Use Alex A.'s advice to have 2 analysis passes per recon pass:
+
+  2 x 2.5 = 5.0
 
 =====================================================================
 cores
@@ -181,10 +183,10 @@ here:  https://halldweb.jlab.org/wiki/index.php/GlueX-II_and_DIRC_ERR )
 <parameter name="RESTfraction" value="0.15"/>
 
 <parameter name="reconstructionRate" value="5.5" units="Hz"/>
-<parameter name="reconPasses" value="2.0"/>
+<parameter name="reconPasses" value="2.5"/>
 <parameter name="goodRunFraction" value="0.85"/>
 <parameter name="analysisRate" value="75.0" units="Hz"/>
-<parameter name="analysisPasses" value="2.82"/>
+<parameter name="analysisPasses" value="5.0"/>
 <parameter name="cores" value="4500"/>
 <parameter name="incomingData" value="5" units="files"/>
 <parameter name="calibRate" value="0.530" units="Mhr/week"/>
