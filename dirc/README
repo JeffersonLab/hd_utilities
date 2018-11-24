@@ -87,10 +87,10 @@ cd batch/
 ./loop_lut_avr.py
 
 #4) Combine averaged LUT tables from many bars into single file:
-root loadlib.C glxlut_add.C+'("tree/lut_avr_*.root")'
+root -b -q loadlib.C glxlut_add.C+'("tree/lut_avr_*.root")'
 
 #5) Convert LUT to "flat" TTree with smaller size to be used in JANA factory
-root loadlib.C glxlut_convert.C
+root -b -q loadlib.C glxlut_convert.C
 
 ####### LUT reconstruction (standalone macro) #######
 
