@@ -1,0 +1,703 @@
+<html>
+    <head>
+        <title>Reaction Submit Form by Thomas Britton</title>
+    </head>
+<body>
+        <script src="../data_monitoring/js_utilities/jquery-3.3.1.min.js" type="text/javascript"></script>
+
+Email: <input type="text" id="submitter">
+<br>
+Please fill out your reaction below:
+<br>
+<br>
+Use add/remove particle to add/remove a partical from the products side of the reaction.
+<br>
+Each product comes as a set of three objects:<br>
+1) the main selector where you can select the product.<br>
+2) a tri-state button to let you flag the particle as "m" or "M" as desired.
+<br>3) a checkbox to indicate the product decays
+<br>
+<br>
+<div id="GlobalFlags">
+B:<input id="BFlag" type="number" min="0" max="1000" value="1" onchange="MakeConfigLines()">&emsp;T:<input id="TFlag" type="number" min="0" max="1000" value="3" onchange="MakeConfigLines()">&emsp;F:<input id="FFlag" type="number" min="0" max="5"  value="4" onchange="MakeConfigLines()">&emsp;U:<input id="UFlag" type="checkbox" onchange="MakeConfigLines()">
+
+</div>
+<br>
+Initial Particles -----> Final State Particles <input type="button" id="addDecayLineDecayfPart0_0" onclick="AddSelector(0,this);MakeConfigLines()" value="add particle"><input type="button" id="removeDecayLineDecayfPart0_0" onclick="RemoveSelector(0,this);MakeConfigLines()" value="remove particle"><!--addDecayLevel_0-->
+
+<div id='DecayLevels'>
+        <div id='DecayLevel_0'>
+        <div id='DecayLineDecayfPart0_0'>
+                &emsp;<select id="iPart1_0" name="iPart1_0" class="selectStyle" onchange="MakeConfigLines()"></select><select id="iPart2_0" name="iPart2_0" class="selectStyle" onchange="MakeConfigLines()"></select><font size='30'>&rarr;</font>
+        </div>
+        </div>
+        <hr>
+</div>
+<hr>
+<br>
+<!--<input type="button" onclick="MakeConfigLines()" value="Make">The line:-->
+<textarea id="output" style="margin: 0px; width: 290px; height: 157px;">
+</textarea>
+<input type="button" onClick="WriteLinesJSON()" value="Submit Reaction">
+
+
+<style>
+    .selectStyle {
+        font-size: 30px;
+    }
+</style>
+
+<script>
+    var MassConstrain=[];
+    //var FinalCount=1;
+    //var PartArray=[];
+    //PartArray.push({Particle:'γ' , geantID: 1, pdgID: 1 });//&#947;
+    //PartArray.push({Particle:'p' , geantID: 2, pdgID: 2 });
+    var PartArray=[];
+    PartArray.push({Particle:'γ', geantID: 1, pdgID: 22, sortID: 1 });
+    PartArray.push({Particle:'p', geantID: 14, pdgID: 2212, sortID: 1014 });
+    PartArray.push({Particle:'X', geantID: 0, pdgID: 0, sortID: 1000000 });
+
+    PartArray.push({Particle:'e\u207A', geantID: 2, pdgID: -11, sortID: 2});//e+
+    PartArray.push({Particle:'e\u207B', geantID: 3, pdgID: 11, sortID: 3});//e-
+    // PartArray.push({Particle:'nu', geantID: 4, pdgID: 121416, sortID: 4}); -->
+    // PartArray.push({Particle:'mu+', geantID: 5, pdgID: -13, sortID: 5}); -->
+    // PartArray.push({Particle:'mu-', geantID: 6, pdgID: 13, sortID: 6}); -->
+    PartArray.push({Particle:'π\u00B0', geantID: 7, pdgID: 111, sortID: 7});
+    PartArray.push({Particle:'π\u207A', geantID: 8, pdgID: 211, sortID: 8});
+    PartArray.push({Particle:'π\u207B', geantID: 9, pdgID: -211, sortID: 9});
+    PartArray.push({Particle:'K\u2097', geantID: 10, pdgID: 130, sortID: 10});
+    PartArray.push({Particle:'K\u207A', geantID: 11, pdgID: 321, sortID: 11});
+    PartArray.push({Particle:'K\u207B', geantID: 12, pdgID: -321, sortID: 12});
+    PartArray.push({Particle:'n', geantID: 13, pdgID: 2112, sortID: 13});
+    
+    PartArray.push({Particle:'p̅', geantID: 15, pdgID: -2212, sortID: 515});
+    PartArray.push({Particle:'K\u209B', geantID: 16, pdgID: 310, sortID: 16});
+    PartArray.push({Particle:'η', geantID: 17, pdgID: 221, sortID: 17});
+    PartArray.push({Particle:'Λ', geantID: 18, pdgID: 3122, sortID: 1018});
+    PartArray.push({Particle:'Σ\u207A', geantID: 19, pdgID: 3222, sortID: 1019});
+    PartArray.push({Particle:'Σ\u00B0', geantID: 20, pdgID: 3212, sortID: 1020});
+    PartArray.push({Particle:'Σ\u207B', geantID: 21, pdgID: 3112, sortID: 1021});
+    PartArray.push({Particle:'Ξ\u00B0', geantID: 22, pdgID: 3322, sortID: 1022});
+    PartArray.push({Particle:'Ξ\u207B', geantID: 23, pdgID: 3312, sortID: 1023});
+    PartArray.push({Particle:'Ω\u207B', geantID: 24, pdgID: 3334, sortID: 1024});
+    PartArray.push({Particle:'n̅', geantID: 25, pdgID: -2112, sortID: 525});
+    PartArray.push({Particle:'Λ̅', geantID: 26, pdgID: -3122, sortID: 526});
+    PartArray.push({Particle:'Σ̅\u207B bar', geantID: 27, pdgID: -3112, sortID: 527});
+    PartArray.push({Particle:'Σ\u00B0 bar', geantID: 28, pdgID: -3212, sortID: 528});
+    PartArray.push({Particle:'Σ\u207A bar', geantID: 29, pdgID: -3222, sortID: 529});
+    PartArray.push({Particle:'Ξ\u00B0 bar', geantID: 30 , pdgID: -3322, sortID: 530});
+    PartArray.push({Particle:'Ξ\u207A bar', geantID: 31 , pdgID: -3312, sortID: 531})
+    PartArray.push({Particle:'Ω\u207A bar', geantID: 32, pdgID: -3334, sortID: 532});
+
+    // PartArray.push({Particle:'omega', geantID: 33, pdgID: 223, sortID: 33}); -->
+    // PartArray.push({Particle:'phi', geantID: 34, pdgID: 333, sortID: 34}); -->
+    PartArray.push({Particle:'η\'', geantID: 35, pdgID: 331, sortID: 35});
+    // PartArray.push({Particle:'rho+', geantID: 42, pdgID: 213, sortID: 42}); -->
+    // PartArray.push({Particle:'rho-', geantID: 43, pdgID: -213, sortID: 43}); -->
+    // PartArray.push({Particle:'rho0', geantID: 44, pdgID: 113, sortID: 44}); -->
+
+    // PartArray.push({Particle:'D', geantID: 45 , pdgID: 45, sortID: 1045}); -->
+    // PartArray.push({Particle:'T', geantID: 46 , pdgID: 46, sortID: 1046}); -->
+    // PartArray.push({Particle:'He', geantID: 47 , pdgID: 47, sortID: 1047}); -->
+    // PartArray.push({Particle:'He3', geantID: 49 , pdgID: 49, sortID: 1049}); -->
+    // PartArray.push({Particle:'Pb208', geantID: 111 , pdgID: 1000822080, sortID: 1111}); -->
+
+    PartArray.push({Particle:'J/Ψ', geantID: 83, pdgID: 443, sortID: 83});
+    // PartArray.push({Particle:'eta_c', geantID: 84, pdgID: 441, sortID: 84}); -->
+    // PartArray.push({Particle:'chi_c0', geantID: 85, pdgID: 10441, sortID: 85}); -->
+    // PartArray.push({Particle:'chi_c1', geantID: 86, pdgID: 20443, sortID: 86}); -->
+    // PartArray.push({Particle:'chi_c2', geantID: 87, pdgID: 445, sortID: 87}); -->
+
+    PartArray.push({Particle:'D0', geantID: 89, pdgID: 421, sortID: 89});
+    PartArray.push({Particle:'D+', geantID: 90, pdgID: 411, sortID: 90});
+    PartArray.push({Particle:'D*0', geantID: 91, pdgID: 423, sortID: 91});
+    PartArray.push({Particle:'D*+', geantID: 92, pdgID: 413, sortID: 92});
+    PartArray.push({Particle:'Λc', geantID: 93, pdgID: 4122, sortID: 93});
+    PartArray.push({Particle:'D0 bar', geantID: 94, pdgID: -421, sortID: 94});
+
+
+    var DefDecayArray=[];
+     DefDecayArray.push({Parent:7,  Decay: "7__1_1"});
+     DefDecayArray.push({Parent:16, Decay: "16__8_9"});
+     DefDecayArray.push({Parent:17, Decay: "17__1_1"});
+     DefDecayArray.push({Parent:35, Decay: "35__8_9_17"});
+     DefDecayArray.push({Parent:89, Decay: "89__8_12"});
+     DefDecayArray.push({Parent:94, Decay: "94__9_11"});
+     DefDecayArray.push({Parent:89, Decay: "89__2_3"});
+
+     DefDecayArray.push({Parent:18, Decay: "18__9_14"});
+     DefDecayArray.push({Parent:26, Decay: "26__8_15"});
+     DefDecayArray.push({Parent:21, Decay: "21__9_13"});
+     DefDecayArray.push({Parent:20, Decay: "20__1_18"});
+     DefDecayArray.push({Parent:19, Decay: "19__7_14"});
+     DefDecayArray.push({Parent:22, Decay: "22__7_18"});
+     DefDecayArray.push({Parent:23, Decay: "23__9_18"});
+     DefDecayArray.push({Parent:24, Decay: "24__12_18"});
+     DefDecayArray.push({Parent:93, Decay: "93__8_12_14"});
+
+    $(document).ready(function(){populateParticleSelector("iPart1_0",true);populateParticleSelector("iPart2_0",true);MakeConfigLines();});
+    function populateParticleSelector(id,trunc)
+    {
+        var selector=document.getElementById(id);
+        
+        if(selector)
+        {
+            
+            for(var i=0;i<PartArray.length;i++ )
+            {
+                if(trunc && i>1)
+                {
+                    continue;
+                }
+                var newoption = document.createElement("option");
+                newoption.text = PartArray[i].Particle;
+                newoption.value = PartArray[i].geantID;
+
+                if(i==0)
+                {
+                    newoption.selected=true;
+                }
+                if(id=="iPart2_0" && i==1)
+                {
+                    newoption.selected=true;
+                }
+                
+
+                selector.add(newoption);
+
+                
+            }
+        }
+        else
+        {
+            console.log("could not find "+ id )
+        }
+    }
+
+function toggleTri(thisbutton)
+{
+    console.log(thisbutton.getAttribute("state"))
+    thisbutton.setAttribute("state",(thisbutton.getAttribute("state")+1)%3)
+
+    if(thisbutton.getAttribute("state")==0)
+    {
+        thisbutton.value=""
+    }
+    else if(thisbutton.getAttribute("state")==1)
+    {
+        thisbutton.value="m"
+    }
+    else
+    {
+        thisbutton.value="M"
+    }
+}
+function RemoveSelector(level,parent)
+    {
+        var theDecLine=document.getElementById(parent.id.split("remove")[1])
+        console.log(level);
+        console.log(theDecLine.lastChild)
+
+        if(theDecLine.lastChild.tagName=="INPUT")
+        {
+            if(theDecLine.lastChild.checked)
+            {
+                removeDecayLine(theDecLine.lastChild.id)
+            }
+
+            theDecLine.removeChild(theDecLine.lastChild)
+            theDecLine.removeChild(theDecLine.lastChild)
+            theDecLine.removeChild(theDecLine.lastChild)
+        }
+        
+    }
+    function AddSelector(level,parent)
+    {
+        //console.log("parent is: "+parent.id.split("add")[1]);
+        var lineToAddTo=parent.id.split("add")[1];
+        var div=1;
+        if(level==0)
+        {
+            div=3
+        }
+        var partcount=document.getElementById(lineToAddTo).children.length/div; //"DecayLevel_"+level.toString()
+        //console.log(partcount)
+        if(partcount > 10)
+        {
+            alert("Let's not get carried away");
+        }
+        else
+        {
+            var newSelector= document.createElement("select");
+            newSelector.classList.add("selectStyle");
+            //newSelector.id="fPart"+partcount.toString()+"_"+level.toString();
+            newSelector.id="fPart"+parent.id.split("_")[0].split("fPart")[1]+partcount.toString()+"_"+level.toString();
+            newSelector.onchange=function(){UpdateText(this);MakeConfigLines()}
+            document.getElementById(lineToAddTo).appendChild(newSelector);
+            populateParticleSelector(newSelector.id,false);
+
+            var newTriCheckbox=document.createElement("input");
+            newTriCheckbox.type="button";
+            newTriCheckbox.id="fPart"+parent.id.split("_")[0].split("fPart")[1]+partcount.toString()+"mM"+"_"+level.toString();
+            //newTriCheckbox.class="tristate";
+            newTriCheckbox.value=""
+            newTriCheckbox.setAttribute("state",0)
+            newTriCheckbox.onclick=function(){toggleTri(this);MakeConfigLines()}
+            //newTriCheckbox.indeterminate="1";
+            
+
+            document.getElementById(lineToAddTo).appendChild(newTriCheckbox);//"DecayLevel_"+level.toString()
+
+            var newDecay_checkbox=document.createElement("input");
+            newDecay_checkbox.type="checkbox";
+            newDecay_checkbox.id="DecayfPart"+parent.id.split("_")[0].split("fPart")[1]+partcount.toString()+"_"+level.toString();
+            newDecay_checkbox.onclick=function(){ModifyDecayLine(this.id);MakeConfigLines()};
+
+            document.getElementById(lineToAddTo).appendChild(newDecay_checkbox);//"DecayLevel_"+level.toString()
+
+
+           // FinalCount++;
+
+        }
+
+        CheckReaction()
+
+
+    }
+    function UpdateText(particle)
+    {
+        var dividedName=particle.id.split("_")
+        var nextLevel=parseInt(dividedName[1])+1
+        //console.log(particle.id)
+        var lineToUpdate=document.querySelectorAll('[id*='+'"'+dividedName[0]+"_"+nextLevel.toString()+'"]')
+        //console.log(lineToUpdate)
+        for(var i=0;i<lineToUpdate.length;i++)
+        {
+            if(lineToUpdate[i].tagName != "DIV")
+                continue;
+            
+            var parts=lineToUpdate[i].children;
+            for(var j=0;j<parts.length;j++)
+            {
+                if(parts[j].tagName != "FONT")
+                    continue;
+                
+                //console.log(parts[j].innerHTML)
+                parts[j].innerHTML=particle.options[particle.selectedIndex].text+'&rarr;'
+            }
+        }
+    }
+    function ModifyDecayLine(id)
+    {
+        var theCheckbox=document.getElementById(id)
+        if(theCheckbox.checked)
+        {
+            //console.log("checked")
+            addDecayLine(id);
+        }
+        else{
+            //console.log("unchecked")
+            removeDecayLine(id);
+        }
+        
+    }
+    function addDecayLine(id)
+    {
+        var checkbox=document.getElementById(id);
+        var currentlevel=id.split("_")[1];
+
+        var nextLevelDiv=document.getElementById("DecayLevel_"+(parseInt(currentlevel)+1).toString())
+
+        if(!nextLevelDiv)
+        {
+            var newDIV=document.createElement("div");
+            newDIV.id="DecayLevel_"+(parseInt(currentlevel)+1).toString()
+            newDIV.innerHTML='<hr>LEVEL '+(parseInt(currentlevel)+1).toString()+'<br>'
+            document.getElementById("DecayLevels").appendChild(newDIV)
+            nextLevelDiv=newDIV
+        }
+
+        var newDecayLineDIV = document.getElementById("DecayLine"+id.split("_")[0]+"_"+(parseInt(currentlevel)+1).toString());
+        if(!newDecayLineDIV)
+        {
+            newDecayLineDIV=document.createElement("div");
+            //console.log("DecayLine"+id)
+            newDecayLineDIV.id="DecayLine"+id.split("_")[0]+"_"+(parseInt(currentlevel)+1).toString();
+            nextLevelDiv.appendChild(newDecayLineDIV);
+
+        }
+            var parentNum=id.split("fPart")[1].split("_")[0]
+            //var partID="fPart"+currentlevel+id.split("_")[0].slice(-1)+"_"+id.split("_")[1];
+            var partID="fPart"+parentNum+"_"+id.split("_")[1];
+            //console.log(partID)
+            var theDecayingPart=document.getElementById(partID);
+            //console.log(theDecayingPart.options[theDecayingPart.selectedIndex].text)
+            newDecayLineDIV.style.fontSize='30px'
+            newDecayLineDIV.innerHTML='<input type="button" id="add'+newDecayLineDIV.id+'" onclick="AddSelector('+(parseInt(currentlevel)+1).toString()+',this);MakeConfigLines()" value="add particle" > <input type="button" id="remove'+newDecayLineDIV.id+'" onclick="RemoveSelector('+(parseInt(currentlevel)+1).toString()+',this);MakeConfigLines()" value="remove particle"> <font size=30>'+theDecayingPart.options[theDecayingPart.selectedIndex].text+'&rarr;</font>';
+        
+    }
+    function removeDecayLine(id)
+    {
+        //console.log("remove: "+"DecayLine"+id)
+
+        var ToRemoveROOT=getParentPath(id);
+        var linesToRemove=document.querySelectorAll('[id*='+'"'+ToRemoveROOT+'"]')
+
+        for(var i=0;i<linesToRemove.length;i++)
+        {
+            if(linesToRemove[i].id.substr(0,9)=="DecayLine")
+            {
+                var LineToRemove=document.getElementById(linesToRemove[i].id);
+                LineToRemove.innerHTML='';
+            }
+
+        }
+    }
+    function CheckReaction()
+    {
+        var ReactionDiv=document.getElementById("DecayLevel_0");
+        for(var i=0;i<ReactionDiv.children.length;i++)
+        {
+            if (ReactionDiv.children[i].tagName != "FONT")
+                console.log(ReactionDiv.children[i].tagName)
+
+            //MAKE CHECK FOR CONSERVATIONS ETC?
+        }
+    }
+    function getParentPath(id)
+    {
+        return id.split("_")[0].split("fPart")[1];
+    }
+    function MakeConfigLines()
+    {
+        MassConstrain=[];
+        var DecayCount=1;
+        var ConfigLines="";
+        var AllDecayLevels=document.getElementById("DecayLevels").children;
+
+        for(var i=0;i<AllDecayLevels.length;i++)
+        {
+            if(AllDecayLevels[i].tagName== "DIV")
+            {
+                if(AllDecayLevels[i].id.split("_")[1]=="0")
+                {
+                    var passedArrow=false;
+                    var ThisDecay=document.getElementById("DecayLineDecayfPart0_0").children
+                    //console.log(AllDecayLevels[i].children)
+                    var littlem=[]
+                    LineToAdd="Reaction1 "
+
+                    var Reaction_Products=[];
+
+                    for(var j=0;j<ThisDecay.length;j++)
+                    {
+                        if(ThisDecay[j].tagName == "SELECT")
+                        {
+                            if(ThisDecay[j+1].value=="m" && passedArrow)
+                            {
+                                //LineToAdd+="m"
+                                littlem.push("m"+getSelectedGeantID(ThisDecay[j]))
+                            }
+                            else if(ThisDecay[j+1].value=="M" && passedArrow)
+                            {
+                                MassConstrain.push(getSelectedGeantID(ThisDecay[j]))
+                            }
+                            if(passedArrow)
+                            {
+                                LineToAdd+="P_"
+                                Reaction_Products.push(getSortID(ThisDecay[j]));
+                            }
+                            else
+                            {
+                                LineToAdd+=getSelectedGeantID(ThisDecay[j])+"_"
+                            }
+                            
+                        }
+                        else if(ThisDecay[j].tagName == "FONT")
+                        {
+                            LineToAdd=LineToAdd.slice(0,-1);
+                            LineToAdd+="__";
+                            passedArrow=true;
+                        }
+                    }
+
+                    LineToAdd=LineToAdd.slice(0,-1);
+                    //console.log("THE SORT LIST")
+                    Reaction_Products.sort(function(a, b){return a-b});
+                    //console.log(Reaction_Products)
+                    LineToAdd=Transcribe(LineToAdd,Reaction_Products,littlem);
+                    ConfigLines+=LineToAdd;
+                    
+                    
+                }
+                else
+                {
+                    
+                    var ThisDecayLevelDecays=AllDecayLevels[i].children
+                    for(var j=0;j<ThisDecayLevelDecays.length;j++)
+                    {
+                        
+                        if(ThisDecayLevelDecays[j].tagName == "DIV" )
+                        {
+                            if(ThisDecayLevelDecays[j].children.length==0)
+                            {
+                                continue;
+                            }
+                            var passedArrow=false;
+                            var littlem=[];
+                            ConfigLines+="\n";
+                            LineToAdd="Reaction1:Decay"+DecayCount.toString()+" ";
+                            var Reaction_Products=[];
+                            DecayCount++;
+                            var ThisDecay=ThisDecayLevelDecays[j].children
+                            for(var k=0;k<ThisDecay.length;k++)
+                            {
+                                if(k==0)
+                                {
+                                    var prevLevel=parseInt(ThisDecay[k].id.split("_")[1])-1
+                                    var parentSelector=ThisDecay[k].id.split("addDecayLineDecay")[1].split("_")[0]+"_"+prevLevel.toString();
+                                    //console.log(ThisDecay[k].id.split("addDecayLineDecay")[1])
+                                    LineToAdd+=getSelectedGeantID(document.getElementById(parentSelector));
+                                }
+                                else{
+                                    if(ThisDecay[k].tagName == "SELECT")
+                                    {
+                                        if(ThisDecay[k+1].value=="m" && passedArrow)
+                                        {
+                                            littlem.push("m"+getSelectedGeantID(ThisDecay[k]))
+                                            //LineToAdd+="m"
+                                        }
+                                        else if(ThisDecay[k+1].value=="M" && passedArrow)
+                                        {
+                                            MassConstrain.push(getSelectedGeantID(ThisDecay[k]))
+                                        }
+
+                                        if(passedArrow)
+                                        {
+                                            LineToAdd+="P_"
+                                            Reaction_Products.push(getSortID(ThisDecay[k]));
+                                        }
+                                        else
+                                        {
+                                            LineToAdd+=getSelectedGeantID(ThisDecay[k])+"_"
+                                        }
+                                            
+                                    }
+                                    else if(ThisDecay[k].tagName == "FONT")
+                                    {
+                                        LineToAdd+="__";
+                                        passedArrow=true;
+                                    }
+                                }
+                        }
+                        LineToAdd=LineToAdd.slice(0,-1);
+                        //console.log("THE SORT LIST")
+                        Reaction_Products.sort(function(a, b){return a-b});
+                        //console.log(Reaction_Products)
+                        LineToAdd=Transcribe(LineToAdd,Reaction_Products,littlem);
+                        ConfigLines+=LineToAdd;
+                        }
+                    }
+        
+                }
+
+                
+                
+            }
+        }
+
+        
+        ConfigLines+="\n"
+
+        var BFlag_val=document.getElementById("BFlag").value
+        var FFlag_val=document.getElementById("FFlag").value
+        var TFlag_val=document.getElementById("TFlag").value
+
+        ConfigLines+="Reaction1:Flags B"+BFlag_val+"_F"+FFlag_val+"_T"+TFlag_val;
+
+        if(document.getElementById("UFlag").checked)
+        {
+            ConfigLines+="_U1"
+        }
+
+        for(var i=0;i<MassConstrain.length ;i++)
+        {
+            ConfigLines+="_M"+MassConstrain[i].toString();
+        }
+
+        document.getElementById('output').value=ConfigLines;
+    }
+
+    function getSelectedGeantID(obj)
+    {
+        return obj.children[obj.selectedIndex].value
+    }
+    function getSortID(obj)
+    {
+        var objgeantID=obj.children[obj.selectedIndex].value
+        for(var i=0;i<PartArray.length;i++)
+        {
+            if(PartArray[i].geantID==objgeantID)
+            {
+                return PartArray[i].sortID;
+            }
+        }
+    }
+    function Transcribe(line,sorted_list,littlem)
+    {
+        var lineToReturn="";
+        var transI=0
+        for(var i=0;i<line.length;i++)
+        {
+            if(line[i]=="P")
+            {
+                var indexOF=littlem.indexOf("m"+GetGeantIDFromSortID(sorted_list[transI]));
+                if(indexOF != -1)
+                {
+                    littlem.splice(indexOF,1);
+                    lineToReturn+="m"
+                }
+                lineToReturn+=GetGeantIDFromSortID(sorted_list[transI]);
+                transI++;
+            }
+            else
+            {
+                lineToReturn+=line[i]
+            }
+        }
+        return lineToReturn;
+    }
+    function GetGeantIDFromSortID(objsortID)
+    {
+        for(var i=0;i<PartArray.length;i++)
+        {
+            if(PartArray[i].sortID==objsortID)
+            {
+                return PartArray[i].geantID;
+            }
+        }
+    }
+    function SortLine(line)
+    {
+        return line;
+        var toGetm=[];
+        var stringList=(line.split(" ")[1].split("__")[1].split("_"));
+        for(var i=0;i<stringList.length;i++)
+        {
+            if(stringList[i][0]=="m")
+            {
+                toGetm.push(parseInt(stringList))
+            }
+        }
+    }
+    function WriteLinesJSON()
+    {
+        var blame=document.getElementById("submitter").value
+        var theLines=document.getElementById('output').value;
+        var AllLines=theLines.split("\n");
+        var ReactionSTR=""
+        var DecayArray=[]
+        var BSTR="1";
+        var FSTR="4";
+        var TSTR="3";
+        var USTR="0";
+        for(var i=0;i<AllLines.length;i++)
+        {
+            var splitLine=AllLines[i].split(" ");
+            if(i==0)
+            {
+                ReactionSTR=splitLine[1];
+            }
+            else if(i==AllLines.length-1)
+            {
+                var FlagsArray=splitLine[1].split("_");
+                for(var j=0;j<FlagsArray.length;j++)
+                {
+                    var flagparts=FlagsArray[j].split("");
+                    if(flagparts[0]=="B")
+                    {
+                        BSTR=flagparts[1]
+                    }
+                    else if(flagparts[0]=="F")
+                    {
+                        FSTR=flagparts[1]
+                    }
+                    else if(flagparts[0]=="T")
+                    {
+                        TSTR=flagparts[1]
+                    }
+                    else if(flagparts[0]=="U")
+                    {
+                        USTR=flagparts[1]
+                    }
+                }
+
+            }
+            else
+            {
+                if(splitLine[1]!=findDefDec(parseInt(splitLine[1].split("__")[0])))
+                {
+                    DecayArray.push(splitLine[1])
+                }
+                
+            }
+        }
+        var jsonOBJ={Name: blame,Reaction: ReactionSTR, Decays: DecayArray, B: BSTR, F: FSTR, T:TSTR, U:USTR, Marray: MassConstrain}
+
+        var JSONSTR=JSON.stringify(jsonOBJ);
+        console.log(jsonOBJ)
+        console.log(JSONSTR)
+        //PASS JSONSTR TO php for saving
+
+        //CHECK HERE
+        var pass=CheckLine(jsonOBJ);
+
+        if(pass)
+            SubmitLine(JSONSTR);
+        
+    }
+
+    function CheckLine(jsonOBJ)
+    {
+        if(!jsonOBJ.Name.includes("@"))
+        {
+            alert("NO EMAIL GIVEN.  LINE WILL NOT BE SUBMITTED.")
+            return false;
+        }
+
+        if(jsonOBJ.Reaction.split("__").length < 2)
+        {
+            return false;
+        }
+
+
+        return true;
+    }
+
+    function SubmitLine(jsonSTR)
+  {
+    console.log("./utilities/LineWriter.php?jstr="+jsonSTR)
+    var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance 
+    xmlhttp.open("POST", "./utilities/LineWriter.php?jstr="+jsonSTR);
+    //xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    xmlhttp.send();
+    alert("Line Submitted");
+  }
+
+  function findDefDec(par)
+  {
+      
+      for(var i=0;i<DefDecayArray.length;i++)
+      {
+          if(DefDecayArray[i].Parent==par)
+          {
+              return DefDecayArray[i].Decay;
+          }
+      }
+      return ""
+  }
+</script>
+</body>
+
+</html>

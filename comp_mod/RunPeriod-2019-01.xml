@@ -1,0 +1,230 @@
+<!--
+
+Spring 2019  -  PrimEx Eta
+
+2019-11-05 : Initial version DL
+
+Some of the numbers here come from Alex Somov's slides shown at
+the 2017 Readiness Review:
+https://cnidlamp.jlab.org/RareEtaDecay/JDocDB/system/files/biblio/2017/06/beamline_trigger_4.pdf
+
+=====================================================================
+triggerRate
+
+Estimated L1 trigger rate is 7kHz. (See "PrimEx-D Trigger Rate Estimates"
+slide of Alex's talk.) From discussion with Eugene, the L1 trigger
+should integrate both the Primakoff and Compton triggers (this is
+indicated on the slide).
+
+The PS trigger rate is estimated at 1-3kHz from slide 8: "Photon Flux
+Measurements with Pair Spectrometer".
+
+Assume total trigger rate of 10kHz with events for all flavors being
+roughly the same size.
+
+=====================================================================
+runningTimeOnFloor
+
+According to Ashot's talk :https://cnidlamp.jlab.org/RareEtaDecay/JDocDB/system/files/biblio/2017/06/err_0607_2017_gasparian_3.pdf
+The experiment will run for a total of 79 days, with 70 of those
+for production and the rest for empty target runs and calibration/setup.
+For this estimate we use 75 days of production running equivalent.
+
+=====================================================================
+runningEfficiency
+
+Nominally, the acclerator runs at around 50%, but our overall running
+efficiency is supposed to represent production running only. Special
+runs and losses due to DAQ etc. count against this number.
+
+The value obtained for RunPeriod-2018-01 was 39%. For the purposes
+of this estimate we use 40%.
+
+=====================================================================
+eventsize
+
+Event size estimates are currently unavailable. Without the drift
+chambers the event sizes can be assumed to be significantly smaller.
+However, Eugene points out that a lot of backgrounds are not well
+known yet. To be conservative, we estimate the average event size
+as 10kB.
+
+=====================================================================
+eventsPerRun
+
+Number of events (in millions) in a production run. It has yet to
+be determined how PrimEx will split runs (time or events). Assume
+for now 1hr runs with 60% beam up time with 10kHz trigger rate:
+
+ (3600s)(0.60)(10E3Hz) = 21.6 Mevents
+
+=====================================================================
+compressionFactor
+
+  Compression has not yet been implemented or tested. PrimEx numbers
+will be smaller so we are unlikely to be motivated to implement
+compression here. Thus, leave factor at 1.0
+
+=====================================================================
+RESTfraction
+
+This is also tough to estimate for PrimeX data given the lack of
+Drift Chambers. For GlueX, this was ~14.6%. For the purposes of
+this estimate we round up to 15%.
+
+=====================================================================
+reconstructionRate
+
+PrimeX will run without drift chambers and with the magnetic field
+off. Roughly 95% of the reconstruction time for GlueX is spent in
+producing Wire-based and Time-base tracks. Thus, we assume x20 faster
+reconstruction rate than the current GlueX reconstruction rate of
+5.5Hz.
+
+ 20 x 5.5Hz = 110 Hz/core
+
+=====================================================================
+reconPasses
+
+PrimEx will benefit from GlueX experience with FCAL calibration, but
+is also making heavier use of the inner rings and the new ComCal.
+This, and the fact that passes will be "cheaper" make it hard to
+estimate the total number of passes. To make this conservative, we
+assume 10 passes.
+
+=====================================================================
+goodRunFraction
+
+This represents the fraction of the full dataset considered good production
+runs. We get reuse the number from the RunPeriod-2018-01 model: 0.85
+
+=====================================================================
+analysisRate
+
+This is difficult to estimate without real data and a full recon/analysis
+chain. It should be considerably faster than the reconstruction rate.
+For the RunPeriod-2018-01 data, this was estimated at 13.6 times faster
+than the reconstructionRate. Use that same factor here.
+
+    (110Hz)(13.6) = 1,4960 = 15kHz
+
+=====================================================================
+analysisPasses
+
+The empirical number from 2017 GlueX was 2.82. Assume the lower cost
+per analysis pass may result in many more of these. Guestimate the
+number for now as 15.
+
+=====================================================================
+cores
+
+Assume 5000 cores will be available to us on average.
+
+=====================================================================
+incomingData
+
+proportional to number of runs
+
+Number of files per run analyzed for the "incoming data" jobs. This
+is always 5.
+
+=====================================================================
+calibRate
+
+proportional to time on floor
+
+This value represents the number of Mhr of CPU used per week of running
+to calibrate the detector. For 2017 data, the gxproj3 account (Sean)
+used 2Mhr. Additional time was used by individual accounts for
+calibration that is not as easy to categorize. Tegan B. was the biggest
+user with 7.4% of the 26.3Mhr, some fraction of this for calibration.
+For the RunPeriod-2017-01 value we assume 3Mhr/5.7 weeks = 0.526
+
+It should be noted that during the discussion on this at the Offline
+meeting on 2018-06-15 there was general thinking that we should be
+able to calibrate with far less CPU in the future. This number is
+higher partly because we were still developing technique and partly
+because the farm resource was not freely available at the time.
+
+For PrimEx, this number is likely smaller. However, there is no good
+means to estimate by how much so we use the same value.
+
+=====================================================================
+offlineMonitoring
+
+proportional to number of runs
+
+A 1hr run at 10kHz with e 10kB event size and 60% beam on time is going
+to result in 0.22TB/run. With 20GB file sizes, this will be only about
+11 files/run. At JLab, we did 5 files per run in the offline monitoring
+passes. At NERSC we did 10. Here we'll assume PrimeX will take advantage
+of the faster turn around by doing only 2 of the 11 files per run for
+offline monitoring. For two 20GB files at 110Hz/core and 10kB/event it
+will take:
+
+     (2 files)(20 GB/file)/[(10kB/event)(110Hz/core)] = 36.4ks = 10 cpu-hr
+ 
+     or
+ 
+     1E-5 Mhr
+
+=====================================================================
+miscUserStudies
+
+proportional to time to process all files of single run
+
+This value is used to capture the CPU usage by all of the various users
+that is attributed to the gluex project. Some of this should probably
+go under calibRate, but it is very hard to categorize which parts of
+this should go there.
+
+It is assumed here that these are jobs that run over all files from a
+small number of runs in order to do special studies. The amount of CPU
+required is therefore proportional to the time it takes to process a
+single production run. This number is empirical based on 2017 CPU usage.
+There is about a 9 Mhr descrepency in the total usage (26.3MHr) and the
+shared account usage (16.4Mhr). We attribute 1Mhr of that to Teagan's
+calibrations in the calibrateRate value above.
+
+9Mhr/( (200M events)/(5Hz)/(3600s/hr) ) = 810
+
+Note that this is not to say that there were 810 studies, but rather,
+this is the proportionality constant for the CPU usage that is
+needed to process a single run.
+
+=====================================================================
+Simulation
+
+The simulation rates may be similar for PrimEx and GlueX given that
+calorimeter showers tend to dominate. PrimEx will have to include
+the COMCAL as well which may even increase the time to simulate one
+event.
+
+Here, we keep the same numbers as were copied from the RunPeriod-2018-01
+inputs for lack of a better estimate.
+
+-->
+<compMod>
+<parameter name="triggerRate" value="10.0e3" units="Hz"/>
+<parameter name="runningTimeOnFloor" value="75.0" units="days"/>
+<parameter name="runningEfficiency" value="0.40"/>
+<parameter name="eventsize" value="10.0" units="kB"/>
+<parameter name="eventsPerRun" value="21.6" units="Mevent"/>
+<parameter name="compressionFactor" value="1.0"/>
+<parameter name="RESTfraction" value="0.15"/>
+
+<parameter name="reconstructionRate" value="110.0" units="Hz"/>
+<parameter name="reconPasses" value="10.0"/>
+<parameter name="goodRunFraction" value="0.85"/>
+<parameter name="analysisRate" value="1500.0" units="Hz"/>
+<parameter name="analysisPasses" value="15.0"/>
+<parameter name="cores" value="5000"/>
+<parameter name="incomingData" value="5" units="files"/>
+<parameter name="calibRate" value="0.530" units="Mhr/week"/>
+<parameter name="offlineMonitoring" value="1.0E-5" units="Mhr/run"/>
+<parameter name="miscUserStudies" value="810"/>
+
+<parameter name="simulationRate" value="25" units="Hz"/>
+<parameter name="simulationpasses" value="2"/>
+<parameter name="simulatedPerRawEvent" value="2.0"/>
+</compMod>
