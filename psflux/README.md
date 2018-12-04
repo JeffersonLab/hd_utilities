@@ -27,7 +27,7 @@ Options:
                         Minimum energy for flux histogram
   -x EMAX, --energy-max=EMAX
                         Maximum energy for flux histogram
-  -r RCDB, --rcdb-query=‘query'
+  -r RCDB, --rcdb-query='query'
                         RCDB query for run selection
 ```
 
