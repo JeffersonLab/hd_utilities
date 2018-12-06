@@ -140,7 +140,7 @@ def MakeJob(RUN,FILE):
 	SBATCH += ['--nodes=1']
 	SBATCH += ['--tasks-per-node=1']
 	SBATCH += ['--cpus-per-task=64']
-	SBATCH += ['--qos=regular']
+	SBATCH += ['--qos='+QOS]
 	SBATCH += ['-C', NODETYPE]
 	SBATCH += ['-L', 'project']
 
