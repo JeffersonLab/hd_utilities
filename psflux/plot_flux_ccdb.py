@@ -44,8 +44,8 @@ def main():
     ENDRUN = 100000000
 
     # Beam energy histogram defaults
-    NBINS = 600
-    EMIN = 6.0
+    NBINS = 1000
+    EMIN = 2.0
     EMAX = 12.0
 
     pp = pprint.PrettyPrinter(indent=4)
@@ -66,6 +66,8 @@ def main():
 		     help="Minimum energy for flux histogram")
     parser.add_option("-x","--energy-max", dest="emax",
                      help="Maximum energy for flux histogram")
+    parser.add_option("-q","--rcdb-query", dest="rcdb_query",
+                     help="RCDB query")
 
     (options, args) = parser.parse_args(sys.argv)
 
@@ -87,6 +89,8 @@ def main():
         EMIN = float(options.emin)
     if options.emax:
         EMAX = float(options.emax)
+    if options.rcdb_query:
+	RCDB_QUERY = options.rcdb_query
 
     # Load CCDB
     ccdb_conn = LoadCCDB()
@@ -127,15 +131,24 @@ def main():
             if RCDB_POL_ANGLE != "" and run.get_condition('polarization_angle').value != float(RCDB_POL_ANGLE):
                 continue
 
-        print "==%d=="%run.number
+	# temporary to exclude runs before status_approved flag is set for RunPeriod-2018-08
+	if run.number == 51385 or run.number == 51404:
+		continue
+
+	print "==%d=="%run.number
 
 	# Set livetime scale factor
-	livetime_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/pair_spectrometer/lumi/trig_live", run.number, VARIATION)
-	livetime = livetime_assignment.constant_set.data_table
-	if float(livetime[3][1]) > 0.0: # check that livetimes are non-zero
-		livetime_ratio = float(livetime[0][1])/float(livetime[3][1])
-	else: # if bad livetime assume ratio is 1
-		livetime_ratio = 1.0
+	livetime_ratio = 0.0
+	try:
+		livetime_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/pair_spectrometer/lumi/trig_live", run.number, VARIATION)
+		livetime = livetime_assignment.constant_set.data_table
+	        if float(livetime[3][1]) > 0.0: # check that livetimes are non-zero
+        	       livetime_ratio = float(livetime[0][1])/float(livetime[3][1])
+        	else: # if bad livetime assume ratio is 1
+        	       livetime_ratio = 1.0
+	except:
+		livetime_ratio = 1.0 # default to unity if table doesn't exist
+	
 	# printout for livetimes different from unity
 	#if livetime_ratio > 1.0 or livetime_ratio < 0.9:
 	#	print livetime_ratio
@@ -191,7 +204,7 @@ def main():
 	    htagged_fluxErr.SetBinError(bin_energy, new_binerror)
 
     # PS acceptance correction
-    fPSAcceptance = TF1("PSAcceptance", PSAcceptance, 6.0, 12.0, 3);
+    fPSAcceptance = TF1("PSAcceptance", PSAcceptance, 2.0, 12.0, 3);
 
     # Get parameters from CCDB 
     PS_accept_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/pair_spectrometer/lumi/PS_accept", run.number, VARIATION)
