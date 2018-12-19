@@ -6,13 +6,13 @@ gluex_MC.py config_file run_number total_events
 # batch=2 : automatically run swif workflow after jobs are submitted
 
 # command for generating bggen simulations
-gluex_MC.py bggen.config 50000 1000000 per_file=5000 recon=0 cleanmcsmear=0 batch=2
+gluex_MC.py bggen.config 50000 1000000 per_file=25000 recon=0 cleanmcsmear=0 batch=2
 
 # command for generating gp -> phi p, phi -> K+K- simulations
-gluex_MC.py gen_2k.config 50000 500000 per_file=5000 recon=0 cleanmcsmear=0 batch=2
+gluex_MC.py gen_2k.config 50000 2500000 per_file=25000 recon=0 cleanmcsmear=0 batch=2
 
 # command for generating gp -> rho p, rho -> pi+pi- simulations
-gluex_MC.py gen_2pi_amp.config 50000 500000 per_file=5000 recon=0 cleanmcsmear=0 batch=2
+gluex_MC.py gen_2pi_amp.config 50000 10000000 per_file=25000 recon=0 cleanmcsmear=0 batch=2
 
 # command for generating single particle simulations
 # note: need to modify 
