@@ -13,6 +13,8 @@ import glob
 ##################### main function ####################
 def main(argv):
 
+	#subprocess.call(["sleep", "1800"])
+	subprocess.call(["mkdir", "-p", "tree/"])
 	for lut in range(0, 48):
 		fileInName = "hddm/lut_%d.hddm" % lut
 		fileOutName = "tree/lut_%d.root" % lut

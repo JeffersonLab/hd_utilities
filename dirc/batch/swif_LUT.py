@@ -38,8 +38,7 @@ TIMELIMIT  = "360minutes"      # Max walltime
 OS         = "centos7"        # Specify CentOS65 machines
 
 # OUTPUT DATA LOCATION
-DATA_OUTPUT_BASE_DIR    = "/volatile/halld/home/%s/2018-dirc/dircsim-2018_08-ver01/lut/"%(os.environ['USER'])   ## CHANGE IF YOU WANT TO
-
+DATA_OUTPUT_BASE_DIR    = "/volatile/halld/home/%s/2018-dirc/dircsim-2018_08-ver08/lut/"%(os.environ['USER']) 
 
 # JOB EXECUTION
 SCRIPTFILE        = "/work/halld2/home/jrsteven/2018-dirc/builds/hd_utilities/dirc/batch/script_LUT.sh"
