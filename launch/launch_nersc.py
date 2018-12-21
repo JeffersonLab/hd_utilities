@@ -2,6 +2,9 @@
 #
 # Submit jobs to run at NERSC via swif2
 #
+# See more detailed documentation here:
+#  https://halldweb.jlab.org/wiki/index.php/HOWTO_Execute_a_Launch_using_NERSC
+#
 # This will run commands submitting several recon jobs
 # with the run/file numbers hardcoded into this script.
 # Here is how this is supposed to work:
@@ -13,10 +16,10 @@
 # the file is there, it will submit the job to Cori.
 #
 # When the job wakes up, it will be in a subdirectory of the
-# NERSC project directory that swif2 has already setup.
+# NERSC scratch disk that swif2 has already setup.
 # This directory will contain a symbolic link pointing
-# to the raw data file which is somewhere else in the project
-# directory tree.
+# to the raw data file which is somewhere else on the scratch
+# disk.
 #
 # The container will run the /launch/script_nersc.sh script
 # where /launch has been mounted in the container from the
@@ -28,23 +31,23 @@
 # point to the appropriate subdirectory of /cvmfs making the
 # the GlueX software available. The script_nersc.sh script
 # will use this to setup the environment and then run hd_root
-# using the /launch/jana_recon.config file.
+# using the /launch/jana_recon_nersc.config file.
 #
 # A couple of more notes:
 #
 # 1. The CCDB and RCDB used comes from an sqlite file in
 # CVMFS. These are copied to the local node in /tmp at
 # the beginning of the job and deleted at the end. The
-# timestamp used is built into the /launch/jana_recon.config
+# timestamp used is hardcoded in /launch/jana_recon_nersc.config
 #
 # 2. NERSC requires that the program being run is actually
-# a script that starts with #!/XXX/YYY . Thus, the command
-# we give to swif2 to run for the job is:
-#
-#       /launch/jana_recon_nersc.config
-#
-# which is a simple wrapper script to run the
-# /launch/script_nersc.sh script using shifter
+# a script that starts with #!/XXX/YYY . It is actually a
+# SLURM script where additional SLURM options could be set.
+# We do not put them there though. All SLURM options are
+# passed via the sbatch command swif2 runs and that we specify
+# here. The /launch/script_nersc.sh script is trivial and only
+# runs shifter passing any arguments we give to it here in
+# the swif2 command.
 #
 # 3. The output directory is created here
 # to allow group writing since the files are copied using
@@ -66,8 +69,8 @@ TESTMODE       = True  # True=only print commands, but don't actually submit job
 VERBOSE        = 3     # 1 is default
 
 RUNPERIOD      = '2018-01'
-LAUNCHTYPE     = 'offmon'  # 'offmon' or 'recon' 
-VER            = '19'
+LAUNCHTYPE     = 'recon'  # 'offmon' or 'recon'
+VER            = '01'
 WORKFLOW       = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER
 NAME           = 'GLUEX_' + LAUNCHTYPE
 
@@ -77,26 +80,31 @@ MINRUN         = 40000   # If RUNS is empty, then RCDB queried for this range
 MAXRUN         = 49999   # If RUNS is empty, then RCDB queried for this range
 MINFILENO      = 0       # Min file number to process for each run (n.b. file numbers start at 0!)
 MAXFILENO      = 1000    # Max file number to process for each run (n.b. file numbers start at 0!)
-FILE_FRACTION  = 0.05     # Fraction of files to process for each run in specified range (see GetFileNumbersToProcess)
-MAX_CONCURRENT_JOBS = '2000'  # Miximum number of jobs swif2 will have in flight at once
+FILE_FRACTION  = 1.0     # Fraction of files to process for each run in specified range (see GetFileNumbersToProcess)
+MAX_CONCURRENT_JOBS = '2000'  # Maximum number of jobs swif2 will have in flight at once
 
 PROJECT        = 'm3120'
 TIMELIMIT      = '9:00:00'  # Set time limit (2.4 timeslonger for KNL than haswell)
 QOS            = 'regular'  # debug, regular, premium
-NODETYPE       = 'knl'  # haswell, knl  (quad,cache)
+NODETYPE       = 'knl'      # haswell, knl  (quad,cache)
 
 IMAGE          = 'docker:markito3/gluex_docker_devel'
-#RECONVERSION   = 'sim-recon/sim-recon-recon-2017_01-ver03'
 RECONVERSION   = 'halld_recon/halld_recon-recon-ver03.2'  # must exist in /group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5-cntr
 SCRIPTFILE     = '/launch/script_nersc.sh'
 CONFIG         = '/launch/jana_'+LAUNCHTYPE+'_nersc.config'
-#OUTPUTTOP      = 'mss:/mss/halld/offline_monitoring/RunPeriod-'+RUNPERIOD+'/ver'+VER  # prefix with mss: for tape or file: for filesystem
-OUTPUTTOP      = 'mss:/mss/halld/halld-scratch/offline_monitoring/RunPeriod-'+RUNPERIOD+'/ver'+VER  # prefix with mss: for tape or file: for filesystem
-#OUTPUTTOP      = 'file:/u/home/gxproj4/NERSC/2018.08.15.offmon_ver00N/tmp'
 
 RCDB_HOST    = 'hallddb.jlab.org'
 RCDB_USER    = 'rcdb'
 RCDB         = None
+
+# Set output directory depending on launch type
+if   LAUNCHTYPE=='offmon':
+	OUTPUTTOP      = 'mss:/mss/halld/halld-scratch/offline_monitoring/RunPeriod-'+RUNPERIOD+'/ver'+VER  # prefix with mss: for tape or file: for filesystem
+elif LAUNCHTYPE=='recon':
+	OUTPUTTOP      = 'mss:/mss/halld/halld-scratch/RunPeriod-'+RUNPERIOD'+/recon/ver'+VER
+else:
+	print 'Unknown launch type "'+LAUNCHTYPE+'"! Don\'t know where to put output files!'
+	sys.exit(-1)
 
 #----------------------------------------------------
 def MakeJob(RUN,FILE):
