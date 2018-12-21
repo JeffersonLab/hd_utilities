@@ -20,6 +20,8 @@ HALLD_RECON_VERSION=$2
 RUN=$3
 FILE=$4
 
+ulimit -c unlimited
+
 # Setup environment for the specified sim-recon version
 setenv_file=/cvmfs/oasis.opensciencegrid.org/gluex/group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5-cntr/${HALLD_RECON_VERSION}/Linux_CentOS7-x86_64-gcc4.8.5-cntr/setenv.sh
 source $setenv_file
@@ -48,6 +50,9 @@ env > env.out
 
 rm -f hostname.out
 hostname > hostname.out
+
+# Run script in background that will send abort signal after 8.5 hours
+/launch/assassin.sh &> assassin.out  &
 
 
 # Run hd_root
