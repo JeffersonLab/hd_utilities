@@ -5,6 +5,7 @@ Use 2018-dirc-commissioning branch for:
 	-halld_recon (https://github.com/JeffersonLab/halld_recon)
 	-halld_sim (https://github.com/JeffersonLab/halld_sim)
 	-HDGeant4 (https://github.com/JeffersonLab/HDGeant4)
+	-gluex_root_analysis (https://github.com/JeffersonLab/gluex_root_analysis)
 
 To setup your own builds of with these branches use the following commands:
 
@@ -27,6 +28,9 @@ This will pull the master of each repository and build it, after this you'll nee
 > cd ../../hdgeant4/
 > git checkout dirc_commissioning_2018
 > make
+> cd ../../gluex_root_analysis/
+> git checkout dirc_commissioning_2018
+> ./make_all.sh
 
 Finally, you're environment can be set using the builds/setup_gluex.csh file creted by the build scripts.  In order to use the local xml geometry with the DIRC you'll need to add the line below to your setup_gluex.csh script so the local geometry definition is used instead of CCDB
 
@@ -103,9 +107,8 @@ root loadlib.C reco_lut.C'("drc_kaon_pion.root")'
 
 #1) Simulate any event sample you like (see example simulation workflow above).  Use dirc_hists, dirc_reactions, and truth_dirc plugin to run LUT algorithm in PID library.  
 # Some example event samples are located at 
-## /volatile/halld/home/jrsteven/2018-dirc/dircsim-2018_08-ver01/bggen_Ee10.3_Eg7.7
-## /volatile/halld/home/jrsteven/2018-dirc/dircsim-2018_08-ver01/kp_p4_theta4/ (fixed p=4 GeV and theta=4 deg)
-## /volatile/halld/home/jrsteven/2018-dirc/dircsim-2018_08-ver01/kp_flat/ (flat in p and theta)
+## /volatile/halld/home/jrsteven/2018-dirc/dircsim-2018_08-ver08/bggen/
+## /volatile/halld/home/jrsteven/2018-dirc/dircsim-2018_08-ver08/kp_p4_theta4/ (fixed p=4 GeV and theta=4 deg)
 ## the above to directories are for kaons, and there are similar directories for pions
 
 #2) View the histograms for thetaC, likelihood differences etc. in the hd_root.root file
