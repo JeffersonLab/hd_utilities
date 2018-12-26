@@ -40,9 +40,9 @@ TRACK      = "analysis"		   # https://scicomp.jlab.org/docs/batch_job_tracks
 
 # RESOURCES
 NCORES     = "8"               # Number of CPU cores
-DISK       = "10GB"            # Max Disk usage
+DISK       = "20GB"            # Max Disk usage
 RAM        = "16000MB"            # Max RAM usage
-TIMELIMIT  = "600minutes"      # Max walltime
+TIMELIMIT  = "900minutes"      # Max walltime
 OS         = "centos7"        # Specify CentOS65 machines
 
 # SOURCE DATA INFORMATION
@@ -58,11 +58,11 @@ DATA_OUTPUT_BASE_DIR    = "/volatile/halld/home/%s/2018-dirc/dircsim-2018_08-ver
 SCRIPTFILE        = "/work/halld2/home/jrsteven/2018-dirc/dirc/batch/analysis/script.sh"
 ENVFILE           = "/work/halld2/home/jrsteven/2018-dirc/builds/setup_gluex.csh"
 CONFIG_FILE_PATH  = "/work/halld2/home/jrsteven/2018-dirc/dirc/batch/analysis/analysis_dirc.conf"
-TREE_NAMES        = "p2k_dirc,p2pi_dirc,pippim,kpkm" #"dirc_reactions"
+TREE_NAMES        = "p2k_dirc,p2pi_dirc,pippim__B4,kpkm__B4" #"dirc_reactions"
 
 # CONFIG FILE CONTENTS
 CONFIG_DICT = {}
-CONFIG_DICT["PLUGINS"] =            "monitoring_hists,dirc_hists,dirc_reactions,truth_dirc,danarest,ReactionFilter"
+CONFIG_DICT["PLUGINS"] =            "monitoring_hists,pid_dirc,dirc_hists,dirc_reactions,truth_dirc,danarest,ReactionFilter"
 CONFIG_DICT["NTHREADS"] =           "8" #Ncores if you have the whole node
 CONFIG_DICT["THREAD_TIMEOUT"] =     "300"
 CONFIG_DICT["JANA_CALIB_CONTEXT"] = '"variation=mc"' #'"variation=,calibtime="'
