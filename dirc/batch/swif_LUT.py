@@ -38,7 +38,7 @@ TIMELIMIT  = "360minutes"      # Max walltime
 OS         = "centos7"        # Specify CentOS65 machines
 
 # OUTPUT DATA LOCATION
-DATA_OUTPUT_BASE_DIR    = "/volatile/halld/home/%s/2018-dirc/dircsim-2018_08-ver08/lut/"%(os.environ['USER']) 
+DATA_OUTPUT_BASE_DIR    = "/volatile/halld/home/%s/2018-dirc/dircsim-2018_08-ver10/lut/"%(os.environ['USER']) 
 
 # JOB EXECUTION
 SCRIPTFILE        = "/work/halld2/home/jrsteven/2018-dirc/builds/hd_utilities/dirc/batch/script_LUT.sh"
@@ -53,7 +53,7 @@ def generate_config(CONFIG_FILE, BAR):
         config_file = open(CONFIG_FILE, 'w')
         config_file.truncate() #wipe it out
 
-	config_file.write("RUNG 50000 \n")
+	config_file.write("RUNG 60000 \n")
 	config_file.write("OUTFILE 'out.hddm' \n")
 	config_file.write("DIRCLUT %d \n" % BAR)
 	config_file.write("HADR 1 \n")
