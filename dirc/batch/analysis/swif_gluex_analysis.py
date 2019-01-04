@@ -41,7 +41,7 @@ TRACK      = "analysis"		   # https://scicomp.jlab.org/docs/batch_job_tracks
 # RESOURCES
 NCORES     = "8"               # Number of CPU cores
 DISK       = "20GB"            # Max Disk usage
-RAM        = "16000MB"            # Max RAM usage
+RAM        = "8000MB"            # Max RAM usage
 TIMELIMIT  = "900minutes"      # Max walltime
 OS         = "centos7"        # Specify CentOS65 machines
 
@@ -49,33 +49,28 @@ OS         = "centos7"        # Specify CentOS65 machines
 # FILES ARE SEARCHED-FOR WITH THE PATH: DATA_SOURCE_BASE_DIR + "/RunPeriod-" + RUN_PERIOD + "/" + VERSION + "/REST/" + FORMATTED_RUN + "/dana_rest_*.hddm"
 # Where FORMATTED_RUN is the run number you chose, with leading zeros. 
 DATA_SOURCE_TYPE      = "file" #"mss" or "file"
-DATA_SOURCE_BASE_DIR  = "/volatile/halld/home/jrsteven/2018-dirc/dircsim-2018_08-ver08/"
+DATA_SOURCE_BASE_DIR  = "/volatile/halld/home/jrsteven/2018-dirc/dircsim-2018_08-ver10/"
 
 # OUTPUT DATA LOCATION
-DATA_OUTPUT_BASE_DIR    = "/volatile/halld/home/%s/2018-dirc/dircsim-2018_08-ver08/analysis/"%(os.environ['USER'])   ## CHANGE IF YOU WANT TO
+DATA_OUTPUT_BASE_DIR    = "/volatile/halld/home/%s/2018-dirc/dircsim-2018_08-ver10/analysis/"%(os.environ['USER'])   ## CHANGE IF YOU WANT TO
 
 # JOB EXECUTION
 SCRIPTFILE        = "/work/halld2/home/jrsteven/2018-dirc/dirc/batch/analysis/script.sh"
 ENVFILE           = "/work/halld2/home/jrsteven/2018-dirc/builds/setup_gluex.csh"
 CONFIG_FILE_PATH  = "/work/halld2/home/jrsteven/2018-dirc/dirc/batch/analysis/analysis_dirc.conf"
-TREE_NAMES        = "p2k_dirc,p2pi_dirc,pippim__B4,kpkm__B4" #"dirc_reactions"
+TREE_NAMES        = ""
 
 # CONFIG FILE CONTENTS
 CONFIG_DICT = {}
-CONFIG_DICT["PLUGINS"] =            "monitoring_hists,pid_dirc,dirc_hists,dirc_reactions,truth_dirc,danarest,ReactionFilter"
+CONFIG_DICT["PLUGINS"] =            "monitoring_hists,danarest" #,dirc_hists,dirc_reactions,truth_dirc,ReactionFilter,DIRC_online"
 CONFIG_DICT["NTHREADS"] =           "8" #Ncores if you have the whole node
 CONFIG_DICT["THREAD_TIMEOUT"] =     "300"
 CONFIG_DICT["JANA_CALIB_CONTEXT"] = '"variation=mc"' #'"variation=,calibtime="'
 CONFIG_DICT["TRIG:BYPASS"] =            "1"
 CONFIG_DICT["JANA:MAX_RELAUNCH_THREADS"] = "10"
-CONFIG_DICT["DIRC:FILL_BAR_MAP"]         = "1"
-CONFIG_DICT["DIRC:TRUTH_BARHIT"]         = "1"
-CONFIG_DICT["DIRC:DEBUG_HISTS"]          = "1"
+CONFIG_DICT["DIRC:TRUTH_BARHIT"]         = "0"
+CONFIG_DICT["DIRC:DEBUG_HISTS"]          = "0"
 CONFIG_DICT["REST:WRITE_DIRC_HITS"]      = "1"
-CONFIG_DICT["Reaction1"]                 = "1_14__8_9_14"
-CONFIG_DICT["Reaction1:Flags"]           = "B4"
-CONFIG_DICT["Reaction2"]                 = "1_14__11_12_14"
-CONFIG_DICT["Reaction2:Flags"]           = "B4"
 
 ################################################## GENERATE CONFIG FILE ##################################################
 
@@ -198,7 +193,7 @@ def main(argv):
 
 		# Add jobs to workflow
 		for FILENAME in file_list:
-			FILENO = FILENAME[-24:-20] #e.g. dana_rest_003185_015.hddm #Cheat!
+			FILENO = FILENAME[-24:-20]
 			FILENO = FILENO.replace("_","")
 			#print FILENAME
 			#print FILENO
