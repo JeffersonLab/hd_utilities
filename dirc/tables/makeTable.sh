@@ -10,7 +10,7 @@ ccdb mkdir DIRC/South
 ## Copy lut_all_flat.root to /group/halld/www/halldweb/html/resources/DIRC/LUT/
 ## Set JANA_CALIB_CONTEXT to correct location (private ccdb.sqlite3 or MySQL)
 ## Execute command line to add resource, which will create CCDB commands and ask for your confirmation
-jresource -a DIRC/LUT/lut_all_flat.root 0- https://halldweb.jlab.org/resources
+jresource -a DIRC/LUT/lut_commissioning_2019_v10.root 0- https://halldweb.jlab.org/resources
 
 # CCDB: Create map table which connects resource files to run numbers
 ccdb mktbl DIRC/LUT/lut_map -r 1 map_name=string
