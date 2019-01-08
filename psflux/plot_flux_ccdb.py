@@ -105,6 +105,11 @@ def main():
     
     # get run list
     runs = rcdb_conn.select_runs(RCDB_QUERY, BEGINRUN, ENDRUN)
+    #print runs
+    #print len(runs)
+    if len(runs) == 0:
+        print("There are no runs matching the query \""+RCDB_QUERY +"\" between runs "+str(BEGINRUN)+" and "+str(ENDRUN))
+        return
 
     photon_endpoint = array('f')
     tagm_tagged_flux = array('f')
@@ -117,7 +122,7 @@ def main():
 
     # Loop over runs
     for run in runs:
-
+        print run
         # select run conditions: AMO, PARA, and PERP and polarization angle
         if RCDB_POLARIZATION != "":
             conditions_by_name = run.get_conditions_by_name()
