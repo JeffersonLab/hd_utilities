@@ -82,6 +82,13 @@ MINFILENO      = 0       # Min file number to process for each run (n.b. file nu
 MAXFILENO      = 1000    # Max file number to process for each run (n.b. file numbers start at 0!)
 FILE_FRACTION  = 1.0     # Fraction of files to process for each run in specified range (see GetFileNumbersToProcess)
 MAX_CONCURRENT_JOBS = '2000'  # Maximum number of jobs swif2 will have in flight at once
+EXCLUDE_RUNS   = [40986, 40987, 40988, 40993, 40994,
+                  41187, 41197, 41202, 41203, 41204,
+                  41376, 41378, 41383, 41384, 41385,
+                  41566, 41570, 41571, 41572, 41573,
+                  41936, 41941, 41942, 41956, 41976,
+                  42154, 42155, 42156, 42157, 42158,
+                  42439, 42442, 42444, 42445, 42446]
 
 PROJECT        = 'm3120'
 TIMELIMIT      = '9:00:00'  # Set time limit (2.4 timeslonger for KNL than haswell)
@@ -295,7 +302,13 @@ def GetRunInfo():
 		print 'Getting info for runs : ' + ' '.join([str(x) for x in RUNS])
 		for RUN in RUNS: good_runs[RUN] = GetNumEVIOFiles(RUN)
 
-	return good_runs
+	# Filter out runs in the EXCLUDE_RUNS list
+	global EXCLUDE_RUNS
+	good_runs_filtered = []
+	for run in good_runs.keys():
+		if run not in EXCLUDE_RUNS: good_runs_filtered[run] = good_runs[run]
+
+	return good_runs_filtered
 
 #----------------------------------------------------
 def GetNumEVIOFiles(RUN):
