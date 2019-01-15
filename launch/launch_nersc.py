@@ -49,11 +49,37 @@
 # runs shifter passing any arguments we give to it here in
 # the swif2 command.
 #
-# 3. The output directory is created here
+# 3. The output directory is created by this script
 # to allow group writing since the files are copied using
 # the davidl account on globus but swif2 is being run from
 # the gxproj4 account.
 #
+#
+# For the recon_2018-01_ver02 launch, the data were separated into
+# separate batches following the boundaries defined here:
+# https://halldweb.jlab.org/wiki-private/index.php/Spring_2018_Dataset_Summary
+#
+# BATCH 1: 40856-41105
+# BATCH 2: 41106-41257
+# BATCH 3: 41258-41482
+# BATCH 4: 41483-41632
+# BATCH 5: 41860-42059
+# BATCH 6: 42075-42273
+# BATCH 7: 42274-42577
+#
+# Originally, the following runs were to be excluded from the NERSC
+# launch since they were done at JLab. Some additional BCAL calibrations
+# came in last minute causing the NERSC launch to become ver02 and
+# include all runs. Here is the list of those originally excluded
+# just in case I need them handy.
+#EXCLUDE_RUNS   = [40986, 40987, 40988, 40993, 40994,
+#                  41187, 41197, 41202, 41203, 41204,
+#                  41376, 41378, 41383, 41384, 41385,
+#                  41566, 41570, 41571, 41572, 41573,
+#                  41936, 41941, 41942, 41956, 41976,
+#                  42154, 42155, 42156, 42157, 42158,
+#                  42439, 42442, 42444, 42445, 42446]
+
 
 import subprocess
 import math
@@ -70,33 +96,27 @@ VERBOSE        = 3     # 1 is default
 
 RUNPERIOD      = '2018-01'
 LAUNCHTYPE     = 'recon'  # 'offmon' or 'recon'
-VER            = '01'
-WORKFLOW       = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER
+VER            = '02'
+BATCH          = '01'
+WORKFLOW       = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER+'_batch'+BATCH
 NAME           = 'GLUEX_' + LAUNCHTYPE
 
 RCDB_QUERY     = '@is_2018production and @status_approved'  # Comment out for all runs in range MINRUN-MAXRUN
-RUNS           = [40951]      # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
-MINRUN         = 40000   # If RUNS is empty, then RCDB queried for this range
-MAXRUN         = 49999   # If RUNS is empty, then RCDB queried for this range
+RUNS           = [40951] # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
+MINRUN         = 40856   # If RUNS is empty, then RCDB queried for this range
+MAXRUN         = 41105   # If RUNS is empty, then RCDB queried for this range
 MINFILENO      = 0       # Min file number to process for each run (n.b. file numbers start at 0!)
-MAXFILENO      = 1000    # Max file number to process for each run (n.b. file numbers start at 0!)
+MAXFILENO      = 0       # Max file number to process for each run (n.b. file numbers start at 0!)
 FILE_FRACTION  = 1.0     # Fraction of files to process for each run in specified range (see GetFileNumbersToProcess)
 MAX_CONCURRENT_JOBS = '2000'  # Maximum number of jobs swif2 will have in flight at once
-EXCLUDE_RUNS   = [40986, 40987, 40988, 40993, 40994,
-                  41187, 41197, 41202, 41203, 41204,
-                  41376, 41378, 41383, 41384, 41385,
-                  41566, 41570, 41571, 41572, 41573,
-                  41936, 41941, 41942, 41956, 41976,
-                  42154, 42155, 42156, 42157, 42158,
-                  42439, 42442, 42444, 42445, 42446]
-
+EXCLUDE_RUNS   = []      # Runs that should be excluded from processing
 PROJECT        = 'm3120'
 TIMELIMIT      = '9:00:00'  # Set time limit (2.4 timeslonger for KNL than haswell)
 QOS            = 'regular'  # debug, regular, premium
 NODETYPE       = 'knl'      # haswell, knl  (quad,cache)
 
 IMAGE          = 'docker:markito3/gluex_docker_devel'
-RECONVERSION   = 'halld_recon/halld_recon-recon-ver03.2'  # must exist in /group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5-cntr
+RECONVERSION   = 'halld_recon/halld_recon-recon-2018_01-ver01'  # must exist in /group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5-cntr
 SCRIPTFILE     = '/launch/script_nersc.sh'
 CONFIG         = '/launch/jana_'+LAUNCHTYPE+'_nersc.config'
 
@@ -108,7 +128,7 @@ RCDB         = None
 if   LAUNCHTYPE=='offmon':
 	OUTPUTTOP      = 'mss:/mss/halld/halld-scratch/offline_monitoring/RunPeriod-'+RUNPERIOD+'/ver'+VER  # prefix with mss: for tape or file: for filesystem
 elif LAUNCHTYPE=='recon':
-	OUTPUTTOP      = 'mss:/mss/halld/halld-scratch/RunPeriod-'+RUNPERIOD'+/recon/ver'+VER
+	OUTPUTTOP      = 'mss:/mss/halld/halld-scratch/RunPeriod-'+RUNPERIOD+'/recon/ver'+VER
 else:
 	print 'Unknown launch type "'+LAUNCHTYPE+'"! Don\'t know where to put output files!'
 	sys.exit(-1)
@@ -237,10 +257,12 @@ def ReconOutFiles(RUN, FILE):
 	RFSTR = '%06d_%03d' % (RUN, FILE)
 	outfiles = {}
 	outfiles['job_info_%s.tgz'  % RFSTR               ] = 'job_info/%06d/job_info_%s.tgz' % (RUN, RFSTR)
+	outfiles['converted_random.hddm'                  ] = 'converted_random/%06d/converted_random_%s.hddm' % (RUN, RFSTR)
 	outfiles['dana_rest_coherent_peak.hddm'           ] = 'dana_rest_coherent_peak/%06d/dana_rest_coherent_peak_%s.hddm' % (RUN, RFSTR)
 	outfiles['dana_rest.hddm'                         ] = 'REST/%06d/dana_rest_%s.hddm' % (RUN, RFSTR)
-	outfiles['hd_rawdata_%s.exclusivepi0.evio' % RFSTR] = 'exclusivepi0/%06d/exclusivepi0_%s.evio' % (RUN, RFSTR)
+	#outfiles['hd_rawdata_%s.exclusivepi0.evio' % RFSTR] = 'exclusivepi0/%06d/exclusivepi0_%s.evio' % (RUN, RFSTR)
 	outfiles['hd_rawdata_%s.omega.evio' % RFSTR       ] = 'omega/%06d/omega_%s.evio' % (RUN, RFSTR)
+	outfiles['hd_rawdata_%s.pi0bcalskim.evio' % RFSTR ] = 'pi0bcalskim/%06d/pi0bcalskim_%s.evio' % (RUN, RFSTR)
 	outfiles['hd_root.root'                           ] = 'hists/%06d/hd_root_%s.root' % (RUN, RFSTR)
 	outfiles['p3pi_excl_skim.root'                    ] = 'p3pi_excl_skim/%06d/p3pi_excl_skim_%s.root' % (RUN, RFSTR)
 	outfiles['tree_bcal_hadronic_eff.root'            ] = 'tree_bcal_hadronic_eff/%06d/tree_bcal_hadronic_eff_%s.root' % (RUN, RFSTR)
@@ -248,9 +270,10 @@ def ReconOutFiles(RUN, FILE):
 	outfiles['tree_PSFlux.root'                       ] = 'tree_PSFlux/%06d/tree_PSFlux_%s.root' % (RUN, RFSTR)
 	outfiles['tree_sc_eff.root'                       ] = 'tree_sc_eff/%06d/tree_sc_eff_%s.root' % (RUN, RFSTR)
 	outfiles['tree_tof_eff.root'                      ] = 'tree_tof_eff/%06d/tree_tof_eff_%s.root' % (RUN, RFSTR)
+	outfiles['tree_TPOL.root'                         ] = 'tree_TPOL/%06d/tree_TPOL_%s.root' % (RUN, RFSTR)
 	outfiles['tree_trackeff.root'                     ] = 'tree_trackeff/%06d/tree_trackeff_%s.root' % (RUN, RFSTR)
 	outfiles['tree_TS_scaler.root'                    ] = 'tree_TS_scaler/%06d/tree_TS_scaler_%s.root' % (RUN, RFSTR)
-	outfiles['hd_rawdata_%s.cal_high_energy_skim.evio' % RFSTR] = 'cal_high_energy_skim/%06d/cal_high_energy_skim_%s.evio'% (RUN, RFSTR)
+	#outfiles['hd_rawdata_%s.cal_high_energy_skim.evio' % RFSTR] = 'cal_high_energy_skim/%06d/cal_high_energy_skim_%s.evio'% (RUN, RFSTR)
 
 	return outfiles
 
@@ -304,7 +327,7 @@ def GetRunInfo():
 
 	# Filter out runs in the EXCLUDE_RUNS list
 	global EXCLUDE_RUNS
-	good_runs_filtered = []
+	good_runs_filtered = {}
 	for run in good_runs.keys():
 		if run not in EXCLUDE_RUNS: good_runs_filtered[run] = good_runs[run]
 
@@ -409,6 +432,7 @@ if VERBOSE > 0:
 	print '             RunPeriod: ' + RUNPERIOD
 	print '           Launch type: ' + LAUNCHTYPE
 	print '               Version: ' + VER
+	print '                 batch: ' + BATCH
 	print '              WORKFLOW: ' + WORKFLOW
 	print '    Origin of run list: ' + RUN_LIST_SOURCE
 	print '        Number of runs: ' + str(len(good_runs))
