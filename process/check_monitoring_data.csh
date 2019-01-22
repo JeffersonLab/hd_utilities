@@ -4,7 +4,7 @@ set LOCKFILE=lock.offline
 
 set DATATYPE=mon
 set VERSION=01
-set RUNPERIOD=RunPeriod-2017-01
+set RUNPERIOD=RunPeriod-2019-01
 set INPUTDIR=/cache/halld/offline_monitoring/$RUNPERIOD
 set INPUT_SMALLFILE_DIR=/cache/halld/offline_monitoring/$RUNPERIOD
 #set OUTPUTDIR=/work/halld/data_monitoring/$RUNPERIOD/ver$VERSION
@@ -36,15 +36,16 @@ if (! -d $MONITORING_LOGDIR ) then
 endif
 
 # delete logs that are older than 30 days
-#if (-d $MONITORING_LOGDIR && $MONITORING_LOGDIR != "/log" ) then
-#    find $MONITORING_LOGDIR/ -mtime +30 -exec rm '{}' \;
-#endif
+if (-d $MONITORING_LOGDIR && $MONITORING_LOGDIR != "/log" ) then
+   find $MONITORING_LOGDIR/ -mtime +30 -exec rm '{}' \;
+endif
 
 # run the script
 cd $MONITORING_HOME
 
 if ( ! -e $LOCKFILE ) then
     touch $LOCKFILE
+    echo     ./process_new_offline_data.py $ARGS ver$VERSION $INPUTDIR $INPUT_SMALLFILE_DIR $OUTPUTDIR --logfile=$MONITORING_LOGDIR/check_monitoring_data.`date +%F_%T`.log
     ./process_new_offline_data.py $ARGS ver$VERSION $INPUTDIR $INPUT_SMALLFILE_DIR $OUTPUTDIR --logfile=$MONITORING_LOGDIR/check_monitoring_data.`date +%F_%T`.log
     #./process_new_offline_data.py $ARGS ver$VERSION $INPUTDIR $INPUT_SMALLFILE_DIR $OUTPUTDIR
     rm $LOCKFILE
