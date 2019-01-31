@@ -102,16 +102,16 @@ WORKFLOW       = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER+'_batch'+BATCH
 NAME           = 'GLUEX_' + LAUNCHTYPE
 
 RCDB_QUERY     = '@is_2018production and @status_approved'  # Comment out for all runs in range MINRUN-MAXRUN
-RUNS           = [40951] # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
+RUNS           = [40949] # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
 MINRUN         = 40856   # If RUNS is empty, then RCDB queried for this range
 MAXRUN         = 41105   # If RUNS is empty, then RCDB queried for this range
 MINFILENO      = 0       # Min file number to process for each run (n.b. file numbers start at 0!)
-MAXFILENO      = 0       # Max file number to process for each run (n.b. file numbers start at 0!)
+MAXFILENO      = 1000       # Max file number to process for each run (n.b. file numbers start at 0!)
 FILE_FRACTION  = 1.0     # Fraction of files to process for each run in specified range (see GetFileNumbersToProcess)
-MAX_CONCURRENT_JOBS = '2000'  # Maximum number of jobs swif2 will have in flight at once
+MAX_CONCURRENT_JOBS = '2100'  # Maximum number of jobs swif2 will have in flight at once
 EXCLUDE_RUNS   = []      # Runs that should be excluded from processing
 PROJECT        = 'm3120'
-TIMELIMIT      = '9:00:00'  # Set time limit (2.4 timeslonger for KNL than haswell)
+TIMELIMIT      = '7:30:00'  # Set time limit (2.4 timeslonger for KNL than haswell)
 QOS            = 'regular'  # debug, regular, premium
 NODETYPE       = 'knl'      # haswell, knl  (quad,cache)
 
