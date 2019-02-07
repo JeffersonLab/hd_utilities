@@ -115,22 +115,17 @@ root loadlib.C reco_lut.C'("drc_kaon_pion.root")'
 
 
 ###################    LED simulation   ################################
-#	The DIRCLED card in control.in controls which LED feedthrough the LED photons will come out of. The feedthroughs are 
-#	numbered from 1 to 6 with the following convention:
-#		i) number increases as one moves away from the beamline;
-#		ii) North/Upper optical box has feedthroughs 1, 2 and 3 while the South/Lower optical box has 4, 5 and 6;
+# The DIRCLED card in control.in controls which LED feedthrough the LED photons will come out of. The feedthroughs are 
+# numbered from 1 to 6 with the following convention:
+# 	i) number increases as one moves away from the beamline;
+#	ii) North/Upper optical box has feedthroughs 1, 2 and 3 while the South/Lower optical box has 4, 5 and 6;
 #
-#	The user can pass up to 6 numbers to the DIRCLED card, specifying the feedthrough numbers. Any integer number other than 
-#	1 through 6 will be ignored and any numbers passed beyond the 6th will be ignored as well. If one valid number is passed,
-#	all photons will be generated from this feedthrough. If 2 to 6 valid numbers are passed, each photon is randomly assigned 
-#	one feedthrough to come out of.
+# The user can pass up to 6 numbers to the DIRCLED card, specifying the feedthrough numbers. Any integer number other than 
+# 1 through 6 will be ignored and any numbers passed beyond the 6th will be ignored as well. If one valid number is passed,
+# all photons will be generated from this feedthrough. If 2 to 6 valid numbers are passed, each photon is randomly assigned 
+# one feedthrough to come out of.
 #
-#	Examples: 
-#	1) line "DIRCLED 4 5 6" : will generate LED photons for the South/Lower box from all feedthroughs in the South/Lower optical box
-#	2) line "DIRCLED 1" : will generate LED photons from the feedthrough in the North/Upper optical box that's closest to the beamline
-#	
-#
-#
-#
-#
-#
+# Examples: 
+#  1) line "DIRCLED 4 5 6" : will generate LED photons for the South/Lower box from all feedthroughs in the South/Lower optical box
+#  2) line "DIRCLED 1" : will generate LED photons from the feedthrough in the North/Upper optical box that's closest 
+#	to the beamline
