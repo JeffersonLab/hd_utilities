@@ -208,6 +208,16 @@ def add_job(WORKFLOW, FILEPATH, config_dict):
 	JANA_CONFIG = config_dict["JANA_CONFIG"] if ("JANA_CONFIG" in config_dict) else "NA"
 	NUM_THREADS = find_num_threads(JANA_CONFIG) if ("JANA_CONFIG" in config_dict) else "1"
 
+        # SETUP LOG DIRECTORY FOR SLURM
+        if(FILENO != "-1"):
+		LOG_DIR = config_dict["OUTDIR_SMALL"] + "/log/" + RUNNO
+	else:
+		LOG_DIR = config_dict["OUTDIR_SMALL"] + "/log"
+        make_log_dir = "mkdir -p " + LOG_DIR
+        try_command(make_log_dir)
+        if(VERBOSE == True):
+                print "LOG DIRECTORY " + LOG_DIR + " CREATED"
+
 	# CREATE ADD-JOB COMMAND
 	# job
 	add_command = "swif add-job -workflow " + WORKFLOW + " -name " + JOBNAME
@@ -325,7 +335,7 @@ def main(argv):
 
 		# Add jobs to workflow
 		for FILEPATH in file_list:
-			add_job(WORKFLOW, FILEPATH, config_dict)
+                        add_job(WORKFLOW, FILEPATH, config_dict)
 
 if __name__ == "__main__":
    main(sys.argv[1:])
