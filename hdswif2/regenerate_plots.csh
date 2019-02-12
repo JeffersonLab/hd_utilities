@@ -59,8 +59,8 @@
 #
 
 # A defaults
-set workflow="offmon_2018-01_ver18"
-set uploaddir="gxproj5@ifarm:/group/halld/www/halldweb/html/data_monitoring/launch_analysis/2018_01/launches/offline_monitoring_RunPeriod2018_01_ver18"
+set workflow="offmon_2018-01_ver19"
+set uploaddir="gxproj5@ifarm:/group/halld/www/halldweb/html/data_monitoring/launch_analysis/2018_01/launches/offline_monitoring_RunPeriod2018_01_ver19"
 set njobs=0
 set nsucceeded=0
 
@@ -78,7 +78,7 @@ set nsucceeded=0
 
 # KNL 14TB test
 #set start_date="2018-09-20T13:20:00" # n.b. California time
-#set   plot_end="2018-09-22T12:00:00" # Use this for "now"
+#set   plot_end="2018-09-22T12:00:00" 
 
 # Dual Haswell + KNL 14TB test
 #set start_date="2018-09-26T06:00:00" # n.b. California time
@@ -86,14 +86,18 @@ set nsucceeded=0
 
 # Quad Haswell + KNL 14TB test
 #set start_date="2018-09-27T10:00:00" # n.b. California time
-#set   plot_end="2018-10-01T16:00:00" # Use this for "now"
+#set   plot_end="2018-10-01T16:00:00" 
 
 # Hex Haswell + KNL 14TB test
 #set start_date="2018-10-01T18:00:00" # n.b. California time
 #set   plot_end="" # Use this for "now"
 
 # offmon-2018_01_ver18
-set start_date="2018-10-07T06:30:00" # n.b. California time
+#set start_date="2018-10-07T06:30:00" # n.b. California time
+#set   plot_end="2018-24-07T06:30:00" 
+
+# offmon-2018_01_ver19
+set start_date="2018-11-13T19:00:00" # n.b. California time
 set   plot_end="" # Use this for "now"
 
 
