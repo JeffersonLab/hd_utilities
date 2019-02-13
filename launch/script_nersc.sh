@@ -65,6 +65,16 @@ mv top.out cpuinfo.out env.out hostname.out std.err std.out $JOB_INFO
 tar czf ${JOB_INFO}.tgz $JOB_INFO
 rm -rf $JOB_INFO
 
+# The converted_random.hddm file may or may not exist, depending on
+# whether the file had random trigger events in it. In order for
+# swif2 to copy it if it does, but ignore it if not, we have to use
+# the "match:" feature. This requires the destination be a directory.
+# Thus, we need to rename the file here to it's final name since swif2
+# won't rename it while copying it.
+if [ -f converted_random.hddm ]; then
+	mv converted_random.hddm $(printf "converted_random_%06d_%03d.hddm" $RUN $FILE)
+fi
+
 # Remove link to input file.
 # The swif2 job will copy all files in this directory back
 # to JLab so we don't want the raw data file to be copied back.
