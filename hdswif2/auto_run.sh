@@ -6,7 +6,7 @@
 
 while ( true ); do
 
- ./regenerate_plots.csh -p -N -w offmon_2018-01_ver19
+ ./regenerate_plots.csh -p -N -w recon_2018-01_ver02_batch01
  sleep 500 
 
 done
