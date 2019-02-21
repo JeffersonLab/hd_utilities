@@ -138,9 +138,9 @@ void iNjobs_vs_time(const char *start_tstr, int NJOBS_TOTAL=0, int NJOBS_SUCCEED
 		DrawValue( x, 0.85*ymax, 0.04, "Jobs in workflow:", NJOBS_TOTAL);
 	}
 	DrawValue( x, 0.78*ymax, 0.04, "Jobs submitted:", nsubmitted_vs_time->GetMaximum(), NJOBS_TOTAL);
-	DrawValue( x, 0.71*ymax, 0.04, "Jobs succeeded:", NJOBS_SUCCEEDED, NJOBS_TOTAL);
-	DrawValue( x, 0.64*ymax, 0.04, "Jobs started:", nstarted_vs_time->GetMaximum(), NJOBS_TOTAL);
-	DrawValue( x, 0.57*ymax, 0.04, "Jobs ended:", nended_vs_time->GetMaximum(), NJOBS_TOTAL);
+	DrawValue( x, 0.71*ymax, 0.04, "Jobs started:", nstarted_vs_time->GetMaximum(), NJOBS_TOTAL);
+	DrawValue( x, 0.64*ymax, 0.04, "Jobs ended:", nended_vs_time->GetMaximum(), NJOBS_TOTAL);
+	DrawValue( x, 0.57*ymax, 0.04, "Jobs succeeded:", NJOBS_SUCCEEDED, NJOBS_TOTAL);
 	
 	StandardLabels(axes);
 
