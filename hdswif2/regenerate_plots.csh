@@ -59,8 +59,8 @@
 #
 
 # A defaults
-set workflow="offmon_2018-01_ver19"
-set uploaddir="gxproj5@ifarm:/group/halld/www/halldweb/html/data_monitoring/launch_analysis/2018_01/launches/offline_monitoring_RunPeriod2018_01_ver19"
+set workflow="recon_2018-01_ver01_batch01"
+set uploaddir="gxproj5@ifarm:/group/halld/www/halldweb/html/data_monitoring/launch_analysis/../recon/summary_swif2_output_recon_2018-01_ver02_batch01"
 set njobs=0
 set nsucceeded=0
 
@@ -97,7 +97,11 @@ set nsucceeded=0
 #set   plot_end="2018-24-07T06:30:00" 
 
 # offmon-2018_01_ver19
-set start_date="2018-11-13T19:00:00" # n.b. California time
+#set start_date="2018-11-13T19:00:00" # n.b. California time
+#set   plot_end="" # Use this for "now"
+
+# recon-2018_01_ver02_batch01
+set start_date="2019-02-16T06:10:00" # n.b. California time
 set   plot_end="" # Use this for "now"
 
 
