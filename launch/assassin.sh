@@ -9,7 +9,7 @@
 
 echo 'assassin.sh starting'
 date
-sleep 30600
+sleep 26950
 
 echo 'Sending abort'
 date
