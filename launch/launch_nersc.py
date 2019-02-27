@@ -103,7 +103,7 @@ NAME           = 'GLUEX_' + LAUNCHTYPE
 
 RCDB_QUERY     = '@is_2018production and @status_approved'  # Comment out for all runs in range MINRUN-MAXRUN
 RUNS           = [] # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
-MINRUN         = 40856   # If RUNS is empty, then RCDB queried for this range
+MINRUN         = 40857   # If RUNS is empty, then RCDB queried for this range
 MAXRUN         = 41105   # If RUNS is empty, then RCDB queried for this range
 MINFILENO      = 0       # Min file number to process for each run (n.b. file numbers start at 0!)
 MAXFILENO      = 1000    # Max file number to process for each run (n.b. file numbers start at 0!)
@@ -159,12 +159,6 @@ def MakeJob(RUN,FILE):
 	else:
 		print 'Unknown launch type (' + LAUNCHTYPE + ')! Unable to form output file list'
 
-	# Get list of output directories so we can pre-create them with proper 
-	# permissions. Normally, we wouldn't have to make the directories, but if using
-	# a Globus account with a different user than the one running swif2,
-	# there will be permissions errors otherwise.
-	outdirs = []
-	for (infile, outpath) in outfiles.iteritems(): outdirs.append(os.path.dirname(outpath))
 
 	# SLURM options
 	SBATCH  = ['-sbatch']
@@ -197,6 +191,17 @@ def MakeJob(RUN,FILE):
 	SWIF2_CMD += ['-input', EVIOFILE, 'mss:'+MSSFILE]
 	for src,dest in outfiles.iteritems(): SWIF2_CMD += ['-output', src, OUTPUTTOP + '/' + dest]
 	SWIF2_CMD += SBATCH + ['::'] + CMD
+
+	# Get list of output directories so we can pre-create them with proper 
+	# permissions. Normally, we wouldn't have to make the directories, but if using
+	# a Globus account with a different user than the one running swif2,
+	# there will be permissions errors otherwise.
+	outdirs = []
+	for (infile, outpath) in outfiles.iteritems():
+		if infile.startswith('match:'):  # If using wildcards, the outputpath already is the output directory
+			outdirs.append(outpath)
+		else:
+			outdirs.append(os.path.dirname(outpath))
 
 	# Pare down list of outdirs to only those that don't already exist
 	new_outdirs = [x for x in outdirs if x not in DIRS_CREATED]
@@ -257,7 +262,7 @@ def ReconOutFiles(RUN, FILE):
 	RFSTR = '%06d_%03d' % (RUN, FILE)
 	outfiles = {}
 	outfiles['job_info_%s.tgz'  % RFSTR               ] = 'job_info/%06d/job_info_%s.tgz' % (RUN, RFSTR)
-	outfiles['match:converted_random*.hddm'                  ] = 'converted_random/%06d' % (RUN)
+	outfiles['match:converted_random*.hddm'           ] = 'converted_random/%06d' % (RUN)
 	outfiles['dana_rest_coherent_peak.hddm'           ] = 'dana_rest_coherent_peak/%06d/dana_rest_coherent_peak_%s.hddm' % (RUN, RFSTR)
 	outfiles['dana_rest.hddm'                         ] = 'REST/%06d/dana_rest_%s.hddm' % (RUN, RFSTR)
 	#outfiles['hd_rawdata_%s.exclusivepi0.evio' % RFSTR] = 'exclusivepi0/%06d/exclusivepi0_%s.evio' % (RUN, RFSTR)
