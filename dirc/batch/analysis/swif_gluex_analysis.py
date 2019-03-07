@@ -39,35 +39,38 @@ PROJECT    = "gluex"          # http://scicomp.jlab.org/scicomp/#/projects
 TRACK      = "analysis"		   # https://scicomp.jlab.org/docs/batch_job_tracks
 
 # RESOURCES
-NCORES     = "4"               # Number of CPU cores
-DISK       = "10GB"            # Max Disk usage
-RAM        = "5000MB"            # Max RAM usage
-TIMELIMIT  = "600minutes"      # Max walltime
+NCORES     = "8"               # Number of CPU cores
+DISK       = "20GB"            # Max Disk usage
+RAM        = "8000MB"            # Max RAM usage
+TIMELIMIT  = "900minutes"      # Max walltime
 OS         = "centos7"        # Specify CentOS65 machines
 
 # SOURCE DATA INFORMATION
 # FILES ARE SEARCHED-FOR WITH THE PATH: DATA_SOURCE_BASE_DIR + "/RunPeriod-" + RUN_PERIOD + "/" + VERSION + "/REST/" + FORMATTED_RUN + "/dana_rest_*.hddm"
 # Where FORMATTED_RUN is the run number you chose, with leading zeros. 
 DATA_SOURCE_TYPE      = "file" #"mss" or "file"
-DATA_SOURCE_BASE_DIR  = "/volatile/halld/home/jrsteven/2018-dirc/dircsim-2018_08-ver01/"
+DATA_SOURCE_BASE_DIR  = "/volatile/halld/home/jrsteven/2018-dirc/dircsim-2018_08-ver10/"
 
 # OUTPUT DATA LOCATION
-DATA_OUTPUT_BASE_DIR    = "/volatile/halld/home/%s/2018-dirc/dircsim-2018_08-ver01/analysis/"%(os.environ['USER'])   ## CHANGE IF YOU WANT TO
+DATA_OUTPUT_BASE_DIR    = "/volatile/halld/home/%s/2018-dirc/dircsim-2018_08-ver10/analysis/"%(os.environ['USER'])   ## CHANGE IF YOU WANT TO
 
 # JOB EXECUTION
 SCRIPTFILE        = "/work/halld2/home/jrsteven/2018-dirc/dirc/batch/analysis/script.sh"
 ENVFILE           = "/work/halld2/home/jrsteven/2018-dirc/builds/setup_gluex.csh"
 CONFIG_FILE_PATH  = "/work/halld2/home/jrsteven/2018-dirc/dirc/batch/analysis/analysis_dirc.conf"
-TREE_NAMES        = "dirc_reactions" #,npi_missing,compton,gg"
+TREE_NAMES        = ""
 
 # CONFIG FILE CONTENTS
 CONFIG_DICT = {}
-CONFIG_DICT["PLUGINS"] =            "monitoring_hists,dirc_hists,dirc_reactions,truth_dirc"
-CONFIG_DICT["NTHREADS"] =           "4" #Ncores if you have the whole node
+CONFIG_DICT["PLUGINS"] =            "monitoring_hists,danarest" #,dirc_hists,dirc_reactions,truth_dirc,ReactionFilter,DIRC_online"
+CONFIG_DICT["NTHREADS"] =           "8" #Ncores if you have the whole node
 CONFIG_DICT["THREAD_TIMEOUT"] =     "300"
 CONFIG_DICT["JANA_CALIB_CONTEXT"] = '"variation=mc"' #'"variation=,calibtime="'
 CONFIG_DICT["TRIG:BYPASS"] =            "1"
 CONFIG_DICT["JANA:MAX_RELAUNCH_THREADS"] = "10"
+CONFIG_DICT["DIRC:TRUTH_BARHIT"]         = "0"
+CONFIG_DICT["DIRC:DEBUG_HISTS"]          = "0"
+CONFIG_DICT["REST:WRITE_DIRC_HITS"]      = "1"
 
 ################################################## GENERATE CONFIG FILE ##################################################
 
@@ -117,7 +120,7 @@ def add_job(WORKFLOW, DATA_SOURCE_DIR, DATA_OUTPUT_DIR, FILENAME, RUNNO, FILENO)
 	# resources
 	add_command += " -cores " + NCORES + " -disk " + DISK + " -ram " + RAM + " -time " + TIMELIMIT + " -os " + OS
 	# inputs
-	add_command += " -input " + FILENAME + " " + DATA_SOURCE_TYPE + ":" + DATA_SOURCE_DIR + "/" + FILENAME
+	#add_command += " -input " + FILENAME + " " + DATA_SOURCE_TYPE + ":" + DATA_SOURCE_DIR + "/" + FILENAME
 	# stdout
 	add_command += " -stdout " + DATA_OUTPUT_DIR + "/log/" + RUNNO + "/stdout." + STUBNAME + ".out"
 	# stderr
@@ -127,7 +130,7 @@ def add_job(WORKFLOW, DATA_SOURCE_DIR, DATA_OUTPUT_DIR, FILENAME, RUNNO, FILENO)
 	# tags
 	add_command += " -tag file_number " + FILENO
 	# command
-	add_command += " " + SCRIPTFILE + " " + ENVFILE + " " + FILENAME + " " + CONFIG_FILE_PATH + " " + DATA_OUTPUT_DIR + " " + RUNNO + " " + FILENO + " " + TREE_NAMES
+	add_command += " " + SCRIPTFILE + " " + ENVFILE + " " + DATA_SOURCE_DIR + "/" + FILENAME + " " + CONFIG_FILE_PATH + " " + DATA_OUTPUT_DIR + " " + RUNNO + " " + FILENO + " " + TREE_NAMES
 
 	if(VERBOSE == True):
 		print "job add command is \n" + str(add_command)
@@ -190,10 +193,15 @@ def main(argv):
 
 		# Add jobs to workflow
 		for FILENAME in file_list:
-			FILENO = FILENAME[-23:-20] #e.g. dana_rest_003185_015.hddm #Cheat!
-			print FILENAME
-			print FILENO
-			add_job(WORKFLOW, DATA_SOURCE_DIR, DATA_OUTPUT_DIR, FILENAME, FORMATTED_RUN, FILENO)
+			FILENO = FILENAME[-24:-20]
+			FILENO = FILENO.replace("_","")
+			#print FILENAME
+			#print FILENO
+
+			if int(FILENO) % 10 == 0: # and int(FILENO) < 100:
+				FILENAME = FILENAME.replace("0_geant4_smeared.hddm","")
+				print FILENAME
+				add_job(WORKFLOW, DATA_SOURCE_DIR, DATA_OUTPUT_DIR, FILENAME, FORMATTED_RUN, FILENO)
 
 if __name__ == "__main__":
    main(sys.argv[1:])
