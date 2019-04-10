@@ -127,7 +127,7 @@ Check_Workflow_Loop()
 
 Send_Email()
 {
-	cd /group/halld/Software/scripts/simple_email_list/lists/recon_test/
+	cd /home/gluex/simple_email_list/lists/recon_test/
 	echo "SENDING EMAIL"
 	echo "Test Results:" >> message.txt
 	echo https://halldweb.jlab.org/recon_test/$DATE/ >> message.txt
@@ -136,7 +136,7 @@ Send_Email()
 	echo https://halldweb.jlab.org/cgi-bin/data_monitoring/monitoring/recontestBrowser.py >> message.txt
 	#echo "MESSAGE CONTENT:"
 	#cat message.txt
-	/group/halld/Software/scripts/simple_email_list/scripts/simple_email_list.pl
+	/home/gluex/simple_email_list/scripts/simple_email_list.pl
 }
 
 ######################################################### EXECUTE SCRIPT ########################################################
