@@ -4,7 +4,7 @@
 # Author: Justin Stevens (jrsteven@jlab.org)
 
 import os,sys
-from ROOT import TFile,TGraph,TH1F,TF1
+from ROOT import TFile,TGraph,TH1F,TF1,gRandom
 import rcdb
 from optparse import OptionParser
 from array import array
@@ -17,6 +17,7 @@ from ccdb import Directory, TypeTable, Assignment, ConstantSet
 
 def LoadCCDB():
     sqlite_connect_str = "mysql://ccdb_user@hallddb.jlab.org/ccdb"
+    #sqlite_connect_str = "sqlite:////work/halld2/home/jrsteven/tables/hd_utilities/psflux/ccdb.sqlite"
     provider = ccdb.AlchemyProvider()                           # this class has all CCDB manipulation functions
     provider.connect(sqlite_connect_str)                        # use usual connection string to connect to database
     provider.authentication.current_user_name = "psflux_user"   # to have a name in logs
@@ -50,6 +51,7 @@ def main():
     NBINS = 1000
     EMIN = 2.0
     EMAX = 12.0
+    UNIFORM = False
 
     pp = pprint.PrettyPrinter(indent=4)
 
@@ -73,6 +75,8 @@ def main():
                      help="RCDB query")
     parser.add_option("-t","--calib-time", dest="calib_time",
                      help="CCDB calibtime Y-M-D-h-min-s")
+    parser.add_option("-u","--uniform", dest="uniform",
+		     help="Uniform option")
 
     (options, args) = parser.parse_args(sys.argv)
 
@@ -102,6 +106,8 @@ def main():
         except:
             print "Calibration time format: Y-M-D-h-min-s"
             sys.exit(0)
+    if options.uniform:
+	UNIFORM = True
 
     # Load CCDB
     print "CCDB calibtime = " + CALIBTIME.strftime("%Y-%m-%d-%H-%M-%S")
@@ -127,6 +133,7 @@ def main():
     tagh_tagged_flux = array('f')
     tagh_scaled_energy = array('f')
 
+    htagged_flux = TH1F("tagged_flux_uniform", "Uniform tagged flux; Photon Beam Energy (GeV); Flux", NBINS, EMIN, EMAX)
     htagged_fluxErr = TH1F("tagged_flux", "Tagged flux; Photon Beam Energy (GeV); Flux", NBINS, EMIN, EMAX)
     htagged_fluxErr.Sumw2()
 
@@ -198,7 +205,18 @@ def main():
 	
         # fill tagm histogram
 	for tagm_flux, tagm_scaled_energy in zip(tagm_tagged_flux, tagm_scaled_energy):
-            tagm_energy = float(photon_endpoint[0][0])*(float(tagm_scaled_energy[1])+float(tagm_scaled_energy[2]))/2.
+	    tagm_energy = float(photon_endpoint[0][0])*(float(tagm_scaled_energy[1])+float(tagm_scaled_energy[2]))/2.
+
+	    if UNIFORM:
+	            tagm_energy_low = float(photon_endpoint[0][0])*(float(tagm_scaled_energy[1]))
+		    tagm_energy_high = float(photon_endpoint[0][0])*(float(tagm_scaled_energy[2]))
+		    flux = float(tagm_flux[1])
+		    i = 0
+		    while i <= flux:
+			energy = tagm_energy_low + gRandom.Uniform(tagm_energy_high-tagm_energy_low)
+		    	htagged_flux.Fill(energy,scale)
+			i += 1
+
             bin_energy = htagged_fluxErr.FindBin(tagm_energy)
             previous_bincontent = htagged_fluxErr.GetBinContent(bin_energy)
             previous_binerror = math.sqrt(htagged_fluxErr.GetBinError(bin_energy)) # error^2 stored in histogram
@@ -210,6 +228,17 @@ def main():
         # fill tagh histogram
 	for tagh_flux, tagh_scaled_energy in zip(tagh_tagged_flux, tagh_scaled_energy):
             tagh_energy = float(photon_endpoint[0][0])*(float(tagh_scaled_energy[1])+float(tagh_scaled_energy[2]))/2.
+
+	    if UNIFORM:
+		    tagh_energy_low = float(photon_endpoint[0][0])*(float(tagh_scaled_energy[1]))
+ 	    	    tagh_energy_high = float(photon_endpoint[0][0])*(float(tagh_scaled_energy[2]))
+	            flux = float(tagh_flux[1])
+	            i = 0
+	            while i <= flux:
+	                energy = tagh_energy_low + gRandom.Uniform(tagh_energy_high-tagh_energy_low)
+	                htagged_flux.Fill(energy,scale)
+	                i += 1
+
 	    bin_energy = htagged_fluxErr.FindBin(tagh_energy)
 	    previous_bincontent = htagged_fluxErr.GetBinContent(bin_energy)
 	    previous_binerror = math.sqrt(htagged_fluxErr.GetBinError(bin_energy)) # error^2 stored in histogram
@@ -226,6 +255,7 @@ def main():
     PS_accept = PS_accept_assignment.constant_set.data_table
     fPSAcceptance.SetParameters(float(PS_accept[0][0]), float(PS_accept[0][1]), float(PS_accept[0][2]));
 
+    htagged_flux.Divide(fPSAcceptance);
     htagged_fluxErr.Divide(fPSAcceptance);
 
     # Initialize output file
@@ -237,6 +267,7 @@ def main():
     OUTPUT_FILENAME += "_%d_%d.root" % (BEGINRUN, ENDRUN)
     
     fout = TFile(OUTPUT_FILENAME, "recreate")
+    htagged_flux.Write()
     htagged_fluxErr.Write()
     fout.Close()
     
