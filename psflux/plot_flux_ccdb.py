@@ -139,7 +139,11 @@ def main():
 
     # Loop over runs
     for run in runs:
-
+        if RCDB_POLARIZATION == "" and RCDB_POL_ANGLE != "":
+            print "ERROR: polarization angle (option -a or --angle) specified, but polarization flag (option -p or --pol) was not. "
+            print "Please rerun and specify a polarization flag (PARA or PERP) while running"
+            return
+			
         # select run conditions: AMO, PARA, and PERP and polarization angle
         if RCDB_POLARIZATION != "":
             conditions_by_name = run.get_conditions_by_name()
