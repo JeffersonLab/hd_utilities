@@ -143,7 +143,7 @@ def main():
             print "ERROR: polarization angle (option -a or --angle) specified, but polarization flag (option -p or --pol) was not. "
             print "Please rerun and specify a polarization flag (PARA or PERP) while running"
             return
-			
+
         # select run conditions: AMO, PARA, and PERP and polarization angle
         if RCDB_POLARIZATION != "":
             conditions_by_name = run.get_conditions_by_name()
@@ -230,18 +230,24 @@ def main():
             htagged_fluxErr.SetBinError(bin_energy, new_binerror)
         
         # fill tagh histogram
+	previous_energy_scaled_low = 999. # keep track of low energy bin boundry to avoid overlaps
 	for tagh_flux, tagh_scaled_energy in zip(tagh_tagged_flux, tagh_scaled_energy):
             tagh_energy = float(photon_endpoint[0][0])*(float(tagh_scaled_energy[1])+float(tagh_scaled_energy[2]))/2.
 
 	    if UNIFORM:
 		    tagh_energy_low = float(photon_endpoint[0][0])*(float(tagh_scaled_energy[1]))
  	    	    tagh_energy_high = float(photon_endpoint[0][0])*(float(tagh_scaled_energy[2]))
+		    if previous_energy_scaled_low < tagh_energy_high:
+			tagh_energy_high = previous_energy_scaled_low
+
 	            flux = float(tagh_flux[1])
 	            i = 0
 	            while i <= flux:
 	                energy = tagh_energy_low + gRandom.Uniform(tagh_energy_high-tagh_energy_low)
 	                htagged_flux.Fill(energy,scale)
 	                i += 1
+
+		    previous_energy_scaled_low = tagh_energy_low
 
 	    bin_energy = htagged_fluxErr.FindBin(tagh_energy)
 	    previous_bincontent = htagged_fluxErr.GetBinContent(bin_energy)
