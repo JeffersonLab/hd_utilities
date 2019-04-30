@@ -1,5 +1,5 @@
 #!/bin/sh
-simple_dir=/group/halld/Software/scripts/simple_email_list/lists/b1pi
+simple_dir=/home/gluex/simple_email_list/lists/b1pi
 cd $simple_dir
 rm -f message.txt
 touch message.txt

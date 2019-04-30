@@ -27,6 +27,10 @@ Options:
                         Minimum energy for flux histogram
   -x EMAX, --energy-max=EMAX
                         Maximum energy for flux histogram
+  -r RCDB, --rcdb-query='query'
+                        RCDB query for run selection
+  -t CALIBTIME, --calib-time='T-M-D-h-min-s'
+                        CCDB calibtime
 ```
 
 Here beginRun is the beginning of your run range and endRun is the end of your run range.  For example for RunPeriod-2016-02 "golden period" beginRun=11366 and endRun=11555

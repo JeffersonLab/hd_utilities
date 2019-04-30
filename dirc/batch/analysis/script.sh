@@ -27,13 +27,11 @@ printenv
 # This step is necessary since the cache files will be created as soft links in the current directory, and we want to avoid large I/O processes.
 # We first copy the input file to the current directory, then remove the link.
 ls -l
-cp $INPUTFILE ./tmp_file
-rm -f $INPUTFILE
-mv tmp_file $INPUTFILE
+cp ${INPUTFILE}?_geant4_smeared.hddm ./
 ls -l
 
 # RUN JANA
-hd_root $INPUTFILE --config=$CONFIG_FILE
+hd_root ./*.hddm --config=$CONFIG_FILE
 
 # RETURN CODE
 set RETURN_CODE = $?

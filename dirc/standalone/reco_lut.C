@@ -107,14 +107,13 @@ void reco_lut(TString infile="out.root",TString inlut="lut_all_avr.root",double 
     	hit = glx_event->GetHit(h);
     	int pmt = hit.GetPmtId();
     	int pix = hit.GetPixelId();
-    	double hitTime = hit.GetLeadTime(); //glx_event->GetTime();
+    	double hitTime = hit.GetLeadTime() - glx_event->GetTime();
 	TVector3 gpos = hit.GetPosition();
 
 	//if(hitTime>48) continue;
 	nphc++;
 	
-       	bool reflected = hitTime>48;
-	//bool reflected = hitTime>34;
+	bool reflected = hitTime>38;
 	
 	if(glx_event->GetPosition().Y()<0) lenz = fabs(barend+glx_event->GetPosition().X()*10); //80 
 	else lenz =fabs(glx_event->GetPosition().X()*10-barend);
@@ -158,7 +157,7 @@ void reco_lut(TString infile="out.root",TString inlut="lut_all_avr.root",double 
 	      tangle = momInBar.Angle(dir);//-0.002; //correction
 	    
 	      //double bartime = lenz/cos(luttheta)/222.0; //198 //203.767 for 1.47125
-	      double bartime = lenz/cos(luttheta)/208.0; //198 //203.767 for 1.47125
+	      double bartime = lenz/cos(luttheta)/198.; //203.767 for 1.47125
 	      //double bartime = lenz/cos(luttheta)/198.;
 	      double totalTime = bartime+evtime;
 	      hTime->Fill(hitTime);

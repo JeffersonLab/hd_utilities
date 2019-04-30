@@ -16,7 +16,8 @@ def main(argv):
 	for lut in range(0, 48):
 		fileInName = "tree/lut_%d.root" % lut
 		subprocess.call(["ln", "-s", fileInName, "lut.root"])
-		subprocess.call(["root", "-b", "-q", "loadlib.C", "glxlut_avr.C+"])
+		subprocess.call(["root", "-l", "-b", "-q", "loadlib.C", "glxlut_avr.C+"])
+
 		fileOutName = "tree/lut_avr_%d.root" % lut
 		subprocess.call(["mv", "lut_avr.root", fileOutName])
 		subprocess.call(["rm", "lut.root"]) 
