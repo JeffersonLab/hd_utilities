@@ -110,8 +110,8 @@ with open('slurm.dat') as f:
 				MaxRSS_GB = float(vals[6].split('M')[0])/1000.0  # Non-batch line skips the MaxRSS field so JobName is 6th value
 		elif vals[0].endswith('.extern'):
 			for i in range(0,len(vals)):
-				if vals[i] == 'extern' and len(vals)>(i+1):
-					ExitCode = int(vals[i+1].split(':')[0])  # "extern" line skips ResvCPURAW field so ExitCode is 8th value
+				if vals[i] == 'extern':
+					if len(vals)>(i+1): ExitCode = int(vals[i+1].split(':')[0])  # "extern" line skips ResvCPURAW field so ExitCode is 8th value
 					myvals =                          (Submit , Start , End , NCPUS , CPUTIME , Latency , JobName , job_type , run , file , ExitCode)
 					c.execute('INSERT INTO jobs VALUES ( ?    ,   ?   ,  ?  ,   ?   ,   ?     ,    ?    ,    ?    ,     ?    ,  ?  ,   ?  ,    ?    )', myvals)
 					break
@@ -134,6 +134,8 @@ with open('slurm.dat') as f:
 				job_type='test'
 				run = 12345
 				file = 0
+			ExitCode = 0
+			if len(vals)>8 : ExitCode = int(vals[8].split(':')[0])
 
 			# Go ahead and make an entry for jobs that have not started but are queued so they
 			# can be plotted
