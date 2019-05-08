@@ -113,8 +113,8 @@ set start_date="2019-03-18T08:45:00" # n.b. California time
 set   plot_end="2019-04-16T11:00:00"
 
 # recon-2018_01_ver02_batch04
-set start_date="2019-04-16T11:45:00" # n.b. California time
-set   plot_end="" # Use this for "now"
+set start_date="2019-04-16T09:30:00" # n.b. California time
+set   plot_end="2019-05-07T08:00:00" # 
 
 
 set plot_start=$start_date 
