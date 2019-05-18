@@ -430,6 +430,7 @@ void ConvertTree(TString treeName){
   float  outPx[MAXPARTICLES]={},  outPy[MAXPARTICLES]={},  outPz[MAXPARTICLES]={},  outEn[MAXPARTICLES]={};
   float outRPx[MAXPARTICLES]={}, outRPy[MAXPARTICLES]={}, outRPz[MAXPARTICLES]={}, outREn[MAXPARTICLES]={};
   float outTkChi2[MAXPARTICLES]={}, outTkNDF[MAXPARTICLES]={};
+  float outQuality[MAXPARTICLES]={};
   {
     for (unsigned int im = 0; im < orderedParticleNames.size(); im++){
     for (unsigned int id = 0; id < orderedParticleNames[im].size(); id++){
@@ -444,6 +445,8 @@ void ConvertTree(TString treeName){
       TString vRPy("RPyP"); vRPy += fsIndex; outTree.Branch(vRPy,&outRPy[pIndex],vRPy+"/F");
       TString vRPz("RPzP"); vRPz += fsIndex; outTree.Branch(vRPz,&outRPz[pIndex],vRPz+"/F");
       TString vREn("REnP"); vREn += fsIndex; outTree.Branch(vREn,&outREn[pIndex],vREn+"/F");
+      TString vQual("Quality"); vQual += fsIndex; outTree.Branch(vQual, &outQuality[pIndex], vQual+"/F");
+      
       if (particleClass(name) == "Charged"){
         TString vTkNDF("TkNDFP"); vTkNDF += fsIndex;
             outTree.Branch(vTkNDF,&outTkNDF[pIndex],vTkNDF+"/F");
@@ -555,6 +558,8 @@ void ConvertTree(TString treeName){
             outRPy[pIndex] = p4->Py();
             outRPz[pIndex] = p4->Pz();
             outREn[pIndex] = p4->E();
+        
+            outQuality[pIndex] = inShower_Quality[pIndex];
         }
 
           // decaying to charged tracks
