@@ -324,7 +324,9 @@ void ConvertTree(TString treeName){
 
   TClonesArray *inNeutralHypo__P4_Measured = new TClonesArray("TLorentzVector");
       inTree->SetBranchAddress("NeutralHypo__P4_Measured",&(inNeutralHypo__P4_Measured));
-
+  
+  Float_t inShower_Quality[MAXPARTICLES] = {};
+      inTree->SetBranchAddress("NeutralHypo__ShowerQuality", inShower_Quality);
 
         // ************************************
         // ***** 2B. COMBO-DEPENDENT DATA *****
