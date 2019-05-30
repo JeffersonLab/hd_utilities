@@ -60,7 +60,7 @@
 
 # A defaults
 set workflow="recon_2018-01_ver01_batch03"
-set uploaddir="gxproj5@ifarm:/group/halld/www/halldweb/html/data_monitoring/launch_analysis/../recon/summary_swif2_output_recon_2018-01_ver02_batch04"
+set uploaddir="gxproj5@ifarm:/group/halld/www/halldweb/html/data_monitoring/launch_analysis/../recon/summary_swif2_output_recon_2018-01_ver02_batch05"
 set njobs=0
 set nsucceeded=0
 
@@ -115,6 +115,10 @@ set   plot_end="2019-04-16T11:00:00"
 # recon-2018_01_ver02_batch04
 set start_date="2019-04-16T09:30:00" # n.b. California time
 set   plot_end="2019-05-07T08:00:00" # 
+
+# recon-2018_01_ver02_batch05
+set start_date="2019-05-07T20:00:00" # n.b. California time
+set   plot_end="" # Use this for "now"
 
 
 set plot_start=$start_date 
