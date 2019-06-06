@@ -19,9 +19,17 @@ static const int MAXPARTICLES = 50;
 void ConvertFile(TString inFileName, TString outFileName);
 void ConvertTree(TString treeName);
 
+  // utility functions
+TString FSParticleType(TString gluexParticleType);
+int FSParticleOrder(TString gluexParticleType);
+TString particleClass(TString gluexParticleType);
+pair<int,int> FSCode(vector< vector<TString> > gluexParticleTypes);
+
+
 TFile* gInputFile;
 TFile* gOutputFile;
 float  gChi2DOFCut;
+bool gIsMC;
 
 
 int main(int argc, char** argv){
@@ -31,83 +39,33 @@ int main(int argc, char** argv){
   cout << "in the GlueX analysis code to a flat TTree (\"FS Format\")." << endl << endl;
   cout << "The final state is determined automatically from the input file." << endl << endl;
   cout << "Usage:" << endl;
-  cout << "  flatten  <input file name> <output file name> [Chi2DOF cut value]" << endl << endl;
+  cout << "  flatten  <input file name> <output file name> <MC: 0 or 1> " << endl;
+  cout << "            [optional Chi2DOF cut value]" << endl << endl;
   cout << "Notes:" << endl;
   cout << "  * the output tree name is ntFSGlueX for now " << endl;
   cout << "  * the output tree name could also be derived from the input" << endl;
   cout << "     tree name (this is commented out)" << endl;
   cout << "  * the input tree name should contain \"_Tree\" (if this standard" << endl;
   cout << "     changes in the GlueX code, this code can be easily modified)" << endl;
-  cout << "***********************************************************" << endl;
-  if ((argc != 3) && (argc != 4)) exit(0);
+  cout << "***********************************************************" << endl << endl;
+  if ((argc != 4) && (argc != 5)){
+     cout << "ERROR: wrong number of arguments -- see usage notes above" << endl;
+     exit(0);
+  }
   TString inFileName(argv[1]);
   TString outFileName(argv[2]);
-  if (argc == 3) gChi2DOFCut = 1000.0;
-  if (argc == 4) gChi2DOFCut = atof(argv[3]);
+  TString isMC(argv[3]);
+       if (isMC == "0"){ gIsMC = false; }
+  else if (isMC == "1"){ gIsMC = true; }
+  else {
+     cout << "ERROR: 3rd argument should be 1 or 0 to specify whether this is or is not MC" << endl;
+     exit(0);
+  }
+  if (argc == 4) gChi2DOFCut = 1000.0;
+  if (argc == 5) gChi2DOFCut = atof(argv[4]);
   ConvertFile(inFileName,outFileName);
 }
 
-
-TString FSParticleType(TString gluexParticleType){
-  if (gluexParticleType.Contains("AntiLambda"))  return TString("ALambda");
-  if (gluexParticleType.Contains("Lambda"))      return TString("Lambda");
-  if (gluexParticleType.Contains("Positron"))    return TString("e+");
-  if (gluexParticleType.Contains("Electron"))    return TString("e-");
-  if (gluexParticleType.Contains("MuonPlus"))    return TString("mu+");
-  if (gluexParticleType.Contains("MuonMinus"))   return TString("mu-");
-  if (gluexParticleType.Contains("AntiProton"))  return TString("p-");
-  if (gluexParticleType.Contains("Proton"))      return TString("p+");
-  if (gluexParticleType.Contains("Eta"))         return TString("eta");
-  if (gluexParticleType.Contains("Photon"))      return TString("gamma");
-  if (gluexParticleType.Contains("KPlus"))       return TString("K+");
-  if (gluexParticleType.Contains("KMinus"))      return TString("K-");
-  if (gluexParticleType.Contains("KShort"))      return TString("Ks");
-  if (gluexParticleType.Contains("PiPlus"))      return TString("pi+");
-  if (gluexParticleType.Contains("PiMinus"))     return TString("pi-");
-  if (gluexParticleType.Contains("Pi0"))         return TString("pi0");
-  return TString("");
-}
-
-
-int FSParticleOrder(TString gluexParticleType){
-  if (gluexParticleType.Contains("AntiLambda"))  return 15;
-  if (gluexParticleType.Contains("Lambda"))      return 16;
-  if (gluexParticleType.Contains("Positron"))    return 14;
-  if (gluexParticleType.Contains("Electron"))    return 13;
-  if (gluexParticleType.Contains("MuonPlus"))    return 12;
-  if (gluexParticleType.Contains("MuonMinus"))   return 11;
-  if (gluexParticleType.Contains("AntiProton"))  return 9;
-  if (gluexParticleType.Contains("Proton"))      return 10;
-  if (gluexParticleType.Contains("Eta"))         return 8;
-  if (gluexParticleType.Contains("Photon"))      return 7;
-  if (gluexParticleType.Contains("KPlus"))       return 6;
-  if (gluexParticleType.Contains("KMinus"))      return 5;
-  if (gluexParticleType.Contains("KShort"))      return 4;
-  if (gluexParticleType.Contains("PiPlus"))      return 3;
-  if (gluexParticleType.Contains("PiMinus"))     return 2;
-  if (gluexParticleType.Contains("Pi0"))         return 1;
-  return 0;
-}
-
-TString particleClass(TString gluexParticleType){
-  if (gluexParticleType.Contains("AntiLambda"))  return TString("DecayingToCharged");
-  if (gluexParticleType.Contains("Lambda"))      return TString("DecayingToCharged");
-  if (gluexParticleType.Contains("Positron"))    return TString("Charged");
-  if (gluexParticleType.Contains("Electron"))    return TString("Charged");
-  if (gluexParticleType.Contains("MuonPlus"))    return TString("Charged");
-  if (gluexParticleType.Contains("MuonMinus"))   return TString("Charged");
-  if (gluexParticleType.Contains("AntiProton"))  return TString("Charged");
-  if (gluexParticleType.Contains("Proton"))      return TString("Charged");
-  if (gluexParticleType.Contains("Eta"))         return TString("DecayingToNeutral");
-  if (gluexParticleType.Contains("Photon"))      return TString("Neutral");
-  if (gluexParticleType.Contains("KPlus"))       return TString("Charged");
-  if (gluexParticleType.Contains("KMinus"))      return TString("Charged");
-  if (gluexParticleType.Contains("KShort"))      return TString("DecayingToCharged");
-  if (gluexParticleType.Contains("PiPlus"))      return TString("Charged");
-  if (gluexParticleType.Contains("PiMinus"))     return TString("Charged");
-  if (gluexParticleType.Contains("Pi0"))         return TString("DecayingToNeutral");
-  return TString("");
-}
 
 
 void ConvertFile(TString inFileName, TString outFileName){
@@ -151,31 +109,34 @@ void ConvertTree(TString treeName){
   {
     TList* userInfo = inTree->GetUserInfo();
         if (userInfo){ cout << "  OK: found UserInfo" << endl; }
-        else { cout << "  ERROR:  could not find UserInfo" << endl; exit(1); }
+        else { cout << "  ERROR:  could not find UserInfo" << endl; exit(0); }
     TList* rootMothers = (TList*) userInfo->FindObject("ParticleNameList");
         if (rootMothers){ cout << "  OK: found ParticleNameList" << endl; }
-        else { cout << "  ERROR:  could not find ParticleNameList" << endl; exit(1); }
+        else { cout << "  ERROR:  could not find ParticleNameList" << endl; exit(0); }
     TMap* rootDecayProductMap = (TMap*) userInfo->FindObject("DecayProductMap");
         if (rootDecayProductMap){ cout << "  OK: found DecayProductMap" << endl; }
-        else { cout << "  ERROR:  could not find DecayProductMap" << endl; exit(1); }
+        else { cout << "  ERROR:  could not find DecayProductMap" << endl; exit(0); }
+    TMap* rootNameToPIDMap = (TMap*) userInfo->FindObject("NameToPIDMap");
+        if (rootNameToPIDMap){ cout << "  OK: found NameToPIDMap" << endl; }
+        else { cout << "  ERROR:  could not find NameToPIDMap" << endl; exit(0); }
     TMap* miscInfo = (TMap*) userInfo->FindObject("MiscInfoMap");
         if (miscInfo){ cout << "  OK: found MiscInfoMap" << endl; }
-        else { cout << "  ERROR:  could not find MiscInfoMap" << endl; exit(1); }
+        else { cout << "  ERROR:  could not find MiscInfoMap" << endl; exit(0); }
     TObjString* kinFitType = (TObjString*) miscInfo->GetValue("KinFitType");
         if (kinFitType->GetString() != "" && 
             kinFitType->GetString() != "0")
              { cout << "  OK: found KinFitType = "  << kinFitType->GetString() << endl; }
-        else { cout << "  ERROR: bad KinFitType = " << kinFitType->GetString() << endl; exit(1); }
+        else { cout << "  ERROR: bad KinFitType = " << kinFitType->GetString() << endl; exit(0); }
     TObjString* tosTCZ = (TObjString*) miscInfo->GetValue("Target__CenterZ");
         if (tosTCZ) 
              { cout << "  OK: found Target__CenterZ = "  << tosTCZ->GetString() << endl; }
-        else { cout << "  ERROR: could not find Target__CenterZ " << endl; exit(1); }
+        else { cout << "  ERROR: could not find Target__CenterZ " << endl; exit(0); }
     TString tsTCZ(tosTCZ->GetString());
         if (tsTCZ.IsFloat())
              { string sTCZ(""); for (int i=0; i<tsTCZ.Length(); i++){ sTCZ += tsTCZ[i]; }
                inTargetCenterZ = atof(sTCZ.c_str()); 
                cout << "            inTargetCenterZ = " << inTargetCenterZ << endl; }
-        else { cout << "  ERROR: Target__CenterZ is not a number" << endl; exit(1); }
+        else { cout << "  ERROR: Target__CenterZ is not a number" << endl; exit(0); }
   }
 
 
@@ -209,6 +170,23 @@ void ConvertTree(TString treeName){
     }
     for (unsigned int i = 0; i < eraseVector.size(); i++){
       decayProductMap.erase(eraseVector[i]);
+    }
+  }
+
+
+  cout << endl << endl << "testing:  READING PDG NUMBERS FROM THE ROOT FILE:" << endl << endl;
+  map< TString, int > nameToPIDMap;  // map from name to PDG ID
+  {
+    TList* userInfo = inTree->GetUserInfo();
+    TMap* rootNameToPIDMap = (TMap*) userInfo->FindObject("NameToPIDMap");
+    TMapIter tmapIter(rootNameToPIDMap);
+    TObjString* rootName = (TObjString*) tmapIter();
+    while (rootName != NULL){
+      TObjString* rootPID =  (TObjString*) rootNameToPIDMap->GetValue(rootName->GetString());
+      TString sName = rootName->GetString();
+      TString sPID  = rootPID->GetString();
+      cout << sName << ":  " << sPID << endl;
+      rootName = (TObjString*) tmapIter.Next();
     }
   }
 
@@ -250,6 +228,9 @@ void ConvertTree(TString treeName){
       }
     }
   }
+  pair<int,int> fsCode = FSCode(orderedParticleNames);
+  cout << "  DecayCode1 = " << fsCode.first << endl;
+  cout << "  DecayCode2 = " << fsCode.second << endl << endl;
 
 
      // **********************************************************************
@@ -282,8 +263,31 @@ void ConvertTree(TString treeName){
    // STEP 2:  SET UP TO READ THE INPUT TREE (IN ANALYSIS TREE FORMAT)
    // **********************************************************************
 
+        // ******************************
+        // ***** 2A. SIMULATED DATA *****
+        // ******************************
+
+        //   *** Thrown Non-Particle Data ***
+
+  UInt_t inNumThrown;
+      if (gIsMC) inTree->SetBranchAddress("NumThrown", &inNumThrown);
+
+
+        //   *** Thrown Beam Particle ***
+
+  Float_t inThrownBeam__GeneratedEnergy;
+      if (gIsMC) inTree->SetBranchAddress("ThrownBeam__GeneratedEnergy", &inThrownBeam__GeneratedEnergy);
+
+
+        //   *** Thrown Products ***
+
+  Int_t  inThrown__PID[MAXPARTICLES] = {};   
+      if (gIsMC) inTree->SetBranchAddress("Thrown__PID", inThrown__PID);
+
+
+
         // **************************************
-        // ***** 2A. COMBO-INDEPENDENT DATA *****
+        // ***** 2B. COMBO-INDEPENDENT DATA *****
         // **************************************
 
         //   *** Non-Particle Data ***
@@ -329,7 +333,7 @@ void ConvertTree(TString treeName){
 
 
         // ************************************
-        // ***** 2B. COMBO-DEPENDENT DATA *****
+        // ***** 2C. COMBO-DEPENDENT DATA *****
         // ************************************
 
         //   *** Particle-Independent Data (indexed by combo) ***
@@ -613,6 +617,7 @@ void ConvertTree(TString treeName){
       }
       if (iEntry < 5){
         cout << "EVENT: " << inEventNumber << " (combo no. " << ic+1 << ")" << endl;
+        if (gIsMC) cout << "  NumThrown = " << inNumThrown << endl;
         cout << "  NumChargedHypos = " << inNumChargedHypos << endl;
         cout << "  NumNeutralHypos = " << inNumNeutralHypos << endl;
         cout << "  NumBeam   = " << inNumBeam << endl;
@@ -666,3 +671,111 @@ void ConvertTree(TString treeName){
 
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// **************************************
+//   utility functions
+// **************************************
+
+
+
+TString FSParticleType(TString gluexParticleType){
+  if (gluexParticleType.Contains("AntiLambda"))  return TString("ALambda");
+  if (gluexParticleType.Contains("Lambda"))      return TString("Lambda");
+  if (gluexParticleType.Contains("Positron"))    return TString("e+");
+  if (gluexParticleType.Contains("Electron"))    return TString("e-");
+  if (gluexParticleType.Contains("MuonPlus"))    return TString("mu+");
+  if (gluexParticleType.Contains("MuonMinus"))   return TString("mu-");
+  if (gluexParticleType.Contains("AntiProton"))  return TString("p-");
+  if (gluexParticleType.Contains("Proton"))      return TString("p+");
+  if (gluexParticleType.Contains("Eta"))         return TString("eta");
+  if (gluexParticleType.Contains("Photon"))      return TString("gamma");
+  if (gluexParticleType.Contains("KPlus"))       return TString("K+");
+  if (gluexParticleType.Contains("KMinus"))      return TString("K-");
+  if (gluexParticleType.Contains("KShort"))      return TString("Ks");
+  if (gluexParticleType.Contains("PiPlus"))      return TString("pi+");
+  if (gluexParticleType.Contains("PiMinus"))     return TString("pi-");
+  if (gluexParticleType.Contains("Pi0"))         return TString("pi0");
+  return TString("");
+}
+
+
+int FSParticleOrder(TString gluexParticleType){
+  if (gluexParticleType.Contains("AntiLambda"))  return 15;
+  if (gluexParticleType.Contains("Lambda"))      return 16;
+  if (gluexParticleType.Contains("Positron"))    return 14;
+  if (gluexParticleType.Contains("Electron"))    return 13;
+  if (gluexParticleType.Contains("MuonPlus"))    return 12;
+  if (gluexParticleType.Contains("MuonMinus"))   return 11;
+  if (gluexParticleType.Contains("AntiProton"))  return 9;
+  if (gluexParticleType.Contains("Proton"))      return 10;
+  if (gluexParticleType.Contains("Eta"))         return 8;
+  if (gluexParticleType.Contains("Photon"))      return 7;
+  if (gluexParticleType.Contains("KPlus"))       return 6;
+  if (gluexParticleType.Contains("KMinus"))      return 5;
+  if (gluexParticleType.Contains("KShort"))      return 4;
+  if (gluexParticleType.Contains("PiPlus"))      return 3;
+  if (gluexParticleType.Contains("PiMinus"))     return 2;
+  if (gluexParticleType.Contains("Pi0"))         return 1;
+  return 0;
+}
+
+
+TString particleClass(TString gluexParticleType){
+  if (gluexParticleType.Contains("AntiLambda"))  return TString("DecayingToCharged");
+  if (gluexParticleType.Contains("Lambda"))      return TString("DecayingToCharged");
+  if (gluexParticleType.Contains("Positron"))    return TString("Charged");
+  if (gluexParticleType.Contains("Electron"))    return TString("Charged");
+  if (gluexParticleType.Contains("MuonPlus"))    return TString("Charged");
+  if (gluexParticleType.Contains("MuonMinus"))   return TString("Charged");
+  if (gluexParticleType.Contains("AntiProton"))  return TString("Charged");
+  if (gluexParticleType.Contains("Proton"))      return TString("Charged");
+  if (gluexParticleType.Contains("Eta"))         return TString("DecayingToNeutral");
+  if (gluexParticleType.Contains("Photon"))      return TString("Neutral");
+  if (gluexParticleType.Contains("KPlus"))       return TString("Charged");
+  if (gluexParticleType.Contains("KMinus"))      return TString("Charged");
+  if (gluexParticleType.Contains("KShort"))      return TString("DecayingToCharged");
+  if (gluexParticleType.Contains("PiPlus"))      return TString("Charged");
+  if (gluexParticleType.Contains("PiMinus"))     return TString("Charged");
+  if (gluexParticleType.Contains("Pi0"))         return TString("DecayingToNeutral");
+  return TString("");
+}
+
+
+pair<int,int> FSCode(vector< vector<TString> > gluexParticleTypes){
+  int code1 = 0;
+  int code2 = 0;
+  for (unsigned int i = 0; i < gluexParticleTypes.size(); i++){
+    TString gluexParticleType = gluexParticleTypes[i][0];
+         if (gluexParticleType.Contains("AntiLambda"))  code2 += 10000000;
+    else if (gluexParticleType.Contains("Lambda"))      code2 += 100000000;
+    else if (gluexParticleType.Contains("Positron"))    code2 += 1000000;
+    else if (gluexParticleType.Contains("Electron"))    code2 += 100000;
+    else if (gluexParticleType.Contains("MuonPlus"))    code2 += 10000;
+    else if (gluexParticleType.Contains("MuonMinus"))   code2 += 1000;
+    else if (gluexParticleType.Contains("AntiProton"))  code2 += 10;
+    else if (gluexParticleType.Contains("Proton"))      code2 += 100;
+    else if (gluexParticleType.Contains("Eta"))         code2 += 1;
+    else if (gluexParticleType.Contains("Photon"))      code1 += 1000000;
+    else if (gluexParticleType.Contains("KPlus"))       code1 += 100000;
+    else if (gluexParticleType.Contains("KMinus"))      code1 += 10000;
+    else if (gluexParticleType.Contains("KShort"))      code1 += 1000;
+    else if (gluexParticleType.Contains("PiPlus"))      code1 += 100;
+    else if (gluexParticleType.Contains("PiMinus"))     code1 += 10;
+    else if (gluexParticleType.Contains("Pi0"))         code1 += 1;
+  }
+  return pair<int,int>(code1,code2);
+}
