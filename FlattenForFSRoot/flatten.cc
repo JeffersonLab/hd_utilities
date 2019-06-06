@@ -336,8 +336,8 @@ void ConvertTree(TString treeName){
 
   Float_t inRFTime_Measured[MAXCOMBOS] = {};
       inTree->SetBranchAddress("RFTime_Measured", inRFTime_Measured);  
-  Float_t inRFTime_KinFit[MAXCOMBOS] = {};
-      inTree->SetBranchAddress("RFTime_KinFit", inRFTime_KinFit);  
+  //Float_t inRFTime_KinFit[MAXCOMBOS] = {};
+  //    inTree->SetBranchAddress("RFTime_KinFit", inRFTime_KinFit);  
   Float_t inChiSq_KinFit[MAXCOMBOS] = {};
       inTree->SetBranchAddress("ChiSq_KinFit", inChiSq_KinFit);
   UInt_t inNDF_KinFit[MAXCOMBOS] = {};
@@ -499,7 +499,8 @@ void ConvertTree(TString treeName){
       outEventNumber = inEventNumber;
       outChi2        = inChiSq_KinFit[ic];
       outChi2DOF     = -1; if (inNDF_KinFit[ic]>0.0) outChi2DOF = outChi2/inNDF_KinFit[ic];
-      outRFTime      = inRFTime_KinFit[ic];
+      //outRFTime      = inRFTime_KinFit[ic];
+      outRFTime      = inRFTime_Measured[ic];
               //   line from jon z. for timing info:
               //  Double_t rf_timing = locBeamX4_Measured.T() - (dComboWrapper->Get_RFTime_Measured() 
               //     + (locBeamX4_Measured.Z()- dComboWrapper->Get_TargetCenter().Z())/29.9792458 );
