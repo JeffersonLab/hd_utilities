@@ -27,7 +27,7 @@ TString pdgName(int pdgID);
 map<int, pair<TString,TString> > MapThrownIndexToFSType(int numThrown, int pids[], int parentIndices[]);
 pair<int,int> FSCode(vector< vector<TString> > gluexParticleTypes);
 pair<int,int> FSCode(map<int, pair<TString,TString> > mapThrownIndexToFSType);
-
+int FSMCExtras(int numThrown, int pids[]);
 
   // global input parameters
 TFile* gInputFile;
@@ -529,6 +529,7 @@ void ConvertTree(TString treeName){
 
   float outMCDecayCode1;  if (gIsMC) outTree.Branch("MCDecayCode1",&outMCDecayCode1,"MCDecayCode1/F");
   float outMCDecayCode2;  if (gIsMC) outTree.Branch("MCDecayCode2",&outMCDecayCode2,"MCDecayCode2/F");
+  float outMCExtras;      if (gIsMC) outTree.Branch("MCExtras",    &outMCExtras,    "MCExtras/F");
 
     // particle information
 
@@ -612,6 +613,7 @@ void ConvertTree(TString treeName){
       pair<int,int> fsCode = FSCode(mapThrownIndexToFSType);
       outMCDecayCode1 = fsCode.first;
       outMCDecayCode2 = fsCode.second;
+      outMCExtras = FSMCExtras(inNumThrown,inThrown__PID);
     }
 
 
@@ -1100,6 +1102,31 @@ map<int, pair<TString,TString> > MapThrownIndexToFSType(int numThrown, int pids[
         mapThrownIndexToFSType[daughterIndex1] = pair<TString,TString>("pi+","Ks");
         mapThrownIndexToFSType[daughterIndex2] = pair<TString,TString>("pi-","Ks");
       }
+      if (parentID == kpdgKs && daughterID1 == kpdgPim && daughterID2 == kpdgPip){
+        mapThrownIndexToFSType[parentIndex]    = pair<TString,TString>("Ks","--");
+        mapThrownIndexToFSType[daughterIndex1] = pair<TString,TString>("pi-","Ks");
+        mapThrownIndexToFSType[daughterIndex2] = pair<TString,TString>("pi+","Ks");
+      }
+      if (parentID == kpdgLambda && daughterID1 == kpdgPp && daughterID2 == kpdgPim){
+        mapThrownIndexToFSType[parentIndex]    = pair<TString,TString>("Lambda","--");
+        mapThrownIndexToFSType[daughterIndex1] = pair<TString,TString>("p+", "Lambda");
+        mapThrownIndexToFSType[daughterIndex2] = pair<TString,TString>("pi-","Lambda");
+      }
+      if (parentID == kpdgLambda && daughterID1 == kpdgPim && daughterID2 == kpdgPp){
+        mapThrownIndexToFSType[parentIndex]    = pair<TString,TString>("Lambda","--");
+        mapThrownIndexToFSType[daughterIndex1] = pair<TString,TString>("pi-","Lambda");
+        mapThrownIndexToFSType[daughterIndex2] = pair<TString,TString>("p+", "Lambda");
+      }
+      if (parentID == kpdgALambda && daughterID1 == kpdgPm && daughterID2 == kpdgPip){
+        mapThrownIndexToFSType[parentIndex]    = pair<TString,TString>("ALambda","--");
+        mapThrownIndexToFSType[daughterIndex1] = pair<TString,TString>("p-", "ALambda");
+        mapThrownIndexToFSType[daughterIndex2] = pair<TString,TString>("pi+","ALambda");
+      }
+      if (parentID == kpdgALambda && daughterID1 == kpdgPip && daughterID2 == kpdgPm){
+        mapThrownIndexToFSType[parentIndex]    = pair<TString,TString>("ALambda","--");
+        mapThrownIndexToFSType[daughterIndex1] = pair<TString,TString>("pi+","ALambda");
+        mapThrownIndexToFSType[daughterIndex2] = pair<TString,TString>("p-", "ALambda");
+      }
       if (parentID == kpdgEta && daughterID1 == kpdgGamma && daughterID2 == kpdgGamma){
         mapThrownIndexToFSType[parentIndex]    = pair<TString,TString>("eta","--");
         mapThrownIndexToFSType[daughterIndex1] = pair<TString,TString>("gamma","eta");
@@ -1176,4 +1203,22 @@ pair<int,int> FSCode(map<int, pair<TString,TString> > mapThrownIndexToFSType){
   }
   return pair<int,int>(code1,code2);
 }
+
+
+int FSMCExtras(int numThrown, int pids[]){
+  int mcExtras = 0;
+  for (int i = 0; i < numThrown; i++){
+    if ((pids[i] == kpdgNuE) ||
+        (pids[i] == kpdgNuMu) ||
+        (pids[i] == kpdgNuTau) ||
+        (pids[i] == kpdgAntiNuE) ||
+        (pids[i] == kpdgAntiNuMu) ||
+        (pids[i] == kpdgAntiNuTau)) mcExtras += 1000;
+    if  (pids[i] == kpdgKl)         mcExtras += 100;
+    if  (pids[i] == kpdgN)          mcExtras += 10;
+    if  (pids[i] == kpdgAntiN)      mcExtras += 1;
+  }
+  return mcExtras;
+}
+
 
