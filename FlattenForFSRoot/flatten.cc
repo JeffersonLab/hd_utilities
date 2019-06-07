@@ -397,6 +397,9 @@ void ConvertTree(TString treeName){
       inTree->SetBranchAddress("NumNeutralHypos", &inNumNeutralHypos);
   UInt_t inNumCombos;
       inTree->SetBranchAddress("NumCombos", &inNumCombos);
+  Bool_t inIsThrownTopology;
+      if (gIsMC) inTree->SetBranchAddress("IsThrownTopology", &inNumCombos);
+
 
         //   *** Beam Particles (indexed using ComboBeam__BeamIndex) ***
 
@@ -522,6 +525,11 @@ void ConvertTree(TString treeName){
   float outRPzPB;         outTree.Branch("RPzPB",      &outRPzPB,      "RPzPB/F");
   float outREnPB;         outTree.Branch("REnPB",      &outREnPB,      "REnPB/F");
 
+    // MC information
+
+  float outMCDecayCode1;  if (gIsMC) outTree.Branch("MCDecayCode1",&outMCDecayCode1,"MCDecayCode1/F");
+  float outMCDecayCode2;  if (gIsMC) outTree.Branch("MCDecayCode2",&outMCDecayCode2,"MCDecayCode2/F");
+
     // particle information
 
   float  outPx[MAXPARTICLES]={},  outPy[MAXPARTICLES]={},  outPz[MAXPARTICLES]={},  outEn[MAXPARTICLES]={};
@@ -599,19 +607,25 @@ void ConvertTree(TString treeName){
       // if MC, start parsing truth information
 
     map<int, pair<TString,TString> > mapThrownIndexToFSType;
-    if (gIsMC)
+    if (gIsMC){
       mapThrownIndexToFSType = MapThrownIndexToFSType(inNumThrown,inThrown__PID,inThrown__ParentIndex);
+      pair<int,int> fsCode = FSCode(mapThrownIndexToFSType);
+      outMCDecayCode1 = fsCode.first;
+      outMCDecayCode2 = fsCode.second;
+    }
 
 
       // print a few events to make sure MC makes sense
 
     if (gIsMC && iEntry < 5){
+    //if (gIsMC && (iEntry < 5||inIsThrownTopology)){
       cout << endl << endl;
       cout << "  **** TRUTH INFO STUDY FOR EVENT " << iEntry+1 << " ****" << endl;
       cout << "  NumThrown = " << inNumThrown << endl;
       cout << "  GeneratedEnergy = " << inThrownBeam__GeneratedEnergy << endl;
       pair<int,int> fsCode = FSCode(mapThrownIndexToFSType);
       cout << "  FSCode = " << fsCode.second << "_" << fsCode.first << endl;
+      cout << "  IsThrownTopology = " << inIsThrownTopology << endl;
       for (int i = 0; i < inNumThrown; i++){      
         cout << "    THROWN INDEX = " << i << endl;
         cout << "      PID = " << inThrown__PID[i] << endl;
