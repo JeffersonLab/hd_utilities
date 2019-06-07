@@ -312,9 +312,9 @@ void ConvertTree(TString treeName){
       }
     }
   }
-  pair<int,int> fsCode = FSCode(orderedParticleNames);
-  cout << "  DecayCode1 = " << fsCode.first << endl;
-  cout << "  DecayCode2 = " << fsCode.second << endl << endl;
+  pair<int,int> reconstructedFSCode = FSCode(orderedParticleNames);
+  cout << "  DecayCode1 = " << reconstructedFSCode.first << endl;
+  cout << "  DecayCode2 = " << reconstructedFSCode.second << endl << endl;
 
 
      // **********************************************************************
@@ -532,6 +532,7 @@ void ConvertTree(TString treeName){
   float outMCDecayCode1;  if (gIsMC) outTree.Branch("MCDecayCode1",&outMCDecayCode1,"MCDecayCode1/F");
   float outMCDecayCode2;  if (gIsMC) outTree.Branch("MCDecayCode2",&outMCDecayCode2,"MCDecayCode2/F");
   float outMCExtras;      if (gIsMC) outTree.Branch("MCExtras",    &outMCExtras,    "MCExtras/F");
+  float outMCSignal;      if (gIsMC) outTree.Branch("MCSignal",    &outMCSignal,    "MCSignal/F");
 
     // particle information
 
@@ -616,7 +617,10 @@ void ConvertTree(TString treeName){
       outMCDecayCode1 = fsCode.first;
       outMCDecayCode2 = fsCode.second;
       outMCExtras = FSMCExtras(inNumThrown,inThrown__PID);
-
+      outMCSignal = 0;
+      if ((reconstructedFSCode.first == fsCode.first) &&
+          (reconstructedFSCode.second == fsCode.second) &&
+          (outMCExtras < 0.1)) outMCSignal = 1;
 // ?????
 //        TString name = orderedParticleNames[im][id];
 //        int tIndex = mapNameToThrownIndex[name];
