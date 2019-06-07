@@ -21,10 +21,12 @@ void ConvertTree(TString treeName);
 
   // utility functions (collected at the end of this file)
 TString FSParticleType(TString gluexParticleType);
+TString GluexParticleType(TString fsParticleType);
 int FSParticleOrder(TString gluexParticleType);
 TString particleClass(TString gluexParticleType);
 TString pdgName(int pdgID);
 map<int, pair<TString,TString> > MapThrownIndexToFSType(int numThrown, int pids[], int parentIndices[]);
+map<int, vector<int> > MapThrownIndexToDaughters(int numThrown, int pids[], int parentIndices[]);
 pair<int,int> FSCode(vector< vector<TString> > gluexParticleTypes);
 pair<int,int> FSCode(map<int, pair<TString,TString> > mapThrownIndexToFSType);
 int FSMCExtras(int numThrown, int pids[]);
@@ -226,27 +228,27 @@ void ConvertTree(TString treeName){
       for (unsigned int i = 0; i < daughterNames.size(); i++){
         cout << "    " << daughterNames[i] << ": " << daughterFSTypes[i] << endl;
       }
-      if (motherFSType == "pi0" && daughterNames.size() != 2 && 
-            !(daughterFSTypes[0] == "gamma" && daughterFSTypes[1] == "gamma")){
+      if (motherFSType == "pi0" && (daughterNames.size() != 2 || 
+            !(daughterFSTypes[0] == "gamma" && daughterFSTypes[1] == "gamma"))){
         cout << "  ERROR: unrecognized pi0 decay" << endl;
       }
-      if (motherFSType == "eta" && daughterNames.size() != 2 && 
-            !(daughterFSTypes[0] == "gamma" && daughterFSTypes[1] == "gamma")){
+      if (motherFSType == "eta" && (daughterNames.size() != 2 || 
+            !(daughterFSTypes[0] == "gamma" && daughterFSTypes[1] == "gamma"))){
         cout << "  ERROR: unrecognized eta decay" << endl;
       }
-      if (motherFSType == "Ks" && daughterNames.size() != 2 && 
+      if (motherFSType == "Ks" && (daughterNames.size() != 2 || 
             !((daughterFSTypes[0] == "pi+" && daughterFSTypes[1] == "pi-") || 
-              (daughterFSTypes[1] == "pi+" && daughterFSTypes[0] == "pi-"))){
+              (daughterFSTypes[1] == "pi+" && daughterFSTypes[0] == "pi-")))){
         cout << "  ERROR: unrecognized Ks decay" << endl;
       }
-      if (motherFSType == "Lambda" && daughterNames.size() != 2 && 
+      if (motherFSType == "Lambda" && (daughterNames.size() != 2 || 
             !((daughterFSTypes[0] == "p+" && daughterFSTypes[1] == "pi-") || 
-              (daughterFSTypes[1] == "p+" && daughterFSTypes[0] == "pi-"))){
+              (daughterFSTypes[1] == "p+" && daughterFSTypes[0] == "pi-")))){
         cout << "  ERROR: unrecognized Lambda decay" << endl;
       }
-      if (motherFSType == "ALambda" && daughterNames.size() != 2 && 
+      if (motherFSType == "ALambda" && (daughterNames.size() != 2 || 
             !((daughterFSTypes[0] == "p-" && daughterFSTypes[1] == "pi+") || 
-              (daughterFSTypes[1] == "p-" && daughterFSTypes[0] == "pi+"))){
+              (daughterFSTypes[1] == "p-" && daughterFSTypes[0] == "pi+")))){
         cout << "  ERROR: unrecognized ALambda decay" << endl;
       }
     }
@@ -614,6 +616,11 @@ void ConvertTree(TString treeName){
       outMCDecayCode1 = fsCode.first;
       outMCDecayCode2 = fsCode.second;
       outMCExtras = FSMCExtras(inNumThrown,inThrown__PID);
+
+// ?????
+//        TString name = orderedParticleNames[im][id];
+//        int tIndex = mapNameToThrownIndex[name];
+
     }
 
 
@@ -860,6 +867,26 @@ TString FSParticleType(TString gluexParticleType){
   return TString("--");
 }
 
+TString GluexParticleType(TString fsParticleType){
+  if (fsParticleType == "ALambda")   return TString("AntiLambda");
+  if (fsParticleType == "Lambda")    return TString("Lambda")    ;
+  if (fsParticleType == "e+")        return TString("Positron")  ;
+  if (fsParticleType == "e-")        return TString("Electron")  ;
+  if (fsParticleType == "mu+")       return TString("MuonPlus")  ;
+  if (fsParticleType == "mu-")       return TString("MuonMinus") ;
+  if (fsParticleType == "p-")        return TString("AntiProton");
+  if (fsParticleType == "p+")        return TString("Proton")    ;
+  if (fsParticleType == "eta")       return TString("Eta")       ;
+  if (fsParticleType == "gamma")     return TString("Photon")    ;
+  if (fsParticleType == "K+")        return TString("KPlus")     ;
+  if (fsParticleType == "K-")        return TString("KMinus")    ;
+  if (fsParticleType == "Ks")        return TString("KShort")    ;
+  if (fsParticleType == "pi+")       return TString("PiPlus")    ;
+  if (fsParticleType == "pi-")       return TString("PiMinus")   ;
+  if (fsParticleType == "pi0")       return TString("Pi0")       ;
+  return TString("--");
+}
+
 
 int FSParticleOrder(TString gluexParticleType){
   if (gluexParticleType.Contains("AntiLambda"))  return 15;
@@ -1059,15 +1086,23 @@ TString pdgName(int id){
 
 
 
-map<int, pair<TString,TString> > MapThrownIndexToFSType(int numThrown, int pids[], int parentIndices[]){
 
-  map<int, pair<TString,TString> > mapThrownIndexToFSType;
-
+map<int, vector<int> > MapThrownIndexToDaughters(int numThrown, int pids[], int parentIndices[]){
   map<int, vector<int> > groupByParentIndex1;
   for (int i = 0; i < numThrown; i++){
     int parentIndex = parentIndices[i];
     groupByParentIndex1[parentIndex].push_back(i);
   }
+  return groupByParentIndex1;
+}
+
+
+map<int, pair<TString,TString> > MapThrownIndexToFSType(int numThrown, int pids[], int parentIndices[]){
+
+  map<int, pair<TString,TString> > mapThrownIndexToFSType;
+
+  map<int, vector<int> > groupByParentIndex1 = MapThrownIndexToDaughters(numThrown,pids,parentIndices);
+
 
 /*
   cout << "************************" << endl;
