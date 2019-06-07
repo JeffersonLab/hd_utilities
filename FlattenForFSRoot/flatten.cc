@@ -1,4 +1,3 @@
-
 #include <iostream>
 #include "TFile.h"
 #include "TTree.h"
@@ -8,28 +7,39 @@
 #include "TList.h"
 #include "TMap.h"
 #include "TIterator.h"
-
-
 using namespace std;
 
-  // note:  ran into strange memory problems when these were much larger (10000,100)?
+
+  // maximum array indices
+  // [careful:  there were strange memory problems when these were set to 10000 and 100]
 static const int MAXCOMBOS = 1000;
 static const int MAXPARTICLES = 50;
 
+  // main routines to do the conversions
 void ConvertFile(TString inFileName, TString outFileName);
 void ConvertTree(TString treeName);
 
-  // utility functions
+  // utility functions (collected at the end of this file)
 TString FSParticleType(TString gluexParticleType);
 int FSParticleOrder(TString gluexParticleType);
 TString particleClass(TString gluexParticleType);
+TString pdgName(int pdgID);
+map<int, pair<TString,TString> > MapThrownIndexToFSType(int numThrown, int pids[], int parentIndices[]);
 pair<int,int> FSCode(vector< vector<TString> > gluexParticleTypes);
+pair<int,int> FSCode(map<int, pair<TString,TString> > mapThrownIndexToFSType);
 
 
+  // global input parameters
 TFile* gInputFile;
 TFile* gOutputFile;
 float  gChi2DOFCut;
 bool gIsMC;
+
+
+
+// **************************************
+//   MAIN
+// **************************************
 
 
 int main(int argc, char** argv){
@@ -47,6 +57,7 @@ int main(int argc, char** argv){
   cout << "     tree name (this is commented out)" << endl;
   cout << "  * the input tree name should contain \"_Tree\" (if this standard" << endl;
   cout << "     changes in the GlueX code, this code can be easily modified)" << endl;
+  cout << "  * this will not work for all possible final states" << endl;
   cout << "***********************************************************" << endl << endl;
   if ((argc != 4) && (argc != 5)){
      cout << "ERROR: wrong number of arguments -- see usage notes above" << endl;
@@ -68,23 +79,42 @@ int main(int argc, char** argv){
 
 
 
+// **************************************
+//   ConvertFile
+// **************************************
+
 void ConvertFile(TString inFileName, TString outFileName){
+  int nTrees = 0;
   gInputFile  = new TFile(inFileName);
   gOutputFile = new TFile(outFileName,"recreate");
   TList* fileList = gInputFile->GetListOfKeys();
   for (int i = 0; i < fileList->GetEntries(); i++){
     TString treeName(fileList->At(i)->GetName());
     if (treeName.Contains("_Tree")){
-      ConvertTree(treeName);
+      if (nTrees == 0) ConvertTree(treeName);
+      if (nTrees >= 1){
+        cout << "WARNING: found more than one tree -- only converted the first" << endl;
+        cout << "           extra tree = " << treeName << endl;
+      }
+      nTrees++;
     }
   }
   gInputFile->Close();
   gOutputFile->Close();
+  if (nTrees == 0){
+    cout << "WARNING: could not find any trees" << endl;
+  }
 }
 
 
 
+// **************************************
+//   ConvertTree:  all the work is done here
+// **************************************
+
 void ConvertTree(TString treeName){
+
+  cout << endl << "CONVERTING THE TREE NAMED: " << treeName << endl;
 
     // input and output tree names
   TString inNT(treeName);
@@ -147,7 +177,6 @@ void ConvertTree(TString treeName){
   cout << endl << endl << "READING PARTICLE NAMES FROM THE ROOT FILE:" << endl << endl;
 
   map< TString, vector<TString> > decayProductMap;  // from mothers to daughters
-
   {
     TList* userInfo = inTree->GetUserInfo();
     vector<TString> eraseVector; // (to remove double-counting)
@@ -173,9 +202,63 @@ void ConvertTree(TString treeName){
     }
   }
 
+     // **********************************************************************
+     // STEP 1C:  perform checks on the final state
+     // **********************************************************************
 
-  cout << endl << endl << "testing:  READING PDG NUMBERS FROM THE ROOT FILE:" << endl << endl;
-  map< TString, int > nameToPIDMap;  // map from name to PDG ID
+  cout << endl << endl << "PERFORMING CHECKS ON THE FINAL STATE:" << endl << endl;
+  {
+    if (decayProductMap.size() == 0){
+      cout << endl << "  ERROR: no final state partices found" << endl;
+      exit(0);
+    }
+    for (map<TString, vector<TString> >::const_iterator mItr = decayProductMap.begin();
+         mItr != decayProductMap.end(); mItr++){
+      TString motherName = mItr->first;
+      TString motherFSType = FSParticleType(motherName);
+      if (motherFSType == "--") motherFSType = "** NOT USED **";
+      vector<TString> daughterNames = mItr->second;
+      vector<TString> daughterFSTypes;
+      for (unsigned int i = 0; i < daughterNames.size(); i++){
+        daughterFSTypes.push_back(FSParticleType(daughterNames[i]));
+      }
+      cout << motherName << ": " << motherFSType << endl;
+      for (unsigned int i = 0; i < daughterNames.size(); i++){
+        cout << "    " << daughterNames[i] << ": " << daughterFSTypes[i] << endl;
+      }
+      if (motherFSType == "pi0" && daughterNames.size() != 2 && 
+            !(daughterFSTypes[0] == "gamma" && daughterFSTypes[1] == "gamma")){
+        cout << "  ERROR: unrecognized pi0 decay" << endl;
+      }
+      if (motherFSType == "eta" && daughterNames.size() != 2 && 
+            !(daughterFSTypes[0] == "gamma" && daughterFSTypes[1] == "gamma")){
+        cout << "  ERROR: unrecognized eta decay" << endl;
+      }
+      if (motherFSType == "Ks" && daughterNames.size() != 2 && 
+            !((daughterFSTypes[0] == "pi+" && daughterFSTypes[1] == "pi-") || 
+              (daughterFSTypes[1] == "pi+" && daughterFSTypes[0] == "pi-"))){
+        cout << "  ERROR: unrecognized Ks decay" << endl;
+      }
+      if (motherFSType == "Lambda" && daughterNames.size() != 2 && 
+            !((daughterFSTypes[0] == "p+" && daughterFSTypes[1] == "pi-") || 
+              (daughterFSTypes[1] == "p+" && daughterFSTypes[0] == "pi-"))){
+        cout << "  ERROR: unrecognized Lambda decay" << endl;
+      }
+      if (motherFSType == "ALambda" && daughterNames.size() != 2 && 
+            !((daughterFSTypes[0] == "p-" && daughterFSTypes[1] == "pi+") || 
+              (daughterFSTypes[1] == "p-" && daughterFSTypes[0] == "pi+"))){
+        cout << "  ERROR: unrecognized ALambda decay" << endl;
+      }
+    }
+  }
+
+
+     // **********************************************************************
+     // STEP 1D:  extract PDG numbers from the root file (not used, just checking)
+     // **********************************************************************
+
+  cout << endl << endl << "READING PDG NUMBERS FROM THE ROOT FILE:" << endl << endl;
+  //map< TString, int > nameToPIDMap;  // map from name to PDG ID
   {
     TList* userInfo = inTree->GetUserInfo();
     TMap* rootNameToPIDMap = (TMap*) userInfo->FindObject("NameToPIDMap");
@@ -192,17 +275,16 @@ void ConvertTree(TString treeName){
 
 
      // **********************************************************************
-     // STEP 1C:  put the particle names in the right order 
+     // STEP 1E:  put the particle names in the right order 
      // **********************************************************************
 
-  cout << endl << endl << "PUTTING PARTICLE NAMES IN THE RIGHT ORDER:" << endl << endl;
+  cout << endl << endl << "PUTTING PARTICLES IN THE RIGHT ORDER AND SETTING INDICES:" << endl << endl;
 
   vector< vector<TString> > orderedParticleNames;
-
   {
     for (map<TString, vector<TString> >::const_iterator mItr = decayProductMap.begin();
          mItr != decayProductMap.end(); mItr++){
-      if (FSParticleType(mItr->first) != ""){
+      if (FSParticleType(mItr->first) != "--"){
         vector<TString> vp;
         vp.push_back(mItr->first);
         vector<TString> addp = mItr->second;
@@ -234,7 +316,7 @@ void ConvertTree(TString treeName){
 
 
      // **********************************************************************
-     // STEP 1D:  make maps from names to indices
+     // STEP 1F:  make maps from names to indices
      // **********************************************************************
 
   map<TString, TString> mapNameToFSIndex;
@@ -259,6 +341,7 @@ void ConvertTree(TString treeName){
     cout << endl << endl << endl;
   }
 
+
    // **********************************************************************
    // STEP 2:  SET UP TO READ THE INPUT TREE (IN ANALYSIS TREE FORMAT)
    // **********************************************************************
@@ -281,8 +364,16 @@ void ConvertTree(TString treeName){
 
         //   *** Thrown Products ***
 
+  Int_t  inThrown__ParentIndex[MAXPARTICLES] = {};   
+      if (gIsMC) inTree->SetBranchAddress("Thrown__ParentIndex", inThrown__ParentIndex);
   Int_t  inThrown__PID[MAXPARTICLES] = {};   
       if (gIsMC) inTree->SetBranchAddress("Thrown__PID", inThrown__PID);
+  Int_t  inThrown__MatchID[MAXPARTICLES] = {};   
+      if (gIsMC) inTree->SetBranchAddress("Thrown__MatchID", inThrown__MatchID);
+  Float_t  inThrown__MatchFOM[MAXPARTICLES] = {};   
+      if (gIsMC) inTree->SetBranchAddress("Thrown__MatchFOM", inThrown__MatchFOM);
+  TClonesArray *inThrown__P4 = new TClonesArray("TLorentzVector");
+      inTree->SetBranchAddress("Thrown__P4",&(inThrown__P4));
 
 
 
@@ -491,6 +582,47 @@ void ConvertTree(TString treeName){
       exit(0);
     }
 
+     // print some information (for debugging only)
+
+    if (iEntry+1 == 1){ 
+      cout << endl << "PRINTING TEST INFORMATION FOR FIVE EVENTS..." << endl << endl;
+    }
+    if (iEntry < 5){
+      cout << endl << endl;
+      cout << "  ***************************" << endl;
+      cout << "  ******* NEW EVENT " << iEntry+1 << " *******" << endl;
+      cout << "  ***************************" << endl;
+      cout << endl << endl;
+    }
+
+
+      // if MC, start parsing truth information
+
+    map<int, pair<TString,TString> > mapThrownIndexToFSType;
+    if (gIsMC)
+      mapThrownIndexToFSType = MapThrownIndexToFSType(inNumThrown,inThrown__PID,inThrown__ParentIndex);
+
+
+      // print a few events to make sure MC makes sense
+
+    if (gIsMC && iEntry < 5){
+      cout << endl << endl;
+      cout << "  **** TRUTH INFO STUDY FOR EVENT " << iEntry+1 << " ****" << endl;
+      cout << "  NumThrown = " << inNumThrown << endl;
+      cout << "  GeneratedEnergy = " << inThrownBeam__GeneratedEnergy << endl;
+      pair<int,int> fsCode = FSCode(mapThrownIndexToFSType);
+      cout << "  FSCode = " << fsCode.second << "_" << fsCode.first << endl;
+      for (int i = 0; i < inNumThrown; i++){      
+        cout << "    THROWN INDEX = " << i << endl;
+        cout << "      PID = " << inThrown__PID[i] << endl;
+        cout << "      PDG Name = " << pdgName(inThrown__PID[i]) << endl;
+        cout << "      Parent Index = " << inThrown__ParentIndex[i] << endl;
+        cout << "      FS Name = " << mapThrownIndexToFSType[i].first << endl;
+        cout << "      FS Parent = " << mapThrownIndexToFSType[i].second << endl;
+      }
+      cout << endl << endl;
+    }
+
 
       // loop over combos
 
@@ -612,10 +744,10 @@ void ConvertTree(TString treeName){
 
       // print some information (for debugging only)
 
-      if (iEntry+1 == 1 && ic+1 == 1){ 
-        cout << endl << "PRINTING TEST INFORMATION FOR FIVE EVENTS..." << endl << endl;
-      }
       if (iEntry < 5){
+        cout << "  *******************************" << endl;
+        cout << "  **** INFO FOR EVENT " << iEntry+1 << " ****" << endl;
+        cout << "  *******************************" << endl;
         cout << "EVENT: " << inEventNumber << " (combo no. " << ic+1 << ")" << endl;
         if (gIsMC) cout << "  NumThrown = " << inNumThrown << endl;
         cout << "  NumChargedHypos = " << inNumChargedHypos << endl;
@@ -709,7 +841,7 @@ TString FSParticleType(TString gluexParticleType){
   if (gluexParticleType.Contains("PiPlus"))      return TString("pi+");
   if (gluexParticleType.Contains("PiMinus"))     return TString("pi-");
   if (gluexParticleType.Contains("Pi0"))         return TString("pi0");
-  return TString("");
+  return TString("--");
 }
 
 
@@ -779,3 +911,255 @@ pair<int,int> FSCode(vector< vector<TString> > gluexParticleTypes){
   }
   return pair<int,int>(code1,code2);
 }
+
+
+static const int kpdgPsi2S      = 100443;     
+static const int kpdgGamma      = 22;         
+static const int kpdgFSRGamma   = -22;        
+static const int kpdgHc         = 10443;      
+static const int kpdgChic0      = 10441;      
+static const int kpdgChic1      = 20443;      
+static const int kpdgChic2      = 445;        
+static const int kpdgJpsi       = 443;        
+static const int kpdgEtac       = 441;        
+static const int kpdgPhi        = 333;        
+static const int kpdgOmega      = 223;        
+static const int kpdgPi0        = 111;        
+static const int kpdgPip        = 211;        
+static const int kpdgPim        = -211;       
+static const int kpdgRho0       = 113;        
+static const int kpdgRhop       = 213;        
+static const int kpdgRhom       = -213;       
+static const int kpdgEtaprime   = 331;        
+static const int kpdgEta        = 221;        
+static const int kpdgKs         = 310;        
+static const int kpdgKl         = 130;        
+static const int kpdgKp         = 321;        
+static const int kpdgKm         = -321;       
+static const int kpdgPp         = 2212;       
+static const int kpdgPm         = -2212;      
+static const int kpdgN          = 2112;       
+static const int kpdgAntiN      = -2112;
+static const int kpdgDelta0     = 2114;
+static const int kpdgDeltap     = 2214;
+static const int kpdgDeltapp    = 2224;
+static const int kpdgEp         = -11;         
+static const int kpdgEm         = 11;        
+static const int kpdgMup        = -13;         
+static const int kpdgMum        = 13;        
+static const int kpdgTaup       = -15;        
+static const int kpdgTaum       = 15;         
+static const int kpdgNuE        = 12;         
+static const int kpdgNuMu       = 14;         
+static const int kpdgNuTau      = 16;         
+static const int kpdgAntiNuE    = -12;        
+static const int kpdgAntiNuMu   = -14;        
+static const int kpdgAntiNuTau  = -16;        
+static const int kpdgF0600      = 9000221;    
+static const int kpdgK0         = 311;        
+static const int kpdgAntiK0     = -311;       
+static const int kpdgKstarp     = 323;        
+static const int kpdgKstarm     = -323;       
+static const int kpdgKstar0     = 313;        
+static const int kpdgAntiKstar0 = -313;
+static const int kpdgLambda     = 3122;
+static const int kpdgALambda    = -3122;
+static const int kpdgDp         = 411;
+static const int kpdgDm         = -411;
+static const int kpdgD0         = 421;
+static const int kpdgDA         = -421;
+static const int kpdgDstarp     = 413;
+static const int kpdgDstarm     = -413;
+static const int kpdgDstar0     = 423;
+static const int kpdgDstarA     = -423;
+
+
+TString pdgName(int id){
+  TString name("");
+  if      (id == kpdgPsi2S)      name = "psi(2S)";
+  else if (id == kpdgGamma)      name = "gamma";
+  else if (id == kpdgFSRGamma)   name = "FSRgamma";
+  else if (id == kpdgHc)         name = "h_c";
+  else if (id == kpdgChic0)      name = "chi_c0";
+  else if (id == kpdgChic1)      name = "chi_c1";
+  else if (id == kpdgChic2)      name = "chi_c2";
+  else if (id == kpdgJpsi)       name = "J/psi";
+  else if (id == kpdgEtac)       name = "eta_c";
+  else if (id == kpdgPhi)        name = "phi";
+  else if (id == kpdgOmega)      name = "omega";
+  else if (id == kpdgPi0)        name = "pi0";
+  else if (id == kpdgPip)        name = "pi+";
+  else if (id == kpdgPim)        name = "pi-";
+  else if (id == kpdgRho0)       name = "rho0";
+  else if (id == kpdgRhop)       name = "rho+";
+  else if (id == kpdgRhom)       name = "rho-";
+  else if (id == kpdgEtaprime)   name = "etaprime";
+  else if (id == kpdgEta)        name = "eta";
+  else if (id == kpdgKs)         name = "K_S0";
+  else if (id == kpdgKl)         name = "K_L0";
+  else if (id == kpdgKp)         name = "K+";
+  else if (id == kpdgKm)         name = "K-";
+  else if (id == kpdgPp)         name = "p+";
+  else if (id == kpdgPm)         name = "p-";
+  else if (id == kpdgN)          name = "N";
+  else if (id == kpdgAntiN)      name = "antiN";
+  else if (id == kpdgDelta0)     name = "Delta0";
+  else if (id == kpdgDeltap)     name = "Delta+";
+  else if (id == kpdgDeltapp)    name = "Delta++";
+  else if (id == kpdgEp)         name = "e+";
+  else if (id == kpdgEm)         name = "e-";
+  else if (id == kpdgMup)        name = "mu+";
+  else if (id == kpdgMum)        name = "mu-";
+  else if (id == kpdgTaup)       name = "tau+";
+  else if (id == kpdgTaum)       name = "tau-";
+  else if (id == kpdgNuE)        name = "nu";
+  else if (id == kpdgNuMu)       name = "nu";
+  else if (id == kpdgNuTau)      name = "nu";
+  else if (id == kpdgAntiNuE)    name = "nu";
+  else if (id == kpdgAntiNuMu)   name = "nu";
+  else if (id == kpdgAntiNuTau)  name = "nu";
+  else if (id == kpdgF0600)      name = "f0(600)";
+  else if (id == kpdgK0)         name = "K0";
+  else if (id == kpdgAntiK0)     name = "K0";
+  else if (id == kpdgKstarp)     name = "K*+";
+  else if (id == kpdgKstarm)     name = "K*-";
+  else if (id == kpdgKstar0)     name = "K*0";
+  else if (id == kpdgAntiKstar0) name = "K*0";
+  else if (id == kpdgLambda)     name = "Lambda";
+  else if (id == kpdgALambda)    name = "ALambda";
+  else if (id == kpdgDp)         name = "D+";
+  else if (id == kpdgDm)         name = "D-";
+  else if (id == kpdgD0)         name = "D0";
+  else if (id == kpdgDA)         name = "D0bar";
+  else if (id == kpdgDstarp)     name = "D*+";
+  else if (id == kpdgDstarm)     name = "D*-";
+  else if (id == kpdgDstar0)     name = "D*0";
+  else if (id == kpdgDstarA)     name = "D*0bar";
+  else{
+    name += id;
+  }
+  return name;
+}
+
+
+
+map<int, pair<TString,TString> > MapThrownIndexToFSType(int numThrown, int pids[], int parentIndices[]){
+
+  map<int, pair<TString,TString> > mapThrownIndexToFSType;
+
+  map<int, vector<int> > groupByParentIndex1;
+  for (int i = 0; i < numThrown; i++){
+    int parentIndex = parentIndices[i];
+    groupByParentIndex1[parentIndex].push_back(i);
+  }
+
+/*
+  cout << "************************" << endl;
+  cout << "*** truth info debug ***" << endl;
+  cout << "************************" << endl;
+  cout << "groupByParentIndex1:" << endl;
+  for (map<int, vector<int> >::const_iterator mItr = groupByParentIndex1.begin();
+         mItr != groupByParentIndex1.end(); mItr++){
+    int parent = mItr->first;
+    vector<int> daughters = mItr->second;
+    cout << parent << endl;
+    for (unsigned int i = 0; i < daughters.size(); i++){
+      cout << "  " << daughters[i] << endl;
+    } 
+  }
+  cout << "************************" << endl;
+*/
+
+  for (map<int, vector<int> >::const_iterator mItr = groupByParentIndex1.begin();
+         mItr != groupByParentIndex1.end(); mItr++){
+    int parentIndex = mItr->first;
+    if (parentIndex == -1) continue;
+    vector<int> daughterIndices = mItr->second;
+    if (daughterIndices.size() == 2){
+      int parentID = pids[parentIndex];
+      int daughterIndex1 = daughterIndices[0];
+      int daughterIndex2 = daughterIndices[1];
+      int daughterID1 = pids[daughterIndex1];
+      int daughterID2 = pids[daughterIndex2];
+      if (parentID == kpdgKs && daughterID1 == kpdgPip && daughterID2 == kpdgPim){
+        mapThrownIndexToFSType[parentIndex]    = pair<TString,TString>("Ks","--");
+        mapThrownIndexToFSType[daughterIndex1] = pair<TString,TString>("pi+","Ks");
+        mapThrownIndexToFSType[daughterIndex2] = pair<TString,TString>("pi-","Ks");
+      }
+      if (parentID == kpdgEta && daughterID1 == kpdgGamma && daughterID2 == kpdgGamma){
+        mapThrownIndexToFSType[parentIndex]    = pair<TString,TString>("eta","--");
+        mapThrownIndexToFSType[daughterIndex1] = pair<TString,TString>("gamma","eta");
+        mapThrownIndexToFSType[daughterIndex2] = pair<TString,TString>("gamma","eta");
+      }
+      if (parentID == kpdgPi0 && daughterID1 == kpdgGamma && daughterID2 == kpdgGamma){
+        mapThrownIndexToFSType[parentIndex]    = pair<TString,TString>("pi0","--");
+        mapThrownIndexToFSType[daughterIndex1] = pair<TString,TString>("gamma","pi0");
+        mapThrownIndexToFSType[daughterIndex2] = pair<TString,TString>("gamma","pi0");
+      }
+    }
+  }
+
+  for (int i = 0; i < numThrown; i++){
+    if (mapThrownIndexToFSType.find(i) == mapThrownIndexToFSType.end()){
+           if (pids[i] == kpdgEp)   { mapThrownIndexToFSType[i] = pair<TString,TString>("e+",   "--"); }
+      else if (pids[i] == kpdgEm)   { mapThrownIndexToFSType[i] = pair<TString,TString>("e-",   "--"); }
+      else if (pids[i] == kpdgMup)  { mapThrownIndexToFSType[i] = pair<TString,TString>("mu+",  "--"); }
+      else if (pids[i] == kpdgMum)  { mapThrownIndexToFSType[i] = pair<TString,TString>("mu-",  "--"); }
+      else if (pids[i] == kpdgPp)   { mapThrownIndexToFSType[i] = pair<TString,TString>("p+",   "--"); }
+      else if (pids[i] == kpdgPm)   { mapThrownIndexToFSType[i] = pair<TString,TString>("p-",   "--"); }
+      else if (pids[i] == kpdgGamma){ mapThrownIndexToFSType[i] = pair<TString,TString>("gamma","--"); }
+      else if (pids[i] == kpdgKp)   { mapThrownIndexToFSType[i] = pair<TString,TString>("K+",   "--"); }
+      else if (pids[i] == kpdgKm)   { mapThrownIndexToFSType[i] = pair<TString,TString>("K-",   "--"); }
+      else if (pids[i] == kpdgPip)  { mapThrownIndexToFSType[i] = pair<TString,TString>("pi+",  "--"); }
+      else if (pids[i] == kpdgPim)  { mapThrownIndexToFSType[i] = pair<TString,TString>("pi-",  "--"); }
+      else                          { mapThrownIndexToFSType[i] = pair<TString,TString>("--",   "--"); }
+    }
+  }
+
+/*
+  cout << "************************" << endl;
+  cout << "*** truth info debug ***" << endl;
+  cout << "************************" << endl;
+  for (map<int, pair<TString,TString> >::const_iterator mItr = mapThrownIndexToFSType.begin();
+         mItr != mapThrownIndexToFSType.end(); mItr++){
+    int index = mItr->first;
+    pair<TString,TString> fsType = mItr->second;
+    cout << index << ": " << endl;
+    cout << "    " << fsType.first << endl;
+    cout << "    " << fsType.second << endl;
+  }
+  cout << "************************" << endl;
+*/
+
+  return mapThrownIndexToFSType;
+}
+
+
+
+pair<int,int> FSCode(map<int, pair<TString,TString> > mapThrownIndexToFSType){
+  int code1 = 0;
+  int code2 = 0;
+  for (map<int, pair<TString,TString> >::const_iterator mItr = mapThrownIndexToFSType.begin();
+         mItr != mapThrownIndexToFSType.end(); mItr++){
+    TString fsType   = mItr->second.first;
+    TString fsParent = mItr->second.second;
+         if (fsType == "Lambda"  && fsParent == "--"){ code2 += 100000000; }
+    else if (fsType == "ALambda" && fsParent == "--"){ code2 += 10000000; }
+    else if (fsType == "e+"      && fsParent == "--"){ code2 += 1000000; }
+    else if (fsType == "e-"      && fsParent == "--"){ code2 += 100000; }
+    else if (fsType == "mu+"     && fsParent == "--"){ code2 += 10000; }
+    else if (fsType == "mu-"     && fsParent == "--"){ code2 += 1000; }
+    else if (fsType == "p+"      && fsParent == "--"){ code2 += 100; }
+    else if (fsType == "p-"      && fsParent == "--"){ code2 += 10; }
+    else if (fsType == "eta"     && fsParent == "--"){ code2 += 1; }
+    else if (fsType == "gamma"   && fsParent == "--"){ code1 += 1000000; }
+    else if (fsType == "K+"      && fsParent == "--"){ code1 += 100000; }
+    else if (fsType == "K-"      && fsParent == "--"){ code1 += 10000; }
+    else if (fsType == "Ks"      && fsParent == "--"){ code1 += 1000; }
+    else if (fsType == "pi+"     && fsParent == "--"){ code1 += 100; }
+    else if (fsType == "pi-"     && fsParent == "--"){ code1 += 10; }
+    else if (fsType == "pi0"     && fsParent == "--"){ code1 += 1; }
+  }
+  return pair<int,int>(code1,code2);
+}
+
