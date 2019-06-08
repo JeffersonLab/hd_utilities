@@ -538,8 +538,9 @@ void ConvertTree(TString treeName){
 
     // particle information
 
-  float  outPx[MAXPARTICLES]={},  outPy[MAXPARTICLES]={},  outPz[MAXPARTICLES]={},  outEn[MAXPARTICLES]={};
-  float outRPx[MAXPARTICLES]={}, outRPy[MAXPARTICLES]={}, outRPz[MAXPARTICLES]={}, outREn[MAXPARTICLES]={};
+  float   outPx[MAXPARTICLES]={},   outPy[MAXPARTICLES]={},   outPz[MAXPARTICLES]={},   outEn[MAXPARTICLES]={};
+  float  outRPx[MAXPARTICLES]={},  outRPy[MAXPARTICLES]={},  outRPz[MAXPARTICLES]={},  outREn[MAXPARTICLES]={};
+  float outMCPx[MAXPARTICLES]={}, outMCPy[MAXPARTICLES]={}, outMCPz[MAXPARTICLES]={}, outMCEn[MAXPARTICLES]={};
   float outTkChi2[MAXPARTICLES]={}, outTkNDF[MAXPARTICLES]={};
   float outShQuality[MAXPARTICLES]={};
   {
@@ -556,6 +557,10 @@ void ConvertTree(TString treeName){
       TString vRPy("RPyP"); vRPy += fsIndex; outTree.Branch(vRPy,&outRPy[pIndex],vRPy+"/F");
       TString vRPz("RPzP"); vRPz += fsIndex; outTree.Branch(vRPz,&outRPz[pIndex],vRPz+"/F");
       TString vREn("REnP"); vREn += fsIndex; outTree.Branch(vREn,&outREn[pIndex],vREn+"/F");
+      TString vMCPx("MCPxP"); vMCPx += fsIndex; if (gIsMC) outTree.Branch(vMCPx,&outMCPx[pIndex],vMCPx+"/F");
+      TString vMCPy("MCPyP"); vMCPy += fsIndex; if (gIsMC) outTree.Branch(vMCPy,&outMCPy[pIndex],vMCPy+"/F");
+      TString vMCPz("MCPzP"); vMCPz += fsIndex; if (gIsMC) outTree.Branch(vMCPz,&outMCPz[pIndex],vMCPz+"/F");
+      TString vMCEn("MCEnP"); vMCEn += fsIndex; if (gIsMC) outTree.Branch(vMCEn,&outMCEn[pIndex],vMCEn+"/F");
       if (particleClass(name) == "Charged"){
         TString vTkNDF("TkNDFP"); vTkNDF += fsIndex;
             outTree.Branch(vTkNDF,&outTkNDF[pIndex],vTkNDF+"/F");
