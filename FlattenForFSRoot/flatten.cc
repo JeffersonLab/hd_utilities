@@ -34,9 +34,6 @@ TString particleClass(TString glueXParticleType);
 TString PDGReadableName(int pdgID);
   // utility functions for MC truth parsing
 vector< vector<int> > OrderedThrownIndices(int numThrown, int pids[], int parentIndices[]);
-pair<int,int> FSCode(map<int, pair<TString,TString> > mapThrownIndexToFSTypePair);
-map<int, pair<TString,TString> > MapThrownIndexToFSTypePair(int numThrown, int pids[], int parentIndices[]);
-map<int, vector<int> > MapThrownIndexToDaughters(int numThrown, int parentIndices[]);
 int FSMCExtras(int numThrown, int pids[]);
 
   // global input parameters
@@ -618,8 +615,6 @@ void ConvertTree(TString treeName){
 
       // if MC, start parsing truth information
 
-    map<int, pair<TString,TString> > mapThrownIndexToFSTypePair;
-    map<int, vector<int> > mapThrownIndexToDaughters;
     map<TString, int> mapGlueXNameToThrownIndex;
 
     vector< vector<int> > orderedThrownIndices;
@@ -651,16 +646,13 @@ void ConvertTree(TString treeName){
       cout << "  **** TRUTH INFO STUDY FOR EVENT " << iEntry+1 << " ****" << endl;
       cout << "  NumThrown = " << inNumThrown << endl;
       cout << "  GeneratedEnergy = " << inThrownBeam__GeneratedEnergy << endl;
-      pair<int,int> fsCode = FSCode(mapThrownIndexToFSTypePair);
-      cout << "  FSCode = " << fsCode.second << "_" << fsCode.first << endl;
+      cout << "  FSCode = " << outMCDecayCode2 << "_" << outMCDecayCode1 << endl;
       cout << "  IsThrownTopology = " << inIsThrownTopology << endl;
       for (int i = 0; i < inNumThrown; i++){      
         cout << "    THROWN INDEX = " << i << endl;
         cout << "      PID = " << inThrown__PID[i] << endl;
         cout << "      PDG Name = " << PDGReadableName(inThrown__PID[i]) << endl;
         cout << "      Parent Index = " << inThrown__ParentIndex[i] << endl;
-        cout << "      FS Name = " << mapThrownIndexToFSTypePair[i].first << endl;
-        cout << "      FS Parent = " << mapThrownIndexToFSTypePair[i].second << endl;
       }
       cout << endl << endl;
     }
@@ -1068,21 +1060,7 @@ TString PDGReadableName(int id){
 
 
 
-
-map<int, vector<int> > MapThrownIndexToDaughters(int numThrown, int parentIndices[]){
-  map<int, vector<int> > groupByParentIndex;
-  for (int i = 0; i < numThrown; i++){
-    int parentIndex = parentIndices[i];
-    groupByParentIndex[parentIndex].push_back(i);
-  }
-  return groupByParentIndex;
-}
-
-
-
 vector< vector<int> > OrderedThrownIndices(int numThrown, int pids[], int parentIndices[]){
-
-
   vector< vector<int> > orderedThrownIndices;
   {
     map<int, vector<int> > mapThrownIndexToDaughters;
@@ -1131,9 +1109,9 @@ vector< vector<int> > OrderedThrownIndices(int numThrown, int pids[], int parent
       if (mapThrownIndexToDaughters.find(i) != mapThrownIndexToDaughters.end()) continue;
       int index = i;
       int pdgID = pids[index];
-      if ((pdgID == kpdgEp) || (index == kpdgEm) || (index == kpdgMup) || (index == kpdgMum) ||
-          (pdgID == kpdgPp) || (index == kpdgPm) || (index == kpdgGamma) || 
-          (pdgID == kpdgKp) || (index == kpdgKm) || (index == kpdgPip) || (index == kpdgPim)){
+      if ((pdgID == kpdgEp) || (pdgID == kpdgEm) || (pdgID == kpdgMup) || (pdgID == kpdgMum) ||
+          (pdgID == kpdgPp) || (pdgID == kpdgPm) || (pdgID == kpdgGamma) || 
+          (pdgID == kpdgKp) || (pdgID == kpdgKm) || (pdgID == kpdgPip) || (pdgID == kpdgPim)){
         vector<int> addIndex;
         addIndex.push_back(index);    mapUsedIndices[index] = true;
         orderedThrownIndices.push_back(addIndex);
@@ -1150,151 +1128,12 @@ vector< vector<int> > OrderedThrownIndices(int numThrown, int pids[], int parent
       }
     }
   }
-
   return orderedThrownIndices;
 }
 
 
 
-map<int, pair<TString,TString> > MapThrownIndexToFSTypePair(int numThrown, int pids[], int parentIndices[]){
 
-  map<int, pair<TString,TString> > mapThrownIndexToFSTypePair;
-  map<int, vector<int> > mapThrownIndexToDaughters = MapThrownIndexToDaughters(numThrown,parentIndices);
-
-/*
-  cout << "************************" << endl;
-  cout << "*** truth info debug ***" << endl;
-  cout << "************************" << endl;
-  cout << "mapThrownIndexToDaughters:" << endl;
-  for (map<int, vector<int> >::const_iterator mItr = mapThrownIndexToDaughters.begin();
-         mItr != mapThrownIndexToDaughters.end(); mItr++){
-    int parent = mItr->first;
-    vector<int> daughters = mItr->second;
-    cout << parent << endl;
-    for (unsigned int i = 0; i < daughters.size(); i++){
-      cout << "  " << daughters[i] << endl;
-    } 
-  }
-  cout << "************************" << endl;
-*/
-
-  for (map<int, vector<int> >::const_iterator mItr = mapThrownIndexToDaughters.begin();
-         mItr != mapThrownIndexToDaughters.end(); mItr++){
-    int parentIndex = mItr->first;
-    if (parentIndex == -1) continue;
-    vector<int> daughterIndices = mItr->second;
-    if (daughterIndices.size() == 2){
-      int parentID = pids[parentIndex];
-      int daughterIndex1 = daughterIndices[0];
-      int daughterIndex2 = daughterIndices[1];
-      int daughterID1 = pids[daughterIndex1];
-      int daughterID2 = pids[daughterIndex2];
-      if (parentID == kpdgKs && daughterID1 == kpdgPip && daughterID2 == kpdgPim){
-        mapThrownIndexToFSTypePair[parentIndex]    = pair<TString,TString>("Ks","--");
-        mapThrownIndexToFSTypePair[daughterIndex1] = pair<TString,TString>("pi+","Ks");
-        mapThrownIndexToFSTypePair[daughterIndex2] = pair<TString,TString>("pi-","Ks");
-      }
-      if (parentID == kpdgKs && daughterID1 == kpdgPim && daughterID2 == kpdgPip){
-        mapThrownIndexToFSTypePair[parentIndex]    = pair<TString,TString>("Ks","--");
-        mapThrownIndexToFSTypePair[daughterIndex1] = pair<TString,TString>("pi-","Ks");
-        mapThrownIndexToFSTypePair[daughterIndex2] = pair<TString,TString>("pi+","Ks");
-      }
-      if (parentID == kpdgLambda && daughterID1 == kpdgPp && daughterID2 == kpdgPim){
-        mapThrownIndexToFSTypePair[parentIndex]    = pair<TString,TString>("Lambda","--");
-        mapThrownIndexToFSTypePair[daughterIndex1] = pair<TString,TString>("p+", "Lambda");
-        mapThrownIndexToFSTypePair[daughterIndex2] = pair<TString,TString>("pi-","Lambda");
-      }
-      if (parentID == kpdgLambda && daughterID1 == kpdgPim && daughterID2 == kpdgPp){
-        mapThrownIndexToFSTypePair[parentIndex]    = pair<TString,TString>("Lambda","--");
-        mapThrownIndexToFSTypePair[daughterIndex1] = pair<TString,TString>("pi-","Lambda");
-        mapThrownIndexToFSTypePair[daughterIndex2] = pair<TString,TString>("p+", "Lambda");
-      }
-      if (parentID == kpdgALambda && daughterID1 == kpdgPm && daughterID2 == kpdgPip){
-        mapThrownIndexToFSTypePair[parentIndex]    = pair<TString,TString>("ALambda","--");
-        mapThrownIndexToFSTypePair[daughterIndex1] = pair<TString,TString>("p-", "ALambda");
-        mapThrownIndexToFSTypePair[daughterIndex2] = pair<TString,TString>("pi+","ALambda");
-      }
-      if (parentID == kpdgALambda && daughterID1 == kpdgPip && daughterID2 == kpdgPm){
-        mapThrownIndexToFSTypePair[parentIndex]    = pair<TString,TString>("ALambda","--");
-        mapThrownIndexToFSTypePair[daughterIndex1] = pair<TString,TString>("pi+","ALambda");
-        mapThrownIndexToFSTypePair[daughterIndex2] = pair<TString,TString>("p-", "ALambda");
-      }
-      if (parentID == kpdgEta && daughterID1 == kpdgGamma && daughterID2 == kpdgGamma){
-        mapThrownIndexToFSTypePair[parentIndex]    = pair<TString,TString>("eta","--");
-        mapThrownIndexToFSTypePair[daughterIndex1] = pair<TString,TString>("gamma","eta");
-        mapThrownIndexToFSTypePair[daughterIndex2] = pair<TString,TString>("gamma","eta");
-      }
-      if (parentID == kpdgPi0 && daughterID1 == kpdgGamma && daughterID2 == kpdgGamma){
-        mapThrownIndexToFSTypePair[parentIndex]    = pair<TString,TString>("pi0","--");
-        mapThrownIndexToFSTypePair[daughterIndex1] = pair<TString,TString>("gamma","pi0");
-        mapThrownIndexToFSTypePair[daughterIndex2] = pair<TString,TString>("gamma","pi0");
-      }
-    }
-  }
-
-  for (int i = 0; i < numThrown; i++){
-    if (mapThrownIndexToFSTypePair.find(i) == mapThrownIndexToFSTypePair.end()){
-           if (pids[i] == kpdgEp)   { mapThrownIndexToFSTypePair[i] = pair<TString,TString>("e+",   "--"); }
-      else if (pids[i] == kpdgEm)   { mapThrownIndexToFSTypePair[i] = pair<TString,TString>("e-",   "--"); }
-      else if (pids[i] == kpdgMup)  { mapThrownIndexToFSTypePair[i] = pair<TString,TString>("mu+",  "--"); }
-      else if (pids[i] == kpdgMum)  { mapThrownIndexToFSTypePair[i] = pair<TString,TString>("mu-",  "--"); }
-      else if (pids[i] == kpdgPp)   { mapThrownIndexToFSTypePair[i] = pair<TString,TString>("p+",   "--"); }
-      else if (pids[i] == kpdgPm)   { mapThrownIndexToFSTypePair[i] = pair<TString,TString>("p-",   "--"); }
-      else if (pids[i] == kpdgGamma){ mapThrownIndexToFSTypePair[i] = pair<TString,TString>("gamma","--"); }
-      else if (pids[i] == kpdgKp)   { mapThrownIndexToFSTypePair[i] = pair<TString,TString>("K+",   "--"); }
-      else if (pids[i] == kpdgKm)   { mapThrownIndexToFSTypePair[i] = pair<TString,TString>("K-",   "--"); }
-      else if (pids[i] == kpdgPip)  { mapThrownIndexToFSTypePair[i] = pair<TString,TString>("pi+",  "--"); }
-      else if (pids[i] == kpdgPim)  { mapThrownIndexToFSTypePair[i] = pair<TString,TString>("pi-",  "--"); }
-      else                          { mapThrownIndexToFSTypePair[i] = pair<TString,TString>("--",   "--"); }
-    }
-  }
-
-/*
-  cout << "************************" << endl;
-  cout << "*** truth info debug ***" << endl;
-  cout << "************************" << endl;
-  for (map<int, pair<TString,TString> >::const_iterator mItr = mapThrownIndexToFSTypePair.begin();
-         mItr != mapThrownIndexToFSTypePair.end(); mItr++){
-    int index = mItr->first;
-    pair<TString,TString> fsType = mItr->second;
-    cout << index << ": " << endl;
-    cout << "    " << fsType.first << endl;
-    cout << "    " << fsType.second << endl;
-  }
-  cout << "************************" << endl;
-*/
-
-  return mapThrownIndexToFSTypePair;
-}
-
-
-
-pair<int,int> FSCode(map<int, pair<TString,TString> > mapThrownIndexToFSTypePair){
-  int code1 = 0;
-  int code2 = 0;
-  for (map<int, pair<TString,TString> >::const_iterator mItr = mapThrownIndexToFSTypePair.begin();
-         mItr != mapThrownIndexToFSTypePair.end(); mItr++){
-    TString fsType   = mItr->second.first;
-    TString fsParent = mItr->second.second;
-         if (fsType == "Lambda"  && fsParent == "--"){ code2 += 100000000; }
-    else if (fsType == "ALambda" && fsParent == "--"){ code2 += 10000000; }
-    else if (fsType == "e+"      && fsParent == "--"){ code2 += 1000000; }
-    else if (fsType == "e-"      && fsParent == "--"){ code2 += 100000; }
-    else if (fsType == "mu+"     && fsParent == "--"){ code2 += 10000; }
-    else if (fsType == "mu-"     && fsParent == "--"){ code2 += 1000; }
-    else if (fsType == "p+"      && fsParent == "--"){ code2 += 100; }
-    else if (fsType == "p-"      && fsParent == "--"){ code2 += 10; }
-    else if (fsType == "eta"     && fsParent == "--"){ code2 += 1; }
-    else if (fsType == "gamma"   && fsParent == "--"){ code1 += 1000000; }
-    else if (fsType == "K+"      && fsParent == "--"){ code1 += 100000; }
-    else if (fsType == "K-"      && fsParent == "--"){ code1 += 10000; }
-    else if (fsType == "Ks"      && fsParent == "--"){ code1 += 1000; }
-    else if (fsType == "pi+"     && fsParent == "--"){ code1 += 100; }
-    else if (fsType == "pi-"     && fsParent == "--"){ code1 += 10; }
-    else if (fsType == "pi0"     && fsParent == "--"){ code1 += 1; }
-  }
-  return pair<int,int>(code1,code2);
-}
 
 
 int FSMCExtras(int numThrown, int pids[]){
