@@ -23,11 +23,17 @@ void ConvertTree(TString treeName);
   //   [containing mostly conversions between conventions]
 TString FSParticleType(TString glueXParticleType);
 //TString GlueXParticleType(TString fsParticleType);
+
+int PDGIDNumber(TString glueXParticleType);
 int FSParticleOrder(TString glueXParticleType);
-TString particleClass(TString glueXParticleType);
-TString pdgName(int pdgID);
+int FSParticleOrder(int pdgID);
 pair<int,int> FSCode(vector< vector<TString> > glueXParticleTypes);
+pair<int,int> FSCode(vector< vector<int> > pdgIDs);
+
+TString particleClass(TString glueXParticleType);
+TString PDGReadableName(int pdgID);
   // utility functions for MC truth parsing
+vector< vector<int> > OrderedThrownIndices(int numThrown, int pids[], int parentIndices[]);
 pair<int,int> FSCode(map<int, pair<TString,TString> > mapThrownIndexToFSTypePair);
 map<int, pair<TString,TString> > MapThrownIndexToFSTypePair(int numThrown, int pids[], int parentIndices[]);
 map<int, vector<int> > MapThrownIndexToDaughters(int numThrown, int parentIndices[]);
@@ -616,10 +622,17 @@ void ConvertTree(TString treeName){
     map<int, vector<int> > mapThrownIndexToDaughters;
     map<TString, int> mapGlueXNameToThrownIndex;
 
+    vector< vector<int> > orderedThrownIndices;
+    vector< vector<int> > orderedThrownPDGNumbers;
+
     if (gIsMC){
-      mapThrownIndexToFSTypePair = MapThrownIndexToFSTypePair(inNumThrown,inThrown__PID,inThrown__ParentIndex);
-      pair<int,int> fsCode = FSCode(mapThrownIndexToFSTypePair);
-      mapThrownIndexToDaughters = MapThrownIndexToDaughters(inNumThrown,inThrown__ParentIndex);
+      orderedThrownIndices = OrderedThrownIndices(inNumThrown,inThrown__PID,inThrown__ParentIndex);
+      orderedThrownPDGNumbers = orderedThrownIndices;
+      for (unsigned int i = 0; i < orderedThrownPDGNumbers.size(); i++){
+      for (unsigned int j = 0; j < orderedThrownPDGNumbers[i].size(); j++){
+        orderedThrownPDGNumbers[i][j] = inThrown__PID[orderedThrownIndices[i][j]];
+      }}
+      pair<int,int> fsCode = FSCode(orderedThrownPDGNumbers);
       outMCDecayCode1 = fsCode.first;
       outMCDecayCode2 = fsCode.second;
       outMCExtras = FSMCExtras(inNumThrown,inThrown__PID);
@@ -627,55 +640,6 @@ void ConvertTree(TString treeName){
       if ((reconstructedFSCode.first == fsCode.first) &&
           (reconstructedFSCode.second == fsCode.second) &&
           (outMCExtras < 0.1)) outMCSignal = 1;
-// ?????
-//        TString name = orderedParticleNames[im][id];
-//        int tIndex = mapGlueXNameToThrownIndex[name];
-
-
-// maybe need to rearrage mapThrownIndexToDaughters
-
-      for (unsigned int im = 0; im < orderedParticleNames.size(); im++){
-        TString glueXName = orderedParticleNames[im][0];
-        TString fsType = FSParticleType(glueXName);
-
-        if (orderedParticleNames[im].size() == 1){
-
-          //loop over map<int, pair<TString,TString> > mapThrownIndexToFSTypePair
-          {
-            // int thrownIndex = mItr->first();
-            // pair<TString,TString> fsTypePair = mItr->second();
-            // if (fsTypePair.second == "--")
-            // if (fsTypePair.first == fsType)
-
-            // if not already in map
-            //   mapGlueXNameToThrownIndex[glueXName] = thrownIndex;
-            //   break
-          }
-
-        }
-        if (orderedParticleNames[im].size() == 3){
-
-          //loop over map<int, pair<TString,TString> > mapThrownIndexToFSTypePair
-          {
-            // int thrownIndex = mItr->first();
-            // pair<TString,TString> fsTypePair = mItr->second();
-            //  if fsTypePair.second == "--"
-            //  if fsTypePair.first == fsType
-
-            //  vector<int> thrownIndexDaughters = mapThrownIndexToDaughters[thrownIndex];
-            //  if thrownIndexDaughters.size() == 2
-
-
-            //  if not already in map
-
-          }
-
-
-
-        }
-      }
-
-
     }
 
 
@@ -693,7 +657,7 @@ void ConvertTree(TString treeName){
       for (int i = 0; i < inNumThrown; i++){      
         cout << "    THROWN INDEX = " << i << endl;
         cout << "      PID = " << inThrown__PID[i] << endl;
-        cout << "      PDG Name = " << pdgName(inThrown__PID[i]) << endl;
+        cout << "      PDG Name = " << PDGReadableName(inThrown__PID[i]) << endl;
         cout << "      Parent Index = " << inThrown__ParentIndex[i] << endl;
         cout << "      FS Name = " << mapThrownIndexToFSTypePair[i].first << endl;
         cout << "      FS Parent = " << mapThrownIndexToFSTypePair[i].second << endl;
@@ -922,6 +886,8 @@ TString FSParticleType(TString glueXParticleType){
   return TString("--");
 }
 
+
+
 /*
 TString GlueXParticleType(TString fsParticleType){
   if (fsParticleType == "ALambda")   return TString("AntiLambda");
@@ -945,25 +911,6 @@ TString GlueXParticleType(TString fsParticleType){
 */
 
 
-int FSParticleOrder(TString glueXParticleType){
-  if (glueXParticleType.Contains("AntiLambda"))  return 15;
-  if (glueXParticleType.Contains("Lambda"))      return 16;
-  if (glueXParticleType.Contains("Positron"))    return 14;
-  if (glueXParticleType.Contains("Electron"))    return 13;
-  if (glueXParticleType.Contains("MuonPlus"))    return 12;
-  if (glueXParticleType.Contains("MuonMinus"))   return 11;
-  if (glueXParticleType.Contains("AntiProton"))  return 9;
-  if (glueXParticleType.Contains("Proton"))      return 10;
-  if (glueXParticleType.Contains("Eta"))         return 8;
-  if (glueXParticleType.Contains("Photon"))      return 7;
-  if (glueXParticleType.Contains("KPlus"))       return 6;
-  if (glueXParticleType.Contains("KMinus"))      return 5;
-  if (glueXParticleType.Contains("KShort"))      return 4;
-  if (glueXParticleType.Contains("PiPlus"))      return 3;
-  if (glueXParticleType.Contains("PiMinus"))     return 2;
-  if (glueXParticleType.Contains("Pi0"))         return 1;
-  return 0;
-}
 
 
 TString particleClass(TString glueXParticleType){
@@ -987,30 +934,8 @@ TString particleClass(TString glueXParticleType){
 }
 
 
-pair<int,int> FSCode(vector< vector<TString> > glueXParticleTypes){
-  int code1 = 0;
-  int code2 = 0;
-  for (unsigned int i = 0; i < glueXParticleTypes.size(); i++){
-    TString glueXParticleType = glueXParticleTypes[i][0];
-         if (glueXParticleType.Contains("AntiLambda"))  code2 += 10000000;
-    else if (glueXParticleType.Contains("Lambda"))      code2 += 100000000;
-    else if (glueXParticleType.Contains("Positron"))    code2 += 1000000;
-    else if (glueXParticleType.Contains("Electron"))    code2 += 100000;
-    else if (glueXParticleType.Contains("MuonPlus"))    code2 += 10000;
-    else if (glueXParticleType.Contains("MuonMinus"))   code2 += 1000;
-    else if (glueXParticleType.Contains("AntiProton"))  code2 += 10;
-    else if (glueXParticleType.Contains("Proton"))      code2 += 100;
-    else if (glueXParticleType.Contains("Eta"))         code2 += 1;
-    else if (glueXParticleType.Contains("Photon"))      code1 += 1000000;
-    else if (glueXParticleType.Contains("KPlus"))       code1 += 100000;
-    else if (glueXParticleType.Contains("KMinus"))      code1 += 10000;
-    else if (glueXParticleType.Contains("KShort"))      code1 += 1000;
-    else if (glueXParticleType.Contains("PiPlus"))      code1 += 100;
-    else if (glueXParticleType.Contains("PiMinus"))     code1 += 10;
-    else if (glueXParticleType.Contains("Pi0"))         code1 += 1;
-  }
-  return pair<int,int>(code1,code2);
-}
+
+
 
 
 static const int kpdgPsi2S      = 100443;     
@@ -1074,7 +999,7 @@ static const int kpdgDstar0     = 423;
 static const int kpdgDstarA     = -423;
 
 
-TString pdgName(int id){
+TString PDGReadableName(int id){
   TString name("");
   if      (id == kpdgPsi2S)      name = "psi(2S)";
   else if (id == kpdgGamma)      name = "gamma";
@@ -1152,6 +1077,83 @@ map<int, vector<int> > MapThrownIndexToDaughters(int numThrown, int parentIndice
   }
   return groupByParentIndex;
 }
+
+
+
+vector< vector<int> > OrderedThrownIndices(int numThrown, int pids[], int parentIndices[]){
+
+
+  vector< vector<int> > orderedThrownIndices;
+  {
+    map<int, vector<int> > mapThrownIndexToDaughters;
+    for (int i = 0; i < numThrown; i++){
+      int parentIndex = parentIndices[i];
+      mapThrownIndexToDaughters[parentIndex].push_back(i);
+    }
+    map<int, bool> mapUsedIndices;
+    for (int i = 0; i < numThrown; i++){
+      mapUsedIndices[i] = false;
+    }
+    for (int i = 0; i < numThrown; i++){ 
+      if (mapUsedIndices[i] == true) continue;
+      if (mapThrownIndexToDaughters.find(i) == mapThrownIndexToDaughters.end()) continue;
+      vector<int> daughterIndices = mapThrownIndexToDaughters[i];
+      if (daughterIndices.size() != 2) continue;
+      int parentIndex = i;
+      int parentID = pids[parentIndex];
+      int daughterIndex1 = daughterIndices[0];
+      int daughterIndex2 = daughterIndices[1];
+      int daughterID1 = pids[daughterIndex1];
+      int daughterID2 = pids[daughterIndex2];
+      if ((parentID == kpdgKs      && daughterID1 == kpdgPip   && daughterID2 == kpdgPim)   || 
+          (parentID == kpdgLambda  && daughterID1 == kpdgPp    && daughterID2 == kpdgPim)   ||
+          (parentID == kpdgALambda && daughterID1 == kpdgPm    && daughterID2 == kpdgPip)   ||
+          (parentID == kpdgPi0     && daughterID1 == kpdgGamma && daughterID2 == kpdgGamma) ||
+          (parentID == kpdgEta     && daughterID1 == kpdgGamma && daughterID2 == kpdgGamma)){
+        vector<int> addIndices;
+        addIndices.push_back(parentIndex);     mapUsedIndices[parentIndex] = true;
+        addIndices.push_back(daughterIndex1);  mapUsedIndices[daughterIndex1] = true;
+        addIndices.push_back(daughterIndex2);  mapUsedIndices[daughterIndex2] = true;
+        orderedThrownIndices.push_back(addIndices);
+      }
+      if ((parentID == kpdgKs      && daughterID1 == kpdgPim && daughterID2 == kpdgPip) || 
+          (parentID == kpdgLambda  && daughterID1 == kpdgPim && daughterID2 == kpdgPp) ||
+          (parentID == kpdgALambda && daughterID1 == kpdgPip && daughterID2 == kpdgPm)){
+        vector<int> addIndices;
+        addIndices.push_back(parentIndex);     mapUsedIndices[parentIndex] = true;
+        addIndices.push_back(daughterIndex2);  mapUsedIndices[daughterIndex2] = true;
+        addIndices.push_back(daughterIndex1);  mapUsedIndices[daughterIndex1] = true;
+        orderedThrownIndices.push_back(addIndices);
+      }
+    }
+    for (int i = 0; i < numThrown; i++){ 
+      if (mapUsedIndices[i] == true) continue;
+      if (mapThrownIndexToDaughters.find(i) != mapThrownIndexToDaughters.end()) continue;
+      int index = i;
+      int pdgID = pids[index];
+      if ((pdgID == kpdgEp) || (index == kpdgEm) || (index == kpdgMup) || (index == kpdgMum) ||
+          (pdgID == kpdgPp) || (index == kpdgPm) || (index == kpdgGamma) || 
+          (pdgID == kpdgKp) || (index == kpdgKm) || (index == kpdgPip) || (index == kpdgPim)){
+        vector<int> addIndex;
+        addIndex.push_back(index);    mapUsedIndices[index] = true;
+        orderedThrownIndices.push_back(addIndex);
+      }
+    }
+    for (unsigned int i = 0; i < orderedThrownIndices.size(); i++){
+      for (unsigned int j = i + 1; j < orderedThrownIndices.size(); j++){
+        if (FSParticleOrder(pids[orderedThrownIndices[j][0]]) >
+            FSParticleOrder(pids[orderedThrownIndices[i][0]])){
+          vector<int> temp = orderedThrownIndices[i];
+          orderedThrownIndices[i] = orderedThrownIndices[j];
+          orderedThrownIndices[j] = temp;
+        }
+      }
+    }
+  }
+
+  return orderedThrownIndices;
+}
+
 
 
 map<int, pair<TString,TString> > MapThrownIndexToFSTypePair(int numThrown, int pids[], int parentIndices[]){
@@ -1311,4 +1313,91 @@ int FSMCExtras(int numThrown, int pids[]){
   return mcExtras;
 }
 
+
+
+
+int PDGIDNumber(TString glueXParticleType){
+  if (glueXParticleType.Contains("AntiLambda"))  return kpdgALambda;
+  if (glueXParticleType.Contains("Lambda"))      return kpdgLambda;
+  if (glueXParticleType.Contains("Positron"))    return kpdgEp;
+  if (glueXParticleType.Contains("Electron"))    return kpdgEm;
+  if (glueXParticleType.Contains("MuonPlus"))    return kpdgMup;
+  if (glueXParticleType.Contains("MuonMinus"))   return kpdgMum;
+  if (glueXParticleType.Contains("AntiProton"))  return kpdgPm;
+  if (glueXParticleType.Contains("Proton"))      return kpdgPp;
+  if (glueXParticleType.Contains("Eta"))         return kpdgEta;
+  if (glueXParticleType.Contains("Photon"))      return kpdgGamma;
+  if (glueXParticleType.Contains("KPlus"))       return kpdgKp;
+  if (glueXParticleType.Contains("KMinus"))      return kpdgKm;
+  if (glueXParticleType.Contains("KShort"))      return kpdgKs;
+  if (glueXParticleType.Contains("PiPlus"))      return kpdgPip;
+  if (glueXParticleType.Contains("PiMinus"))     return kpdgPim;
+  if (glueXParticleType.Contains("Pi0"))         return kpdgPi0;
+  return 0;
+}
+
+
+int FSParticleOrder(TString glueXParticleType){
+  return FSParticleOrder(PDGIDNumber(glueXParticleType));
+}
+
+
+int FSParticleOrder(int pdgID){
+  if (pdgID == kpdgLambda)  return 16;
+  if (pdgID == kpdgALambda) return 15;
+  if (pdgID == kpdgEp)      return 14;
+  if (pdgID == kpdgEm)      return 13;
+  if (pdgID == kpdgMup)     return 12;
+  if (pdgID == kpdgMum)     return 11;
+  if (pdgID == kpdgPp)      return 10;
+  if (pdgID == kpdgPm)      return 9;
+  if (pdgID == kpdgEta)     return 8;
+  if (pdgID == kpdgGamma)   return 7;
+  if (pdgID == kpdgKp)      return 6;
+  if (pdgID == kpdgKm)      return 5;
+  if (pdgID == kpdgKs)      return 4;
+  if (pdgID == kpdgPip)     return 3;
+  if (pdgID == kpdgPim)     return 2;
+  if (pdgID == kpdgPi0)     return 1;
+  return 0;
+}
+
+
+pair<int,int> FSCode(vector< vector<TString> > glueXParticleTypes){
+  vector< vector<int> > pdgIDs;
+  for (unsigned int i = 0; i < glueXParticleTypes.size(); i++){
+    vector<int> addPDGIDs;
+    for (unsigned int j = 0; j < glueXParticleTypes[i].size(); j++){
+      addPDGIDs.push_back(PDGIDNumber(glueXParticleTypes[i][j]));
+    }
+    pdgIDs.push_back(addPDGIDs);
+  }
+  return FSCode(pdgIDs);
+}
+
+
+pair<int,int> FSCode(vector< vector<int> > pdgIDs){
+  int code1 = 0;
+  int code2 = 0;
+  for (unsigned int i = 0; i < pdgIDs.size(); i++){
+    int pdgID = pdgIDs[i][0];
+         if (pdgID  == kpdgLambda)  { code2 += 100000000; }
+    else if (pdgID  == kpdgALambda) { code2 += 10000000; }
+    else if (pdgID  == kpdgEp)      { code2 += 1000000; }
+    else if (pdgID  == kpdgEm)      { code2 += 100000; }
+    else if (pdgID  == kpdgMup)     { code2 += 10000; }
+    else if (pdgID  == kpdgMum)     { code2 += 1000; }
+    else if (pdgID  == kpdgPp)      { code2 += 100; }
+    else if (pdgID  == kpdgPm)      { code2 += 10; }
+    else if (pdgID  == kpdgEta)     { code2 += 1; }
+    else if (pdgID  == kpdgGamma)   { code1 += 1000000; }
+    else if (pdgID  == kpdgKp)      { code1 += 100000; }
+    else if (pdgID  == kpdgKm)      { code1 += 10000; }
+    else if (pdgID  == kpdgKs)      { code1 += 1000; }
+    else if (pdgID  == kpdgPip)     { code1 += 100; }
+    else if (pdgID  == kpdgPim)     { code1 += 10; }
+    else if (pdgID  == kpdgPi0)     { code1 += 1; }
+  }
+  return pair<int,int>(code1,code2);
+}
 
