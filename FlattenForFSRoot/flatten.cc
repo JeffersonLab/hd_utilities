@@ -30,7 +30,7 @@ pair<int,int> FSCode(vector< vector<TString> > glueXParticleTypes);
   // utility functions for MC truth parsing
 pair<int,int> FSCode(map<int, pair<TString,TString> > mapThrownIndexToFSTypePair);
 map<int, pair<TString,TString> > MapThrownIndexToFSTypePair(int numThrown, int pids[], int parentIndices[]);
-map<int, vector<int> > MapThrownIndexToDaughters(int numThrown, int pids[], int parentIndices[]);
+map<int, vector<int> > MapThrownIndexToDaughters(int numThrown, int parentIndices[]);
 int FSMCExtras(int numThrown, int pids[]);
 
   // global input parameters
@@ -180,7 +180,7 @@ void ConvertTree(TString treeName){
 
   cout << endl << endl << "READING PARTICLE NAMES FROM THE ROOT FILE:" << endl << endl;
 
-  map< TString, vector<TString> > decayProductMap;  // from mothers to daughters
+  map< TString, vector<TString> > decayProductMap;  // from mothers to daughters (glueXNames)
   {
     TList* userInfo = inTree->GetUserInfo();
     vector<TString> eraseVector; // (to remove double-counting)
@@ -262,7 +262,7 @@ void ConvertTree(TString treeName){
      // **********************************************************************
 
   cout << endl << endl << "READING PDG NUMBERS FROM THE ROOT FILE:" << endl << endl;
-  //map< TString, int > nameToPIDMap;  // map from name to PDG ID
+  //map< TString, int > nameToPIDMap;  // map from name to PDG ID (not used)
   {
     TList* userInfo = inTree->GetUserInfo();
     TMap* rootNameToPIDMap = (TMap*) userInfo->FindObject("NameToPIDMap");
@@ -284,7 +284,7 @@ void ConvertTree(TString treeName){
 
   cout << endl << endl << "PUTTING PARTICLES IN THE RIGHT ORDER AND SETTING INDICES:" << endl << endl;
 
-  vector< vector<TString> > orderedParticleNames;
+  vector< vector<TString> > orderedParticleNames;  // (glueXNames)
   {
     for (map<TString, vector<TString> >::const_iterator mItr = decayProductMap.begin();
          mItr != decayProductMap.end(); mItr++){
@@ -323,8 +323,8 @@ void ConvertTree(TString treeName){
      // STEP 1F:  make maps from names to indices
      // **********************************************************************
 
-  map<TString, TString> mapNameToFSIndex;
-  map<TString, int> mapNameToParticleIndex;
+  map<TString, TString> mapGlueXNameToFSIndex;
+  map<TString, int> mapGlueXNameToParticleIndex;
 
   {
     int particleIndex = 0;
@@ -336,9 +336,9 @@ void ConvertTree(TString treeName){
       if (id == 2) fsIndex += "b";
       cout << fsIndex << ". ";
       cout << name << " ";
-      mapNameToFSIndex[name] = fsIndex;
-      mapNameToParticleIndex[name] = particleIndex++;
-      cout << "(" << mapNameToParticleIndex[name] << ")   ";
+      mapGlueXNameToFSIndex[name] = fsIndex;
+      mapGlueXNameToParticleIndex[name] = particleIndex++;
+      cout << "(" << mapGlueXNameToParticleIndex[name] << ")   ";
     }
     cout << endl;
     }
@@ -402,7 +402,7 @@ void ConvertTree(TString treeName){
   UInt_t inNumCombos;
       inTree->SetBranchAddress("NumCombos", &inNumCombos);
   Bool_t inIsThrownTopology;
-      if (gIsMC) inTree->SetBranchAddress("IsThrownTopology", &inNumCombos);
+      if (gIsMC) inTree->SetBranchAddress("IsThrownTopology", &inIsThrownTopology);
 
 
         //   *** Beam Particles (indexed using ComboBeam__BeamIndex) ***
@@ -468,7 +468,7 @@ void ConvertTree(TString treeName){
     for (unsigned int im = 0; im < orderedParticleNames.size(); im++){
     for (unsigned int id = 0; id < orderedParticleNames[im].size(); id++){
       TString name = orderedParticleNames[im][id];
-      int pIndex = mapNameToParticleIndex[name];
+      int pIndex = mapGlueXNameToParticleIndex[name];
 
         //   *** Combo Tracks ***
 
@@ -546,8 +546,8 @@ void ConvertTree(TString treeName){
     for (unsigned int im = 0; im < orderedParticleNames.size(); im++){
     for (unsigned int id = 0; id < orderedParticleNames[im].size(); id++){
       TString name = orderedParticleNames[im][id];
-      int pIndex = mapNameToParticleIndex[name];
-      TString fsIndex = mapNameToFSIndex[name];
+      int pIndex = mapGlueXNameToParticleIndex[name];
+      TString fsIndex = mapGlueXNameToFSIndex[name];
       TString vPx("PxP"); vPx += fsIndex; outTree.Branch(vPx,&outPx[pIndex],vPx+"/F");
       TString vPy("PyP"); vPy += fsIndex; outTree.Branch(vPy,&outPy[pIndex],vPy+"/F");
       TString vPz("PzP"); vPz += fsIndex; outTree.Branch(vPz,&outPz[pIndex],vPz+"/F");
@@ -614,12 +614,12 @@ void ConvertTree(TString treeName){
 
     map<int, pair<TString,TString> > mapThrownIndexToFSTypePair;
     map<int, vector<int> > mapThrownIndexToDaughters;
-    map<TString, int> mapNameToThrownIndex;
+    map<TString, int> mapGlueXNameToThrownIndex;
 
     if (gIsMC){
       mapThrownIndexToFSTypePair = MapThrownIndexToFSTypePair(inNumThrown,inThrown__PID,inThrown__ParentIndex);
       pair<int,int> fsCode = FSCode(mapThrownIndexToFSTypePair);
-      mapThrownIndexToDaughters = MapThrownIndexToDaughters(inNumThrown,inThrown__PID,inThrown__ParentIndex);
+      mapThrownIndexToDaughters = MapThrownIndexToDaughters(inNumThrown,inThrown__ParentIndex);
       outMCDecayCode1 = fsCode.first;
       outMCDecayCode2 = fsCode.second;
       outMCExtras = FSMCExtras(inNumThrown,inThrown__PID);
@@ -629,7 +629,7 @@ void ConvertTree(TString treeName){
           (outMCExtras < 0.1)) outMCSignal = 1;
 // ?????
 //        TString name = orderedParticleNames[im][id];
-//        int tIndex = mapNameToThrownIndex[name];
+//        int tIndex = mapGlueXNameToThrownIndex[name];
 
 
 // maybe need to rearrage mapThrownIndexToDaughters
@@ -646,8 +646,9 @@ void ConvertTree(TString treeName){
             // pair<TString,TString> fsTypePair = mItr->second();
             // if (fsTypePair.second == "--")
             // if (fsTypePair.first == fsType)
+
             // if not already in map
-            //   mapNameToThrownIndex[glueXName] = thrownIndex;
+            //   mapGlueXNameToThrownIndex[glueXName] = thrownIndex;
             //   break
           }
 
@@ -657,8 +658,16 @@ void ConvertTree(TString treeName){
           //loop over map<int, pair<TString,TString> > mapThrownIndexToFSTypePair
           {
             // int thrownIndex = mItr->first();
+            // pair<TString,TString> fsTypePair = mItr->second();
+            //  if fsTypePair.second == "--"
+            //  if fsTypePair.first == fsType
+
             //  vector<int> thrownIndexDaughters = mapThrownIndexToDaughters[thrownIndex];
             //  if thrownIndexDaughters.size() == 2
+
+
+            //  if not already in map
+
           }
 
 
@@ -736,7 +745,7 @@ void ConvertTree(TString treeName){
       for (unsigned int im = 0; im < orderedParticleNames.size(); im++){
       for (unsigned int id = 0; id < orderedParticleNames[im].size(); id++){
         TString name = orderedParticleNames[im][id];
-        int pIndex = mapNameToParticleIndex[name];
+        int pIndex = mapGlueXNameToParticleIndex[name];
 
           // charged tracks
 
@@ -774,8 +783,8 @@ void ConvertTree(TString treeName){
           // decaying to charged tracks
 
         if (particleClass(name) == "DecayingToCharged"){ 
-          int pIndex1 = mapNameToParticleIndex[orderedParticleNames[im][1]];
-          int pIndex2 = mapNameToParticleIndex[orderedParticleNames[im][2]];
+          int pIndex1 = mapGlueXNameToParticleIndex[orderedParticleNames[im][1]];
+          int pIndex2 = mapGlueXNameToParticleIndex[orderedParticleNames[im][2]];
           p4a = (TLorentzVector*)inP4_KinFit[pIndex1]->At(ic);
           p4b = (TLorentzVector*)inP4_KinFit[pIndex2]->At(ic);
             outPx[pIndex] = p4a->Px() + p4b->Px();
@@ -793,8 +802,8 @@ void ConvertTree(TString treeName){
           // decaying to neutral particles
 
         if (particleClass(name) == "DecayingToNeutral"){ 
-          int pIndex1 = mapNameToParticleIndex[orderedParticleNames[im][1]];
-          int pIndex2 = mapNameToParticleIndex[orderedParticleNames[im][2]];
+          int pIndex1 = mapGlueXNameToParticleIndex[orderedParticleNames[im][1]];
+          int pIndex2 = mapGlueXNameToParticleIndex[orderedParticleNames[im][2]];
           p4a = (TLorentzVector*)inP4_KinFit[pIndex1]->At(ic);
           p4b = (TLorentzVector*)inP4_KinFit[pIndex2]->At(ic);
             outPx[pIndex] = p4a->Px() + p4b->Px();
@@ -830,8 +839,8 @@ void ConvertTree(TString treeName){
         for (unsigned int im = 0; im < orderedParticleNames.size(); im++){
         for (unsigned int id = 0; id < orderedParticleNames[im].size(); id++){
           TString name = orderedParticleNames[im][id];
-          int pIndex = mapNameToParticleIndex[name];
-          TString fsIndex = mapNameToFSIndex[name];
+          int pIndex = mapGlueXNameToParticleIndex[name];
+          TString fsIndex = mapGlueXNameToFSIndex[name];
           double px = outPx[pIndex];
           double py = outPy[pIndex];
           double pz = outPz[pIndex];
@@ -1135,30 +1144,28 @@ TString pdgName(int id){
 
 
 
-map<int, vector<int> > MapThrownIndexToDaughters(int numThrown, int pids[], int parentIndices[]){
-  map<int, vector<int> > groupByParentIndex1;
+map<int, vector<int> > MapThrownIndexToDaughters(int numThrown, int parentIndices[]){
+  map<int, vector<int> > groupByParentIndex;
   for (int i = 0; i < numThrown; i++){
     int parentIndex = parentIndices[i];
-    groupByParentIndex1[parentIndex].push_back(i);
+    groupByParentIndex[parentIndex].push_back(i);
   }
-  return groupByParentIndex1;
+  return groupByParentIndex;
 }
 
 
 map<int, pair<TString,TString> > MapThrownIndexToFSTypePair(int numThrown, int pids[], int parentIndices[]){
 
   map<int, pair<TString,TString> > mapThrownIndexToFSTypePair;
-
-  map<int, vector<int> > groupByParentIndex1 = MapThrownIndexToDaughters(numThrown,pids,parentIndices);
-
+  map<int, vector<int> > mapThrownIndexToDaughters = MapThrownIndexToDaughters(numThrown,parentIndices);
 
 /*
   cout << "************************" << endl;
   cout << "*** truth info debug ***" << endl;
   cout << "************************" << endl;
-  cout << "groupByParentIndex1:" << endl;
-  for (map<int, vector<int> >::const_iterator mItr = groupByParentIndex1.begin();
-         mItr != groupByParentIndex1.end(); mItr++){
+  cout << "mapThrownIndexToDaughters:" << endl;
+  for (map<int, vector<int> >::const_iterator mItr = mapThrownIndexToDaughters.begin();
+         mItr != mapThrownIndexToDaughters.end(); mItr++){
     int parent = mItr->first;
     vector<int> daughters = mItr->second;
     cout << parent << endl;
@@ -1169,8 +1176,8 @@ map<int, pair<TString,TString> > MapThrownIndexToFSTypePair(int numThrown, int p
   cout << "************************" << endl;
 */
 
-  for (map<int, vector<int> >::const_iterator mItr = groupByParentIndex1.begin();
-         mItr != groupByParentIndex1.end(); mItr++){
+  for (map<int, vector<int> >::const_iterator mItr = mapThrownIndexToDaughters.begin();
+         mItr != mapThrownIndexToDaughters.end(); mItr++){
     int parentIndex = mItr->first;
     if (parentIndex == -1) continue;
     vector<int> daughterIndices = mItr->second;
