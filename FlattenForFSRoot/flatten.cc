@@ -21,17 +21,14 @@ void ConvertTree(TString treeName);
 
   // utility functions (collected at the end of this file) 
   //   [containing mostly conversions between conventions]
+TString PDGReadableName(int pdgID);
 TString FSParticleType(TString glueXParticleType);
-//TString GlueXParticleType(TString fsParticleType);
-
+TString particleClass(TString glueXParticleType);
 int PDGIDNumber(TString glueXParticleType);
 int FSParticleOrder(TString glueXParticleType);
 int FSParticleOrder(int pdgID);
 pair<int,int> FSCode(vector< vector<TString> > glueXParticleTypes);
 pair<int,int> FSCode(vector< vector<int> > pdgIDs);
-
-TString particleClass(TString glueXParticleType);
-TString PDGReadableName(int pdgID);
   // utility functions for MC truth parsing
 vector< vector<int> > OrderedThrownIndices(int numThrown, int pids[], int parentIndices[]);
 int FSMCExtras(int numThrown, int pids[]);
@@ -857,79 +854,6 @@ void ConvertTree(TString treeName){
 // **************************************
 
 
-
-TString FSParticleType(TString glueXParticleType){
-  if (glueXParticleType.Contains("AntiLambda"))  return TString("ALambda");
-  if (glueXParticleType.Contains("Lambda"))      return TString("Lambda");
-  if (glueXParticleType.Contains("Positron"))    return TString("e+");
-  if (glueXParticleType.Contains("Electron"))    return TString("e-");
-  if (glueXParticleType.Contains("MuonPlus"))    return TString("mu+");
-  if (glueXParticleType.Contains("MuonMinus"))   return TString("mu-");
-  if (glueXParticleType.Contains("AntiProton"))  return TString("p-");
-  if (glueXParticleType.Contains("Proton"))      return TString("p+");
-  if (glueXParticleType.Contains("Eta"))         return TString("eta");
-  if (glueXParticleType.Contains("Photon"))      return TString("gamma");
-  if (glueXParticleType.Contains("KPlus"))       return TString("K+");
-  if (glueXParticleType.Contains("KMinus"))      return TString("K-");
-  if (glueXParticleType.Contains("KShort"))      return TString("Ks");
-  if (glueXParticleType.Contains("PiPlus"))      return TString("pi+");
-  if (glueXParticleType.Contains("PiMinus"))     return TString("pi-");
-  if (glueXParticleType.Contains("Pi0"))         return TString("pi0");
-  return TString("--");
-}
-
-
-
-/*
-TString GlueXParticleType(TString fsParticleType){
-  if (fsParticleType == "ALambda")   return TString("AntiLambda");
-  if (fsParticleType == "Lambda")    return TString("Lambda")    ;
-  if (fsParticleType == "e+")        return TString("Positron")  ;
-  if (fsParticleType == "e-")        return TString("Electron")  ;
-  if (fsParticleType == "mu+")       return TString("MuonPlus")  ;
-  if (fsParticleType == "mu-")       return TString("MuonMinus") ;
-  if (fsParticleType == "p-")        return TString("AntiProton");
-  if (fsParticleType == "p+")        return TString("Proton")    ;
-  if (fsParticleType == "eta")       return TString("Eta")       ;
-  if (fsParticleType == "gamma")     return TString("Photon")    ;
-  if (fsParticleType == "K+")        return TString("KPlus")     ;
-  if (fsParticleType == "K-")        return TString("KMinus")    ;
-  if (fsParticleType == "Ks")        return TString("KShort")    ;
-  if (fsParticleType == "pi+")       return TString("PiPlus")    ;
-  if (fsParticleType == "pi-")       return TString("PiMinus")   ;
-  if (fsParticleType == "pi0")       return TString("Pi0")       ;
-  return TString("--");
-}
-*/
-
-
-
-
-TString particleClass(TString glueXParticleType){
-  if (glueXParticleType.Contains("AntiLambda"))  return TString("DecayingToCharged");
-  if (glueXParticleType.Contains("Lambda"))      return TString("DecayingToCharged");
-  if (glueXParticleType.Contains("Positron"))    return TString("Charged");
-  if (glueXParticleType.Contains("Electron"))    return TString("Charged");
-  if (glueXParticleType.Contains("MuonPlus"))    return TString("Charged");
-  if (glueXParticleType.Contains("MuonMinus"))   return TString("Charged");
-  if (glueXParticleType.Contains("AntiProton"))  return TString("Charged");
-  if (glueXParticleType.Contains("Proton"))      return TString("Charged");
-  if (glueXParticleType.Contains("Eta"))         return TString("DecayingToNeutral");
-  if (glueXParticleType.Contains("Photon"))      return TString("Neutral");
-  if (glueXParticleType.Contains("KPlus"))       return TString("Charged");
-  if (glueXParticleType.Contains("KMinus"))      return TString("Charged");
-  if (glueXParticleType.Contains("KShort"))      return TString("DecayingToCharged");
-  if (glueXParticleType.Contains("PiPlus"))      return TString("Charged");
-  if (glueXParticleType.Contains("PiMinus"))     return TString("Charged");
-  if (glueXParticleType.Contains("Pi0"))         return TString("DecayingToNeutral");
-  return TString("");
-}
-
-
-
-
-
-
 static const int kpdgPsi2S      = 100443;     
 static const int kpdgGamma      = 22;         
 static const int kpdgFSRGamma   = -22;        
@@ -1059,7 +983,6 @@ TString PDGReadableName(int id){
 }
 
 
-
 vector< vector<int> > OrderedThrownIndices(int numThrown, int pids[], int parentIndices[]){
   vector< vector<int> > orderedThrownIndices;
   {
@@ -1132,10 +1055,6 @@ vector< vector<int> > OrderedThrownIndices(int numThrown, int pids[], int parent
 }
 
 
-
-
-
-
 int FSMCExtras(int numThrown, int pids[]){
   int mcExtras = 0;
   for (int i = 0; i < numThrown; i++){
@@ -1154,6 +1073,46 @@ int FSMCExtras(int numThrown, int pids[]){
 
 
 
+TString FSParticleType(TString glueXParticleType){
+  if (glueXParticleType.Contains("AntiLambda"))  return TString("ALambda");
+  if (glueXParticleType.Contains("Lambda"))      return TString("Lambda");
+  if (glueXParticleType.Contains("Positron"))    return TString("e+");
+  if (glueXParticleType.Contains("Electron"))    return TString("e-");
+  if (glueXParticleType.Contains("MuonPlus"))    return TString("mu+");
+  if (glueXParticleType.Contains("MuonMinus"))   return TString("mu-");
+  if (glueXParticleType.Contains("AntiProton"))  return TString("p-");
+  if (glueXParticleType.Contains("Proton"))      return TString("p+");
+  if (glueXParticleType.Contains("Eta"))         return TString("eta");
+  if (glueXParticleType.Contains("Photon"))      return TString("gamma");
+  if (glueXParticleType.Contains("KPlus"))       return TString("K+");
+  if (glueXParticleType.Contains("KMinus"))      return TString("K-");
+  if (glueXParticleType.Contains("KShort"))      return TString("Ks");
+  if (glueXParticleType.Contains("PiPlus"))      return TString("pi+");
+  if (glueXParticleType.Contains("PiMinus"))     return TString("pi-");
+  if (glueXParticleType.Contains("Pi0"))         return TString("pi0");
+  return TString("--");
+}
+
+
+TString particleClass(TString glueXParticleType){
+  if (glueXParticleType.Contains("AntiLambda"))  return TString("DecayingToCharged");
+  if (glueXParticleType.Contains("Lambda"))      return TString("DecayingToCharged");
+  if (glueXParticleType.Contains("Positron"))    return TString("Charged");
+  if (glueXParticleType.Contains("Electron"))    return TString("Charged");
+  if (glueXParticleType.Contains("MuonPlus"))    return TString("Charged");
+  if (glueXParticleType.Contains("MuonMinus"))   return TString("Charged");
+  if (glueXParticleType.Contains("AntiProton"))  return TString("Charged");
+  if (glueXParticleType.Contains("Proton"))      return TString("Charged");
+  if (glueXParticleType.Contains("Eta"))         return TString("DecayingToNeutral");
+  if (glueXParticleType.Contains("Photon"))      return TString("Neutral");
+  if (glueXParticleType.Contains("KPlus"))       return TString("Charged");
+  if (glueXParticleType.Contains("KMinus"))      return TString("Charged");
+  if (glueXParticleType.Contains("KShort"))      return TString("DecayingToCharged");
+  if (glueXParticleType.Contains("PiPlus"))      return TString("Charged");
+  if (glueXParticleType.Contains("PiMinus"))     return TString("Charged");
+  if (glueXParticleType.Contains("Pi0"))         return TString("DecayingToNeutral");
+  return TString("");
+}
 
 int PDGIDNumber(TString glueXParticleType){
   if (glueXParticleType.Contains("AntiLambda"))  return kpdgALambda;
@@ -1239,4 +1198,5 @@ pair<int,int> FSCode(vector< vector<int> > pdgIDs){
   }
   return pair<int,int>(code1,code2);
 }
+
 
