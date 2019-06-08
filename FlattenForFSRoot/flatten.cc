@@ -715,6 +715,7 @@ void ConvertTree(TString treeName){
       for (unsigned int id = 0; id < orderedParticleNames[im].size(); id++){
         TString name = orderedParticleNames[im][id];
         int pIndex = mapGlueXNameToParticleIndex[name];
+        int tIndex; if (gIsMC && outMCSignal > 0.1) tIndex = orderedThrownIndices[im][id];
 
           // charged tracks
 
@@ -729,6 +730,12 @@ void ConvertTree(TString treeName){
             outRPy[pIndex] = p4->Py();
             outRPz[pIndex] = p4->Pz();
             outREn[pIndex] = p4->E();
+          if (gIsMC && outMCSignal > 0.1){
+          p4 = (TLorentzVector*)inThrown__P4->At(tIndex);
+            outMCPx[pIndex] = p4->Px();
+            outMCPy[pIndex] = p4->Py();
+            outMCPz[pIndex] = p4->Pz();
+            outMCEn[pIndex] = p4->E(); }
           outTkNDF [pIndex] = inChargedHypo__NDF_Tracking  [(inChargedIndex[pIndex][ic])];
           outTkChi2[pIndex] = inChargedHypo__ChiSq_Tracking[(inChargedIndex[pIndex][ic])];
         }
@@ -746,6 +753,12 @@ void ConvertTree(TString treeName){
             outRPy[pIndex] = p4->Py();
             outRPz[pIndex] = p4->Pz();
             outREn[pIndex] = p4->E();
+          if (gIsMC && outMCSignal > 0.1){
+          p4 = (TLorentzVector*)inThrown__P4->At(tIndex);
+            outMCPx[pIndex] = p4->Px();
+            outMCPy[pIndex] = p4->Py();
+            outMCPz[pIndex] = p4->Pz();
+            outMCEn[pIndex] = p4->E(); }
           outShQuality[pIndex] = inNeutralHypo__ShowerQuality[(inNeutralIndex[pIndex][ic])];
         }
 
@@ -754,6 +767,8 @@ void ConvertTree(TString treeName){
         if (particleClass(name) == "DecayingToCharged"){ 
           int pIndex1 = mapGlueXNameToParticleIndex[orderedParticleNames[im][1]];
           int pIndex2 = mapGlueXNameToParticleIndex[orderedParticleNames[im][2]];
+          int tIndex1;  if (gIsMC && outMCSignal > 0.1) tIndex1 = orderedThrownIndices[im][1];
+          int tIndex2;  if (gIsMC && outMCSignal > 0.1) tIndex2 = orderedThrownIndices[im][2];
           p4a = (TLorentzVector*)inP4_KinFit[pIndex1]->At(ic);
           p4b = (TLorentzVector*)inP4_KinFit[pIndex2]->At(ic);
             outPx[pIndex] = p4a->Px() + p4b->Px();
@@ -766,6 +781,13 @@ void ConvertTree(TString treeName){
             outRPy[pIndex] = p4a->Py() + p4b->Py();
             outRPz[pIndex] = p4a->Pz() + p4b->Pz();
             outREn[pIndex] = p4a->E()  + p4b->E();
+          if (gIsMC && outMCSignal > 0.1){
+          p4a = (TLorentzVector*)inThrown__P4->At(tIndex1);
+          p4b = (TLorentzVector*)inThrown__P4->At(tIndex2);
+            outMCPx[pIndex] = p4a->Px() + p4b->Px();
+            outMCPy[pIndex] = p4a->Py() + p4b->Py();
+            outMCPz[pIndex] = p4a->Pz() + p4b->Pz();
+            outMCEn[pIndex] = p4a->E()  + p4b->E(); }
         }
 
           // decaying to neutral particles
@@ -773,6 +795,8 @@ void ConvertTree(TString treeName){
         if (particleClass(name) == "DecayingToNeutral"){ 
           int pIndex1 = mapGlueXNameToParticleIndex[orderedParticleNames[im][1]];
           int pIndex2 = mapGlueXNameToParticleIndex[orderedParticleNames[im][2]];
+          int tIndex1;  if (gIsMC && outMCSignal > 0.1) tIndex1 = orderedThrownIndices[im][1];
+          int tIndex2;  if (gIsMC && outMCSignal > 0.1) tIndex2 = orderedThrownIndices[im][2];
           p4a = (TLorentzVector*)inP4_KinFit[pIndex1]->At(ic);
           p4b = (TLorentzVector*)inP4_KinFit[pIndex2]->At(ic);
             outPx[pIndex] = p4a->Px() + p4b->Px();
@@ -784,7 +808,14 @@ void ConvertTree(TString treeName){
             outRPx[pIndex] = p4a->Px() + p4b->Px();
             outRPy[pIndex] = p4a->Py() + p4b->Py();
             outRPz[pIndex] = p4a->Pz() + p4b->Pz();
-            outREn[pIndex] = p4a->E()  + p4b->E();
+            outREn[pIndex] = p4a->E()  + p4b->E(); 
+          if (gIsMC && outMCSignal > 0.1){
+          p4a = (TLorentzVector*)inThrown__P4->At(tIndex1);
+          p4b = (TLorentzVector*)inThrown__P4->At(tIndex2);
+            outMCPx[pIndex] = p4a->Px() + p4b->Px();
+            outMCPy[pIndex] = p4a->Py() + p4b->Py();
+            outMCPz[pIndex] = p4a->Pz() + p4b->Pz();
+            outMCEn[pIndex] = p4a->E()  + p4b->E(); }
         }
 
       }}
