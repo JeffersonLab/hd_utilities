@@ -612,8 +612,6 @@ void ConvertTree(TString treeName){
 
       // if MC, start parsing truth information
 
-    map<TString, int> mapGlueXNameToThrownIndex;
-
     vector< vector<int> > orderedThrownIndices;
     vector< vector<int> > orderedThrownPDGNumbers;
 
@@ -632,6 +630,19 @@ void ConvertTree(TString treeName){
       if ((reconstructedFSCode.first == fsCode.first) &&
           (reconstructedFSCode.second == fsCode.second) &&
           (outMCExtras < 0.1)) outMCSignal = 1;
+      if (outMCSignal > 0.1){
+          // check orderedThrownIndices
+        if (orderedThrownIndices.size() != orderedParticleNames.size()){
+          cout << "ERROR: problem with size of orderedThrownIndices" << endl;
+          exit(0);
+        }
+        for (unsigned int i = 0; i < orderedThrownIndices.size(); i++){
+          if (orderedThrownIndices[i].size() != orderedParticleNames[i].size()){
+            cout << "ERROR: problem with size of orderedThrownIndices" << endl;
+            exit(0);
+          }
+        }
+      }
     }
 
 
