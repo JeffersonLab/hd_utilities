@@ -1,4 +1,3 @@
-
 #include <iostream>
 #include "TFile.h"
 #include "TTree.h"
@@ -8,125 +7,118 @@
 #include "TList.h"
 #include "TMap.h"
 #include "TIterator.h"
-
-
 using namespace std;
 
-  // note:  ran into strange memory problems when these were much larger (10000,100)?
+
+  // maximum array indices
+  // [careful:  there were strange memory problems when these were set to 10000 and 100]
 static const int MAXCOMBOS = 1000;
 static const int MAXPARTICLES = 50;
 
+  // main routines to do the conversions
 void ConvertFile(TString inFileName, TString outFileName);
 void ConvertTree(TString treeName);
 
+  // utility functions (collected at the end of this file) 
+  //   [containing mostly conversions between conventions]
+TString PDGReadableName(int pdgID);
+TString FSParticleType(TString glueXParticleType);
+TString GlueXParticleClass(TString glueXParticleType);
+int PDGIDNumber(TString glueXParticleType);
+int FSParticleOrder(TString glueXParticleType);
+int FSParticleOrder(int pdgID);
+pair<int,int> FSCode(vector< vector<TString> > glueXParticleTypes);
+pair<int,int> FSCode(vector< vector<int> > pdgIDs);
+  // utility functions for MC truth parsing
+vector< vector<int> > OrderedThrownIndices(int numThrown, int pids[], int parentIndices[]);
+int FSMCExtras(int numThrown, int pids[]);
+
+  // global input parameters
 TFile* gInputFile;
 TFile* gOutputFile;
-float  gChi2DOFCut;
+double  gChi2DOFCut;
+bool gIsMC;
+
+
+
+// **************************************
+//   MAIN
+// **************************************
 
 
 int main(int argc, char** argv){
   cout << endl;
   cout << "***********************************************************" << endl;
-  cout << "This program converts trees from the standard TTree format" << endl;
-  cout << "in the GlueX analysis code to a flat TTree (\"FS Format\")." << endl << endl;
+  cout << "This program converts trees from the standard TTree format in the" << endl;
+  cout << "  GlueX analysis environment to a flat TTree (\"FS Format\")." << endl << endl;
+  cout << "The output tree is compatible with the utilities in the FSRoot package." << endl << endl;
   cout << "The final state is determined automatically from the input file." << endl << endl;
   cout << "Usage:" << endl;
-  cout << "  flatten  <input file name> <output file name> [Chi2DOF cut value]" << endl << endl;
+  cout << "  flatten  <input file name> <output file name> <MC: 0 or 1> " << endl;
+  cout << "            [optional Chi2DOF cut value]" << endl << endl;
   cout << "Notes:" << endl;
-  cout << "  * the output tree name is ntFSGlueX for now " << endl;
-  cout << "  * the output tree name could also be derived from the input" << endl;
-  cout << "     tree name (this is commented out)" << endl;
   cout << "  * the input tree name should contain \"_Tree\" (if this standard" << endl;
   cout << "     changes in the GlueX code, this code can be easily modified)" << endl;
-  cout << "***********************************************************" << endl;
-  if ((argc != 3) && (argc != 4)) exit(0);
+  cout << "  * the output tree name is ntFSGlueX (for now) " << endl;
+  cout << "      [it might be better to eventually use a FSCode, for example]" << endl;
+  cout << "  * this works for a large variety of final states (but not all)" << endl;
+  cout << "***********************************************************" << endl << endl;
+  if ((argc != 4) && (argc != 5)){
+     cout << "ERROR: wrong number of arguments -- see usage notes above" << endl;
+     exit(0);
+  }
   TString inFileName(argv[1]);
   TString outFileName(argv[2]);
-  if (argc == 3) gChi2DOFCut = 1000.0;
-  if (argc == 4) gChi2DOFCut = atof(argv[3]);
+  TString isMC(argv[3]);
+       if (isMC == "0"){ gIsMC = false; }
+  else if (isMC == "1"){ gIsMC = true; }
+  else {
+     cout << "ERROR: 3rd argument should be 1 or 0 to specify whether this is or is not MC" << endl;
+     exit(0);
+  }
+  if (argc == 4) gChi2DOFCut = 1000.0;
+  if (argc == 5) gChi2DOFCut = atof(argv[4]);
   ConvertFile(inFileName,outFileName);
 }
 
 
-TString FSParticleType(TString gluexParticleType){
-  if (gluexParticleType.Contains("AntiLambda"))  return TString("ALambda");
-  if (gluexParticleType.Contains("Lambda"))      return TString("Lambda");
-  if (gluexParticleType.Contains("Positron"))    return TString("e+");
-  if (gluexParticleType.Contains("Electron"))    return TString("e-");
-  if (gluexParticleType.Contains("MuonPlus"))    return TString("mu+");
-  if (gluexParticleType.Contains("MuonMinus"))   return TString("mu-");
-  if (gluexParticleType.Contains("AntiProton"))  return TString("p-");
-  if (gluexParticleType.Contains("Proton"))      return TString("p+");
-  if (gluexParticleType.Contains("Eta"))         return TString("eta");
-  if (gluexParticleType.Contains("Photon"))      return TString("gamma");
-  if (gluexParticleType.Contains("KPlus"))       return TString("K+");
-  if (gluexParticleType.Contains("KMinus"))      return TString("K-");
-  if (gluexParticleType.Contains("KShort"))      return TString("Ks");
-  if (gluexParticleType.Contains("PiPlus"))      return TString("pi+");
-  if (gluexParticleType.Contains("PiMinus"))     return TString("pi-");
-  if (gluexParticleType.Contains("Pi0"))         return TString("pi0");
-  return TString("");
-}
 
-
-int FSParticleOrder(TString gluexParticleType){
-  if (gluexParticleType.Contains("AntiLambda"))  return 15;
-  if (gluexParticleType.Contains("Lambda"))      return 16;
-  if (gluexParticleType.Contains("Positron"))    return 14;
-  if (gluexParticleType.Contains("Electron"))    return 13;
-  if (gluexParticleType.Contains("MuonPlus"))    return 12;
-  if (gluexParticleType.Contains("MuonMinus"))   return 11;
-  if (gluexParticleType.Contains("AntiProton"))  return 9;
-  if (gluexParticleType.Contains("Proton"))      return 10;
-  if (gluexParticleType.Contains("Eta"))         return 8;
-  if (gluexParticleType.Contains("Photon"))      return 7;
-  if (gluexParticleType.Contains("KPlus"))       return 6;
-  if (gluexParticleType.Contains("KMinus"))      return 5;
-  if (gluexParticleType.Contains("KShort"))      return 4;
-  if (gluexParticleType.Contains("PiPlus"))      return 3;
-  if (gluexParticleType.Contains("PiMinus"))     return 2;
-  if (gluexParticleType.Contains("Pi0"))         return 1;
-  return 0;
-}
-
-TString particleClass(TString gluexParticleType){
-  if (gluexParticleType.Contains("AntiLambda"))  return TString("DecayingToCharged");
-  if (gluexParticleType.Contains("Lambda"))      return TString("DecayingToCharged");
-  if (gluexParticleType.Contains("Positron"))    return TString("Charged");
-  if (gluexParticleType.Contains("Electron"))    return TString("Charged");
-  if (gluexParticleType.Contains("MuonPlus"))    return TString("Charged");
-  if (gluexParticleType.Contains("MuonMinus"))   return TString("Charged");
-  if (gluexParticleType.Contains("AntiProton"))  return TString("Charged");
-  if (gluexParticleType.Contains("Proton"))      return TString("Charged");
-  if (gluexParticleType.Contains("Eta"))         return TString("DecayingToNeutral");
-  if (gluexParticleType.Contains("Photon"))      return TString("Neutral");
-  if (gluexParticleType.Contains("KPlus"))       return TString("Charged");
-  if (gluexParticleType.Contains("KMinus"))      return TString("Charged");
-  if (gluexParticleType.Contains("KShort"))      return TString("DecayingToCharged");
-  if (gluexParticleType.Contains("PiPlus"))      return TString("Charged");
-  if (gluexParticleType.Contains("PiMinus"))     return TString("Charged");
-  if (gluexParticleType.Contains("Pi0"))         return TString("DecayingToNeutral");
-  return TString("");
-}
-
+// **************************************
+//   ConvertFile
+// **************************************
 
 void ConvertFile(TString inFileName, TString outFileName){
+  int nTrees = 0;
   gInputFile  = new TFile(inFileName);
   gOutputFile = new TFile(outFileName,"recreate");
   TList* fileList = gInputFile->GetListOfKeys();
   for (int i = 0; i < fileList->GetEntries(); i++){
     TString treeName(fileList->At(i)->GetName());
     if (treeName.Contains("_Tree")){
-      ConvertTree(treeName);
+      if (nTrees == 0) ConvertTree(treeName);
+      if (nTrees >= 1){
+        cout << "WARNING: found more than one tree -- only converted the first" << endl;
+        cout << "           extra tree = " << treeName << endl;
+      }
+      nTrees++;
     }
   }
   gInputFile->Close();
   gOutputFile->Close();
+  if (nTrees == 0){
+    cout << "WARNING: could not find any trees" << endl;
+  }
 }
 
 
 
+// **************************************
+//   ConvertTree:  all the work is done here
+// **************************************
+
 void ConvertTree(TString treeName){
+
+  cout << endl << "CONVERTING THE TREE NAMED: " << treeName << endl;
 
     // input and output tree names
   TString inNT(treeName);
@@ -151,31 +143,34 @@ void ConvertTree(TString treeName){
   {
     TList* userInfo = inTree->GetUserInfo();
         if (userInfo){ cout << "  OK: found UserInfo" << endl; }
-        else { cout << "  ERROR:  could not find UserInfo" << endl; exit(1); }
+        else { cout << "  ERROR:  could not find UserInfo" << endl; exit(0); }
     TList* rootMothers = (TList*) userInfo->FindObject("ParticleNameList");
         if (rootMothers){ cout << "  OK: found ParticleNameList" << endl; }
-        else { cout << "  ERROR:  could not find ParticleNameList" << endl; exit(1); }
+        else { cout << "  ERROR:  could not find ParticleNameList" << endl; exit(0); }
     TMap* rootDecayProductMap = (TMap*) userInfo->FindObject("DecayProductMap");
         if (rootDecayProductMap){ cout << "  OK: found DecayProductMap" << endl; }
-        else { cout << "  ERROR:  could not find DecayProductMap" << endl; exit(1); }
+        else { cout << "  ERROR:  could not find DecayProductMap" << endl; exit(0); }
+    TMap* rootNameToPIDMap = (TMap*) userInfo->FindObject("NameToPIDMap");
+        if (rootNameToPIDMap){ cout << "  OK: found NameToPIDMap" << endl; }
+        else { cout << "  ERROR:  could not find NameToPIDMap" << endl; exit(0); }
     TMap* miscInfo = (TMap*) userInfo->FindObject("MiscInfoMap");
         if (miscInfo){ cout << "  OK: found MiscInfoMap" << endl; }
-        else { cout << "  ERROR:  could not find MiscInfoMap" << endl; exit(1); }
+        else { cout << "  ERROR:  could not find MiscInfoMap" << endl; exit(0); }
     TObjString* kinFitType = (TObjString*) miscInfo->GetValue("KinFitType");
         if (kinFitType->GetString() != "" && 
             kinFitType->GetString() != "0")
              { cout << "  OK: found KinFitType = "  << kinFitType->GetString() << endl; }
-        else { cout << "  ERROR: bad KinFitType = " << kinFitType->GetString() << endl; exit(1); }
+        else { cout << "  ERROR: bad KinFitType = " << kinFitType->GetString() << endl; exit(0); }
     TObjString* tosTCZ = (TObjString*) miscInfo->GetValue("Target__CenterZ");
         if (tosTCZ) 
              { cout << "  OK: found Target__CenterZ = "  << tosTCZ->GetString() << endl; }
-        else { cout << "  ERROR: could not find Target__CenterZ " << endl; exit(1); }
+        else { cout << "  ERROR: could not find Target__CenterZ " << endl; exit(0); }
     TString tsTCZ(tosTCZ->GetString());
         if (tsTCZ.IsFloat())
              { string sTCZ(""); for (int i=0; i<tsTCZ.Length(); i++){ sTCZ += tsTCZ[i]; }
                inTargetCenterZ = atof(sTCZ.c_str()); 
                cout << "            inTargetCenterZ = " << inTargetCenterZ << endl; }
-        else { cout << "  ERROR: Target__CenterZ is not a number" << endl; exit(1); }
+        else { cout << "  ERROR: Target__CenterZ is not a number" << endl; exit(0); }
   }
 
 
@@ -185,8 +180,7 @@ void ConvertTree(TString treeName){
 
   cout << endl << endl << "READING PARTICLE NAMES FROM THE ROOT FILE:" << endl << endl;
 
-  map< TString, vector<TString> > decayProductMap;  // from mothers to daughters
-
+  map< TString, vector<TString> > decayProductMap;  // from mothers to daughters (glueXNames)
   {
     TList* userInfo = inTree->GetUserInfo();
     vector<TString> eraseVector; // (to remove double-counting)
@@ -212,19 +206,89 @@ void ConvertTree(TString treeName){
     }
   }
 
+     // **********************************************************************
+     // STEP 1C:  perform checks on the final state
+     // **********************************************************************
+
+  cout << endl << endl << "PERFORMING CHECKS ON THE FINAL STATE:" << endl << endl;
+  {
+    if (decayProductMap.size() == 0){
+      cout << endl << "  ERROR: no final state partices found" << endl;
+      exit(0);
+    }
+    for (map<TString, vector<TString> >::const_iterator mItr = decayProductMap.begin();
+         mItr != decayProductMap.end(); mItr++){
+      TString motherName = mItr->first;
+      TString motherFSType = FSParticleType(motherName);
+      if (motherFSType == "--") motherFSType = "** NOT USED **";
+      vector<TString> daughterNames = mItr->second;
+      vector<TString> daughterFSTypes;
+      for (unsigned int i = 0; i < daughterNames.size(); i++){
+        daughterFSTypes.push_back(FSParticleType(daughterNames[i]));
+      }
+      cout << motherName << ": " << motherFSType << endl;
+      for (unsigned int i = 0; i < daughterNames.size(); i++){
+        cout << "    " << daughterNames[i] << ": " << daughterFSTypes[i] << endl;
+      }
+      if (motherFSType == "pi0" && (daughterNames.size() != 2 || 
+            !(daughterFSTypes[0] == "gamma" && daughterFSTypes[1] == "gamma"))){
+        cout << "  ERROR: unrecognized pi0 decay" << endl;
+      }
+      if (motherFSType == "eta" && (daughterNames.size() != 2 || 
+            !(daughterFSTypes[0] == "gamma" && daughterFSTypes[1] == "gamma"))){
+        cout << "  ERROR: unrecognized eta decay" << endl;
+      }
+      if (motherFSType == "Ks" && (daughterNames.size() != 2 || 
+            !((daughterFSTypes[0] == "pi+" && daughterFSTypes[1] == "pi-") || 
+              (daughterFSTypes[1] == "pi+" && daughterFSTypes[0] == "pi-")))){
+        cout << "  ERROR: unrecognized Ks decay" << endl;
+      }
+      if (motherFSType == "Lambda" && (daughterNames.size() != 2 || 
+            !((daughterFSTypes[0] == "p+" && daughterFSTypes[1] == "pi-") || 
+              (daughterFSTypes[1] == "p+" && daughterFSTypes[0] == "pi-")))){
+        cout << "  ERROR: unrecognized Lambda decay" << endl;
+      }
+      if (motherFSType == "ALambda" && (daughterNames.size() != 2 || 
+            !((daughterFSTypes[0] == "p-" && daughterFSTypes[1] == "pi+") || 
+              (daughterFSTypes[1] == "p-" && daughterFSTypes[0] == "pi+")))){
+        cout << "  ERROR: unrecognized ALambda decay" << endl;
+      }
+    }
+  }
+
 
      // **********************************************************************
-     // STEP 1C:  put the particle names in the right order 
+     // STEP 1D:  extract PDG numbers from the root file (not used, just checking)
      // **********************************************************************
 
-  cout << endl << endl << "PUTTING PARTICLE NAMES IN THE RIGHT ORDER:" << endl << endl;
+  cout << endl << endl << "READING PDG NUMBERS FROM THE ROOT FILE:" << endl << endl;
+  //map< TString, int > nameToPIDMap;  // map from name to PDG ID (not used)
+  {
+    TList* userInfo = inTree->GetUserInfo();
+    TMap* rootNameToPIDMap = (TMap*) userInfo->FindObject("NameToPIDMap");
+    TMapIter tmapIter(rootNameToPIDMap);
+    TObjString* rootName = (TObjString*) tmapIter();
+    while (rootName != NULL){
+      TObjString* rootPID =  (TObjString*) rootNameToPIDMap->GetValue(rootName->GetString());
+      TString sName = rootName->GetString();
+      TString sPID  = rootPID->GetString();
+      cout << sName << ":  " << sPID << endl;
+      rootName = (TObjString*) tmapIter.Next();
+    }
+  }
 
-  vector< vector<TString> > orderedParticleNames;
 
+     // **********************************************************************
+     // STEP 1E:  put the particle names in the right order 
+     // **********************************************************************
+
+  cout << endl << endl << "PUTTING PARTICLES IN THE RIGHT ORDER AND SETTING INDICES:" << endl << endl;
+
+  vector< vector<TString> > orderedParticleNames;  // (glueXNames)
   {
     for (map<TString, vector<TString> >::const_iterator mItr = decayProductMap.begin();
          mItr != decayProductMap.end(); mItr++){
-      if (FSParticleType(mItr->first) != ""){
+      if (FSParticleType(mItr->first) != "--"){
         vector<TString> vp;
         vp.push_back(mItr->first);
         vector<TString> addp = mItr->second;
@@ -250,14 +314,17 @@ void ConvertTree(TString treeName){
       }
     }
   }
+  pair<int,int> reconstructedFSCode = FSCode(orderedParticleNames);
+  cout << "  DecayCode1 = " << reconstructedFSCode.first << endl;
+  cout << "  DecayCode2 = " << reconstructedFSCode.second << endl << endl;
 
 
      // **********************************************************************
-     // STEP 1D:  make maps from names to indices
+     // STEP 1F:  make maps from names to indices
      // **********************************************************************
 
-  map<TString, TString> mapNameToFSIndex;
-  map<TString, int> mapNameToParticleIndex;
+  map<TString, TString> mapGlueXNameToFSIndex;
+  map<TString, int> mapGlueXNameToParticleIndex;
 
   {
     int particleIndex = 0;
@@ -269,21 +336,53 @@ void ConvertTree(TString treeName){
       if (id == 2) fsIndex += "b";
       cout << fsIndex << ". ";
       cout << name << " ";
-      mapNameToFSIndex[name] = fsIndex;
-      mapNameToParticleIndex[name] = particleIndex++;
-      cout << "(" << mapNameToParticleIndex[name] << ")   ";
+      mapGlueXNameToFSIndex[name] = fsIndex;
+      mapGlueXNameToParticleIndex[name] = particleIndex++;
+      cout << "(" << mapGlueXNameToParticleIndex[name] << ")   ";
     }
     cout << endl;
     }
     cout << endl << endl << endl;
   }
 
+
    // **********************************************************************
    // STEP 2:  SET UP TO READ THE INPUT TREE (IN ANALYSIS TREE FORMAT)
    // **********************************************************************
 
+        // ******************************
+        // ***** 2A. SIMULATED DATA *****
+        // ******************************
+
+        //   *** Thrown Non-Particle Data ***
+
+  UInt_t inNumThrown;
+      if (gIsMC) inTree->SetBranchAddress("NumThrown", &inNumThrown);
+
+
+        //   *** Thrown Beam Particle ***
+
+  Float_t inThrownBeam__GeneratedEnergy;
+      if (gIsMC) inTree->SetBranchAddress("ThrownBeam__GeneratedEnergy", &inThrownBeam__GeneratedEnergy);
+
+
+        //   *** Thrown Products ***
+
+  Int_t  inThrown__ParentIndex[MAXPARTICLES] = {};   
+      if (gIsMC) inTree->SetBranchAddress("Thrown__ParentIndex", inThrown__ParentIndex);
+  Int_t  inThrown__PID[MAXPARTICLES] = {};   
+      if (gIsMC) inTree->SetBranchAddress("Thrown__PID", inThrown__PID);
+  Int_t  inThrown__MatchID[MAXPARTICLES] = {};   
+      if (gIsMC) inTree->SetBranchAddress("Thrown__MatchID", inThrown__MatchID);
+  Float_t  inThrown__MatchFOM[MAXPARTICLES] = {};   
+      if (gIsMC) inTree->SetBranchAddress("Thrown__MatchFOM", inThrown__MatchFOM);
+  TClonesArray *inThrown__P4 = new TClonesArray("TLorentzVector");
+      if (gIsMC) inTree->SetBranchAddress("Thrown__P4",&(inThrown__P4));
+
+
+
         // **************************************
-        // ***** 2A. COMBO-INDEPENDENT DATA *****
+        // ***** 2B. COMBO-INDEPENDENT DATA *****
         // **************************************
 
         //   *** Non-Particle Data ***
@@ -302,6 +401,9 @@ void ConvertTree(TString treeName){
       inTree->SetBranchAddress("NumNeutralHypos", &inNumNeutralHypos);
   UInt_t inNumCombos;
       inTree->SetBranchAddress("NumCombos", &inNumCombos);
+  Bool_t inIsThrownTopology;
+      if (gIsMC) inTree->SetBranchAddress("IsThrownTopology", &inIsThrownTopology);
+
 
         //   *** Beam Particles (indexed using ComboBeam__BeamIndex) ***
 
@@ -324,20 +426,20 @@ void ConvertTree(TString treeName){
 
   TClonesArray *inNeutralHypo__P4_Measured = new TClonesArray("TLorentzVector");
       inTree->SetBranchAddress("NeutralHypo__P4_Measured",&(inNeutralHypo__P4_Measured));
-  
-  Float_t inShower_Quality[MAXPARTICLES] = {};
-      inTree->SetBranchAddress("NeutralHypo__ShowerQuality", inShower_Quality);
+  Float_t inNeutralHypo__ShowerQuality[MAXPARTICLES] = {};
+      inTree->SetBranchAddress("NeutralHypo__ShowerQuality", inNeutralHypo__ShowerQuality);
+
 
         // ************************************
-        // ***** 2B. COMBO-DEPENDENT DATA *****
+        // ***** 2C. COMBO-DEPENDENT DATA *****
         // ************************************
 
         //   *** Particle-Independent Data (indexed by combo) ***
 
   Float_t inRFTime_Measured[MAXCOMBOS] = {};
       inTree->SetBranchAddress("RFTime_Measured", inRFTime_Measured);  
-  Float_t inRFTime_KinFit[MAXCOMBOS] = {};
-      inTree->SetBranchAddress("RFTime_KinFit", inRFTime_KinFit);  
+  //Float_t inRFTime_KinFit[MAXCOMBOS] = {};
+  //    inTree->SetBranchAddress("RFTime_KinFit", inRFTime_KinFit);  
   Float_t inChiSq_KinFit[MAXCOMBOS] = {};
       inTree->SetBranchAddress("ChiSq_KinFit", inChiSq_KinFit);
   UInt_t inNDF_KinFit[MAXCOMBOS] = {};
@@ -366,11 +468,11 @@ void ConvertTree(TString treeName){
     for (unsigned int im = 0; im < orderedParticleNames.size(); im++){
     for (unsigned int id = 0; id < orderedParticleNames[im].size(); id++){
       TString name = orderedParticleNames[im][id];
-      int pIndex = mapNameToParticleIndex[name];
+      int pIndex = mapGlueXNameToParticleIndex[name];
 
         //   *** Combo Tracks ***
 
-      if (particleClass(name) == "Charged"){
+      if (GlueXParticleClass(name) == "Charged"){
         TString var_P4_KinFit(name); var_P4_KinFit += "__P4_KinFit";
             inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector");
             inTree->SetBranchAddress(var_P4_KinFit,&(inP4_KinFit[pIndex]));
@@ -380,7 +482,7 @@ void ConvertTree(TString treeName){
 
         //   *** Combo Neutrals ***
 
-      if (particleClass(name) == "Neutral"){
+      if (GlueXParticleClass(name) == "Neutral"){
         TString var_P4_KinFit(name); var_P4_KinFit += "__P4_KinFit";
             inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector");
             inTree->SetBranchAddress(var_P4_KinFit,&(inP4_KinFit[pIndex]));
@@ -390,7 +492,7 @@ void ConvertTree(TString treeName){
 
         //   *** Combo Decaying Particles ***
 
-      if (particleClass(name).Contains("Decaying")){
+      if (GlueXParticleClass(name).Contains("Decaying")){
       }
 
     }
@@ -407,53 +509,71 @@ void ConvertTree(TString treeName){
 
     // non-particle information
 
-  float outRunNumber;     outTree.Branch("Run",        &outRunNumber,  "Run/F");
-  float outEventNumber;   outTree.Branch("Event",      &outEventNumber,"Event/F");
-  float outChi2;          outTree.Branch("Chi2",       &outChi2,       "Chi2/F");
-  float outChi2DOF;       outTree.Branch("Chi2DOF",    &outChi2DOF,    "Chi2DOF/F");
-  float outRFTime;        outTree.Branch("RFTime",     &outRFTime,     "RFTime/F");
-  float outRFDeltaT;      outTree.Branch("RFDeltaT",   &outRFDeltaT,   "RFDeltaT/F");
-  float outEnUnusedSh;    outTree.Branch("EnUnusedSh", &outEnUnusedSh, "EnUnusedSh/F");
-  float outProdVx;        outTree.Branch("ProdVx",     &outProdVx,     "ProdVx/F");
-  float outProdVy;        outTree.Branch("ProdVy",     &outProdVy,     "ProdVy/F");
-  float outProdVz;        outTree.Branch("ProdVz",     &outProdVz,     "ProdVz/F");
-  float outProdVt;        outTree.Branch("ProdVt",     &outProdVt,     "ProdVt/F");
-  float outPxPB;          outTree.Branch("PxPB",       &outPxPB,       "PxPB/F");
-  float outPyPB;          outTree.Branch("PyPB",       &outPyPB,       "PyPB/F");
-  float outPzPB;          outTree.Branch("PzPB",       &outPzPB,       "PzPB/F");
-  float outEnPB;          outTree.Branch("EnPB",       &outEnPB,       "EnPB/F");
-  float outRPxPB;         outTree.Branch("RPxPB",      &outRPxPB,      "RPxPB/F");
-  float outRPyPB;         outTree.Branch("RPyPB",      &outRPyPB,      "RPyPB/F");
-  float outRPzPB;         outTree.Branch("RPzPB",      &outRPzPB,      "RPzPB/F");
-  float outREnPB;         outTree.Branch("REnPB",      &outREnPB,      "REnPB/F");
+  double outRunNumber;     outTree.Branch("Run",        &outRunNumber,  "Run/D");
+  double outEventNumber;   outTree.Branch("Event",      &outEventNumber,"Event/D");
+  double outChi2;          outTree.Branch("Chi2",       &outChi2,       "Chi2/D");
+  double outChi2DOF;       outTree.Branch("Chi2DOF",    &outChi2DOF,    "Chi2DOF/D");
+  double outRFTime;        outTree.Branch("RFTime",     &outRFTime,     "RFTime/D");
+  double outRFDeltaT;      outTree.Branch("RFDeltaT",   &outRFDeltaT,   "RFDeltaT/D");
+  double outEnUnusedSh;    outTree.Branch("EnUnusedSh", &outEnUnusedSh, "EnUnusedSh/D");
+  double outProdVx;        outTree.Branch("ProdVx",     &outProdVx,     "ProdVx/D");
+  double outProdVy;        outTree.Branch("ProdVy",     &outProdVy,     "ProdVy/D");
+  double outProdVz;        outTree.Branch("ProdVz",     &outProdVz,     "ProdVz/D");
+  double outProdVt;        outTree.Branch("ProdVt",     &outProdVt,     "ProdVt/D");
+  double outPxPB;          outTree.Branch("PxPB",       &outPxPB,       "PxPB/D");
+  double outPyPB;          outTree.Branch("PyPB",       &outPyPB,       "PyPB/D");
+  double outPzPB;          outTree.Branch("PzPB",       &outPzPB,       "PzPB/D");
+  double outEnPB;          outTree.Branch("EnPB",       &outEnPB,       "EnPB/D");
+  double outRPxPB;         outTree.Branch("RPxPB",      &outRPxPB,      "RPxPB/D");
+  double outRPyPB;         outTree.Branch("RPyPB",      &outRPyPB,      "RPyPB/D");
+  double outRPzPB;         outTree.Branch("RPzPB",      &outRPzPB,      "RPzPB/D");
+  double outREnPB;         outTree.Branch("REnPB",      &outREnPB,      "REnPB/D");
+
+    // MC information
+
+  double outMCPxPB;        if (gIsMC) outTree.Branch("MCPxPB",      &outMCPxPB,      "MCPxPB/D");
+  double outMCPyPB;        if (gIsMC) outTree.Branch("MCPyPB",      &outMCPyPB,      "MCPyPB/D");
+  double outMCPzPB;        if (gIsMC) outTree.Branch("MCPzPB",      &outMCPzPB,      "MCPzPB/D");
+  double outMCEnPB;        if (gIsMC) outTree.Branch("MCEnPB",      &outMCEnPB,      "MCEnPB/D");
+  double outMCDecayCode1;  if (gIsMC) outTree.Branch("MCDecayCode1",&outMCDecayCode1,"MCDecayCode1/D");
+  double outMCDecayCode2;  if (gIsMC) outTree.Branch("MCDecayCode2",&outMCDecayCode2,"MCDecayCode2/D");
+  double outMCExtras;      if (gIsMC) outTree.Branch("MCExtras",    &outMCExtras,    "MCExtras/D");
+  double outMCSignal;      if (gIsMC) outTree.Branch("MCSignal",    &outMCSignal,    "MCSignal/D");
 
     // particle information
 
-  float  outPx[MAXPARTICLES]={},  outPy[MAXPARTICLES]={},  outPz[MAXPARTICLES]={},  outEn[MAXPARTICLES]={};
-  float outRPx[MAXPARTICLES]={}, outRPy[MAXPARTICLES]={}, outRPz[MAXPARTICLES]={}, outREn[MAXPARTICLES]={};
-  float outTkChi2[MAXPARTICLES]={}, outTkNDF[MAXPARTICLES]={};
-  float outQuality[MAXPARTICLES]={};
+  double   outPx[MAXPARTICLES]={},   outPy[MAXPARTICLES]={},   outPz[MAXPARTICLES]={},   outEn[MAXPARTICLES]={};
+  double  outRPx[MAXPARTICLES]={},  outRPy[MAXPARTICLES]={},  outRPz[MAXPARTICLES]={},  outREn[MAXPARTICLES]={};
+  double outMCPx[MAXPARTICLES]={}, outMCPy[MAXPARTICLES]={}, outMCPz[MAXPARTICLES]={}, outMCEn[MAXPARTICLES]={};
+  double outTkChi2[MAXPARTICLES]={}, outTkNDF[MAXPARTICLES]={};
+  double outShQuality[MAXPARTICLES]={};
   {
     for (unsigned int im = 0; im < orderedParticleNames.size(); im++){
     for (unsigned int id = 0; id < orderedParticleNames[im].size(); id++){
       TString name = orderedParticleNames[im][id];
-      int pIndex = mapNameToParticleIndex[name];
-      TString fsIndex = mapNameToFSIndex[name];
-      TString vPx("PxP"); vPx += fsIndex; outTree.Branch(vPx,&outPx[pIndex],vPx+"/F");
-      TString vPy("PyP"); vPy += fsIndex; outTree.Branch(vPy,&outPy[pIndex],vPy+"/F");
-      TString vPz("PzP"); vPz += fsIndex; outTree.Branch(vPz,&outPz[pIndex],vPz+"/F");
-      TString vEn("EnP"); vEn += fsIndex; outTree.Branch(vEn,&outEn[pIndex],vEn+"/F");
-      TString vRPx("RPxP"); vRPx += fsIndex; outTree.Branch(vRPx,&outRPx[pIndex],vRPx+"/F");
-      TString vRPy("RPyP"); vRPy += fsIndex; outTree.Branch(vRPy,&outRPy[pIndex],vRPy+"/F");
-      TString vRPz("RPzP"); vRPz += fsIndex; outTree.Branch(vRPz,&outRPz[pIndex],vRPz+"/F");
-      TString vREn("REnP"); vREn += fsIndex; outTree.Branch(vREn,&outREn[pIndex],vREn+"/F");
-      TString vQual("Quality"); vQual += fsIndex; outTree.Branch(vQual, &outQuality[pIndex], vQual+"/F");
-      
-      if (particleClass(name) == "Charged"){
+      int pIndex = mapGlueXNameToParticleIndex[name];
+      TString fsIndex = mapGlueXNameToFSIndex[name];
+      TString vPx("PxP"); vPx += fsIndex; outTree.Branch(vPx,&outPx[pIndex],vPx+"/D");
+      TString vPy("PyP"); vPy += fsIndex; outTree.Branch(vPy,&outPy[pIndex],vPy+"/D");
+      TString vPz("PzP"); vPz += fsIndex; outTree.Branch(vPz,&outPz[pIndex],vPz+"/D");
+      TString vEn("EnP"); vEn += fsIndex; outTree.Branch(vEn,&outEn[pIndex],vEn+"/D");
+      TString vRPx("RPxP"); vRPx += fsIndex; outTree.Branch(vRPx,&outRPx[pIndex],vRPx+"/D");
+      TString vRPy("RPyP"); vRPy += fsIndex; outTree.Branch(vRPy,&outRPy[pIndex],vRPy+"/D");
+      TString vRPz("RPzP"); vRPz += fsIndex; outTree.Branch(vRPz,&outRPz[pIndex],vRPz+"/D");
+      TString vREn("REnP"); vREn += fsIndex; outTree.Branch(vREn,&outREn[pIndex],vREn+"/D");
+      TString vMCPx("MCPxP"); vMCPx += fsIndex; if (gIsMC) outTree.Branch(vMCPx,&outMCPx[pIndex],vMCPx+"/D");
+      TString vMCPy("MCPyP"); vMCPy += fsIndex; if (gIsMC) outTree.Branch(vMCPy,&outMCPy[pIndex],vMCPy+"/D");
+      TString vMCPz("MCPzP"); vMCPz += fsIndex; if (gIsMC) outTree.Branch(vMCPz,&outMCPz[pIndex],vMCPz+"/D");
+      TString vMCEn("MCEnP"); vMCEn += fsIndex; if (gIsMC) outTree.Branch(vMCEn,&outMCEn[pIndex],vMCEn+"/D");
+      if (GlueXParticleClass(name) == "Charged"){
         TString vTkNDF("TkNDFP"); vTkNDF += fsIndex;
-            outTree.Branch(vTkNDF,&outTkNDF[pIndex],vTkNDF+"/F");
+            outTree.Branch(vTkNDF,&outTkNDF[pIndex],vTkNDF+"/D");
         TString vTkChi2("TkChi2P"); vTkChi2 += fsIndex;
-            outTree.Branch(vTkChi2,&outTkChi2[pIndex],vTkChi2+"/F");
+            outTree.Branch(vTkChi2,&outTkChi2[pIndex],vTkChi2+"/D");
+      }
+      if (GlueXParticleClass(name) == "Neutral"){
+        TString vQual("ShQualityP"); vQual += fsIndex;
+            outTree.Branch(vQual, &outShQuality[pIndex], vQual+"/D");
       }
     }
     }
@@ -485,6 +605,86 @@ void ConvertTree(TString treeName){
       exit(0);
     }
 
+     // print some information (for debugging only)
+
+    if (iEntry+1 == 1){ 
+      cout << endl << "PRINTING TEST INFORMATION FOR FIVE EVENTS..." << endl << endl;
+    }
+    if (iEntry < 5){
+      cout << endl << endl;
+      cout << "  ***************************" << endl;
+      cout << "  ******* NEW EVENT " << iEntry+1 << " *******" << endl;
+      cout << "  ***************************" << endl;
+      cout << endl << endl;
+    }
+
+
+      // if MC, start parsing truth information
+
+    vector< vector<int> > orderedThrownIndices;
+    vector< vector<int> > orderedThrownPDGNumbers;
+
+    if (gIsMC){
+        // set indices
+      orderedThrownIndices = OrderedThrownIndices(inNumThrown,inThrown__PID,inThrown__ParentIndex);
+      orderedThrownPDGNumbers = orderedThrownIndices;
+      for (unsigned int i = 0; i < orderedThrownPDGNumbers.size(); i++){
+      for (unsigned int j = 0; j < orderedThrownPDGNumbers[i].size(); j++){
+        orderedThrownPDGNumbers[i][j] = inThrown__PID[orderedThrownIndices[i][j]];
+      }}
+        // set output information
+      pair<int,int> fsCode = FSCode(orderedThrownPDGNumbers);
+      outMCDecayCode1 = fsCode.first;
+      outMCDecayCode2 = fsCode.second;
+      outMCExtras = FSMCExtras(inNumThrown,inThrown__PID);
+      outMCSignal = 0;
+      if ((reconstructedFSCode.first == fsCode.first) &&
+          (reconstructedFSCode.second == fsCode.second) &&
+          (outMCExtras < 0.1)) outMCSignal = 1;
+        // do some checks on the MC information
+      bool mcProblems = false;
+      if (outMCSignal > 0.1){
+          // check orderedThrownIndices
+        if (orderedThrownIndices.size() != orderedParticleNames.size()){
+          cout << "ERROR: problem with size of orderedThrownIndices" << endl;
+          mcProblems = true;
+        }
+        for (unsigned int i = 0; i < orderedThrownIndices.size(); i++){
+          if (orderedThrownIndices[i].size() != orderedParticleNames[i].size()){
+            cout << "ERROR: problem with size of orderedThrownIndices" << endl;
+            mcProblems = true;
+          }
+        }
+      }
+      //if (((outMCSignal > 0.1)&&!inIsThrownTopology) ||
+      //    ((outMCSignal < 0.1)&& inIsThrownTopology)){
+      //  cout << "ERROR: MCSignal does not match IsThrownTopology" << endl;
+      //  mcProblems = true;
+      //}
+        // print a few events to make sure MC makes sense
+      if (iEntry < 5 || mcProblems == true){
+      //if (gIsMC && (iEntry < 5||inIsThrownTopology)){
+        cout << endl << endl;
+        cout << "  **** TRUTH INFO STUDY FOR EVENT " << iEntry+1 << " ****" << endl;
+        cout << "  NumThrown = " << inNumThrown << endl;
+        cout << "  GeneratedEnergy = " << inThrownBeam__GeneratedEnergy << endl;
+        cout << "  FSCode = " << outMCDecayCode2 << "_" << outMCDecayCode1 << endl;
+        cout << "  IsThrownTopology = " << inIsThrownTopology << endl;
+        for (int i = 0; i < inNumThrown; i++){      
+          cout << "    THROWN INDEX = " << i << endl;
+          cout << "      PID = " << inThrown__PID[i] << endl;
+          cout << "      PDG Name = " << PDGReadableName(inThrown__PID[i]) << endl;
+          cout << "      Parent Index = " << inThrown__ParentIndex[i] << endl;
+        }
+        cout << endl << endl;
+      }
+      if (mcProblems == true){
+        cout << "ERROR: problem with MC truth parsing" << endl;
+        exit(0);
+      }
+    }
+
+
 
       // loop over combos
 
@@ -497,7 +697,8 @@ void ConvertTree(TString treeName){
       outEventNumber = inEventNumber;
       outChi2        = inChiSq_KinFit[ic];
       outChi2DOF     = -1; if (inNDF_KinFit[ic]>0.0) outChi2DOF = outChi2/inNDF_KinFit[ic];
-      outRFTime      = inRFTime_KinFit[ic];
+      //outRFTime      = inRFTime_KinFit[ic];
+      outRFTime      = inRFTime_Measured[ic];
               //   line from jon z. for timing info:
               //  Double_t rf_timing = locBeamX4_Measured.T() - (dComboWrapper->Get_RFTime_Measured() 
               //     + (locBeamX4_Measured.Z()- dComboWrapper->Get_TargetCenter().Z())/29.9792458 );
@@ -522,17 +723,23 @@ void ConvertTree(TString treeName){
       outRPyPB = p4->Py();
       outRPzPB = p4->Pz();
       outREnPB = p4->E();
+          if (gIsMC){
+      outMCPxPB = 0.0;
+      outMCPyPB = 0.0;
+      outMCPzPB = inThrownBeam__GeneratedEnergy;
+      outMCEnPB = inThrownBeam__GeneratedEnergy; }
 
         // particle information
 
       for (unsigned int im = 0; im < orderedParticleNames.size(); im++){
       for (unsigned int id = 0; id < orderedParticleNames[im].size(); id++){
         TString name = orderedParticleNames[im][id];
-        int pIndex = mapNameToParticleIndex[name];
+        int pIndex = mapGlueXNameToParticleIndex[name];
+        int tIndex; if (gIsMC && outMCSignal > 0.1) tIndex = orderedThrownIndices[im][id];
 
           // charged tracks
 
-        if (particleClass(name) == "Charged"){ 
+        if (GlueXParticleClass(name) == "Charged"){ 
           p4 = (TLorentzVector*)inP4_KinFit[pIndex]->At(ic);
             outPx[pIndex] = p4->Px();
             outPy[pIndex] = p4->Py();
@@ -543,13 +750,19 @@ void ConvertTree(TString treeName){
             outRPy[pIndex] = p4->Py();
             outRPz[pIndex] = p4->Pz();
             outREn[pIndex] = p4->E();
+          if (gIsMC && outMCSignal > 0.1){
+          p4 = (TLorentzVector*)inThrown__P4->At(tIndex);
+            outMCPx[pIndex] = p4->Px();
+            outMCPy[pIndex] = p4->Py();
+            outMCPz[pIndex] = p4->Pz();
+            outMCEn[pIndex] = p4->E(); }
           outTkNDF [pIndex] = inChargedHypo__NDF_Tracking  [(inChargedIndex[pIndex][ic])];
           outTkChi2[pIndex] = inChargedHypo__ChiSq_Tracking[(inChargedIndex[pIndex][ic])];
         }
 
           // neutral particles
 
-        if (particleClass(name) == "Neutral"){ 
+        if (GlueXParticleClass(name) == "Neutral"){ 
           p4 = (TLorentzVector*)inP4_KinFit[pIndex]->At(ic);
             outPx[pIndex] = p4->Px();
             outPy[pIndex] = p4->Py();
@@ -560,15 +773,22 @@ void ConvertTree(TString treeName){
             outRPy[pIndex] = p4->Py();
             outRPz[pIndex] = p4->Pz();
             outREn[pIndex] = p4->E();
-        
-            outQuality[pIndex] = inShower_Quality[pIndex];
+          if (gIsMC && outMCSignal > 0.1){
+          p4 = (TLorentzVector*)inThrown__P4->At(tIndex);
+            outMCPx[pIndex] = p4->Px();
+            outMCPy[pIndex] = p4->Py();
+            outMCPz[pIndex] = p4->Pz();
+            outMCEn[pIndex] = p4->E(); }
+          outShQuality[pIndex] = inNeutralHypo__ShowerQuality[(inNeutralIndex[pIndex][ic])];
         }
 
           // decaying to charged tracks
 
-        if (particleClass(name) == "DecayingToCharged"){ 
-          int pIndex1 = mapNameToParticleIndex[orderedParticleNames[im][1]];
-          int pIndex2 = mapNameToParticleIndex[orderedParticleNames[im][2]];
+        if (GlueXParticleClass(name) == "DecayingToCharged"){ 
+          int pIndex1 = mapGlueXNameToParticleIndex[orderedParticleNames[im][1]];
+          int pIndex2 = mapGlueXNameToParticleIndex[orderedParticleNames[im][2]];
+          int tIndex1;  if (gIsMC && outMCSignal > 0.1) tIndex1 = orderedThrownIndices[im][1];
+          int tIndex2;  if (gIsMC && outMCSignal > 0.1) tIndex2 = orderedThrownIndices[im][2];
           p4a = (TLorentzVector*)inP4_KinFit[pIndex1]->At(ic);
           p4b = (TLorentzVector*)inP4_KinFit[pIndex2]->At(ic);
             outPx[pIndex] = p4a->Px() + p4b->Px();
@@ -581,13 +801,22 @@ void ConvertTree(TString treeName){
             outRPy[pIndex] = p4a->Py() + p4b->Py();
             outRPz[pIndex] = p4a->Pz() + p4b->Pz();
             outREn[pIndex] = p4a->E()  + p4b->E();
+          if (gIsMC && outMCSignal > 0.1){
+          p4a = (TLorentzVector*)inThrown__P4->At(tIndex1);
+          p4b = (TLorentzVector*)inThrown__P4->At(tIndex2);
+            outMCPx[pIndex] = p4a->Px() + p4b->Px();
+            outMCPy[pIndex] = p4a->Py() + p4b->Py();
+            outMCPz[pIndex] = p4a->Pz() + p4b->Pz();
+            outMCEn[pIndex] = p4a->E()  + p4b->E(); }
         }
 
           // decaying to neutral particles
 
-        if (particleClass(name) == "DecayingToNeutral"){ 
-          int pIndex1 = mapNameToParticleIndex[orderedParticleNames[im][1]];
-          int pIndex2 = mapNameToParticleIndex[orderedParticleNames[im][2]];
+        if (GlueXParticleClass(name) == "DecayingToNeutral"){ 
+          int pIndex1 = mapGlueXNameToParticleIndex[orderedParticleNames[im][1]];
+          int pIndex2 = mapGlueXNameToParticleIndex[orderedParticleNames[im][2]];
+          int tIndex1;  if (gIsMC && outMCSignal > 0.1) tIndex1 = orderedThrownIndices[im][1];
+          int tIndex2;  if (gIsMC && outMCSignal > 0.1) tIndex2 = orderedThrownIndices[im][2];
           p4a = (TLorentzVector*)inP4_KinFit[pIndex1]->At(ic);
           p4b = (TLorentzVector*)inP4_KinFit[pIndex2]->At(ic);
             outPx[pIndex] = p4a->Px() + p4b->Px();
@@ -599,18 +828,26 @@ void ConvertTree(TString treeName){
             outRPx[pIndex] = p4a->Px() + p4b->Px();
             outRPy[pIndex] = p4a->Py() + p4b->Py();
             outRPz[pIndex] = p4a->Pz() + p4b->Pz();
-            outREn[pIndex] = p4a->E()  + p4b->E();
+            outREn[pIndex] = p4a->E()  + p4b->E(); 
+          if (gIsMC && outMCSignal > 0.1){
+          p4a = (TLorentzVector*)inThrown__P4->At(tIndex1);
+          p4b = (TLorentzVector*)inThrown__P4->At(tIndex2);
+            outMCPx[pIndex] = p4a->Px() + p4b->Px();
+            outMCPy[pIndex] = p4a->Py() + p4b->Py();
+            outMCPz[pIndex] = p4a->Pz() + p4b->Pz();
+            outMCEn[pIndex] = p4a->E()  + p4b->E(); }
         }
 
       }}
 
       // print some information (for debugging only)
 
-      if (iEntry+1 == 1 && ic+1 == 1){ 
-        cout << endl << "PRINTING TEST INFORMATION FOR FIVE EVENTS..." << endl << endl;
-      }
       if (iEntry < 5){
+        cout << "  *******************************" << endl;
+        cout << "  **** INFO FOR EVENT " << iEntry+1 << " ****" << endl;
+        cout << "  *******************************" << endl;
         cout << "EVENT: " << inEventNumber << " (combo no. " << ic+1 << ")" << endl;
+        if (gIsMC) cout << "  NumThrown = " << inNumThrown << endl;
         cout << "  NumChargedHypos = " << inNumChargedHypos << endl;
         cout << "  NumNeutralHypos = " << inNumNeutralHypos << endl;
         cout << "  NumBeam   = " << inNumBeam << endl;
@@ -622,8 +859,8 @@ void ConvertTree(TString treeName){
         for (unsigned int im = 0; im < orderedParticleNames.size(); im++){
         for (unsigned int id = 0; id < orderedParticleNames[im].size(); id++){
           TString name = orderedParticleNames[im][id];
-          int pIndex = mapNameToParticleIndex[name];
-          TString fsIndex = mapNameToFSIndex[name];
+          int pIndex = mapGlueXNameToParticleIndex[name];
+          TString fsIndex = mapGlueXNameToFSIndex[name];
           double px = outPx[pIndex];
           double py = outPy[pIndex];
           double pz = outPz[pIndex];
@@ -663,4 +900,370 @@ void ConvertTree(TString treeName){
   cout << "FINISHED" << endl << endl;
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// **************************************
+//   utility functions
+// **************************************
+
+
+static const int kpdgPsi2S      = 100443;     
+static const int kpdgGamma      = 22;         
+static const int kpdgFSRGamma   = -22;        
+static const int kpdgHc         = 10443;      
+static const int kpdgChic0      = 10441;      
+static const int kpdgChic1      = 20443;      
+static const int kpdgChic2      = 445;        
+static const int kpdgJpsi       = 443;        
+static const int kpdgEtac       = 441;        
+static const int kpdgPhi        = 333;        
+static const int kpdgOmega      = 223;        
+static const int kpdgPi0        = 111;        
+static const int kpdgPip        = 211;        
+static const int kpdgPim        = -211;       
+static const int kpdgRho0       = 113;        
+static const int kpdgRhop       = 213;        
+static const int kpdgRhom       = -213;       
+static const int kpdgEtaprime   = 331;        
+static const int kpdgEta        = 221;        
+static const int kpdgKs         = 310;        
+static const int kpdgKl         = 130;        
+static const int kpdgKp         = 321;        
+static const int kpdgKm         = -321;       
+static const int kpdgPp         = 2212;       
+static const int kpdgPm         = -2212;      
+static const int kpdgN          = 2112;       
+static const int kpdgAntiN      = -2112;
+static const int kpdgDelta0     = 2114;
+static const int kpdgDeltap     = 2214;
+static const int kpdgDeltapp    = 2224;
+static const int kpdgEp         = -11;         
+static const int kpdgEm         = 11;        
+static const int kpdgMup        = -13;         
+static const int kpdgMum        = 13;        
+static const int kpdgTaup       = -15;        
+static const int kpdgTaum       = 15;         
+static const int kpdgNuE        = 12;         
+static const int kpdgNuMu       = 14;         
+static const int kpdgNuTau      = 16;         
+static const int kpdgAntiNuE    = -12;        
+static const int kpdgAntiNuMu   = -14;        
+static const int kpdgAntiNuTau  = -16;        
+static const int kpdgF0600      = 9000221;    
+static const int kpdgK0         = 311;        
+static const int kpdgAntiK0     = -311;       
+static const int kpdgKstarp     = 323;        
+static const int kpdgKstarm     = -323;       
+static const int kpdgKstar0     = 313;        
+static const int kpdgAntiKstar0 = -313;
+static const int kpdgLambda     = 3122;
+static const int kpdgALambda    = -3122;
+static const int kpdgDp         = 411;
+static const int kpdgDm         = -411;
+static const int kpdgD0         = 421;
+static const int kpdgDA         = -421;
+static const int kpdgDstarp     = 413;
+static const int kpdgDstarm     = -413;
+static const int kpdgDstar0     = 423;
+static const int kpdgDstarA     = -423;
+
+
+TString PDGReadableName(int id){
+  TString name("");
+  if      (id == kpdgPsi2S)      name = "psi(2S)";
+  else if (id == kpdgGamma)      name = "gamma";
+  else if (id == kpdgFSRGamma)   name = "FSRgamma";
+  else if (id == kpdgHc)         name = "h_c";
+  else if (id == kpdgChic0)      name = "chi_c0";
+  else if (id == kpdgChic1)      name = "chi_c1";
+  else if (id == kpdgChic2)      name = "chi_c2";
+  else if (id == kpdgJpsi)       name = "J/psi";
+  else if (id == kpdgEtac)       name = "eta_c";
+  else if (id == kpdgPhi)        name = "phi";
+  else if (id == kpdgOmega)      name = "omega";
+  else if (id == kpdgPi0)        name = "pi0";
+  else if (id == kpdgPip)        name = "pi+";
+  else if (id == kpdgPim)        name = "pi-";
+  else if (id == kpdgRho0)       name = "rho0";
+  else if (id == kpdgRhop)       name = "rho+";
+  else if (id == kpdgRhom)       name = "rho-";
+  else if (id == kpdgEtaprime)   name = "etaprime";
+  else if (id == kpdgEta)        name = "eta";
+  else if (id == kpdgKs)         name = "K_S0";
+  else if (id == kpdgKl)         name = "K_L0";
+  else if (id == kpdgKp)         name = "K+";
+  else if (id == kpdgKm)         name = "K-";
+  else if (id == kpdgPp)         name = "p+";
+  else if (id == kpdgPm)         name = "p-";
+  else if (id == kpdgN)          name = "N";
+  else if (id == kpdgAntiN)      name = "antiN";
+  else if (id == kpdgDelta0)     name = "Delta0";
+  else if (id == kpdgDeltap)     name = "Delta+";
+  else if (id == kpdgDeltapp)    name = "Delta++";
+  else if (id == kpdgEp)         name = "e+";
+  else if (id == kpdgEm)         name = "e-";
+  else if (id == kpdgMup)        name = "mu+";
+  else if (id == kpdgMum)        name = "mu-";
+  else if (id == kpdgTaup)       name = "tau+";
+  else if (id == kpdgTaum)       name = "tau-";
+  else if (id == kpdgNuE)        name = "nu";
+  else if (id == kpdgNuMu)       name = "nu";
+  else if (id == kpdgNuTau)      name = "nu";
+  else if (id == kpdgAntiNuE)    name = "nu";
+  else if (id == kpdgAntiNuMu)   name = "nu";
+  else if (id == kpdgAntiNuTau)  name = "nu";
+  else if (id == kpdgF0600)      name = "f0(600)";
+  else if (id == kpdgK0)         name = "K0";
+  else if (id == kpdgAntiK0)     name = "K0";
+  else if (id == kpdgKstarp)     name = "K*+";
+  else if (id == kpdgKstarm)     name = "K*-";
+  else if (id == kpdgKstar0)     name = "K*0";
+  else if (id == kpdgAntiKstar0) name = "K*0";
+  else if (id == kpdgLambda)     name = "Lambda";
+  else if (id == kpdgALambda)    name = "ALambda";
+  else if (id == kpdgDp)         name = "D+";
+  else if (id == kpdgDm)         name = "D-";
+  else if (id == kpdgD0)         name = "D0";
+  else if (id == kpdgDA)         name = "D0bar";
+  else if (id == kpdgDstarp)     name = "D*+";
+  else if (id == kpdgDstarm)     name = "D*-";
+  else if (id == kpdgDstar0)     name = "D*0";
+  else if (id == kpdgDstarA)     name = "D*0bar";
+  else{
+    name += id;
+  }
+  return name;
+}
+
+
+vector< vector<int> > OrderedThrownIndices(int numThrown, int pids[], int parentIndices[]){
+  vector< vector<int> > orderedThrownIndices;
+  {
+    map<int, vector<int> > mapThrownIndexToDaughters;
+    for (int i = 0; i < numThrown; i++){
+      int parentIndex = parentIndices[i];
+      mapThrownIndexToDaughters[parentIndex].push_back(i);
+    }
+    map<int, bool> mapUsedIndices;
+    for (int i = 0; i < numThrown; i++){
+      mapUsedIndices[i] = false;
+    }
+    for (int i = 0; i < numThrown; i++){ 
+      if (mapUsedIndices[i] == true) continue;
+      if (mapThrownIndexToDaughters.find(i) == mapThrownIndexToDaughters.end()) continue;
+      vector<int> daughterIndices = mapThrownIndexToDaughters[i];
+      if (daughterIndices.size() != 2) continue;
+      int parentIndex = i;
+      int parentID = pids[parentIndex];
+      int daughterIndex1 = daughterIndices[0];
+      int daughterIndex2 = daughterIndices[1];
+      int daughterID1 = pids[daughterIndex1];
+      int daughterID2 = pids[daughterIndex2];
+      if ((parentID == kpdgKs      && daughterID1 == kpdgPip   && daughterID2 == kpdgPim)   || 
+          (parentID == kpdgLambda  && daughterID1 == kpdgPp    && daughterID2 == kpdgPim)   ||
+          (parentID == kpdgALambda && daughterID1 == kpdgPm    && daughterID2 == kpdgPip)   ||
+          (parentID == kpdgPi0     && daughterID1 == kpdgGamma && daughterID2 == kpdgGamma) ||
+          (parentID == kpdgEta     && daughterID1 == kpdgGamma && daughterID2 == kpdgGamma)){
+        vector<int> addIndices;
+        addIndices.push_back(parentIndex);     mapUsedIndices[parentIndex] = true;
+        addIndices.push_back(daughterIndex1);  mapUsedIndices[daughterIndex1] = true;
+        addIndices.push_back(daughterIndex2);  mapUsedIndices[daughterIndex2] = true;
+        orderedThrownIndices.push_back(addIndices);
+      }
+      if ((parentID == kpdgKs      && daughterID1 == kpdgPim && daughterID2 == kpdgPip) || 
+          (parentID == kpdgLambda  && daughterID1 == kpdgPim && daughterID2 == kpdgPp) ||
+          (parentID == kpdgALambda && daughterID1 == kpdgPip && daughterID2 == kpdgPm)){
+        vector<int> addIndices;
+        addIndices.push_back(parentIndex);     mapUsedIndices[parentIndex] = true;
+        addIndices.push_back(daughterIndex2);  mapUsedIndices[daughterIndex2] = true;
+        addIndices.push_back(daughterIndex1);  mapUsedIndices[daughterIndex1] = true;
+        orderedThrownIndices.push_back(addIndices);
+      }
+    }
+    for (int i = 0; i < numThrown; i++){ 
+      if (mapUsedIndices[i] == true) continue;
+      if (mapThrownIndexToDaughters.find(i) != mapThrownIndexToDaughters.end()) continue;
+      int index = i;
+      int pdgID = pids[index];
+      if ((pdgID == kpdgEp) || (pdgID == kpdgEm) || (pdgID == kpdgMup) || (pdgID == kpdgMum) ||
+          (pdgID == kpdgPp) || (pdgID == kpdgPm) || (pdgID == kpdgGamma) || 
+          (pdgID == kpdgKp) || (pdgID == kpdgKm) || (pdgID == kpdgPip) || (pdgID == kpdgPim)){
+        vector<int> addIndex;
+        addIndex.push_back(index);    mapUsedIndices[index] = true;
+        orderedThrownIndices.push_back(addIndex);
+      }
+    }
+    for (unsigned int i = 0; i < orderedThrownIndices.size(); i++){
+      for (unsigned int j = i + 1; j < orderedThrownIndices.size(); j++){
+        if (FSParticleOrder(pids[orderedThrownIndices[j][0]]) >
+            FSParticleOrder(pids[orderedThrownIndices[i][0]])){
+          vector<int> temp = orderedThrownIndices[i];
+          orderedThrownIndices[i] = orderedThrownIndices[j];
+          orderedThrownIndices[j] = temp;
+        }
+      }
+    }
+  }
+  return orderedThrownIndices;
+}
+
+
+int FSMCExtras(int numThrown, int pids[]){
+  int mcExtras = 0;
+  for (int i = 0; i < numThrown; i++){
+    if ((pids[i] == kpdgNuE) ||
+        (pids[i] == kpdgNuMu) ||
+        (pids[i] == kpdgNuTau) ||
+        (pids[i] == kpdgAntiNuE) ||
+        (pids[i] == kpdgAntiNuMu) ||
+        (pids[i] == kpdgAntiNuTau)) mcExtras += 1000;
+    if  (pids[i] == kpdgKl)         mcExtras += 100;
+    if  (pids[i] == kpdgN)          mcExtras += 10;
+    if  (pids[i] == kpdgAntiN)      mcExtras += 1;
+  }
+  return mcExtras;
+}
+
+
+
+TString FSParticleType(TString glueXParticleType){
+  if (glueXParticleType.Contains("AntiLambda"))  return TString("ALambda");
+  if (glueXParticleType.Contains("Lambda"))      return TString("Lambda");
+  if (glueXParticleType.Contains("Positron"))    return TString("e+");
+  if (glueXParticleType.Contains("Electron"))    return TString("e-");
+  if (glueXParticleType.Contains("MuonPlus"))    return TString("mu+");
+  if (glueXParticleType.Contains("MuonMinus"))   return TString("mu-");
+  if (glueXParticleType.Contains("AntiProton"))  return TString("p-");
+  if (glueXParticleType.Contains("Proton"))      return TString("p+");
+  if (glueXParticleType.Contains("Eta"))         return TString("eta");
+  if (glueXParticleType.Contains("Photon"))      return TString("gamma");
+  if (glueXParticleType.Contains("KPlus"))       return TString("K+");
+  if (glueXParticleType.Contains("KMinus"))      return TString("K-");
+  if (glueXParticleType.Contains("KShort"))      return TString("Ks");
+  if (glueXParticleType.Contains("PiPlus"))      return TString("pi+");
+  if (glueXParticleType.Contains("PiMinus"))     return TString("pi-");
+  if (glueXParticleType.Contains("Pi0"))         return TString("pi0");
+  return TString("--");
+}
+
+
+TString GlueXParticleClass(TString glueXParticleType){
+  if (glueXParticleType.Contains("AntiLambda"))  return TString("DecayingToCharged");
+  if (glueXParticleType.Contains("Lambda"))      return TString("DecayingToCharged");
+  if (glueXParticleType.Contains("Positron"))    return TString("Charged");
+  if (glueXParticleType.Contains("Electron"))    return TString("Charged");
+  if (glueXParticleType.Contains("MuonPlus"))    return TString("Charged");
+  if (glueXParticleType.Contains("MuonMinus"))   return TString("Charged");
+  if (glueXParticleType.Contains("AntiProton"))  return TString("Charged");
+  if (glueXParticleType.Contains("Proton"))      return TString("Charged");
+  if (glueXParticleType.Contains("Eta"))         return TString("DecayingToNeutral");
+  if (glueXParticleType.Contains("Photon"))      return TString("Neutral");
+  if (glueXParticleType.Contains("KPlus"))       return TString("Charged");
+  if (glueXParticleType.Contains("KMinus"))      return TString("Charged");
+  if (glueXParticleType.Contains("KShort"))      return TString("DecayingToCharged");
+  if (glueXParticleType.Contains("PiPlus"))      return TString("Charged");
+  if (glueXParticleType.Contains("PiMinus"))     return TString("Charged");
+  if (glueXParticleType.Contains("Pi0"))         return TString("DecayingToNeutral");
+  return TString("");
+}
+
+int PDGIDNumber(TString glueXParticleType){
+  if (glueXParticleType.Contains("AntiLambda"))  return kpdgALambda;
+  if (glueXParticleType.Contains("Lambda"))      return kpdgLambda;
+  if (glueXParticleType.Contains("Positron"))    return kpdgEp;
+  if (glueXParticleType.Contains("Electron"))    return kpdgEm;
+  if (glueXParticleType.Contains("MuonPlus"))    return kpdgMup;
+  if (glueXParticleType.Contains("MuonMinus"))   return kpdgMum;
+  if (glueXParticleType.Contains("AntiProton"))  return kpdgPm;
+  if (glueXParticleType.Contains("Proton"))      return kpdgPp;
+  if (glueXParticleType.Contains("Eta"))         return kpdgEta;
+  if (glueXParticleType.Contains("Photon"))      return kpdgGamma;
+  if (glueXParticleType.Contains("KPlus"))       return kpdgKp;
+  if (glueXParticleType.Contains("KMinus"))      return kpdgKm;
+  if (glueXParticleType.Contains("KShort"))      return kpdgKs;
+  if (glueXParticleType.Contains("PiPlus"))      return kpdgPip;
+  if (glueXParticleType.Contains("PiMinus"))     return kpdgPim;
+  if (glueXParticleType.Contains("Pi0"))         return kpdgPi0;
+  return 0;
+}
+
+
+int FSParticleOrder(TString glueXParticleType){
+  return FSParticleOrder(PDGIDNumber(glueXParticleType));
+}
+
+
+int FSParticleOrder(int pdgID){
+  if (pdgID == kpdgLambda)  return 16;
+  if (pdgID == kpdgALambda) return 15;
+  if (pdgID == kpdgEp)      return 14;
+  if (pdgID == kpdgEm)      return 13;
+  if (pdgID == kpdgMup)     return 12;
+  if (pdgID == kpdgMum)     return 11;
+  if (pdgID == kpdgPp)      return 10;
+  if (pdgID == kpdgPm)      return 9;
+  if (pdgID == kpdgEta)     return 8;
+  if (pdgID == kpdgGamma)   return 7;
+  if (pdgID == kpdgKp)      return 6;
+  if (pdgID == kpdgKm)      return 5;
+  if (pdgID == kpdgKs)      return 4;
+  if (pdgID == kpdgPip)     return 3;
+  if (pdgID == kpdgPim)     return 2;
+  if (pdgID == kpdgPi0)     return 1;
+  return 0;
+}
+
+
+pair<int,int> FSCode(vector< vector<TString> > glueXParticleTypes){
+  vector< vector<int> > pdgIDs;
+  for (unsigned int i = 0; i < glueXParticleTypes.size(); i++){
+    vector<int> addPDGIDs;
+    for (unsigned int j = 0; j < glueXParticleTypes[i].size(); j++){
+      addPDGIDs.push_back(PDGIDNumber(glueXParticleTypes[i][j]));
+    }
+    pdgIDs.push_back(addPDGIDs);
+  }
+  return FSCode(pdgIDs);
+}
+
+
+pair<int,int> FSCode(vector< vector<int> > pdgIDs){
+  int code1 = 0;
+  int code2 = 0;
+  for (unsigned int i = 0; i < pdgIDs.size(); i++){
+    int pdgID = pdgIDs[i][0];
+         if (pdgID  == kpdgLambda)  { code2 += 100000000; }
+    else if (pdgID  == kpdgALambda) { code2 += 10000000; }
+    else if (pdgID  == kpdgEp)      { code2 += 1000000; }
+    else if (pdgID  == kpdgEm)      { code2 += 100000; }
+    else if (pdgID  == kpdgMup)     { code2 += 10000; }
+    else if (pdgID  == kpdgMum)     { code2 += 1000; }
+    else if (pdgID  == kpdgPp)      { code2 += 100; }
+    else if (pdgID  == kpdgPm)      { code2 += 10; }
+    else if (pdgID  == kpdgEta)     { code2 += 1; }
+    else if (pdgID  == kpdgGamma)   { code1 += 1000000; }
+    else if (pdgID  == kpdgKp)      { code1 += 100000; }
+    else if (pdgID  == kpdgKm)      { code1 += 10000; }
+    else if (pdgID  == kpdgKs)      { code1 += 1000; }
+    else if (pdgID  == kpdgPip)     { code1 += 100; }
+    else if (pdgID  == kpdgPim)     { code1 += 10; }
+    else if (pdgID  == kpdgPi0)     { code1 += 1; }
+  }
+  return pair<int,int>(code1,code2);
+}
+
 
