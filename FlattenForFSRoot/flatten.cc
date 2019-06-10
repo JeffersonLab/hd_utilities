@@ -23,7 +23,7 @@ void ConvertTree(TString treeName);
   //   [containing mostly conversions between conventions]
 TString PDGReadableName(int pdgID);
 TString FSParticleType(TString glueXParticleType);
-TString particleClass(TString glueXParticleType);
+TString GlueXParticleClass(TString glueXParticleType);
 int PDGIDNumber(TString glueXParticleType);
 int FSParticleOrder(TString glueXParticleType);
 int FSParticleOrder(int pdgID);
@@ -49,19 +49,19 @@ bool gIsMC;
 int main(int argc, char** argv){
   cout << endl;
   cout << "***********************************************************" << endl;
-  cout << "This program converts trees from the standard TTree format" << endl;
-  cout << "in the GlueX analysis code to a flat TTree (\"FS Format\")." << endl << endl;
+  cout << "This program converts trees from the standard TTree format in the" << endl;
+  cout << "  GlueX analysis environment to a flat TTree (\"FS Format\")." << endl << endl;
+  cout << "The output tree is compatible with the utilities in the FSRoot package." << endl << endl;
   cout << "The final state is determined automatically from the input file." << endl << endl;
   cout << "Usage:" << endl;
   cout << "  flatten  <input file name> <output file name> <MC: 0 or 1> " << endl;
   cout << "            [optional Chi2DOF cut value]" << endl << endl;
   cout << "Notes:" << endl;
-  cout << "  * the output tree name is ntFSGlueX for now " << endl;
-  cout << "  * the output tree name could also be derived from the input" << endl;
-  cout << "     tree name (this is commented out)" << endl;
   cout << "  * the input tree name should contain \"_Tree\" (if this standard" << endl;
   cout << "     changes in the GlueX code, this code can be easily modified)" << endl;
-  cout << "  * this will not work for all possible final states" << endl;
+  cout << "  * the output tree name is ntFSGlueX (for now) " << endl;
+  cout << "      [it might be better to eventually use a FSCode, for example]" << endl;
+  cout << "  * this works for a large variety of final states (but not all)" << endl;
   cout << "***********************************************************" << endl << endl;
   if ((argc != 4) && (argc != 5)){
      cout << "ERROR: wrong number of arguments -- see usage notes above" << endl;
@@ -377,7 +377,7 @@ void ConvertTree(TString treeName){
   Float_t  inThrown__MatchFOM[MAXPARTICLES] = {};   
       if (gIsMC) inTree->SetBranchAddress("Thrown__MatchFOM", inThrown__MatchFOM);
   TClonesArray *inThrown__P4 = new TClonesArray("TLorentzVector");
-      inTree->SetBranchAddress("Thrown__P4",&(inThrown__P4));
+      if (gIsMC) inTree->SetBranchAddress("Thrown__P4",&(inThrown__P4));
 
 
 
@@ -472,7 +472,7 @@ void ConvertTree(TString treeName){
 
         //   *** Combo Tracks ***
 
-      if (particleClass(name) == "Charged"){
+      if (GlueXParticleClass(name) == "Charged"){
         TString var_P4_KinFit(name); var_P4_KinFit += "__P4_KinFit";
             inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector");
             inTree->SetBranchAddress(var_P4_KinFit,&(inP4_KinFit[pIndex]));
@@ -482,7 +482,7 @@ void ConvertTree(TString treeName){
 
         //   *** Combo Neutrals ***
 
-      if (particleClass(name) == "Neutral"){
+      if (GlueXParticleClass(name) == "Neutral"){
         TString var_P4_KinFit(name); var_P4_KinFit += "__P4_KinFit";
             inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector");
             inTree->SetBranchAddress(var_P4_KinFit,&(inP4_KinFit[pIndex]));
@@ -492,7 +492,7 @@ void ConvertTree(TString treeName){
 
         //   *** Combo Decaying Particles ***
 
-      if (particleClass(name).Contains("Decaying")){
+      if (GlueXParticleClass(name).Contains("Decaying")){
       }
 
     }
@@ -531,6 +531,10 @@ void ConvertTree(TString treeName){
 
     // MC information
 
+  float outMCPxPB;        if (gIsMC) outTree.Branch("MCPxPB",      &outMCPxPB,      "MCPxPB/F");
+  float outMCPyPB;        if (gIsMC) outTree.Branch("MCPyPB",      &outMCPyPB,      "MCPyPB/F");
+  float outMCPzPB;        if (gIsMC) outTree.Branch("MCPzPB",      &outMCPzPB,      "MCPzPB/F");
+  float outMCEnPB;        if (gIsMC) outTree.Branch("MCEnPB",      &outMCEnPB,      "MCEnPB/F");
   float outMCDecayCode1;  if (gIsMC) outTree.Branch("MCDecayCode1",&outMCDecayCode1,"MCDecayCode1/F");
   float outMCDecayCode2;  if (gIsMC) outTree.Branch("MCDecayCode2",&outMCDecayCode2,"MCDecayCode2/F");
   float outMCExtras;      if (gIsMC) outTree.Branch("MCExtras",    &outMCExtras,    "MCExtras/F");
@@ -561,13 +565,13 @@ void ConvertTree(TString treeName){
       TString vMCPy("MCPyP"); vMCPy += fsIndex; if (gIsMC) outTree.Branch(vMCPy,&outMCPy[pIndex],vMCPy+"/F");
       TString vMCPz("MCPzP"); vMCPz += fsIndex; if (gIsMC) outTree.Branch(vMCPz,&outMCPz[pIndex],vMCPz+"/F");
       TString vMCEn("MCEnP"); vMCEn += fsIndex; if (gIsMC) outTree.Branch(vMCEn,&outMCEn[pIndex],vMCEn+"/F");
-      if (particleClass(name) == "Charged"){
+      if (GlueXParticleClass(name) == "Charged"){
         TString vTkNDF("TkNDFP"); vTkNDF += fsIndex;
             outTree.Branch(vTkNDF,&outTkNDF[pIndex],vTkNDF+"/F");
         TString vTkChi2("TkChi2P"); vTkChi2 += fsIndex;
             outTree.Branch(vTkChi2,&outTkChi2[pIndex],vTkChi2+"/F");
       }
-      if (particleClass(name) == "Neutral"){
+      if (GlueXParticleClass(name) == "Neutral"){
         TString vQual("ShQualityP"); vQual += fsIndex;
             outTree.Branch(vQual, &outShQuality[pIndex], vQual+"/F");
       }
@@ -621,12 +625,14 @@ void ConvertTree(TString treeName){
     vector< vector<int> > orderedThrownPDGNumbers;
 
     if (gIsMC){
+        // set indices
       orderedThrownIndices = OrderedThrownIndices(inNumThrown,inThrown__PID,inThrown__ParentIndex);
       orderedThrownPDGNumbers = orderedThrownIndices;
       for (unsigned int i = 0; i < orderedThrownPDGNumbers.size(); i++){
       for (unsigned int j = 0; j < orderedThrownPDGNumbers[i].size(); j++){
         orderedThrownPDGNumbers[i][j] = inThrown__PID[orderedThrownIndices[i][j]];
       }}
+        // set output information
       pair<int,int> fsCode = FSCode(orderedThrownPDGNumbers);
       outMCDecayCode1 = fsCode.first;
       outMCDecayCode2 = fsCode.second;
@@ -635,40 +641,49 @@ void ConvertTree(TString treeName){
       if ((reconstructedFSCode.first == fsCode.first) &&
           (reconstructedFSCode.second == fsCode.second) &&
           (outMCExtras < 0.1)) outMCSignal = 1;
+        // do some checks on the MC information
+      bool mcProblems = false;
       if (outMCSignal > 0.1){
           // check orderedThrownIndices
         if (orderedThrownIndices.size() != orderedParticleNames.size()){
           cout << "ERROR: problem with size of orderedThrownIndices" << endl;
-          exit(0);
+          mcProblems = true;
         }
         for (unsigned int i = 0; i < orderedThrownIndices.size(); i++){
           if (orderedThrownIndices[i].size() != orderedParticleNames[i].size()){
             cout << "ERROR: problem with size of orderedThrownIndices" << endl;
-            exit(0);
+            mcProblems = true;
           }
         }
       }
-    }
-
-
-      // print a few events to make sure MC makes sense
-
-    if (gIsMC && iEntry < 5){
-    //if (gIsMC && (iEntry < 5||inIsThrownTopology)){
-      cout << endl << endl;
-      cout << "  **** TRUTH INFO STUDY FOR EVENT " << iEntry+1 << " ****" << endl;
-      cout << "  NumThrown = " << inNumThrown << endl;
-      cout << "  GeneratedEnergy = " << inThrownBeam__GeneratedEnergy << endl;
-      cout << "  FSCode = " << outMCDecayCode2 << "_" << outMCDecayCode1 << endl;
-      cout << "  IsThrownTopology = " << inIsThrownTopology << endl;
-      for (int i = 0; i < inNumThrown; i++){      
-        cout << "    THROWN INDEX = " << i << endl;
-        cout << "      PID = " << inThrown__PID[i] << endl;
-        cout << "      PDG Name = " << PDGReadableName(inThrown__PID[i]) << endl;
-        cout << "      Parent Index = " << inThrown__ParentIndex[i] << endl;
+      if (((outMCSignal > 0.1)&&!inIsThrownTopology) ||
+          ((outMCSignal < 0.1)&& inIsThrownTopology)){
+        cout << "ERROR: MCSignal does not match IsThrownTopology" << endl;
+        mcProblems = true;
       }
-      cout << endl << endl;
+        // print a few events to make sure MC makes sense
+      if (iEntry < 5 || mcProblems == true){
+      //if (gIsMC && (iEntry < 5||inIsThrownTopology)){
+        cout << endl << endl;
+        cout << "  **** TRUTH INFO STUDY FOR EVENT " << iEntry+1 << " ****" << endl;
+        cout << "  NumThrown = " << inNumThrown << endl;
+        cout << "  GeneratedEnergy = " << inThrownBeam__GeneratedEnergy << endl;
+        cout << "  FSCode = " << outMCDecayCode2 << "_" << outMCDecayCode1 << endl;
+        cout << "  IsThrownTopology = " << inIsThrownTopology << endl;
+        for (int i = 0; i < inNumThrown; i++){      
+          cout << "    THROWN INDEX = " << i << endl;
+          cout << "      PID = " << inThrown__PID[i] << endl;
+          cout << "      PDG Name = " << PDGReadableName(inThrown__PID[i]) << endl;
+          cout << "      Parent Index = " << inThrown__ParentIndex[i] << endl;
+        }
+        cout << endl << endl;
+      }
+      if (mcProblems == true){
+        cout << "ERROR: problem with MC truth parsing" << endl;
+        exit(0);
+      }
     }
+
 
 
       // loop over combos
@@ -708,6 +723,11 @@ void ConvertTree(TString treeName){
       outRPyPB = p4->Py();
       outRPzPB = p4->Pz();
       outREnPB = p4->E();
+          if (gIsMC){
+      outMCPxPB = 0.0;
+      outMCPyPB = 0.0;
+      outMCPzPB = inThrownBeam__GeneratedEnergy;
+      outMCEnPB = inThrownBeam__GeneratedEnergy; }
 
         // particle information
 
@@ -719,7 +739,7 @@ void ConvertTree(TString treeName){
 
           // charged tracks
 
-        if (particleClass(name) == "Charged"){ 
+        if (GlueXParticleClass(name) == "Charged"){ 
           p4 = (TLorentzVector*)inP4_KinFit[pIndex]->At(ic);
             outPx[pIndex] = p4->Px();
             outPy[pIndex] = p4->Py();
@@ -742,7 +762,7 @@ void ConvertTree(TString treeName){
 
           // neutral particles
 
-        if (particleClass(name) == "Neutral"){ 
+        if (GlueXParticleClass(name) == "Neutral"){ 
           p4 = (TLorentzVector*)inP4_KinFit[pIndex]->At(ic);
             outPx[pIndex] = p4->Px();
             outPy[pIndex] = p4->Py();
@@ -764,7 +784,7 @@ void ConvertTree(TString treeName){
 
           // decaying to charged tracks
 
-        if (particleClass(name) == "DecayingToCharged"){ 
+        if (GlueXParticleClass(name) == "DecayingToCharged"){ 
           int pIndex1 = mapGlueXNameToParticleIndex[orderedParticleNames[im][1]];
           int pIndex2 = mapGlueXNameToParticleIndex[orderedParticleNames[im][2]];
           int tIndex1;  if (gIsMC && outMCSignal > 0.1) tIndex1 = orderedThrownIndices[im][1];
@@ -792,7 +812,7 @@ void ConvertTree(TString treeName){
 
           // decaying to neutral particles
 
-        if (particleClass(name) == "DecayingToNeutral"){ 
+        if (GlueXParticleClass(name) == "DecayingToNeutral"){ 
           int pIndex1 = mapGlueXNameToParticleIndex[orderedParticleNames[im][1]];
           int pIndex2 = mapGlueXNameToParticleIndex[orderedParticleNames[im][2]];
           int tIndex1;  if (gIsMC && outMCSignal > 0.1) tIndex1 = orderedThrownIndices[im][1];
@@ -1141,7 +1161,7 @@ TString FSParticleType(TString glueXParticleType){
 }
 
 
-TString particleClass(TString glueXParticleType){
+TString GlueXParticleClass(TString glueXParticleType){
   if (glueXParticleType.Contains("AntiLambda"))  return TString("DecayingToCharged");
   if (glueXParticleType.Contains("Lambda"))      return TString("DecayingToCharged");
   if (glueXParticleType.Contains("Positron"))    return TString("Charged");
