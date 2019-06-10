@@ -36,7 +36,7 @@ int FSMCExtras(int numThrown, int pids[]);
   // global input parameters
 TFile* gInputFile;
 TFile* gOutputFile;
-float  gChi2DOFCut;
+double  gChi2DOFCut;
 bool gIsMC;
 
 
@@ -509,71 +509,71 @@ void ConvertTree(TString treeName){
 
     // non-particle information
 
-  float outRunNumber;     outTree.Branch("Run",        &outRunNumber,  "Run/F");
-  float outEventNumber;   outTree.Branch("Event",      &outEventNumber,"Event/F");
-  float outChi2;          outTree.Branch("Chi2",       &outChi2,       "Chi2/F");
-  float outChi2DOF;       outTree.Branch("Chi2DOF",    &outChi2DOF,    "Chi2DOF/F");
-  float outRFTime;        outTree.Branch("RFTime",     &outRFTime,     "RFTime/F");
-  float outRFDeltaT;      outTree.Branch("RFDeltaT",   &outRFDeltaT,   "RFDeltaT/F");
-  float outEnUnusedSh;    outTree.Branch("EnUnusedSh", &outEnUnusedSh, "EnUnusedSh/F");
-  float outProdVx;        outTree.Branch("ProdVx",     &outProdVx,     "ProdVx/F");
-  float outProdVy;        outTree.Branch("ProdVy",     &outProdVy,     "ProdVy/F");
-  float outProdVz;        outTree.Branch("ProdVz",     &outProdVz,     "ProdVz/F");
-  float outProdVt;        outTree.Branch("ProdVt",     &outProdVt,     "ProdVt/F");
-  float outPxPB;          outTree.Branch("PxPB",       &outPxPB,       "PxPB/F");
-  float outPyPB;          outTree.Branch("PyPB",       &outPyPB,       "PyPB/F");
-  float outPzPB;          outTree.Branch("PzPB",       &outPzPB,       "PzPB/F");
-  float outEnPB;          outTree.Branch("EnPB",       &outEnPB,       "EnPB/F");
-  float outRPxPB;         outTree.Branch("RPxPB",      &outRPxPB,      "RPxPB/F");
-  float outRPyPB;         outTree.Branch("RPyPB",      &outRPyPB,      "RPyPB/F");
-  float outRPzPB;         outTree.Branch("RPzPB",      &outRPzPB,      "RPzPB/F");
-  float outREnPB;         outTree.Branch("REnPB",      &outREnPB,      "REnPB/F");
+  double outRunNumber;     outTree.Branch("Run",        &outRunNumber,  "Run/D");
+  double outEventNumber;   outTree.Branch("Event",      &outEventNumber,"Event/D");
+  double outChi2;          outTree.Branch("Chi2",       &outChi2,       "Chi2/D");
+  double outChi2DOF;       outTree.Branch("Chi2DOF",    &outChi2DOF,    "Chi2DOF/D");
+  double outRFTime;        outTree.Branch("RFTime",     &outRFTime,     "RFTime/D");
+  double outRFDeltaT;      outTree.Branch("RFDeltaT",   &outRFDeltaT,   "RFDeltaT/D");
+  double outEnUnusedSh;    outTree.Branch("EnUnusedSh", &outEnUnusedSh, "EnUnusedSh/D");
+  double outProdVx;        outTree.Branch("ProdVx",     &outProdVx,     "ProdVx/D");
+  double outProdVy;        outTree.Branch("ProdVy",     &outProdVy,     "ProdVy/D");
+  double outProdVz;        outTree.Branch("ProdVz",     &outProdVz,     "ProdVz/D");
+  double outProdVt;        outTree.Branch("ProdVt",     &outProdVt,     "ProdVt/D");
+  double outPxPB;          outTree.Branch("PxPB",       &outPxPB,       "PxPB/D");
+  double outPyPB;          outTree.Branch("PyPB",       &outPyPB,       "PyPB/D");
+  double outPzPB;          outTree.Branch("PzPB",       &outPzPB,       "PzPB/D");
+  double outEnPB;          outTree.Branch("EnPB",       &outEnPB,       "EnPB/D");
+  double outRPxPB;         outTree.Branch("RPxPB",      &outRPxPB,      "RPxPB/D");
+  double outRPyPB;         outTree.Branch("RPyPB",      &outRPyPB,      "RPyPB/D");
+  double outRPzPB;         outTree.Branch("RPzPB",      &outRPzPB,      "RPzPB/D");
+  double outREnPB;         outTree.Branch("REnPB",      &outREnPB,      "REnPB/D");
 
     // MC information
 
-  float outMCPxPB;        if (gIsMC) outTree.Branch("MCPxPB",      &outMCPxPB,      "MCPxPB/F");
-  float outMCPyPB;        if (gIsMC) outTree.Branch("MCPyPB",      &outMCPyPB,      "MCPyPB/F");
-  float outMCPzPB;        if (gIsMC) outTree.Branch("MCPzPB",      &outMCPzPB,      "MCPzPB/F");
-  float outMCEnPB;        if (gIsMC) outTree.Branch("MCEnPB",      &outMCEnPB,      "MCEnPB/F");
-  float outMCDecayCode1;  if (gIsMC) outTree.Branch("MCDecayCode1",&outMCDecayCode1,"MCDecayCode1/F");
-  float outMCDecayCode2;  if (gIsMC) outTree.Branch("MCDecayCode2",&outMCDecayCode2,"MCDecayCode2/F");
-  float outMCExtras;      if (gIsMC) outTree.Branch("MCExtras",    &outMCExtras,    "MCExtras/F");
-  float outMCSignal;      if (gIsMC) outTree.Branch("MCSignal",    &outMCSignal,    "MCSignal/F");
+  double outMCPxPB;        if (gIsMC) outTree.Branch("MCPxPB",      &outMCPxPB,      "MCPxPB/D");
+  double outMCPyPB;        if (gIsMC) outTree.Branch("MCPyPB",      &outMCPyPB,      "MCPyPB/D");
+  double outMCPzPB;        if (gIsMC) outTree.Branch("MCPzPB",      &outMCPzPB,      "MCPzPB/D");
+  double outMCEnPB;        if (gIsMC) outTree.Branch("MCEnPB",      &outMCEnPB,      "MCEnPB/D");
+  double outMCDecayCode1;  if (gIsMC) outTree.Branch("MCDecayCode1",&outMCDecayCode1,"MCDecayCode1/D");
+  double outMCDecayCode2;  if (gIsMC) outTree.Branch("MCDecayCode2",&outMCDecayCode2,"MCDecayCode2/D");
+  double outMCExtras;      if (gIsMC) outTree.Branch("MCExtras",    &outMCExtras,    "MCExtras/D");
+  double outMCSignal;      if (gIsMC) outTree.Branch("MCSignal",    &outMCSignal,    "MCSignal/D");
 
     // particle information
 
-  float   outPx[MAXPARTICLES]={},   outPy[MAXPARTICLES]={},   outPz[MAXPARTICLES]={},   outEn[MAXPARTICLES]={};
-  float  outRPx[MAXPARTICLES]={},  outRPy[MAXPARTICLES]={},  outRPz[MAXPARTICLES]={},  outREn[MAXPARTICLES]={};
-  float outMCPx[MAXPARTICLES]={}, outMCPy[MAXPARTICLES]={}, outMCPz[MAXPARTICLES]={}, outMCEn[MAXPARTICLES]={};
-  float outTkChi2[MAXPARTICLES]={}, outTkNDF[MAXPARTICLES]={};
-  float outShQuality[MAXPARTICLES]={};
+  double   outPx[MAXPARTICLES]={},   outPy[MAXPARTICLES]={},   outPz[MAXPARTICLES]={},   outEn[MAXPARTICLES]={};
+  double  outRPx[MAXPARTICLES]={},  outRPy[MAXPARTICLES]={},  outRPz[MAXPARTICLES]={},  outREn[MAXPARTICLES]={};
+  double outMCPx[MAXPARTICLES]={}, outMCPy[MAXPARTICLES]={}, outMCPz[MAXPARTICLES]={}, outMCEn[MAXPARTICLES]={};
+  double outTkChi2[MAXPARTICLES]={}, outTkNDF[MAXPARTICLES]={};
+  double outShQuality[MAXPARTICLES]={};
   {
     for (unsigned int im = 0; im < orderedParticleNames.size(); im++){
     for (unsigned int id = 0; id < orderedParticleNames[im].size(); id++){
       TString name = orderedParticleNames[im][id];
       int pIndex = mapGlueXNameToParticleIndex[name];
       TString fsIndex = mapGlueXNameToFSIndex[name];
-      TString vPx("PxP"); vPx += fsIndex; outTree.Branch(vPx,&outPx[pIndex],vPx+"/F");
-      TString vPy("PyP"); vPy += fsIndex; outTree.Branch(vPy,&outPy[pIndex],vPy+"/F");
-      TString vPz("PzP"); vPz += fsIndex; outTree.Branch(vPz,&outPz[pIndex],vPz+"/F");
-      TString vEn("EnP"); vEn += fsIndex; outTree.Branch(vEn,&outEn[pIndex],vEn+"/F");
-      TString vRPx("RPxP"); vRPx += fsIndex; outTree.Branch(vRPx,&outRPx[pIndex],vRPx+"/F");
-      TString vRPy("RPyP"); vRPy += fsIndex; outTree.Branch(vRPy,&outRPy[pIndex],vRPy+"/F");
-      TString vRPz("RPzP"); vRPz += fsIndex; outTree.Branch(vRPz,&outRPz[pIndex],vRPz+"/F");
-      TString vREn("REnP"); vREn += fsIndex; outTree.Branch(vREn,&outREn[pIndex],vREn+"/F");
-      TString vMCPx("MCPxP"); vMCPx += fsIndex; if (gIsMC) outTree.Branch(vMCPx,&outMCPx[pIndex],vMCPx+"/F");
-      TString vMCPy("MCPyP"); vMCPy += fsIndex; if (gIsMC) outTree.Branch(vMCPy,&outMCPy[pIndex],vMCPy+"/F");
-      TString vMCPz("MCPzP"); vMCPz += fsIndex; if (gIsMC) outTree.Branch(vMCPz,&outMCPz[pIndex],vMCPz+"/F");
-      TString vMCEn("MCEnP"); vMCEn += fsIndex; if (gIsMC) outTree.Branch(vMCEn,&outMCEn[pIndex],vMCEn+"/F");
+      TString vPx("PxP"); vPx += fsIndex; outTree.Branch(vPx,&outPx[pIndex],vPx+"/D");
+      TString vPy("PyP"); vPy += fsIndex; outTree.Branch(vPy,&outPy[pIndex],vPy+"/D");
+      TString vPz("PzP"); vPz += fsIndex; outTree.Branch(vPz,&outPz[pIndex],vPz+"/D");
+      TString vEn("EnP"); vEn += fsIndex; outTree.Branch(vEn,&outEn[pIndex],vEn+"/D");
+      TString vRPx("RPxP"); vRPx += fsIndex; outTree.Branch(vRPx,&outRPx[pIndex],vRPx+"/D");
+      TString vRPy("RPyP"); vRPy += fsIndex; outTree.Branch(vRPy,&outRPy[pIndex],vRPy+"/D");
+      TString vRPz("RPzP"); vRPz += fsIndex; outTree.Branch(vRPz,&outRPz[pIndex],vRPz+"/D");
+      TString vREn("REnP"); vREn += fsIndex; outTree.Branch(vREn,&outREn[pIndex],vREn+"/D");
+      TString vMCPx("MCPxP"); vMCPx += fsIndex; if (gIsMC) outTree.Branch(vMCPx,&outMCPx[pIndex],vMCPx+"/D");
+      TString vMCPy("MCPyP"); vMCPy += fsIndex; if (gIsMC) outTree.Branch(vMCPy,&outMCPy[pIndex],vMCPy+"/D");
+      TString vMCPz("MCPzP"); vMCPz += fsIndex; if (gIsMC) outTree.Branch(vMCPz,&outMCPz[pIndex],vMCPz+"/D");
+      TString vMCEn("MCEnP"); vMCEn += fsIndex; if (gIsMC) outTree.Branch(vMCEn,&outMCEn[pIndex],vMCEn+"/D");
       if (GlueXParticleClass(name) == "Charged"){
         TString vTkNDF("TkNDFP"); vTkNDF += fsIndex;
-            outTree.Branch(vTkNDF,&outTkNDF[pIndex],vTkNDF+"/F");
+            outTree.Branch(vTkNDF,&outTkNDF[pIndex],vTkNDF+"/D");
         TString vTkChi2("TkChi2P"); vTkChi2 += fsIndex;
-            outTree.Branch(vTkChi2,&outTkChi2[pIndex],vTkChi2+"/F");
+            outTree.Branch(vTkChi2,&outTkChi2[pIndex],vTkChi2+"/D");
       }
       if (GlueXParticleClass(name) == "Neutral"){
         TString vQual("ShQualityP"); vQual += fsIndex;
-            outTree.Branch(vQual, &outShQuality[pIndex], vQual+"/F");
+            outTree.Branch(vQual, &outShQuality[pIndex], vQual+"/D");
       }
     }
     }
