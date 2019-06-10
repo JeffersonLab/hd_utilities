@@ -656,11 +656,11 @@ void ConvertTree(TString treeName){
           }
         }
       }
-      if (((outMCSignal > 0.1)&&!inIsThrownTopology) ||
-          ((outMCSignal < 0.1)&& inIsThrownTopology)){
-        cout << "ERROR: MCSignal does not match IsThrownTopology" << endl;
-        mcProblems = true;
-      }
+      //if (((outMCSignal > 0.1)&&!inIsThrownTopology) ||
+      //    ((outMCSignal < 0.1)&& inIsThrownTopology)){
+      //  cout << "ERROR: MCSignal does not match IsThrownTopology" << endl;
+      //  mcProblems = true;
+      //}
         // print a few events to make sure MC makes sense
       if (iEntry < 5 || mcProblems == true){
       //if (gIsMC && (iEntry < 5||inIsThrownTopology)){
