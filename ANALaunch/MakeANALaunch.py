@@ -19,22 +19,70 @@ import time
 from datetime import timedelta
 from datetime import datetime
 
+
+translateDict =	{
+  "1": "g",
+  "2": "ep",
+  "3": "em",
+  "7": "pi0",
+  "8": "pip",
+  "9": "pim",
+  "10": "kl",
+  "11": "kp",
+  "12": "km",
+  "13": "n",
+  "14": "p",
+  "15": "antip",
+  "16": "ks",
+  "17": "eta",
+  "18": "lamb",
+  "20": "sig0",
+  "22": "Xi0",
+  "23": "Xim",
+  "24": "omegam",
+  "25": "antin",
+  "26": "antilamb"
+}
+
+def TranslateID(id):
+    #return id
+    if id in translateDict.keys():
+        return translateDict[id]
+    else:
+        return id
+
+def TreeName(reaction):
+    name=""
+    particles=reaction.split("__")[1].split("_")
+    for part in particles:
+        trans=""
+        if part[0]=="m":
+            name=name+"miss"
+            trans=TranslateID(part[+1:])
+        else:
+            trans=TranslateID(str(part))
+
+        name=name+trans
+
+    return name
+
 def WriteLinesToFile(ReactionNum,jobj,configF):
     #print "Reaction"+str(ReactionNum)+" "+jobj["Reaction"]
     print "\n"
-    configF.write("\n\n")
+    #configF.write("\n\n")
     print "#"+jobj["Name"]
-    configF.write("#"+jobj["Name"]+"\n")
+    print "#"+TreeName(jobj["Reaction"])
+    #configF.write("#"+jobj["Name"]+"\n")
     print "Reaction"+str(ReactionNum)+" "+jobj["Reaction"]
-    configF.write("Reaction"+str(ReactionNum)+" "+jobj["Reaction"])
+    #configF.write("Reaction"+str(ReactionNum)+" "+jobj["Reaction"])
     decnum=0
     for dec in jobj["Decays"]:
         decnum=decnum+1
         #print "Reaction"+str(ReactionNum)+":Decay"+str(decnum)+" "+dec
-        configF.write("\n")
+        #configF.write("\n")
         print "Reaction"+str(ReactionNum)+":Decay"+str(decnum)+" "+dec
-        configF.write("Reaction"+str(ReactionNum)+":Decay"+str(decnum)+" "+dec)
-    configF.write("\n")
+        #configF.write("Reaction"+str(ReactionNum)+":Decay"+str(decnum)+" "+dec)
+    #configF.write("\n")
     flagstrpre="Reaction"+str(ReactionNum)+":Flags "
 
     flagstr=""
@@ -44,15 +92,23 @@ def WriteLinesToFile(ReactionNum,jobj,configF):
         flagstr+="F"+jobj["F"]+"_"
     if(jobj["T"] != "3"):
         flagstr+="T"+jobj["T"]+"_"
+    if(jobj["U"] != "0"):
+        flagstr+="U"+jobj["U"]+"_"
     
     flagstr=flagstr[:-1]
-
+    
     for M in jobj["Marray"]:
         flagstr+="_M"+str(M)
 
+    if flagstr != "":
+        if flagstr[0]=="_":
+        #    flagstr="TEST"
+            flagstr=flagstr[1:]
+
     if len(flagstr) > 0:
         print flagstrpre+flagstr
-        configF.write(flagstrpre+flagstr)
+
+    #configF.write(flagstr)
 ########################################################## MAIN ##########################################################
 
 def FilterFiles(Files):
@@ -64,10 +120,12 @@ def FilterFiles(Files):
     return toUse
 
 def main(argv):
+
     ananameSTR=""
     restnameSTR=""
     numThread="12"
     isMC=0
+    dataset=""
 
     for argu in argv:
         splitArg=argu.split("=")
@@ -83,32 +141,35 @@ def main(argv):
         elif(splitArg[0]=="nthread"):
             numThread=splitArg[1]
         
+        elif(splitArg[0]=="dataset"):
+            dataset=splitArg[1]
+        
         else:
             print "argument: "+splitArg[0]+" not found"
             #exit(1)
 
 
-    dir="/u/group/halld/www/halldweb/data/webdata/analysis/newlines/"
+    dir="/u/group/halld/www/halldweb/data/webdata/analysis/newlines/"+dataset+"/"
     Files=os.listdir(dir)
     #print Files
     ReactionNum=0
 
-    configF=open("ANALaunch.config","w+")
+    configF=1#open("ANALaunch.config","w+")
     print "PLUGINS monitoring_hists,ReactionFilter"
-    configF.write("PLUGINS monitoring_hists,ReactionFilter")
+    #configF.write("PLUGINS monitoring_hists,ReactionFilter")
     
-    if(isMC != 0):
-        configF.write(",mcthrown_tree")
+    #if(isMC != 0):
+    #    configF.write(",mcthrown_tree")
 
     print "\nNTHREADS "+str(numThread)+"\n"
-    configF.write("\n\nNTHREADS "+str(numThread)+"\n\n")
-    print "COMBO:MAX_NEUTRALS 15\n"
-    configF.write("COMBO:MAX_NEUTRALS 15\n\n")
+    #configF.write("\n\nNTHREADS "+str(numThread)+"\n\n")
+    print "COMBO:MAX_NEUTRALS 15"
+    #configF.write("COMBO:MAX_NEUTRALS 15\n\n")
 
-    print "REST:DATAVERSIONSTRING recon_"+restnameSTR
-    print "ANALYSIS:DATAVERSIONSTRING analysis_"+ananameSTR
-    configF.write("REST:DATAVERSIONSTRING recon_"+restnameSTR+"\n")
-    configF.write("ANALYSIS:DATAVERSIONSTRING analysis_"+ananameSTR)
+   #print "REST:DATAVERSIONSTRING recon_"+restnameSTR
+   #print "ANALYSIS:DATAVERSIONSTRING analysis_"+ananameSTR
+    #configF.write("REST:DATAVERSIONSTRING recon_"+restnameSTR+"\n")
+    #configF.write("ANALYSIS:DATAVERSIONSTRING analysis_"+ananameSTR)
 
     
     #Make an array of files to include in a seperate function.  Do below only for those files in that array.  Not directory

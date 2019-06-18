@@ -1,5 +1,6 @@
 <?php
 echo $_GET["jstr"];
+echo $_GET["dataset"];
 $file='';
 //echo "<br>" . $file;
 $jsonOBJ=json_decode($_GET["jstr"],true);
@@ -32,9 +33,9 @@ foreach ($Mlist as $M)
 $newlB=true;
 $newlT=true;
 $newlU=true;
-if(file_exists("/u/group/halld/www/halldweb/data/webdata/analysis/newlines/" . $file . ".json"))
+if(file_exists("/u/group/halld/www/halldweb/data/webdata/analysis/newlines/" . $_GET["dataset"] . '/' . $file . ".json"))
 {
-    $string = file_get_contents("/u/group/halld/www/halldweb/data/webdata/analysis/newlines/" . $file . ".json");
+    $string = file_get_contents("/u/group/halld/www/halldweb/data/webdata/analysis/newlines/" . $_GET["dataset"] . '/' . $file . ".json");
     $json_fromF = json_decode($string, true);
 
     if(intval($B)<intval($json_fromF["B"]))
@@ -65,7 +66,7 @@ if(file_exists("/u/group/halld/www/halldweb/data/webdata/analysis/newlines/" . $
 if($newlB || $newlT || $newlU)
 {
     echo "<br>" . $file;
-    $fp = fopen('/u/group/halld/www/halldweb/data/webdata/analysis/newlines/' . $file . '.json','w') or die('Cannot open file:  '.$file);
+    $fp = fopen('/u/group/halld/www/halldweb/data/webdata/analysis/newlines/' . $_GET["dataset"] . '/' . $file . '.json','w') or die('Cannot open file:  '.$file);
     //fwrite($fp,"\"");
     fwrite($fp,json_encode($jsonOBJ));
     //fwrite($fp,"\"");

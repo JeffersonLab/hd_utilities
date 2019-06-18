@@ -1,9 +1,11 @@
 <html>
     <head>
-        <title>Reaction Submit Form by Thomas Britton</title>
+        <title>Analysisssss Reaction Submit Form by Thomas Britton</title>
     </head>
 <body>
         <script src="../data_monitoring/js_utilities/jquery-3.3.1.min.js" type="text/javascript"></script>
+
+<img align="right" src="./imgs/anaconda_logo.png" width="250px" height="250px">
 
 Email: <input type="text" id="submitter">
 <br>
@@ -19,7 +21,14 @@ Each product comes as a set of three objects:<br>
 <br>
 <br>
 <div id="GlobalFlags">
-B (Beam Bunches):<input id="BFlag" type="number" min="0" max="1000" value="1" onchange="MakeConfigLines()">&emsp;T (Extra Charged Tracks):<input id="TFlag" type="number" min="0" max="1000" value="3" onchange="MakeConfigLines()">&emsp;F (Fit Type):<input id="FFlag" type="number" min="0" max="5"  value="4" onchange="MakeConfigLines()">&emsp;U (unused tracks):<input id="UFlag" type="checkbox" onchange="MakeConfigLines()">
+B (Beam Bunches):<input id="BFlag" type="number" min="0" max="5" value="1" onchange="MakeConfigLines()">&emsp;T (Extra Charged Tracks):<input id="TFlag" type="number" min="0" max="10" value="3" onchange="MakeConfigLines()">&emsp;F (Fit Type):<select id="FFlag" onchange="MakeConfigLines()">
+    <option value=0 >None</option>
+    <option value=1 >P4 </option>
+    <option value=2>Vertex</option>
+    <option value=3>Spacetime</option>
+    <option value=4 selected>P4 and Vertex</option>
+    <option value=5 >P4 and Spacetime</option>
+    </select>&emsp;U (unused tracks):<input id="UFlag" type="checkbox" onchange="MakeConfigLines()">
 
 </div>
 <br>
@@ -36,10 +45,18 @@ Initial Particles -----> Final State Particles <input type="button" id="addDecay
 <hr>
 <br>
 <!--<input type="button" onclick="MakeConfigLines()" value="Make">The line:-->
-<textarea id="output" style="margin: 0px; width: 290px; height: 157px;">
+<textarea id="output" style="margin: 0px; width: 290px; height: 157px;" readonly>
 </textarea>
-<input type="button" onClick="WriteLinesJSON()" value="Submit Reaction">
-
+<input type="button" onClick="WriteLinesJSON();GetCurrentConfigFile()" value="Submit Reaction"> to run over <b>
+<font size='4'>
+    <select id="dataSet" onchange="UpdatePreview()">
+        <option value="2017-01_ver03" selected >2017-01_ver03</option>
+        <option value="2018-01_ver02" >2018-01_ver02</option>
+    </select>
+</font></b>
+<br>
+<textarea id="curconf" style="margin: 0px; width: 406px; height: 450px;" readonly>
+</textarea>
 
 <style>
     .selectStyle {
@@ -48,6 +65,7 @@ Initial Particles -----> Final State Particles <input type="button" id="addDecay
 </style>
 
 <script>
+    var snd = new Audio("./imgs/snakehiss.mp3");
     var MassConstrain=[];
     //var FinalCount=1;
     //var PartArray=[];
@@ -60,9 +78,9 @@ Initial Particles -----> Final State Particles <input type="button" id="addDecay
 
     PartArray.push({Particle:'e\u207A', geantID: 2, pdgID: -11, sortID: 2});//e+
     PartArray.push({Particle:'e\u207B', geantID: 3, pdgID: 11, sortID: 3});//e-
-    // PartArray.push({Particle:'nu', geantID: 4, pdgID: 121416, sortID: 4}); -->
-    // PartArray.push({Particle:'mu+', geantID: 5, pdgID: -13, sortID: 5}); -->
-    // PartArray.push({Particle:'mu-', geantID: 6, pdgID: 13, sortID: 6}); -->
+    PartArray.push({Particle:'ν', geantID: 4, pdgID: 121416, sortID: 4});
+    PartArray.push({Particle:'μ+', geantID: 5, pdgID: -13, sortID: 5});
+    PartArray.push({Particle:'μ-', geantID: 6, pdgID: 13, sortID: 6});
     PartArray.push({Particle:'π\u00B0', geantID: 7, pdgID: 111, sortID: 7});
     PartArray.push({Particle:'π\u207A', geantID: 8, pdgID: 211, sortID: 8});
     PartArray.push({Particle:'π\u207B', geantID: 9, pdgID: -211, sortID: 9});
@@ -136,7 +154,7 @@ Initial Particles -----> Final State Particles <input type="button" id="addDecay
      DefDecayArray.push({Parent:24, Decay: "24__12_18"});
      DefDecayArray.push({Parent:93, Decay: "93__8_12_14"});
 
-    $(document).ready(function(){populateParticleSelector("iPart1_0",true);populateParticleSelector("iPart2_0",true);MakeConfigLines();});
+    $(document).ready(function(){populateParticleSelector("iPart1_0",true);populateParticleSelector("iPart2_0",true);MakeConfigLines();GetCurrentConfigFile();});
     function populateParticleSelector(id,trunc)
     {
         var selector=document.getElementById(id);
@@ -174,7 +192,13 @@ Initial Particles -----> Final State Particles <input type="button" id="addDecay
             console.log("could not find "+ id )
         }
     }
-
+function UpdatePreview()
+{
+    console.log("update Preview")
+    var sel_val=document.getElementById("dataSet").value;
+    GetCurrentConfigFile()
+    console.log(sel_val)
+}
 function toggleTri(thisbutton)
 {
     console.log(thisbutton.getAttribute("state"))
@@ -514,16 +538,50 @@ function RemoveSelector(level,parent)
         var FFlag_val=document.getElementById("FFlag").value
         var TFlag_val=document.getElementById("TFlag").value
 
-        ConfigLines+="Reaction1:Flags B"+BFlag_val+"_F"+FFlag_val+"_T"+TFlag_val;
-
-        if(document.getElementById("UFlag").checked)
+        if(BFlag_val != "1" || FFlag_val != "4" || TFlag_val != "3" || document.getElementById("UFlag").checked || MassConstrain.length!=0)
         {
-            ConfigLines+="_U1"
-        }
+            ConfigLines+="Reaction1"+":Flags "
+            if(BFlag_val != "1")
+            {
+                ConfigLines+="B"+BFlag_val;
+            }
+            if(BFlag_val != "1" && FFlag_val != "4")
+            {
+                ConfigLines+="_"
+            }
+            if(FFlag_val != "4")
+            {
+                ConfigLines+="F"+FFlag_val;
+            }
+            if((BFlag_val != "1" || FFlag_val != "4") && TFlag_val != "3")
+            {
+                ConfigLines+="_"
+            }
+            if(TFlag_val != "3")
+            {
+                ConfigLines+="T"+TFlag_val;
+            }
+            if((BFlag_val != "1" || FFlag_val != "4" || TFlag_val != "3") && document.getElementById("UFlag").checked)
+            {
+                ConfigLines+="_"
+            }
+            if(document.getElementById("UFlag").checked)
+            {
+                ConfigLines+="U1"
+            }
+            if((BFlag_val != "1" || FFlag_val != "4" || TFlag_val != "3" || document.getElementById("UFlag").checked) && MassConstrain.length!=0)
+            {
+                ConfigLines+="_"
+            }
+            for(var i=0;i<MassConstrain.length ;i++)
+            {
+                ConfigLines+="M"+MassConstrain[i].toString()+"_";
+            }
+            if(MassConstrain.length !=0)
+            {
+                ConfigLines=ConfigLines.slice(0,-1);
+            }
 
-        for(var i=0;i<MassConstrain.length ;i++)
-        {
-            ConfigLines+="_M"+MassConstrain[i].toString();
         }
 
         document.getElementById('output').value=ConfigLines;
@@ -591,8 +649,48 @@ function RemoveSelector(level,parent)
             }
         }
     }
+
+    function GetCurrentConfigFile()
+    {
+        var sel_val=document.getElementById("dataSet").value
+        console.log("./utilities/MakeCurrentConfig.php?query=anatag=example resttag=example nthread=12")
+          var qresult= new Array;
+        if (window.XMLHttpRequest) {
+            // code for IE7+, Firefox, Chrome, Opera, Safari
+            xmlhttp = new XMLHttpRequest();
+        } else {
+            // code for IE6, IE5
+            xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+        }
+
+        xmlhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+
+                query_result=this.responseText;
+                //var result_to_use=JSON.parse(this.responseText);
+                //console.log(result_to_use);
+                console.log(query_result)
+                document.getElementById("curconf").value=query_result;
+                //HideWaitIcon();
+                //QueryXref();
+                //ShowPlots();
+                }
+                
+            }
+
+
+        xmlhttp.open("GET","./utilities/MakeCurrentConfig.php?dataset="+sel_val);
+
+        
+        xmlhttp.send();
+}
+
     function WriteLinesJSON()
     {
+    var txt;
+    var r = confirm("Are you sure you want to submit: \n"+document.getElementById('output').value);
+    if (r == true) {
+
         var blame=document.getElementById("submitter").value
         var theLines=document.getElementById('output').value;
         var AllLines=theLines.split("\n");
@@ -611,6 +709,9 @@ function RemoveSelector(level,parent)
             }
             else if(i==AllLines.length-1)
             {
+                if(splitLine[0] == "")
+                    continue
+
                 var FlagsArray=splitLine[1].split("_");
                 for(var j=0;j<FlagsArray.length;j++)
                 {
@@ -655,6 +756,10 @@ function RemoveSelector(level,parent)
 
         if(pass)
             SubmitLine(JSONSTR);
+        } 
+        else {
+            return
+        }
         
     }
 
@@ -692,12 +797,14 @@ function RemoveSelector(level,parent)
 
     function SubmitLine(jsonSTR)
   {
-    console.log("./utilities/LineWriter.php?jstr="+jsonSTR)
+    var sel_val=document.getElementById("dataSet").value;
+    console.log("./utilities/LineWriter.php?jstr="+jsonSTR+"&dataset="+sel_val)
     var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance 
-    xmlhttp.open("POST", "./utilities/LineWriter.php?jstr="+jsonSTR);
+    xmlhttp.open("POST", "./utilities/LineWriter.php?jstr="+jsonSTR+"&dataset="+sel_val);
     //xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     xmlhttp.send();
     alert("Line Submitted");
+    UpdatePreview();
   }
 
   function findDefDec(par)
