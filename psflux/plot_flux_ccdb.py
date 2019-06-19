@@ -133,7 +133,8 @@ def main():
     tagh_tagged_flux = array('f')
     tagh_scaled_energy = array('f')
 
-    htagged_flux = TH1F("tagged_flux_uniform", "Uniform tagged flux; Photon Beam Energy (GeV); Flux", NBINS, EMIN, EMAX)
+    if UNIFORM:
+	htagged_flux = TH1F("tagged_flux_uniform", "Uniform tagged flux; Photon Beam Energy (GeV); Flux", NBINS, EMIN, EMAX)
     htagged_fluxErr = TH1F("tagged_flux", "Tagged flux; Photon Beam Energy (GeV); Flux", NBINS, EMIN, EMAX)
     htagged_fluxErr.Sumw2()
 
@@ -159,6 +160,10 @@ def main():
 
 	# temporary to exclude runs before status_approved flag is set for RunPeriod-2018-08
 	if run.number == 51385 or run.number == 51404:
+		continue
+
+	# temporary while fixing runs
+	if run.number > 41830 and run.number < 41860:
 		continue
 
 	print "==%d=="%run.number
@@ -265,7 +270,8 @@ def main():
     PS_accept = PS_accept_assignment.constant_set.data_table
     fPSAcceptance.SetParameters(float(PS_accept[0][0]), float(PS_accept[0][1]), float(PS_accept[0][2]));
 
-    htagged_flux.Divide(fPSAcceptance);
+    if UNIFORM:
+	htagged_flux.Divide(fPSAcceptance);
     htagged_fluxErr.Divide(fPSAcceptance);
 
     # Initialize output file
@@ -277,7 +283,8 @@ def main():
     OUTPUT_FILENAME += "_%d_%d.root" % (BEGINRUN, ENDRUN)
     
     fout = TFile(OUTPUT_FILENAME, "recreate")
-    htagged_flux.Write()
+    if UNIFORM:
+	htagged_flux.Write()
     htagged_fluxErr.Write()
     fout.Close()
     
