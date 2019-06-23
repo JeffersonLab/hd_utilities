@@ -1,0 +1,55 @@
+----- command 1 = "ccdb ls /test" -----
+subtest
+test_vars
+demo
+PHOTON_BEAM
+----- command 2 = "ccdb mkdir /test/mydir" -----
+Directory mydir created
+----- command 3 = "ccdb ls /test" -----
+subtest
+test_vars
+demo
+PHOTON_BEAM
+mydir
+----- command 4 = "ccdb ls /test/mydir" -----
+Can't find the directory or tables
+----- command 5 = "ccdb mktbl /test/mydir/mytable alpha beta gamma" -----
+saving table to database...  completed
+----- command 6 = "ccdb ls /test/mydir" -----
+/test/mydir/mytable
+(ID)   (Created)              (Modified)              (variation)     (run range)      (comments)
+----- command 7 = "cat data.txt" -----
+2. 4. 6.
+----- command 8 = "ccdb add /test/mydir/mytable -v test -r 1000-2000 data.txt" -----
+/test/mydir/mytable:1000:test:2019-06-21_16-55-53
+----- command 9 = "ccdb ls /test/mydir" -----
+/test/mydir/mytable
+(ID)   (Created)              (Modified)              (variation)     (run range)      (comments)
+ 221875  2019-06-21 16-55-53    2019-06-21 16-55-53     test            1000-2000       
+----- command 10 = "ccdb cat /test/mydir/mytable:999:test" -----
+There is no data for table /test/mydir/mytable, run 999, variation 'test'
+Cannot fill data for assignment with this ID
+----- command 11 = "ccdb cat /test/mydir/mytable:1000:test" -----
++--------------------------------------+
+| alpha      | beta       | gamma      |
+| double     | double     | double     |
++--------------------------------------+
+| 2.         | 4.         | 6.         |
++--------------------------------------+
+----- command 12 = "ccdb cat /test/mydir/mytable:1500:test" -----
++--------------------------------------+
+| alpha      | beta       | gamma      |
+| double     | double     | double     |
++--------------------------------------+
+| 2.         | 4.         | 6.         |
++--------------------------------------+
+----- command 13 = "ccdb cat /test/mydir/mytable:2000:test" -----
++--------------------------------------+
+| alpha      | beta       | gamma      |
+| double     | double     | double     |
++--------------------------------------+
+| 2.         | 4.         | 6.         |
++--------------------------------------+
+----- command 14 = "ccdb cat /test/mydir/mytable:2001:test" -----
+There is no data for table /test/mydir/mytable, run 2001, variation 'test'
+Cannot fill data for assignment with this ID
