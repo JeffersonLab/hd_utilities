@@ -68,6 +68,9 @@ void DSelector_pi0pippim__B4_ver21::Init(TTree *locTree)
 	// // Change MyPhi to match reaction
 	// dAnalyzeCutActions = new DHistogramAction_AnalyzeCutActions( dAnalysisActions, dComboWrapper, false, 0, MyPhi, 1000, 0.9, 2.4, "CutActionEffect" );
 
+        // dAnalysisActions.push_back(new DCutAction_ShowerQuality(dComboWrapper, SYS_FCAL, 0.5)); 
+
+
 	//INITIALIZE ACTIONS
 	//If you create any actions that you want to run manually (i.e. don't add to dAnalysisActions), be sure to initialize them here as well
 	Initialize_Actions();
@@ -77,59 +80,99 @@ void DSelector_pi0pippim__B4_ver21::Init(TTree *locTree)
 
         cout << "Init: Define Histograms" << endl;
 	//EXAMPLE MANUAL HISTOGRAMS:
-	dHist_MissingMassSquared = new TH1I("MissingMassSquared", ";Missing Mass Squared (GeV/c^{2})^{2}", 200, -0.1, 0.1);
-	dHist_BeamEnergy = new TH1I("BeamEnergy", ";Beam Energy (GeV)", 600, 0.0, 12.0);
+	dHist_MissingMassSquared = new TH1D("MissingMassSquared", ";Missing Mass Squared (GeV/c^{2})^{2}", 200, -0.1, 0.1);
+	dHist_BeamEnergy = new TH1D("BeamEnergy", ";Beam Energy (GeV)", 600, 0.0, 12.0);
 
-	dH1_CL = new TH1I("CL", ";Combo CL", 100, 0.0, 1.0);
-	dH1_Chi2NDF = new TH1I("Chi2NDF", ";Combo Chi2/NDF", 100, 0.0, 20.0);
+	dH1_CutSelection = new TH1D("CutSelection", ";Cut Selection", 100, 0.0, 100.0);
+	dH1_CL = new TH1D("CL", ";Combo CL", 100, 0.0, 1.0);
+	dH1_Chi2NDF = new TH1D("Chi2NDF", ";Combo Chi2/NDF", 100, 0.0, 20.0);
+	dH1_Chi2NDF_BCAL = new TH1D("Chi2NDF_BCAL", ";Combo BCAL Chi2/NDF", 100, 0.0, 20.0);
+	dH1_Chi2NDF_FCAL = new TH1D("Chi2NDF_FCAL", ";Combo FCAL Chi2/NDF", 100, 0.0, 20.0);
+	dH1_Chi2NDF_FCALBCAL = new TH1D("Chi2ND_FCALBCAL", ";Combo FCAL/BCAL Chi2/NDF", 100, 0.0, 20.0);
 	dH2_Chi2_vs_Pi0Theta = new TH2I("Chi2_vs_Pi0Theta", ";Chi2_vs_Pi0Theta", 120, 0.0, 40.0, 100, 0.0, 20.0);
 
-	dH1_ProtonP = new TH1I("ProtonP", ";Proton KIN P (GeV)", 100, 0.0, 10.0);
-	dH1_PiPlusP = new TH1I("PiPlusP", ";PiPlus KIN  P (GeV)", 100, 0.0, 10.0);
-	dH1_PiMinusP = new TH1I("PiMinusP", ";PiMinus KIN  P (GeV)", 100, 0.0, 10.0);
-	dH1_Pi0P = new TH1I("Pi0P", ";Pi0 P (GeV)", 100, 0.0, 10.0);
-	dH1_Photon1P = new TH1I("Photon1P", ";Photon 1 KIN P  (GeV)", 100, 0.0, 10.0);
-	dH1_Photon2P = new TH1I("Photon2P", ";Photon 2 KIN  P (GeV)", 100, 0.0, 10.0);
-	dH1_Pi0MeasuredP = new TH1I("Pi0MeasuredP", ";Pi0 MEAS P (GeV)", 100, 0.0, 10.0);
-	dH1_Pi0MeasuredMass = new TH1I("Pi0MeasuredMass", ";Pi0 MEAS Mass (GeV)", 100, 0.0, 0.4);
-	dH1_Mass3pi = new TH1I("Mass3pi", ";3pi Mass (GeV)", 100, 0.5, 1.5);
+	dH1_ProtonP = new TH1D("ProtonP", ";Proton KIN P (GeV)", 100, 0.0, 10.0);
+	dH1_PiPlusP = new TH1D("PiPlusP", ";PiPlus KIN  P (GeV)", 100, 0.0, 10.0);
+	dH1_PiMinusP = new TH1D("PiMinusP", ";PiMinus KIN  P (GeV)", 100, 0.0, 10.0);
+	dH1_Pi0P = new TH1D("Pi0P", ";Pi0 P (GeV)", 100, 0.0, 10.0);
+	dH1_Photon1P = new TH1D("Photon1P", ";Photon 1 KIN P  (GeV)", 100, 0.0, 10.0);
+	dH1_Photon2P = new TH1D("Photon2P", ";Photon 2 KIN  P (GeV)", 100, 0.0, 10.0);
+	dH1_Pi0MeasuredP = new TH1D("Pi0MeasuredP", ";Pi0 MEAS P (GeV)", 100, 0.0, 10.0);
+	dH1_Pi0MeasuredMass = new TH1D("Pi0MeasuredMass", ";Pi0 MEAS Mass (GeV)", 100, 0.0, 0.4);
+	dH1_Mass3pi = new TH1D("Mass3pi", ";3pi Mass (GeV)", 150, 0.5, 3.5);
+	dH1_MassPiPlusP = new TH1D("MassPiPlusP", ";PiPlusP Mass (GeV)", 150, 0.5, 3.5);
+	dH1_MassPiMinusP = new TH1D("MassPiMinusP", ";PiMinusP Mass (GeV)", 150, 0.5, 3.5);
+	dH1_MassPiPlusPiMinus = new TH1D("MassPiPlusPiMinus", ";PiPlus PiPMinus Mass (GeV)", 150, 0., 3.);
+	dH1_MassPiPlusPi0 = new TH1D("MassPiPlusPi0", ";PiPlus Pi0 Mass (GeV)", 150, 0., 3.);
+	dH1_MassPiMinusPi0 = new TH1D("MassPiMinusPi0", ";PiMinus Pi0 Mass (GeV)", 150, 0., 3.);
+	dH1_t_BCAL = new TH1D("t_BCAL", ";-t (GeV2) BCAL", 100, 0, 5);
+	dH1_t_FCAL = new TH1D("t_FCAL", ";-t (GeV2) FCAL", 100, 0, 5);
+	dH1_t_FCALBCAL = new TH1D("t_FCALBCAL", ";-t (GeV2) FCAL/BCAL", 100, 0, 5);
 
-	dH1_CostheStarB_BCAL = new TH1I("CostheStarB_BCAL", ";Costhe^{*B} BCAL", 150, -1.5,1.5);
-	dH1_CostheStarB_FCAL = new TH1I("CostheStarB_FCAL", ";Costhe^{*B} FCAL", 150, -1.5,1.5);
-	dH1_CostheStarB_FCALBCAL = new TH1I("CostheStarB_FCALBCAL", ";Costhe^{*B} BCAL/FCAL", 150, -1.5,1.5);
-	dH1_CostheStarA_BCAL = new TH1I("CostheStarA_BCAL", ";Costhe^{*A} BCAL", 150, -1.5,1.5);
-	dH1_CostheStarA_FCAL = new TH1I("CostheStarA_FCAL", ";Costhe^{*A} FCAL", 150, -1.5,1.5);
-	dH1_CostheStarA_FCALBCAL = new TH1I("CostheStarA_FCALBCAL", ";Costhe^{*A} BCAL/FCAL", 150, -1.5,1.5);
-	dH1_CostheStarDiff = new TH1I("CostheStarDiff", ";Costhe^{*A}-Costhe^{*B}", 100, -0.5,0.5);
+	dH1_CostheStarB_BCAL = new TH1D("CostheStarB_BCAL", ";Costhe^{*B} BCAL", 150, -1.5,1.5);
+	dH1_CostheStarB_FCAL = new TH1D("CostheStarB_FCAL", ";Costhe^{*B} FCAL", 150, -1.5,1.5);
+	dH1_CostheStarB_FCALBCAL = new TH1D("CostheStarB_FCALBCAL", ";Costhe^{*B} BCAL/FCAL", 150, -1.5,1.5);
+	dH1_CostheStarA_BCAL = new TH1D("CostheStarA_BCAL", ";Costhe^{*A} BCAL", 150, -1.5,1.5);
+	dH1_CostheStarA_FCAL = new TH1D("CostheStarA_FCAL", ";Costhe^{*A} FCAL", 150, -1.5,1.5);
+	dH1_CostheStarA_FCALBCAL = new TH1D("CostheStarA_FCALBCAL", ";Costhe^{*A} BCAL/FCAL", 150, -1.5,1.5);
+	dH1_CostheStarDiff = new TH1D("CostheStarDiff", ";Costhe^{*A}-Costhe^{*B}", 100, -0.5,0.5);
 
 	// Note: The three histograms below should have the same binning as dH1_CostheStarB_* histograms
-	dH1_CostheStarB_BCAL_eff = new TH1F("CostheStarB_BCAL_eff", ";Costhe^{*B} BCAL Eff", 150, -1.5,1.5);
-	dH1_CostheStarB_FCAL_eff = new TH1F("CostheStarB_FCAL_eff", ";Costhe^{*B} FCAL Eff", 150, -1.5,1.5);
-	dH1_CostheStarB_FCALBCAL_eff = new TH1F("CostheStarB_FCALBCAL_eff", ";Costhe^{*B} BCAL/FCAL Eff", 150, -1.5,1.5);
+	dH1_CostheStarB_BCAL_eff = new TH1D("CostheStarB_BCAL_eff", ";Costhe^{*B} BCAL Eff", 150, -1.5,1.5);
+	dH1_CostheStarB_FCAL_eff = new TH1D("CostheStarB_FCAL_eff", ";Costhe^{*B} FCAL Eff", 150, -1.5,1.5);
+	dH1_CostheStarB_FCALBCAL_eff = new TH1D("CostheStarB_FCALBCAL_eff", ";Costhe^{*B} BCAL/FCAL Eff", 150, -1.5,1.5);
 
-	dH1_E2_w1_FCAL = new TH1F("E2_w1_FCAL", ";E2 FCAL w=1", 50, 0,2);
-	dH1_E2_w1_BCAL = new TH1F("E2_w1_BCAL", ";E2 BCAL w=1", 50, 0,2);
-	dH1_E2_w1_FCALBCAL = new TH1F("E2_w1_FCALBCAL", ";E2 FCAL/BCAL w=1", 50, 0,2);
+	dH1_E2_w1_FCAL = new TH1D("E2_w1_FCAL", ";E2 FCAL w=1", 50, 0,2);
+	dH1_E2_w1_BCAL = new TH1D("E2_w1_BCAL", ";E2 BCAL w=1", 50, 0,2);
+	dH1_E2_w1_FCALBCAL = new TH1D("E2_w1_FCALBCAL", ";E2 FCAL/BCAL w=1", 50, 0,2);
 
-	dH1_E2_weff_FCAL = new TH1F("E2_weff_FCAL", ";E2 FCAL weighted", 50, 0,2);
-	dH1_E2_weff_BCAL = new TH1F("E2_weff_BCAL", ";E2 BCAL weighted", 50, 0,2);
-	dH1_E2_weff_FCALBCAL = new TH1F("E2_weff_FCALBCAL", ";E2 FCAL/BCAL weighted", 50, 0,2);
+	dH1_E2_weff_FCAL = new TH1D("E2_weff_FCAL", ";E2 FCAL weighted", 50, 0,2);
+	dH1_E2_weff_BCAL = new TH1D("E2_weff_BCAL", ";E2 BCAL weighted", 50, 0,2);
+	dH1_E2_weff_FCALBCAL = new TH1D("E2_weff_FCALBCAL", ";E2 FCAL/BCAL weighted", 50, 0,2);
 
-	dH1_E2_eff_FCAL = new TH1F("E2_eff_FCAL", ";E2 FCAL Eff", 50, 0,2);
+	dH1_E2_eff_FCAL = new TH1D("E2_eff_FCAL", ";E2 FCAL Eff", 50, 0,2);
 	dH1_E2_eff_FCAL->Sumw2();
-	dH1_E2_eff_BCAL = new TH1F("E2_eff_BCAL", ";E2 BCAL Eff", 50, 0,2);
+	dH1_E2_eff_BCAL = new TH1D("E2_eff_BCAL", ";E2 BCAL Eff", 50, 0,2);
 	dH1_E2_eff_BCAL->Sumw2();
-	dH1_E2_eff_FCALBCAL = new TH1F("E2_eff_FCALBCAL", ";E2 FCAL/BCAL Eff", 50, 0,2);
+	dH1_E2_eff_FCALBCAL = new TH1D("E2_eff_FCALBCAL", ";E2 FCAL/BCAL Eff", 50, 0,2);
 	dH1_E2_eff_FCALBCAL->Sumw2();
 
+	dH1_Shower_Quality_FCAL1 = new TH1D("Shower_Quality_FCAL1", ";Shower_Quality_FCAL E1", 50, 0,1);
+	dH1_Shower_Quality_FCAL2 = new TH1D("Shower_Quality_FCAL2", ";Shower_Quality_FCAL E2", 50, 0,1);
+	dHist_TaggerAccidentals = new TH1D("dHist_TaggerAccidentals", "Vertex time - RF (ns)", 400,-20,20);
+	dHist_TaggerAccidentalsWeight = new TH1D("dHist_TaggerAccidentalsWeight", "Vertex time - RF (ns) Weighted", 400,-20,20);
 
-	dH1_Pi0Theta_BCAL = new TH1I("Pi0Theta_BCAL", ";Pi0Theta BCAL (deg)", 120, 0, 40);
-	dH1_Pi0Theta_FCAL = new TH1I("Pi0Theta_FCAL", ";Pi0Theta FCAL (deg)", 120, 0, 40);
-	dH1_Pi0Theta_FCALBCAL = new TH1I("Pi0Theta_FCALBCAL", ";Pi0Theta FCAL/BCAL (deg)", 120, 0, 40);
+	dP1_E2_eff_FCAL = new TProfile("dP1_E2_eff_FCAL", ";Profile: E2 FCAL Eff", 50, 0,2, 0,5);
+	dP1_E2_eff_BCAL = new TProfile("dP1_E2_eff_BCAL", ";Profile: E2 BCAL Eff", 50, 0,2, 0,5);
+	dP1_E2_eff_FCALBCAL = new TProfile("dP1_E2_eff_FCALBCAL", ";Profile: E2 FCAL/BCAL Eff", 50, 0,2, 0,5);
 
-	dH1_PhotonTheta_BCAL = new TH1I("PhotonTheta_BCAL", ";Photon Theta BCAL (deg)", 120, 0, 40);
-	dH1_PhotonTheta_FCAL = new TH1I("PhotonTheta_FCAL", ";Photon Theta FCAL (deg)", 120, 0, 40);
-	dH1_PhotonTheta_FCALBCAL = new TH1I("PhotonTheta_FCALBCAL", ";Photon Theta FCAL/BCAL (deg)", 120, 0, 40);
+	dH2_E2_w1_FCAL = new TH2D("dH2_E2_w1_FCAL", ";Angle vs E2 FCAL w=1", 50, 0,2, 20, 0, 10);
+	dH2_E2_w1_BCAL = new TH2D("dH2_E2_w1_BCAL", ";Angle vs E2 BCAL w=1", 50, 0,2, 40, 10, 50);
+	dH2_E2_w1_FCALBCAL = new TH2D("dH2_E2_w1_FCALBCAL", ";Angle vs E2 FCAL/BCAL w=1", 50, 0,2, 20, 8, 12);
+
+	dH2_E2_weff_FCAL = new TH2D("dH2_E2_weff_FCAL", ";Angle vs E2 FCAL weighted", 50, 0,2,  20, 0, 10);
+	dH2_E2_weff_BCAL = new TH2D("dH2_E2_weff_BCAL", ";Angle vs E2 BCAL weighted", 50, 0,2,  40, 10, 50);
+	dH2_E2_weff_FCALBCAL = new TH2D("dH2_E2_weff_FCALBCAL", ";Angle vs E2 FCAL/BCAL weighted", 50, 0,2,  20, 8, 12);
+
+	dH2_E2_eff_FCAL = new TH2D("dH2_E2_eff_FCAL", ";Angle vs E2 FCAL Eff", 50, 0,2,  20, 0, 10);
+	dH2_E2_eff_FCAL->Sumw2();
+	dH2_E2_eff_BCAL = new TH2D("dH2_E2_eff_BCAL", ";Angle vs E2 BCAL Eff", 50, 0,2,  40, 10, 50);
+	dH2_E2_eff_BCAL->Sumw2();
+	dH2_E2_eff_FCALBCAL = new TH2D("dH2_E2_eff_FCALBCAL", ";Angle vs E2 FCAL/BCAL Eff", 50, 0,2,  20, 8, 12);
+	dH2_E2_eff_FCALBCAL->Sumw2();
+
+	dP2_E2_eff_FCAL = new TProfile2D("dP2_E2_eff_FCAL", ";Profile2D: Angle vs E2 FCAL Eff", 50, 0,2,  20, 0, 10, 0,5);
+	dP2_E2_eff_BCAL = new TProfile2D("dP2_E2_eff_BCAL", ";Profile2D: Angle vs E2 BCAL Eff", 50, 0,2,  40, 10, 50, 0,5);
+	dP2_E2_eff_FCALBCAL = new TProfile2D("dP2_E2_eff_FCALBCAL", ";Profile2D: Angle vs E2 FCAL/BCAL Eff", 50, 0,2,  20, 8, 12, 0,5);
+
+
+	dH1_Pi0Theta_BCAL = new TH1D("Pi0Theta_BCAL", ";Pi0Theta BCAL (deg)", 120, 0, 40);
+	dH1_Pi0Theta_FCAL = new TH1D("Pi0Theta_FCAL", ";Pi0Theta FCAL (deg)", 120, 0, 40);
+	dH1_Pi0Theta_FCALBCAL = new TH1D("Pi0Theta_FCALBCAL", ";Pi0Theta FCAL/BCAL (deg)", 120, 0, 40);
+
+	dH1_PhotonTheta_BCAL = new TH1D("PhotonTheta_BCAL", ";Photon Theta BCAL (deg)", 120, 0, 40);
+	dH1_PhotonTheta_FCAL = new TH1D("PhotonTheta_FCAL", ";Photon Theta FCAL (deg)", 120, 0, 40);
+	dH1_PhotonTheta_FCALBCAL = new TH1D("PhotonTheta_FCALBCAL", ";Photon Theta FCAL/BCAL (deg)", 120, 0, 40);
 
 	dH2_ProtonP_MeasVsKin = new TH2I("ProtonP_MeasVsKin", ";Proton P MEAS Vs KIN (GeV)", 100, 0.0, 10.0, 100, 0.0, 10.0);
 	dH2_PiPlusP_MeasVsKin = new TH2I("PiPlusP_MeasVsKin", ";PiPlus P MEAS Vs KIN  (GeV)", 100, 0.0, 10.0, 100, 0.0, 10.0);
@@ -141,6 +184,14 @@ void DSelector_pi0pippim__B4_ver21::Init(TTree *locTree)
 	dH2_ProtondEdX_vs_P = new TH2I("ProtondEdX_vs_P", ";Proton dEdX vs P ", 100, 0.0, 4.0, 100, 0.0, 10.0);
 	dH2_PiPlusdEdX_vs_P = new TH2I("PiPlusdEdX_vs_P", ";Pi+ EdX vs P ", 100, 0.0, 4.0, 100, 0.0, 10.0);
 	dH2_PiMinusdEdX_vs_P = new TH2I("PiMinusdEdX_vs_P", ";Pi- EdX vs P ", 100, 0.0, 4.0, 100, 0.0, 10.0);
+	dH2_PiPlusTheta_vs_P = new TH2I("PiPlusTheta_vs_P", ";PiPlus Theta (deg) vs P (GeV)", 100, 0.0, 10.0, 120, 0, 40);
+	dH2_PiMinusTheta_vs_P = new TH2I("PiMinusTheta_vs_P", ";PiMinus Theta (deg) vs P (GeV)", 100, 0.0, 10.0, 120, 0, 40);
+	dH2_Photon1Theta_vs_E_BCAL = new TH2I("Photon1Theta_vs_E_BCAL", ";Photon 1 Theta (deg) vs E BCAL(GeV)", 100, 0.0, 10.0, 120, 0, 40);
+	dH2_Photon2Theta_vs_E_BCAL = new TH2I("Photon2Theta_vs_E_BCAL", ";Photon 2 Theta (deg) vs E BCAL(GeV)", 100, 0.0, 10.0, 120, 0, 40);
+	dH2_Photon1Theta_vs_E_FCAL = new TH2I("Photon1Theta_vs_E_FCAL", ";Photon 1 Theta (deg) vs E FCAL(GeV)", 100, 0.0, 10.0, 120, 0, 40);
+	dH2_Photon2Theta_vs_E_FCAL = new TH2I("Photon2Theta_vs_E_FCAL", ";Photon 2 Theta (deg) vs E FCAL(GeV)", 100, 0.0, 10.0, 120, 0, 40);
+	dH2_Photon1Theta_vs_E_FCALBCAL = new TH2I("Photon1Theta_vs_E_FCALBCAL", ";Photon 1 Theta (deg) vs E FCAL/BCAL(GeV)", 100, 0.0, 10.0, 120, 0, 40);
+	dH2_Photon2Theta_vs_E_FCALBCAL = new TH2I("Photon2Theta_vs_E_FCALBCAL", ";Photon 2 Theta (deg) vs E FCAL/BCAL(GeV)", 100, 0.0, 10.0, 120, 0, 40);
 
 	// EXAMPLE CUT PARAMETERS:
 	fMinProton_dEdx = new TF1("fMinProton_dEdx", "exp(-1.*[0]*x + [1]) + [2]", 0., 10.);
@@ -150,26 +201,31 @@ void DSelector_pi0pippim__B4_ver21::Init(TTree *locTree)
 	fMaxPion_dEdx = new TF1("fMaxPion_dEdx", "[0]*(1-exp(-1.*[1]*x))", 0., 10.);
 	fMaxPion_dEdx->SetParameters(4.0, 4.0);
 
-	// dMinKinFitCL = 5.73303e-7; //5.73303e-7;
-	dMinKinFitCL = 0.01;
-	// dMaxKinFitChiSq = 5.0;
-	dMaxKinFitChiSq = 40.0;
-	dMinBeamEnergy = 5.5;
-	dMaxBeamEnergy = 6.0;
+	dMinKinFitCL = 5.73303e-7; //5.73303e-7;
+	// dMinKinFitCL = 0.01;
+	dMaxKinFitChiSq = 5.0;
+	// dMaxKinFitChiSq = 40.0;
+	dMinBeamEnergy = 8.4;
+	dMaxBeamEnergy = 9.05;
+	// dMinFCALShape = 0.;   // use DCutAction
+	dMinFCALShape = 0.5;
 	dMin2piMass = 0.2;
 	dMax2piMass = 0.5;
 	dMin3piMass = 0.7;
 	dMax3piMass = 3.0;
-	// dMax3piMass = 0.85;
+	dMax3piMass_FCAL = 0.85;
 	dMinMissingMassSquared = -0.02;
 	dMaxMissingMassSquared = 0.02;
-	Epi0_min=3;
-	Epi0_max=5;
+	Epi0_min=1.0;
+	Epi0_max=10.0;
         dMinmisE = -1;    // initial values from Qiao
         dMaxmisE = 1;    // initial values from Qiao
-        dMaxmisTM = 0.25;    // initial values from Qiao
-	dMinGapTheta = 8.;
-	dMaxGapTheta = 12.;
+        // dMaxmisTM = 0.25;    // initial values from Qiao
+        dMaxmisTM = 0.40;    // value from George V. for eta, eta' studies
+	dMinGapTheta = 10.3;
+	dMaxGapTheta = 11.9; 
+	dMinPiPlusPMass = 1.8;
+	dMinPiMinusPMass = 1.8;
 
 	// initialize vector with efficiency parameters
 	Veffinfo.clear();     // clear vector to begin
@@ -227,7 +283,10 @@ Bool_t DSelector_pi0pippim__B4_ver21::Process(Long64_t locEntry)
 	// Use fStatus to set the return value of TTree::Process().
 	// The return value is currently not used.
 
-  if (locEntry > 1e7) {
+  dH1_CutSelection->Fill(1);
+
+   if (locEntry > 1e10) {
+  //    if (locEntry > 1000) {
     return 0;    // limit number of events to process for debugging.
   }
     else {
@@ -274,6 +333,11 @@ Bool_t DSelector_pi0pippim__B4_ver21::Process(Long64_t locEntry)
         set<map<Particle_t, set<Int_t> > > locUsedSoFar_Pi0;
         set<map<Particle_t, set<Int_t> > > locUsedSoFar_Pi0Measured;
         set<map<Particle_t, set<Int_t> > > locUsedSoFar_Mass3pi;
+        set<map<Particle_t, set<Int_t> > > locUsedSoFar_MassPiPlusP;
+        set<map<Particle_t, set<Int_t> > > locUsedSoFar_MassPiMinusP;
+        set<map<Particle_t, set<Int_t> > > locUsedSoFar_MassPiPlusPiMinus;
+        set<map<Particle_t, set<Int_t> > > locUsedSoFar_MassPiPlusPi0;
+        set<map<Particle_t, set<Int_t> > > locUsedSoFar_MassPiMinusPi0;
 
 	//EXAMPLE 2: Combo-specific info:
 		//In general: Could have multiple particles with the same PID: Use a set of Int_t's
@@ -299,9 +363,14 @@ Bool_t DSelector_pi0pippim__B4_ver21::Process(Long64_t locEntry)
 
 	/************************************************* LOOP OVER COMBOS *************************************************/
 
+
+        dH1_CutSelection->Fill(2);
+
 	//Loop over combos
 	for(UInt_t loc_i = 0; loc_i < Get_NumCombos(); ++loc_i)
 	{
+
+                dH1_CutSelection->Fill(3);
 
 		//Set branch array indices for combo and all combo particles
 		dComboWrapper->Set_ComboIndex(loc_i);
@@ -344,11 +413,20 @@ Bool_t DSelector_pi0pippim__B4_ver21::Process(Long64_t locEntry)
 
 		TLorentzVector locMissingP4 = locBeamP4 + dTargetP4 -  locPiPlusP4 - locPiMinusP4 - locDecayingPi0P4 - locProtonP4; 
 		TLorentzVector loc3piP4 = locPiPlusP4 + locPiMinusP4 + locDecayingPi0P4;
+		TLorentzVector locPiPlusPP4 = locPiPlusP4 + locProtonP4;
+		TLorentzVector locPiMinusPP4 = locPiMinusP4 + locProtonP4;
+		TLorentzVector locPiPlusPiMinusP4 = locPiPlusP4 + locPiMinusP4;
+		TLorentzVector locPiPlusPi0P4 = locPiPlusP4 + locDecayingPi0P4;
+		TLorentzVector locPiMinusPi0P4 = locPiMinusP4 + locDecayingPi0P4;
  
 		double ProtonP = sqrt(locProtonP4.E()*locProtonP4.E()-locProtonP4.M2());
+		double ProtonTheta =  locProtonP4.Vect().Theta()*180./3.14159;;
 		double PiPlusP = sqrt(locPiPlusP4.E()*locPiPlusP4.E()-locPiPlusP4.M2());
+		double PiPlusTheta =  locPiPlusP4.Vect().Theta()*180./3.14159;;
 		double PiMinusP = sqrt(locPiMinusP4.E()*locPiMinusP4.E()-locPiMinusP4.M2());
+		double PiMinusTheta =  locPiMinusP4.Vect().Theta()*180./3.14159;;
 		double Pi0P = sqrt(locDecayingPi0P4.E()*locDecayingPi0P4.E()-locDecayingPi0P4.M2());
+		double t = -2*locProtonP4.M()*(locProtonP4.E()-locProtonP4.M());
 
 		// Get Measured P4's:
 		//Step 0
@@ -363,8 +441,12 @@ Bool_t DSelector_pi0pippim__B4_ver21::Process(Long64_t locEntry)
 
                 double Ephoton1_BCAL = dPhoton1Wrapper->Get_Energy_BCAL();
                 double Ephoton1_FCAL = dPhoton1Wrapper->Get_Energy_FCAL();
+		// double FCAL_Shower_Quality1 = 0;
+		double FCAL_Shower_Quality1 = Ephoton1_FCAL>0? dPhoton1Wrapper->Get_Shower_Quality():0;
                 double Ephoton2_BCAL = dPhoton2Wrapper->Get_Energy_BCAL();
                 double Ephoton2_FCAL = dPhoton2Wrapper->Get_Energy_FCAL();
+		// double FCAL_Shower_Quality2 = 0;
+		double FCAL_Shower_Quality2 = Ephoton2_FCAL>0? dPhoton2Wrapper->Get_Shower_Quality():0;
 
 		double ProtonP_Measured = sqrt(locProtonP4_Measured.E()*locProtonP4_Measured.E()-locProtonP4_Measured.M2());
 		double PiPlusP_Measured = sqrt(locPiPlusP4_Measured.E()*locPiPlusP4_Measured.E()-locPiPlusP4_Measured.M2());
@@ -379,10 +461,16 @@ Bool_t DSelector_pi0pippim__B4_ver21::Process(Long64_t locEntry)
 		// Combine 4-vectors
 		TLorentzVector locMissingP4_Measured = locBeamP4_Measured + dTargetP4;
 		TLorentzVector loc3piP4_Measured = locPiPlusP4_Measured + locPiMinusP4_Measured + locPhoton1P4_Measured + locPhoton2P4_Measured;
+		TLorentzVector locPiPlusPP4_Measured = locPiPlusP4_Measured + locProtonP4_Measured;
+		TLorentzVector locPiMinusPP4_Measured = locPiMinusP4_Measured + locProtonP4_Measured;
+		TLorentzVector locPiPlusPiMinusP4_Measured = locPiPlusP4_Measured + locPiMinusP4_Measured;
+		TLorentzVector locPiPlusPi0P4_Measured = locPiPlusP4_Measured + locDecayingPi0P4_Measured;
+		TLorentzVector locPiMinusPi0P4_Measured = locPiMinusP4_Measured + locDecayingPi0P4_Measured;
 		locMissingP4_Measured -= loc3piP4_Measured + locProtonP4_Measured ;
 		TLorentzVector loc2gammaP4_Measured = locPhoton1P4_Measured + locPhoton2P4_Measured;
 
 
+                dH1_CutSelection->Fill(4);
 
 		/********************************************* COMBINE FOUR-MOMENTUM ********************************************/
 
@@ -412,6 +500,36 @@ Bool_t DSelector_pi0pippim__B4_ver21::Process(Long64_t locEntry)
 		dTreeInterface->Fill_TObject<TLorentzVector>("my_p4_array", locMyComboP4, loc_i);
 		*/
 
+
+		/******************************************** ACCIDENTAL SUBRACTION INFO *******************************************/
+		
+		// measured tagger time for combo
+		TLorentzVector locBeam_X4_Measured = dComboBeamWrapper->Get_X4_Measured(); 
+
+		// measured RF time for combo
+		double locRFTime = dComboWrapper->Get_RFTime_Measured(); 
+
+		double AccWeight =0;
+
+		// time difference between tagger and RF (corrected for production vertex position relative to target center)
+		double locBeamDeltaT = locBeam_X4_Measured.T() - (locRFTime + (locBeam_X4_Measured.Z() - dTargetCenter.Z())/29.9792458); 
+
+		if(fabs(locBeamDeltaT) < 0.5*4.008) { // prompt signal recieves a weight of 1
+			AccWeight = 1.;
+		}
+                else if (fabs(locBeamDeltaT) < 4.5*4.008) { // accidentals recieve a weight of 1/# RF bunches included in TTree (4 in this case)
+			AccWeight = -1./8.;
+		}
+		else {
+		        AccWeight = 0.;
+		}
+
+		// cout << " Tagger Accidentals: dTargetCenter=" <<  dTargetCenter.Z() << " locRFTime=" << locRFTime << " locBeamDeltaT=" << locBeamDeltaT << " AccWeight=" << AccWeight << endl;
+		// cout << " locBeam_X4_Measured="; locBeam_X4_Measured.Print();
+		dHist_TaggerAccidentals->Fill(locBeamDeltaT);
+		dHist_TaggerAccidentalsWeight->Fill(locBeamDeltaT,AccWeight);
+
+
 		/**************************************** EXAMPLE: HISTOGRAM BEAM ENERGY *****************************************/
 
 		Double_t CostheStarB, CostheStarA;
@@ -424,22 +542,40 @@ Bool_t DSelector_pi0pippim__B4_ver21::Process(Long64_t locEntry)
 		Double_t Pi0Theta = locDecayingPi0P4.Vect().Theta()*180./3.14159;
 		Double_t Photon1Theta = locPhoton1P4.Vect().Theta()*180./3.14159;
 		Double_t Photon2Theta = locPhoton2P4.Vect().Theta()*180./3.14159;
+		Double_t PiPlusPMass = locPiPlusPP4.M();
+		Double_t PiMinusPMass = locPiMinusPP4.M();
+		Double_t PiPlusPiMinusMass = locPiPlusPiMinusP4.M();
+		Double_t PiPlusPi0Mass = locPiPlusPi0P4.M();
+		Double_t PiMinusPi0Mass = locPiMinusPi0P4.M();
 
-		dH1_CL->Fill(kinfitCL);
-		dH1_Chi2NDF->Fill(kinfitChi2NDF);
+		dH1_CL->Fill(kinfitCL,AccWeight);
+		dH1_Chi2NDF->Fill(kinfitChi2NDF,AccWeight);
 		dH2_Chi2_vs_Pi0Theta->Fill(Pi0Theta,kinfitChi2NDF);
+
+
+                dH1_CutSelection->Fill(5);
 
 		// Event selection cuts.
 		if (kinfitCL < dMinKinFitCL) continue;
+                dH1_CutSelection->Fill(6);
 		if (kinfitChi2NDF > dMaxKinFitChiSq) continue;       // Chi2 cut
-		if (loc3piP4.M()<dMin3piMass || loc3piP4.M()>dMax3piMass) continue; 
-		if (locMissingMassSquared<dMinMissingMassSquared || locMissingMassSquared>dMaxMissingMassSquared) continue; 
-		if (misE<dMinmisE || misE>dMaxmisE) continue; 
+                dH1_CutSelection->Fill(7);
+		if (loc3piP4.M()<dMin3piMass || loc3piP4.M()>dMax3piMass) continue;
+                dH1_CutSelection->Fill(8); 
+		if (locMissingMassSquared<dMinMissingMassSquared || locMissingMassSquared>dMaxMissingMassSquared) continue;
+                dH1_CutSelection->Fill(9); 
+		if (misE<dMinmisE || misE>dMaxmisE) continue;
+                dH1_CutSelection->Fill(10); 
 		if (misTM>dMaxmisTM) continue;
-		if (locDecayingPi0P4.E() < Epi0_min || locDecayingPi0P4.E() > Epi0_max) continue;  
+                dH1_CutSelection->Fill(11);
+		if (locDecayingPi0P4.E() < Epi0_min || locDecayingPi0P4.E() > Epi0_max) continue;
+                dH1_CutSelection->Fill(12);  
 		// if (Pi0Theta > dMinGapTheta && Pi0Theta < dMaxGapTheta) continue; // angle cut on pi0
 		 if ((Photon1Theta > dMinGapTheta && Photon1Theta < dMaxGapTheta) || 
 		     (Photon2Theta > dMinGapTheta && Photon2Theta < dMaxGapTheta) ) continue;           // angle cuts on photons
+                dH1_CutSelection->Fill(13);
+		if (PiPlusPMass < dMinPiPlusPMass) continue;
+		if (PiMinusPMass < dMinPiMinusPMass) continue;
 
 
 		double locPiPlus_dEdx_CDC = dPiPlusWrapper->Get_dEdx_CDC()*1e6;
@@ -447,11 +583,13 @@ Bool_t DSelector_pi0pippim__B4_ver21::Process(Long64_t locEntry)
 			dComboWrapper->Set_IsComboCut(true);
 			continue;
 			}
+                dH1_CutSelection->Fill(14);
 		double locPiMinus_dEdx_CDC = dPiMinusWrapper->Get_dEdx_CDC()*1e6;
 		if(locPiMinus_dEdx_CDC > fMaxPion_dEdx->Eval(locPiMinusP4.P())) {
 			dComboWrapper->Set_IsComboCut(true);
 			continue;
 			}
+                dH1_CutSelection->Fill(15);
 
 		// Proton CDC dE/dx histogram and cut 
 		double locProton_dEdx_CDC = dProtonWrapper->Get_dEdx_CDC()*1e6;
@@ -459,6 +597,7 @@ Bool_t DSelector_pi0pippim__B4_ver21::Process(Long64_t locEntry)
 			dComboWrapper->Set_IsComboCut(true);
 			continue;
 			}
+                dH1_CutSelection->Fill(16);
 		dH2_PiPlusdEdX_vs_P->Fill(PiPlusP,locPiPlus_dEdx_CDC); 
 		dH2_PiMinusdEdX_vs_P->Fill(PiMinusP,locPiMinus_dEdx_CDC);
 		dH2_ProtondEdX_vs_P->Fill(ProtonP,locProton_dEdx_CDC); 
@@ -471,36 +610,38 @@ Bool_t DSelector_pi0pippim__B4_ver21::Process(Long64_t locEntry)
 		//Histogram beam energy (if haven't already)
 		if(locUsedSoFar_BeamEnergy.find(locBeamID) == locUsedSoFar_BeamEnergy.end())
 		{
-			dHist_BeamEnergy->Fill(locBeamP4.E());
+		  dHist_BeamEnergy->Fill(locBeamP4.E(),AccWeight);
 			locUsedSoFar_BeamEnergy.insert(locBeamID);
 		}
 		if(locUsedSoFar_ProtonP.find(locProtonTrackID) == locUsedSoFar_ProtonP.end())
 		{
-		        dH1_ProtonP->Fill(ProtonP);
+		        dH1_ProtonP->Fill(ProtonP,AccWeight);
 		        dH2_ProtonP_MeasVsKin->Fill(ProtonP,ProtonP_Measured);
 			locUsedSoFar_ProtonP.insert(locProtonTrackID);
 		}
 		if(locUsedSoFar_PiPlusP.find(locPiPlusTrackID) == locUsedSoFar_PiPlusP.end())
 		{
-		        dH1_PiPlusP->Fill(PiPlusP);
+		        dH1_PiPlusP->Fill(PiPlusP,AccWeight);
+			dH2_PiPlusTheta_vs_P->Fill(PiPlusP,PiPlusTheta,AccWeight);
 		        dH2_PiPlusP_MeasVsKin->Fill(PiPlusP,PiPlusP_Measured);
 			locUsedSoFar_PiPlusP.insert(locPiPlusTrackID);
 		}
 		if(locUsedSoFar_PiMinusP.find(locPiMinusTrackID) == locUsedSoFar_PiMinusP.end())
 		{
-			dH1_PiMinusP->Fill(PiMinusP);
+			dH1_PiMinusP->Fill(PiMinusP,AccWeight);
+			dH2_PiMinusTheta_vs_P->Fill(PiMinusP,PiMinusTheta,AccWeight);
 		        dH2_PiMinusP_MeasVsKin->Fill(PiMinusP,PiMinusP_Measured);
 			locUsedSoFar_PiMinusP.insert(locPiMinusTrackID);
 		}
 		if(locUsedSoFar_Photon1P.find(locPhoton1NeutralID) == locUsedSoFar_Photon1P.end())
 		{
-			dH1_Photon1P->Fill(locPhoton1P4.E());
+			dH1_Photon1P->Fill(locPhoton1P4.E(),AccWeight);
 		        dH2_Photon1P_MeasVsKin->Fill(locPhoton1P4.E(),locPhoton1P4_Measured.E());
 			locUsedSoFar_Photon1P.insert(locPhoton1NeutralID);
 		}
 		if(locUsedSoFar_Photon2P.find(locPhoton2NeutralID) == locUsedSoFar_Photon2P.end())
 		{
-			dH1_Photon2P->Fill(locPhoton2P4.E());
+			dH1_Photon2P->Fill(locPhoton2P4.E(),AccWeight);
 		        dH2_Photon2P_MeasVsKin->Fill(locPhoton2P4.E(),locPhoton2P4_Measured.E());
 			locUsedSoFar_Photon2P.insert(locPhoton2NeutralID);
 		}
@@ -512,9 +653,61 @@ Bool_t DSelector_pi0pippim__B4_ver21::Process(Long64_t locEntry)
 		locUsedThisCombo_Mass3pi[Gamma].insert(locPhoton2NeutralID);
 		if(locUsedSoFar_Mass3pi.find(locUsedThisCombo_Mass3pi) == locUsedSoFar_Mass3pi.end())
 		{
-			//unique missing mass combo: histogram it, and register this combo of particles
-		        dH1_Mass3pi->Fill(loc3piP4.M());
+			//unique 3pi mass combo: histogram it, and register this combo of particles
+		        dH1_Mass3pi->Fill(loc3piP4.M(),AccWeight);
 			locUsedSoFar_Mass3pi.insert(locUsedThisCombo_Mass3pi);
+		}
+
+                map<Particle_t, set<Int_t> > locUsedThisCombo_MassPiPlusP;
+		locUsedThisCombo_MassPiPlusP[PiPlus].insert(locPiPlusTrackID);
+		locUsedThisCombo_MassPiPlusP[Proton].insert(locProtonTrackID);
+		if(locUsedSoFar_MassPiPlusP.find(locUsedThisCombo_MassPiPlusP) == locUsedSoFar_MassPiPlusP.end())
+		{
+			//unique piplus p mass combo: histogram it, and register this combo of particles
+		        dH1_MassPiPlusP->Fill(PiPlusPMass,AccWeight);
+			locUsedSoFar_MassPiPlusP.insert(locUsedThisCombo_MassPiPlusP);
+		}
+
+                map<Particle_t, set<Int_t> > locUsedThisCombo_MassPiMinusP;
+		locUsedThisCombo_MassPiMinusP[PiMinus].insert(locPiMinusTrackID);
+		locUsedThisCombo_MassPiMinusP[Proton].insert(locProtonTrackID);
+		if(locUsedSoFar_MassPiMinusP.find(locUsedThisCombo_MassPiMinusP) == locUsedSoFar_MassPiMinusP.end())
+		{
+			//unique piminus p mass combo: histogram it, and register this combo of particles
+		        dH1_MassPiMinusP->Fill(PiMinusPMass,AccWeight);
+			locUsedSoFar_MassPiMinusP.insert(locUsedThisCombo_MassPiMinusP);
+		}
+
+                map<Particle_t, set<Int_t> > locUsedThisCombo_MassPiPlusPiMinus;
+		locUsedThisCombo_MassPiPlusPiMinus[PiPlus].insert(locPiPlusTrackID);
+		locUsedThisCombo_MassPiPlusPiMinus[PiMinus].insert(locPiMinusTrackID);
+		if(locUsedSoFar_MassPiPlusPiMinus.find(locUsedThisCombo_MassPiPlusPiMinus) == locUsedSoFar_MassPiPlusPiMinus.end())
+		{
+			//unique piplus piminus mass combo: histogram it, and register this combo of particles
+		        dH1_MassPiPlusPiMinus->Fill(PiPlusPiMinusMass,AccWeight);
+			locUsedSoFar_MassPiPlusPiMinus.insert(locUsedThisCombo_MassPiPlusPiMinus);
+		}
+
+                map<Particle_t, set<Int_t> > locUsedThisCombo_MassPiPlusPi0;
+		locUsedThisCombo_MassPiPlusPi0[PiPlus].insert(locPiPlusTrackID);
+		locUsedThisCombo_MassPiPlusPi0[Gamma].insert(locPhoton1NeutralID);
+		locUsedThisCombo_MassPiPlusPi0[Gamma].insert(locPhoton2NeutralID);
+		if(locUsedSoFar_MassPiPlusPi0.find(locUsedThisCombo_MassPiPlusPi0) == locUsedSoFar_MassPiPlusPi0.end())
+		{
+			//unique piplus piminus mass combo: histogram it, and register this combo of particles
+		        dH1_MassPiPlusPi0->Fill(PiPlusPi0Mass,AccWeight);
+			locUsedSoFar_MassPiPlusPi0.insert(locUsedThisCombo_MassPiPlusPi0);
+		}
+
+                map<Particle_t, set<Int_t> > locUsedThisCombo_MassPiMinusPi0;
+		locUsedThisCombo_MassPiMinusPi0[PiMinus].insert(locPiMinusTrackID);
+		locUsedThisCombo_MassPiMinusPi0[Gamma].insert(locPhoton1NeutralID);
+		locUsedThisCombo_MassPiMinusPi0[Gamma].insert(locPhoton2NeutralID);
+		if(locUsedSoFar_MassPiMinusPi0.find(locUsedThisCombo_MassPiMinusPi0) == locUsedSoFar_MassPiMinusPi0.end())
+		{
+			//unique piplus piminus mass combo: histogram it, and register this combo of particles
+		        dH1_MassPiMinusPi0->Fill(PiMinusPi0Mass,AccWeight);
+			locUsedSoFar_MassPiMinusPi0.insert(locUsedThisCombo_MassPiMinusPi0);
 		}
 
                 map<Particle_t, set<Int_t> > locUsedThisCombo_Pi0;
@@ -523,7 +716,7 @@ Bool_t DSelector_pi0pippim__B4_ver21::Process(Long64_t locEntry)
 		if(locUsedSoFar_Pi0.find(locUsedThisCombo_Pi0) == locUsedSoFar_Pi0.end())
 		{
 			//unique missing mass combo: histogram it, and register this combo of particles
-		        dH1_Pi0P->Fill(Pi0P);
+		        dH1_Pi0P->Fill(Pi0P,AccWeight);
 		        dH2_Pi0P_MeasVsKin->Fill(Pi0P,Pi0P_Measured);
 		        dH2_Photon2P_vs_Photon1P->Fill(locPhoton1P4.E(),locPhoton2P4.E());
 			locUsedSoFar_Pi0.insert(locUsedThisCombo_Pi0);
@@ -534,54 +727,81 @@ Bool_t DSelector_pi0pippim__B4_ver21::Process(Long64_t locEntry)
 		locUsedThisCombo_Pi0Measured[Gamma].insert(locPhoton2NeutralID);  
 		if(locUsedSoFar_Pi0Measured.find(locUsedThisCombo_Pi0Measured) == locUsedSoFar_Pi0Measured.end())
 		{
+                        dH1_CutSelection->Fill(17);
 			//unique missing mass combo: histogram it, and register this combo of particles
-		        dH1_Pi0MeasuredP->Fill(Pi0P_Measured);
-		        dH1_Pi0MeasuredMass->Fill(locDecayingPi0P4_Measured.M());
+		        dH1_Pi0MeasuredP->Fill(Pi0P_Measured,AccWeight);
+		        dH1_Pi0MeasuredMass->Fill(locDecayingPi0P4_Measured.M(),AccWeight);
 			locUsedSoFar_Pi0Measured.insert(locUsedThisCombo_Pi0Measured);
 			Int_t tempCal=0;
-			if (Ephoton1_FCAL>0 && Ephoton2_FCAL>0) {
+			if (Ephoton1_FCAL>0 && Ephoton2_FCAL>0 &&  loc3piP4.M()<dMax3piMass_FCAL) {
 			  CostheStarA = Ephoton1_FCAL>Ephoton2_FCAL? (Ebar-2*Ephoton2_FCAL)/Pbar :  (Ebar-2*Ephoton1_FCAL)/Pbar;
 			  CostheStarB = (Ephoton1_FCAL-Ephoton2_FCAL)/sqrt((Ephoton1_FCAL+Ephoton2_FCAL)*(Ephoton1_FCAL+Ephoton2_FCAL) - MPI*MPI);
 			  CostheStarB = CostheStarB>0? CostheStarB : -CostheStarB;   //make positive
-			  dH1_CostheStarB_FCAL->Fill(CostheStarB);
-			  dH1_CostheStarA_FCAL->Fill(CostheStarA);
-	                  dH1_Pi0Theta_FCAL->Fill(Pi0Theta);
-	                  dH1_PhotonTheta_FCAL->Fill(Photon1Theta);
-	                  dH1_PhotonTheta_FCAL->Fill(Photon2Theta);
-			  tempCal = 1;
+			  dH1_CostheStarB_FCAL->Fill(CostheStarB,AccWeight);
+			  dH1_CostheStarA_FCAL->Fill(CostheStarA,AccWeight);
+	                  dH1_Pi0Theta_FCAL->Fill(Pi0Theta,AccWeight);
+	                  dH1_PhotonTheta_FCAL->Fill(Photon1Theta,AccWeight);
+	                  dH1_PhotonTheta_FCAL->Fill(Photon2Theta,AccWeight);
+			  dH1_Chi2NDF_FCAL->Fill(kinfitChi2NDF,AccWeight);
+			  dH2_Photon1Theta_vs_E_FCAL->Fill(Ephoton1_FCAL,Photon1Theta);
+			  dH2_Photon2Theta_vs_E_FCAL->Fill(Ephoton1_FCAL,Photon2Theta);
+			  // cout << " FCAL_Shower_Quality2=" << FCAL_Shower_Quality2 << endl;
+			  Double_t FCAL_Shower_Quality_Cut = 0.5;
+			  dH1_t_FCAL->Fill(-t,AccWeight);
+			  if (FCAL_Shower_Quality1 > FCAL_Shower_Quality_Cut && FCAL_Shower_Quality2 > FCAL_Shower_Quality_Cut) {
+			    dH1_Shower_Quality_FCAL1->Fill(FCAL_Shower_Quality1,AccWeight);
+			    dH1_Shower_Quality_FCAL2->Fill(FCAL_Shower_Quality2,AccWeight);
+			    tempCal = 1;
+                            dH1_CutSelection->Fill(18);
+			  }
 			}
 			if (Ephoton1_BCAL>0 && Ephoton2_BCAL>0) {
 			  CostheStarA = Ephoton1_BCAL>Ephoton2_BCAL? (Ebar-2*Ephoton2_BCAL)/Pbar :  (Ebar-2*Ephoton1_BCAL)/Pbar;
 			  CostheStarB = (Ephoton1_BCAL-Ephoton2_BCAL)/sqrt((Ephoton1_BCAL+Ephoton2_BCAL)*(Ephoton1_BCAL+Ephoton2_BCAL) - MPI*MPI);
 			  CostheStarB = CostheStarB>0? CostheStarB : -CostheStarB;   //make positive
-			  dH1_CostheStarB_BCAL->Fill(CostheStarB);
-			  dH1_CostheStarA_BCAL->Fill(CostheStarA);
-	                  dH1_Pi0Theta_BCAL->Fill(Pi0Theta);
-	                  dH1_PhotonTheta_BCAL->Fill(Photon1Theta);
-	                  dH1_PhotonTheta_BCAL->Fill(Photon2Theta);
+			  dH1_CostheStarB_BCAL->Fill(CostheStarB,AccWeight);
+			  dH1_CostheStarA_BCAL->Fill(CostheStarA,AccWeight);
+	                  dH1_Pi0Theta_BCAL->Fill(Pi0Theta,AccWeight);
+	                  dH1_PhotonTheta_BCAL->Fill(Photon1Theta,AccWeight);
+	                  dH1_PhotonTheta_BCAL->Fill(Photon2Theta,AccWeight);
+			  dH1_Chi2NDF_BCAL->Fill(kinfitChi2NDF,AccWeight);
+			  dH2_Photon1Theta_vs_E_BCAL->Fill(Ephoton1_BCAL,Photon1Theta);
+			  dH2_Photon2Theta_vs_E_BCAL->Fill(Ephoton2_BCAL,Photon2Theta);
+			  dH1_t_BCAL->Fill(-t,AccWeight);
 			  tempCal = 2;
+                          dH1_CutSelection->Fill(19);
 			}
 			if (Ephoton1_BCAL>0 && Ephoton2_FCAL>0) {
 			  CostheStarA = Ephoton1_BCAL>Ephoton2_FCAL? (Ebar-2*Ephoton2_FCAL)/Pbar :  (Ebar-2*Ephoton1_BCAL)/Pbar;
 			  CostheStarB = (Ephoton1_BCAL-Ephoton2_FCAL)/sqrt((Ephoton1_BCAL+Ephoton2_FCAL)*(Ephoton1_BCAL+Ephoton2_FCAL) - MPI*MPI);
 			  CostheStarB = CostheStarB>0? CostheStarB : -CostheStarB;   //make positive
-			  dH1_CostheStarB_FCALBCAL->Fill(CostheStarB);
-			  dH1_CostheStarA_FCALBCAL->Fill(CostheStarA);
-	                  dH1_Pi0Theta_FCALBCAL->Fill(Pi0Theta);
-	                  dH1_PhotonTheta_FCALBCAL->Fill(Photon1Theta);
-	                  dH1_PhotonTheta_FCALBCAL->Fill(Photon2Theta);
+			  dH1_CostheStarB_FCALBCAL->Fill(CostheStarB,AccWeight);
+			  dH1_CostheStarA_FCALBCAL->Fill(CostheStarA,AccWeight);
+	                  dH1_Pi0Theta_FCALBCAL->Fill(Pi0Theta,AccWeight);
+	                  dH1_PhotonTheta_FCALBCAL->Fill(Photon1Theta,AccWeight);
+	                  dH1_PhotonTheta_FCALBCAL->Fill(Photon2Theta,AccWeight);
+			  dH1_Chi2NDF_FCALBCAL->Fill(kinfitChi2NDF,AccWeight);
+			  dH2_Photon1Theta_vs_E_FCALBCAL->Fill(Ephoton1_BCAL,Photon1Theta);
+			  dH2_Photon2Theta_vs_E_FCALBCAL->Fill(Ephoton2_FCAL,Photon2Theta);
+			  dH1_t_FCALBCAL->Fill(-t,AccWeight);
 			  tempCal = 3;
+                          dH1_CutSelection->Fill(20);
 			}
 			if (Ephoton1_FCAL>0 && Ephoton2_BCAL>0) {
 			  CostheStarA = Ephoton1_FCAL>Ephoton2_BCAL? (Ebar-2*Ephoton2_BCAL)/Pbar :  (Ebar-2*Ephoton1_FCAL)/Pbar;
 			  CostheStarB = (Ephoton1_FCAL-Ephoton2_BCAL)/sqrt((Ephoton1_FCAL+Ephoton2_BCAL)*(Ephoton1_FCAL+Ephoton2_BCAL) - MPI*MPI);
 			  CostheStarB = CostheStarB>0? CostheStarB : -CostheStarB;   //make positive
-			  dH1_CostheStarB_FCALBCAL->Fill(CostheStarB);
-			  dH1_CostheStarA_FCALBCAL->Fill(CostheStarA);
-	                  dH1_Pi0Theta_FCALBCAL->Fill(Pi0Theta);
-	                  dH1_PhotonTheta_FCALBCAL->Fill(Photon1Theta);
-	                  dH1_PhotonTheta_FCALBCAL->Fill(Photon2Theta);
+			  dH1_CostheStarB_FCALBCAL->Fill(CostheStarB,AccWeight);
+			  dH1_CostheStarA_FCALBCAL->Fill(CostheStarA,AccWeight);
+	                  dH1_Pi0Theta_FCALBCAL->Fill(Pi0Theta,AccWeight);
+	                  dH1_PhotonTheta_FCALBCAL->Fill(Photon1Theta,AccWeight);
+	                  dH1_PhotonTheta_FCALBCAL->Fill(Photon2Theta,AccWeight);
+			  dH1_Chi2NDF_FCALBCAL->Fill(kinfitChi2NDF,AccWeight);
+			  dH2_Photon1Theta_vs_E_FCALBCAL->Fill(Ephoton1_FCAL,Photon1Theta);
+			  dH2_Photon2Theta_vs_E_FCALBCAL->Fill(Ephoton2_BCAL,Photon2Theta);
+			  dH1_t_FCALBCAL->Fill(-t,AccWeight);
 			  tempCal = 3;
+                          dH1_CutSelection->Fill(20);
 			}
 			effinfo.cosB = CostheStarB;
 			effinfo.cosA = CostheStarA;
@@ -596,7 +816,7 @@ Bool_t DSelector_pi0pippim__B4_ver21::Process(Long64_t locEntry)
 			}
 			Veffinfo.push_back(effinfo);
 
-			dH1_CostheStarDiff->Fill(CostheStarA-CostheStarB);
+			dH1_CostheStarDiff->Fill(CostheStarA-CostheStarB,AccWeight);
 	      
 		}
 
@@ -683,6 +903,7 @@ Bool_t DSelector_pi0pippim__B4_ver21::Process(Long64_t locEntry)
 
 
 
+                dH1_CutSelection->Fill(21);
 	} // end of combo loop
 
 	//FILL HISTOGRAMS: Num combos / events surviving actions
@@ -766,6 +987,11 @@ void DSelector_pi0pippim__B4_ver21::Finalize(void)
     
     //
     // unpack costhestar distribution and intepret it as an efficiency distribution as a function of E2meas
+
+
+   TRandom1 *r1 = new TRandom1();
+   UInt_t  iseed = 23424111515;
+   r1->SetSeed(iseed);
     
     const Int_t ndim = dH1_CostheStarB_FCAL->GetNbinsX();
     Double_t xlo = dH1_CostheStarB_FCAL->GetBinLowEdge(1);
@@ -773,13 +999,13 @@ void DSelector_pi0pippim__B4_ver21::Finalize(void)
 
     int max_bin;
     max_bin = dH1_CostheStarB_BCAL->GetMaximumBin();
-    Double_t max_contentB_BCAL = dH1_CostheStarB_BCAL->GetBinContent(max_bin);     // use as normalization for efficiency
+    Double_t max_contentB_BCAL = dH1_CostheStarB_BCAL->GetBinContent(max_bin);     // No longer used: use as normalization for efficiency
     max_bin = dH1_CostheStarB_FCAL->GetMaximumBin();
-    Double_t max_contentB_FCAL = dH1_CostheStarB_FCAL->GetBinContent(max_bin);     // use as normalization for efficiency
+    Double_t max_contentB_FCAL = dH1_CostheStarB_FCAL->GetBinContent(max_bin);     //  No longer used: use as normalization for efficiency
     max_bin = dH1_CostheStarB_FCALBCAL->GetMaximumBin();
-    Double_t max_contentB_FCALBCAL = dH1_CostheStarB_FCALBCAL->GetBinContent(max_bin);     // use as normalization for efficiency
+    Double_t max_contentB_FCALBCAL = dH1_CostheStarB_FCALBCAL->GetBinContent(max_bin);     //  No longer used: use as normalization for efficiency
 
-    Double_t cosmin = 0;
+    Double_t cosmin = 0;                              // Use this interval to normalize ave [cosmin,cosmax] -> eff = 1 
     Double_t cosmax = 0.25;
     Double_t eff0 = 1.0;
     Double_t ave_contentB_BCAL = 0;
@@ -857,27 +1083,57 @@ void DSelector_pi0pippim__B4_ver21::Finalize(void)
 	  Double_t E1 = Veffinfo[kk].P4gamma1.E();
 	  Double_t E2 = Veffinfo[kk].P4gamma2.E();
 	  Int_t locCal = Veffinfo[kk].locCal;
+	  Double_t theta1 = Veffinfo[kk].P4gamma1.Theta()*180./3.14159;
+	  Double_t theta2 = Veffinfo[kk].P4gamma2.Theta()*180./3.14159;
 
 	  cout << endl << " Vector loop=" << Veffinfo.size() << " CostheA=" << CostheA << " CostheB=" << CostheB << " locCal=" << locCal << endl;  
-          cout << " P4gamma1: E1=" << Veffinfo[kk].P4gamma1.E() ; Veffinfo[kk].P4gamma1.Print();  
-          cout << " P4gamma2: E2=" << Veffinfo[kk].P4gamma2.E() ; Veffinfo[kk].P4gamma2.Print();
+          cout << " P4gamma1: E1=" << E1 << " Theta1=" << theta1 ; Veffinfo[kk].P4gamma1.Print();  
+          cout << " P4gamma2: E2=" << E1 << " Theta2=" << theta2 ; Veffinfo[kk].P4gamma2.Print();
 
 	  Int_t bin = (CostheB-xlo)/width + 1.5;
 
 	  if (locCal == 1) {
-	    Double_t eff=dH1_CostheStarB_FCAL_eff->GetBinContent(bin);
+	    Double_t effmean=dH1_CostheStarB_FCAL_eff->GetBinContent(bin);
+	    Double_t efferror=dH1_CostheStarB_FCAL_eff->GetBinError(bin);
+	    Double_t content=dH1_CostheStarB_FCAL->GetBinContent(bin);
+	    Double_t error = content > 0? effmean / sqrt(content): 0;
+            Double_t eff = r1->Gaus(effmean,efferror);
+	    eff = eff > 0? eff: 0;
+	    cout << " effmean=" << effmean << " efferror=" << efferror << " content=" << content << " error=" << error << " eff=" << eff << endl; 
 	    dH1_E2_w1_FCAL->Fill(E2,1.);
 	    dH1_E2_weff_FCAL->Fill(E2,eff);
+	    dH2_E2_w1_FCAL->Fill(E2,theta2,1.);
+	    dH2_E2_weff_FCAL->Fill(E2,theta2,eff);
+	    dP1_E2_eff_FCAL->Fill(E2,eff);
+	    dP2_E2_eff_FCAL->Fill(E2,theta2,eff);
 	  }
 	  else if (locCal == 2) {
-	    Double_t eff=dH1_CostheStarB_BCAL_eff->GetBinContent(bin);
+	    Double_t effmean=dH1_CostheStarB_BCAL_eff->GetBinContent(bin);
+	    Double_t efferror=dH1_CostheStarB_BCAL_eff->GetBinError(bin);
+	    Double_t content=dH1_CostheStarB_BCAL->GetBinContent(bin);
+	    Double_t error = content > 0? effmean / sqrt(content): 0;
+            Double_t eff = r1->Gaus(effmean,efferror);
+	    eff = eff > 0? eff: 0;
 	    dH1_E2_w1_BCAL->Fill(E2,1.);
 	    dH1_E2_weff_BCAL->Fill(E2,eff);
+	    dH2_E2_w1_BCAL->Fill(E2,theta2,1.);
+	    dH2_E2_weff_BCAL->Fill(E2,theta2,eff);
+	    dP1_E2_eff_BCAL->Fill(E2,eff);
+	    dP2_E2_eff_BCAL->Fill(E2,theta2,eff);
 	  }
 	  else if (locCal == 3) {
-	    Double_t eff=dH1_CostheStarB_FCALBCAL_eff->GetBinContent(bin);
+	    Double_t effmean=dH1_CostheStarB_FCALBCAL_eff->GetBinContent(bin);
+	    Double_t efferror=dH1_CostheStarB_FCALBCAL_eff->GetBinError(bin);
+	    Double_t content=dH1_CostheStarB_FCALBCAL->GetBinContent(bin);
+	    Double_t error = content > 0? effmean / sqrt(content): 0;
+            Double_t eff = r1->Gaus(effmean,efferror);
+	    eff = eff > 0? eff: 0;
 	    dH1_E2_w1_FCALBCAL->Fill(E2,1.);
 	    dH1_E2_weff_FCALBCAL->Fill(E2,eff);
+	    dH2_E2_w1_FCALBCAL->Fill(E2,theta2,1.);
+	    dH2_E2_weff_FCALBCAL->Fill(E2,theta2,eff);
+	    dP1_E2_eff_FCALBCAL->Fill(E2,eff);
+	    dP2_E2_eff_FCALBCAL->Fill(E2,theta2,eff);
 	  }
 	  else {
 	    cout << " *** DSelector illegal locCal=" << locCal << endl;
@@ -892,7 +1148,13 @@ void DSelector_pi0pippim__B4_ver21::Finalize(void)
 	dH1_E2_eff_BCAL->Divide(dH1_E2_w1_BCAL);
 	dH1_E2_eff_FCALBCAL->Add(dH1_E2_weff_FCALBCAL);
 	dH1_E2_eff_FCALBCAL->Divide(dH1_E2_w1_FCALBCAL);
- 
+
+	dH2_E2_eff_FCAL->Add(dH2_E2_weff_FCAL);
+	dH2_E2_eff_FCAL->Divide(dH2_E2_w1_FCAL);
+	dH2_E2_eff_BCAL->Add(dH2_E2_weff_BCAL);
+	dH2_E2_eff_BCAL->Divide(dH2_E2_w1_BCAL);
+	dH2_E2_eff_FCALBCAL->Add(dH2_E2_weff_FCALBCAL);
+	dH2_E2_eff_FCALBCAL->Divide(dH2_E2_w1_FCALBCAL);
 
 	//CALL THIS LAST
 	DSelector::Finalize(); //Saves results to the output file
