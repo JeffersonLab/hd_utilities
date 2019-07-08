@@ -419,6 +419,7 @@ void ConvertTree(TString treeName){
         //   *** Charged Track Hypotheses (indexed using <particleName>__ChargedIndex) ***
 
   TClonesArray *inChargedHypo__P4_Measured = new TClonesArray("TLorentzVector");
+      inTree->GetBranch       ("ChargedHypo__P4_Measured")->SetAutoDelete(kFALSE);
       inTree->SetBranchAddress("ChargedHypo__P4_Measured",&(inChargedHypo__P4_Measured));
   Float_t inChargedHypo__ChiSq_Tracking[MAXPARTICLES] = {}; 
       inTree->SetBranchAddress("ChargedHypo__ChiSq_Tracking", inChargedHypo__ChiSq_Tracking);
@@ -428,6 +429,7 @@ void ConvertTree(TString treeName){
         //   *** Neutral Particle Hypotheses (indexed using <particleName>__NeutralIndex) ***
 
   TClonesArray *inNeutralHypo__P4_Measured = new TClonesArray("TLorentzVector");
+      inTree->GetBranch       ("NeutralHypo__P4_Measured")->SetAutoDelete(kFALSE);
       inTree->SetBranchAddress("NeutralHypo__P4_Measured",&(inNeutralHypo__P4_Measured));
   Float_t inNeutralHypo__ShowerQuality[MAXPARTICLES] = {};
       inTree->SetBranchAddress("NeutralHypo__ShowerQuality", inNeutralHypo__ShowerQuality);
@@ -456,6 +458,7 @@ void ConvertTree(TString treeName){
   Int_t inBeamIndex[MAXCOMBOS] = {};
       inTree->SetBranchAddress("ComboBeam__BeamIndex", inBeamIndex);
   TClonesArray *inBeam__P4_KinFit = new TClonesArray("TLorentzVector");
+      inTree->GetBranch       ("ComboBeam__P4_KinFit")->SetAutoDelete(kFALSE);
       inTree->SetBranchAddress("ComboBeam__P4_KinFit", &(inBeam__P4_KinFit));
 
 
@@ -478,6 +481,7 @@ void ConvertTree(TString treeName){
       if (GlueXParticleClass(name) == "Charged"){
         TString var_P4_KinFit(name); var_P4_KinFit += "__P4_KinFit";
             inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector");
+            inTree->GetBranch       (var_P4_KinFit)->SetAutoDelete(kFALSE);
             inTree->SetBranchAddress(var_P4_KinFit,&(inP4_KinFit[pIndex]));
         TString var_ChargedIndex(name);  var_ChargedIndex += "__ChargedIndex";  
             inTree->SetBranchAddress(var_ChargedIndex,inChargedIndex[pIndex]);
@@ -488,6 +492,7 @@ void ConvertTree(TString treeName){
       if (GlueXParticleClass(name) == "Neutral"){
         TString var_P4_KinFit(name); var_P4_KinFit += "__P4_KinFit";
             inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector");
+            inTree->GetBranch       (var_P4_KinFit)->SetAutoDelete(kFALSE);
             inTree->SetBranchAddress(var_P4_KinFit,&(inP4_KinFit[pIndex]));
         TString var_NeutralIndex(name);  var_NeutralIndex += "__NeutralIndex";  
             inTree->SetBranchAddress(var_NeutralIndex,inNeutralIndex[pIndex]);
@@ -602,7 +607,10 @@ void ConvertTree(TString treeName){
     inThrown__P4->Clear();
     inBeam__P4_Measured->Clear();
     inBeam__X4_Measured->Clear();
-
+    inChargedHypo__P4_Measured->Clear();
+    inNeutralHypo__P4_Measured->Clear();
+    inBeam__P4_KinFit->Clear();
+    for (unsigned int i = 0; i < MAXPARTICLES; i++){ if (inP4_KinFit[i]) inP4_KinFit[i]->Clear(); }
 
       // get entries from the input tree and do tests
 
