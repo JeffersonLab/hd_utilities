@@ -376,7 +376,8 @@ void ConvertTree(TString treeName){
       if (gIsMC) inTree->SetBranchAddress("Thrown__MatchID", inThrown__MatchID);
   Float_t  inThrown__MatchFOM[MAXPARTICLES] = {};   
       if (gIsMC) inTree->SetBranchAddress("Thrown__MatchFOM", inThrown__MatchFOM);
-  TClonesArray *inThrown__P4 = new TClonesArray("TLorentzVector");
+  TClonesArray *inThrown__P4 = NULL;
+      if (gIsMC) inThrown__P4 = new TClonesArray("TLorentzVector", MAXPARTICLES);
       if (gIsMC) inTree->GetBranch       ("Thrown__P4")->SetAutoDelete(kFALSE);
       if (gIsMC) inTree->SetBranchAddress("Thrown__P4",&(inThrown__P4));
 
