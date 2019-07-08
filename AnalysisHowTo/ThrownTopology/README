@@ -1,0 +1,14 @@
+# Tutorial for Analysis How To's (JRS 7/3/19)
+
+# In this tutorial we show how to identify the thrown particle topology in the DSelector and fill histograms based on the TString associated with the topology 
+
+# Step 1) Open gp -> etapi0p ROOT tree and fill histograms in PROOF
+root -l -b -q runSelector.C
+
+# see files from analysis launch of bggen at /cache/halld/RunPeriod-2017-01/analysis/bggen/batch01/tree_pi0eta__B4_M17_M7/merged/ (these may need to be pulled from tape)
+
+# Step 2) Plot thrown topology selected histograms
+root -l plotThrownTopology.C
+
+# Notes:
+# This should be added as a DHistogramAction in the future but is currently done in the individual analyzer's DSelector for people to try it out and identify issues
