@@ -409,17 +409,17 @@ void ConvertTree(TString treeName){
 
         //   *** Beam Particles (indexed using ComboBeam__BeamIndex) ***
 
-  TClonesArray *inBeam__P4_Measured = new TClonesArray("TLorentzVector");
+  TClonesArray *inBeam__P4_Measured = new TClonesArray("TLorentzVector",MAXCOMBOS);
       inTree->GetBranch       ("Beam__P4_Measured")->SetAutoDelete(kFALSE);
       inTree->SetBranchAddress("Beam__P4_Measured", &(inBeam__P4_Measured));
-  TClonesArray *inBeam__X4_Measured = new TClonesArray("TLorentzVector");
+  TClonesArray *inBeam__X4_Measured = new TClonesArray("TLorentzVector",MAXCOMBOS);
       inTree->GetBranch       ("Beam__X4_Measured")->SetAutoDelete(kFALSE);
       inTree->SetBranchAddress("Beam__X4_Measured", &(inBeam__X4_Measured));
 
 
         //   *** Charged Track Hypotheses (indexed using <particleName>__ChargedIndex) ***
 
-  TClonesArray *inChargedHypo__P4_Measured = new TClonesArray("TLorentzVector");
+  TClonesArray *inChargedHypo__P4_Measured = new TClonesArray("TLorentzVector",MAXPARTICLES);
       inTree->GetBranch       ("ChargedHypo__P4_Measured")->SetAutoDelete(kFALSE);
       inTree->SetBranchAddress("ChargedHypo__P4_Measured",&(inChargedHypo__P4_Measured));
   Float_t inChargedHypo__ChiSq_Tracking[MAXPARTICLES] = {}; 
@@ -429,7 +429,7 @@ void ConvertTree(TString treeName){
 
         //   *** Neutral Particle Hypotheses (indexed using <particleName>__NeutralIndex) ***
 
-  TClonesArray *inNeutralHypo__P4_Measured = new TClonesArray("TLorentzVector");
+  TClonesArray *inNeutralHypo__P4_Measured = new TClonesArray("TLorentzVector",MAXPARTICLES);
       inTree->GetBranch       ("NeutralHypo__P4_Measured")->SetAutoDelete(kFALSE);
       inTree->SetBranchAddress("NeutralHypo__P4_Measured",&(inNeutralHypo__P4_Measured));
   Float_t inNeutralHypo__ShowerQuality[MAXPARTICLES] = {};
@@ -458,7 +458,7 @@ void ConvertTree(TString treeName){
 
   Int_t inBeamIndex[MAXCOMBOS] = {};
       inTree->SetBranchAddress("ComboBeam__BeamIndex", inBeamIndex);
-  TClonesArray *inBeam__P4_KinFit = new TClonesArray("TLorentzVector");
+  TClonesArray *inBeam__P4_KinFit = new TClonesArray("TLorentzVector",MAXCOMBOS);
       inTree->GetBranch       ("ComboBeam__P4_KinFit")->SetAutoDelete(kFALSE);
       inTree->SetBranchAddress("ComboBeam__P4_KinFit", &(inBeam__P4_KinFit));
 
@@ -481,7 +481,7 @@ void ConvertTree(TString treeName){
 
       if (GlueXParticleClass(name) == "Charged"){
         TString var_P4_KinFit(name); var_P4_KinFit += "__P4_KinFit";
-            inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector");
+            inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
             inTree->GetBranch       (var_P4_KinFit)->SetAutoDelete(kFALSE);
             inTree->SetBranchAddress(var_P4_KinFit,&(inP4_KinFit[pIndex]));
         TString var_ChargedIndex(name);  var_ChargedIndex += "__ChargedIndex";  
@@ -492,7 +492,7 @@ void ConvertTree(TString treeName){
 
       if (GlueXParticleClass(name) == "Neutral"){
         TString var_P4_KinFit(name); var_P4_KinFit += "__P4_KinFit";
-            inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector");
+            inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
             inTree->GetBranch       (var_P4_KinFit)->SetAutoDelete(kFALSE);
             inTree->SetBranchAddress(var_P4_KinFit,&(inP4_KinFit[pIndex]));
         TString var_NeutralIndex(name);  var_NeutralIndex += "__NeutralIndex";  
@@ -605,7 +605,7 @@ void ConvertTree(TString treeName){
 
       // clear arrays (from ROOT documentation)
 
-    inThrown__P4->Clear();
+    if (gIsMC) inThrown__P4->Clear();
     inBeam__P4_Measured->Clear();
     inBeam__X4_Measured->Clear();
     inChargedHypo__P4_Measured->Clear();
