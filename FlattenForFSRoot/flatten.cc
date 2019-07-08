@@ -377,6 +377,7 @@ void ConvertTree(TString treeName){
   Float_t  inThrown__MatchFOM[MAXPARTICLES] = {};   
       if (gIsMC) inTree->SetBranchAddress("Thrown__MatchFOM", inThrown__MatchFOM);
   TClonesArray *inThrown__P4 = new TClonesArray("TLorentzVector");
+      if (gIsMC) inTree->GetBranch       ("Thrown__P4")->SetAutoDelete(kFALSE);
       if (gIsMC) inTree->SetBranchAddress("Thrown__P4",&(inThrown__P4));
 
 
@@ -408,8 +409,10 @@ void ConvertTree(TString treeName){
         //   *** Beam Particles (indexed using ComboBeam__BeamIndex) ***
 
   TClonesArray *inBeam__P4_Measured = new TClonesArray("TLorentzVector");
+      inTree->GetBranch       ("Beam__P4_Measured")->SetAutoDelete(kFALSE);
       inTree->SetBranchAddress("Beam__P4_Measured", &(inBeam__P4_Measured));
   TClonesArray *inBeam__X4_Measured = new TClonesArray("TLorentzVector");
+      inTree->GetBranch       ("Beam__X4_Measured")->SetAutoDelete(kFALSE);
       inTree->SetBranchAddress("Beam__X4_Measured", &(inBeam__X4_Measured));
 
 
@@ -593,6 +596,16 @@ void ConvertTree(TString treeName){
   Long64_t nEntries = inTree->GetEntries();
   for (Long64_t iEntry = 0; iEntry < nEntries; iEntry++){
     if ((iEntry+1) % 10000 == 0) cout << "entry = " << iEntry+1 << endl;
+
+      // clear arrays (from ROOT documentation)
+
+    inThrown__P4->Clear();
+    inBeam__P4_Measured->Clear();
+    inBeam__X4_Measured->Clear();
+
+
+      // get entries from the input tree and do tests
+
     inTree->GetEntry(iEntry);
     if (inNumCombos > MAXCOMBOS){
       cout << "ERROR:  Too many combos (" << inNumCombos << ")!" << endl;
