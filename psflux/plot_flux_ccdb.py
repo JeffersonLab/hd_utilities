@@ -158,14 +158,6 @@ def main():
             if RCDB_POL_ANGLE != "" and run.get_condition('polarization_angle').value != float(RCDB_POL_ANGLE):
                 continue
 
-	# temporary to exclude runs before status_approved flag is set for RunPeriod-2018-08
-	if run.number == 51385 or run.number == 51404:
-		continue
-
-	# temporary while fixing runs
-	if run.number > 41830 and run.number < 41860:
-		continue
-
 	print "==%d=="%run.number
 
 	# Set livetime scale factor
@@ -199,19 +191,23 @@ def main():
     	radiationLength = converterLength/berilliumRL;
     	scale = livetime_ratio * 1./((7/9.) * radiationLength);
 
-	photon_endpoint_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/endpoint_energy", run.number, VARIATION, CALIBTIME)
-	photon_endpoint = photon_endpoint_assignment.constant_set.data_table
+        try:
+            photon_endpoint_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/endpoint_energy", run.number, VARIATION, CALIBTIME)
+            photon_endpoint = photon_endpoint_assignment.constant_set.data_table
 
-	tagm_tagged_flux_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/pair_spectrometer/lumi/tagm/tagged", run.number, VARIATION, CALIBTIME)
-	tagm_tagged_flux = tagm_tagged_flux_assignment.constant_set.data_table
-	tagm_scaled_energy_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/microscope/scaled_energy_range", run.number, VARIATION, CALIBTIME)
-	tagm_scaled_energy = tagm_scaled_energy_assignment.constant_set.data_table
+            tagm_tagged_flux_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/pair_spectrometer/lumi/tagm/tagged", run.number, VARIATION, CALIBTIME)
+            tagm_tagged_flux = tagm_tagged_flux_assignment.constant_set.data_table
+            tagm_scaled_energy_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/microscope/scaled_energy_range", run.number, VARIATION, CALIBTIME)
+            tagm_scaled_energy = tagm_scaled_energy_assignment.constant_set.data_table
+            
+            tagh_tagged_flux_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/pair_spectrometer/lumi/tagh/tagged", run.number, VARIATION, CALIBTIME)
+            tagh_tagged_flux = tagh_tagged_flux_assignment.constant_set.data_table
+            tagh_scaled_energy_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/hodoscope/scaled_energy_range", run.number, VARIATION, CALIBTIME)
+            tagh_scaled_energy = tagh_scaled_energy_assignment.constant_set.data_table
+        except:
+            print "Missing flux for run number = %d, contact jrsteven@jlab.org" % run.number 
+            sys.exit(0)
 
-	tagh_tagged_flux_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/pair_spectrometer/lumi/tagh/tagged", run.number, VARIATION, CALIBTIME)
-        tagh_tagged_flux = tagh_tagged_flux_assignment.constant_set.data_table
-        tagh_scaled_energy_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/hodoscope/scaled_energy_range", run.number, VARIATION, CALIBTIME)
-        tagh_scaled_energy = tagh_scaled_energy_assignment.constant_set.data_table
-	
         # fill tagm histogram
 	for tagm_flux, tagm_scaled_energy in zip(tagm_tagged_flux, tagm_scaled_energy):
 	    tagm_energy = float(photon_endpoint[0][0])*(float(tagm_scaled_energy[1])+float(tagm_scaled_energy[2]))/2.
