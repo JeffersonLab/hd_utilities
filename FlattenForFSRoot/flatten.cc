@@ -362,13 +362,13 @@ void ConvertTree(TString treeName){
 
         //   *** Thrown Non-Particle Data ***
 
-  UInt_t inNumThrown;
+  UInt_t inNumThrown = 0;
       if (gIsMC) inTree->SetBranchAddress("NumThrown", &inNumThrown);
 
 
         //   *** Thrown Beam Particle ***
 
-  Float_t inThrownBeam__GeneratedEnergy;
+  Float_t inThrownBeam__GeneratedEnergy = -1.0;
       if (gIsMC) inTree->SetBranchAddress("ThrownBeam__GeneratedEnergy", &inThrownBeam__GeneratedEnergy);
 
 
@@ -395,21 +395,21 @@ void ConvertTree(TString treeName){
 
         //   *** Non-Particle Data ***
 
-  UInt_t inRunNumber;        
+  UInt_t inRunNumber = 0;        
       inTree->SetBranchAddress("RunNumber", &inRunNumber);
-  ULong64_t inEventNumber;
+  ULong64_t inEventNumber = 0;
       inTree->SetBranchAddress("EventNumber", &inEventNumber);
-  TLorentzVector* inX4_Production;
+  TLorentzVector* inX4_Production = NULL;
       inTree->SetBranchAddress("X4_Production", &inX4_Production);
-  UInt_t inNumBeam;
+  UInt_t inNumBeam = 0;
       inTree->SetBranchAddress("NumBeam", &inNumBeam);
-  UInt_t inNumChargedHypos;
+  UInt_t inNumChargedHypos = 0;
       inTree->SetBranchAddress("NumChargedHypos", &inNumChargedHypos);
-  UInt_t inNumNeutralHypos; 
+  UInt_t inNumNeutralHypos = 0; 
       inTree->SetBranchAddress("NumNeutralHypos", &inNumNeutralHypos);
-  UInt_t inNumCombos;
+  UInt_t inNumCombos = 0;
       inTree->SetBranchAddress("NumCombos", &inNumCombos);
-  Bool_t inIsThrownTopology;
+  Bool_t inIsThrownTopology = false;
       if (gIsMC) inTree->SetBranchAddress("IsThrownTopology", &inIsThrownTopology);
 
 
