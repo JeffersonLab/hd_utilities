@@ -1,0 +1,188 @@
+
+
+\documentclass[11pt]{article}
+%\usepackage{graphicx}
+\usepackage{amssymb}
+%\usepackage[]{epsfig}
+%\usepackage{parskip}
+
+
+\textheight 8.0in
+\topmargin 0.0in
+\textwidth 6.0in
+\oddsidemargin 0.25in
+\evensidemargin 0.25in
+
+\newcommand{\gev}{\mathrm{GeV}}
+\newcommand{\gevc}{\mathrm{GeV/c}}
+\newcommand{\gevccgevcc}{\mathrm{GeV^2/c^4}}
+
+\begin{document}
+
+
+\title{Notes on the {\tt GlueX} {\tt FSRoot} Format}
+\author{Ryan Mitchell}
+\date{\today}
+\maketitle
+
+\abstract{This document describes the {\tt GlueX} {\tt FSRoot} format.}
+
+
+\tableofcontents
+
+\parindent 0pt
+\parskip 10pt
+
+\section{Overview}
+
+The {\tt GlueX} {\tt FSRoot} format is a flat {\tt TTree} format.  All variables are {\tt float}.  Multiple combinations within an event are listed as separate {\tt TTree} entries, just like entries from distinct events.  The format is designed to be compatible with the {\tt FSRoot} package.
+
+
+\section{Final States}
+\label{sec:numbering}
+
+The {\tt FSRoot} format can hold information from any final state composed of a combination of $\Lambda$~(decaying to $p\pi^-$), $\overline\Lambda$~(decaying to $\overline{p}\pi^+$), $e^+$, $e^-$, $\mu^+$, $\mu^-$, $p$, $\bar{p}$, $\eta$~(decaying to $\gamma\gamma$), $\gamma$, $K^+$, $K^-$,
+$K^0_S$~(decaying to $\pi^+\pi^-$), $\pi^+$, $\pi^-$, and $\pi^0$~(decaying to $\gamma\gamma$). 
+
+Final state particles are listed in trees in the following order:  
+\begin{verbatim}
+    Lambda ALambda e+ e- mu+ mu- p+ p- eta gamma K+ K- Ks pi+ pi- pi0
+\end{verbatim}
+For example, in the process $\gamma p\to\pi^+\pi^-J/\psi p; J/\psi\to\mu^+\mu^-$, the $\mu^+$ is particle~1, the $\mu^-$ is particle~2, the $p$ is particle~3, the $\pi^+$ is particle~4, and the $\pi^-$ is particle~5. Or as another example, in the process $\gamma p\to\gamma\chi_{c1}p; \chi_{c1}\to\eta\pi^0\pi^0$, the $p$ is particle~1, the $\eta$ is particle~2, the $\gamma$ is particle~3, one $\pi^0$ is particle~4, and the other $\pi^0$ is particle~5.  In cases like this where there are identical particles, no ordering is assumed.
+
+
+
+\section{Event Information}
+
+The ``Event Information'' variables contain information about the event as a whole:
+
+\begin{verbatim}
+  Run:          run number
+  Event:        event number
+  Chi2:         chi2 of the kinematic fit
+  Chi2DOF:      chi2/dof of the kinematic fit
+  RFTime:       RF time determined from the kinematic fit
+  RFDeltaT:     difference between RF time and beam photon time
+  EnUnusedSh:   total energy of unused showers
+  ProdVx:       production vertex parameters
+  ProdVy:         "
+  ProdVz:         "
+  ProdVt:         "
+  PxPB:         kinematically fit beam parameters
+  PyPB:           "
+  PzPB:           "
+  EnPB:           "
+  RPxPB:        measured beam parameters
+  RPyPB:          "
+  RPzPB:          "
+  REnPB:          "
+  MCPxPB:       thrown beam parameters (MC only)
+  MCPyPB:         "
+  MCPzPB:         "
+  MCEnPB:         "
+\end{verbatim}
+
+
+
+\section{Particle Four-Momenta}
+\label{sec:nt:momentum}
+
+The ``Particle Four-Momenta'' variables contain the four-momentum for each particle in the final state:
+
+\begin{verbatim}
+  (prefix)PxP(n):  x momentum of particle (n)
+  (prefix)PyP(n):  y momentum of particle (n)
+  (prefix)PzP(n):  z momentum of particle (n)
+  (prefix)EnP(n):  energy of particle (n)
+\end{verbatim}
+
+Different types of four-momenta are distinguished using prefixes.  Raw four-momenta have a prefix~{\tt R}; the final four-momenta (the fully-constrained four-momenta resulting from the kinematic fit) have no prefix; MC truth information have a prefix~{\tt MC}.
+
+Different particles are differentiated using the postfix {\tt P(n)}, where {\tt (n)} is the number of the particle in the ordered list.  Four-momenta for secondaries originating from particle~{\tt (n)}, such as the two $\gamma$'s from a $\pi^0$, are recorded using {\tt P(n)a} and {\tt P(n)b}, where the ordering follows the same conventions as above, or, in the case of identical daughter particles, no ordering is assumed.  As two examples: in the process $\gamma p \to\pi^+\pi^-J/\psi p; J/\psi\to\mu^+\mu^-$, the raw energy of the $\pi^+$ is given by {\tt REnP4}; and in the process $\gamma p \to \pi^+\pi^-J/\psi p; J/\psi\to\pi^+\pi^-\pi^0$, the y-momentum of a photon from the $\pi^0$ decay, after the kinematic fit, is given by {\tt PyP6b}.
+
+
+
+
+\section{Track Information}
+\label{sec:nt:track}
+
+Track information is written out for every reconstructed track that is part of a final state.  The postfix {\tt P(n)} follows the same convention as for the four-momenta (section~\ref{sec:nt:momentum}).
+\begin{verbatim}
+  TkChi2P(n):   chi2 of the track fit
+  TkNDFP(n):    number of degrees of freedom for the track fit
+\end{verbatim}
+
+
+\section{Shower Information}
+\label{sec:nt:track}
+
+Shower information is written out for every reconstructed shower that is part of a final state.  The postfix {\tt P(n)} follows the same convention as for the four-momenta (section~\ref{sec:nt:momentum}).
+\begin{verbatim}
+  ShQualityP(n):   a shower quality score
+\end{verbatim}
+
+
+\section{MC Truth Information}
+\label{sec:nt:track}
+
+The following variables can be used to help keep track of truth information.
+
+\begin{verbatim}
+  MCDecayCode1:      the true code1, described in the
+                       "final state numbering" section
+  MCDecayCode2:      the true code2, described in the
+                       "final state numbering" section
+  MCExtras:          1000 * number of neutrinos +
+                      100 * number of K_L +
+                       10 * number of neutrons +
+                        1 * number of antineutrons
+  MCSignal:          1 if the reconstructed final state
+                       matches the generated final state;
+                     0 otherwise
+\end{verbatim}
+
+
+\section{Final State Numbering}
+\label{sec:numbering}
+
+Final states are designated using two integers, ``code1'' and ``code2''.  The digits of each integer are used to specify the number of different particle types in the final state:
+\begin{verbatim}
+    code1 = abcdefg
+            a = number of gamma
+            b = number of K+ 
+            c = number of K- 
+            d = number of Ks  ( --> pi+ pi- )
+            e = number of pi+ 
+            f = number of pi- 
+            g = number of pi0 ( --> gamma gamma )
+
+    code2 = hijklmnop
+            h = number of Lambda (--> p+ pi-)
+            i = number of ALambda (--> p- pi+)
+            j = number of e+
+            k = number of e- 
+            l = number of mu+ 
+            m = number of mu-
+            n = number of p+ 
+            o = number of p- 
+            p = number of eta  ( --> gamma gamma )
+\end{verbatim}
+These integers are sometimes combined into a single string of the form:
+\begin{verbatim}
+    "code2_code1"
+\end{verbatim}
+Here are a few examples:
+\begin{verbatim}
+    "0_111":      pi+ pi- pi0
+    "0_1000002":  gamma pi0 pi0
+    "1_220000":   eta K+ K+ K- K-
+    "11000_110":  mu+ mu- pi+ pi-
+\end{verbatim}
+%In the root trees, four-momenta and other information are listed for particles in the following order:
+%\begin{verbatim}
+%    e+ e- mu+ mu- p+ p- eta gamma K+ K- Ks pi+ pi- pi0
+%\end{verbatim}
+
+
+
+\end{document}

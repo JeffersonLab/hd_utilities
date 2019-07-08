@@ -1,0 +1,4 @@
+flatten
+flatten.o
+test*
+*.root
