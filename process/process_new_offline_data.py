@@ -512,6 +512,10 @@ def ProcessOfflineData(args):
             #if config.VERBOSE>2:
             print "  merging %s ..."%file
             hddm_dir = join(config.INPUT_DIRECTORY,config.REVISION,file,"%06d"%run)
+            if not isdir(hddm_dir):
+                continue # folder does not exist
+            if not os.listdir(hddm_dir):
+                continue # or folder is empty
             merged_hddm_dir = join(config.INPUT_DIRECTORY,config.REVISION,file,"merged")
             if not isdir(merged_hddm_dir):
                 os.system("mkdir -m"+config.NEWDIR_MODE+" -p " + merged_hddm_dir)
