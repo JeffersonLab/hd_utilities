@@ -11,9 +11,15 @@ using namespace std;
 
 
   // maximum array indices
-  // [careful:  there were strange memory problems when these were set to 10000 and 100]
-static const int MAXCOMBOS = 1000;
-static const int MAXPARTICLES = 50;
+  //  careful:  these are taken from halld_recon/src/libraries/ANALYSIS/DEventWriterROOT.cc
+  //     (if there is a mismatch between these numbers and those numbers, 
+  //        strange behavior might result (and might not))
+static const int MAXTHROWN    =  20;
+static const int MAXBEAM      =  20;
+static const int MAXTRACKS    =  50;
+static const int MAXNEUTRALS  =  15;
+static const int MAXCOMBOS    = 100;
+static const int MAXPARTICLES =  65; // (MAXTRACKS+MAXNEUTRALS)
 
   // main routines to do the conversions
 void ConvertFile(TString inFileName, TString outFileName);
@@ -356,27 +362,29 @@ void ConvertTree(TString treeName){
 
         //   *** Thrown Non-Particle Data ***
 
-  UInt_t inNumThrown;
+  UInt_t inNumThrown = 0;
       if (gIsMC) inTree->SetBranchAddress("NumThrown", &inNumThrown);
 
 
         //   *** Thrown Beam Particle ***
 
-  Float_t inThrownBeam__GeneratedEnergy;
+  Float_t inThrownBeam__GeneratedEnergy = -1.0;
       if (gIsMC) inTree->SetBranchAddress("ThrownBeam__GeneratedEnergy", &inThrownBeam__GeneratedEnergy);
 
 
         //   *** Thrown Products ***
 
-  Int_t  inThrown__ParentIndex[MAXPARTICLES] = {};   
+  Int_t  inThrown__ParentIndex[MAXTHROWN] = {};   
       if (gIsMC) inTree->SetBranchAddress("Thrown__ParentIndex", inThrown__ParentIndex);
-  Int_t  inThrown__PID[MAXPARTICLES] = {};   
+  Int_t  inThrown__PID[MAXTHROWN] = {};   
       if (gIsMC) inTree->SetBranchAddress("Thrown__PID", inThrown__PID);
-  Int_t  inThrown__MatchID[MAXPARTICLES] = {};   
+  Int_t  inThrown__MatchID[MAXTHROWN] = {};   
       if (gIsMC) inTree->SetBranchAddress("Thrown__MatchID", inThrown__MatchID);
-  Float_t  inThrown__MatchFOM[MAXPARTICLES] = {};   
+  Float_t  inThrown__MatchFOM[MAXTHROWN] = {};   
       if (gIsMC) inTree->SetBranchAddress("Thrown__MatchFOM", inThrown__MatchFOM);
-  TClonesArray *inThrown__P4 = new TClonesArray("TLorentzVector");
+  TClonesArray *inThrown__P4 = NULL;
+      if (gIsMC) inThrown__P4 = new TClonesArray("TLorentzVector", MAXTHROWN);
+      if (gIsMC) inTree->GetBranch       ("Thrown__P4")->SetAutoDelete(kFALSE);
       if (gIsMC) inTree->SetBranchAddress("Thrown__P4",&(inThrown__P4));
 
 
@@ -387,46 +395,50 @@ void ConvertTree(TString treeName){
 
         //   *** Non-Particle Data ***
 
-  UInt_t inRunNumber;        
+  UInt_t inRunNumber = 0;        
       inTree->SetBranchAddress("RunNumber", &inRunNumber);
-  ULong64_t inEventNumber;
+  ULong64_t inEventNumber = 0;
       inTree->SetBranchAddress("EventNumber", &inEventNumber);
-  TLorentzVector* inX4_Production;
+  TLorentzVector* inX4_Production = NULL;
       inTree->SetBranchAddress("X4_Production", &inX4_Production);
-  UInt_t inNumBeam;
+  UInt_t inNumBeam = 0;
       inTree->SetBranchAddress("NumBeam", &inNumBeam);
-  UInt_t inNumChargedHypos;
+  UInt_t inNumChargedHypos = 0;
       inTree->SetBranchAddress("NumChargedHypos", &inNumChargedHypos);
-  UInt_t inNumNeutralHypos; 
+  UInt_t inNumNeutralHypos = 0; 
       inTree->SetBranchAddress("NumNeutralHypos", &inNumNeutralHypos);
-  UInt_t inNumCombos;
+  UInt_t inNumCombos = 0;
       inTree->SetBranchAddress("NumCombos", &inNumCombos);
-  Bool_t inIsThrownTopology;
+  Bool_t inIsThrownTopology = false;
       if (gIsMC) inTree->SetBranchAddress("IsThrownTopology", &inIsThrownTopology);
 
 
         //   *** Beam Particles (indexed using ComboBeam__BeamIndex) ***
 
-  TClonesArray *inBeam__P4_Measured = new TClonesArray("TLorentzVector");
+  TClonesArray *inBeam__P4_Measured = new TClonesArray("TLorentzVector",MAXBEAM);
+      inTree->GetBranch       ("Beam__P4_Measured")->SetAutoDelete(kFALSE);
       inTree->SetBranchAddress("Beam__P4_Measured", &(inBeam__P4_Measured));
-  TClonesArray *inBeam__X4_Measured = new TClonesArray("TLorentzVector");
+  TClonesArray *inBeam__X4_Measured = new TClonesArray("TLorentzVector",MAXBEAM);
+      inTree->GetBranch       ("Beam__X4_Measured")->SetAutoDelete(kFALSE);
       inTree->SetBranchAddress("Beam__X4_Measured", &(inBeam__X4_Measured));
 
 
         //   *** Charged Track Hypotheses (indexed using <particleName>__ChargedIndex) ***
 
-  TClonesArray *inChargedHypo__P4_Measured = new TClonesArray("TLorentzVector");
+  TClonesArray *inChargedHypo__P4_Measured = new TClonesArray("TLorentzVector",MAXTRACKS);
+      inTree->GetBranch       ("ChargedHypo__P4_Measured")->SetAutoDelete(kFALSE);
       inTree->SetBranchAddress("ChargedHypo__P4_Measured",&(inChargedHypo__P4_Measured));
-  Float_t inChargedHypo__ChiSq_Tracking[MAXPARTICLES] = {}; 
+  Float_t inChargedHypo__ChiSq_Tracking[MAXTRACKS] = {}; 
       inTree->SetBranchAddress("ChargedHypo__ChiSq_Tracking", inChargedHypo__ChiSq_Tracking);
-  UInt_t  inChargedHypo__NDF_Tracking[MAXPARTICLES] = {};   
+  UInt_t  inChargedHypo__NDF_Tracking[MAXTRACKS] = {};   
       inTree->SetBranchAddress("ChargedHypo__NDF_Tracking", inChargedHypo__NDF_Tracking);
 
         //   *** Neutral Particle Hypotheses (indexed using <particleName>__NeutralIndex) ***
 
-  TClonesArray *inNeutralHypo__P4_Measured = new TClonesArray("TLorentzVector");
+  TClonesArray *inNeutralHypo__P4_Measured = new TClonesArray("TLorentzVector",MAXNEUTRALS);
+      inTree->GetBranch       ("NeutralHypo__P4_Measured")->SetAutoDelete(kFALSE);
       inTree->SetBranchAddress("NeutralHypo__P4_Measured",&(inNeutralHypo__P4_Measured));
-  Float_t inNeutralHypo__ShowerQuality[MAXPARTICLES] = {};
+  Float_t inNeutralHypo__ShowerQuality[MAXNEUTRALS] = {};
       inTree->SetBranchAddress("NeutralHypo__ShowerQuality", inNeutralHypo__ShowerQuality);
 
 
@@ -452,7 +464,8 @@ void ConvertTree(TString treeName){
 
   Int_t inBeamIndex[MAXCOMBOS] = {};
       inTree->SetBranchAddress("ComboBeam__BeamIndex", inBeamIndex);
-  TClonesArray *inBeam__P4_KinFit = new TClonesArray("TLorentzVector");
+  TClonesArray *inBeam__P4_KinFit = new TClonesArray("TLorentzVector",MAXCOMBOS);
+      inTree->GetBranch       ("ComboBeam__P4_KinFit")->SetAutoDelete(kFALSE);
       inTree->SetBranchAddress("ComboBeam__P4_KinFit", &(inBeam__P4_KinFit));
 
 
@@ -474,7 +487,8 @@ void ConvertTree(TString treeName){
 
       if (GlueXParticleClass(name) == "Charged"){
         TString var_P4_KinFit(name); var_P4_KinFit += "__P4_KinFit";
-            inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector");
+            inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
+            inTree->GetBranch       (var_P4_KinFit)->SetAutoDelete(kFALSE);
             inTree->SetBranchAddress(var_P4_KinFit,&(inP4_KinFit[pIndex]));
         TString var_ChargedIndex(name);  var_ChargedIndex += "__ChargedIndex";  
             inTree->SetBranchAddress(var_ChargedIndex,inChargedIndex[pIndex]);
@@ -484,7 +498,8 @@ void ConvertTree(TString treeName){
 
       if (GlueXParticleClass(name) == "Neutral"){
         TString var_P4_KinFit(name); var_P4_KinFit += "__P4_KinFit";
-            inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector");
+            inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
+            inTree->GetBranch       (var_P4_KinFit)->SetAutoDelete(kFALSE);
             inTree->SetBranchAddress(var_P4_KinFit,&(inP4_KinFit[pIndex]));
         TString var_NeutralIndex(name);  var_NeutralIndex += "__NeutralIndex";  
             inTree->SetBranchAddress(var_NeutralIndex,inNeutralIndex[pIndex]);
@@ -593,12 +608,25 @@ void ConvertTree(TString treeName){
   Long64_t nEntries = inTree->GetEntries();
   for (Long64_t iEntry = 0; iEntry < nEntries; iEntry++){
     if ((iEntry+1) % 10000 == 0) cout << "entry = " << iEntry+1 << endl;
+
+      // clear arrays (from ROOT documentation)
+
+    if (gIsMC) inThrown__P4->Clear();
+    inBeam__P4_Measured->Clear();
+    inBeam__X4_Measured->Clear();
+    inChargedHypo__P4_Measured->Clear();
+    inNeutralHypo__P4_Measured->Clear();
+    inBeam__P4_KinFit->Clear();
+    for (unsigned int i = 0; i < MAXPARTICLES; i++){ if (inP4_KinFit[i]) inP4_KinFit[i]->Clear(); }
+
+      // get entries from the input tree and do tests
+
     inTree->GetEntry(iEntry);
     if (inNumCombos > MAXCOMBOS){
       cout << "ERROR:  Too many combos (" << inNumCombos << ")!" << endl;
       exit(0);
     }
-    if (inNumChargedHypos + inNumNeutralHypos > MAXPARTICLES){
+    if ((inNumChargedHypos > MAXTRACKS) || (inNumNeutralHypos > MAXNEUTRALS)){
       cout << "ERROR:  Too many hypotheses!" << endl;
       cout << "   NumChargedHypos = " << inNumChargedHypos << endl;
       cout << "   NumNeutralHypos = " << inNumNeutralHypos << endl;
