@@ -12,14 +12,14 @@ using namespace std;
 
   // maximum array indices
   //  careful:  these are taken from halld_recon/src/libraries/ANALYSIS/DEventWriterROOT.cc
-  //     (if there is a mismatch between these numbers and those numbers, 
-  //        strange behavior might result (and might not))
-static const int MAXTHROWN    =  20;
-static const int MAXBEAM      =  20;
-static const int MAXTRACKS    =  50;
-static const int MAXNEUTRALS  =  15;
-static const int MAXCOMBOS    = 100;
-static const int MAXPARTICLES =  65; // (MAXTRACKS+MAXNEUTRALS)
+  //       and then scaled to give a buffer
+  //     (if the sizes are too big, strange behavior sometimes results)
+static const int MAXTHROWN    =  20*2;
+static const int MAXBEAM      =  20*2;
+static const int MAXTRACKS    =  50*2;
+static const int MAXNEUTRALS  =  15*2;
+static const int MAXCOMBOS    = 100*5;
+static const int MAXPARTICLES =  65*2; // (MAXTRACKS+MAXNEUTRALS)
 
   // main routines to do the conversions
 void ConvertFile(TString inFileName, TString outFileName);
@@ -624,10 +624,14 @@ void ConvertTree(TString treeName){
     inTree->GetEntry(iEntry);
     if (inNumCombos > MAXCOMBOS){
       cout << "ERROR:  Too many combos (" << inNumCombos << ")!" << endl;
+      cout << "   Entry = " << iEntry << endl;
+      cout << "   NumChargedHypos = " << inNumChargedHypos << endl;
+      cout << "   NumNeutralHypos = " << inNumNeutralHypos << endl;
       exit(0);
     }
     if ((inNumChargedHypos > MAXTRACKS) || (inNumNeutralHypos > MAXNEUTRALS)){
       cout << "ERROR:  Too many hypotheses!" << endl;
+      cout << "   Entry = " << iEntry << endl;
       cout << "   NumChargedHypos = " << inNumChargedHypos << endl;
       cout << "   NumNeutralHypos = " << inNumNeutralHypos << endl;
       exit(0);
