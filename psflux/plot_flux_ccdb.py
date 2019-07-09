@@ -4,7 +4,7 @@
 # Author: Justin Stevens (jrsteven@jlab.org)
 
 import os,sys
-from ROOT import TFile,TGraph,TH1F,TF1
+from ROOT import TFile,TGraph,TH1F,TF1,gRandom
 import rcdb
 from optparse import OptionParser
 from array import array
@@ -17,6 +17,7 @@ from ccdb import Directory, TypeTable, Assignment, ConstantSet
 
 def LoadCCDB():
     sqlite_connect_str = "mysql://ccdb_user@hallddb.jlab.org/ccdb"
+    #sqlite_connect_str = "sqlite:////work/halld2/home/jrsteven/tables/hd_utilities/psflux/ccdb.sqlite"
     provider = ccdb.AlchemyProvider()                           # this class has all CCDB manipulation functions
     provider.connect(sqlite_connect_str)                        # use usual connection string to connect to database
     provider.authentication.current_user_name = "psflux_user"   # to have a name in logs
@@ -50,6 +51,7 @@ def main():
     NBINS = 1000
     EMIN = 2.0
     EMAX = 12.0
+    UNIFORM = False
 
     pp = pprint.PrettyPrinter(indent=4)
 
@@ -73,6 +75,8 @@ def main():
                      help="RCDB query")
     parser.add_option("-t","--calib-time", dest="calib_time",
                      help="CCDB calibtime Y-M-D-h-min-s")
+    parser.add_option("-u","--uniform", dest="uniform",
+		     help="Uniform option")
 
     (options, args) = parser.parse_args(sys.argv)
 
@@ -102,6 +106,8 @@ def main():
         except:
             print "Calibration time format: Y-M-D-h-min-s"
             sys.exit(0)
+    if options.uniform:
+	UNIFORM = True
 
     # Load CCDB
     print "CCDB calibtime = " + CALIBTIME.strftime("%Y-%m-%d-%H-%M-%S")
@@ -127,6 +133,8 @@ def main():
     tagh_tagged_flux = array('f')
     tagh_scaled_energy = array('f')
 
+    if UNIFORM:
+	htagged_flux = TH1F("tagged_flux_uniform", "Uniform tagged flux; Photon Beam Energy (GeV); Flux", NBINS, EMIN, EMAX)
     htagged_fluxErr = TH1F("tagged_flux", "Tagged flux; Photon Beam Energy (GeV); Flux", NBINS, EMIN, EMAX)
     htagged_fluxErr.Sumw2()
 
@@ -136,7 +144,7 @@ def main():
             print "ERROR: polarization angle (option -a or --angle) specified, but polarization flag (option -p or --pol) was not. "
             print "Please rerun and specify a polarization flag (PARA or PERP) while running"
             return
-			
+
         # select run conditions: AMO, PARA, and PERP and polarization angle
         if RCDB_POLARIZATION != "":
             conditions_by_name = run.get_conditions_by_name()
@@ -149,10 +157,6 @@ def main():
                 continue
             if RCDB_POL_ANGLE != "" and run.get_condition('polarization_angle').value != float(RCDB_POL_ANGLE):
                 continue
-
-	# temporary to exclude runs before status_approved flag is set for RunPeriod-2018-08
-	if run.number == 51385 or run.number == 51404:
-		continue
 
 	print "==%d=="%run.number
 
@@ -187,22 +191,37 @@ def main():
     	radiationLength = converterLength/berilliumRL;
     	scale = livetime_ratio * 1./((7/9.) * radiationLength);
 
-	photon_endpoint_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/endpoint_energy", run.number, VARIATION, CALIBTIME)
-	photon_endpoint = photon_endpoint_assignment.constant_set.data_table
+        try:
+            photon_endpoint_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/endpoint_energy", run.number, VARIATION, CALIBTIME)
+            photon_endpoint = photon_endpoint_assignment.constant_set.data_table
 
-	tagm_tagged_flux_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/pair_spectrometer/lumi/tagm/tagged", run.number, VARIATION, CALIBTIME)
-	tagm_tagged_flux = tagm_tagged_flux_assignment.constant_set.data_table
-	tagm_scaled_energy_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/microscope/scaled_energy_range", run.number, VARIATION, CALIBTIME)
-	tagm_scaled_energy = tagm_scaled_energy_assignment.constant_set.data_table
+            tagm_tagged_flux_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/pair_spectrometer/lumi/tagm/tagged", run.number, VARIATION, CALIBTIME)
+            tagm_tagged_flux = tagm_tagged_flux_assignment.constant_set.data_table
+            tagm_scaled_energy_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/microscope/scaled_energy_range", run.number, VARIATION, CALIBTIME)
+            tagm_scaled_energy = tagm_scaled_energy_assignment.constant_set.data_table
+            
+            tagh_tagged_flux_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/pair_spectrometer/lumi/tagh/tagged", run.number, VARIATION, CALIBTIME)
+            tagh_tagged_flux = tagh_tagged_flux_assignment.constant_set.data_table
+            tagh_scaled_energy_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/hodoscope/scaled_energy_range", run.number, VARIATION, CALIBTIME)
+            tagh_scaled_energy = tagh_scaled_energy_assignment.constant_set.data_table
+        except:
+            print "Missing flux for run number = %d, contact jrsteven@jlab.org" % run.number 
+            sys.exit(0)
 
-	tagh_tagged_flux_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/pair_spectrometer/lumi/tagh/tagged", run.number, VARIATION, CALIBTIME)
-        tagh_tagged_flux = tagh_tagged_flux_assignment.constant_set.data_table
-        tagh_scaled_energy_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/hodoscope/scaled_energy_range", run.number, VARIATION, CALIBTIME)
-        tagh_scaled_energy = tagh_scaled_energy_assignment.constant_set.data_table
-	
         # fill tagm histogram
 	for tagm_flux, tagm_scaled_energy in zip(tagm_tagged_flux, tagm_scaled_energy):
-            tagm_energy = float(photon_endpoint[0][0])*(float(tagm_scaled_energy[1])+float(tagm_scaled_energy[2]))/2.
+	    tagm_energy = float(photon_endpoint[0][0])*(float(tagm_scaled_energy[1])+float(tagm_scaled_energy[2]))/2.
+
+	    if UNIFORM:
+	            tagm_energy_low = float(photon_endpoint[0][0])*(float(tagm_scaled_energy[1]))
+		    tagm_energy_high = float(photon_endpoint[0][0])*(float(tagm_scaled_energy[2]))
+		    flux = float(tagm_flux[1])
+		    i = 0
+		    while i <= flux:
+			energy = tagm_energy_low + gRandom.Uniform(tagm_energy_high-tagm_energy_low)
+		    	htagged_flux.Fill(energy,scale)
+			i += 1
+
             bin_energy = htagged_fluxErr.FindBin(tagm_energy)
             previous_bincontent = htagged_fluxErr.GetBinContent(bin_energy)
             previous_binerror = math.sqrt(htagged_fluxErr.GetBinError(bin_energy)) # error^2 stored in histogram
@@ -212,8 +231,25 @@ def main():
             htagged_fluxErr.SetBinError(bin_energy, new_binerror)
         
         # fill tagh histogram
+	previous_energy_scaled_low = 999. # keep track of low energy bin boundry to avoid overlaps
 	for tagh_flux, tagh_scaled_energy in zip(tagh_tagged_flux, tagh_scaled_energy):
             tagh_energy = float(photon_endpoint[0][0])*(float(tagh_scaled_energy[1])+float(tagh_scaled_energy[2]))/2.
+
+	    if UNIFORM:
+		    tagh_energy_low = float(photon_endpoint[0][0])*(float(tagh_scaled_energy[1]))
+ 	    	    tagh_energy_high = float(photon_endpoint[0][0])*(float(tagh_scaled_energy[2]))
+		    if previous_energy_scaled_low < tagh_energy_high:
+			tagh_energy_high = previous_energy_scaled_low
+
+	            flux = float(tagh_flux[1])
+	            i = 0
+	            while i <= flux:
+	                energy = tagh_energy_low + gRandom.Uniform(tagh_energy_high-tagh_energy_low)
+	                htagged_flux.Fill(energy,scale)
+	                i += 1
+
+		    previous_energy_scaled_low = tagh_energy_low
+
 	    bin_energy = htagged_fluxErr.FindBin(tagh_energy)
 	    previous_bincontent = htagged_fluxErr.GetBinContent(bin_energy)
 	    previous_binerror = math.sqrt(htagged_fluxErr.GetBinError(bin_energy)) # error^2 stored in histogram
@@ -230,6 +266,8 @@ def main():
     PS_accept = PS_accept_assignment.constant_set.data_table
     fPSAcceptance.SetParameters(float(PS_accept[0][0]), float(PS_accept[0][1]), float(PS_accept[0][2]));
 
+    if UNIFORM:
+	htagged_flux.Divide(fPSAcceptance);
     htagged_fluxErr.Divide(fPSAcceptance);
 
     # Initialize output file
@@ -241,6 +279,8 @@ def main():
     OUTPUT_FILENAME += "_%d_%d.root" % (BEGINRUN, ENDRUN)
     
     fout = TFile(OUTPUT_FILENAME, "recreate")
+    if UNIFORM:
+	htagged_flux.Write()
     htagged_fluxErr.Write()
     fout.Close()
     
