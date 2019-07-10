@@ -45,6 +45,7 @@ TFile* gOutputFile;
 double  gChi2DOFCut;
 bool gIsMC;
 bool gSafe;
+bool gPrint;
 
 
 // **************************************
@@ -66,6 +67,7 @@ int main(int argc, char** argv){
   cout << "           -mc    [is this mc?  0 or 1]                 (default: 0)" << endl;
   cout << "           -chi2  [optional Chi2/DOF cut value]         (default: 1000)" << endl;
   cout << "           -safe  [check array sizes?  0 or 1]          (default: 0)" << endl;
+  cout << "           -print [print extra info to screen? 0 or 1]  (default: 0)" << endl;
   cout << endl;
   cout << "Notes:" << endl;
   cout << "  * the input tree name should contain \"_Tree\" (if this standard" << endl;
@@ -87,6 +89,7 @@ int main(int argc, char** argv){
   gIsMC = false;
   gChi2DOFCut = 1000.0;
   gSafe = false;
+  gPrint = false;
   for (int i = 0; i < argc-1; i++){
     TString argi(argv[i]);
     TString argi1(argv[i+1]);
@@ -95,6 +98,7 @@ int main(int argc, char** argv){
     if (argi == "-mc"){ if (argi1 == "1") gIsMC = true; }
     if (argi == "-chi2"){ gChi2DOFCut = atof(argi1); }
     if (argi == "-safe"){ if (argi1 == "1") gSafe = true; }
+    if (argi == "-print"){ if (argi1 == "1") gPrint = true; }
   }
   cout << endl;
   cout << "INPUT PARAMETERS:" << endl << endl;
@@ -109,6 +113,7 @@ int main(int argc, char** argv){
      exit(0);
   }
   ConvertFile(inFileName,outFileName);
+  return 0;
 }
 
 
@@ -626,14 +631,15 @@ void ConvertTree(TString treeName){
    // STEP 4:  DO THE CONVERSION
    // **********************************************************************
 
-  cout << "STARTING THE CONVERSION... " << endl << endl;
+  cout << "STARTING THE CONVERSION: " << endl << endl;
 
 
     // loop over the input tree
 
   Long64_t nEntries = inTree->GetEntries();
+  cout << "LOOPING OVER " << nEntries << " EVENTS..." << endl;
   for (Long64_t iEntry = 0; iEntry < nEntries; iEntry++){
-    if ((iEntry+1) % 10000 == 0) cout << "entry = " << iEntry+1 << endl;
+    if ((iEntry+1) % 10000 == 0) cout << "entry = " << iEntry+1 << "  (" << (100.0*(iEntry+1))/nEntries << " percent)" << endl;
 
       // clear arrays (from ROOT documentation)
 
@@ -688,10 +694,10 @@ void ConvertTree(TString treeName){
 
      // print some information (for debugging only)
 
-    if (iEntry+1 == 1){ 
+    if ((iEntry+1 == 1) && (gPrint)){ 
       cout << endl << "PRINTING TEST INFORMATION FOR FIVE EVENTS..." << endl << endl;
     }
-    if (iEntry < 5){
+    if ((iEntry < 5) && (gPrint)){
       cout << endl << endl;
       cout << "  ***************************" << endl;
       cout << "  ******* NEW EVENT " << iEntry+1 << " *******" << endl;
@@ -743,9 +749,10 @@ void ConvertTree(TString treeName){
       //  mcProblems = true;
       //}
         // print a few events to make sure MC makes sense
-      if (iEntry < 5 || mcProblems == true){
+      if (((iEntry < 5) && gPrint) || mcProblems == true){
       //if (gIsMC && (iEntry < 5||inIsThrownTopology)){
         cout << endl << endl;
+        if (mcProblems) cout << "WARNING: problems with the truth parsing (see below)..." << endl;
         cout << "  **** TRUTH INFO STUDY FOR EVENT " << iEntry+1 << " ****" << endl;
         cout << "  NumThrown = " << inNumThrown << endl;
         cout << "  GeneratedEnergy = " << inThrownBeam__GeneratedEnergy << endl;
@@ -923,7 +930,7 @@ void ConvertTree(TString treeName){
 
       // print some information (for debugging only)
 
-      if (iEntry < 5){
+      if ((iEntry < 5) && (gPrint)){
         cout << "  *******************************" << endl;
         cout << "  **** INFO FOR EVENT " << iEntry+1 << " ****" << endl;
         cout << "  *******************************" << endl;
@@ -956,7 +963,7 @@ void ConvertTree(TString treeName){
                << mass << "  " << rmass << endl;
         }}
       }
-      if (iEntry+1 == 5 && ic+1 == inNumCombos){ 
+      if (iEntry+1 == 5 && ic+1 == inNumCombos && gPrint){ 
         cout << endl << endl << "DONE PRINTING TEST INFORMATION FOR FIVE EVENTS" << endl << endl;
         cout << "CONTINUING THE CONVERSION... " << endl << endl;
       }
