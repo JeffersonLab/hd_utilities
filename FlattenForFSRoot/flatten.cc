@@ -17,9 +17,9 @@ using namespace std;
 static const int MAXTHROWN    =  20*2;
 static const int MAXBEAM      =  20*2;
 static const int MAXTRACKS    =  50*2;
-static const int MAXNEUTRALS  =  15*2;
-static const int MAXCOMBOS    = 100*5;
-static const int MAXPARTICLES =  65*2; // (MAXTRACKS+MAXNEUTRALS)
+static const int MAXNEUTRALS  =  15*4;
+static const int MAXCOMBOS    = 100*10;
+static const int MAXPARTICLES =  MAXTRACKS + MAXNEUTRALS;
 
   // main routines to do the conversions
 void ConvertFile(TString inFileName, TString outFileName);
@@ -44,7 +44,7 @@ TFile* gInputFile;
 TFile* gOutputFile;
 double  gChi2DOFCut;
 bool gIsMC;
-
+bool gSafe;
 
 
 // **************************************
@@ -56,34 +56,58 @@ int main(int argc, char** argv){
   cout << endl;
   cout << "***********************************************************" << endl;
   cout << "This program converts trees from the standard TTree format in the" << endl;
-  cout << "  GlueX analysis environment to a flat TTree (\"FS Format\")." << endl << endl;
-  cout << "The output tree is compatible with the utilities in the FSRoot package." << endl << endl;
+  cout << "  GlueX analysis environment to a flat TTree (\"FSRoot Format\")." << endl << endl;
+  cout << "The output tree format is compatible with that used by the external" << endl;
+  cout << "  FSRoot package located here:   https://github.com/remitche66/FSRoot" << endl << endl;
   cout << "The final state is determined automatically from the input file." << endl << endl;
   cout << "Usage:" << endl;
-  cout << "  flatten  <input file name> <output file name> <MC: 0 or 1> " << endl;
-  cout << "            [optional Chi2DOF cut value]" << endl << endl;
+  cout << "  flatten  -in    <input file name>                     (required)" << endl;
+  cout << "           -out   <output file name>                    (required)" << endl;
+  cout << "           -mc    [is this mc?  0 or 1]                 (default: 0)" << endl;
+  cout << "           -chi2  [optional Chi2/DOF cut value]         (default: 1000)" << endl;
+  cout << "           -safe  [check array sizes?  0 or 1]          (default: 0)" << endl;
+  cout << endl;
   cout << "Notes:" << endl;
   cout << "  * the input tree name should contain \"_Tree\" (if this standard" << endl;
   cout << "     changes in the GlueX code, this code can be easily modified)" << endl;
   cout << "  * the output tree name is ntFSGlueX (for now) " << endl;
   cout << "      [it might be better to eventually use a FSCode, for example]" << endl;
   cout << "  * this works for a large variety of final states (but not all)" << endl;
+  cout << "  * the \"safe\" option first reads a limited number of variables" << endl;
+  cout << "      from the tree, then does checks on array sizes, etc.," << endl;
+  cout << "      then reads in the rest of the tree -- this is slower, but avoids" << endl;
+  cout << "      segmentation faults if array sizes are exceeded" << endl;
   cout << "***********************************************************" << endl << endl;
-  if ((argc != 4) && (argc != 5)){
+  if (argc < 5){
      cout << "ERROR: wrong number of arguments -- see usage notes above" << endl;
      exit(0);
   }
-  TString inFileName(argv[1]);
-  TString outFileName(argv[2]);
-  TString isMC(argv[3]);
-       if (isMC == "0"){ gIsMC = false; }
-  else if (isMC == "1"){ gIsMC = true; }
-  else {
-     cout << "ERROR: 3rd argument should be 1 or 0 to specify whether this is or is not MC" << endl;
+  TString inFileName("");
+  TString outFileName("");
+  gIsMC = false;
+  gChi2DOFCut = 1000.0;
+  gSafe = false;
+  for (int i = 0; i < argc-1; i++){
+    TString argi(argv[i]);
+    TString argi1(argv[i+1]);
+    if (argi == "-in")  inFileName = argi1;
+    if (argi == "-out") outFileName = argi1;
+    if (argi == "-mc"){ if (argi1 == "1") gIsMC = true; }
+    if (argi == "-chi2"){ gChi2DOFCut = atof(argi1); }
+    if (argi == "-safe"){ if (argi1 == "1") gSafe = true; }
+  }
+  cout << endl;
+  cout << "INPUT PARAMETERS:" << endl << endl;
+  cout << "  input file:     " << inFileName << endl;
+  cout << "  output file:    " << outFileName << endl;
+  cout << "  MC?             " << gIsMC << endl;
+  cout << "  chi2/dof cut:   " << gChi2DOFCut << endl;
+  cout << "  safe mode?      " << gSafe << endl;
+  cout << endl;
+  if ((inFileName == "") || (outFileName == "")){
+     cout << "ERROR: specify input and output files -- see usage notes above" << endl;
      exit(0);
   }
-  if (argc == 4) gChi2DOFCut = 1000.0;
-  if (argc == 5) gChi2DOFCut = atof(argv[4]);
   ConvertFile(inFileName,outFileName);
 }
 
@@ -352,6 +376,7 @@ void ConvertTree(TString treeName){
   }
 
 
+
    // **********************************************************************
    // STEP 2:  SET UP TO READ THE INPUT TREE (IN ANALYSIS TREE FORMAT)
    // **********************************************************************
@@ -432,6 +457,7 @@ void ConvertTree(TString treeName){
       inTree->SetBranchAddress("ChargedHypo__ChiSq_Tracking", inChargedHypo__ChiSq_Tracking);
   UInt_t  inChargedHypo__NDF_Tracking[MAXTRACKS] = {};   
       inTree->SetBranchAddress("ChargedHypo__NDF_Tracking", inChargedHypo__NDF_Tracking);
+
 
         //   *** Neutral Particle Hypotheses (indexed using <particleName>__NeutralIndex) ***
 
@@ -619,23 +645,46 @@ void ConvertTree(TString treeName){
     inBeam__P4_KinFit->Clear();
     for (unsigned int i = 0; i < MAXPARTICLES; i++){ if (inP4_KinFit[i]) inP4_KinFit[i]->Clear(); }
 
-      // get entries from the input tree and do tests
+
+      // if running in safe mode, first check array sizes
+
+    if (gSafe){
+      inTree->SetBranchStatus("*",0);
+      if (gIsMC) inTree->SetBranchStatus("NumThrown",1);
+      inTree->SetBranchStatus("RunNumber",1);
+      inTree->SetBranchStatus("EventNumber",1);
+      inTree->SetBranchStatus("NumBeam",1);
+      inTree->SetBranchStatus("NumChargedHypos",1);
+      inTree->SetBranchStatus("NumNeutralHypos",1);
+      inTree->SetBranchStatus("NumCombos",1);
+      inTree->GetEntry(iEntry);
+      if (((gIsMC) && (inNumThrown > MAXTHROWN)) ||
+          (inNumBeam > MAXBEAM) ||
+          (inNumChargedHypos > MAXTRACKS) || 
+          (inNumNeutralHypos > MAXNEUTRALS) ||
+          (inNumCombos > MAXCOMBOS)){
+        cout << endl;
+        cout << "WARNING:  Array sizes will be exceeded!  Skipping event!" << endl;
+        cout << "   Entry           = " << iEntry << endl;
+        cout << "   Run             = " << inRunNumber << endl;
+        cout << "   Event           = " << inEventNumber << endl;
+        if (gIsMC) 
+        cout << "   NumThrown       = " << inNumThrown << endl;
+        cout << "   NumBeam         = " << inNumBeam << endl;
+        cout << "   NumChargedHypos = " << inNumChargedHypos << endl;
+        cout << "   NumNeutralHypos = " << inNumNeutralHypos << endl;
+        cout << "   NumCombos       = " << inNumCombos << endl;
+        cout << endl;
+        continue;
+      }
+      inTree->SetBranchStatus("*",1);
+    }
+
+
+      // get entries from the input tree
 
     inTree->GetEntry(iEntry);
-    if (inNumCombos > MAXCOMBOS){
-      cout << "ERROR:  Too many combos (" << inNumCombos << ")!" << endl;
-      cout << "   Entry = " << iEntry << endl;
-      cout << "   NumChargedHypos = " << inNumChargedHypos << endl;
-      cout << "   NumNeutralHypos = " << inNumNeutralHypos << endl;
-      exit(0);
-    }
-    if ((inNumChargedHypos > MAXTRACKS) || (inNumNeutralHypos > MAXNEUTRALS)){
-      cout << "ERROR:  Too many hypotheses!" << endl;
-      cout << "   Entry = " << iEntry << endl;
-      cout << "   NumChargedHypos = " << inNumChargedHypos << endl;
-      cout << "   NumNeutralHypos = " << inNumNeutralHypos << endl;
-      exit(0);
-    }
+
 
      // print some information (for debugging only)
 
