@@ -43,6 +43,8 @@ int FSMCExtras(int numThrown, int pids[]);
 TFile* gInputFile;
 TFile* gOutputFile;
 double  gChi2DOFCut;
+int  gNumUnusedTracksCut;
+int  gNumNeutralHyposCut;
 bool gIsMC;
 bool gSafe;
 bool gPrint;
@@ -66,6 +68,8 @@ int main(int argc, char** argv){
   cout << "           -out   <output file name>                    (required)" << endl;
   cout << "           -mc    [is this mc?  0 or 1]                 (default: 0)" << endl;
   cout << "           -chi2  [optional Chi2/DOF cut value]         (default: 1000)" << endl;
+  cout << "           -numUnusedTracks  [optional cut (<= cut)]    (no default)" << endl;
+  cout << "           -numNeutralHypos  [optional cut (<= cut)]    (no default)" << endl;
   cout << "           -safe  [check array sizes?  0 or 1]          (default: 0)" << endl;
   cout << "           -print [print extra info to screen? 0 or 1]  (default: 0)" << endl;
   cout << endl;
@@ -88,6 +92,8 @@ int main(int argc, char** argv){
   TString outFileName("");
   gIsMC = false;
   gChi2DOFCut = 1000.0;
+  gNumUnusedTracksCut = -1;
+  gNumNeutralHyposCut = -1;
   gSafe = false;
   gPrint = false;
   for (int i = 0; i < argc-1; i++){
@@ -97,16 +103,20 @@ int main(int argc, char** argv){
     if (argi == "-out") outFileName = argi1;
     if (argi == "-mc"){ if (argi1 == "1") gIsMC = true; }
     if (argi == "-chi2"){ gChi2DOFCut = atof(argi1); }
+    if (argi == "-numUnusedTracks"){ gNumUnusedTracksCut = atoi(argi1); }
+    if (argi == "-numNeutralHypos"){ gNumNeutralHyposCut = atoi(argi1); }
     if (argi == "-safe"){ if (argi1 == "1") gSafe = true; }
     if (argi == "-print"){ if (argi1 == "1") gPrint = true; }
   }
   cout << endl;
   cout << "INPUT PARAMETERS:" << endl << endl;
-  cout << "  input file:     " << inFileName << endl;
-  cout << "  output file:    " << outFileName << endl;
-  cout << "  MC?             " << gIsMC << endl;
-  cout << "  chi2/dof cut:   " << gChi2DOFCut << endl;
-  cout << "  safe mode?      " << gSafe << endl;
+  cout << "  input file:          " << inFileName << endl;
+  cout << "  output file:         " << outFileName << endl;
+  cout << "  MC?                  " << gIsMC << endl;
+  cout << "  chi2/dof cut:        " << gChi2DOFCut << endl;
+  cout << "  numUnusedTracks cut: " << gNumUnusedTracksCut << endl;
+  cout << "  numNeutralHypos cut: " << gNumNeutralHyposCut << endl;
+  cout << "  safe mode?           " << gSafe << endl;
   cout << endl;
   if ((inFileName == "") || (outFileName == "")){
      cout << "ERROR: specify input and output files -- see usage notes above" << endl;
@@ -439,6 +449,8 @@ void ConvertTree(TString treeName){
       inTree->SetBranchAddress("NumNeutralHypos", &inNumNeutralHypos);
   UInt_t inNumCombos = 0;
       inTree->SetBranchAddress("NumCombos", &inNumCombos);
+  UChar_t inNumUnusedTracks = 0;
+      inTree->SetBranchAddress("NumUnusedTracks", &inNumUnusedTracks);
   Bool_t inIsThrownTopology = false;
       if (gIsMC) inTree->SetBranchAddress("IsThrownTopology", &inIsThrownTopology);
 
@@ -555,25 +567,29 @@ void ConvertTree(TString treeName){
 
     // non-particle information
 
-  double outRunNumber;     outTree.Branch("Run",        &outRunNumber,  "Run/D");
-  double outEventNumber;   outTree.Branch("Event",      &outEventNumber,"Event/D");
-  double outChi2;          outTree.Branch("Chi2",       &outChi2,       "Chi2/D");
-  double outChi2DOF;       outTree.Branch("Chi2DOF",    &outChi2DOF,    "Chi2DOF/D");
-  double outRFTime;        outTree.Branch("RFTime",     &outRFTime,     "RFTime/D");
-  double outRFDeltaT;      outTree.Branch("RFDeltaT",   &outRFDeltaT,   "RFDeltaT/D");
-  double outEnUnusedSh;    outTree.Branch("EnUnusedSh", &outEnUnusedSh, "EnUnusedSh/D");
-  double outProdVx;        outTree.Branch("ProdVx",     &outProdVx,     "ProdVx/D");
-  double outProdVy;        outTree.Branch("ProdVy",     &outProdVy,     "ProdVy/D");
-  double outProdVz;        outTree.Branch("ProdVz",     &outProdVz,     "ProdVz/D");
-  double outProdVt;        outTree.Branch("ProdVt",     &outProdVt,     "ProdVt/D");
-  double outPxPB;          outTree.Branch("PxPB",       &outPxPB,       "PxPB/D");
-  double outPyPB;          outTree.Branch("PyPB",       &outPyPB,       "PyPB/D");
-  double outPzPB;          outTree.Branch("PzPB",       &outPzPB,       "PzPB/D");
-  double outEnPB;          outTree.Branch("EnPB",       &outEnPB,       "EnPB/D");
-  double outRPxPB;         outTree.Branch("RPxPB",      &outRPxPB,      "RPxPB/D");
-  double outRPyPB;         outTree.Branch("RPyPB",      &outRPyPB,      "RPyPB/D");
-  double outRPzPB;         outTree.Branch("RPzPB",      &outRPzPB,      "RPzPB/D");
-  double outREnPB;         outTree.Branch("REnPB",      &outREnPB,      "REnPB/D");
+  double outRunNumber;        outTree.Branch("Run",             &outRunNumber,       "Run/D");
+  double outEventNumber;      outTree.Branch("Event",           &outEventNumber,     "Event/D");
+  double outChi2;             outTree.Branch("Chi2",            &outChi2,            "Chi2/D");
+  double outChi2DOF;          outTree.Branch("Chi2DOF",         &outChi2DOF,         "Chi2DOF/D");
+  double outRFTime;           outTree.Branch("RFTime",          &outRFTime,          "RFTime/D");
+  double outRFDeltaT;         outTree.Branch("RFDeltaT",        &outRFDeltaT,        "RFDeltaT/D");
+  double outEnUnusedSh;       outTree.Branch("EnUnusedSh",      &outEnUnusedSh,      "EnUnusedSh/D");
+  double outNumUnusedTracks;  outTree.Branch("NumUnusedTracks", &outNumUnusedTracks, "NumUnusedTracks/D");
+  double outNumNeutralHypos;  outTree.Branch("NumNeutralHypos", &outNumNeutralHypos, "NumNeutralHypos/D");
+  double outNumBeam;          outTree.Branch("NumBeam",         &outNumBeam,         "NumBeam/D");
+  double outNumCombos;        outTree.Branch("NumCombos",       &outNumCombos,       "NumCombos/D");
+  double outProdVx;           outTree.Branch("ProdVx",          &outProdVx,          "ProdVx/D");
+  double outProdVy;           outTree.Branch("ProdVy",          &outProdVy,          "ProdVy/D");
+  double outProdVz;           outTree.Branch("ProdVz",          &outProdVz,          "ProdVz/D");
+  double outProdVt;           outTree.Branch("ProdVt",          &outProdVt,          "ProdVt/D");
+  double outPxPB;             outTree.Branch("PxPB",            &outPxPB,            "PxPB/D");
+  double outPyPB;             outTree.Branch("PyPB",            &outPyPB,            "PyPB/D");
+  double outPzPB;             outTree.Branch("PzPB",            &outPzPB,            "PzPB/D");
+  double outEnPB;             outTree.Branch("EnPB",            &outEnPB,            "EnPB/D");
+  double outRPxPB;            outTree.Branch("RPxPB",           &outRPxPB,           "RPxPB/D");
+  double outRPyPB;            outTree.Branch("RPyPB",           &outRPyPB,           "RPyPB/D");
+  double outRPzPB;            outTree.Branch("RPzPB",           &outRPzPB,           "RPzPB/D");
+  double outREnPB;            outTree.Branch("REnPB",           &outREnPB,           "REnPB/D");
 
     // MC information
 
@@ -781,8 +797,12 @@ void ConvertTree(TString treeName){
         // non-particle information
 
       TLorentzVector *p4, *p4a, *p4b, *x4;
-      outRunNumber   = inRunNumber;
-      outEventNumber = inEventNumber;
+      outRunNumber       = inRunNumber;
+      outEventNumber     = inEventNumber;
+      outNumUnusedTracks = inNumUnusedTracks;
+      outNumNeutralHypos = inNumNeutralHypos;
+      outNumBeam         = inNumBeam;
+      outNumCombos       = inNumCombos;
       outChi2        = inChiSq_KinFit[ic];
       outChi2DOF     = -1; if (inNDF_KinFit[ic]>0.0) outChi2DOF = outChi2/inNDF_KinFit[ic];
       //outRFTime      = inRFTime_KinFit[ic];
@@ -971,6 +991,9 @@ void ConvertTree(TString treeName){
         // make cuts
 
       if (outChi2DOF > gChi2DOFCut) continue;
+      if ((gNumUnusedTracksCut >= 0) && (outNumUnusedTracks > gNumUnusedTracksCut)) continue;
+      if ((gNumNeutralHyposCut >= 0) && (outNumNeutralHypos > gNumNeutralHyposCut)) continue;
+
 
         // fill the tree
 
