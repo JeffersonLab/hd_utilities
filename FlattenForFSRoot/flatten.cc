@@ -679,7 +679,10 @@ void ConvertTree(TString treeName){
       inTree->SetBranchStatus("NumChargedHypos",1);
       inTree->SetBranchStatus("NumNeutralHypos",1);
       inTree->SetBranchStatus("NumCombos",1);
+      inTree->SetBranchStatus("NumUnusedTracks",1);
       inTree->GetEntry(iEntry);
+      if ((gNumUnusedTracksCut >= 0) && (inNumUnusedTracks > gNumUnusedTracksCut)) continue;
+      if ((gNumNeutralHyposCut >= 0) && (inNumNeutralHypos > gNumNeutralHyposCut)) continue;
       if (((gIsMC) && (inNumThrown > MAXTHROWN)) ||
           (inNumBeam > MAXBEAM) ||
           (inNumChargedHypos > MAXTRACKS) || 
