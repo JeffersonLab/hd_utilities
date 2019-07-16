@@ -70,7 +70,7 @@ int main(int argc, char** argv){
   cout << "           -chi2  [optional Chi2/DOF cut value]         (default: 1000)" << endl;
   cout << "           -numUnusedTracks  [optional cut (<= cut)]    (no default)" << endl;
   cout << "           -numNeutralHypos  [optional cut (<= cut)]    (no default)" << endl;
-  cout << "           -safe  [check array sizes?  0 or 1]          (default: 0)" << endl;
+  cout << "           -safe  [check array sizes?  0 or 1]          (default: 1)" << endl;
   cout << "           -print [print extra info to screen? 0 or 1]  (default: 0)" << endl;
   cout << endl;
   cout << "Notes:" << endl;
@@ -94,7 +94,7 @@ int main(int argc, char** argv){
   gChi2DOFCut = 1000.0;
   gNumUnusedTracksCut = -1;
   gNumNeutralHyposCut = -1;
-  gSafe = false;
+  gSafe = true;
   gPrint = false;
   for (int i = 0; i < argc-1; i++){
     TString argi(argv[i]);
@@ -105,7 +105,7 @@ int main(int argc, char** argv){
     if (argi == "-chi2"){ gChi2DOFCut = atof(argi1); }
     if (argi == "-numUnusedTracks"){ gNumUnusedTracksCut = atoi(argi1); }
     if (argi == "-numNeutralHypos"){ gNumNeutralHyposCut = atoi(argi1); }
-    if (argi == "-safe"){ if (argi1 == "1") gSafe = true; }
+    if (argi == "-safe"){ if (argi1 == "0") gSafe = false; }
     if (argi == "-print"){ if (argi1 == "1") gPrint = true; }
   }
   cout << endl;
@@ -679,7 +679,10 @@ void ConvertTree(TString treeName){
       inTree->SetBranchStatus("NumChargedHypos",1);
       inTree->SetBranchStatus("NumNeutralHypos",1);
       inTree->SetBranchStatus("NumCombos",1);
+      inTree->SetBranchStatus("NumUnusedTracks",1);
       inTree->GetEntry(iEntry);
+      if ((gNumUnusedTracksCut >= 0) && (inNumUnusedTracks > gNumUnusedTracksCut)) continue;
+      if ((gNumNeutralHyposCut >= 0) && (inNumNeutralHypos > gNumNeutralHyposCut)) continue;
       if (((gIsMC) && (inNumThrown > MAXTHROWN)) ||
           (inNumBeam > MAXBEAM) ||
           (inNumChargedHypos > MAXTRACKS) || 
