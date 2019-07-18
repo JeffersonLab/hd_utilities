@@ -30,6 +30,7 @@ void ConvertTree(TString treeName);
 TString PDGReadableName(int pdgID);
 TString FSParticleType(TString glueXParticleType);
 TString GlueXParticleClass(TString glueXParticleType);
+int GlueXNeutralsCounter(TString glueXParticleType);
 int PDGIDNumber(TString glueXParticleType);
 int FSParticleOrder(TString glueXParticleType);
 int FSParticleOrder(int pdgID);
@@ -44,6 +45,7 @@ TFile* gInputFile;
 TFile* gOutputFile;
 double  gChi2DOFCut;
 int  gNumUnusedTracksCut;
+int  gNumUnusedNeutralsCut;
 int  gNumNeutralHyposCut;
 bool gIsMC;
 bool gSafe;
@@ -68,8 +70,9 @@ int main(int argc, char** argv){
   cout << "           -out   <output file name>                    (required)" << endl;
   cout << "           -mc    [is this mc?  0 or 1]                 (default: 0)" << endl;
   cout << "           -chi2  [optional Chi2/DOF cut value]         (default: 1000)" << endl;
-  cout << "           -numUnusedTracks  [optional cut (<= cut)]    (no default)" << endl;
-  cout << "           -numNeutralHypos  [optional cut (<= cut)]    (no default)" << endl;
+  cout << "           -numUnusedTracks   [optional cut (<= cut)]   (no default)" << endl;
+  cout << "           -numUnusedNeutrals [optional cut (<= cut)]   (no default)" << endl;
+  cout << "           -numNeutralHypos   [optional cut (<= cut)]   (no default)" << endl;
   cout << "           -safe  [check array sizes?  0 or 1]          (default: 1)" << endl;
   cout << "           -print [print extra info to screen? 0 or 1]  (default: 0)" << endl;
   cout << endl;
@@ -93,6 +96,7 @@ int main(int argc, char** argv){
   gIsMC = false;
   gChi2DOFCut = 1000.0;
   gNumUnusedTracksCut = -1;
+  gNumUnusedNeutralsCut = -1;
   gNumNeutralHyposCut = -1;
   gSafe = true;
   gPrint = false;
@@ -104,19 +108,21 @@ int main(int argc, char** argv){
     if (argi == "-mc"){ if (argi1 == "1") gIsMC = true; }
     if (argi == "-chi2"){ gChi2DOFCut = atof(argi1); }
     if (argi == "-numUnusedTracks"){ gNumUnusedTracksCut = atoi(argi1); }
+    if (argi == "-numUnusedNeutrals"){ gNumUnusedNeutralsCut = atoi(argi1); }
     if (argi == "-numNeutralHypos"){ gNumNeutralHyposCut = atoi(argi1); }
     if (argi == "-safe"){ if (argi1 == "0") gSafe = false; }
     if (argi == "-print"){ if (argi1 == "1") gPrint = true; }
   }
   cout << endl;
   cout << "INPUT PARAMETERS:" << endl << endl;
-  cout << "  input file:          " << inFileName << endl;
-  cout << "  output file:         " << outFileName << endl;
-  cout << "  MC?                  " << gIsMC << endl;
-  cout << "  chi2/dof cut:        " << gChi2DOFCut << endl;
-  cout << "  numUnusedTracks cut: " << gNumUnusedTracksCut << endl;
-  cout << "  numNeutralHypos cut: " << gNumNeutralHyposCut << endl;
-  cout << "  safe mode?           " << gSafe << endl;
+  cout << "  input file:            " << inFileName << endl;
+  cout << "  output file:           " << outFileName << endl;
+  cout << "  MC?                    " << gIsMC << endl;
+  cout << "  chi2/dof cut:          " << gChi2DOFCut << endl;
+  cout << "  numUnusedTracks cut:   " << gNumUnusedTracksCut << endl;
+  cout << "  numUnusedNeutrals cut: " << gNumUnusedNeutralsCut << endl;
+  cout << "  numNeutralHypos cut:   " << gNumNeutralHyposCut << endl;
+  cout << "  safe mode?             " << gSafe << endl;
   cout << endl;
   if ((inFileName == "") || (outFileName == "")){
      cout << "ERROR: specify input and output files -- see usage notes above" << endl;
@@ -360,8 +366,13 @@ void ConvertTree(TString treeName){
     }
   }
   pair<int,int> reconstructedFSCode = FSCode(orderedParticleNames);
-  cout << "  DecayCode1 = " << reconstructedFSCode.first << endl;
-  cout << "  DecayCode2 = " << reconstructedFSCode.second << endl << endl;
+  int numFSNeutrals = 0;
+  for (unsigned int i = 0; i < orderedParticleNames.size(); i++){
+    numFSNeutrals += GlueXNeutralsCounter(orderedParticleNames[i][0]);
+  }
+  cout << "  DecayCode1    = " << reconstructedFSCode.first << endl;
+  cout << "  DecayCode2    = " << reconstructedFSCode.second << endl;
+  cout << "  numFSNeutrals = " << numFSNeutrals << endl << endl;
 
 
      // **********************************************************************
@@ -681,8 +692,10 @@ void ConvertTree(TString treeName){
       inTree->SetBranchStatus("NumCombos",1);
       inTree->SetBranchStatus("NumUnusedTracks",1);
       inTree->GetEntry(iEntry);
-      if ((gNumUnusedTracksCut >= 0) && (inNumUnusedTracks > gNumUnusedTracksCut)) continue;
-      if ((gNumNeutralHyposCut >= 0) && (inNumNeutralHypos > gNumNeutralHyposCut)) continue;
+      int numUnusedNeutrals = inNumNeutralHypos - numFSNeutrals;
+      if ((gNumUnusedTracksCut   >= 0) && (inNumUnusedTracks   > gNumUnusedTracksCut)) continue;
+      if ((gNumUnusedNeutralsCut >= 0) && (  numUnusedNeutrals > gNumUnusedNeutralsCut)) continue;
+      if ((gNumNeutralHyposCut   >= 0) && (inNumNeutralHypos   > gNumNeutralHyposCut)) continue;
       if (((gIsMC) && (inNumThrown > MAXTHROWN)) ||
           (inNumBeam > MAXBEAM) ||
           (inNumChargedHypos > MAXTRACKS) || 
@@ -994,8 +1007,10 @@ void ConvertTree(TString treeName){
         // make cuts
 
       if (outChi2DOF > gChi2DOFCut) continue;
-      if ((gNumUnusedTracksCut >= 0) && (outNumUnusedTracks > gNumUnusedTracksCut)) continue;
-      if ((gNumNeutralHyposCut >= 0) && (outNumNeutralHypos > gNumNeutralHyposCut)) continue;
+      int numUnusedNeutrals = inNumNeutralHypos - numFSNeutrals;
+      if ((gNumUnusedTracksCut   >= 0) && (outNumUnusedTracks   > gNumUnusedTracksCut)) continue;
+      if ((gNumUnusedNeutralsCut >= 0) && (   numUnusedNeutrals > gNumUnusedNeutralsCut)) continue;
+      if ((gNumNeutralHyposCut   >= 0) && (outNumNeutralHypos   > gNumNeutralHyposCut)) continue;
 
 
         // fill the tree
@@ -1293,6 +1308,26 @@ TString GlueXParticleClass(TString glueXParticleType){
   if (glueXParticleType.Contains("PiMinus"))     return TString("Charged");
   if (glueXParticleType.Contains("Pi0"))         return TString("DecayingToNeutral");
   return TString("");
+}
+
+int GlueXNeutralsCounter(TString glueXParticleType){
+  if (glueXParticleType.Contains("AntiLambda"))  return 0;
+  if (glueXParticleType.Contains("Lambda"))      return 0;
+  if (glueXParticleType.Contains("Positron"))    return 0;
+  if (glueXParticleType.Contains("Electron"))    return 0;
+  if (glueXParticleType.Contains("MuonPlus"))    return 0;
+  if (glueXParticleType.Contains("MuonMinus"))   return 0;
+  if (glueXParticleType.Contains("AntiProton"))  return 0;
+  if (glueXParticleType.Contains("Proton"))      return 0;
+  if (glueXParticleType.Contains("Eta"))         return 2;
+  if (glueXParticleType.Contains("Photon"))      return 1;
+  if (glueXParticleType.Contains("KPlus"))       return 0;
+  if (glueXParticleType.Contains("KMinus"))      return 0;
+  if (glueXParticleType.Contains("KShort"))      return 0;
+  if (glueXParticleType.Contains("PiPlus"))      return 0;
+  if (glueXParticleType.Contains("PiMinus"))     return 0;
+  if (glueXParticleType.Contains("Pi0"))         return 2;
+  return 0;
 }
 
 int PDGIDNumber(TString glueXParticleType){
