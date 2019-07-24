@@ -203,8 +203,8 @@ void DSelector_pi0pippim__B4_ver21::Init(TTree *locTree)
 
 	dMinKinFitCL = 5.73303e-7; //5.73303e-7;
 	// dMinKinFitCL = 0.01;
-	dMaxKinFitChiSq = 5.0;
-	// dMaxKinFitChiSq = 40.0;
+	// dMaxKinFitChiSq = 5.0;
+	dMaxKinFitChiSq = 2.5;
 	dMinBeamEnergy = 8.4;
 	dMaxBeamEnergy = 9.05;
 	// dMinFCALShape = 0.;   // use DCutAction

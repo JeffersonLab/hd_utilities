@@ -1,4 +1,4 @@
-void plot_compare2DEff (TString tag="")
+void plot_compare2DEff (TString tag="Chi2le25")
 {
 // File: plot_compare2DEff.C
     // Modeled after plot_compareEff.C
@@ -12,15 +12,18 @@ void plot_compare2DEff (TString tag="")
   gStyle->SetPadLeftMargin(0.15);
   gStyle->SetPadBottomMargin(0.15);
     
-    TString inData_name = "DSelector_pi0pippim__B4_030796-030900_"+tag+".root";
+    TString inData_name = "DSelector_pi0pippim__B4_030808-030900_"+tag+".root";
+    // TString inData_name = "DSelector_pi0pippim__B4_030796-030900_"+tag+".root";
     // TString inData_name = "DSelector_pi0pippim__B4_030800_"+tag+".root";
     // TString inData_name = "DSelector_pi0pippim__B4_030274-030403_"+tag+".root";
     // TString inData_name = "DSelector_pi0pippim__B4_030796-030895_"+tag+".root";
     TFile *inData = new TFile(inData_name.Data(),"read");
     cout << " inData file=" << inData_name.Data() << endl;
     
-    TString inMC_name ="DSelector_pi0pippim__B4_gen_amp_G4_030796-030900_"+tag+".root";
-    TString inMC2_name ="DSelector_pi0pippim__B4_gen_amp_G4_030796-030900_"+tag+".root";
+    TString inMC_name ="DSelector_pi0pippim__B4_gen_amp_G4_030808-030900_"+tag+".root";
+    TString inMC2_name ="DSelector_pi0pippim__B4_gen_amp_G4_030808-030900_"+tag+".root";
+    // TString inMC_name ="DSelector_pi0pippim__B4_gen_amp_G4_030796-030900_"+tag+".root";
+    // TString inMC2_name ="DSelector_pi0pippim__B4_gen_amp_G4_030796-030900_"+tag+".root";
     // TString inMC_name ="DSelector_pi0pippim__B4_gen_amp_G4_030800_"+tag+".root";
     // TString inMC2_name ="DSelector_pi0pippim__B4_gen_amp_G4_030800_"+tag+".root";
     // TString inMC2_name ="DSelector_pi0pippim__B4_gen_amp_G3_030274_"+tag+".root";

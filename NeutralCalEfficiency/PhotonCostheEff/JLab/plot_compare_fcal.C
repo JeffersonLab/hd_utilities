@@ -1,4 +1,4 @@
-void plot_compare_fcal (TString tag="jun19")
+void plot_compare_fcal (TString tag="Chi2le25")
 {
 // File: plot_compare_fcal.C
     // Modeled after plot_compareEff.C
@@ -32,11 +32,13 @@ void plot_compare_fcal (TString tag="jun19")
     TFile *inMC;
     TLegend *leg5 = new TLegend(0.4,0.2,0.8,0.5);
     
-    inData_name = "DSelector_pi0pippim__B4_030796-030900_"+tag+".root";
+    // inData_name = "DSelector_pi0pippim__B4_030796-030900_"+tag+".root";
+    inData_name = "DSelector_pi0pippim__B4_030808-030900_"+tag+".root";
     inData = new TFile(inData_name.Data(),"read");
     cout << " inData file=" << inData_name.Data() << endl;
     
-    inMC_name ="DSelector_pi0pippim__B4_gen_amp_G4_030796-030900_"+tag+".root";
+    // inMC_name ="DSelector_pi0pippim__B4_gen_amp_G4_030796-030900_"+tag+".root";
+    inMC_name ="DSelector_pi0pippim__B4_gen_amp_G4_030808-030900_"+tag+".root";
     inMC = new TFile(inMC_name.Data(),"read");
     cout << " inMC file=" << inMC_name.Data() << endl;
     
@@ -51,7 +53,7 @@ void plot_compare_fcal (TString tag="jun19")
     // c0->Divide(3,2);
     
     // c0->cd(1);
-    Double_t fcal_scale = 0.9;                 // scale down to match high energy end of fcal data
+    Double_t fcal_scale = 0.95;                 // scale down to match high energy end of fcal data
     gPad->SetGridx();
     gPad->SetGridy();
     dP1_E2_eff_FCAL_Data->SetTitle("FCAL (0.7<M_{3#pi}<0.85)");
