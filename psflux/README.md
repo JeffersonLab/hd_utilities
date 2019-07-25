@@ -27,7 +27,7 @@ Options:
                         Minimum energy for flux histogram
   -x EMAX, --energy-max=EMAX
                         Maximum energy for flux histogram
-  -r RCDB, --rcdb-query='query'
+  -q RCDB, --rcdb-query='query'
                         RCDB query for run selection
   -t CALIBTIME, --calib-time='T-M-D-h-min-s'
                         CCDB calibtime

@@ -1,0 +1,14 @@
+This set of scripts will divide your data into mass bins. Each mass bin will have N bootstrap folders, where N is the number of bootstraps you want to perform.
+
+These scripts are still pretty raw and need much improvement for ease of use, but for now they should be working. I only tested on eta pi- Delta++, but will begin testing on eta pi0 toy MC.I wanted to upload them so other can have a look. If you've done fitting and plotting intensities with Amptools before, this is a similar procedure. If you haven't then this will likely be confusing. Please ask for help if you have questions. If you find any bugs/issues, let me know.
+
+1) Copy divideData_MassBins_Bootstrap.py and fit_etapi_TEMPLATE.cfg to the directory that contains your AmpTools root files (generated MC, accepted MC, and accepted data).
+2) Run divideData_MassBins_Bootstrap.py to create a fit directory "EtaPi_fit" where your data will be binned in mass and number of bootstraps.
+3) In EtaP_fit, there is another directory "script" that is created. Copy script_Fit.py, fit_TEMPLATE.py, and fit_TEMPLATE.csh to this script directory.
+4) Set name of "baseDir". This should be the directory above the "EtaPi_fit" directory
+5) Change options such as workflow, number of bootstraps, number of mass bins, etc
+6a) create your workflow "swif create -workflow WORKFLOW". "WORKFLOW" needs to be the same as the name in script_Fit.py workflow = ""
+6) Run script_Fit.py. This will submit one job per mass bin to the ifarm. Each job performs N bootstrap fits for you. 
+Note: for eta pi, the fits do not take too long, therefore I chose to do one job per mass bin. If you ahve 60 mass bins, there are 60 jobs running. At some point (or for fits that take awhile) it may be wise to submit one job per mass bin and bootstrap. This would correspond to N_MassBins*N_Bootstrap jobs. 
+7) If you made it this far ad your jobs are runing, congratulations. Once your jobs are done running, it is time to plot the results. For this, I have ammended the plot_etapi program in halld_sim/src/programs/AmplitudeAnalysis/ to create Bootstrap_plot_etapi_delta_SPD. I have a folder Bootstrap_plot_etapi_delta_SPD in this directory. One needs to compile this program to run in the GlueX framework. To keep things consistent, do so in your own local halld_sim in the directory halld_sim/src/programs/AmplitudeAnalysis/. This program creates text files in each mass bin that contains the intensity and error (from minut) of each partial wave.
+8) in your baseDir, run root -l drawWaves.C. This root macro will calculate the std dev and mean of the bootstraps and plot them. Note: the mean of the bootstraps is plotted on each graph. This is not the result you want. You want to perform a fit to the real data then read in thsoe results. For now, I have just commented out the relevant code to do this.

@@ -11,9 +11,15 @@ using namespace std;
 
 
   // maximum array indices
-  // [careful:  there were strange memory problems when these were set to 10000 and 100]
-static const int MAXCOMBOS = 1000;
-static const int MAXPARTICLES = 50;
+  //  careful:  these are taken from halld_recon/src/libraries/ANALYSIS/DEventWriterROOT.cc
+  //       and then scaled to give a buffer
+  //     (if the sizes are too big, strange behavior sometimes results)
+static const int MAXTHROWN    =  20*2;
+static const int MAXBEAM      =  20*2;
+static const int MAXTRACKS    =  50*2;
+static const int MAXNEUTRALS  =  15*4;
+static const int MAXCOMBOS    = 100*10;
+static const int MAXPARTICLES =  MAXTRACKS + MAXNEUTRALS;
 
   // main routines to do the conversions
 void ConvertFile(TString inFileName, TString outFileName);
@@ -24,6 +30,7 @@ void ConvertTree(TString treeName);
 TString PDGReadableName(int pdgID);
 TString FSParticleType(TString glueXParticleType);
 TString GlueXParticleClass(TString glueXParticleType);
+int GlueXNeutralsCounter(TString glueXParticleType);
 int PDGIDNumber(TString glueXParticleType);
 int FSParticleOrder(TString glueXParticleType);
 int FSParticleOrder(int pdgID);
@@ -37,8 +44,12 @@ int FSMCExtras(int numThrown, int pids[]);
 TFile* gInputFile;
 TFile* gOutputFile;
 double  gChi2DOFCut;
+int  gNumUnusedTracksCut;
+int  gNumUnusedNeutralsCut;
+int  gNumNeutralHyposCut;
 bool gIsMC;
-
+bool gSafe;
+bool gPrint;
 
 
 // **************************************
@@ -50,35 +61,75 @@ int main(int argc, char** argv){
   cout << endl;
   cout << "***********************************************************" << endl;
   cout << "This program converts trees from the standard TTree format in the" << endl;
-  cout << "  GlueX analysis environment to a flat TTree (\"FS Format\")." << endl << endl;
-  cout << "The output tree is compatible with the utilities in the FSRoot package." << endl << endl;
+  cout << "  GlueX analysis environment to a flat TTree (\"FSRoot Format\")." << endl << endl;
+  cout << "The output tree format is compatible with that used by the external" << endl;
+  cout << "  FSRoot package located here:   https://github.com/remitche66/FSRoot" << endl << endl;
   cout << "The final state is determined automatically from the input file." << endl << endl;
   cout << "Usage:" << endl;
-  cout << "  flatten  <input file name> <output file name> <MC: 0 or 1> " << endl;
-  cout << "            [optional Chi2DOF cut value]" << endl << endl;
+  cout << "  flatten  -in    <input file name>                     (required)" << endl;
+  cout << "           -out   <output file name>                    (required)" << endl;
+  cout << "           -mc    [is this mc?  0 or 1]                 (default: 0)" << endl;
+  cout << "           -chi2  [optional Chi2/DOF cut value]         (default: 1000)" << endl;
+  cout << "           -numUnusedTracks   [optional cut (<= cut)]   (no default)" << endl;
+  cout << "           -numUnusedNeutrals [optional cut (<= cut)]   (no default)" << endl;
+  cout << "           -numNeutralHypos   [optional cut (<= cut)]   (no default)" << endl;
+  cout << "           -safe  [check array sizes?  0 or 1]          (default: 1)" << endl;
+  cout << "           -print [print extra info to screen? 0 or 1]  (default: 0)" << endl;
+  cout << endl;
   cout << "Notes:" << endl;
   cout << "  * the input tree name should contain \"_Tree\" (if this standard" << endl;
   cout << "     changes in the GlueX code, this code can be easily modified)" << endl;
   cout << "  * the output tree name is ntFSGlueX (for now) " << endl;
   cout << "      [it might be better to eventually use a FSCode, for example]" << endl;
   cout << "  * this works for a large variety of final states (but not all)" << endl;
+  cout << "  * the \"safe\" option first reads a limited number of variables" << endl;
+  cout << "      from the tree, then does checks on array sizes, etc.," << endl;
+  cout << "      then reads in the rest of the tree -- this is slower, but avoids" << endl;
+  cout << "      segmentation faults if array sizes are exceeded" << endl;
   cout << "***********************************************************" << endl << endl;
-  if ((argc != 4) && (argc != 5)){
+  if (argc < 5){
      cout << "ERROR: wrong number of arguments -- see usage notes above" << endl;
      exit(0);
   }
-  TString inFileName(argv[1]);
-  TString outFileName(argv[2]);
-  TString isMC(argv[3]);
-       if (isMC == "0"){ gIsMC = false; }
-  else if (isMC == "1"){ gIsMC = true; }
-  else {
-     cout << "ERROR: 3rd argument should be 1 or 0 to specify whether this is or is not MC" << endl;
+  TString inFileName("");
+  TString outFileName("");
+  gIsMC = false;
+  gChi2DOFCut = 1000.0;
+  gNumUnusedTracksCut = -1;
+  gNumUnusedNeutralsCut = -1;
+  gNumNeutralHyposCut = -1;
+  gSafe = true;
+  gPrint = false;
+  for (int i = 0; i < argc-1; i++){
+    TString argi(argv[i]);
+    TString argi1(argv[i+1]);
+    if (argi == "-in")  inFileName = argi1;
+    if (argi == "-out") outFileName = argi1;
+    if (argi == "-mc"){ if (argi1 == "1") gIsMC = true; }
+    if (argi == "-chi2"){ gChi2DOFCut = atof(argi1); }
+    if (argi == "-numUnusedTracks"){ gNumUnusedTracksCut = atoi(argi1); }
+    if (argi == "-numUnusedNeutrals"){ gNumUnusedNeutralsCut = atoi(argi1); }
+    if (argi == "-numNeutralHypos"){ gNumNeutralHyposCut = atoi(argi1); }
+    if (argi == "-safe"){ if (argi1 == "0") gSafe = false; }
+    if (argi == "-print"){ if (argi1 == "1") gPrint = true; }
+  }
+  cout << endl;
+  cout << "INPUT PARAMETERS:" << endl << endl;
+  cout << "  input file:            " << inFileName << endl;
+  cout << "  output file:           " << outFileName << endl;
+  cout << "  MC?                    " << gIsMC << endl;
+  cout << "  chi2/dof cut:          " << gChi2DOFCut << endl;
+  cout << "  numUnusedTracks cut:   " << gNumUnusedTracksCut << endl;
+  cout << "  numUnusedNeutrals cut: " << gNumUnusedNeutralsCut << endl;
+  cout << "  numNeutralHypos cut:   " << gNumNeutralHyposCut << endl;
+  cout << "  safe mode?             " << gSafe << endl;
+  cout << endl;
+  if ((inFileName == "") || (outFileName == "")){
+     cout << "ERROR: specify input and output files -- see usage notes above" << endl;
      exit(0);
   }
-  if (argc == 4) gChi2DOFCut = 1000.0;
-  if (argc == 5) gChi2DOFCut = atof(argv[4]);
   ConvertFile(inFileName,outFileName);
+  return 0;
 }
 
 
@@ -315,8 +366,13 @@ void ConvertTree(TString treeName){
     }
   }
   pair<int,int> reconstructedFSCode = FSCode(orderedParticleNames);
-  cout << "  DecayCode1 = " << reconstructedFSCode.first << endl;
-  cout << "  DecayCode2 = " << reconstructedFSCode.second << endl << endl;
+  int numFSNeutrals = 0;
+  for (unsigned int i = 0; i < orderedParticleNames.size(); i++){
+    numFSNeutrals += GlueXNeutralsCounter(orderedParticleNames[i][0]);
+  }
+  cout << "  DecayCode1    = " << reconstructedFSCode.first << endl;
+  cout << "  DecayCode2    = " << reconstructedFSCode.second << endl;
+  cout << "  numFSNeutrals = " << numFSNeutrals << endl << endl;
 
 
      // **********************************************************************
@@ -346,6 +402,7 @@ void ConvertTree(TString treeName){
   }
 
 
+
    // **********************************************************************
    // STEP 2:  SET UP TO READ THE INPUT TREE (IN ANALYSIS TREE FORMAT)
    // **********************************************************************
@@ -356,27 +413,29 @@ void ConvertTree(TString treeName){
 
         //   *** Thrown Non-Particle Data ***
 
-  UInt_t inNumThrown;
+  UInt_t inNumThrown = 0;
       if (gIsMC) inTree->SetBranchAddress("NumThrown", &inNumThrown);
 
 
         //   *** Thrown Beam Particle ***
 
-  Float_t inThrownBeam__GeneratedEnergy;
+  Float_t inThrownBeam__GeneratedEnergy = -1.0;
       if (gIsMC) inTree->SetBranchAddress("ThrownBeam__GeneratedEnergy", &inThrownBeam__GeneratedEnergy);
 
 
         //   *** Thrown Products ***
 
-  Int_t  inThrown__ParentIndex[MAXPARTICLES] = {};   
+  Int_t  inThrown__ParentIndex[MAXTHROWN] = {};   
       if (gIsMC) inTree->SetBranchAddress("Thrown__ParentIndex", inThrown__ParentIndex);
-  Int_t  inThrown__PID[MAXPARTICLES] = {};   
+  Int_t  inThrown__PID[MAXTHROWN] = {};   
       if (gIsMC) inTree->SetBranchAddress("Thrown__PID", inThrown__PID);
-  Int_t  inThrown__MatchID[MAXPARTICLES] = {};   
+  Int_t  inThrown__MatchID[MAXTHROWN] = {};   
       if (gIsMC) inTree->SetBranchAddress("Thrown__MatchID", inThrown__MatchID);
-  Float_t  inThrown__MatchFOM[MAXPARTICLES] = {};   
+  Float_t  inThrown__MatchFOM[MAXTHROWN] = {};   
       if (gIsMC) inTree->SetBranchAddress("Thrown__MatchFOM", inThrown__MatchFOM);
-  TClonesArray *inThrown__P4 = new TClonesArray("TLorentzVector");
+  TClonesArray *inThrown__P4 = NULL;
+      if (gIsMC) inThrown__P4 = new TClonesArray("TLorentzVector", MAXTHROWN);
+      if (gIsMC) inTree->GetBranch       ("Thrown__P4")->SetAutoDelete(kFALSE);
       if (gIsMC) inTree->SetBranchAddress("Thrown__P4",&(inThrown__P4));
 
 
@@ -387,46 +446,53 @@ void ConvertTree(TString treeName){
 
         //   *** Non-Particle Data ***
 
-  UInt_t inRunNumber;        
+  UInt_t inRunNumber = 0;        
       inTree->SetBranchAddress("RunNumber", &inRunNumber);
-  ULong64_t inEventNumber;
+  ULong64_t inEventNumber = 0;
       inTree->SetBranchAddress("EventNumber", &inEventNumber);
-  TLorentzVector* inX4_Production;
+  TLorentzVector* inX4_Production = NULL;
       inTree->SetBranchAddress("X4_Production", &inX4_Production);
-  UInt_t inNumBeam;
+  UInt_t inNumBeam = 0;
       inTree->SetBranchAddress("NumBeam", &inNumBeam);
-  UInt_t inNumChargedHypos;
+  UInt_t inNumChargedHypos = 0;
       inTree->SetBranchAddress("NumChargedHypos", &inNumChargedHypos);
-  UInt_t inNumNeutralHypos; 
+  UInt_t inNumNeutralHypos = 0; 
       inTree->SetBranchAddress("NumNeutralHypos", &inNumNeutralHypos);
-  UInt_t inNumCombos;
+  UInt_t inNumCombos = 0;
       inTree->SetBranchAddress("NumCombos", &inNumCombos);
-  Bool_t inIsThrownTopology;
+  UChar_t inNumUnusedTracks = 0;
+      inTree->SetBranchAddress("NumUnusedTracks", &inNumUnusedTracks);
+  Bool_t inIsThrownTopology = false;
       if (gIsMC) inTree->SetBranchAddress("IsThrownTopology", &inIsThrownTopology);
 
 
         //   *** Beam Particles (indexed using ComboBeam__BeamIndex) ***
 
-  TClonesArray *inBeam__P4_Measured = new TClonesArray("TLorentzVector");
+  TClonesArray *inBeam__P4_Measured = new TClonesArray("TLorentzVector",MAXBEAM);
+      inTree->GetBranch       ("Beam__P4_Measured")->SetAutoDelete(kFALSE);
       inTree->SetBranchAddress("Beam__P4_Measured", &(inBeam__P4_Measured));
-  TClonesArray *inBeam__X4_Measured = new TClonesArray("TLorentzVector");
+  TClonesArray *inBeam__X4_Measured = new TClonesArray("TLorentzVector",MAXBEAM);
+      inTree->GetBranch       ("Beam__X4_Measured")->SetAutoDelete(kFALSE);
       inTree->SetBranchAddress("Beam__X4_Measured", &(inBeam__X4_Measured));
 
 
         //   *** Charged Track Hypotheses (indexed using <particleName>__ChargedIndex) ***
 
-  TClonesArray *inChargedHypo__P4_Measured = new TClonesArray("TLorentzVector");
+  TClonesArray *inChargedHypo__P4_Measured = new TClonesArray("TLorentzVector",MAXTRACKS);
+      inTree->GetBranch       ("ChargedHypo__P4_Measured")->SetAutoDelete(kFALSE);
       inTree->SetBranchAddress("ChargedHypo__P4_Measured",&(inChargedHypo__P4_Measured));
-  Float_t inChargedHypo__ChiSq_Tracking[MAXPARTICLES] = {}; 
+  Float_t inChargedHypo__ChiSq_Tracking[MAXTRACKS] = {}; 
       inTree->SetBranchAddress("ChargedHypo__ChiSq_Tracking", inChargedHypo__ChiSq_Tracking);
-  UInt_t  inChargedHypo__NDF_Tracking[MAXPARTICLES] = {};   
+  UInt_t  inChargedHypo__NDF_Tracking[MAXTRACKS] = {};   
       inTree->SetBranchAddress("ChargedHypo__NDF_Tracking", inChargedHypo__NDF_Tracking);
+
 
         //   *** Neutral Particle Hypotheses (indexed using <particleName>__NeutralIndex) ***
 
-  TClonesArray *inNeutralHypo__P4_Measured = new TClonesArray("TLorentzVector");
+  TClonesArray *inNeutralHypo__P4_Measured = new TClonesArray("TLorentzVector",MAXNEUTRALS);
+      inTree->GetBranch       ("NeutralHypo__P4_Measured")->SetAutoDelete(kFALSE);
       inTree->SetBranchAddress("NeutralHypo__P4_Measured",&(inNeutralHypo__P4_Measured));
-  Float_t inNeutralHypo__ShowerQuality[MAXPARTICLES] = {};
+  Float_t inNeutralHypo__ShowerQuality[MAXNEUTRALS] = {};
       inTree->SetBranchAddress("NeutralHypo__ShowerQuality", inNeutralHypo__ShowerQuality);
 
 
@@ -452,7 +518,8 @@ void ConvertTree(TString treeName){
 
   Int_t inBeamIndex[MAXCOMBOS] = {};
       inTree->SetBranchAddress("ComboBeam__BeamIndex", inBeamIndex);
-  TClonesArray *inBeam__P4_KinFit = new TClonesArray("TLorentzVector");
+  TClonesArray *inBeam__P4_KinFit = new TClonesArray("TLorentzVector",MAXCOMBOS);
+      inTree->GetBranch       ("ComboBeam__P4_KinFit")->SetAutoDelete(kFALSE);
       inTree->SetBranchAddress("ComboBeam__P4_KinFit", &(inBeam__P4_KinFit));
 
 
@@ -474,7 +541,8 @@ void ConvertTree(TString treeName){
 
       if (GlueXParticleClass(name) == "Charged"){
         TString var_P4_KinFit(name); var_P4_KinFit += "__P4_KinFit";
-            inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector");
+            inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
+            inTree->GetBranch       (var_P4_KinFit)->SetAutoDelete(kFALSE);
             inTree->SetBranchAddress(var_P4_KinFit,&(inP4_KinFit[pIndex]));
         TString var_ChargedIndex(name);  var_ChargedIndex += "__ChargedIndex";  
             inTree->SetBranchAddress(var_ChargedIndex,inChargedIndex[pIndex]);
@@ -484,7 +552,8 @@ void ConvertTree(TString treeName){
 
       if (GlueXParticleClass(name) == "Neutral"){
         TString var_P4_KinFit(name); var_P4_KinFit += "__P4_KinFit";
-            inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector");
+            inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
+            inTree->GetBranch       (var_P4_KinFit)->SetAutoDelete(kFALSE);
             inTree->SetBranchAddress(var_P4_KinFit,&(inP4_KinFit[pIndex]));
         TString var_NeutralIndex(name);  var_NeutralIndex += "__NeutralIndex";  
             inTree->SetBranchAddress(var_NeutralIndex,inNeutralIndex[pIndex]);
@@ -509,25 +578,29 @@ void ConvertTree(TString treeName){
 
     // non-particle information
 
-  double outRunNumber;     outTree.Branch("Run",        &outRunNumber,  "Run/D");
-  double outEventNumber;   outTree.Branch("Event",      &outEventNumber,"Event/D");
-  double outChi2;          outTree.Branch("Chi2",       &outChi2,       "Chi2/D");
-  double outChi2DOF;       outTree.Branch("Chi2DOF",    &outChi2DOF,    "Chi2DOF/D");
-  double outRFTime;        outTree.Branch("RFTime",     &outRFTime,     "RFTime/D");
-  double outRFDeltaT;      outTree.Branch("RFDeltaT",   &outRFDeltaT,   "RFDeltaT/D");
-  double outEnUnusedSh;    outTree.Branch("EnUnusedSh", &outEnUnusedSh, "EnUnusedSh/D");
-  double outProdVx;        outTree.Branch("ProdVx",     &outProdVx,     "ProdVx/D");
-  double outProdVy;        outTree.Branch("ProdVy",     &outProdVy,     "ProdVy/D");
-  double outProdVz;        outTree.Branch("ProdVz",     &outProdVz,     "ProdVz/D");
-  double outProdVt;        outTree.Branch("ProdVt",     &outProdVt,     "ProdVt/D");
-  double outPxPB;          outTree.Branch("PxPB",       &outPxPB,       "PxPB/D");
-  double outPyPB;          outTree.Branch("PyPB",       &outPyPB,       "PyPB/D");
-  double outPzPB;          outTree.Branch("PzPB",       &outPzPB,       "PzPB/D");
-  double outEnPB;          outTree.Branch("EnPB",       &outEnPB,       "EnPB/D");
-  double outRPxPB;         outTree.Branch("RPxPB",      &outRPxPB,      "RPxPB/D");
-  double outRPyPB;         outTree.Branch("RPyPB",      &outRPyPB,      "RPyPB/D");
-  double outRPzPB;         outTree.Branch("RPzPB",      &outRPzPB,      "RPzPB/D");
-  double outREnPB;         outTree.Branch("REnPB",      &outREnPB,      "REnPB/D");
+  double outRunNumber;        outTree.Branch("Run",             &outRunNumber,       "Run/D");
+  double outEventNumber;      outTree.Branch("Event",           &outEventNumber,     "Event/D");
+  double outChi2;             outTree.Branch("Chi2",            &outChi2,            "Chi2/D");
+  double outChi2DOF;          outTree.Branch("Chi2DOF",         &outChi2DOF,         "Chi2DOF/D");
+  double outRFTime;           outTree.Branch("RFTime",          &outRFTime,          "RFTime/D");
+  double outRFDeltaT;         outTree.Branch("RFDeltaT",        &outRFDeltaT,        "RFDeltaT/D");
+  double outEnUnusedSh;       outTree.Branch("EnUnusedSh",      &outEnUnusedSh,      "EnUnusedSh/D");
+  double outNumUnusedTracks;  outTree.Branch("NumUnusedTracks", &outNumUnusedTracks, "NumUnusedTracks/D");
+  double outNumNeutralHypos;  outTree.Branch("NumNeutralHypos", &outNumNeutralHypos, "NumNeutralHypos/D");
+  double outNumBeam;          outTree.Branch("NumBeam",         &outNumBeam,         "NumBeam/D");
+  double outNumCombos;        outTree.Branch("NumCombos",       &outNumCombos,       "NumCombos/D");
+  double outProdVx;           outTree.Branch("ProdVx",          &outProdVx,          "ProdVx/D");
+  double outProdVy;           outTree.Branch("ProdVy",          &outProdVy,          "ProdVy/D");
+  double outProdVz;           outTree.Branch("ProdVz",          &outProdVz,          "ProdVz/D");
+  double outProdVt;           outTree.Branch("ProdVt",          &outProdVt,          "ProdVt/D");
+  double outPxPB;             outTree.Branch("PxPB",            &outPxPB,            "PxPB/D");
+  double outPyPB;             outTree.Branch("PyPB",            &outPyPB,            "PyPB/D");
+  double outPzPB;             outTree.Branch("PzPB",            &outPzPB,            "PzPB/D");
+  double outEnPB;             outTree.Branch("EnPB",            &outEnPB,            "EnPB/D");
+  double outRPxPB;            outTree.Branch("RPxPB",           &outRPxPB,           "RPxPB/D");
+  double outRPyPB;            outTree.Branch("RPyPB",           &outRPyPB,           "RPyPB/D");
+  double outRPzPB;            outTree.Branch("RPzPB",           &outRPzPB,           "RPzPB/D");
+  double outREnPB;            outTree.Branch("REnPB",           &outREnPB,           "REnPB/D");
 
     // MC information
 
@@ -585,32 +658,78 @@ void ConvertTree(TString treeName){
    // STEP 4:  DO THE CONVERSION
    // **********************************************************************
 
-  cout << "STARTING THE CONVERSION... " << endl << endl;
+  cout << "STARTING THE CONVERSION: " << endl << endl;
 
 
     // loop over the input tree
 
   Long64_t nEntries = inTree->GetEntries();
+  cout << "LOOPING OVER " << nEntries << " EVENTS..." << endl;
   for (Long64_t iEntry = 0; iEntry < nEntries; iEntry++){
-    if ((iEntry+1) % 10000 == 0) cout << "entry = " << iEntry+1 << endl;
+    if ((iEntry+1) % 10000 == 0) cout << "entry = " << iEntry+1 << "  (" << (100.0*(iEntry+1))/nEntries << " percent)" << endl;
+
+      // clear arrays (from ROOT documentation)
+
+    if (gIsMC) inThrown__P4->Clear();
+    inBeam__P4_Measured->Clear();
+    inBeam__X4_Measured->Clear();
+    inChargedHypo__P4_Measured->Clear();
+    inNeutralHypo__P4_Measured->Clear();
+    inBeam__P4_KinFit->Clear();
+    for (unsigned int i = 0; i < MAXPARTICLES; i++){ if (inP4_KinFit[i]) inP4_KinFit[i]->Clear(); }
+
+
+      // if running in safe mode, first check array sizes
+
+    if (gSafe){
+      inTree->SetBranchStatus("*",0);
+      if (gIsMC) inTree->SetBranchStatus("NumThrown",1);
+      inTree->SetBranchStatus("RunNumber",1);
+      inTree->SetBranchStatus("EventNumber",1);
+      inTree->SetBranchStatus("NumBeam",1);
+      inTree->SetBranchStatus("NumChargedHypos",1);
+      inTree->SetBranchStatus("NumNeutralHypos",1);
+      inTree->SetBranchStatus("NumCombos",1);
+      inTree->SetBranchStatus("NumUnusedTracks",1);
+      inTree->GetEntry(iEntry);
+      int numUnusedNeutrals = inNumNeutralHypos - numFSNeutrals;
+      if ((gNumUnusedTracksCut   >= 0) && (inNumUnusedTracks   > gNumUnusedTracksCut)) continue;
+      if ((gNumUnusedNeutralsCut >= 0) && (  numUnusedNeutrals > gNumUnusedNeutralsCut)) continue;
+      if ((gNumNeutralHyposCut   >= 0) && (inNumNeutralHypos   > gNumNeutralHyposCut)) continue;
+      if (((gIsMC) && (inNumThrown > MAXTHROWN)) ||
+          (inNumBeam > MAXBEAM) ||
+          (inNumChargedHypos > MAXTRACKS) || 
+          (inNumNeutralHypos > MAXNEUTRALS) ||
+          (inNumCombos > MAXCOMBOS)){
+        cout << endl;
+        cout << "WARNING:  Array sizes will be exceeded!  Skipping event!" << endl;
+        cout << "   Entry           = " << iEntry << endl;
+        cout << "   Run             = " << inRunNumber << endl;
+        cout << "   Event           = " << inEventNumber << endl;
+        if (gIsMC) 
+        cout << "   NumThrown       = " << inNumThrown << endl;
+        cout << "   NumBeam         = " << inNumBeam << endl;
+        cout << "   NumChargedHypos = " << inNumChargedHypos << endl;
+        cout << "   NumNeutralHypos = " << inNumNeutralHypos << endl;
+        cout << "   NumCombos       = " << inNumCombos << endl;
+        cout << endl;
+        continue;
+      }
+      inTree->SetBranchStatus("*",1);
+    }
+
+
+      // get entries from the input tree
+
     inTree->GetEntry(iEntry);
-    if (inNumCombos > MAXCOMBOS){
-      cout << "ERROR:  Too many combos (" << inNumCombos << ")!" << endl;
-      exit(0);
-    }
-    if (inNumChargedHypos + inNumNeutralHypos > MAXPARTICLES){
-      cout << "ERROR:  Too many hypotheses!" << endl;
-      cout << "   NumChargedHypos = " << inNumChargedHypos << endl;
-      cout << "   NumNeutralHypos = " << inNumNeutralHypos << endl;
-      exit(0);
-    }
+
 
      // print some information (for debugging only)
 
-    if (iEntry+1 == 1){ 
+    if ((iEntry+1 == 1) && (gPrint)){ 
       cout << endl << "PRINTING TEST INFORMATION FOR FIVE EVENTS..." << endl << endl;
     }
-    if (iEntry < 5){
+    if ((iEntry < 5) && (gPrint)){
       cout << endl << endl;
       cout << "  ***************************" << endl;
       cout << "  ******* NEW EVENT " << iEntry+1 << " *******" << endl;
@@ -662,9 +781,10 @@ void ConvertTree(TString treeName){
       //  mcProblems = true;
       //}
         // print a few events to make sure MC makes sense
-      if (iEntry < 5 || mcProblems == true){
+      if (((iEntry < 5) && gPrint) || mcProblems == true){
       //if (gIsMC && (iEntry < 5||inIsThrownTopology)){
         cout << endl << endl;
+        if (mcProblems) cout << "WARNING: problems with the truth parsing (see below)..." << endl;
         cout << "  **** TRUTH INFO STUDY FOR EVENT " << iEntry+1 << " ****" << endl;
         cout << "  NumThrown = " << inNumThrown << endl;
         cout << "  GeneratedEnergy = " << inThrownBeam__GeneratedEnergy << endl;
@@ -693,8 +813,12 @@ void ConvertTree(TString treeName){
         // non-particle information
 
       TLorentzVector *p4, *p4a, *p4b, *x4;
-      outRunNumber   = inRunNumber;
-      outEventNumber = inEventNumber;
+      outRunNumber       = inRunNumber;
+      outEventNumber     = inEventNumber;
+      outNumUnusedTracks = inNumUnusedTracks;
+      outNumNeutralHypos = inNumNeutralHypos;
+      outNumBeam         = inNumBeam;
+      outNumCombos       = inNumCombos;
       outChi2        = inChiSq_KinFit[ic];
       outChi2DOF     = -1; if (inNDF_KinFit[ic]>0.0) outChi2DOF = outChi2/inNDF_KinFit[ic];
       //outRFTime      = inRFTime_KinFit[ic];
@@ -842,7 +966,7 @@ void ConvertTree(TString treeName){
 
       // print some information (for debugging only)
 
-      if (iEntry < 5){
+      if ((iEntry < 5) && (gPrint)){
         cout << "  *******************************" << endl;
         cout << "  **** INFO FOR EVENT " << iEntry+1 << " ****" << endl;
         cout << "  *******************************" << endl;
@@ -875,7 +999,7 @@ void ConvertTree(TString treeName){
                << mass << "  " << rmass << endl;
         }}
       }
-      if (iEntry+1 == 5 && ic+1 == inNumCombos){ 
+      if (iEntry+1 == 5 && ic+1 == inNumCombos && gPrint){ 
         cout << endl << endl << "DONE PRINTING TEST INFORMATION FOR FIVE EVENTS" << endl << endl;
         cout << "CONTINUING THE CONVERSION... " << endl << endl;
       }
@@ -883,6 +1007,11 @@ void ConvertTree(TString treeName){
         // make cuts
 
       if (outChi2DOF > gChi2DOFCut) continue;
+      int numUnusedNeutrals = inNumNeutralHypos - numFSNeutrals;
+      if ((gNumUnusedTracksCut   >= 0) && (outNumUnusedTracks   > gNumUnusedTracksCut)) continue;
+      if ((gNumUnusedNeutralsCut >= 0) && (   numUnusedNeutrals > gNumUnusedNeutralsCut)) continue;
+      if ((gNumNeutralHyposCut   >= 0) && (outNumNeutralHypos   > gNumNeutralHyposCut)) continue;
+
 
         // fill the tree
 
@@ -1179,6 +1308,26 @@ TString GlueXParticleClass(TString glueXParticleType){
   if (glueXParticleType.Contains("PiMinus"))     return TString("Charged");
   if (glueXParticleType.Contains("Pi0"))         return TString("DecayingToNeutral");
   return TString("");
+}
+
+int GlueXNeutralsCounter(TString glueXParticleType){
+  if (glueXParticleType.Contains("AntiLambda"))  return 0;
+  if (glueXParticleType.Contains("Lambda"))      return 0;
+  if (glueXParticleType.Contains("Positron"))    return 0;
+  if (glueXParticleType.Contains("Electron"))    return 0;
+  if (glueXParticleType.Contains("MuonPlus"))    return 0;
+  if (glueXParticleType.Contains("MuonMinus"))   return 0;
+  if (glueXParticleType.Contains("AntiProton"))  return 0;
+  if (glueXParticleType.Contains("Proton"))      return 0;
+  if (glueXParticleType.Contains("Eta"))         return 2;
+  if (glueXParticleType.Contains("Photon"))      return 1;
+  if (glueXParticleType.Contains("KPlus"))       return 0;
+  if (glueXParticleType.Contains("KMinus"))      return 0;
+  if (glueXParticleType.Contains("KShort"))      return 0;
+  if (glueXParticleType.Contains("PiPlus"))      return 0;
+  if (glueXParticleType.Contains("PiMinus"))     return 0;
+  if (glueXParticleType.Contains("Pi0"))         return 2;
+  return 0;
 }
 
 int PDGIDNumber(TString glueXParticleType){
