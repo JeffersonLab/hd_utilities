@@ -30,5 +30,5 @@ while [ $nprocs -ne 0 ]
     nprocs=`ps aux | grep /home/gluex/.ssh/b1pi_cron | grep -v grep | wc -l`
     sleep 300
 done
-/group/halld/Software/scripts/b1pi_test/b1pi_message.sh
+/group/halld/Software/hd_utilities/b1pi_test/b1pi_message.sh
 exit
