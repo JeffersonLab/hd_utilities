@@ -56,7 +56,7 @@ hostname > hostname.out
 
 
 # Run hd_root
-hd_root --config=${JANA_CONFIG} ../hd_rawdata_??????_???.evio 2> std.err 1> std.out
+hd_root --config=${JANA_CONFIG} hd_rawdata_??????_???.evio 2> std.err 1> std.out
 
 # Move small files into a directory and make a tarball
 JOB_INFO=$(printf "job_info_%06d_%03d" $RUN $FILE)
