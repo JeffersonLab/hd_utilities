@@ -20,17 +20,17 @@
 # arg 6: FILE
 #
 
-
-export IMAGE=$1
-export SCRIPTFILE=$2
-export JANACONFIG=$3
-export RECON_VER=$4
-export RUN=$5
-export FILE=$6
+export LAUNCHDIR=$1
+export IMAGE=$2
+export SCRIPTFILE=$3
+export JANACONFIG=$4
+export RECON_VER=$5
+export RUN=$6
+export FILE=$7
 
 cvmfs_config probe
 module load singularity
-singularity run -B/cvmfs:/cvmfs $IMAGE $SCRIPTFILE $JANACONFIG $RECON_VER $RUN $FILE
+singularity run -B/cvmfs:/cvmfs -B${LAUNCHDIR}:/launch $IMAGE $SCRIPTFILE $JANACONFIG $RECON_VER $RUN $FILE
 
 
 
