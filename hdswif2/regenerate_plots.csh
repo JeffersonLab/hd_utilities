@@ -59,8 +59,8 @@
 #
 
 # A defaults
-set workflow="recon_2018-01_ver01_batch03"
-set uploaddir="gxproj5@ifarm:/group/halld/www/halldweb/html/data_monitoring/launch_analysis/../recon/summary_swif2_output_recon_2018-01_ver02_batch05"
+set workflow="recon_2018-08_ver02_batch01"
+set uploaddir="gxproj5@ifarm:/group/halld/www/halldweb/html/data_monitoring/launch_analysis/../recon/summary_swif2_output_recon_2018-08_ver02_batch01"
 set njobs=0
 set nsucceeded=0
 
@@ -101,23 +101,27 @@ set nsucceeded=0
 #set   plot_end="" # Use this for "now"
 
 # recon-2018_01_ver02_batch01
-set start_date="2019-02-16T06:10:00" # n.b. California time
-set   plot_end="2019-02-27T12:00:00" # 
+#set start_date="2019-02-16T06:10:00" # n.b. California time
+#set   plot_end="2019-02-27T12:00:00" # 
 
 # recon-2018_01_ver02_batch02
-set start_date="2019-02-27T11:00:00" # n.b. California time
-set   plot_end="2019-03-12T23:00:00"
+#set start_date="2019-02-27T11:00:00" # n.b. California time
+#set   plot_end="2019-03-12T23:00:00"
 
 # recon-2018_01_ver02_batch03
-set start_date="2019-03-18T08:45:00" # n.b. California time
-set   plot_end="2019-04-16T11:00:00"
+#set start_date="2019-03-18T08:45:00" # n.b. California time
+#set   plot_end="2019-04-16T11:00:00"
 
 # recon-2018_01_ver02_batch04
-set start_date="2019-04-16T09:30:00" # n.b. California time
-set   plot_end="2019-05-07T08:00:00" # 
+#set start_date="2019-04-16T09:30:00" # n.b. California time
+#set   plot_end="2019-05-07T08:00:00" # 
 
 # recon-2018_01_ver02_batch05
-set start_date="2019-05-07T20:00:00" # n.b. California time
+#set start_date="2019-05-07T20:00:00" # n.b. California time
+#set   plot_end="" # Use this for "now"
+
+# recon-2018_01_ver02_batch05
+set start_date="2019-07-30T09:00:00" # n.b. California time
 set   plot_end="" # Use this for "now"
 
 
