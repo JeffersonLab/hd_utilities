@@ -79,14 +79,14 @@ if not os.getenv('PYTHONPATH') : sys.path.append('/group/halld/Software/builds/L
 import mysql.connector
 
 
-TESTMODE       = False  # True=only print commands, but don't actually submit jobs
+TESTMODE       = True  # True=only print commands, but don't actually submit jobs
 VERBOSE        = 3     # 1 is default
 
 RUNPERIOD      = '2018-08'
 LAUNCHTYPE     = 'recon'  # 'offmon' or 'recon'
 VER            = '02'
 BATCH          = '01'
-WORKFLOW       = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER+'_batch'+BATCH
+WORKFLOW       = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER+'_batch'+BATCH+'_test'
 NAME           = 'GLUEX_' + LAUNCHTYPE
 
 RCDB_QUERY     = '@is_2018production and @status_approved'  # Comment out for all runs in range MINRUN-MAXRUN
