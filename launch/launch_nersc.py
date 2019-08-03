@@ -55,31 +55,15 @@
 # the gxproj4 account.
 #
 #
-# For the recon_2018-01_ver02 launch, the data were separated into
+# For the recon_2018-08_ver00 launch, the data were separated into
 # separate batches following the boundaries defined here:
-# https://halldweb.jlab.org/wiki-private/index.php/Spring_2018_Dataset_Summary
+# https://halldweb.jlab.org/wiki-private/index.php/Fall_2018_Dataset_Summary
 #
-# BATCH 1: 40856-41105
-# BATCH 2: 41106-41257
-# BATCH 3: 41258-41482
-# BATCH 4: 41483-41632
-# BATCH 5: 41860-42059
-# BATCH 6: 42075-42273
-# BATCH 7: 42274-42577
+# BATCH 1: 50677-51035
+# BATCH 2: 51036-51203
+# BATCH 3: 51204-51383
+# BATCH 4: 51497-51638, 51683-51687, 51722-51768
 #
-# Originally, the following runs were to be excluded from the NERSC
-# launch since they were done at JLab. Some additional BCAL calibrations
-# came in last minute causing the NERSC launch to become ver02 and
-# include all runs. Here is the list of those originally excluded
-# just in case I need them handy.
-#EXCLUDE_RUNS   = [40986, 40987, 40988, 40993, 40994,
-#                  41187, 41197, 41202, 41203, 41204,
-#                  41376, 41378, 41383, 41384, 41385,
-#                  41566, 41570, 41571, 41572, 41573,
-#                  41936, 41941, 41942, 41956, 41976,
-#                  42154, 42155, 42156, 42157, 42158,
-#                  42439, 42442, 42444, 42445, 42446]
-
 
 import subprocess
 import math
@@ -94,7 +78,7 @@ import mysql.connector
 TESTMODE       = False  # True=only print commands, but don't actually submit jobs
 VERBOSE        = 3     # 1 is default
 
-RUNPERIOD      = '2018-01'
+RUNPERIOD      = '2018-08'
 LAUNCHTYPE     = 'recon'  # 'offmon' or 'recon'
 VER            = '02'
 BATCH          = '01'
@@ -103,8 +87,8 @@ NAME           = 'GLUEX_' + LAUNCHTYPE
 
 RCDB_QUERY     = '@is_2018production and @status_approved'  # Comment out for all runs in range MINRUN-MAXRUN
 RUNS           = [] # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
-MINRUN         = 40857   # If RUNS is empty, then RCDB queried for this range
-MAXRUN         = 41105   # If RUNS is empty, then RCDB queried for this range
+MINRUN         = 50678   # If RUNS is empty, then RCDB queried for this range
+MAXRUN         = 51035   # If RUNS is empty, then RCDB queried for this range
 MINFILENO      = 0       # Min file number to process for each run (n.b. file numbers start at 0!)
 MAXFILENO      = 1000    # Max file number to process for each run (n.b. file numbers start at 0!)
 FILE_FRACTION  = 1.0     # Fraction of files to process for each run in specified range (see GetFileNumbersToProcess)
@@ -112,17 +96,18 @@ MAX_CONCURRENT_JOBS = '2100'  # Maximum number of jobs swif2 will have in flight
 EXCLUDE_RUNS   = []      # Runs that should be excluded from processing
 PROJECT        = 'm3120'
 TIMELIMIT      = '7:30:00'  # Set time limit (2.4 timeslonger for KNL than haswell)
-QOS            = 'regular'  # debug, regular, premium
+QOS            = 'regular'  # debug, regular, premium, low, flex, scavenger
 NODETYPE       = 'knl'      # haswell, knl  (quad,cache)
 
 IMAGE          = 'docker:markito3/gluex_docker_devel'
-RECONVERSION   = 'halld_recon/halld_recon-4.1.1'  # must exist in /group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5-cntr
+RECONVERSION   = 'halld_recon/halld_recon-recon-2018_08-ver02'  # must exist in /group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5-cntr
 SCRIPTFILE     = '/launch/script_nersc.sh'
 CONFIG         = '/launch/jana_'+LAUNCHTYPE+'_nersc.config'
 
 RCDB_HOST    = 'hallddb.jlab.org'
 RCDB_USER    = 'rcdb'
 RCDB         = None
+BAD_RCDB_QUERY_RUNS = []  # will be filled with runs that are missing evio_file_count field in RCDB query
 
 # Set output directory depending on launch type
 if   LAUNCHTYPE=='offmon':
@@ -300,7 +285,7 @@ def GetRunInfo():
 	# python module does not actually need to be in PYTHONPATH. For the 3rd
 	# option, the RCDB python API is used so it is needed.
 
-	global RUNS, MINRUN, MAXRUN, RCDB_QUERY, RUN_LIST_SOURCE
+	global RUNS, MINRUN, MAXRUN, RCDB_QUERY, RUN_LIST_SOURCE, BAD_RCDB_QUERY_RUNS
 	good_runs = {}
 	
 	# If RCDB_QUERY is not defined, define with value None
@@ -314,13 +299,18 @@ def GetRunInfo():
 
 		# Import RCDB python module. Add a path on the CUE just in case
 		# PYTHONPATH is not already set
-		sys.path.append('/group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5/rcdb/rcdb_0.03/python')
+		sys.path.append('/group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5/rcdb/rcdb_0.04.00/python')
 		import rcdb
 
 		db = rcdb.RCDBProvider('mysql://' + RCDB_USER + '@' + RCDB_HOST + '/rcdb')
 		print 'RCDB_QUERY = ' + RCDB_QUERY
 		for r in db.select_runs(RCDB_QUERY, MINRUN, MAXRUN):
-			good_runs[r.number] = int(r.get_condition_value('evio_files_count'))
+			evio_files_count = r.get_condition_value('evio_files_count')
+			if evio_files_count == None:
+				print('ERROR in RCDB: Run ' + str(r.number) + ' has no value for evio_files_count! Skipping ...')
+				BAD_RCDB_QUERY_RUNS.append( int(r.number) )
+				continue
+			good_runs[r.number] = int(evio_files_count)
 	elif len(RUNS)==0 :
 		RUN_LIST_SOURCE = 'All runs in range ' + str(MINRUN) + '-' + str(MAXRUN)
 		print 'Getting info for all runs in range ' + str(MINRUN) + '-' + str(MAXRUN) + ' ....'
@@ -497,5 +487,7 @@ for (RUN, Nfiles) in good_runs.iteritems():
 			sys.stdout.flush()
 
 print ''
+print 'BAD_RCDB_QUERY_RUNS=' + str(BAD_RCDB_QUERY_RUNS)
 print str(NJOBS_SUBMITTED) + ' jobs submitted. ' + str(len(DIRS_CREATED)) + ' directories created for output'
+
 
