@@ -1,0 +1,1 @@
+mysql -u diskmanager diskManagement -e "select a.tmp disk_database.pl disk_report.pl from volatile_file_temp order by id desc limit 5"
