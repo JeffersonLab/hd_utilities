@@ -13,7 +13,7 @@ EOF
 date >> $report_file
 cat >> $report_file <<EOF
 </p>
-<p>Oldest 1000 files on /volatile/halld</p>
+<p>Oldest 1000 files under /volatile/halld</p>
 EOF
 query="select vfile.mod_time as mtime, file_name, vfile.owner, size, full_path from vfile, vdirectory where vfile.dir_index = vdirectory.dir_index and full_path like \"/volatile/halld/%\" order by mtime limit 1000;"
 mysql --html -h scidbw -u dummy wdm -e "$query" >> $report_file
