@@ -79,8 +79,8 @@ if not os.getenv('PYTHONPATH') : sys.path.append('/group/halld/Software/builds/L
 import mysql.connector
 
 
-TESTMODE       = True  # True=only print commands, but don't actually submit jobs
-VERBOSE        = 3     # 1 is default
+TESTMODE       = False  # True=only print commands, but don't actually submit jobs
+VERBOSE        = 3      # 1 is default
 
 RUNPERIOD      = '2018-08'
 LAUNCHTYPE     = 'recon'  # 'offmon' or 'recon'
@@ -90,16 +90,16 @@ WORKFLOW       = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER+'_batch'+BATCH+'_test'
 NAME           = 'GLUEX_' + LAUNCHTYPE
 
 RCDB_QUERY     = '@is_2018production and @status_approved'  # Comment out for all runs in range MINRUN-MAXRUN
-RUNS           = [41222, 50705] # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
+RUNS           = [50705] # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
 MINRUN         = 50678   # If RUNS is empty, then RCDB queried for this range
 MAXRUN         = 51035   # If RUNS is empty, then RCDB queried for this range
-MINFILENO      = 2       # Min file number to process for each run (n.b. file numbers start at 0!)
-MAXFILENO      = 2    # Max file number to process for each run (n.b. file numbers start at 0!)
+MINFILENO      = 4       # Min file number to process for each run (n.b. file numbers start at 0!)
+MAXFILENO      = 4       # Max file number to process for each run (n.b. file numbers start at 0!)
 FILE_FRACTION  = 1.0     # Fraction of files to process for each run in specified range (see GetFileNumbersToProcess)
 MAX_CONCURRENT_JOBS = '2100'  # Maximum number of jobs swif2 will have in flight at once
 EXCLUDE_RUNS   = []      # Runs that should be excluded from processing
 PROJECT        = 'm3120'
-TIMELIMIT      = '3:00:00'  # Set time limit (2.4 timeslonger for KNL than haswell)
+TIMELIMIT      = '7:30:00'  # Set time limit (2.4 timeslonger for KNL than haswell)
 QOS            = 'regular'  # debug, regular, premium, low, flex, scavenger
 NODETYPE       = 'knl'      # haswell, knl  (quad,cache)
 
@@ -153,6 +153,7 @@ def MakeJob(RUN,FILE):
 	SBATCH  = ['-sbatch']
 	SBATCH += ['-A', PROJECT]
 	SBATCH += ['--volume="/global/project/projectdirs/%s/launch:/launch"' % PROJECT]
+	SBATCH += ['--volume="/global/cscratch1/sd/davidl/cvmfs_fake:/cvmfs"']  # --- TEMPORARY ---
 	SBATCH += ['--image=%s' % IMAGE]
 	SBATCH += ['--time=%s' % TIMELIMIT]
 	SBATCH += ['--nodes=1']
@@ -164,7 +165,7 @@ def MakeJob(RUN,FILE):
 
 	# Command for job to run
 	CMD  = ['/global/project/projectdirs/%s/launch/run_shifter.sh' % PROJECT]
-	CMD += ['--module=cvmfs']
+	#CMD += ['--module=cvmfs']  # --- TEMPORARILY COMMENTED OUT ---
 	CMD += ['--']
 	CMD += [SCRIPTFILE]
 	CMD += [CONFIG]           # arg 1:  JANA config file
