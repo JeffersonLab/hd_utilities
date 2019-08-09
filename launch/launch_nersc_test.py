@@ -152,8 +152,8 @@ def MakeJob(RUN,FILE):
 	# SLURM options
 	SBATCH  = ['-sbatch']
 	SBATCH += ['-A', PROJECT]
-	SBATCH += ['--volume="/global/project/projectdirs/%s/launch:/launch"' % PROJECT]
-	SBATCH += ['--volume="/global/cscratch1/sd/davidl/cvmfs_fake:/cvmfs"']  # --- TEMPORARY ---
+#	SBATCH += ['--volume="/global/project/projectdirs/%s/launch:/launch"' % PROJECT]
+	SBATCH += ['--volume="/global/project/projectdirs/%s/launch:/launch;/global/cscratch1/sd/davidl/cvmfs_fake:/cvmfs"']  # --- TEMPORARY ---
 	SBATCH += ['--image=%s' % IMAGE]
 	SBATCH += ['--time=%s' % TIMELIMIT]
 	SBATCH += ['--nodes=1']
