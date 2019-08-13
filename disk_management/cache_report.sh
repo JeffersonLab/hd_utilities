@@ -15,7 +15,7 @@ cat >> $report_file <<EOF
 </p>
 <p>Oldest 1000 files under /cache/halld</p>
 EOF
-query="select file.mod_time as mtime, file_name, file.owner, size, full_path from file, directory where file.dir_index = directory.dir_index and full_path like \"/cache/halld/%\" order by mtime limit 1000;"
+query="select file.mod_time as mtime, file_name, file.owner, size, full_path from file, directory where file.dir_index = directory.dir_index and full_path like \"/cache/halld/%\" and isCached = 1 order by mtime limit 1000;"
 mysql --html -h scidbw -u dummy wdm -e "$query" >> $report_file
 cat >> $report_file <<EOF
 </body>
