@@ -79,29 +79,29 @@ if not os.getenv('PYTHONPATH') : sys.path.append('/group/halld/Software/builds/L
 import mysql.connector
 
 
-TESTMODE       = False  # True=only print commands, but don't actually submit jobs
+TESTMODE       = True  # True=only print commands, but don't actually submit jobs
 VERBOSE        = 3      # 1 is default
 
 RUNPERIOD      = '2018-08'
 LAUNCHTYPE     = 'recon'  # 'offmon' or 'recon'
 VER            = '02'
-BATCH          = '01'
+BATCH          = '04'
 WORKFLOW       = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER+'_batch'+BATCH+'_test'
 NAME           = 'GLUEX_' + LAUNCHTYPE
 
 RCDB_QUERY     = '@is_2018production and @status_approved'  # Comment out for all runs in range MINRUN-MAXRUN
-RUNS           = [50705] # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
-MINRUN         = 50678   # If RUNS is empty, then RCDB queried for this range
-MAXRUN         = 51035   # If RUNS is empty, then RCDB queried for this range
-MINFILENO      = 4       # Min file number to process for each run (n.b. file numbers start at 0!)
-MAXFILENO      = 4       # Max file number to process for each run (n.b. file numbers start at 0!)
+RUNS           = [51683] # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
+MINRUN         = 51683   # If RUNS is empty, then RCDB queried for this range
+MAXRUN         = 51687   # If RUNS is empty, then RCDB queried for this range
+MINFILENO      = 0       # Min file number to process for each run (n.b. file numbers start at 0!)
+MAXFILENO      = 0       # Max file number to process for each run (n.b. file numbers start at 0!)
 FILE_FRACTION  = 1.0     # Fraction of files to process for each run in specified range (see GetFileNumbersToProcess)
-MAX_CONCURRENT_JOBS = '2100'  # Maximum number of jobs swif2 will have in flight at once
+MAX_CONCURRENT_JOBS = '10'  # Maximum number of jobs swif2 will have in flight at once
 EXCLUDE_RUNS   = []      # Runs that should be excluded from processing
 PROJECT        = 'm3120'
-TIMELIMIT      = '7:30:00'  # Set time limit (2.4 timeslonger for KNL than haswell)
+TIMELIMIT      = '3:30:00'  # Set time limit (2.4 timeslonger for KNL than haswell)
 QOS            = 'regular'  # debug, regular, premium, low, flex, scavenger
-NODETYPE       = 'knl'      # haswell, knl  (quad,cache)
+NODETYPE       = 'haswell'      # haswell, knl  (quad,cache)
 
 IMAGE          = 'docker:markito3/gluex_docker_devel'
 RECONVERSION   = 'halld_recon/halld_recon-recon-2018_08-ver02'  # must exist in /group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5-cntr
