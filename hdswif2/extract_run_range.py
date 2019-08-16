@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
 #
-# Extract the minimum an maximum run number from a given
+# Extract the minimum and maximum run number from a given
 # swif2 workflow.
 #
 # This works by reading the .json file for the workflow
