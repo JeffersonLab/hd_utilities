@@ -22,6 +22,11 @@
 
 class njobs : public TSelector {
 public :
+
+	int RunMin=0;
+	int RunMax=999999;
+	void SetRunRange(int RunMin, int RunMax){ this->RunMin = RunMin; this->RunMax = RunMax; }
+
    TTreeReader     fReader;  //!the tree reader
    TTree          *fChain = 0;   //!pointer to the analyzed TTree or TChain
 
@@ -31,6 +36,8 @@ public :
    TTreeReaderValue<Float_t> tend = {fReader, "tend"};
    TTreeReaderValue<Float_t> cpu = {fReader, "cpu"};
    TTreeReaderValue<Float_t> latency = {fReader, "latency"};
+   TTreeReaderValue<Int_t> run = {fReader, "run"};
+   TTreeReaderValue<Int_t> file = {fReader, "file"};
 
 	TH1D *njobs_vs_time;
 	TH1D *nqueued_vs_time;

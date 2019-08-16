@@ -1,7 +1,8 @@
 
 #include "StandardLabels.C"
+#include "njobs.h"
 
-void Njobs_vs_time(const char *start_tstr)
+void Njobs_vs_time(const char *start_tstr, int RunMin=0, int RunMax=999999)
 {
 	// "Start" time of launch 
 	// should match plot_start in regenerate_plots.csh for California
@@ -15,7 +16,7 @@ void Njobs_vs_time(const char *start_tstr)
 
 
 	TTree *t = new TTree("slurminfo", "SLURM Info.");
-	t->ReadFile("slurm.csv", "tsubmit/F:tstart:tend:cpu:latency:ncpus");
+	t->ReadFile("slurm.csv", "tsubmit/F:tstart:tend:cpu:latency:ncpus:run/I:file");
 	
 	TCanvas *c1 = new TCanvas("c1", "", 1600,600);
 	c1->SetGrid();
@@ -23,7 +24,9 @@ void Njobs_vs_time(const char *start_tstr)
 	gPad->SetBottomMargin(0.3);
 	gPad->SetRightMargin(0.02);
 
-	t->Process("njobs.C");
+	auto selector = (njobs*)TSelector::GetSelector("njobs.C");
+	selector->SetRunRange( RunMin, RunMax );
+	t->Process(selector);
 	TH1D *njobs_vs_time = (TH1D*)gROOT->FindObject("njobs_vs_time");
 	TH1D *nqueued_vs_time = (TH1D*)gROOT->FindObject("nqueued_vs_time");
 	

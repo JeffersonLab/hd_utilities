@@ -71,6 +71,9 @@ Bool_t njobs::Process(Long64_t entry)
 
    fReader.SetEntry(entry);
 	
+	if( *run < RunMin ) return kTRUE;
+	if( *run > RunMax ) return kTRUE;
+
    if( *tstart < *tsubmit ) *tstart = njobs_vs_time->GetXaxis()->GetXmax();
    if( *tend   < *tsubmit ) *tend   = njobs_vs_time->GetXaxis()->GetXmax();
 

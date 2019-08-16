@@ -120,8 +120,8 @@ set nsucceeded=0
 #set start_date="2019-05-07T20:00:00" # n.b. California time
 #set   plot_end="" # Use this for "now"
 
-# recon-2018_01_ver02_batch05
-set start_date="2019-07-30T09:00:00" # n.b. California time
+# recon-2018_08_ver02_batch01
+set start_date="2019-08-10T04:48:00" # n.b. California time
 set   plot_end="" # Use this for "now"
 
 
@@ -178,11 +178,18 @@ if ( $?get_njobs_from_workflow ) then
 	set nsucceeded=`ssh gxproj4@ifarm swif2 status -workflow $workflow | grep succeeded | awk '{print $3" "$4}'`
 endif
 
+# Get min and max runs in workflow
+set runrange=`./extract_run_range.py $workflow`
+set RunMin=`echo $runrange | awk '{print $1}'`
+set RunMax=`echo $runrange | awk '{print $2}'`
+
 echo "  workflow: "$workflow
 echo "start time: "$start_date
 echo "plot start: "$plot_start
 echo "plot  end : "$plot_end
 echo "     njobs: "$njobs
+echo "    RunMin: "$RunMin
+echo "    RunMax: "$RunMax
 
 # Run sacct on cori to get info from slurm in form of text
 # file and copy it back to local directory.
@@ -196,10 +203,10 @@ scp cori.nersc.gov:builds/accounting/slurm.dat .
 # Run all macros to create plots
 foreach m ( Njobs_vs_time.C latency_vs_time.C cpu_vs_time.C )
 	echo "Running ROOT macro $m ..."
-	root -l -q -b $m'("'$plot_start'")'
+	root -l -q -b $m'("'$plot_start'",'$RunMin','$RunMax')'
 end
 
-root -l -q -b 'iNjobs_vs_time.C("'$plot_start'",'$njobs','$nsucceeded')'
+root -l -q -b 'iNjobs_vs_time.C("'$plot_start'",'$njobs','$nsucceeded','$RunMin','$RunMax')'
 
 # Optionally open window to display plots on local machine
 if ( $?display_plots ) then

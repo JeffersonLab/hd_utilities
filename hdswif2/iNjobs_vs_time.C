@@ -22,7 +22,7 @@ void DrawValue( double x, double y, double tsize, const char *lab, int val, int 
 
 //----------------
 // iNjobs_vs_time
-void iNjobs_vs_time(const char *start_tstr, int NJOBS_TOTAL=0, int NJOBS_SUCCEEDED=0)
+void iNjobs_vs_time(const char *start_tstr, int NJOBS_TOTAL=0, int NJOBS_SUCCEEDED=0, int RunMin=0, int RunMax=999999)
 {
 	// "Start" time of launch 
 	// should match plot_start in regenerate_plots.csh for California
@@ -36,20 +36,23 @@ void iNjobs_vs_time(const char *start_tstr, int NJOBS_TOTAL=0, int NJOBS_SUCCEED
 
 
 	TTree *t = new TTree("slurminfo", "SLURM Info.");
-	t->ReadFile("slurm.csv", "tsubmit/F:tstart:tend:cpu:latency:ncpus");
+	t->ReadFile("slurm.csv", "tsubmit/F:tstart:tend:cpu:latency:ncpus:run/I:file");
 	
 	TCanvas *c1 = new TCanvas("c1", "", 1600,600);
 	c1->SetGrid();
 	c1->SetTicks();
 	gPad->SetBottomMargin(0.3);
 	gPad->SetRightMargin(0.02);
+	
+	char run_cut_str[256];
+	sprintf(run_cut_str, "(run>=%d) && (run<=%d)", RunMin, RunMax);
 
 	TH1D *nsubmitted_vs_time = new TH1D("nsubmitted_vs_time",   "", 5000E1, 0.0, 5000.0E3);
 	TH1D *nstarted_vs_time = (TH1D*)nsubmitted_vs_time->Clone("nstarted_vs_time");
 	TH1D *nended_vs_time = (TH1D*)nsubmitted_vs_time->Clone("nended_vs_time");
-	t->Project("nsubmitted_vs_time", "tsubmit");
-	t->Project("nstarted_vs_time", "tstart");
-	t->Project("nended_vs_time", "tend");
+	t->Project("nsubmitted_vs_time", "tsubmit", run_cut_str);
+	t->Project("nstarted_vs_time", "tstart", run_cut_str);
+	t->Project("nended_vs_time", "tend", run_cut_str);
 	for(int ibin=2; ibin<=nsubmitted_vs_time->GetNbinsX(); ibin++){
 		double v0 = nsubmitted_vs_time->GetBinContent(ibin-1);
 		double v1 = nsubmitted_vs_time->GetBinContent(ibin-0);
@@ -67,6 +70,12 @@ void iNjobs_vs_time(const char *start_tstr, int NJOBS_TOTAL=0, int NJOBS_SUCCEED
 	
 	// Find maximum of tsubmit, tstart, and tend since that should indicate the
 	// end of our time region.
+	//
+	// In order to restrict this to only entries for our run range
+	// we have to make a TEventList and set this for the tree
+	t->Draw(">>elist1", run_cut_str);
+	TEventList *list = (TEventList*)gDirectory->Get("elist1");
+	t->SetEventList(list);
 	double tsubmit_max = t->GetMaximum("tsubmit");
 	double tstart_max  = t->GetMaximum("tstart");
 	double tend_max    = t->GetMaximum("tend");

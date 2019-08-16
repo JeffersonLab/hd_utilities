@@ -175,6 +175,8 @@ with open('slurm.dat') as f:
 	#sql += ',LATENCY'
 	sql += ',CAST(strftime("%s",Start) as integer) - CAST(strftime("%s",Submit) as integer)'
 	sql += ',NCPUS'
+	sql += ',Run'
+	sql += ',file'
 	sql += ' FROM jobs'
 	sql += ' WHERE CAST(strftime("%s",Submit) as integer)<' + tmax
 	print sql
