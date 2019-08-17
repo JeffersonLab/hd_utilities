@@ -67,6 +67,7 @@
 
 import subprocess
 import math
+import glob
 import sys
 import os
 
@@ -86,7 +87,7 @@ WORKFLOW       = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER+'_batch'+BATCH
 NAME           = 'GLUEX_' + LAUNCHTYPE
 
 RCDB_QUERY     = '@is_2018production and @status_approved'  # Comment out for all runs in range MINRUN-MAXRUN
-RUNS           = [] # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
+RUNS           = [51017, 51018, 51019, 51020] # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
 MINRUN         = 50678   # If RUNS is empty, then RCDB queried for this range
 MAXRUN         = 51035   # If RUNS is empty, then RCDB queried for this range
 MINFILENO      = 0       # Min file number to process for each run (n.b. file numbers start at 0!)
@@ -108,6 +109,7 @@ RCDB_HOST    = 'hallddb.jlab.org'
 RCDB_USER    = 'rcdb'
 RCDB         = None
 BAD_RCDB_QUERY_RUNS = []  # will be filled with runs that are missing evio_file_count field in RCDB query
+BAD_FILE_COUNT_RUNS = []  # will be filled with runs where number of evio files could not be obtained by any method
 
 # Set output directory depending on launch type
 if   LAUNCHTYPE=='offmon':
@@ -285,7 +287,7 @@ def GetRunInfo():
 	# python module does not actually need to be in PYTHONPATH. For the 3rd
 	# option, the RCDB python API is used so it is needed.
 
-	global RUNS, MINRUN, MAXRUN, RCDB_QUERY, RUN_LIST_SOURCE, BAD_RCDB_QUERY_RUNS
+	global RUNS, MINRUN, MAXRUN, RCDB_QUERY, RUN_LIST_SOURCE, BAD_RCDB_QUERY_RUNS, BAD_FILE_COUNT_RUNS
 	good_runs = {}
 	
 	# If RCDB_QUERY is not defined, define with value None
@@ -307,8 +309,14 @@ def GetRunInfo():
 		for r in db.select_runs(RCDB_QUERY, MINRUN, MAXRUN):
 			evio_files_count = r.get_condition_value('evio_files_count')
 			if evio_files_count == None:
-				print('ERROR in RCDB: Run ' + str(r.number) + ' has no value for evio_files_count! Skipping ...')
+				print('ERROR in RCDB: Run ' + str(r.number) + ' has no value for evio_files_count!...')
 				BAD_RCDB_QUERY_RUNS.append( int(r.number) )
+				print('Attempting to extract number of files by examining /mss ...')
+				rawdatafiles = glob.glob('/mss/halld/RunPeriod-'+RUNPERIOD+'/rawdata/Run%06d/hd_rawdata_%06d_*.evio' % (r.number,r.number))
+				if len(rawdatafiles) > 0: evio_files_count = len(rawdatafiles)
+			if evio_files_count == None:
+				print('ERROR getting number of files for: Run ' + str(r.number) )
+				BAD_FILE_COUNT_RUNS.append( int(r.number) )
 				continue
 			good_runs[r.number] = int(evio_files_count)
 	elif len(RUNS)==0 :
@@ -331,6 +339,8 @@ def GetRunInfo():
 #----------------------------------------------------
 def GetNumEVIOFiles(RUN):
 
+	global BAD_RCDB_QUERY_RUNS, BAD_FILE_COUNT_RUNS
+
 	# Access RCDB to get the number of EVIO files for this run.
 	# n.b. the file numbers start from 0 so the last valid file
 	# number will be one less than the value returned
@@ -350,7 +360,17 @@ def GetNumEVIOFiles(RUN):
 	sql += ' AND condition_types.name="evio_files_count" AND run_number=' + str(RUN);
 	cur.execute(sql)
 	c_rows = cur.fetchall()
-	if len(c_rows)>0 : Nfiles = int(c_rows[0][0])
+	if len(c_rows)>0 :
+		Nfiles = int(c_rows[0][0])
+	else:
+		BAD_RCDB_QUERY_RUNS.append(RUN)
+		print('Attempting to extract number of files by examining /mss ...')
+		rawdatafiles = glob.glob('/mss/halld/RunPeriod-'+RUNPERIOD+'/rawdata/Run%06d/hd_rawdata_%06d_*.evio' % (RUN,RUN))
+		if len(rawdatafiles) > 0:
+			Nfiles = len(rawdatafiles)
+		else:
+			BAD_FILE_COUNT_RUNS.append(RUN)
+
 
 	return Nfiles
 
@@ -486,8 +506,19 @@ for (RUN, Nfiles) in good_runs.iteritems():
 			sys.stdout.write('  ' + str(NJOBS_SUBMITTED) + '/' + str(Njobs) + ' jobs \r')
 			sys.stdout.flush()
 
-print ''
+print('\n')
+print('NOTE: The values in BAD_RCDB_QUERY_RUNS is informative about what is missing from')
+print('      the RCDB. An attempt to recover the information from the /mss filesystem')
+print('      was also made. Values in BAD_FILE_COUNT_RUNS are ones for which that failed.')
+print('      Thus, only runs listed in BAD_FILE_COUNT_RUNS will not have any jobs submitted')
 print 'BAD_RCDB_QUERY_RUNS=' + str(BAD_RCDB_QUERY_RUNS)
-print str(NJOBS_SUBMITTED) + ' jobs submitted. ' + str(len(DIRS_CREATED)) + ' directories created for output'
+print 'BAD_FILE_COUNT_RUNS=' + str(BAD_FILE_COUNT_RUNS)
 
+print('')
+print('WORKFLOW: ' + WORKFLOW)
+print('------------------------------------')
+print('Number of runs: ' + str(len(good_runs)) + '  (only good runs)')
+print(str(NJOBS_SUBMITTED) + '/' + str(Njobs) + ' jobs submitted')
+print(str(len(DIRS_CREATED)) + ' directories created for output')
+print('')
 
