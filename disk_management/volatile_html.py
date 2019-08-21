@@ -21,9 +21,12 @@ def checkdir(dir):
   else:
     return False
 
+title = 'Directories with the Oldest Volatile Files'
+
 print('<html>')
-print('<head><title>Oldest Volatile Files</title></head>')
+print('<head><title>' + title + '</title></head>')
 print('<body>')
+print('<h1>' + title + '</h1>')
 print('<p>' + datetime + '</p>')
 print('<table border>')
 print('<tr><th>running directory count</th><th>running sum of <br/> size of old files (GB)</th><th>directories with oldest files</th><th>running file count</th><th>oldest file in directory</th><th>file mod time</th><th>file owner</th></tr>')
