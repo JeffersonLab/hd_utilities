@@ -30,7 +30,7 @@ EOF
 
 b1pi_test_options=""
 
-while getopts "h?v:f:n:t:d:s:" opt; do
+while getopts "h?4v:f:n:t:d:s:" opt; do
     case "$opt" in
     h|\?)
         show_help
@@ -48,6 +48,8 @@ while getopts "h?v:f:n:t:d:s:" opt; do
         b1pi_test_options="$b1pi_test_options -d $B1PI_TEST_DIR"
 	;;
     s)  SEED=$OPTARG
+	;;
+    4)  HDG4=true
     esac
 done
 
@@ -98,6 +100,11 @@ fi
 if [ ! -z "$SEED" ]
     then
     b1pi_test_options="$b1pi_test_options -s $SEED"
+fi
+
+if [ ! -z "$HDG4" ]
+    then
+    b1pi_test_options="$b1pi_test_options -4"
 fi
 
 if ! which genr8
