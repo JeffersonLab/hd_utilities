@@ -60,9 +60,9 @@
 
 # A defaults
 set workflow="recon_2018-08_ver02_batch01"
-set uploaddir="gxproj5@ifarm:/group/halld/www/halldweb/html/data_monitoring/launch_analysis/../recon/summary_swif2_output_recon_2018-08_ver02_batch01"
 set njobs=0
 set nsucceeded=0
+set uploaddir="UNSET"
 
 # Initial testing
 #set start_date="2018-07-19T11:00:00" # n.b. California time
@@ -166,6 +166,12 @@ foreach arg ($*)
 	if ( $#argv > 0 ) shift
 end
 
+# If uploaddir was not specified by user then set a default based on workflow name
+if ( $uploaddir == "UNSET" ) then
+	set uploaddir="gxproj5@ifarm1801:/group/halld/www/halldweb/html/data_monitoring/launch_analysis/../recon/summary_swif2_output_"$workflow
+   echo "Setting default upload directory to: "$uploaddir
+endif
+
 # If user did not specify start date/time of the launch
 # then get it from the workflow.
 if ( ! $?start_date ) then
@@ -174,8 +180,8 @@ endif
 
 # Optionally get the number of jobs from workflow
 if ( $?get_njobs_from_workflow ) then
-	set njobs=`ssh gxproj4@ifarm swif2 status -workflow $workflow | grep jobs | awk '{print $3" "$4}'`
-	set nsucceeded=`ssh gxproj4@ifarm swif2 status -workflow $workflow | grep succeeded | awk '{print $3" "$4}'`
+	set njobs=`ssh gxproj4@ifarm1801 swif2 status -workflow $workflow | grep jobs | awk '{print $3" "$4}'`
+	set nsucceeded=`ssh gxproj4@ifarm1801 swif2 status -workflow $workflow | grep succeeded | awk '{print $3" "$4}'`
 endif
 
 # Get min and max runs in workflow
