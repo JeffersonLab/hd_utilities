@@ -85,6 +85,7 @@
 
 import subprocess
 import math
+import glob
 import sys
 import os
 
@@ -93,31 +94,31 @@ if not os.getenv('PYTHONPATH') : sys.path.append('/group/halld/Software/builds/L
 import mysql.connector
 
 
-TESTMODE       = False  # True=only print commands, but don't actually submit jobs
+TESTMODE       = True  # True=only print commands, but don't actually submit jobs
 VERBOSE        = 3     # 1 is default
 
 RUNPERIOD      = '2018-08'
 LAUNCHTYPE     = 'recon'  # 'offmon' or 'recon'
 VER            = '02'
-BATCH          = '01'
+BATCH          = '04'
 WORKFLOW       = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER+'_batch'+BATCH+'_PSC'
 NAME           = 'GLUEX_' + LAUNCHTYPE
 
 RCDB_QUERY     = '@is_2018production and @status_approved'  # Comment out for all runs in range MINRUN-MAXRUN
-RUNS           = [51035] # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
-MINRUN         = 50677   # If RUNS is empty, then RCDB queried for this range
-MAXRUN         = 51035   # If RUNS is empty, then RCDB queried for this range
+RUNS           = [51683]      # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
+MINRUN         = 51683   # If RUNS is empty, then RCDB queried for this range
+MAXRUN         = 51687   # If RUNS is empty, then RCDB queried for this range
 MINFILENO      = 0       # Min file number to process for each run (n.b. file numbers start at 0!)
-MAXFILENO      = 0    # Max file number to process for each run (n.b. file numbers start at 0!)
+MAXFILENO      = 0       # Max file number to process for each run (n.b. file numbers start at 0!)
 FILE_FRACTION  = 1.0     # Fraction of files to process for each run in specified range (see GetFileNumbersToProcess)
-MAX_CONCURRENT_JOBS = '2100'  # Maximum number of jobs swif2 will have in flight at once
+MAX_CONCURRENT_JOBS = '700'  # Maximum number of jobs swif2 will have in flight at once
 EXCLUDE_RUNS   = []      # Runs that should be excluded from processing
 PSCUSER        = 'davidl'   # username of account used at PSC
 TIMELIMIT      = '5:10:00'  # Set time limit (expect ~4:38 on PSC Bridges)
 #QOS            = 'regular' # QOS not used for PSC
 NODETYPE       = 'RM'       # we only use RM=Regular Memory nodes
 
-LAUNCHDIR      = '/home/davidl/work/2019.07.25.swif2_test/launch'  # will get mapped to /launch in singularity container
+LAUNCHDIR      = '/home/davidl/work/2019.08.31.recon_2018-08_ver02/launch'  # will get mapped to /launch in singularity container
 IMAGE          = '/home/davidl/pylon5/singularity/gluex_docker_devel.simg'
 RECONVERSION   = 'halld_recon/halld_recon-recon-2018_08-ver02'  # must exist in /group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5-cntr
 SCRIPTFILE     = '/launch/script_psc.sh'
@@ -126,6 +127,8 @@ CONFIG         = '/launch/jana_'+LAUNCHTYPE+'_nersc.config'
 RCDB_HOST    = 'hallddb.jlab.org'
 RCDB_USER    = 'rcdb'
 RCDB         = None
+BAD_RCDB_QUERY_RUNS = []  # will be filled with runs that are missing evio_file_count field in RCDB query
+BAD_FILE_COUNT_RUNS = []  # will be filled with runs where number of evio files could not be obtained by any method
 
 # Set output directory depending on launch type
 if   LAUNCHTYPE=='offmon':
@@ -309,7 +312,7 @@ def GetRunInfo():
 	# python module does not actually need to be in PYTHONPATH. For the 3rd
 	# option, the RCDB python API is used so it is needed.
 
-	global RUNS, MINRUN, MAXRUN, RCDB_QUERY, RUN_LIST_SOURCE
+	global RUNS, MINRUN, MAXRUN, RCDB_QUERY, RUN_LIST_SOURCE, BAD_RCDB_QUERY_RUNS, BAD_FILE_COUNT_RUNS
 	good_runs = {}
 	
 	# If RCDB_QUERY is not defined, define with value None
@@ -323,13 +326,24 @@ def GetRunInfo():
 
 		# Import RCDB python module. Add a path on the CUE just in case
 		# PYTHONPATH is not already set
-		sys.path.append('/group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5/rcdb/rcdb_0.03/python')
+		sys.path.append('/group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5/rcdb/rcdb_0.04.00/python')
 		import rcdb
 
 		db = rcdb.RCDBProvider('mysql://' + RCDB_USER + '@' + RCDB_HOST + '/rcdb')
 		print 'RCDB_QUERY = ' + RCDB_QUERY
 		for r in db.select_runs(RCDB_QUERY, MINRUN, MAXRUN):
-			good_runs[r.number] = int(r.get_condition_value('evio_files_count'))
+			evio_files_count = r.get_condition_value('evio_files_count')
+			if evio_files_count == None:
+				print('ERROR in RCDB: Run ' + str(r.number) + ' has no value for evio_files_count!...')
+				BAD_RCDB_QUERY_RUNS.append( int(r.number) )
+				print('Attempting to extract number of files by examining /mss ...')
+				rawdatafiles = glob.glob('/mss/halld/RunPeriod-'+RUNPERIOD+'/rawdata/Run%06d/hd_rawdata_%06d_*.evio' % (r.number,r.number))
+				if len(rawdatafiles) > 0: evio_files_count = len(rawdatafiles)
+			if evio_files_count == None:
+				print('ERROR getting number of files for: Run ' + str(r.number) )
+				BAD_FILE_COUNT_RUNS.append( int(r.number) )
+				continue
+			good_runs[r.number] = int(evio_files_count)
 	elif len(RUNS)==0 :
 		RUN_LIST_SOURCE = 'All runs in range ' + str(MINRUN) + '-' + str(MAXRUN)
 		print 'Getting info for all runs in range ' + str(MINRUN) + '-' + str(MAXRUN) + ' ....'
@@ -350,6 +364,8 @@ def GetRunInfo():
 #----------------------------------------------------
 def GetNumEVIOFiles(RUN):
 
+	global BAD_RCDB_QUERY_RUNS, BAD_FILE_COUNT_RUNS
+
 	# Access RCDB to get the number of EVIO files for this run.
 	# n.b. the file numbers start from 0 so the last valid file
 	# number will be one less than the value returned
@@ -369,7 +385,17 @@ def GetNumEVIOFiles(RUN):
 	sql += ' AND condition_types.name="evio_files_count" AND run_number=' + str(RUN);
 	cur.execute(sql)
 	c_rows = cur.fetchall()
-	if len(c_rows)>0 : Nfiles = int(c_rows[0][0])
+	if len(c_rows)>0 :
+		Nfiles = int(c_rows[0][0])
+	else:
+		BAD_RCDB_QUERY_RUNS.append(RUN)
+		print('Attempting to extract number of files by examining /mss ...')
+		rawdatafiles = glob.glob('/mss/halld/RunPeriod-'+RUNPERIOD+'/rawdata/Run%06d/hd_rawdata_%06d_*.evio' % (RUN,RUN))
+		if len(rawdatafiles) > 0:
+			Nfiles = len(rawdatafiles)
+		else:
+			BAD_FILE_COUNT_RUNS.append(RUN)
+
 
 	return Nfiles
 
@@ -505,6 +531,19 @@ for (RUN, Nfiles) in good_runs.iteritems():
 			sys.stdout.write('  ' + str(NJOBS_SUBMITTED) + '/' + str(Njobs) + ' jobs \r')
 			sys.stdout.flush()
 
-print ''
-print str(NJOBS_SUBMITTED) + ' jobs submitted. ' + str(len(DIRS_CREATED)) + ' directories created for output'
+print('\n')
+print('NOTE: The values in BAD_RCDB_QUERY_RUNS is informative about what is missing from')
+print('      the RCDB. An attempt to recover the information from the /mss filesystem')
+print('      was also made. Values in BAD_FILE_COUNT_RUNS are ones for which that failed.')
+print('      Thus, only runs listed in BAD_FILE_COUNT_RUNS will not have any jobs submitted')
+print 'BAD_RCDB_QUERY_RUNS=' + str(BAD_RCDB_QUERY_RUNS)
+print 'BAD_FILE_COUNT_RUNS=' + str(BAD_FILE_COUNT_RUNS)
+
+print('')
+print('WORKFLOW: ' + WORKFLOW)
+print('------------------------------------')
+print('Number of runs: ' + str(len(good_runs)) + '  (only good runs)')
+print(str(NJOBS_SUBMITTED) + '/' + str(Njobs) + ' jobs submitted')
+print(str(len(DIRS_CREATED)) + ' directories created for output')
+print('')
 
