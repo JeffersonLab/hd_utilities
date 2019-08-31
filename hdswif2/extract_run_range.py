@@ -29,9 +29,9 @@ fname = workflow + '.json'
 # Create json file if needed
 if not os.path.exists( fname ):
 	cmd = ['swif2', 'status', '-workflow', workflow, '-jobs', '-display', 'json']
-	json = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
+	json_out = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0]
 	f = open(fname, 'w')
-	f. write( json )
+	f. write( json_out )
 	f.close()
 
 # Read in json file
