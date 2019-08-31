@@ -64,6 +64,11 @@
 # BATCH 3: 51204-51383
 # BATCH 4: 51497-51638, 51683-51687, 51722-51768
 #
+# Number of jobs by batch:
+# BATCH 1: 14833
+# BATCH 2: 12154
+# BATCH 3:  9835
+# BATCH 4: 10363 = 8373+189+1801
 
 import subprocess
 import math
@@ -76,7 +81,7 @@ if not os.getenv('PYTHONPATH') : sys.path.append('/group/halld/Software/builds/L
 import mysql.connector
 
 
-TESTMODE       = False  # True=only print commands, but don't actually submit jobs
+TESTMODE       = True  # True=only print commands, but don't actually submit jobs
 VERBOSE        = 3     # 1 is default
 
 RUNPERIOD      = '2018-08'
@@ -87,9 +92,9 @@ WORKFLOW       = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER+'_batch'+BATCH
 NAME           = 'GLUEX_' + LAUNCHTYPE
 
 RCDB_QUERY     = '@is_2018production and @status_approved'  # Comment out for all runs in range MINRUN-MAXRUN
-RUNS           = [51017, 51018, 51019, 51020] # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
-MINRUN         = 50678   # If RUNS is empty, then RCDB queried for this range
-MAXRUN         = 51035   # If RUNS is empty, then RCDB queried for this range
+RUNS           = [] # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
+MINRUN         = 51722   # If RUNS is empty, then RCDB queried for this range
+MAXRUN         = 51768   # If RUNS is empty, then RCDB queried for this range
 MINFILENO      = 0       # Min file number to process for each run (n.b. file numbers start at 0!)
 MAXFILENO      = 1000    # Max file number to process for each run (n.b. file numbers start at 0!)
 FILE_FRACTION  = 1.0     # Fraction of files to process for each run in specified range (see GetFileNumbersToProcess)
