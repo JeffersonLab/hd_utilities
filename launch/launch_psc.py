@@ -76,6 +76,11 @@
 # BATCH 3: 51204-51383
 # BATCH 4: 51497-51638, 51683-51687, 51722-51768
 #
+# Number of jobs by batch:
+# BATCH 1: 14833
+# BATCH 2: 12154
+# BATCH 3:  9835
+# BATCH 4: 10363 = 8373+189+1801
 
 
 import subprocess
@@ -88,18 +93,18 @@ if not os.getenv('PYTHONPATH') : sys.path.append('/group/halld/Software/builds/L
 import mysql.connector
 
 
-TESTMODE       = True  # True=only print commands, but don't actually submit jobs
+TESTMODE       = False  # True=only print commands, but don't actually submit jobs
 VERBOSE        = 3     # 1 is default
 
 RUNPERIOD      = '2018-08'
 LAUNCHTYPE     = 'recon'  # 'offmon' or 'recon'
-VER            = '00'
+VER            = '02'
 BATCH          = '01'
-WORKFLOW       = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER+'_batch'+BATCH
+WORKFLOW       = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER+'_batch'+BATCH+'_PSC'
 NAME           = 'GLUEX_' + LAUNCHTYPE
 
 RCDB_QUERY     = '@is_2018production and @status_approved'  # Comment out for all runs in range MINRUN-MAXRUN
-RUNS           = [50677] # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
+RUNS           = [51035] # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
 MINRUN         = 50677   # If RUNS is empty, then RCDB queried for this range
 MAXRUN         = 51035   # If RUNS is empty, then RCDB queried for this range
 MINFILENO      = 0       # Min file number to process for each run (n.b. file numbers start at 0!)
