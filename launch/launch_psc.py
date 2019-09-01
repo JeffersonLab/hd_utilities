@@ -94,7 +94,7 @@ if not os.getenv('PYTHONPATH') : sys.path.append('/group/halld/Software/builds/L
 import mysql.connector
 
 
-TESTMODE       = True  # True=only print commands, but don't actually submit jobs
+TESTMODE       = False  # True=only print commands, but don't actually submit jobs
 VERBOSE        = 3     # 1 is default
 
 RUNPERIOD      = '2018-08'
@@ -105,14 +105,15 @@ WORKFLOW       = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER+'_batch'+BATCH+'_PSC'
 NAME           = 'GLUEX_' + LAUNCHTYPE
 
 RCDB_QUERY     = '@is_2018production and @status_approved'  # Comment out for all runs in range MINRUN-MAXRUN
-RUNS           = [51683]      # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
-MINRUN         = 51683   # If RUNS is empty, then RCDB queried for this range
-MAXRUN         = 51687   # If RUNS is empty, then RCDB queried for this range
+RUNS           = []      # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
+MINRUN         = 51722   # If RUNS is empty, then RCDB queried for this range
+MAXRUN         = 51768   # If RUNS is empty, then RCDB queried for this range
 MINFILENO      = 0       # Min file number to process for each run (n.b. file numbers start at 0!)
-MAXFILENO      = 0       # Max file number to process for each run (n.b. file numbers start at 0!)
+MAXFILENO      = 1000    # Max file number to process for each run (n.b. file numbers start at 0!)
 FILE_FRACTION  = 1.0     # Fraction of files to process for each run in specified range (see GetFileNumbersToProcess)
 MAX_CONCURRENT_JOBS = '700'  # Maximum number of jobs swif2 will have in flight at once
 EXCLUDE_RUNS   = []      # Runs that should be excluded from processing
+PROJECT        = 'ph5pi4p' # run "projects" command on bridges and look for "Charge ID"
 PSCUSER        = 'davidl'   # username of account used at PSC
 TIMELIMIT      = '5:10:00'  # Set time limit (expect ~4:38 on PSC Bridges)
 #QOS            = 'regular' # QOS not used for PSC
@@ -134,7 +135,7 @@ BAD_FILE_COUNT_RUNS = []  # will be filled with runs where number of evio files 
 if   LAUNCHTYPE=='offmon':
 	OUTPUTTOP      = 'mss:/mss/halld/halld-scratch/offline_monitoring/RunPeriod-'+RUNPERIOD+'/ver'+VER  # prefix with mss: for tape or file: for filesystem
 elif LAUNCHTYPE=='recon':
-	OUTPUTTOP      = 'mss:/mss/halld/halld-scratch/RunPeriod-'+RUNPERIOD+'/recon/ver'+VER
+	OUTPUTTOP      = 'mss:/mss/halld/RunPeriod-'+RUNPERIOD+'/recon/ver'+VER
 else:
 	print 'Unknown launch type "'+LAUNCHTYPE+'"! Don\'t know where to put output files!'
 	sys.exit(-1)
@@ -168,6 +169,7 @@ def MakeJob(RUN,FILE):
 
 	# SLURM options
 	SBATCH  = ['-sbatch']
+	SBATCH += ['-A', PROJECT]
 	SBATCH += ['-N', '1']                 # Number of nodes requested (per job)
 	SBATCH += ['--tasks-per-node=28']     # Number of cores allocated per node
 	SBATCH += ['-t', '%s' % TIMELIMIT]    # Amount of wall time requested
