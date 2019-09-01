@@ -121,7 +121,11 @@ set uploaddir="UNSET"
 #set   plot_end="" # Use this for "now"
 
 # recon-2018_08_ver02_batch01
-set start_date="2019-08-10T04:48:00" # n.b. California time
+#set start_date="2019-08-10T04:48:00" # n.b. California time
+#set   plot_end="" # Use this for "now"
+
+# recon-2018_08_ver02_batch04_PSC
+set start_date="2019-09-01T00:50:00" # n.b. California time
 set   plot_end="" # Use this for "now"
 
 
@@ -199,9 +203,15 @@ echo "    RunMax: "$RunMax
 
 # Run sacct on cori to get info from slurm in form of text
 # file and copy it back to local directory.
-echo "Mining slurm data from NERSC ..."
-ssh cori.nersc.gov "cd builds/accounting ; sacct --format=JobID%15,Submit,Start,End,NCPUS,CPUTimeRaw,ResvCPURAW,MaxRSS,JobName%30,ExitCode,MaxDiskRead -S '$start_date' > slurm.dat"
-scp cori.nersc.gov:builds/accounting/slurm.dat .
+if ( $workflow =~ *_PSC ) then
+	echo "Mining slurm data from PSC ..."
+	ssh bridges.psc.edu "cd work/accounting ; sacct --format=JobID%15,Submit,Start,End,NCPUS,CPUTimeRaw,ResvCPURAW,MaxRSS,JobName%30,ExitCode,MaxDiskRead -S '$start_date' > slurm.dat"
+	scp bridges.psc.edu:work/accounting/slurm.dat .
+else
+	echo "Mining slurm data from NERSC ..."
+	ssh cori.nersc.gov "cd builds/accounting ; sacct --format=JobID%15,Submit,Start,End,NCPUS,CPUTimeRaw,ResvCPURAW,MaxRSS,JobName%30,ExitCode,MaxDiskRead -S '$start_date' > slurm.dat"
+	scp cori.nersc.gov:builds/accounting/slurm.dat .
+endif
 
 # Convert ascii file to SQLite DB and CSV formats
 ./slurm2sqlite.py $plot_start $plot_end
