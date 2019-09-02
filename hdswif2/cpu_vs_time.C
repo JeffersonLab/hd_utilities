@@ -1,7 +1,7 @@
 
 #include "StandardLabels.C"
 
-void cpu_vs_time(const char *start_tstr, int RunMin=0, int RunMax=999999)
+void cpu_vs_time(const char *start_tstr, int RunMin=0, int RunMax=999999, const char *site="")
 {
 	// "Start" time of launch 
 	// should match plot_start in regenerate_plots.csh for California
@@ -42,7 +42,8 @@ void cpu_vs_time(const char *start_tstr, int RunMin=0, int RunMax=999999)
 	if(tend_max   > tmax) tmax = tend_max;
 
 	double ymax = 10.0; // hrs
-	TH2D *axes = new TH2D("axes", "NERSC Wall time vs. Start Time (completed jobs only);;Wall time per job (hrs)", 100, 0.0, tmax, 100, 0.0, ymax);
+	string title = string(site) + " Wall time vs. Start Time (completed jobs only);;Wall time per job (hrs)";
+	TH2D *axes = new TH2D("axes", title.c_str(), 100, 0.0, tmax, 100, 0.0, ymax);
 	axes->SetStats(0);
 	axes->GetYaxis()->SetTitleSize(0.05);
 	axes->GetYaxis()->SetTitleOffset(0.4);

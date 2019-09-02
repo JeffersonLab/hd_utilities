@@ -1,7 +1,7 @@
 
 #include "StandardLabels.C"
 
-void latency_vs_time(const char *start_tstr, int RunMin=0, int RunMax=999999)
+void latency_vs_time(const char *start_tstr, int RunMin=0, int RunMax=999999, const char *site="")
 {
 	// "Start" time of launch 
 	// should match plot_start in regenerate_plots.csh for California
@@ -42,7 +42,8 @@ void latency_vs_time(const char *start_tstr, int RunMin=0, int RunMax=999999)
 
 	double ymax = 1.05*t->GetMaximum("latency")/3600.0;
 	//double ymax = 1.05*t->GetMaximum("tstart-tsubmit")/3600.0;
-	TH2D *axes = new TH2D("axes", "NERSC Job Start Latency vs. Submit Time (completed jobs only);;Latency (hrs)", 100, 0.0, tmax, 100, 0.0, ymax);
+	string title = string(site) + " Job Start Latency vs. Submit Time (completed jobs only);;Latency (hrs)";
+	TH2D *axes = new TH2D("axes", title.c_str(), 100, 0.0, tmax, 100, 0.0, ymax);
 	axes->SetStats(0);
 	axes->GetYaxis()->SetTitleSize(0.07);
 	axes->GetYaxis()->SetTitleOffset(0.4);

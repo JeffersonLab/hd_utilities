@@ -203,14 +203,17 @@ echo "    RunMax: "$RunMax
 
 # Run sacct on cori to get info from slurm in form of text
 # file and copy it back to local directory.
+set SITE=""
 if ( $workflow =~ *_PSC ) then
 	echo "Mining slurm data from PSC ..."
 	ssh bridges.psc.edu "cd work/accounting ; sacct --format=JobID%15,Submit,Start,End,NCPUS,CPUTimeRaw,ResvCPURAW,MaxRSS,JobName%30,ExitCode,MaxDiskRead -S '$start_date' > slurm.dat"
 	scp bridges.psc.edu:work/accounting/slurm.dat .
+	set SITE="PSC"
 else
 	echo "Mining slurm data from NERSC ..."
 	ssh cori.nersc.gov "cd builds/accounting ; sacct --format=JobID%15,Submit,Start,End,NCPUS,CPUTimeRaw,ResvCPURAW,MaxRSS,JobName%30,ExitCode,MaxDiskRead -S '$start_date' > slurm.dat"
 	scp cori.nersc.gov:builds/accounting/slurm.dat .
+	set SITE="NERSC"
 endif
 
 # Convert ascii file to SQLite DB and CSV formats
@@ -219,10 +222,10 @@ endif
 # Run all macros to create plots
 foreach m ( Njobs_vs_time.C latency_vs_time.C cpu_vs_time.C )
 	echo "Running ROOT macro $m ..."
-	root -l -q -b $m'("'$plot_start'",'$RunMin','$RunMax')'
+	root -l -q -b $m'("'$plot_start'",'$RunMin','$RunMax',"'$SITE'")'
 end
 
-root -l -q -b 'iNjobs_vs_time.C("'$plot_start'",'$njobs','$nsucceeded','$RunMin','$RunMax')'
+root -l -q -b 'iNjobs_vs_time.C("'$plot_start'",'$njobs','$nsucceeded','$RunMin','$RunMax',"'$SITE'")'
 
 # Optionally open window to display plots on local machine
 if ( $?display_plots ) then

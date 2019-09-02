@@ -2,7 +2,7 @@
 #include "StandardLabels.C"
 #include "njobs.h"
 
-void Njobs_vs_time(const char *start_tstr, int RunMin=0, int RunMax=999999)
+void Njobs_vs_time(const char *start_tstr, int RunMin=0, int RunMax=999999, const char *site="")
 {
 	// "Start" time of launch 
 	// should match plot_start in regenerate_plots.csh for California
@@ -41,7 +41,8 @@ void Njobs_vs_time(const char *start_tstr, int RunMin=0, int RunMax=999999)
 
 	double ymax = 1.10*nqueued_vs_time->GetMaximum();
 	if( njobs_vs_time->GetMaximum() > nqueued_vs_time->GetMaximum() ) ymax = 1.10*njobs_vs_time->GetMaximum();
-	TH2D *axes = new TH2D("axes", "NERSC Instantaneous Num. Jobs vs. Time;;Number of jobs", 100, 0.0, tmax, 100, 0.0, ymax);
+	string title = string(site) + " Instantaneous Num. Jobs vs. Time;;Number of jobs";
+	TH2D *axes = new TH2D("axes", title.c_str(), 100, 0.0, tmax, 100, 0.0, ymax);
 	axes->SetStats(0);
 	axes->GetYaxis()->SetTitleSize(0.07);
 	axes->GetYaxis()->SetTitleOffset(0.4);

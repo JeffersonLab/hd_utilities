@@ -22,7 +22,7 @@ void DrawValue( double x, double y, double tsize, const char *lab, int val, int 
 
 //----------------
 // iNjobs_vs_time
-void iNjobs_vs_time(const char *start_tstr, int NJOBS_TOTAL=0, int NJOBS_SUCCEEDED=0, int RunMin=0, int RunMax=999999)
+void iNjobs_vs_time(const char *start_tstr, int NJOBS_TOTAL=0, int NJOBS_SUCCEEDED=0, int RunMin=0, int RunMax=999999, const char *site="")
 {
 	// "Start" time of launch 
 	// should match plot_start in regenerate_plots.csh for California
@@ -87,7 +87,8 @@ void iNjobs_vs_time(const char *start_tstr, int NJOBS_TOTAL=0, int NJOBS_SUCCEED
 	if( nsubmitted_vs_time->GetMaximum() > ymax ) ymax = nsubmitted_vs_time->GetMaximum();
 	if( nstarted_vs_time->GetMaximum() > ymax ) ymax = nstarted_vs_time->GetMaximum();
 	ymax *= 1.10;
-	TH2D *axes = new TH2D("axes", "NERSC Integrated Num. Jobs vs. Time;;Number of jobs", 100, 0.0, tmax, 100, 0.0, ymax);
+	string title = string(site) + " Integrated Num. Jobs vs. Time;;Number of jobs";
+	TH2D *axes = new TH2D("axes", title.c_str(), 100, 0.0, tmax, 100, 0.0, ymax);
 	axes->SetStats(0);
 	axes->GetYaxis()->SetTitleSize(0.07);
 	axes->GetYaxis()->SetTitleOffset(0.4);
