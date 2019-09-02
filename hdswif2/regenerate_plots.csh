@@ -170,6 +170,12 @@ foreach arg ($*)
 	if ( $#argv > 0 ) shift
 end
 
+# Make sure root is setup in environment
+if ( ! $?ROOTSYS ) then
+	echo "Setting up ROOT ..."
+	source /apps/root/PRO/bin/thisroot.csh
+endif
+
 # If uploaddir was not specified by user then set a default based on workflow name
 if ( $uploaddir == "UNSET" ) then
 	set uploaddir="gxproj5@ifarm1801:/group/halld/www/halldweb/html/data_monitoring/launch_analysis/../recon/summary_swif2_output_"$workflow
@@ -238,6 +244,16 @@ endif
 
 # Optionally upload files to web
 if ( $?post_to_web ) then
+
+	# Make sure destination directory exists
+	if ( $uploaddir =~ gxproj5@ifarm* ) then
+		set upart=`echo $uploaddir | cut -d: -f 1`
+		set dirpart=`echo $uploaddir | cut -d: -f 2`
+		echo "ssh $upart mkdir -p $dirpart"
+		ssh $upart mkdir -p $dirpart
+	endif
+
+	# Upload index.html and all .png files
 	echo "uploading to $uploaddir"
 	scp index.html *.png $uploaddir
 endif
