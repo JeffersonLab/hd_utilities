@@ -190,7 +190,7 @@ endif
 
 # Optionally get the number of jobs from workflow
 if ( $?get_njobs_from_workflow ) then
-	set njobs=`ssh gxproj4@ifarm1801 swif2 status -workflow $workflow | grep jobs | awk '{print $3" "$4}'`
+	set njobs=`ssh gxproj4@ifarm1801 swif2 status -workflow $workflow | grep jobs | grep -v xfer_globus | awk '{print $3" "$4}'`
 	set nsucceeded=`ssh gxproj4@ifarm1801 swif2 status -workflow $workflow | grep succeeded | awk '{print $3" "$4}'`
 endif
 
@@ -231,6 +231,7 @@ foreach m ( Njobs_vs_time.C latency_vs_time.C cpu_vs_time.C )
 	root -l -q -b $m'("'$plot_start'",'$RunMin','$RunMax',"'$SITE'")'
 end
 
+echo 'iNjobs_vs_time.C("'$plot_start'",'$njobs','$nsucceeded','$RunMin','$RunMax',"'$SITE'")'
 root -l -q -b 'iNjobs_vs_time.C("'$plot_start'",'$njobs','$nsucceeded','$RunMin','$RunMax',"'$SITE'")'
 
 # Optionally open window to display plots on local machine
