@@ -138,7 +138,7 @@ with open('slurm.dat') as f:
 				file = 0
 			ExitCode = 0
 			MaxRSS_GB = 0
-			CPUTIME = 0
+			#CPUTIME = 0
 			if Start == 'Unknown' : Start = '1970-01-04'
 			if len(vals)>8 : ExitCode = int(vals[8].split(':')[0])
 			myvals =                           (id    ,Submit , Start , End , NCPUS , CPUTIME , MaxRSS_GB, Latency , JobName , job_type , run , file , ExitCode)
