@@ -87,7 +87,7 @@ with open('slurm.dat') as f:
 	c = conn.cursor()
 	try:
 		c.execute('''DROP TABLE IF EXISTS jobs''')  # force recreation of table to avoid duplicate entries
-		c.execute('''CREATE TABLE jobs (Submit text, Start text, End text, NCPUS integer, CPUTIME integer, Latency real, JobName text, job_type text, Run integer, file integer, ExitCode integer)''')
+		c.execute('''CREATE TABLE jobs (ID integer, Submit text, Start text, End text, NCPUS integer, CPUTIME integer, MaxRSS_GB float, Latency real, JobName text, job_type text, Run integer, file integer, ExitCode integer)''')
 	except:
 		print 'Error creating table'
 
@@ -108,16 +108,18 @@ with open('slurm.dat') as f:
 				MaxRSS_GB = float(vals[6].split('K')[0])/1000000.0  # Non-batch line skips the MaxRSS field so JobName is 6th value
 			if 'M' in vals[6]:
 				MaxRSS_GB = float(vals[6].split('M')[0])/1000.0  # Non-batch line skips the MaxRSS field so JobName is 6th value
+			c.execute('UPDATE jobs SET MaxRSS_GB=%f WHERE ID=%s' % (MaxRSS_GB, id))
 		elif vals[0].endswith('.extern'):
 			for i in range(0,len(vals)):
 				if vals[i] == 'extern':
-					if len(vals)>(i+1): ExitCode = int(vals[i+1].split(':')[0])  # "extern" line skips ResvCPURAW field so ExitCode is 8th value
-					myvals =                          (Submit , Start , End , NCPUS , CPUTIME , Latency , JobName , job_type , run , file , ExitCode)
-					c.execute('INSERT INTO jobs VALUES ( ?    ,   ?   ,  ?  ,   ?   ,   ?     ,    ?    ,    ?    ,     ?    ,  ?  ,   ?  ,    ?    )', myvals)
-					break
+					if len(vals)>(i+1):
+						ExitCode = int(vals[i+1].split(':')[0])  # "extern" line skips ResvCPURAW field so ExitCode is 8th value
+						c.execute('UPDATE jobs SET ExitCode=%d WHERE ID=%s' % (ExitCode, id))
+						break
 		elif vals[0].endswith('.0'):
 			pass # early test jobs seem to have this with NCPUS=1
 		else:
+			# This should be the first of the 3 lines or only one if just one exists
 			Submit   = vals[1]
 			Start    = vals[2]
 			End      = vals[3] if vals[3]!='Unknown' else '2018-01-01'
@@ -135,16 +137,12 @@ with open('slurm.dat') as f:
 				run = 12345
 				file = 0
 			ExitCode = 0
+			MaxRSS_GB = 0
+			CPUTIME = 0
+			if Start == 'Unknown' : Start = '1970-01-04'
 			if len(vals)>8 : ExitCode = int(vals[8].split(':')[0])
-
-			# Go ahead and make an entry for jobs that have not started but are queued so they
-			# can be plotted
-			if Start == 'Unknown':
-				Start = '2018-01-01'
-				End   = '2018-01-01'
-				ExitCode = 0
-				myvals =                          (Submit , Start , End , NCPUS , CPUTIME , Latency , JobName , job_type , run , file , ExitCode)
-				c.execute('INSERT INTO jobs VALUES ( ?    ,   ?   ,  ?  ,   ?   ,   ?     ,    ?    ,    ?    ,     ?    ,  ?  ,   ?  ,    ?    )', myvals)
+			myvals =                           (id    ,Submit , Start , End , NCPUS , CPUTIME , MaxRSS_GB, Latency , JobName , job_type , run , file , ExitCode)
+			c.execute('INSERT INTO jobs VALUES ( ?    ,   ?   ,  ?    ,   ? ,   ?   ,    ?    ,    ?     ,     ?   ,    ?    ,     ?    ,  ?  ,   ?  ,   ?     )', myvals)
 
 	# Flush date to sqlite file and close it
 	conn.commit()
