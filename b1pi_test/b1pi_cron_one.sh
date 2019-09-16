@@ -17,7 +17,7 @@ export RUN_DIR=/u/scratch/$USER/b1pi/$TODAYS_DATE/$BMS_OSNAME/$RUN
 rm -rfv $RUN_DIR
 mkdir -pv $RUN_DIR
 cd $RUN_DIR
-$B1PI_TEST_DIR/b1pi_test.sh -n 30000 -r $RUN
+$B1PI_TEST_DIR/b1pi_test.sh -n 10000 -r $RUN
 #echo \#count events
 #echo \#count b1_pi.hddm `hddm_counter.pl b1_pi.hddm physicsEvent`
 #echo \#count hdgeant.hddm `hddm_counter.pl hdgeant.hddm physicsEvent`
@@ -33,7 +33,7 @@ export RUN_DIR=/u/scratch/$USER/b1pi/$TODAYS_DATE/$BMS_OSNAME/$RUN
 rm -rfv $RUN_DIR
 mkdir -pv $RUN_DIR
 cd $RUN_DIR
-$B1PI_TEST_DIR/b1pi_test.sh -n 30000 -r $RUN
+$B1PI_TEST_DIR/b1pi_test.sh -n 10000 -r $RUN
 #echo \#count events
 #echo \#count b1_pi.hddm `hddm_counter.pl b1_pi.hddm physicsEvent`
 #echo \#count hdgeant.hddm `hddm_counter.pl hdgeant.hddm physicsEvent`

@@ -29,7 +29,7 @@ Example:
 EOF
 }
 
-while getopts "h?v:f:n:t:d:r:s:" opt; do
+while getopts "h?4v:f:n:t:d:r:s:" opt; do
     case "$opt" in
     h|\?)
         show_help
@@ -48,6 +48,8 @@ while getopts "h?v:f:n:t:d:r:s:" opt; do
     r)  RUN=$OPTARG
 	;;
     s)  SEED=$OPTARG
+	;;
+    4)  HDG4=true
     esac
 done
 
@@ -124,8 +126,18 @@ HADR 1
 
 EOF
 
-echo "Running hdgeant ..."
-command="hdgeant"
+if [ "$HDG4" = "true" ]
+then
+    echo "Running hdgeant4 ..."
+    rm -f run.mac
+    cat <<EOF
+/run/beamOn 100000
+EOF
+    command="hdgeant4 run.mac"
+else
+    echo "Running hdgeant ..."
+    command="hdgeant"
+fi
 echo $command
 $command
 

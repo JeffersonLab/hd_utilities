@@ -35,7 +35,7 @@
 
 \section{Overview}
 
-The {\tt GlueX} {\tt FSRoot} format is a flat {\tt TTree} format.  All variables are {\tt float}.  Multiple combinations within an event are listed as separate {\tt TTree} entries, just like entries from distinct events.  The format is designed to be compatible with the {\tt FSRoot} package.
+The {\tt GlueX} {\tt FSRoot} format is a flat {\tt TTree} format.  All variables are {\tt double}.  Multiple combinations within an event are listed as separate {\tt TTree} entries, just like entries from distinct events.  The format is designed to be compatible with the {\tt FSRoot} package\footnote{The {\tt FSRoot} package, along with documentation, can be found here: https://github.com/remitche66/FSRoot}.
 
 
 \section{Final States}
@@ -63,7 +63,13 @@ The ``Event Information'' variables contain information about the event as a who
   Chi2DOF:      chi2/dof of the kinematic fit
   RFTime:       RF time determined from the kinematic fit
   RFDeltaT:     difference between RF time and beam photon time
-  EnUnusedSh:   total energy of unused showers
+
+  EnUnusedSh:       total energy of unused showers
+  NumUnusedTracks:  number of unused tracks
+  NumNeutralHypos:  number of neutral hypotheses
+  NumBeam:          number of beam hypotheses from tagger
+  NumCombos:        number of combos
+
   ProdVx:       production vertex parameters
   ProdVy:         "
   ProdVz:         "

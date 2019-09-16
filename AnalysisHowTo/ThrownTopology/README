@@ -1,4 +1,5 @@
 # Tutorial for Analysis How To's (JRS 7/3/19)
+# See a short presentation at https://halldweb.jlab.org/doc-private/DocDB/ShowDocument?docid=4111 for further information
 
 # In this tutorial we show how to identify the thrown particle topology in the DSelector and fill histograms based on the TString associated with the topology 
 

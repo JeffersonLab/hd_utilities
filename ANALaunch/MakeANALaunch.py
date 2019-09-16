@@ -41,7 +41,9 @@ translateDict =	{
   "23": "Xim",
   "24": "omegam",
   "25": "antin",
-  "26": "antilamb"
+  "26": "antilamb",
+  "30": "antiXi0",
+  "31": "antiXiPlus"
 }
 
 def TranslateID(id):
