@@ -7,9 +7,9 @@ what we know as of today. Note that many values here are taken from
 RunPeriod-2017-01.xml where there are more extensive comments describing
 how each of the values were derived.
 
-2018-06-04 : Initial version DL
-2018-06-18 : Revised for enhanced computing model
-2018-11-12 : Copied from HigIntensity_Projection.xml and modified
+2018-11-12 : Copied from HigIntensity_Projection.xml and modified DL
+2019-09-16 : Updated to reflect new accelerator schedule. Currently:
+             Nov. 25 - Dec. 19 or 25 days
 
 =====================================================================
 triggerRate
@@ -20,9 +20,8 @@ Assume 90kHz entire time
 runningTimeOnFloor
 
 According to published schedule, Hall-D will run from Nov. 1 - Dec. 19
-in 2019. This is 7 weeks.
-
-     7 * 7 = 49
+in 2019. Word on the street though is that the start date is delayed
+to Nov. 25th. This is a total of 25 days.
 
 =====================================================================
 runningEfficiency
@@ -46,6 +45,25 @@ eventsPerRun
 
 Number of events (in millions) in a production run. We assume 400M.
 With 50% accelerator efficiency, this would be about 2.5hr/run
+
+=====================================================================
+compressionFactor
+
+This is how much we anticipate compressing the data stream prior to
+storage. Here are some compression factors for different algorithms
+used on a file from run 51505:
+
+compression type  file size  fraction  factor
+- - - - - - - -   - - - - -  - - - -   - - - - 
+    none           19.5GB     100.0%     1.00
+    lz4-1          15.9GB      81.5%     1.23
+    lz4-9          14.3GB      73.3%     1.36
+    gzip           12.6GB      64.6%     1.55
+    bzip2
+
+At this point in time the exact compression mechanism is not fully
+in place and tests (9/16/2019). We therefore estimate a compression
+factor of 1.4
 
 =====================================================================
 RESTfraction
@@ -114,7 +132,7 @@ The value of 0.00800 is taken from the RunPeriod-2017-01 number.
 =====================================================================
 miscUserStudies
 
-proportional to time to process al files of single run
+proportional to time to process all files of single run
 
 This value is used to capture the CPU usage by all of the various users
 that is attributed to the gluex project. Some of this should probably
@@ -155,11 +173,11 @@ here:  https://halldweb.jlab.org/wiki/index.php/GlueX-II_and_DIRC_ERR )
 -->
 <compMod>
 <parameter name="triggerRate" value="90e3" units="Hz"/>
-<parameter name="runningTimeOnFloor" value="49.0" units="days"/>
+<parameter name="runningTimeOnFloor" value="25.0" units="days"/>
 <parameter name="runningEfficiency" value="0.50"/>
 <parameter name="eventsize" value="13.0" units="kB"/>
 <parameter name="eventsPerRun" value="400" units="Mevent"/>
-<parameter name="compressionFactor" value="2.0"/>
+<parameter name="compressionFactor" value="1.4"/>
 <parameter name="RESTfraction" value="0.15"/>
 
 <parameter name="reconstructionRate" value="5.5" units="Hz"/>
