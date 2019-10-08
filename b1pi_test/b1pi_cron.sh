@@ -31,4 +31,6 @@ while [ $nprocs -ne 0 ]
     sleep 300
 done
 /group/halld/Software/hd_utilities/b1pi_test/b1pi_message.sh
+source /group/halld/Software/build_scripts/gluex_env_jlab.sh
+/group/halld/Software/time-history-plots/plots/b1pi_test/b1pi_history_data.sh $date_token >> /group/halld/time_history_data/b1pi_test.txt
 exit
