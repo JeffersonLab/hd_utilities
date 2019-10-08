@@ -3,7 +3,7 @@ Python script for creating histograms of tagged and untagged PS flux: Justin Ste
 The tagged and untagged pair spectrometer flux and acceptance are stored in CCDB.  The command to obtain histograms of the flux is:
 
 ```
-plot_flux_ccdb.py --begin-run beginRun --end-run endRun --num-bins 100 --energy-min 6.0 --energy-max 12.0
+plot_flux_ccdb.py --begin-run beginRun --end-run endRun --num-bins 100 --energy-min 6.0 --energy-max 12.0 --rest-ver 3
 ```
 
 ## Command line options:
@@ -31,9 +31,20 @@ Options:
                         RCDB query for run selection
   -t CALIBTIME, --calib-time='T-M-D-h-min-s'
                         CCDB calibtime
+  -u UNIFORM, --uniform=UNIFORM
+                        Uniform option
+  -r REST_VER, --rest-ver=REST_VER
+                        REST version option
 ```
 
-Here beginRun is the beginning of your run range and endRun is the end of your run range.  For example for RunPeriod-2016-02 "golden period" beginRun=11366 and endRun=11555
+Here beginRun is the beginning of your run range and endRun is the end of your run range.  For example for RunPeriod-2016-02 "golden period" beginRun=11366 and endRun=11555.  
+
+You must also match the REST production version you're analysing by setting the --rest-ver option to the REST version listed on the corresponding TTree in the analysis launch.  See examples at
+
+https://halldweb.jlab.org/wiki-private/index.php/Spring_2016_Analysis_Launch
+https://halldweb.jlab.org/wiki-private/index.php/Spring_2017_Analysis_Launch
+https://halldweb.jlab.org/wiki-private/index.php/Spring_2018_Analysis_Launch
+https://halldweb.jlab.org/wiki-private/index.php/Fall_2018_Analysis_Launch
 
 ## Prerequisites:
 
@@ -48,13 +59,14 @@ CCDB_HOME
 and for simplicity you can use the standard build_scripts procedure to set these for you or one of the nightly builds with this command (with the date replaced)
 
 ```
-source /group/halld/Software/build_scripts/gluex_env_nightly.csh 2018-11-11
+source /group/halld/Software/build_scripts/gluex_env_nightly.csh 2019-10-08
 ```
 
 ## Notes:
 
 The flux values in the MySQL CCDB are from:
 
+RunPeriod-2018-01: REST ver02 production (ver01 for low-energy runs 51384-51457)
+RunPeriod-2018-01: REST ver02 production
 RunPeriod-2017-01: REST ver03 production
-
 RunPeriod-2016-02: REST ver06 production
