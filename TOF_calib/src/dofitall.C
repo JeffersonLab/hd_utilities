@@ -29,22 +29,27 @@
 
 using namespace std;
 
-TH1D *ADCHists[179];
-TH1D *ADCPeakHists[179];
-TH2D *xTvsxE[88];
-TH2D *E0vsxE[88];
-TH1F *Timings[8];
-TH2D *TDiff_TDCvsADC[88];
+#define NumPMTMax 200
+int NPMTS = 0;
 
-TH2D *xTvsEPMT[179];
-TH2D *xTvsEPMTcorr[179];
+TH1D *ADCHists[200];
+TH1D *ADCPeakHists[200];
+TH2D *xTvsxE[100];
+TH2D *E0vsxE[100];
+TH1F *Timings[8];
+TH2D *TDiff_TDCvsADC[100];
+
+TH2D *xTvsEPMT[200];
+TH2D *xTvsEPMTcorr[200];
 
 int DEBUG = 10;
 int use_current_calibration = 1;
 
+int BARS_PER_PLANE = 0; // including 2 short padeles being one
+int PMTS_PER_PLANE = 0; 
+
 TH2D *h2d;
 void saverootfile(int R){
-
   char fnam[128];
   sprintf(fnam,"calibration%d/adchists_run%d.root",R,R);
 
@@ -54,12 +59,12 @@ void saverootfile(int R){
   for (int k=0;k<8;k++){
     Timings[k]->Write();
   }
-  for (int k=0;k<88;k++){
+  for (int k=0;k<PMTS_PER_PLANE;k++){
     xTvsxE[k]->Write();
     E0vsxE[k]->Write();
     TDiff_TDCvsADC[k]->Write();
   }
-  for (int k=0;k<176;k++){
+  for (int k=0;k<NPMTS;k++){
     ADCHists[k]->Write();
     ADCPeakHists[k]->Write();
     xTvsEPMT[k]->Write();
@@ -346,6 +351,13 @@ TF1*  langaus(TH1D *hist, Double_t &Peak, Double_t &FWHM) {
 
 void dofitall(int R , int dbgmode){
 
+  NPMTS = 176;            // TOF 1 geometry
+  if (R>69999){
+    NPMTS = 184;          // TOF 2 geometry
+  }
+  BARS_PER_PLANE = NPMTS/4;
+  PMTS_PER_PLANE = NPMTS/2;
+
   DEBUG = dbgmode;
 
   h2d = new TH2D("h2d","of vs. e", 200, 0., 24000., 10, 0., 10.);
@@ -357,7 +369,7 @@ void dofitall(int R , int dbgmode){
     sprintf(fnam,"localdir/tofdata_run%d.root",RunNumber);
   }
 
-  for (int k=0;k<176;k++){
+  for (int k=0;k<NPMTS;k++){
     char hnam[128];
     sprintf(hnam,"ADCHists%d",k);
     char htit[128];
@@ -370,8 +382,15 @@ void dofitall(int R , int dbgmode){
 
     sprintf(hnam,"xTvsEPMT%d",k);
     sprintf(htit,"XPos vs PMTIntegral %d",k);
-    if ( (k==21) || (k==22) || (k==21+44) || (k==22+44) || (k==21+88) || (k==22+88) || (k==21+44+88) || (k==22+44+88)){
-      xTvsEPMT[k] = new TH2D(hnam,htit,200, 0., 24000., 44, 0., 44.);
+
+    int nb = BARS_PER_PLANE/2-21;
+
+    if ((TMath::Abs(k+1-BARS_PER_PLANE/2)<nb) || 
+	(TMath::Abs(k+1-BARS_PER_PLANE-BARS_PER_PLANE/2)<nb) ||
+	(TMath::Abs(k+1-2*BARS_PER_PLANE-BARS_PER_PLANE/2)<nb) ||
+	(TMath::Abs(k+1-3*BARS_PER_PLANE-BARS_PER_PLANE/2)<nb)){
+      //if ( (k==21) || (k==22) || (k==21+44) || (k==22+44) || (k==21+88) || (k==22+88) || (k==21+44+88) || (k==22+44+88)){
+      xTvsEPMT[k] = new TH2D(hnam,htit,200, 0., 24000., BARS_PER_PLANE, 0., (double)BARS_PER_PLANE);
     } else {
       xTvsEPMT[k] = new TH2D(hnam,htit,200, 0., 24000., 40, 0., 260.);
     }
@@ -380,7 +399,7 @@ void dofitall(int R , int dbgmode){
     xTvsEPMTcorr[k] = new TH2D(hnam,htit,200, 0., 24000., 40, 0., 260.);
   }
 
-  for (int k=0;k<88;k++){
+  for (int k=0;k<PMTS_PER_PLANE;k++){
     char hnam[128];
     sprintf(hnam,"xTvsxE%d",k);
     char htit[128];
@@ -406,7 +425,7 @@ void dofitall(int R , int dbgmode){
     char htit[128];
     int pl = k/4;
     int u = (k-pl*4)/2;
-    int pad = 22 + (k%2);
+    int pad = BARS_PER_PLANE/2 + (k%2);
     sprintf(htit,"PMT_time - MT_REF plane %d Paddle %d pmtside %d",pl,pad,u);
     Timings[k] = new TH1F(hnam,htit,500,-10.,10.);
     //Timings[k] = new TH1F(hnam,htit,200,-6.,0.);
@@ -421,14 +440,14 @@ void dofitall(int R , int dbgmode){
   cout<<"offsetfile: "<<fnam<<endl;
   ifstream INF;
   INF.open(fnam);
-  float PMTOffsets[176];
-  for (int k=0;k<176;k++){
+  float PMTOffsets[200];
+  for (int k=0;k<NPMTS;k++){
     INF>>PMTOffsets[k];
     //cout<<k<<"  "<<PMTOffsets[k]<<endl;
   }
   INF.close();
 
-  double Speeds[88];
+  double Speeds[100];
   if (use_current_calibration) {
     sprintf(fnam,"calibration%d/tofpaddles_propagation_speed_run%d.DB",RunNumber,RunNumber);
     INF.open(fnam);
@@ -440,7 +459,7 @@ void dofitall(int R , int dbgmode){
     cout<<"Use propagation speeds from current calibration data!!!!!"<<endl;
     int dum1;
     double dum2;
-    for (int k=0;k<88;k++){
+    for (int k=0;k<PMTS_PER_PLANE;k++){
       INF>>dum1>>Speeds[k]>>dum2;
     }
     INF.close();
@@ -460,7 +479,7 @@ void dofitall(int R , int dbgmode){
       INF.open(fnam);
     }
 
-    for (int k=0;k<88;k++){
+    for (int k=0;k<PMTS_PER_PLANE;k++){
       INF>>Speeds[k];
     }
   
@@ -470,7 +489,7 @@ void dofitall(int R , int dbgmode){
     if (fromDB) {
       ofstream OUTF("src/Paddle_velocities.dat");
       if (OUTF) {
-	for (int k=0;k<88;k++){
+	for (int k=0;k<PMTS_PER_PLANE;k++){
 	  OUTF<<Speeds[k];
 	}
 	OUTF.close();
@@ -482,12 +501,12 @@ void dofitall(int R , int dbgmode){
 
 
   // get walk correction parameters
-  double WalkPar[176][17];
+  double WalkPar[200][17];
   double dummy;
   int idx;
   sprintf(fnam,"calibration%d/tof_walk_parameters_run%d.dat",RunNumber,RunNumber);
   INF.open(fnam);
-  for (int k=0;k<176;k++){
+  for (int k=0;k<NPMTS;k++){
     INF >> idx;
     for (int s=0;s<17;s++) {
       INF >> WalkPar[k][s];
@@ -586,8 +605,8 @@ void dofitall(int R , int dbgmode){
     
     int CenterHits[2][2];
     memset(CenterHits,0,16);
-    int CenterHitsALL[2][44][2];
-    memset(CenterHitsALL,0,2*44*2*4);
+    int CenterHitsALL[2][BARS_PER_PLANE][2];
+    memset(CenterHitsALL,0,2*BARS_PER_PLANE*2*4);
     float MeanTimeRef[2][2] = {0., 0., 0., 0.};
 
     for (int i=0; i<Nhits;i++){
@@ -603,8 +622,8 @@ void dofitall(int R , int dbgmode){
           float PeakR = PEAKR[n];
           float tL = MeanTime[i]-TimeDiff[i];
           float tR = MeanTime[i]+TimeDiff[i];
-          int hid1 = plane*88 + paddle - 1;
-          int hid2 = plane*88 + 44 + paddle - 1;
+          int hid1 = plane*PMTS_PER_PLANE + paddle - 1;
+          int hid2 = plane*PMTS_PER_PLANE + BARS_PER_PLANE + paddle - 1;
 
 	  // apply TDC offsets
 	  tL -= PMTOffsets[hid1];
@@ -660,7 +679,7 @@ void dofitall(int R , int dbgmode){
 
 	  //cout<<kk<<" "<<DT<<endl;
 
-	  int idx = 44*plane+paddle-1;
+	  int idx = BARS_PER_PLANE*plane+paddle-1;
 	  TDiff_TDCvsADC[idx]->Fill(TimeDiffA[n],DT); 
 
 	  double xT = (tR-tL)/2.*Speeds[idx];
@@ -716,7 +735,7 @@ void dofitall(int R , int dbgmode){
       int plane = PlaneSA[i];
       int paddle = PaddleSA[i];
       int side = LRA[i];
-      int idx = plane*88 + side*44 + paddle -1;
+      int idx = plane*PMTS_PER_PLANE + side*BARS_PER_PLANE + paddle -1;
       int p = 1;
       int s = side;
 
@@ -766,7 +785,7 @@ void dofitall(int R , int dbgmode){
 	Timings[idxt]->Fill(T - MeanTimeRef[p][s] );
       }
 
-      for (int n=0; n<44; n++) {
+      for (int n=0; n<BARS_PER_PLANE; n++) {
 	if (CenterHitsALL[p][n][s]){
 	  float x = (float)n;
 	  xTvsEPMT[idx]->Fill(ADCS[i],x);
@@ -812,7 +831,7 @@ void dofitall(int R , int dbgmode){
     OffsetPMTsig[n] = sig;
     int plane = n/4;
     int u = (n-plane*4)/2;
-    int pad = 22 + (n%2);
+    int pad = BARS_PER_PLANE/2 + (n%2);
     OUTF1<<plane<<"  "<<pad<<" "<<"  "<<u<<"  "<<max<<"  "<<sig<<endl;
     if (DEBUG == 77){
       Timings[n]->Draw();
@@ -820,7 +839,7 @@ void dofitall(int R , int dbgmode){
       getchar();
     }
 
-    int indx = plane*88 + u*44 + pad-1;
+    int indx = plane*PMTS_PER_PLANE + u*BARS_PER_PLANE + pad-1;
     PMTOffsets[indx] = max;
 
   }
@@ -830,7 +849,7 @@ void dofitall(int R , int dbgmode){
   sprintf(fnam,"calibration%d/tofpmt_tdc_offsets_all_FULL_run%d.DB",RunNumber,RunNumber);
   ofstream OUTF2;
   OUTF2.open(fnam);
-  for (int k=0;k<176;k++){
+  for (int k=0;k<NPMTS;k++){
     OUTF2<<PMTOffsets[k]<<endl;
   }
   OUTF2.close();
@@ -842,17 +861,17 @@ void dofitall(int R , int dbgmode){
     return;
   }
 
-  float W[2][2][44];
-  float dW[2][2][44];
-  float M[2][2][44];
-  float dM[2][2][44];
-  float A[2][2][44];
-  float dA[2][2][44];
-  float G[2][2][44];
-  float dG[2][2][44];
-  float chisq[2][2][44];
-  float peak[2][2][44];
-  float fwhm[2][2][44];
+  float W[2][2][BARS_PER_PLANE];
+  float dW[2][2][BARS_PER_PLANE];
+  float M[2][2][BARS_PER_PLANE];
+  float dM[2][2][BARS_PER_PLANE];
+  float A[2][2][BARS_PER_PLANE];
+  float dA[2][2][BARS_PER_PLANE];
+  float G[2][2][BARS_PER_PLANE];
+  float dG[2][2][BARS_PER_PLANE];
+  float chisq[2][2][BARS_PER_PLANE];
+  float peak[2][2][BARS_PER_PLANE];
+  float fwhm[2][2][BARS_PER_PLANE];
   TCanvas *c1 = new TCanvas("c1","TOF MPVs Fit Results",700.,500.);
 
   double Peak;
@@ -863,14 +882,14 @@ void dofitall(int R , int dbgmode){
   gStyle->SetLabelSize(0.03,"y");
   
   char htit[128];
-  for (int k=0;k<176;k++){
+  for (int k=0;k<NPMTS;k++){
     //ADCHists[k]->Draw();
     //gPad->Update();
     //getchar();
     if (ADCHists[k]->GetEntries()>1000){
-      int plane = k/88;
-      int side = (k - plane*88)/44;
-      int paddle = k - plane*88 - side*44;
+      int plane = k/PMTS_PER_PLANE;
+      int side = (k - plane*PMTS_PER_PLANE)/BARS_PER_PLANE;
+      int paddle = k - plane*PMTS_PER_PLANE - side*BARS_PER_PLANE;
       
       sprintf(htit,"TOF ADC Signal Plane %d, Paddle %d, Side %d",plane,paddle,side);
       ADCHists[k]->SetTitle(htit);
@@ -927,16 +946,16 @@ void dofitall(int R , int dbgmode){
   }
   OUTF.close();
 
-  float X[44];
-  for (int k=0;k<44;k++){
+  float X[BARS_PER_PLANE];
+  for (int k=0;k<BARS_PER_PLANE;k++){
     X[k] = k;
   }
 
   TGraphErrors *gr[4];
-  gr[0] = new TGraphErrors(44, X, M[0][0], NULL, dM[0][0]);
-  gr[1] = new TGraphErrors(44, X, M[0][1], NULL, dM[0][1]);
-  gr[2] = new TGraphErrors(44, X, M[1][0], NULL, dM[1][0]);
-  gr[3] = new TGraphErrors(44, X, M[1][1], NULL, dM[1][1]);
+  gr[0] = new TGraphErrors(BARS_PER_PLANE, X, M[0][0], NULL, dM[0][0]);
+  gr[1] = new TGraphErrors(BARS_PER_PLANE, X, M[0][1], NULL, dM[0][1]);
+  gr[2] = new TGraphErrors(BARS_PER_PLANE, X, M[1][0], NULL, dM[1][0]);
+  gr[3] = new TGraphErrors(BARS_PER_PLANE, X, M[1][1], NULL, dM[1][1]);
 
   gr[0]->SetTitle("Plane 0 PMT end 0");
   gr[1]->SetTitle("Plane 0 PMT end 1");
@@ -981,10 +1000,10 @@ void dofitall(int R , int dbgmode){
   c1->Clear();
 
   TGraphErrors *grPeak[4];
-  grPeak[0] = new TGraphErrors(44, X, peak[0][0], NULL,  NULL);
-  grPeak[1] = new TGraphErrors(44, X, peak[0][1], NULL,  NULL);
-  grPeak[2] = new TGraphErrors(44, X, peak[1][0], NULL,  NULL);
-  grPeak[3] = new TGraphErrors(44, X, peak[1][1], NULL,  NULL);
+  grPeak[0] = new TGraphErrors(BARS_PER_PLANE, X, peak[0][0], NULL,  NULL);
+  grPeak[1] = new TGraphErrors(BARS_PER_PLANE, X, peak[0][1], NULL,  NULL);
+  grPeak[2] = new TGraphErrors(BARS_PER_PLANE, X, peak[1][0], NULL,  NULL);
+  grPeak[3] = new TGraphErrors(BARS_PER_PLANE, X, peak[1][1], NULL,  NULL);
 
   grPeak[0]->SetTitle("Plane 0 PMT end 0");
   grPeak[1]->SetTitle("Plane 0 PMT end 1");
@@ -1029,10 +1048,10 @@ void dofitall(int R , int dbgmode){
 
 
   TGraphErrors *grFwhm[4];
-  grFwhm[0] = new TGraphErrors(44, X, fwhm[0][0], NULL,  NULL);
-  grFwhm[1] = new TGraphErrors(44, X, fwhm[0][1], NULL,  NULL);
-  grFwhm[2] = new TGraphErrors(44, X, fwhm[1][0], NULL,  NULL);
-  grFwhm[3] = new TGraphErrors(44, X, fwhm[1][1], NULL,  NULL);
+  grFwhm[0] = new TGraphErrors(BARS_PER_PLANE, X, fwhm[0][0], NULL,  NULL);
+  grFwhm[1] = new TGraphErrors(BARS_PER_PLANE, X, fwhm[0][1], NULL,  NULL);
+  grFwhm[2] = new TGraphErrors(BARS_PER_PLANE, X, fwhm[1][0], NULL,  NULL);
+  grFwhm[3] = new TGraphErrors(BARS_PER_PLANE, X, fwhm[1][1], NULL,  NULL);
 
   grFwhm[0]->SetTitle("Plane 0 PMT end 0");
   grFwhm[1]->SetTitle("Plane 0 PMT end 1");

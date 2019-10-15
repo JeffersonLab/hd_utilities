@@ -35,6 +35,10 @@
 
 using namespace std;
 
+#define NumPMTMax 200
+int NPMTS = 0;
+int BARS_PER_PLANE = 0; // including 2 short padeles being one
+int PMTS_PER_PLANE = 0; 
 
 void consolidate(int RunNumber){
   // 3 input files
@@ -42,8 +46,15 @@ void consolidate(int RunNumber){
   // time difference plane 0: tof_timediffoffsets_plane0.dat
   // time difference plane 1: tof_timediffoffsets_plane1.dat
 
-  double MeanTimes[2][44];
-  double DeltaTimes[2][44];
+  NPMTS = 176;            // TOF 1 geometry
+  if (RunNumber>69999){
+    NPMTS = 184;          // TOF 2 geometry
+  }
+  BARS_PER_PLANE = NPMTS/4;
+  PMTS_PER_PLANE = NPMTS/2;
+
+  double MeanTimes[2][BARS_PER_PLANE];
+  double DeltaTimes[2][BARS_PER_PLANE];
 
   char inf[128];
   sprintf(inf,"calibration%d/mtparameters_plane0_ref18.dat",RunNumber);
@@ -82,7 +93,7 @@ void consolidate(int RunNumber){
   INF.close();
  
 
-  double OFFSETS[2][44][2];
+  double OFFSETS[2][BARS_PER_PLANE][2];
 
   char outf[128];
   sprintf(outf,"calibration%d/tofpmt_tdc_offsets_all.dat",RunNumber);
@@ -92,7 +103,7 @@ void consolidate(int RunNumber){
   OUTF<<"----------------------------"<<endl;
   TH1F *histoffsets = new TH1F("histoffsets","PMT offsets distribution",100,-5.,5.);
   for (int plane=0;plane<2;plane++) {    
-    for (int k=0;k<44;k++){
+    for (int k=0;k<BARS_PER_PLANE;k++){
       // MT = (cR+cL)/2  DT = (cR-cL)/2
       // cL = (MT-DT)  and cR = (MT+DT)
       
@@ -121,7 +132,7 @@ void consolidate(int RunNumber){
   OUTF.open(outf);
   for (int plane=0;plane<2;plane++) {    
     for (int end=0;end<2;end++){
-      for (int k=0;k<44;k++){
+      for (int k=0;k<BARS_PER_PLANE;k++){
 	if ((k<21) || (k>22)){
 	  OUTF<<OFFSETS[plane][k][end]-MeanOff<<endl; 
 	}else {
@@ -144,10 +155,10 @@ void consolidate(int RunNumber){
     return;
   }
   int dum1;
-  float Speeds[88],dum2;
+  float Speeds[PMTS_PER_PLANE],dum2;
   float SSum = 0;
   int Scnt = 0;
-  for (int k=0;k<44;k++){
+  for (int k=0;k<BARS_PER_PLANE;k++){
     INF>>dum1>>Speeds[k]>>dum2;
     //cout<<dum1<<"  "<<Speeds[k]<<endl;
     if (TMath::Abs(Speeds[k]-15.5)<2.){
@@ -164,9 +175,9 @@ void consolidate(int RunNumber){
     cout<<"Major problem, stop right here!"<<endl;
     return;
   }
-  for (int k=0;k<44;k++){
-    INF>>dum1>>Speeds[k+44]>>dum2;
-    if (TMath::Abs(Speeds[k+44]-15.5)<2.){
+  for (int k=0;k<BARS_PER_PLANE;k++){
+    INF>>dum1>>Speeds[k+BARS_PER_PLANE]>>dum2;
+    if (TMath::Abs(Speeds[k+BARS_PER_PLANE]-15.5)<2.){
       SSum += Speeds[k];
       Scnt++;
     }
@@ -177,8 +188,12 @@ void consolidate(int RunNumber){
 
   sprintf(outf,"calibration%d/tofpaddles_propagation_speed_run%d.DB",RunNumber,RunNumber);
   OUTF.open(outf);
-  for (int k=0;k<88;k++){
-    if ((k==21) || (k==22) || (k==65) || (k==66)) {
+
+  int nb = BARS_PER_PLANE/2-21;
+  
+  for (int k=0;k<PMTS_PER_PLANE;k++){
+    if ((TMath::Abs(k+1-BARS_PER_PLANE/2)<nb) || (TMath::Abs(k+1-BARS_PER_PLANE-BARS_PER_PLANE/2)<nb) ){
+      //if ((k==21) || (k==22) || (k==65) || (k==66)) {
       // for the single ended paddles use the mean propagation speed of 
       // all the other paddles.
       Speeds[k] = Mspeed;

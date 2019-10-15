@@ -1,6 +1,9 @@
 #!/bin/tcsh
 
 set RUN = $1
+# the following number needs to be adjusted
+# according to the number of paddles in one plane NPMTS/2
+set BARS = 44
 
 mkdir calibration$RUN
 
@@ -8,12 +11,12 @@ mkdir calibration$RUN
 root -b -q "src/walk1.C+($RUN)"
 
 # do mean time determination
-./domeantime.csh $RUN &
+./domeantime.csh $RUN $BARS &
 
 set PID = $!
 
 # calculate time differences
-./dotimediff.csh $RUN
+./dotimediff.csh $RUN $BARS
 
 while ( `ps -p "$PID" | wc -l` > 1 )
   sleep 60
