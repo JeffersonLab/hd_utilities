@@ -41,10 +41,10 @@ Here beginRun is the beginning of your run range and endRun is the end of your r
 
 You must also match the REST production version you're analysing by setting the --rest-ver option to the REST version listed on the corresponding TTree in the analysis launch.  See examples at
 
-https://halldweb.jlab.org/wiki-private/index.php/Spring_2016_Analysis_Launch
-https://halldweb.jlab.org/wiki-private/index.php/Spring_2017_Analysis_Launch
-https://halldweb.jlab.org/wiki-private/index.php/Spring_2018_Analysis_Launch
-https://halldweb.jlab.org/wiki-private/index.php/Fall_2018_Analysis_Launch
+https://halldweb.jlab.org/wiki-private/index.php/Spring_2016_Analysis_Launch  
+https://halldweb.jlab.org/wiki-private/index.php/Spring_2017_Analysis_Launch  
+https://halldweb.jlab.org/wiki-private/index.php/Spring_2018_Analysis_Launch  
+https://halldweb.jlab.org/wiki-private/index.php/Fall_2018_Analysis_Launch  
 
 ## Prerequisites:
 
@@ -66,7 +66,7 @@ source /group/halld/Software/build_scripts/gluex_env_nightly.csh 2019-10-08
 
 The flux values in the MySQL CCDB are from:
 
-RunPeriod-2018-01: REST ver02 production (ver00 for low-energy runs 51384-51457)
-RunPeriod-2018-01: REST ver02 production
-RunPeriod-2017-01: REST ver03 production
-RunPeriod-2016-02: REST ver06 production
+RunPeriod-2018-01: REST ver02 production  
+RunPeriod-2018-08: REST ver02 production  (ver00 for low-energy runs 51384-51457)  
+RunPeriod-2017-01: REST ver03 production  
+RunPeriod-2016-02: REST ver06 production  
