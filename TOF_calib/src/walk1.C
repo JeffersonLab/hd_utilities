@@ -335,15 +335,15 @@ void walk1(int Run){
   for (int k=0;k<NPMTS;k++){ 
     Twalk[k]->Write();    
     onedplots[k]->Write();
-  }  
+  }
   for (int k=0;k<NPMTS;k++){ 
     if (AllFits[0][k]){
       AllFits[0][k]->Write();
-      if (AllFits[1][k]){
-	AllFits[1][k]->Write();
-      }
     }
- }  
+    if (AllFits[1][k]){
+      AllFits[1][k]->Write();
+    }
+  }  
   MeanOffset->Write();
   Rout->Close();
 
@@ -374,9 +374,9 @@ double fithist(TH2F *hist, double *allp, int plane, int paddle, int side, int id
   }
 
   int NFits = 0;
-
+  
  StartOfFit:
-
+  
   f1->SetParameter(0, 286.);
   f1->SetParameter(1, 100.);
   f1->SetParameter(2, -11.);

@@ -30,7 +30,7 @@ int RunNumber;
 int NPMTS = 0;
 int BARS_PER_PLANE = 0; // including 2 short padeles being one
 int PMTS_PER_PLANE = 0; 
-
+int NSHORTS = 0;        // number of short paddles per plane
 
 void gettime(int , int , double &, double &, double &, double &);
 
@@ -38,22 +38,23 @@ void tdlook(int R, int PLID){
   RunNumber = R;
 
   NPMTS = 176;            // TOF 1 geometry
+  NSHORTS = 4;
   if (RunNumber>69999){
     NPMTS = 184;          // TOF 2 geometry
+    NSHORTS = 8;
   }
   BARS_PER_PLANE = NPMTS/4;
   PMTS_PER_PLANE = NPMTS/2;
 
-  double Speeds[BARS_PER_PLANE];
-  double DSpeeds[BARS_PER_PLANE];
+  double Speeds[100];
+  double DSpeeds[100];
   double v,dv;
 
-  double TimeDiffOffset[BARS_PER_PLANE];
-  double TimeDiffSlope[BARS_PER_PLANE];
+  double TimeDiffOffset[100];
+  double TimeDiffSlope[100];
   double offs,slop;
 
-  int nb = BARS_PER_PLANE/2 - 21;
-  for (int k=(BARS_PER_PLANE/2)-nb; k<(BARS_PER_PLANE/2)+nb; k++){
+  for (int k=(BARS_PER_PLANE/2)-NSHORTS/4; k<(BARS_PER_PLANE/2)+NSHORTS/4; k++){
 
     Speeds[k] = 0;
     DSpeeds[k] = 0;
@@ -63,7 +64,7 @@ void tdlook(int R, int PLID){
 
   }
 
-  for (int k=0;k<(BARS_PER_PLANE/2)-nb;k++) {
+  for (int k=0; k<(BARS_PER_PLANE/2) - NSHORTS/4; k++) {
     int REFID = k+1;
     gettime(REFID, PLID, v, dv, offs, slop);
     Speeds[k] = v;
@@ -71,7 +72,7 @@ void tdlook(int R, int PLID){
     TimeDiffOffset[k] = offs;
     TimeDiffSlope[k] = slop;
   }
-  for (int k=(BARS_PER_PLANE/2)+nb;k<BARS_PER_PLANE;k++) {
+  for (int k=(BARS_PER_PLANE/2) + NSHORTS/4; k<BARS_PER_PLANE; k++) {
     int REFID = k+1;
     gettime(REFID, PLID, v, dv, offs, slop);
     Speeds[k] = v;
@@ -105,8 +106,8 @@ void gettime(int REFID, int PLANEID,
 
 
 
-  double XP[BARS_PER_PLANE];
-  if (BARS_PER_PLANE<45){
+  double XP[100];            // nominal geometric location of paddle center in [cm] 
+  if (BARS_PER_PLANE<45){    // TOF 1
     XP[21] = -3.;
     XP[22] = 3.;
     XP[20] = -7.5;
@@ -119,7 +120,7 @@ void gettime(int REFID, int PLANEID,
       XP[18-k] = -15. - k*6.;
       XP[25+k] =  15. + k*6.;
     }
-  } else {
+  } else {                 // TOF 2
     XP[23] = -2.25;
     XP[24] = 2.25;
     XP[22] = -6.75;
@@ -148,11 +149,11 @@ void gettime(int REFID, int PLANEID,
     return;
   }
   
-  double Times[BARS_PER_PLANE];
-  double dTimes[BARS_PER_PLANE];
+  double Times[100];
+  double dTimes[100];
   int dummy;
   int idx = 0;
-  double xt[BARS_PER_PLANE];
+  double xt[100];
   while (!INF.eof()){
     xt[idx] = idx;
     INF>>dummy>>Times[idx]>>dTimes[idx];
@@ -169,9 +170,9 @@ void gettime(int REFID, int PLANEID,
   //SIN->SetParameter(1,10000.);
 
   idx=0;
-  double XX[BARS_PER_PLANE];
-  double YY[BARS_PER_PLANE];
-  double dYY[BARS_PER_PLANE];
+  double XX[100];
+  double YY[100];
+  double dYY[100];
   int hili = 28;
   int loli = 17;
   if ((REFID>19) && (REFID<26)){

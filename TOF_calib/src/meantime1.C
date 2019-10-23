@@ -41,14 +41,28 @@ int REFPAD = 18;
 int REFPLANE = 0;
 int RunNumber;
 
+// nominal geomtry
+double TOF1Geom[44] = {-123., -117., -111., -105., -99., -93., -87., -81., -75., -69., -63., -57., -51., 
+		       -45., -39., -33., -27., -21., -15., -10.5, -7.5, -3., 3., 7.5, 10.5, 15., 21., 27., 33., 
+		       39., 45., 51., 57., 63., 69., 75., 81., 87., 93., 99., 105., 111., 117., 123.};
+
+double TOF2Geom[46] = {-123., -117., -111., -105., -99., -93., -87., -81., -75., -69., -63., -57., -51., 
+		       -45., -39., -33., -27., -21.75, -17.25, -13.5, -10.5, -6.75, -2.25, 2.25, 6.75, 10.5, 
+		       13.5, 17.25, 21.75, 27., 33., 
+		       39., 45., 51., 57., 63., 69., 75., 81., 87., 93., 99., 105., 111., 117., 123.};
+
+double *PTOFG;
+
 void findpeak(double*, double*);
 
 void meantime1(int Run, int REF, int RefPlane){
   
   RunNumber = Run;
   NPMTS = 176;                 // TOF1 geometry 
+  PTOFG = TOF1Geom;
   if (RunNumber>69999){
     NPMTS = 184;               // TOF2 geometry
+    PTOFG = TOF2Geom;
   }
   BARS_PER_PLANE = NPMTS/4;
   PMTS_PER_PLANE = NPMTS/2;
@@ -93,17 +107,10 @@ void meantime1(int Run, int REF, int RefPlane){
   INF.close();
 
   // define xpos of the reference paddle by geometry
+  // this does not need to be acurate only ball park
+  //
   int REFPADi = REFPAD-1;
-  float xpos= 999.;
-  if (REFPADi<19){
-    xpos = -15. - 6.0*(18. - REFPADi);
-  } else if (REFPADi>24) {
-    xpos = 15. + 6.0*(REFPADi-24.);
-  } else if (REFPADi<21){
-    xpos = -7.5 - 3.0*(20. - REFPADi);
-  } else if (REFPADi>22){
-    xpos = 7.5 + 3.0*(REFPADi-23.);
-  }
+  float xpos= PTOFG[REFPADi];
 
   // prepare root file and tree to read from 
   TFile *ROOTFile = new TFile(ROOTFileName);
@@ -311,8 +318,8 @@ void meantime1(int Run, int REF, int RefPlane){
 
   ROOTFile->Close();
 
-  double ppos[BARS_PER_PLANE];
-  double psig[BARS_PER_PLANE];
+  double ppos[100];
+  double psig[100];
   // find the peaks in all the 1-d projections of the 2-d histogram
   findpeak(ppos,psig);
   
@@ -342,7 +349,7 @@ void findpeak(double *MTPosition, double *MTSigma){
   }
 
 
-  for (int k=1;k<45;k++ ){
+  for (int k=1; k<BARS_PER_PLANE+1; k++ ){
 
     TH1D *h = dMT->ProjectionX("h",k,k);
 

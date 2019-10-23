@@ -23,36 +23,37 @@
 using namespace std;
 
 int DEBUG = 0;
+int RunNumber = 0;
 
-TH2F *TDiff;
-int FIRST = 0;
-void saverootfile(int R){
+#define NumPMTMax 200
+int NPMTS = 0;
+int BARS_PER_PLANE = 0; // including 2 short padeles being one
+int PMTS_PER_PLANE = 0; 
 
-  char fnam[128];
-  sprintf(fnam,"calibration%d/adc_time_offsets_run%d.root",R,R);
+void doadctimeoffsets(int Run){
 
-  TFile *RF = new TFile(fnam,"RECREATE");
-  RF->cd();
+  TH2D *TDiff;
+  TH2D *TDiffF;
 
-  TDiff->Write();
-    
-  RF->Close();
+  RunNumber = Run;
 
-}
-
-
-void doadctimeoffsets(int RunNumber){
-
-  float LOLIM = -10.;
-  float HILIM = 10.;
-
-  if (!FIRST){
-    TDiff = new TH2F("TDiff","TDC_T - ADC_T",176, 0,176, 200, LOLIM, HILIM);
-  } else {
-    TDiff->Reset();
+  NPMTS = 176;            // TOF 1 geometry
+  if (RunNumber>69999){
+    NPMTS = 184;          // TOF 2 geometry
   }
-  FIRST++;
-
+  BARS_PER_PLANE = NPMTS/4;
+  PMTS_PER_PLANE = NPMTS/2;
+ 
+  double LOLIM = -10.;
+  double HILIM = 10.;
+  
+  TDiff  = new TH2D("TDiff",  "TDC_T - ADC_T", 
+		    NumPMTMax, 0., (double)NumPMTMax, 
+		    200, LOLIM, HILIM);
+  TDiffF = new TH2D("TDiffF","TDC_T - ADC_T", 
+		    NumPMTMax, 0., (double)NumPMTMax, 
+		    200, LOLIM*10., HILIM*10.);
+  
   char fnam[128];
   char ROOTFILE[128];
   if (RunNumber == 99999){
@@ -66,8 +67,8 @@ void doadctimeoffsets(int RunNumber){
   cout<<"offsetfile: "<<fnam<<endl;
   ifstream INF;
   INF.open(fnam);
-  float PMTOffsets[176];
-  for (int k=0;k<176;k++){
+  double PMTOffsets[NumPMTMax];
+  for (int k=0;k<NPMTS;k++){
     INF>>PMTOffsets[k];
     //cout<<k<<"  "<<PMTOffsets[k]<<endl;
   }
@@ -82,18 +83,18 @@ void doadctimeoffsets(int RunNumber){
   INF.open(fnam);
   char dummy[128];
   INF.getline(dummy,120);
-  float ADC_T_OFFSET, TDC_T_OFFSET;
+  double ADC_T_OFFSET, TDC_T_OFFSET;
   INF>>ADC_T_OFFSET>>TDC_T_OFFSET;
   INF.close();
 
 
   // get walk correction parameters
-  double WalkPar[176][17];
+  double WalkPar[NumPMTMax][17];
   double dum;
   int idx;
   sprintf(fnam,"calibration%d/tof_walk_parameters_run%d.dat",RunNumber,RunNumber);
   INF.open(fnam);
-  for (int k=0;k<176;k++){
+  for (int k=0;k<NPMTS;k++){
     INF >> idx;
     for (int s=0;s<17;s++) {
       INF >> WalkPar[k][s];
@@ -105,7 +106,6 @@ void doadctimeoffsets(int RunNumber){
   TFile *f = new TFile(ROOTFILE,"READ");
   //f->ls();
   TTree *t3 = (TTree*)f->Get("TOFcalib/t3");
-  
   
   int Event;
   int Nhits;
@@ -179,13 +179,6 @@ void doadctimeoffsets(int RunNumber){
 
   unsigned int nentries = (unsigned int) t3->GetEntries();
   cout<<"Number of Entries "<<nentries<<endl;
-  /*
-  if (nentries>100000000){
-    nentries = 100000000;
-    cout<<"  use only 100000000";
-  }
-  cout<<endl;
-  */
   for (unsigned int kk=0; kk<nentries; kk++){
     t3->GetEntry(kk);
     //cout<<Event<<" "<<Nhits<<" "<<NhitsA<<" "<<NsinglesA<<" "<<NsinglesT<<endl;
@@ -194,92 +187,96 @@ void doadctimeoffsets(int RunNumber){
       cout<<"Current time is "<<a.Get()<<endl;
     }
 
-    float THESHIFT = TShift;
-    
-    if (0) { // make offset 0: TEMPORARY FIX
-      int S = (int)TShift / (int)4;
-      S -= 1;
-      if (S<1)
-        S = 6;
-      
-      THESHIFT = (float)S * 4.;
-    }
-    
+    double THESHIFT = (double)TShift;
 
     for (int i=0; i<Nhits;i++){ // loop over double ended paddles TDC hits
       int paddle = Paddle[i];
       int plane = Plane[i];
       
-      for (int n=0; n<NhitsA;n++){      
+      for (int n=0; n<NhitsA;n++){
+
         if ( (paddle == PaddleA[n]) &&
              (plane == PlaneA[n])) {   // find matching ADC hit
           float pmtL = ADCL[n];
           float pmtR = ADCR[n];
           float tL = MeanTime[i]-TimeDiff[i];
           float tR = MeanTime[i]+TimeDiff[i];
-          int hid1 = plane*88 + paddle - 1;
-          int hid2 = plane*88 + 44 + paddle - 1;
+          int idx1 = plane*PMTS_PER_PLANE + paddle - 1;    // north/top
+          int idx2 = plane*PMTS_PER_PLANE + BARS_PER_PLANE + paddle - 1;   //south/bottom
+
+	  if ( (OFR[n]) || (OFL[n]) ){
+	    continue;
+	  }
 
           // apply TDC offsets
-          tL -= PMTOffsets[hid1];
-          tR -= PMTOffsets[hid2];
+          tL -= PMTOffsets[idx1];
+          tR -= PMTOffsets[idx2];
 
           // apply walk correciton
 	  int DOFF = 0;
-	  if (PEAKL[n]>WalkPar[hid1][16]){
+	  if (PEAKL[n]>WalkPar[idx1][16]){
 	    DOFF = 8;
 	  }
-	  double a1 = WalkPar[hid1][0+DOFF]
-            +WalkPar[hid1][2+DOFF]*TMath::Power(PEAKL[n],-0.5) 
-            +WalkPar[hid1][4+DOFF]*TMath::Power(PEAKL[n],-0.33) 
-            +WalkPar[hid1][6+DOFF]*TMath::Power(PEAKL[n],-0.2);
+	  double a1 = WalkPar[idx1][0+DOFF]
+            +WalkPar[idx1][2+DOFF]*TMath::Power(PEAKL[n],-0.5) 
+            +WalkPar[idx1][4+DOFF]*TMath::Power(PEAKL[n],-0.33) 
+            +WalkPar[idx1][6+DOFF]*TMath::Power(PEAKL[n],-0.2);
 
 	  if (PEAKL[n]>4095){
 	    a1 += 0.55; // overflow hits
 	  }
 	  
 	  DOFF = 8;
-          double a2 = WalkPar[hid1][0+DOFF]
-            +WalkPar[hid1][2+DOFF]*TMath::Power(1500.,-0.5) 
-            +WalkPar[hid1][4+DOFF]*TMath::Power(1500.,-0.33) 
-            +WalkPar[hid1][6+DOFF]*TMath::Power(1500.,-0.2);
+          double a2 = WalkPar[idx1][0+DOFF]
+            +WalkPar[idx1][2+DOFF]*TMath::Power(1500.,-0.5) 
+            +WalkPar[idx1][4+DOFF]*TMath::Power(1500.,-0.33) 
+            +WalkPar[idx1][6+DOFF]*TMath::Power(1500.,-0.2);
 	  
-          float tcL = a1 - a2;
+          double tcL = a1 - a2;
 	  
  	  DOFF = 0;
-	  if (PEAKR[n]>WalkPar[hid2][16]){
+	  if (PEAKR[n]>WalkPar[idx2][16]){
 	    DOFF = 8;
 	  }
-	  a1 = WalkPar[hid2][0+DOFF]
-            +WalkPar[hid2][2+DOFF]*TMath::Power(PEAKR[n],-0.5) 
-            +WalkPar[hid2][4+DOFF]*TMath::Power(PEAKR[n],-0.33) 
-            +WalkPar[hid2][6+DOFF]*TMath::Power(PEAKR[n],-0.2);
+	  a1 = WalkPar[idx2][0+DOFF]
+            +WalkPar[idx2][2+DOFF]*TMath::Power(PEAKR[n],-0.5) 
+            +WalkPar[idx2][4+DOFF]*TMath::Power(PEAKR[n],-0.33) 
+            +WalkPar[idx2][6+DOFF]*TMath::Power(PEAKR[n],-0.2);
 	  if (PEAKR[n]>4095){
 	    a1 += 0.55; // overflow hits
 	  }
           
 	  DOFF = 8;
-          a2 = WalkPar[hid2][0+DOFF]
-            +WalkPar[hid2][2+DOFF]*TMath::Power(1500.,-0.5) 
-            +WalkPar[hid2][4+DOFF]*TMath::Power(1500.,-0.33) 
-            +WalkPar[hid2][6+DOFF]*TMath::Power(1500.,-0.2);
+          a2 = WalkPar[idx2][0+DOFF]
+            +WalkPar[idx2][2+DOFF]*TMath::Power(1500.,-0.5) 
+            +WalkPar[idx2][4+DOFF]*TMath::Power(1500.,-0.33) 
+            +WalkPar[idx2][6+DOFF]*TMath::Power(1500.,-0.2);
 	  
-          float tcR = a1 - a2;
+          double tcR = a1 - a2;
 	  
-	  tL -= tcL;
-          tR -= tcR;
+	  tL -= (float)tcL;
+          tR -= (float)tcR;
 
 	  tL += TDC_T_OFFSET;
 	  tR += TDC_T_OFFSET;
  
-          float tLADC = MeanTimeA[i]-TimeDiffA[i];
-          float tRADC = MeanTimeA[i]+TimeDiffA[i];
+          double tLADC = (double)MeanTimeA[n] - (double)TimeDiffA[n];
+          double tRADC = (double)MeanTimeA[n] + (double)TimeDiffA[n];
 
 	  tLADC += ADC_T_OFFSET;
 	  tRADC += ADC_T_OFFSET;
 
-	  TDiff->Fill(hid1, tL - tLADC + THESHIFT);
-	  TDiff->Fill(hid2, tR - tRADC + THESHIFT);
+	  /*
+	  if (idx2 == 157){
+	    cout<<"idx2="<<idx2<<endl;
+	    cout<<tR<<"    "<<PMTOffsets[idx2]<<endl;
+	  }
+	  */
+
+	  TDiff->Fill(idx1, tL - tLADC + THESHIFT);
+	  TDiff->Fill(idx2, tR - tRADC + THESHIFT);
+	  TDiffF->Fill(idx1, tL - tLADC + THESHIFT);
+	  TDiffF->Fill(idx2, tR - tRADC + THESHIFT);
 
 	}
       }
@@ -290,8 +287,8 @@ void doadctimeoffsets(int RunNumber){
       int plane = PlaneSA[i];
       int paddle = PaddleSA[i];
       int side = LRA[i];
-      int idx = plane*88 + side*44 + paddle - 1;
-      float tADC = TADCS[i];
+      int idx = plane*PMTS_PER_PLANE + side*BARS_PER_PLANE + paddle - 1;
+      double tADC = (double)TADCS[i];
 
       for (int j=0; j<NsinglesT; j++){ // loop over TDC single hits
 	
@@ -320,13 +317,14 @@ void doadctimeoffsets(int RunNumber){
 	  
 	  double walk = a1 - a2;
 
-	  float T = TDCST[j] - walk;  // apply walk correction 
+	  double T = (double)TDCST[j] - walk;  // apply walk correction 
 	  T -= PMTOffsets[idx];       // apply pmt timing offset
 	  T += TDC_T_OFFSET;          // apply global TDC time offset
 
 	  tADC += ADC_T_OFFSET;       // apply global ADC time offset
 
- 	  TDiff->Fill(idx, T - tADC + THESHIFT);
+ 	  TDiff->Fill(idx,  T - tADC + THESHIFT);
+ 	  TDiffF->Fill(idx, T - tADC + THESHIFT);
 
 	}
       }
@@ -336,13 +334,18 @@ void doadctimeoffsets(int RunNumber){
 
   if (DEBUG){
     TDiff->Draw("colz");
+    gPad->SetLogz(1);
+    gPad->Update();
+    getchar();
+    TDiffF->Draw("colz");
+    gPad->SetLogz(1);
     gPad->Update();
     getchar();
   }
 
-  float ADC_T_offsets[176];
+  float ADC_T_offsets[NumPMTMax];
 
-  for (int k=0;k<176;k++) {
+  for (int k=0;k<NPMTS;k++) {
 
     ADC_T_offsets[k] = 0.;
     //cout<<"bin "<<k+1<<endl;
@@ -359,6 +362,11 @@ void doadctimeoffsets(int RunNumber){
       int maxbin = h->GetMaximumBin();
       float maxloc = h->GetBinCenter(maxbin);
 
+      if (h->GetBinContent(maxbin)<1){
+	cout<<"Error histogram projection empty!"<<endl;
+	continue;
+      }
+
       float lowlim = maxloc - 1.;
       float higlim = maxloc + 1.;
       if (lowlim < LOLIM){
@@ -366,6 +374,13 @@ void doadctimeoffsets(int RunNumber){
       }
       if (higlim > HILIM) {
 	higlim = HILIM;
+      }
+
+      if (DEBUG) {
+	cout<<lowlim<<" / "<<higlim<<endl;
+	h->Draw();
+	gPad->Update();
+	getchar();
       }
       
       h->Fit("gaus","Q","R", lowlim, higlim);
@@ -399,11 +414,10 @@ void doadctimeoffsets(int RunNumber){
 
   }
 
-
   sprintf(fnam,"calibration%d/tdc_adc_time_offsets_run%d.DB",RunNumber,RunNumber);
   ofstream OUTF;
   OUTF.open(fnam);
-  for (int k=0;k<176;k++) {
+  for (int k=0;k<NPMTS;k++) {
     OUTF << ADC_T_offsets[k]<<endl;
   }
  
@@ -413,8 +427,7 @@ void doadctimeoffsets(int RunNumber){
   TFile *RootF = new TFile(fnam, "RECREATE");
   RootF->cd();
   TDiff->Write();
+  TDiffF->Write();
   RootF->Close();
 
-  
-  
 }
