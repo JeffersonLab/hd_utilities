@@ -31,6 +31,7 @@ using namespace std;
 
 #define NumPMTMax 200
 int NPMTS = 0;
+int NSHORTS = 0;
 
 TH1D *ADCHists[200];
 TH1D *ADCPeakHists[200];
@@ -352,8 +353,10 @@ TF1*  langaus(TH1D *hist, Double_t &Peak, Double_t &FWHM) {
 void dofitall(int R , int dbgmode){
 
   NPMTS = 176;            // TOF 1 geometry
+  NSHORTS = 4;
   if (R>69999){
     NPMTS = 184;          // TOF 2 geometry
+    NSHORTS = 8;
   }
   BARS_PER_PLANE = NPMTS/4;
   PMTS_PER_PLANE = NPMTS/2;
@@ -383,12 +386,10 @@ void dofitall(int R , int dbgmode){
     sprintf(hnam,"xTvsEPMT%d",k);
     sprintf(htit,"XPos vs PMTIntegral %d",k);
 
-    int nb = BARS_PER_PLANE/2-21;
-
-    if ((TMath::Abs(k+1-BARS_PER_PLANE/2)<nb) || 
-	(TMath::Abs(k+1-BARS_PER_PLANE-BARS_PER_PLANE/2)<nb) ||
-	(TMath::Abs(k+1-2*BARS_PER_PLANE-BARS_PER_PLANE/2)<nb) ||
-	(TMath::Abs(k+1-3*BARS_PER_PLANE-BARS_PER_PLANE/2)<nb)){
+    if ((TMath::Abs(k+1 - BARS_PER_PLANE/2 - 0.5)<NSHORTS/4) || 
+	(TMath::Abs(k+1 - BARS_PER_PLANE   - BARS_PER_PLANE/2 - 0.5)<NSHORTS/4) ||
+	(TMath::Abs(k+1 - 2*BARS_PER_PLANE - BARS_PER_PLANE/2 - 0.5)<NSHORTS/4) ||
+	(TMath::Abs(k+1 - 3*BARS_PER_PLANE - BARS_PER_PLANE/2 - 0.5)<NSHORTS/4)){
       //if ( (k==21) || (k==22) || (k==21+44) || (k==22+44) || (k==21+88) || (k==22+88) || (k==21+44+88) || (k==22+44+88)){
       xTvsEPMT[k] = new TH2D(hnam,htit,200, 0., 24000., BARS_PER_PLANE, 0., (double)BARS_PER_PLANE);
     } else {
@@ -605,7 +606,7 @@ void dofitall(int R , int dbgmode){
     
     int CenterHits[2][2];
     memset(CenterHits,0,16);
-    int CenterHitsALL[2][BARS_PER_PLANE][2];
+    int CenterHitsALL[2][100][2];
     memset(CenterHitsALL,0,2*BARS_PER_PLANE*2*4);
     float MeanTimeRef[2][2] = {0., 0., 0., 0.};
 
@@ -861,17 +862,17 @@ void dofitall(int R , int dbgmode){
     return;
   }
 
-  float W[2][2][BARS_PER_PLANE];
-  float dW[2][2][BARS_PER_PLANE];
-  float M[2][2][BARS_PER_PLANE];
-  float dM[2][2][BARS_PER_PLANE];
-  float A[2][2][BARS_PER_PLANE];
-  float dA[2][2][BARS_PER_PLANE];
-  float G[2][2][BARS_PER_PLANE];
-  float dG[2][2][BARS_PER_PLANE];
-  float chisq[2][2][BARS_PER_PLANE];
-  float peak[2][2][BARS_PER_PLANE];
-  float fwhm[2][2][BARS_PER_PLANE];
+  float W[2][2][100];
+  float dW[2][2][100];
+  float M[2][2][100];
+  float dM[2][2][100];
+  float A[2][2][100];
+  float dA[2][2][100];
+  float G[2][2][100];
+  float dG[2][2][100];
+  float chisq[2][2][100];
+  float peak[2][2][100];
+  float fwhm[2][2][100];
   TCanvas *c1 = new TCanvas("c1","TOF MPVs Fit Results",700.,500.);
 
   double Peak;
@@ -946,7 +947,7 @@ void dofitall(int R , int dbgmode){
   }
   OUTF.close();
 
-  float X[BARS_PER_PLANE];
+  float X[100];
   for (int k=0;k<BARS_PER_PLANE;k++){
     X[k] = k;
   }

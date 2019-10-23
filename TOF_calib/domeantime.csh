@@ -1,6 +1,7 @@
 #!/bin/tcsh
 set Run = $1
-set Bars = $2
+set Bars = 44
+if ($Run > 69999) set Bars = 46
 
 foreach x (`seq 1 $Bars`)
     echo $x

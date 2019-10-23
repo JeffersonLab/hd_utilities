@@ -214,8 +214,8 @@ void timedifference(int Run, int REF, int REFPLANE){
 
   ROOTFile->Close();
 
-  double tpos[BARS_PER_PLANE];
-  double dtpos[BARS_PER_PLANE];
+  double tpos[100];
+  double dtpos[100];
   // NOTE THE OFFSET OF 3!!!!!!!!!
   for (int j=3; j<3+BARS_PER_PLANE; j++){
     double p = 0.;

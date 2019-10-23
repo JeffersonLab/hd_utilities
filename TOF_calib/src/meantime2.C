@@ -30,6 +30,7 @@
 using namespace std;
 #define NumPMTMax 200
 int NPMTS = 0;
+int NSHORTS = 0;
 int BARS_PER_PLANE = 0; // including 2 short padeles being one
 int PMTS_PER_PLANE = 0; 
 
@@ -40,17 +41,19 @@ double getmt(int , int , double* ,int );
 void meantime2(int RunNumber){
 
   NPMTS = 176;                 // TOF1 geometry 
+  NSHORTS = 4;
   if (RunNumber>69999){
     NPMTS = 184;               // TOF2 geometry
+    NSHORTS = 8;
   }
   BARS_PER_PLANE = NPMTS/4;
   PMTS_PER_PLANE = NPMTS/2;
 
-  double MTPlane0[BARS_PER_PLANE];
-  double MTPlane1[BARS_PER_PLANE];
+  double MTPlane0[100];
+  double MTPlane1[100];
 
-  int nb = BARS_PER_PLANE/2 - 21;
-  for (int k=(BARS_PER_PLANE/2)-nb; k<(BARS_PER_PLANE/2)+nb; k++){
+
+  for (int k=(BARS_PER_PLANE/2) - NSHORTS/4; k<(BARS_PER_PLANE/2) + NSHORTS/4; k++){  
     MTPlane0[k] = 0.;
     MTPlane0[k] = 0.;
     MTPlane1[k] = 0.;
@@ -59,10 +62,10 @@ void meantime2(int RunNumber){
   // determine average mean time differences between the reference paddle 18 and paddle k
   // <s> = 1/N Sum(dMT_k - dMT_18)_i  sum over all i
   // this average number is the meatime offsets between paddle k and paddle 18 in plane 0
-  for (int k=1;k<BARS_PER_PLANE/2-nb+1;k++){    
+  for (int k=1;k<BARS_PER_PLANE/2 - NSHORTS/4 + 1;k++){    
     MTPlane0[k-1] = getmt(18,k,MTPlane1,RunNumber);
   }
-  for (int k=BARS_PER_PLANE/2+nb+1;k<BARS_PER_PLANE+1;k++){    
+  for (int k=BARS_PER_PLANE/2 + NSHORTS/4 + 1;k<BARS_PER_PLANE+1;k++){    
     MTPlane0[k-1] = getmt(18,k,MTPlane1,RunNumber);
   }
   MTPlane0[18-1] = 0.;  // this is the reference paddle!
@@ -90,7 +93,7 @@ void meantime2(int RunNumber){
 
 double getmt(int p1, int p2, double *mtref,int RunNumber) {
 
-  double PPos[2][BARS_PER_PLANE];
+  double PPos[2][100];
   int REFPAD[2] = {p1,p2};
   int REFPLANE = 0;
 
