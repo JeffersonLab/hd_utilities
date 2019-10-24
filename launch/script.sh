@@ -15,12 +15,16 @@ Setup_Script()
 	echo "PERL INCLUDES: "
 	perl -e "print qq(@INC)"
 
-	# COPY CCDB SQLITE FILE
-	# TO DO: copy only if sqlite file, do not try if mysql
-	# cp -v ${CCDB_CONNECTION:10} $PWD
-	# export CCDB_CONNECTION=sqlite://ccdb_monitoring_launch.sqlite
-	# export JANA_CALIB_URL=sqlite://ccdb_monitoring_launch.sqlite
-	# echo "JANA_CALIB_URL: " $JANA_CALIB_URL
+	# COPY CCDB SQLITE FILE TO LOCAL DISK
+	if [[ $CCDB_CONNECTION  == *"sqlite"* ]] ; then
+	    local SCRATCH=/scratch/slurm/${SLURM_JOB_ID}
+	    ls -l $SCRATCH
+	    local NEW_SQLITE=${SCRATCH}/ccdb.sqlite
+            cp -v ${CCDB_CONNECTION:10} $NEW_SQLITE
+            export CCDB_CONNECTION=sqlite:///$NEW_SQLITE
+            export JANA_CALIB_URL=sqlite:///$NEW_SQLITE
+            echo "JANA_CALIB_URL: " $JANA_CALIB_URL
+	fi
 
 	# COPY INPUT FILE TO WORKING DIRECTORY
 	# This step is necessary since the cache files will be created as soft links in the current directory, and we want to avoid large I/O processes.
