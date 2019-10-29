@@ -377,9 +377,10 @@ void timedifference(int Run, int REF, int REFPLANE){
 
   char of[128];
   sprintf(of,"calibration%d/deltat_tpos_refpad%dplane%d.dat",RunNumber,REF,REFPLANE);
-  ofstream OF(of, ofstream::out);
+  ofstream OF(of, std::ofstream::out);
 
   if (OF){
+    cout<<"Write time difference results to file: "<<REF<<" "<<REFPLANE<<endl;
     for (int n=0; n<BARS_PER_PLANE; n++){ 
       OF<<n<<"  "<<tpos[n]<<"  "<<dtpos[n]<<endl;
     }
