@@ -23,10 +23,12 @@
 
 using namespace std;
 
-TH2F *Twalk[176];
-TF1 *AllFits[2][176];
-TGraphErrors *onedplots[176];
+#define NumPMTMax 200
 
+int NPMTS = 0;
+TH2F *Twalk[NumPMTMax];
+TF1 *AllFits[2][NumPMTMax];
+TGraphErrors *onedplots[NumPMTMax];
 
 int DEBUG = 2; // 2 = make plots, 99 = interupt
 
@@ -34,18 +36,28 @@ double  fithist(TH2F*, double*, int , int, int, int);
 TGraphErrors *mkprof(TH2F*, int);
 int RunNumber ;
 
+int BARS_PER_PLANE = 0; // including 2 short padeles being one
+int PMTS_PER_PLANE = 0; 
+
 void walk1(int Run){
-  
   RunNumber = Run;
+
+  NPMTS = 176;            // TOF 1 geometry
+  if (RunNumber>69999){
+    NPMTS = 184;          // TOF 2 geometry
+  }
+  BARS_PER_PLANE = NPMTS/4;
+  PMTS_PER_PLANE = NPMTS/2;
+
   char ROOTFileName[128];
-  sprintf(ROOTFileName,"localdir/run%d/hd_root_tofcalib.root",RunNumber);
+  //sprintf(ROOTFileName,"localdir/run%d/hd_root_tofcalib.root",RunNumber);
   sprintf(ROOTFileName,"localdir/tofdata_run%d.root",RunNumber);
   if (RunNumber == 99999)
     sprintf(ROOTFileName,"localdir/big%d.root",RunNumber);
 
-  // create a 2-d histogram for each PMT (176) with horizontal axis ADC
+  // create a 2-d histogram for each PMT  with horizontal axis ADC
   // and vertical axis timedifference 
-  for (int n=0; n<176; n++){
+  for (int n=0; n<NPMTS; n++){
     char hnam[128];
     sprintf(hnam,"Twalk%d",n);
     char htit[128];
@@ -176,8 +188,8 @@ void walk1(int Run){
 	  float tR = MeanTime[i]+TimeDiff[i];
 	  float adcTL = MeanTimeA[n]-TimeDiffA[n] ;
 	  float adcTR = MeanTimeA[n]+TimeDiffA[n] ;
-	  int hid1 = plane*88 + paddle - 1;
-	  int hid2 = plane*88 + 44 + paddle - 1;
+	  int hid1 = plane*PMTS_PER_PLANE + paddle - 1;
+	  int hid2 = plane*PMTS_PER_PLANE + BARS_PER_PLANE + paddle - 1;
 	  //cout<<tL-adcTL<<endl;
 	  if ( (!OFR[n]) && (!OFL[n]) ){
 	    //bool c = (((tL-adcTL+THESHIFT)>248.) && (pmtL>3000)) || ((tL-adcTL+THESHIFT)<240.);
@@ -207,7 +219,7 @@ void walk1(int Run){
 	  float pmt = PEAK[n];
 	  float adct = TADCS[n]; 
 	  float tdct = TDCST[i];
-	  int idx = 88*plane + s*44 + paddle -1;
+	  int idx = plane*PMTS_PER_PLANE + s*BARS_PER_PLANE + paddle -1;
 	  if (!OF[n]){
 	    //bool c = (((tdct-adct+THESHIFT)>248.) && (pmt>2000)) || ((tdct-adct+THESHIFT)<240.);
 	    //if (!c)
@@ -221,16 +233,16 @@ void walk1(int Run){
   ROOTFile->Close();
   cout<<".... done reading"<<endl;
 
-  // now do the walk determintion for all 176 PMTs
-  double FitPar[176][17];
+  // now do the walk determintion for all PMTs
+  double FitPar[NumPMTMax][17];
   double allp[17];
-  double CHI2[176];
-  for (int n=0; n<176; n++){
+  double CHI2[NumPMTMax];
+  for (int n=0; n<NPMTS; n++){
     if (Twalk[n]->GetEntries()>100){
       // fit 2-D histogram using profile 
-      int plane  = n/88;
-      int side = (n - 88*plane)/44;
-      int paddle = n - 88*plane - side*44;
+      int plane  = n/PMTS_PER_PLANE;
+      int side = (n - PMTS_PER_PLANE*plane)/BARS_PER_PLANE;
+      int paddle = n - PMTS_PER_PLANE*plane - side*BARS_PER_PLANE;
       cout<<"Paddle "<<n<< ": do walk fit"<<endl; 
       CHI2[n] = fithist(Twalk[n], allp, plane, paddle, side, n);
 
@@ -243,6 +255,7 @@ void walk1(int Run){
       }
     }
   }
+
   char outf[128];
   sprintf(outf, "calibration%d/tof_walk_parameters_run%d.dat",RunNumber,RunNumber);
   ofstream OUTF;
@@ -251,8 +264,8 @@ void walk1(int Run){
   ofstream OUTF1;
   sprintf(outf, "calibration%d/tof_TDC_ADC_timediff_run%d.dat",RunNumber,RunNumber);
   OUTF1.open(outf);
-  double TheOffsets[176];
-  for (int n=0; n<176; n++){
+  double TheOffsets[NumPMTMax];
+  for (int n=0; n<NPMTS; n++){
     OUTF<<n;
     for (int s=0;s<17;s++){
       OUTF<<"   "<<FitPar[n][s];
@@ -267,13 +280,14 @@ void walk1(int Run){
     MeanOffset->Fill(TheOffsets[n]);
     OUTF1<<n<<"  "<<TheOffsets[n]<<"       "<<CHI2[n]<<endl;
   }
+
   OUTF.close();
   OUTF1.close();
 
   // create DB file to loaded to ccdb data base
   sprintf(outf, "calibration%d/tof_walk_parameters_run%d.DB",RunNumber,RunNumber);
   OUTF.open(outf);
-  for (int n=0; n<176; n++){
+  for (int n=0; n<NPMTS; n++){
     OUTF<< FitPar[n][0]<<"   " << FitPar[n][2] 
 	<<"   "<< FitPar[n][4]<<"   "<< FitPar[n][6]
 	<<"   "<< FitPar[n][8]<<"   " << FitPar[n][10] 
@@ -281,6 +295,7 @@ void walk1(int Run){
 	<<"   "<< FitPar[n][16]
 	<<"  1500."<<endl ;
   }
+
   OUTF.close();
   
   MeanOffset->Draw();
@@ -308,7 +323,7 @@ void walk1(int Run){
   OUTF.open(outf);
   // CenterOffset is mean time offset between ADC and TDC
   // TheOffsets[n] is nth pmt offset w.r.t. CenterOffset
-  for (int n=0; n<176; n++){
+  for (int n=0; n<NPMTS; n++){
     OUTF<<CenterOffset-TheOffsets[n]<<endl;
   }
   OUTF.close();
@@ -317,18 +332,18 @@ void walk1(int Run){
   sprintf(rfile,"calibration%d/walk_results_run%d.root",RunNumber,RunNumber);
   TFile *Rout = new TFile(rfile,"RECREATE");
   Rout->cd();
-  for (unsigned int k=0;k<176;k++){ 
+  for (int k=0;k<NPMTS;k++){ 
     Twalk[k]->Write();    
     onedplots[k]->Write();
-  }  
-  for (unsigned int k=0;k<176;k++){ 
+  }
+  for (int k=0;k<NPMTS;k++){ 
     if (AllFits[0][k]){
       AllFits[0][k]->Write();
-      if (AllFits[1][k]){
-	AllFits[1][k]->Write();
-      }
     }
- }  
+    if (AllFits[1][k]){
+      AllFits[1][k]->Write();
+    }
+  }  
   MeanOffset->Write();
   Rout->Close();
 
@@ -359,9 +374,9 @@ double fithist(TH2F *hist, double *allp, int plane, int paddle, int side, int id
   }
 
   int NFits = 0;
-
+  
  StartOfFit:
-
+  
   f1->SetParameter(0, 286.);
   f1->SetParameter(1, 100.);
   f1->SetParameter(2, -11.);
@@ -376,7 +391,6 @@ double fithist(TH2F *hist, double *allp, int plane, int paddle, int side, int id
 
   f2->SetParLimits(0, 200., 300.);
   
-
   TFitResultPtr r = grnew->Fit(f1, "QS", "R", 150., ConectPoint+10.);
   double *l = grnew->GetY();
   double ll = *l;
@@ -412,8 +426,8 @@ double fithist(TH2F *hist, double *allp, int plane, int paddle, int side, int id
 
   double P2 = thefit->Eval(ConectPoint); 
   cout<<"Delta t at ConectPoint: "<<P1-P2<<endl;
-  if (TMath::Abs(P1-P2)>0.025){
-    cout<<"Missmatch > 25ps! shift Connectpoint and redo fit"<<endl;
+  if (TMath::Abs(P1-P2)>0.02){
+    cout<<"Missmatch > 20ps! shift Connectpoint and redo fit"<<endl;
     if (NFits<6){
       NFits++;
       ConectPoint -= 50.;

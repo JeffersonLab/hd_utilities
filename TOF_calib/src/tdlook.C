@@ -26,31 +26,45 @@ using namespace std;
 int DEBUG = 2;
 int RunNumber;
 
+#define NumPMTMax 200
+int NPMTS = 0;
+int BARS_PER_PLANE = 0; // including 2 short padeles being one
+int PMTS_PER_PLANE = 0; 
+int NSHORTS = 0;        // number of short paddles per plane
+
 void gettime(int , int , double &, double &, double &, double &);
 
 void tdlook(int R, int PLID){
-
-  double Speeds[44];
-  double DSpeeds[44];
-  double v,dv;
-
-  double TimeDiffOffset[44];
-  double TimeDiffSlope[44];
-  double offs,slop;
-
   RunNumber = R;
 
-  Speeds[21] = 0;
-  DSpeeds[21] = 0;
-  Speeds[22] = 0;
-  DSpeeds[22] = 0;
+  NPMTS = 176;            // TOF 1 geometry
+  NSHORTS = 4;
+  if (RunNumber>69999){
+    NPMTS = 184;          // TOF 2 geometry
+    NSHORTS = 8;
+  }
+  BARS_PER_PLANE = NPMTS/4;
+  PMTS_PER_PLANE = NPMTS/2;
 
-  TimeDiffOffset[21] = 0.;
-  TimeDiffSlope[21] = 0.;
-  TimeDiffOffset[22] = 0.;
-  TimeDiffSlope[22] = 0.;
+  double Speeds[100];
+  double DSpeeds[100];
+  double v,dv;
 
-  for (int k=0;k<21;k++) {
+  double TimeDiffOffset[100];
+  double TimeDiffSlope[100];
+  double offs,slop;
+
+  for (int k=(BARS_PER_PLANE/2)-NSHORTS/4; k<(BARS_PER_PLANE/2)+NSHORTS/4; k++){
+
+    Speeds[k] = 0;
+    DSpeeds[k] = 0;
+
+    TimeDiffOffset[k] = 0.;
+    TimeDiffSlope[k] = 0.;
+
+  }
+
+  for (int k=0; k<(BARS_PER_PLANE/2) - NSHORTS/4; k++) {
     int REFID = k+1;
     gettime(REFID, PLID, v, dv, offs, slop);
     Speeds[k] = v;
@@ -58,7 +72,7 @@ void tdlook(int R, int PLID){
     TimeDiffOffset[k] = offs;
     TimeDiffSlope[k] = slop;
   }
-  for (int k=23;k<44;k++) {
+  for (int k=(BARS_PER_PLANE/2) + NSHORTS/4; k<BARS_PER_PLANE; k++) {
     int REFID = k+1;
     gettime(REFID, PLID, v, dv, offs, slop);
     Speeds[k] = v;
@@ -71,14 +85,14 @@ void tdlook(int R, int PLID){
   sprintf(outf,"calibration%d/tof_speeds_plane%d_run%d.dat",RunNumber, PLID, RunNumber);
   ofstream OUTF;
   OUTF.open(outf,ios::out);
-  for (int k=0;k<44;k++){
+  for (int k=0;k<BARS_PER_PLANE;k++){
     OUTF << k << "  " << Speeds[k] << "  " << DSpeeds[k] << endl;
   }
   OUTF.close();
 
   sprintf(outf,"calibration%d/tof_timediffoffsets_plane%d.dat",RunNumber, PLID);
   OUTF.open(outf,ios::out);
-  for (int k=0;k<44;k++){
+  for (int k=0;k<BARS_PER_PLANE;k++){
     OUTF << k << "  " << TimeDiffOffset[k] << "  " << TimeDiffSlope[k] << endl;
   }
   OUTF.close();
@@ -92,18 +106,37 @@ void gettime(int REFID, int PLANEID,
 
 
 
-  double XP[44];
-  XP[21] = -3.;
-  XP[22] = 3.;
-  XP[20] = -7.5;
-  XP[23] = 7.5;
-  XP[19] = -10.5;
-  XP[24] = 10.5;
-  XP[18] = -15.;
-  XP[25] = 15.;
-  for (int k=1;k<19;k++){
-    XP[18-k] = -15. - k*6.;
-    XP[25+k] =  15. + k*6.;
+  double XP[100];            // nominal geometric location of paddle center in [cm] 
+  if (BARS_PER_PLANE<45){    // TOF 1
+    XP[21] = -3.;
+    XP[22] = 3.;
+    XP[20] = -7.5;
+    XP[23] = 7.5;
+    XP[19] = -10.5;
+    XP[24] = 10.5;
+    XP[18] = -15.;
+    XP[25] = 15.;
+    for (int k=1;k<19;k++){
+      XP[18-k] = -15. - k*6.;
+      XP[25+k] =  15. + k*6.;
+    }
+  } else {                 // TOF 2
+    XP[23] = -2.25;
+    XP[24] = 2.25;
+    XP[22] = -6.75;
+    XP[25] = 6.75;
+    XP[21] = -8.25;
+    XP[26] = 8.25;
+    XP[20] = -9.75;
+    XP[27] = 9.75;
+    XP[19] = -12.25;
+    XP[28] = 12.25;
+    XP[18] = -14.75;
+    XP[29] = 14.75;
+    for (int k=1;k<19;k++){
+      XP[18-k] = -14. - k*6.;
+      XP[29+k] =  14. + k*6.;
+    }
   }
 
   char inf[128];
@@ -116,11 +149,11 @@ void gettime(int REFID, int PLANEID,
     return;
   }
   
-  double Times[44];
-  double dTimes[44];
+  double Times[100];
+  double dTimes[100];
   int dummy;
   int idx = 0;
-  double xt[44];
+  double xt[100];
   while (!INF.eof()){
     xt[idx] = idx;
     INF>>dummy>>Times[idx]>>dTimes[idx];
@@ -137,16 +170,16 @@ void gettime(int REFID, int PLANEID,
   //SIN->SetParameter(1,10000.);
 
   idx=0;
-  double XX[44];
-  double YY[44];
-  double dYY[44];
-  int hili = 24;
+  double XX[100];
+  double YY[100];
+  double dYY[100];
+  int hili = 28;
   int loli = 17;
   if ((REFID>19) && (REFID<26)){
     loli = 16;
     hili = 28;
   }
-  for (int k=0;k<44;k++){
+  for (int k=0;k<BARS_PER_PLANE;k++){
     if ((k<loli) || (k>hili)){ // filter out half paddles and narrow paddles
       if (dTimes[k]<0.1){
 	XX[idx] = XP[k];

@@ -13,7 +13,7 @@ root -b -q "src/walk1.C+($RUN)"
 set PID = $!
 
 # calculate time differences
-./dotimediff.csh $RUN
+./dotimediff.csh $RUN 
 
 while ( `ps -p "$PID" | wc -l` > 1 )
   sleep 60
