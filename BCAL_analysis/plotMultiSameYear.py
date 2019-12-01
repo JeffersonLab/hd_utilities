@@ -354,9 +354,9 @@ def main(argv):
 	
 	legend = TLegend(0.13+0.15, 0.65, 0.5+0.15, 0.85) #0.1 is lower limit of plot, 0.9 is upper limit (beyond on either side is labeling+whitespace)
 	legend.AddEntry(gr_diff_L1,"Layer 1","pl")
-	legend.AddEntry(gr_diff_L2,"Layer 2 / 2","pl")
-	legend.AddEntry(gr_diff_L3,"Layer 3 / 3","pl")
-	legend.AddEntry(gr_diff_L4,"Layer 4 / 4","pl")
+	legend.AddEntry(gr_diff_L2,"Layer 2 / #sqrt{2}","pl")
+	legend.AddEntry(gr_diff_L3,"Layer 3 / #sqrt{3}","pl")
+	legend.AddEntry(gr_diff_L4,"Layer 4 / #sqrt{4}","pl")
 	gr_diff_L1.SetTitle("")
 	gr_diff_L1.Draw("APx")
 	gr_diff_L2.Draw("pxsame")
