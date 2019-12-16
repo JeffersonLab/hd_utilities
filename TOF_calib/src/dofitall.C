@@ -30,14 +30,14 @@
 using namespace std;
 
 #define NumPMTMax 200
-int NPMTS = 0;
-int NSHORTS = 0;
+int NPMTS = 184;
+int NSHORTS = 8;
 
 TH1D *ADCHists[200];
 TH1D *ADCPeakHists[200];
 TH2D *xTvsxE[100];
 TH2D *E0vsxE[100];
-TH1F *Timings[8];
+TH1F *Timings[16];
 TH2D *TDiff_TDCvsADC[100];
 
 TH2D *xTvsEPMT[200];
@@ -46,8 +46,8 @@ TH2D *xTvsEPMTcorr[200];
 int DEBUG = 10;
 int use_current_calibration = 1;
 
-int BARS_PER_PLANE = 0; // including 2 short padeles being one
-int PMTS_PER_PLANE = 0; 
+int BARS_PER_PLANE = 46; // including 2 short padeles being one
+int PMTS_PER_PLANE = 92; 
 
 TH2D *h2d;
 void saverootfile(int R){
@@ -57,7 +57,7 @@ void saverootfile(int R){
   TFile *RF = new TFile(fnam,"RECREATE");
   RF->cd();
 
-  for (int k=0;k<8;k++){
+  for (int k=0;k<NSHORTS*2;k++){
     Timings[k]->Write();
   }
   for (int k=0;k<PMTS_PER_PLANE;k++){
@@ -366,7 +366,7 @@ void dofitall(int R , int dbgmode){
   h2d = new TH2D("h2d","of vs. e", 200, 0., 24000., 10, 0., 10.);
   int RunNumber = R;
   char fnam[128];
-  if (RunNumber == 99999){
+  if (RunNumber == 999999){
     sprintf(fnam,"localdir/big%d.root",RunNumber);
   } else {
     sprintf(fnam,"localdir/tofdata_run%d.root",RunNumber);
@@ -420,7 +420,7 @@ void dofitall(int R , int dbgmode){
   }
 
 
-  for (int k=0;k<8;k++){
+  for (int k=0;k<NSHORTS*2;k++){
     char hnam[128];
     sprintf(hnam,"Timing%d",k);
     char htit[128];
@@ -805,15 +805,22 @@ void dofitall(int R , int dbgmode){
 
   // Fit the Timings[i] i=0,..,7 histograms to get offsets for the single ended paddle pmts
 
-  float OffsetPMT[8];
-  float OffsetPMTsig[8];
+  float OffsetPMT[16];
+  float OffsetPMTsig[16];
 
   char of1[128];
   sprintf(of1,"calibration%d/tdc_pmtsingles_offsets_run%d.dat",RunNumber,RunNumber);
   ofstream OUTF1;
   OUTF1.open(of1);
   
-  for (int n=0; n<8;n++){
+  for (int n=0; n<NSHORTS*2;n++){
+    if (Timings[n]->GetEntries()<500){
+      int plane = n/NSHORTS;
+      int u = (n-plane*NSHORTS)/2;
+      int pad = BARS_PER_PLANE/2 + (n%(NSHORTS/2));
+      OUTF1<<plane<<"  "<<pad<<" "<<"  "<<u<<"  0.0"<<"  0.0"<<endl;
+      continue;
+    }
     int maxloc = Timings[n]->GetMaximumBin();
     float max = Timings[n]->GetBinCenter(maxloc);
     float hili = max+0.5;
@@ -830,9 +837,9 @@ void dofitall(int R , int dbgmode){
     sig =  f1->GetParameter(2);	
     OffsetPMT[n] = max;
     OffsetPMTsig[n] = sig;
-    int plane = n/4;
-    int u = (n-plane*4)/2;
-    int pad = BARS_PER_PLANE/2 + (n%2);
+    int plane = n/NSHORTS;
+    int u = (n-plane*NSHORTS)/2;
+    int pad = BARS_PER_PLANE/2 + (n%(NSHORTS/2));
     OUTF1<<plane<<"  "<<pad<<" "<<"  "<<u<<"  "<<max<<"  "<<sig<<endl;
     if (DEBUG == 77){
       Timings[n]->Draw();

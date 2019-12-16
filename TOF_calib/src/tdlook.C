@@ -121,21 +121,21 @@ void gettime(int REFID, int PLANEID,
       XP[25+k] =  15. + k*6.;
     }
   } else {                 // TOF 2
-    XP[23] = -2.25;
-    XP[24] = 2.25;
-    XP[22] = -6.75;
-    XP[25] = 6.75;
-    XP[21] = -8.25;
-    XP[26] = 8.25;
-    XP[20] = -9.75;
-    XP[27] = 9.75;
-    XP[19] = -12.25;
-    XP[28] = 12.25;
-    XP[18] = -14.75;
-    XP[29] = 14.75;
-    for (int k=1;k<19;k++){
-      XP[18-k] = -14. - k*6.;
-      XP[29+k] =  14. + k*6.;
+    XP[22] = -2.25;
+    XP[23] = 2.25;
+    XP[21] = -6.75;
+    XP[24] = 6.75;
+    XP[20] = -10.5;
+    XP[25] = 10.5;
+    XP[19] = -13.5;
+    XP[26] = 13.5;
+    XP[18] = -17.25;
+    XP[27] = 17.25;
+    XP[17] = -21.75;
+    XP[28] = 21.75;
+    for (int k=1;k<18;k++){
+      XP[17-k] = -27. - (k-1)*6.;
+      XP[28+k] =  27. + (k-1)*6.;
     }
   }
 
@@ -178,6 +178,10 @@ void gettime(int REFID, int PLANEID,
   if ((REFID>19) && (REFID<26)){
     loli = 16;
     hili = 28;
+  }
+  if (NSHORTS>2){
+    loli = 16;
+    hili = 29;
   }
   for (int k=0;k<BARS_PER_PLANE;k++){
     if ((k<loli) || (k>hili)){ // filter out half paddles and narrow paddles
