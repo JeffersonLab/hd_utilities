@@ -418,19 +418,25 @@ void dofitall(int R , int dbgmode){
     TDiff_TDCvsADC[k]->GetXaxis()->SetTitle("#Delta T ADC [ns]");
     TDiff_TDCvsADC[k]->GetYaxis()->SetTitle("#Delta T TDC calibrated [ns]");
   }
-
-
-  for (int k=0;k<NSHORTS*2;k++){
-    char hnam[128];
-    sprintf(hnam,"Timing%d",k);
-    char htit[128];
-    int pl = k/4;
-    int u = (k-pl*4)/2;
-    int pad = BARS_PER_PLANE/2 + (k%2);
-    sprintf(htit,"PMT_time - MT_REF plane %d Paddle %d pmtside %d",pl,pad,u);
-    Timings[k] = new TH1F(hnam,htit,500,-10.,10.);
-    //Timings[k] = new TH1F(hnam,htit,200,-6.,0.);
-    Timings[k]->GetXaxis()->SetTitle("T-MTref [ns]");
+  
+  
+  for (int pla=0; pla<2 ; pla++) {
+    
+    for (int side=0; side<2 ; side++) {
+      
+      for (int k=0;k<NSHORTS/2;k++){
+	char hnam[128];
+	sprintf(hnam,"Timing%d",k+4*side+8*pla);
+	char htit[128];
+	int pl = pla;
+	int u = side;
+	int pad = BARS_PER_PLANE/2 - 1 + k;
+	sprintf(htit,"PMT_time - MT_REF plane %d Paddle %d pmtside %d",pl,pad,u);
+	Timings[k + 4*side + 8*pla] = new TH1F(hnam,htit,500,-10.,10.);
+	//Timings[k] = new TH1F(hnam,htit,200,-6.,0.);
+	Timings[k + 4*side + 8*pla]->GetXaxis()->SetTitle("T-MTref [ns]");
+      }
+    }
   }
 
   TFile *f = new TFile(fnam,"READ");
@@ -604,10 +610,10 @@ void dofitall(int R , int dbgmode){
       cout<<"Current time is "<<a.Get()<<endl;
     }
     
-    int CenterHits[2][2];
-    memset(CenterHits,0,16);
-    int CenterHitsALL[2][100][2];
-    memset(CenterHitsALL,0,2*BARS_PER_PLANE*2*4);
+    int CenterHits[2][4];
+    memset(CenterHits,0,4*8);
+    int CenterHitsALL[2][100][4];
+    memset(CenterHitsALL,0,4*800);
     float MeanTimeRef[2][2] = {0., 0., 0., 0.};
 
     for (int i=0; i<Nhits;i++){
@@ -706,12 +712,12 @@ void dofitall(int R , int dbgmode){
 	  xTvsEPMTcorr[hid2]->Fill(pmtR/corr,126.+xT);
 	  
 	  if (TMath::Abs(DT)<0.25){
-	    if (paddle < 22){ // overlaps with R/D
+	    if (paddle < BARS_PER_PLANE/2 - NSHORTS/4){ // overlaps with R/D
 	      CenterHits[plane][1]++;
 	      MeanTimeRef[plane][1] = (tR+tL)/2.;; 
 	      CenterHitsALL[plane][paddle-1][1]++;
 	    }
-	    if (paddle > 23){ // overlaps with L/U
+	    if (paddle > BARS_PER_PLANE/2 + NSHORTS/4){ // overlaps with L/U
 	      CenterHits[plane][0]++;
 	      MeanTimeRef[plane][0] = (tR+tL)/2.;; 
 	      CenterHitsALL[plane][paddle-1][0]++;
@@ -782,7 +788,7 @@ void dofitall(int R , int dbgmode){
 	    }
 	  }
 	}
-	int idxt = plane*4 + (paddle-22) + side*2;
+	int idxt = plane*NSHORTS + (paddle-(BARS_PER_PLANE/2-1)) + side*NSHORTS/2;
 	Timings[idxt]->Fill(T - MeanTimeRef[p][s] );
       }
 
@@ -803,7 +809,7 @@ void dofitall(int R , int dbgmode){
   }
 
 
-  // Fit the Timings[i] i=0,..,7 histograms to get offsets for the single ended paddle pmts
+  // Fit the Timings[i] i=0,..,NSHORTS*2 histograms to get offsets for the single ended paddle pmts
 
   float OffsetPMT[16];
   float OffsetPMTsig[16];
@@ -816,8 +822,8 @@ void dofitall(int R , int dbgmode){
   for (int n=0; n<NSHORTS*2;n++){
     if (Timings[n]->GetEntries()<500){
       int plane = n/NSHORTS;
-      int u = (n-plane*NSHORTS)/2;
-      int pad = BARS_PER_PLANE/2 + (n%(NSHORTS/2));
+      int u = (n-plane*NSHORTS)/(NSHORTS/2);
+      int pad = BARS_PER_PLANE/2-1 + (n - u*NSHORTS/2 - plane*NSHORTS);
       OUTF1<<plane<<"  "<<pad<<" "<<"  "<<u<<"  0.0"<<"  0.0"<<endl;
       continue;
     }
@@ -838,8 +844,8 @@ void dofitall(int R , int dbgmode){
     OffsetPMT[n] = max;
     OffsetPMTsig[n] = sig;
     int plane = n/NSHORTS;
-    int u = (n-plane*NSHORTS)/2;
-    int pad = BARS_PER_PLANE/2 + (n%(NSHORTS/2));
+    int u = (n-plane*NSHORTS)/(NSHORTS/2);
+    int pad = BARS_PER_PLANE/2 -1  + (n - u*NSHORTS/2 - plane*NSHORTS);
     OUTF1<<plane<<"  "<<pad<<" "<<"  "<<u<<"  "<<max<<"  "<<sig<<endl;
     if (DEBUG == 77){
       Timings[n]->Draw();
