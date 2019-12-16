@@ -23,20 +23,15 @@ from ROOT import gBenchmark, gDirectory, gROOT, gStyle, gPad
 from jz_pyroot_helper import *
 #from jz_pyroot_FitMacros import *
 
-#NOTES FOR OTHERS USING THIS SCRIPT!!!!
-## You need both PyRoot and the helper script above before this script will work
-## run plugin F250_mode10_pedestal over pedestal data and get hd_root files. Then run this over those files.
-## You'll have to update run list at bottom of this script
-## Hopefully it's pretty well automated otherwise
-
 
 histbasename = "pedmeansub_"
 
 
 temp = "10_C"
-year = "2019"
+year = "2015"
 base_directory = "/w/halld-scifs17exp/home/jzarling/BCAL_stuff/pedestal_width_study/"+year+"/"+temp+"/"
 
+subtract_floor_term = True
 
 def main(argv):
 	#Usage controls from OptionParser
@@ -113,7 +108,6 @@ def main(argv):
 	mean_err_layer4_diff_RMS  = array('d',[])
 	mean_err_global_diff_RMS  = array('d',[])
 
-
 	#Loop over all files
 	for curr_run in f_list:
 		print "Runnum: " + str(curr_run)
@@ -147,15 +141,15 @@ def main(argv):
 					# if(quadrant==3): continue #Skip quadrant 3, it has LEDs firing (in 2019 at least)
 					if(quadrant==3 or quadrant==2 or quadrant==4): continue #Skip quadrant 3, it has LEDs firing (in 2019 at least)
 					#Fill appropriate histograms
-					if(layer==1 and is_downstream==0): h_layer1_US_RMS.Fill(hist.GetRMS())
-					if(layer==2 and is_downstream==0): h_layer2_US_RMS.Fill(hist.GetRMS())
-					if(layer==3 and is_downstream==0): h_layer3_US_RMS.Fill(hist.GetRMS())
-					if(layer==4 and is_downstream==0): h_layer4_US_RMS.Fill(hist.GetRMS())
+					if(layer==1 and is_downstream==0): h_layer1_US_RMS.Fill(hist.GetRMS()/sqrt(layer))
+					if(layer==2 and is_downstream==0): h_layer2_US_RMS.Fill(hist.GetRMS()/sqrt(layer))
+					if(layer==3 and is_downstream==0): h_layer3_US_RMS.Fill(hist.GetRMS()/sqrt(layer))
+					if(layer==4 and is_downstream==0): h_layer4_US_RMS.Fill(hist.GetRMS()/sqrt(layer))
 					if(is_downstream==0): h_global_US_RMS.Fill(hist.GetRMS())
-					if(layer==1 and is_downstream==1): h_layer1_DS_RMS.Fill(hist.GetRMS())
-					if(layer==2 and is_downstream==1): h_layer2_DS_RMS.Fill(hist.GetRMS())
-					if(layer==3 and is_downstream==1): h_layer3_DS_RMS.Fill(hist.GetRMS())
-					if(layer==4 and is_downstream==1): h_layer4_DS_RMS.Fill(hist.GetRMS())
+					if(layer==1 and is_downstream==1): h_layer1_DS_RMS.Fill(hist.GetRMS()/sqrt(layer))
+					if(layer==2 and is_downstream==1): h_layer2_DS_RMS.Fill(hist.GetRMS()/sqrt(layer))
+					if(layer==3 and is_downstream==1): h_layer3_DS_RMS.Fill(hist.GetRMS()/sqrt(layer))
+					if(layer==4 and is_downstream==1): h_layer4_DS_RMS.Fill(hist.GetRMS()/sqrt(layer))
 					if(is_downstream==1): h_global_DS_RMS.Fill(hist.GetRMS())
 					h_global_all_RMS.Fill(hist.GetRMS())
 		#End of file: add histograms to list
@@ -223,6 +217,23 @@ def main(argv):
 	gr_layer3_diff_RMS = TGraphErrors(len(bias_arr),bias_arr,mean_layer3_diff_RMS,bias_err_arr,mean_err_layer3_diff_RMS)
 	gr_layer4_diff_RMS = TGraphErrors(len(bias_arr),bias_arr,mean_layer4_diff_RMS,bias_err_arr,mean_err_layer4_diff_RMS)
 	gr_global_diff_RMS = TGraphErrors(len(bias_arr),bias_arr,mean_global_diff_RMS,bias_err_arr,mean_err_global_diff_RMS)
+	if(subtract_floor_term):
+		gr_layer1_US_RMS   = remove_floor_term_from_gr(gr_layer1_US_RMS)
+		gr_layer2_US_RMS   = remove_floor_term_from_gr(gr_layer2_US_RMS)
+		gr_layer3_US_RMS   = remove_floor_term_from_gr(gr_layer3_US_RMS)
+		gr_layer4_US_RMS   = remove_floor_term_from_gr(gr_layer4_US_RMS)
+		gr_global_US_RMS   = remove_floor_term_from_gr(gr_global_US_RMS)
+		gr_layer1_DS_RMS   = remove_floor_term_from_gr(gr_layer1_DS_RMS)
+		gr_layer2_DS_RMS   = remove_floor_term_from_gr(gr_layer2_DS_RMS)
+		gr_layer3_DS_RMS   = remove_floor_term_from_gr(gr_layer3_DS_RMS)
+		gr_layer4_DS_RMS   = remove_floor_term_from_gr(gr_layer4_DS_RMS)
+		gr_global_DS_RMS   = remove_floor_term_from_gr(gr_global_DS_RMS)
+		gr_global_all_RMS  = remove_floor_term_from_gr(gr_global_all_RMS)
+		gr_layer1_diff_RMS = remove_floor_term_from_gr_diff(gr_layer1_US_RMS,gr_layer1_DS_RMS)
+		gr_layer2_diff_RMS = remove_floor_term_from_gr_diff(gr_layer2_US_RMS,gr_layer2_DS_RMS)
+		gr_layer3_diff_RMS = remove_floor_term_from_gr_diff(gr_layer3_US_RMS,gr_layer3_DS_RMS)
+		gr_layer4_diff_RMS = remove_floor_term_from_gr_diff(gr_layer4_US_RMS,gr_layer4_DS_RMS)
+		gr_global_diff_RMS = remove_floor_term_from_gr_diff(gr_global_US_RMS,gr_global_DS_RMS)
 	gr_layer1_US_RMS.SetNameTitle("gr_layer1_US_RMS","Layer 1 Upstream;Bias (V);Pedestal Width (ADC units)")
 	gr_layer2_US_RMS.SetNameTitle("gr_layer2_US_RMS","Layer 2 Upstream;Bias (V);Pedestal Width (ADC units)")
 	gr_layer3_US_RMS.SetNameTitle("gr_layer3_US_RMS","Layer 3 Upstream;Bias (V);Pedestal Width (ADC units)")
@@ -240,6 +251,8 @@ def main(argv):
 	gr_layer4_diff_RMS.SetNameTitle("gr_layer4_diff_RMS","Layer 4 Downstream - Upstream;Bias (V);Pedestal Width Difference (ADC units)")
 	gr_global_diff_RMS.SetNameTitle("gr_global_diff_RMS","ALL Downstream - Upstream;Bias (V);Pedestal Width Difference (ADC units)")
 
+	
+	
 	#Save results to file
 	f_out = TFile(argv[0],"RECREATE")
 	f_out.cd()
@@ -323,6 +336,22 @@ def get_run_dict():
 				70455:1.6,
 				70456:1.8,
 				70457:2.0,
+			}
+		if(temp=="5_C"):
+			run_dict = {
+				# 2019 5 degree data
+				70407:-0.2,
+				70408:0.0,
+				70409:0.2,
+				70410:0.4,
+				70411:0.6,
+				70413:0.8,
+				70414:1.0,
+				70415:1.2,
+				70417:1.4,
+				70418:1.6,
+				70419:1.8,
+				70420:2.0,
 			}
 	
 	if(year=="2017"):
@@ -416,7 +445,70 @@ def get_hist_from_rocid_slot_channel(f,rocid,slot,channel):
 		print "searching for histogram: " + histname_str
 	return hist
 
-
+def remove_floor_term_from_gr(gr):
+	
+	bias_V_arr = array('d',[])
+	RMS_arr    = array('d',[])
+	
+	bias_V_arr = gr.GetX()
+	RMS_arr = gr.GetY()
+	
+	min_RMS = 1000
+	for i in range(0,len(RMS_arr)):
+		if RMS_arr[i]<min_RMS:
+			min_RMS = RMS_arr[i]
+	print "min RMS is: " + str(min_RMS)
+	
+	# RMS_floorsub_arr    = array('d',[])
+	# for i in range(0,len(RMS_arr)): RMS_floorsub_arr.append(RMS_arr[i]-min_RMS)
+	
+	new_gr = gr.Clone()
+	for i in range(0,len(RMS_arr)): 
+		new_gr.SetPoint(i,bias_V_arr[i],RMS_arr[i]-min_RMS)
+		
+	return new_gr
+	
+def remove_floor_term_from_gr_diff(gr_up,gr_down):
+	
+	bias_V_arr_up = array('d',[])
+	RMS_arr_up    = array('d',[])
+	bias_V_arr_up = gr_up.GetX()
+	RMS_arr_up = gr_up.GetY()
+	min_RMS_up = 1000
+	for i in range(0,len(RMS_arr_up)):
+		if RMS_arr_up[i]<min_RMS_up:
+			min_RMS_up = RMS_arr_up[i]
+	print "min RMS upstream: " + str(min_RMS_up)
+	
+	bias_V_arr_down = array('d',[])
+	RMS_arr_down    = array('d',[])
+	bias_V_arr_down = gr_down.GetX()
+	RMS_arr_down = gr_down.GetY()
+	min_RMS_down = 1000
+	for i in range(0,len(RMS_arr_down)):
+		if RMS_arr_down[i]<min_RMS_down:
+			min_RMS_down = RMS_arr_down[i]
+	print "min RMS downstream: " + str(min_RMS_down)
+	
+	min_RMS_down = RMS_arr_down[0]
+	min_RMS_up = RMS_arr_up[0]
+	
+	
+	new_gr = gr_down.Clone()
+	for i in range(0,len(RMS_arr_down)): 
+		down_subtracted = RMS_arr_down[i]-min_RMS_down
+		up_subtracted = RMS_arr_up[i]-min_RMS_up
+		# print "First bin down: " + str(down_subtracted)
+		# print "First bin up: " + str(up_subtracted)
+		
+		
+		new_gr.SetPoint(i,bias_V_arr_up[i],down_subtracted-up_subtracted)
+		
+	return new_gr
+	
+	
+	
+	
 # Conversion functions
 ###################################
 ###################################
@@ -467,6 +559,20 @@ def getquadrant(rocid):
 
 # dictionary of Run:bias V. 
 # run_dict = {	
+	# # 2019 5 degree data
+	# 70407:-0.2,
+	# 70408:0.0,
+	# 70409:0.2,
+	# 70410:0.4,
+	# 70411:0.6,
+	# 70413:0.8,
+	# 70414:1.0,
+	# 70415:1.2,
+	# 70417:1.4,
+	# 70418:1.6,
+	# 70419:1.8,
+	# 70420:2.0,
+	
 	# # 2019 10 degree data
 	# 70446:-0.2,
 	# 70447:0.0,
