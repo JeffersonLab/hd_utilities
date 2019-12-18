@@ -48,6 +48,10 @@
 # DIRC
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/DIRC_online/DIRC_hit.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/DIRC_online/DIRC_digihit.C
+# TRD
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_incoming/src/plugins/monitoring/TRD_online/TRD_hit.C
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_incoming/src/plugins/monitoring/TRD_online/GEM_hit.C
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_incoming/src/plugins/Analysis/TRD_hists/TRD_extrap.C
 # Trigger
 #/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/TRIG_online/trig_fcalbcal.C
 # RF
