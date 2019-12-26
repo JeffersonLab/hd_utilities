@@ -23,11 +23,6 @@ from ROOT import gBenchmark, gDirectory, gROOT, gStyle, gPad
 from jz_pyroot_helper import *
 #from jz_pyroot_FitMacros import *
 
-#NOTES FOR OTHERS USING THIS SCRIPT!!!!
-## You need both PyRoot and the helper script above before this script will work
-
-
-
 # has_5deg = False
 
 kOpenCircle = 24 #18 degree data
@@ -37,6 +32,8 @@ kRad = 26        #rad
 year = "2019"
 # year = "2017"
 # year = "2015"
+
+temp_4PlottingDiff = "10"
 
 def main(argv):
 	#Usage controls from OptionParser
@@ -181,21 +178,6 @@ def main(argv):
 	
 	
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	gr_L1_DS_18deg = f_18deg.Get("gr_layer1_DS_RMS")
 	gr_L2_DS_18deg = f_18deg.Get("gr_layer2_DS_RMS")
 	gr_L3_DS_18deg = f_18deg.Get("gr_layer3_DS_RMS")
@@ -317,6 +299,84 @@ def main(argv):
 	if(len(args)==3):legend.AddEntry(gr_global_DS_5deg,"ALL downstream (5 Celcius)","pl")
 	legend.Draw()
 	c1.SaveAs("plots/downstream"+year+".png")
+	
+	#Difference plots
+	size = 0.8
+	gr_diff_L1 = TGraphErrors()
+	gr_diff_L2 = TGraphErrors()
+	gr_diff_L3 = TGraphErrors()
+	gr_diff_L4 = TGraphErrors()
+	gr_diff_G  = TGraphErrors()
+	if temp_4PlottingDiff == "5": 
+		gr_diff_L1 = f_5deg.Get("gr_layer1_diff_RMS")
+		gr_diff_L2 = f_5deg.Get("gr_layer2_diff_RMS")
+		gr_diff_L3 = f_5deg.Get("gr_layer3_diff_RMS")
+		gr_diff_L4 = f_5deg.Get("gr_layer4_diff_RMS")
+		gr_diff_G  = f_5deg.Get("gr_global_diff_RMS")
+	if temp_4PlottingDiff == "10": 
+		gr_diff_L1 = f_10deg.Get("gr_layer1_diff_RMS")
+		gr_diff_L2 = f_10deg.Get("gr_layer2_diff_RMS")
+		gr_diff_L3 = f_10deg.Get("gr_layer3_diff_RMS")
+		gr_diff_L4 = f_10deg.Get("gr_layer4_diff_RMS")
+		gr_diff_G  = f_10deg.Get("gr_global_diff_RMS")
+	if temp_4PlottingDiff == "18": 
+		gr_diff_L1 = f_18deg.Get("gr_layer1_diff_RMS")
+		gr_diff_L2 = f_18deg.Get("gr_layer2_diff_RMS")
+		gr_diff_L3 = f_18deg.Get("gr_layer3_diff_RMS")
+		gr_diff_L4 = f_18deg.Get("gr_layer4_diff_RMS")
+		gr_diff_G  = f_18deg.Get("gr_global_diff_RMS")
+	gr_diff_L1.SetMarkerColor(kBlack)
+	gr_diff_L2.SetMarkerColor(kRed)
+	gr_diff_L3.SetMarkerColor(kBlue)
+	gr_diff_L4.SetMarkerColor(kMagenta)
+	gr_diff_G.SetMarkerColor(kBlack)
+	gr_diff_L1.SetMarkerStyle(20)
+	gr_diff_L2.SetMarkerStyle(20)
+	gr_diff_L3.SetMarkerStyle(20)
+	gr_diff_L4.SetMarkerStyle(20)
+	gr_diff_G.SetMarkerStyle(kOpenCircle)
+	gr_diff_L1.SetMarkerSize(size)
+	gr_diff_L2.SetMarkerSize(size)
+	gr_diff_L3.SetMarkerSize(size)
+	gr_diff_L4.SetMarkerSize(size)
+	gr_diff_G.SetMarkerSize(size)
+	
+	gr_diff_L1.Draw("APx")
+	c1.SaveAs("plots/diff_L1_"+year+"_"+temp_4PlottingDiff+"C.png")
+	gr_diff_L2.Draw("APx")
+	c1.SaveAs("plots/diff_L2_"+year+"_"+temp_4PlottingDiff+"C.png")
+	gr_diff_L3.Draw("APx")
+	c1.SaveAs("plots/diff_L3_"+year+"_"+temp_4PlottingDiff+"C.png")
+	gr_diff_L4.Draw("APx")
+	c1.SaveAs("plots/diff_L4_"+year+"_"+temp_4PlottingDiff+"C.png")
+	gr_diff_G.Draw("APx")
+	c1.SaveAs("plots/diff_global_"+year+"_"+temp_4PlottingDiff+"C.png")
+	
+	legend = TLegend(0.13+0.15, 0.65, 0.5+0.15, 0.85) #0.1 is lower limit of plot, 0.9 is upper limit (beyond on either side is labeling+whitespace)
+	legend.AddEntry(gr_diff_L1,"Layer 1","pl")
+	legend.AddEntry(gr_diff_L2,"Layer 2 / #sqrt{2}","pl")
+	legend.AddEntry(gr_diff_L3,"Layer 3 / #sqrt{3}","pl")
+	legend.AddEntry(gr_diff_L4,"Layer 4 / #sqrt{4}","pl")
+	gr_diff_L1.SetTitle("")
+	gr_diff_L1.Draw("APx")
+	gr_diff_L2.Draw("pxsame")
+	gr_diff_L3.Draw("pxsame")
+	gr_diff_L4.Draw("pxsame")
+	legend.Draw()
+	c1.SaveAs("plots/diff"+year+"_"+temp_4PlottingDiff+"C.png")
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 
 
