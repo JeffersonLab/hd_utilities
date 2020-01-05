@@ -1,4 +1,5 @@
 #!/bin/bash
+nevents=10000
 date_file=/u/scratch/$USER/b1pi_date.txt
 if [ ! -f $date_file ] ; then
     echo date file $date_file not found, exiting
@@ -8,7 +9,7 @@ date_token=`cat /u/scratch/$USER/b1pi_date.txt`
 export TODAYS_DATE=$date_token
 export BMS_OSNAME=`/group/halld/Software/build_scripts/osrelease.pl`
 export BUILD_DIR=/u/scratch/gluex/nightly/$TODAYS_DATE/$BMS_OSNAME
-export B1PI_TEST_DIR=/group/halld/Software/scripts/b1pi_test
+export B1PI_TEST_DIR=/group/halld/Software/hd_utilities/b1pi_test
 export BUILD_SCRIPTS=/group/halld/Software/build_scripts
 
 # Setup environment based on sim-recon build we're using 
@@ -22,7 +23,7 @@ export RUN_DIR=/u/scratch/$USER/b1pi/$TODAYS_DATE/$BMS_OSNAME/$RUN
 rm -rfv $RUN_DIR
 mkdir -pv $RUN_DIR
 cd $RUN_DIR
-$B1PI_TEST_DIR/b1pi_test.sh -n 10000 -r $RUN
+$B1PI_TEST_DIR/b1pi_test.sh -4 -n $nevents -r $RUN
 echo \#count events
 echo \#count b1_pi.hddm `hddm_counter.pl b1_pi.hddm physicsEvent`
 echo \#count hdgeant.hddm `hddm_counter.pl hdgeant.hddm physicsEvent`
@@ -38,7 +39,7 @@ export RUN_DIR=/u/scratch/$USER/b1pi/$TODAYS_DATE/$BMS_OSNAME/$RUN
 rm -rfv $RUN_DIR
 mkdir -pv $RUN_DIR
 cd $RUN_DIR
-$B1PI_TEST_DIR/b1pi_test.sh -n 10000 -r $RUN
+$B1PI_TEST_DIR/b1pi_test.sh -n $nevents -r $RUN -4
 echo \#count events
 echo \#count b1_pi.hddm `hddm_counter.pl b1_pi.hddm physicsEvent`
 echo \#count hdgeant.hddm `hddm_counter.pl hdgeant.hddm physicsEvent`
