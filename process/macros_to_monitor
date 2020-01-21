@@ -122,6 +122,8 @@
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/L1_online/l1_ancilary.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/L1_online/l1_fcal_bcal.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/L1_online/l1_rate.C 
+# BEAM
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_incoming/src/plugins/monitoring/BEAM_online/BEAM_overview.C
 # ALIGNMENT
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/TrackingPulls/PlotCDCStrawResiduals.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/TrackingPulls/PlotCathodeResidualsLocal.C
