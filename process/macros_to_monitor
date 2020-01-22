@@ -67,6 +67,7 @@
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/Calibration/HLDetectorTiming/HistMacro_TaggerTiming.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/Calibration/HLDetectorTiming/HistMacro_TrackingTiming.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/Calibration/HLDetectorTiming/HistMacro_TrackMatchedTiming.C
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/Calibration/HLDetectorTiming/HistMacro_OnlineRF.C
 # RECONSTRUCTION
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_NumHighLevelObjects.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_NumLowLevelObjects_p1.C
@@ -123,7 +124,7 @@
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/L1_online/l1_fcal_bcal.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/L1_online/l1_rate.C 
 # BEAM
-/work/halld2/home/gxproj5/builds/halld_recon/monitoring_incoming/src/plugins/monitoring/BEAM_online/BEAM_overview.C
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/BEAM_online/BEAM_overview.C
 # ALIGNMENT
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/TrackingPulls/PlotCDCStrawResiduals.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/TrackingPulls/PlotCathodeResidualsLocal.C
