@@ -1,0 +1,18 @@
+Coherent enhancement plots and slope fits for monitoring run dependence.  There are two steps to the procedure
+
+1) Loop over runs, create enhancment ratios and fit Coherent Brem. model
+
+./loopRunsRCDB.py first_run last_run
+
+where first_run and last_run are the run numbers you want to process.  The python script loops for the monitoring plots of the diamond and reference amorphous runs in the offline monitoring (ver01) directory.  After the enhancement histogram is filled, the cobremFit.C macro is run to fit the Coherent Brem. model to extract an approximate polarization.  The output of the fit is stored in the polarization/ directory for each run with a file enhancementFit_run.root 
+
+Note: this process needs to only be done once for each run number to save the enhancement ratio and fit result to the ROOT file.
+
+2) Plot the relevant beam parameters as a function of run number
+
+./loopPlotPolarization.py first_run last_run label
+
+where first_run and last_run is the run number range that you want to plot, and its assumed that step 1) has already been completed, as the ROOT file is used as input here.  Plots of the enhancement (diamond/amorphous) maximum and coherent edge slope are produced as a function of run number.  Also, diagnostic plots of each coherent edge slope are saved in the slopeFit/ directory.  They can be summed together into a PDF file with the following command 
+
+cat slopeFit/*.ps | ps2pdf - slopeFit.pdf
+
