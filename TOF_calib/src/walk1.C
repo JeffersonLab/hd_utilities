@@ -333,8 +333,10 @@ void walk1(int Run){
   TFile *Rout = new TFile(rfile,"RECREATE");
   Rout->cd();
   for (int k=0;k<NPMTS;k++){ 
-    Twalk[k]->Write();    
-    onedplots[k]->Write();
+    Twalk[k]->Write(); 
+    if (onedplots[k]){
+      onedplots[k]->Write();
+    }
   }
   for (int k=0;k<NPMTS;k++){ 
     if (AllFits[0][k]){
