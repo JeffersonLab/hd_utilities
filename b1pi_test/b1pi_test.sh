@@ -130,7 +130,7 @@ if [ "$HDG4" = "true" ]
 then
     echo "Running hdgeant4 ..."
     rm -f run.mac
-    cat <<EOF
+    cat > run.mac <<EOF
 /run/beamOn 100000
 EOF
     command="hdgeant4 run.mac"
