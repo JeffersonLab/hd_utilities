@@ -156,7 +156,7 @@ Submit_Job 2018-08 051030 000
 # CHECK FOR JOB SUCCESS. IF SUCCESS, SEND EMAIL
 Check_Workflow_Loop recon_tests
 RETURN_CODE=$?
-echo "Job success return code = "$RETURN_CODE
+echo "Job success return code = " $RETURN_CODE
 if [ "$RETURN_CODE" -eq "0" ]; then
 	Send_Email
 fi
