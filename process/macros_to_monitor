@@ -48,10 +48,18 @@
 # DIRC
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/DIRC_online/DIRC_hit.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/DIRC_online/DIRC_digihit.C
+# CompCal
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/CCAL_online/ccal_cluster_et.C
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/CCAL_online/ccal_cluster_space.C
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/CCAL_online/ccal_comp2.C
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/CCAL_online/ccal_comp.C
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/CCAL_online/ccal_dig_pedestal.C
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/CCAL_online/ccal_dig_pulse.C
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/CCAL_online/ccal_hit_energy.C
 # TRD
-/work/halld2/home/gxproj5/builds/halld_recon/monitoring_incoming/src/plugins/monitoring/TRD_online/TRD_hit.C
-/work/halld2/home/gxproj5/builds/halld_recon/monitoring_incoming/src/plugins/monitoring/TRD_online/GEM_hit.C
-/work/halld2/home/gxproj5/builds/halld_recon/monitoring_incoming/src/plugins/Analysis/TRD_hists/TRD_extrap.C
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/TRD_online/TRD_hit.C
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/TRD_online/GEM_hit.C
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/Analysis/TRD_hists/TRD_extrap.C
 # Trigger
 #/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/TRIG_online/trig_fcalbcal.C
 # RF
