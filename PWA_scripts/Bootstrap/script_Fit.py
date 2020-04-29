@@ -57,7 +57,7 @@ for bin in range(0,nBins):
     subprocess.call(command)
     cmd = "swif add-job -workflow %s -project %s -track %s"%(workflow,project,track)
     cmd += " -name %s_-%d"%(workflow, bin)
-    cmd += " -os centos7"
+    cmd += " -os centos77"
     cmd += " -stdout file:%s/log/log_%d.log"%(scriptDir, bin)
     cmd += " -stderr file:%s/log/err_%d.err"%(scriptDir, bin)
     cmd += " -disk %d"%int(disk_space)
