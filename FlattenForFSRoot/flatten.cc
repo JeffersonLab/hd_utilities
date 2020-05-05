@@ -79,8 +79,8 @@ int main(int argc, char** argv){
   cout << "Notes:" << endl;
   cout << "  * the input tree name should contain \"_Tree\" (if this standard" << endl;
   cout << "     changes in the GlueX code, this code can be easily modified)" << endl;
-  cout << "  * the output tree name is ntFSGlueX (for now) " << endl;
-  cout << "      [it might be better to eventually use a FSCode, for example]" << endl;
+  cout << "  * the output tree name is ntFSGlueX_[code2]_[code1], where [code1] " << endl;
+  cout << "      and [code2] specify the final state (Documentation/GlueXFSRootFormat.pdf)" << endl;
   cout << "  * this works for a large variety of final states (but not all)" << endl;
   cout << "  * the \"safe\" option first reads a limited number of variables" << endl;
   cout << "      from the tree, then does checks on array sizes, etc.," << endl;
@@ -173,7 +173,6 @@ void ConvertTree(TString treeName){
 
     // input and output tree names
   TString inNT(treeName);
-  //TString outNT("nt");  outNT += inNT;  outNT.Replace(outNT.Index("_Tree"),5,"");
   TString outNT("ntFSGlueX");
 
     // setup for the input tree
@@ -373,6 +372,8 @@ void ConvertTree(TString treeName){
   cout << "  DecayCode1    = " << reconstructedFSCode.first << endl;
   cout << "  DecayCode2    = " << reconstructedFSCode.second << endl;
   cout << "  numFSNeutrals = " << numFSNeutrals << endl << endl;
+
+  outNT = outNT + "_" + reconstructedFSCode.second + "_" + reconstructedFSCode.first;
 
 
      // **********************************************************************

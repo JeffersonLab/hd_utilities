@@ -3,7 +3,10 @@
 ROOTFLAGS     = $(shell root-config --cflags)
 ROOTLIBS      = $(shell root-config --libs) -lMinuit -lMathCore
 
-default: flatten
+EXE_SRCFILES := $(wildcard *.cc)
+EXE_EXEFILES := $(foreach file,$(EXE_SRCFILES),$(file:.cc=))
+
+default: $(EXE_EXEFILES)
 
 %: %.cc
 	g++  $(ROOTFLAGS) $(MYINCLUDES) -c -o $*.o $*.cc
@@ -11,4 +14,5 @@ default: flatten
 
 
 clean:
-	@rm -f *.o $* */*.o
+	@rm -f *.o $(EXE_EXEFILES)
+
