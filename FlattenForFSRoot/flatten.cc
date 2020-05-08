@@ -373,8 +373,10 @@ void ConvertTree(TString treeName){
   cout << "  DecayCode2    = " << reconstructedFSCode.second << endl;
   cout << "  numFSNeutrals = " << numFSNeutrals << endl << endl;
 
-  outNT = outNT + "_" + TString(reconstructedFSCode.second) 
-                + "_" + TString(reconstructedFSCode.first);
+  outNT += "_";
+  outNT += reconstructedFSCode.second;
+  outNT += "_";
+  outNT += reconstructedFSCode.first;
 
 
      // **********************************************************************
