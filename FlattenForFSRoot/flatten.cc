@@ -67,7 +67,8 @@ int main(int argc, char** argv){
   cout << "The final state is determined automatically from the input file." << endl << endl;
   cout << "Usage:" << endl;
   cout << "  flatten  -in    <input file name>                     (required)" << endl;
-  cout << "           -out   <output file name>                    (required)" << endl;
+  cout << "           -out   <output file name or none>            (default: none)" << endl;
+  cout << "                   (if none, just print info and quit)"   << endl;
   cout << "           -mc    [is this mc?  0 or 1]                 (default: 0)" << endl;
   cout << "           -chi2  [optional Chi2/DOF cut value]         (default: 1000)" << endl;
   cout << "           -numUnusedTracks   [optional cut (<= cut)]   (no default)" << endl;
@@ -87,12 +88,12 @@ int main(int argc, char** argv){
   cout << "      then reads in the rest of the tree -- this is slower, but avoids" << endl;
   cout << "      segmentation faults if array sizes are exceeded" << endl;
   cout << "***********************************************************" << endl << endl;
-  if (argc < 5){
+  if (argc < 3){
      cout << "ERROR: wrong number of arguments -- see usage notes above" << endl;
      exit(0);
   }
   TString inFileName("");
-  TString outFileName("");
+  TString outFileName("none");
   gIsMC = false;
   gChi2DOFCut = 1000.0;
   gNumUnusedTracksCut = -1;
@@ -141,7 +142,8 @@ int main(int argc, char** argv){
 void ConvertFile(TString inFileName, TString outFileName){
   int nTrees = 0;
   gInputFile  = new TFile(inFileName);
-  gOutputFile = new TFile(outFileName,"recreate");
+  gOutputFile = NULL;
+  if (outFileName != "none") gOutputFile = new TFile(outFileName,"recreate");
   TList* fileList = gInputFile->GetListOfKeys();
   for (int i = 0; i < fileList->GetEntries(); i++){
     TString treeName(fileList->At(i)->GetName());
@@ -155,7 +157,7 @@ void ConvertFile(TString inFileName, TString outFileName){
     }
   }
   gInputFile->Close();
-  gOutputFile->Close();
+  if (outFileName != "none") gOutputFile->Close();
   if (nTrees == 0){
     cout << "WARNING: could not find any trees" << endl;
   }
@@ -410,6 +412,8 @@ void ConvertTree(TString treeName){
    // **********************************************************************
    // STEP 2:  SET UP TO READ THE INPUT TREE (IN ANALYSIS TREE FORMAT)
    // **********************************************************************
+
+   if (!gOutputFile) return;
 
         // ******************************
         // ***** 2A. SIMULATED DATA *****
