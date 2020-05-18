@@ -263,6 +263,7 @@ void ConvertTree(TString treeName){
      // **********************************************************************
 
   cout << endl << endl << "PERFORMING CHECKS ON THE FINAL STATE:" << endl << endl;
+  bool checkFSOkay = true;
   {
     if (decayProductMap.size() == 0){
       cout << endl << "  ERROR: no final state partices found" << endl;
@@ -284,26 +285,26 @@ void ConvertTree(TString treeName){
       }
       if (motherFSType == "pi0" && (daughterNames.size() != 2 || 
             !(daughterFSTypes[0] == "gamma" && daughterFSTypes[1] == "gamma"))){
-        cout << "  ERROR: unrecognized pi0 decay" << endl;
+        cout << "  ERROR: unrecognized pi0 decay" << endl;  checkFSOkay = false;
       }
       if (motherFSType == "eta" && (daughterNames.size() != 2 || 
             !(daughterFSTypes[0] == "gamma" && daughterFSTypes[1] == "gamma"))){
-        cout << "  ERROR: unrecognized eta decay" << endl;
+        cout << "  ERROR: unrecognized eta decay" << endl;  checkFSOkay = false;
       }
       if (motherFSType == "Ks" && (daughterNames.size() != 2 || 
             !((daughterFSTypes[0] == "pi+" && daughterFSTypes[1] == "pi-") || 
               (daughterFSTypes[1] == "pi+" && daughterFSTypes[0] == "pi-")))){
-        cout << "  ERROR: unrecognized Ks decay" << endl;
+        cout << "  ERROR: unrecognized Ks decay" << endl;  checkFSOkay = false;
       }
       if (motherFSType == "Lambda" && (daughterNames.size() != 2 || 
             !((daughterFSTypes[0] == "p+" && daughterFSTypes[1] == "pi-") || 
               (daughterFSTypes[1] == "p+" && daughterFSTypes[0] == "pi-")))){
-        cout << "  ERROR: unrecognized Lambda decay" << endl;
+        cout << "  ERROR: unrecognized Lambda decay" << endl;  checkFSOkay = false;
       }
       if (motherFSType == "ALambda" && (daughterNames.size() != 2 || 
             !((daughterFSTypes[0] == "p-" && daughterFSTypes[1] == "pi+") || 
               (daughterFSTypes[1] == "p-" && daughterFSTypes[0] == "pi+")))){
-        cout << "  ERROR: unrecognized ALambda decay" << endl;
+        cout << "  ERROR: unrecognized ALambda decay" << endl;  checkFSOkay = false;
       }
     }
   }
@@ -380,6 +381,10 @@ void ConvertTree(TString treeName){
   outNT += "_";
   outNT += reconstructedFSCode.first;
 
+  if (!checkFSOkay){
+    cout << "ERROR: problem parsing this final state." << endl;
+    exit(0);
+  }
 
      // **********************************************************************
      // STEP 1F:  make maps from names to indices
