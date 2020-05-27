@@ -306,6 +306,13 @@ void ConvertTree(TString treeName){
               (daughterFSTypes[1] == "p-" && daughterFSTypes[0] == "pi+")))){
         cout << "  ERROR: unrecognized ALambda decay" << endl;  checkFSOkay = false;
       }
+      if (motherName.Contains("Decaying") && motherFSType != "pi0"
+                                          && motherFSType != "eta"
+                                          && motherFSType != "Ks"
+                                          && motherFSType != "Lambda"
+                                          && motherFSType != "ALambda"){
+        cout << "  ERROR: unrecognized decaying particle: " << motherName << endl;  checkFSOkay = false;
+      }
     }
   }
 
