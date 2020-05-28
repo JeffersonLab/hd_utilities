@@ -44,6 +44,7 @@ int FSMCExtras(int numThrown, int pids[]);
 TFile* gInputFile;
 TFile* gOutputFile;
 double  gChi2DOFCut;
+double  gShQualityCut;
 int  gNumUnusedTracksCut;
 int  gNumUnusedNeutralsCut;
 int  gNumNeutralHyposCut;
@@ -71,6 +72,7 @@ int main(int argc, char** argv){
   cout << "                   (if none, just print info and quit)"   << endl;
   cout << "           -mc    [is this mc?  0 or 1]                 (default: 0)" << endl;
   cout << "           -chi2  [optional Chi2/DOF cut value]         (default: 1000)" << endl;
+  cout << "           -shQuality  [optional shower quality cut value] (no default)" << endl;
   cout << "           -numUnusedTracks   [optional cut (<= cut)]   (no default)" << endl;
   cout << "           -numUnusedNeutrals [optional cut (<= cut)]   (no default)" << endl;
   cout << "           -numNeutralHypos   [optional cut (<= cut)]   (no default)" << endl;
@@ -96,6 +98,7 @@ int main(int argc, char** argv){
   TString outFileName("none");
   gIsMC = false;
   gChi2DOFCut = 1000.0;
+  gShQualityCut = -1;
   gNumUnusedTracksCut = -1;
   gNumUnusedNeutralsCut = -1;
   gNumNeutralHyposCut = -1;
@@ -108,6 +111,7 @@ int main(int argc, char** argv){
     if (argi == "-out") outFileName = argi1;
     if (argi == "-mc"){ if (argi1 == "1") gIsMC = true; }
     if (argi == "-chi2"){ gChi2DOFCut = atof(argi1); }
+    if (argi == "-shQuality"){ gShQualityCut = atof(argi1); }
     if (argi == "-numUnusedTracks"){ gNumUnusedTracksCut = atoi(argi1); }
     if (argi == "-numUnusedNeutrals"){ gNumUnusedNeutralsCut = atoi(argi1); }
     if (argi == "-numNeutralHypos"){ gNumNeutralHyposCut = atoi(argi1); }
@@ -120,6 +124,7 @@ int main(int argc, char** argv){
   cout << "  output file:           " << outFileName << endl;
   cout << "  MC?                    " << gIsMC << endl;
   cout << "  chi2/dof cut:          " << gChi2DOFCut << endl;
+  cout << "  shower quality cut:    " << gShQualityCut << endl;
   cout << "  numUnusedTracks cut:   " << gNumUnusedTracksCut << endl;
   cout << "  numUnusedNeutrals cut: " << gNumUnusedNeutralsCut << endl;
   cout << "  numNeutralHypos cut:   " << gNumNeutralHyposCut << endl;
@@ -875,6 +880,7 @@ void ConvertTree(TString treeName){
 
         // particle information
 
+      bool cutDueToParticleInfo = false;
       for (unsigned int im = 0; im < orderedParticleNames.size(); im++){
       for (unsigned int id = 0; id < orderedParticleNames[im].size(); id++){
         TString name = orderedParticleNames[im][id];
@@ -924,6 +930,7 @@ void ConvertTree(TString treeName){
             outMCPz[pIndex] = p4->Pz();
             outMCEn[pIndex] = p4->E(); }
           outShQuality[pIndex] = inNeutralHypo__ShowerQuality[(inNeutralIndex[pIndex][ic])];
+          if (outShQuality[pIndex] < gShQualityCut) cutDueToParticleInfo = true;
         }
 
           // decaying to charged tracks
@@ -1026,6 +1033,7 @@ void ConvertTree(TString treeName){
 
         // make cuts
 
+      if (cutDueToParticleInfo) continue;
       if (outChi2DOF > gChi2DOFCut) continue;
       int numUnusedNeutrals = inNumNeutralHypos - numFSNeutrals;
       if ((gNumUnusedTracksCut   >= 0) && (outNumUnusedTracks   > gNumUnusedTracksCut)) continue;
