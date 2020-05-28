@@ -67,7 +67,8 @@ int main(int argc, char** argv){
   cout << "The final state is determined automatically from the input file." << endl << endl;
   cout << "Usage:" << endl;
   cout << "  flatten  -in    <input file name>                     (required)" << endl;
-  cout << "           -out   <output file name>                    (required)" << endl;
+  cout << "           -out   <output file name or none>            (default: none)" << endl;
+  cout << "                   (if none, just print info and quit)"   << endl;
   cout << "           -mc    [is this mc?  0 or 1]                 (default: 0)" << endl;
   cout << "           -chi2  [optional Chi2/DOF cut value]         (default: 1000)" << endl;
   cout << "           -numUnusedTracks   [optional cut (<= cut)]   (no default)" << endl;
@@ -87,12 +88,12 @@ int main(int argc, char** argv){
   cout << "      then reads in the rest of the tree -- this is slower, but avoids" << endl;
   cout << "      segmentation faults if array sizes are exceeded" << endl;
   cout << "***********************************************************" << endl << endl;
-  if (argc < 5){
+  if (argc < 3){
      cout << "ERROR: wrong number of arguments -- see usage notes above" << endl;
      exit(0);
   }
   TString inFileName("");
-  TString outFileName("");
+  TString outFileName("none");
   gIsMC = false;
   gChi2DOFCut = 1000.0;
   gNumUnusedTracksCut = -1;
@@ -141,7 +142,8 @@ int main(int argc, char** argv){
 void ConvertFile(TString inFileName, TString outFileName){
   int nTrees = 0;
   gInputFile  = new TFile(inFileName);
-  gOutputFile = new TFile(outFileName,"recreate");
+  gOutputFile = NULL;
+  if (outFileName != "none") gOutputFile = new TFile(outFileName,"recreate");
   TList* fileList = gInputFile->GetListOfKeys();
   for (int i = 0; i < fileList->GetEntries(); i++){
     TString treeName(fileList->At(i)->GetName());
@@ -155,7 +157,7 @@ void ConvertFile(TString inFileName, TString outFileName){
     }
   }
   gInputFile->Close();
-  gOutputFile->Close();
+  if (outFileName != "none") gOutputFile->Close();
   if (nTrees == 0){
     cout << "WARNING: could not find any trees" << endl;
   }
@@ -261,6 +263,7 @@ void ConvertTree(TString treeName){
      // **********************************************************************
 
   cout << endl << endl << "PERFORMING CHECKS ON THE FINAL STATE:" << endl << endl;
+  bool checkFSOkay = true;
   {
     if (decayProductMap.size() == 0){
       cout << endl << "  ERROR: no final state partices found" << endl;
@@ -282,26 +285,33 @@ void ConvertTree(TString treeName){
       }
       if (motherFSType == "pi0" && (daughterNames.size() != 2 || 
             !(daughterFSTypes[0] == "gamma" && daughterFSTypes[1] == "gamma"))){
-        cout << "  ERROR: unrecognized pi0 decay" << endl;
+        cout << "  ERROR: unrecognized pi0 decay" << endl;  checkFSOkay = false;
       }
       if (motherFSType == "eta" && (daughterNames.size() != 2 || 
             !(daughterFSTypes[0] == "gamma" && daughterFSTypes[1] == "gamma"))){
-        cout << "  ERROR: unrecognized eta decay" << endl;
+        cout << "  ERROR: unrecognized eta decay" << endl;  checkFSOkay = false;
       }
       if (motherFSType == "Ks" && (daughterNames.size() != 2 || 
             !((daughterFSTypes[0] == "pi+" && daughterFSTypes[1] == "pi-") || 
               (daughterFSTypes[1] == "pi+" && daughterFSTypes[0] == "pi-")))){
-        cout << "  ERROR: unrecognized Ks decay" << endl;
+        cout << "  ERROR: unrecognized Ks decay" << endl;  checkFSOkay = false;
       }
       if (motherFSType == "Lambda" && (daughterNames.size() != 2 || 
             !((daughterFSTypes[0] == "p+" && daughterFSTypes[1] == "pi-") || 
               (daughterFSTypes[1] == "p+" && daughterFSTypes[0] == "pi-")))){
-        cout << "  ERROR: unrecognized Lambda decay" << endl;
+        cout << "  ERROR: unrecognized Lambda decay" << endl;  checkFSOkay = false;
       }
       if (motherFSType == "ALambda" && (daughterNames.size() != 2 || 
             !((daughterFSTypes[0] == "p-" && daughterFSTypes[1] == "pi+") || 
               (daughterFSTypes[1] == "p-" && daughterFSTypes[0] == "pi+")))){
-        cout << "  ERROR: unrecognized ALambda decay" << endl;
+        cout << "  ERROR: unrecognized ALambda decay" << endl;  checkFSOkay = false;
+      }
+      if (motherName.Contains("Decaying") && motherFSType != "pi0"
+                                          && motherFSType != "eta"
+                                          && motherFSType != "Ks"
+                                          && motherFSType != "Lambda"
+                                          && motherFSType != "ALambda"){
+        cout << "  ERROR: unrecognized decaying particle: " << motherName << endl;  checkFSOkay = false;
       }
     }
   }
@@ -378,6 +388,10 @@ void ConvertTree(TString treeName){
   outNT += "_";
   outNT += reconstructedFSCode.first;
 
+  if (!checkFSOkay){
+    cout << "ERROR: problem parsing this final state." << endl;
+    exit(0);
+  }
 
      // **********************************************************************
      // STEP 1F:  make maps from names to indices
@@ -410,6 +424,8 @@ void ConvertTree(TString treeName){
    // **********************************************************************
    // STEP 2:  SET UP TO READ THE INPUT TREE (IN ANALYSIS TREE FORMAT)
    // **********************************************************************
+
+   if (!gOutputFile) return;
 
         // ******************************
         // ***** 2A. SIMULATED DATA *****
