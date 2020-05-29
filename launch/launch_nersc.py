@@ -81,22 +81,31 @@ if not os.getenv('PYTHONPATH') : sys.path.append('/group/halld/Software/builds/L
 import mysql.connector
 
 
-TESTMODE       = True  # True=only print commands, but don't actually submit jobs
+#TESTMODE       = True  # True=only print commands, but don't actually submit jobs
+TESTMODE       = False  # True=only print commands, but don't actually submit jobs
 VERBOSE        = 3     # 1 is default
 
-RUNPERIOD      = '2018-08'
-LAUNCHTYPE     = 'recon'  # 'offmon' or 'recon'
-VER            = '02'
+##RUNPERIOD    = '2018-01'
+RUNPERIOD    = '2019-11'
+LAUNCHTYPE   = 'recon'  # 'offmon' or 'recon' 
+VER          = '02_test'
 BATCH          = '01'
-WORKFLOW       = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER+'_batch'+BATCH
+#WORKFLOW       = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER+'_batch'+BATCH
+WORKFLOW       = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER+'_batch'+BATCH+'_igal'
 NAME           = 'GLUEX_' + LAUNCHTYPE
 
-RCDB_QUERY     = '@is_2018production and @status_approved'  # Comment out for all runs in range MINRUN-MAXRUN
-RUNS           = [] # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
-MINRUN         = 51722   # If RUNS is empty, then RCDB queried for this range
-MAXRUN         = 51768   # If RUNS is empty, then RCDB queried for this range
+#RCDB_QUERY     = '@is_2018production and @status_approved'  # Comment out for all runs in range MINRUN-MAXRUN
+RCDB_QUERY     = '@is_dirc_production' # Comment out for all runs in range MINRUN-MAXRUN
+RUNS           = [71463,71469,71724] # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
+#RUNS           = [] # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
+MINRUN         = 71463   # If RUNS is empty, then RCDB queried for this range
+MAXRUN         = 71463   # If RUNS is empty, then RCDB queried for this range
+#MINRUN         = 41511   # If RUNS is empty, then RCDB queried for this range
+#MAXRUN         = 51768   # If RUNS is empty, then RCDB queried for this range
+#MAXRUN         = 41511   # If RUNS is empty, then RCDB queried for this range
 MINFILENO      = 0       # Min file number to process for each run (n.b. file numbers start at 0!)
-MAXFILENO      = 1000    # Max file number to process for each run (n.b. file numbers start at 0!)
+#MAXFILENO      = 1000    # Max file number to process for each run (n.b. file numbers start at 0!)
+MAXFILENO      = 3    # Max file number to process for each run (n.b. file numbers start at 0!)
 FILE_FRACTION  = 1.0     # Fraction of files to process for each run in specified range (see GetFileNumbersToProcess)
 MAX_CONCURRENT_JOBS = '2100'  # Maximum number of jobs swif2 will have in flight at once
 EXCLUDE_RUNS   = []      # Runs that should be excluded from processing
@@ -106,7 +115,10 @@ QOS            = 'regular'  # debug, regular, premium, low, flex, scavenger
 NODETYPE       = 'knl'      # haswell, knl  (quad,cache)
 
 IMAGE          = 'docker:markito3/gluex_docker_devel'
-RECONVERSION   = 'halld_recon/halld_recon-recon-2018_08-ver02'  # must exist in /group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5-cntr
+#RECONVERSION   = 'halld_recon/halld_recon-recon-2018_08-ver02'  # must exist in /group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5-cntr
+RECONVERSION   = 'halld_recon/halld_recon-4.15.0'  # must exist in /group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5-cntr
+#halld_recon-4.15.0
+
 SCRIPTFILE     = '/launch/script_nersc.sh'
 CONFIG         = '/launch/jana_'+LAUNCHTYPE+'_nersc.config'
 
@@ -118,7 +130,7 @@ BAD_FILE_COUNT_RUNS = []  # will be filled with runs where number of evio files 
 
 # Set output directory depending on launch type
 if   LAUNCHTYPE=='offmon':
-	OUTPUTTOP      = 'mss:/mss/halld/halld-scratch/offline_monitoring/RunPeriod-'+RUNPERIOD+'/ver'+VER  # prefix with mss: for tape or file: for filesystem
+	OUTPUTTOP      = 'mss:/mss/halld/halld-scratch/offline_monitoring/RunPeriod-'+RUNPERIOD+'/ver'+VER  # prefix with mss: for tape or file: for filesyste
 elif LAUNCHTYPE=='recon':
 	OUTPUTTOP      = 'mss:/mss/halld/RunPeriod-'+RUNPERIOD+'/recon/ver'+VER
 else:
@@ -306,7 +318,7 @@ def GetRunInfo():
 
 		# Import RCDB python module. Add a path on the CUE just in case
 		# PYTHONPATH is not already set
-		sys.path.append('/group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5/rcdb/rcdb_0.04.00/python')
+		sys.path.append('/group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5/rcdb/rcdb_0.06.00/python')
 		import rcdb
 
 		db = rcdb.RCDBProvider('mysql://' + RCDB_USER + '@' + RCDB_HOST + '/rcdb')
