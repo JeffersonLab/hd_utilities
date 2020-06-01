@@ -88,7 +88,7 @@ VERBOSE        = 3     # 1 is default
 ##RUNPERIOD    = '2018-01'
 RUNPERIOD    = '2019-11'
 LAUNCHTYPE   = 'recon'  # 'offmon' or 'recon' 
-VER          = '02_test'
+VER          = '03_test'
 BATCH          = '01'
 #WORKFLOW       = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER+'_batch'+BATCH
 WORKFLOW       = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER+'_batch'+BATCH+'_igal'
@@ -110,7 +110,7 @@ FILE_FRACTION  = 1.0     # Fraction of files to process for each run in specifie
 MAX_CONCURRENT_JOBS = '2100'  # Maximum number of jobs swif2 will have in flight at once
 EXCLUDE_RUNS   = []      # Runs that should be excluded from processing
 PROJECT        = 'm3120'
-TIMELIMIT      = '7:30:00'  # Set time limit (2.4 timeslonger for KNL than haswell)
+TIMELIMIT      = '12:30:00'  # Set time limit (2.4 timeslonger for KNL than haswell)
 QOS            = 'regular'  # debug, regular, premium, low, flex, scavenger
 NODETYPE       = 'knl'      # haswell, knl  (quad,cache)
 
