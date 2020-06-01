@@ -289,7 +289,7 @@ Bool_t DSelector_p2gamma::Process(Long64_t locEntry)
 		// Loop through the analysis actions, executing them in order for the active particle combo
 		dAnalyzeCutActions->Perform_ActionWeight(locHistAccidWeightFactor); 
 
-		// Note: Using accidental subtraction in AnalyzeCutAction requires version > 1.9.0 of gluex_root_analysis. To use without accidental subtraction and a previous version of the software, comment out the line above and uncomment next line
+		// Note: Using accidental subtraction in AnalyzeCutAction requires version > 1.10.0 of gluex_root_analysis. To use without accidental subtraction and a previous version of the software, comment out the line above and uncomment next line
 		//dAnalyzeCutActions->Perform_Action();
 
 		if(!Execute_Actions()) //if the active combo fails a cut, IsComboCutFlag automatically set
