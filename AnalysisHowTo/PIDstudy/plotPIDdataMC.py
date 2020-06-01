@@ -40,8 +40,8 @@ maxSliceP = 1.0
 
 # Insert your input files here for Data and MC
 files = []
-files.append(TFile.Open("/Users/jrsteven/gluex/p2gamma/histroot/pid_syst/hist_sum_30730_30788.root")) # Data
-files.append(TFile.Open("/Users/jrsteven/gluex/p2gamma/histroot/pid_syst/hist_sum_30274_31057_sim_g4.root")) #MC
+files.append(TFile.Open("hist_sum_30730_30788.root")) # Data
+files.append(TFile.Open("hist_sum_30274_31057_sim_g4.root")) #MC
 
 # Open file and get list of keys
 f = files[0]
