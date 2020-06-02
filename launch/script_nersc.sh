@@ -23,9 +23,9 @@ FILE=$4
 ulimit -c unlimited
 
 # Setup environment for the specified sim-recon version
-setenv_file=/cvmfs/oasis.opensciencegrid.org/gluex/group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5-cntr/${HALLD_RECON_VERSION}/Linux_CentOS7-x86_64-gcc4.8.5-cntr/setenv.sh
-source $setenv_file
-source /cvmfs/oasis.opensciencegrid.org/gluex/halld/Software/build_scripts/gluex_env_jlab.csh /cvmfs/oasis.opensciencegrid.org/gluex/halld/www/halldweb/html/halld_versions/version_4.21.1.xml
+#setenv_file=/cvmfs/oasis.opensciencegrid.org/gluex/group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5-cntr/${HALLD_RECON_VERSION}/Linux_CentOS7-x86_64-gcc4.8.5-cntr/setenv.sh
+#source $setenv_file
+source /cvmfs/oasis.opensciencegrid.org/gluex/group/halld/Software/build_scripts/gluex_env_jlab.csh /cvmfs/oasis.opensciencegrid.org/gluex/group/halld/www/halldweb/html/halld_versions/version_4.21.1.xml
 # Use CCDB and RCDB from CVMFS. Make a temporary local
 # copy so that we don't interfere with other jobs locking
 # the same file
