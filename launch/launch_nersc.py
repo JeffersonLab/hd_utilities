@@ -81,14 +81,15 @@ if not os.getenv('PYTHONPATH') : sys.path.append('/group/halld/Software/builds/L
 import mysql.connector
 
 
-#TESTMODE       = True  # True=only print commands, but don't actually submit jobs
-TESTMODE       = False  # True=only print commands, but don't actually submit jobs
+TESTMODE       = True  # True=only print commands, but don't actually submit jobs
+#TESTMODE       = False  # True=only print commands, but don't actually submit jobs
 VERBOSE        = 3     # 1 is default
-
+### 2019-11 monitoring ver13
 ##RUNPERIOD    = '2018-01'
 RUNPERIOD    = '2019-11'
-LAUNCHTYPE   = 'recon'  # 'offmon' or 'recon' 
-VER          = '03_test'
+#LAUNCHTYPE   = 'recon'  # 'offmon' or 'recon' 
+LAUNCHTYPE   = 'offmon'  # 'offmon' or 'recon' 
+VER          = '13'
 BATCH          = '01'
 #WORKFLOW       = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER+'_batch'+BATCH
 WORKFLOW       = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER+'_batch'+BATCH+'_igal'
@@ -96,27 +97,27 @@ NAME           = 'GLUEX_' + LAUNCHTYPE
 
 #RCDB_QUERY     = '@is_2018production and @status_approved'  # Comment out for all runs in range MINRUN-MAXRUN
 RCDB_QUERY     = '@is_dirc_production' # Comment out for all runs in range MINRUN-MAXRUN
-RUNS           = [71463,71469,71724] # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
-#RUNS           = [] # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
-MINRUN         = 71463   # If RUNS is empty, then RCDB queried for this range
-MAXRUN         = 71463   # If RUNS is empty, then RCDB queried for this range
+#RUNS           = [71463,71469,71724] # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
+RUNS           = [] # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
+MINRUN         = 71350   # If RUNS is empty, then RCDB queried for this range
+MAXRUN         = 71591   # If RUNS is empty, then RCDB queried for this range
 #MINRUN         = 41511   # If RUNS is empty, then RCDB queried for this range
 #MAXRUN         = 51768   # If RUNS is empty, then RCDB queried for this range
 #MAXRUN         = 41511   # If RUNS is empty, then RCDB queried for this range
 MINFILENO      = 0       # Min file number to process for each run (n.b. file numbers start at 0!)
 #MAXFILENO      = 1000    # Max file number to process for each run (n.b. file numbers start at 0!)
-MAXFILENO      = 3    # Max file number to process for each run (n.b. file numbers start at 0!)
+MAXFILENO      = 5    # Max file number to process for each run (n.b. file numbers start at 0!)
 FILE_FRACTION  = 1.0     # Fraction of files to process for each run in specified range (see GetFileNumbersToProcess)
 MAX_CONCURRENT_JOBS = '2100'  # Maximum number of jobs swif2 will have in flight at once
 EXCLUDE_RUNS   = []      # Runs that should be excluded from processing
 PROJECT        = 'm3120'
-TIMELIMIT      = '12:30:00'  # Set time limit (2.4 timeslonger for KNL than haswell)
+TIMELIMIT      = '24:00:00'  # Set time limit (2.4 timeslonger for KNL than haswell)
 QOS            = 'regular'  # debug, regular, premium, low, flex, scavenger
 NODETYPE       = 'knl'      # haswell, knl  (quad,cache)
 
 IMAGE          = 'docker:markito3/gluex_docker_devel'
 #RECONVERSION   = 'halld_recon/halld_recon-recon-2018_08-ver02'  # must exist in /group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5-cntr
-RECONVERSION   = 'halld_recon/halld_recon-4.15.0'  # must exist in /group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5-cntr
+RECONVERSION   = 'halld_recon/halld_recon-4.16.1'  # must exist in /group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5-cntr
 #halld_recon-4.15.0
 
 SCRIPTFILE     = '/launch/script_nersc.sh'
@@ -239,6 +240,7 @@ def OffmonOutFiles(RUN, FILE):
 	outfiles['job_info_%s.tgz'  % RFSTR               ] = 'job_info/%06d/job_info_%s.tgz' % (RUN, RFSTR)
 	#outfiles['dana_rest_coherent_peak.hddm'           ] = 'dana_rest_coherent_peak/%06d/dana_rest_coherent_peak_%s.hddm' % (RUN, RFSTR)
 	outfiles['dana_rest.hddm'                         ] = 'REST/%06d/dana_rest_%s.hddm' % (RUN, RFSTR)
+        outfiles['converted_random.hddm'                  ] = 'converted_random/%06d/converted_random_%s.hddm' % (RUN, RFSTR)
 	#outfiles['hd_rawdata_%s.omega.evio' % RFSTR       ] = 'omega/%06d/omega_%s.evio' % (RUN, RFSTR)
 	outfiles['hd_root.root'                           ] = 'hists/%06d/hd_root_%s.root' % (RUN, RFSTR)
 	#outfiles['p3pi_excl_skim.root'                    ] = 'p3pi_excl_skim/%06d/p3pi_excl_skim_%s.root' % (RUN, RFSTR)
@@ -246,13 +248,18 @@ def OffmonOutFiles(RUN, FILE):
 	outfiles['tree_fcal_hadronic_eff.root'            ] = 'tree_fcal_hadronic_eff/%06d/tree_fcal_hadronic_eff_%s.root' % (RUN, RFSTR)
 	outfiles['tree_PSFlux.root'                       ] = 'tree_PSFlux/%06d/tree_PSFlux_%s.root' % (RUN, RFSTR)
 	outfiles['tree_trackeff.root'                     ] = 'tree_trackeff/%06d/tree_trackeff_%s.root' % (RUN, RFSTR)
-	outfiles['TOF_TDC_shift_%06d.txt' % RUN           ] = 'TOF_TDC_shift/%06d/TOF_TDC_shift_%s.txt' % (RUN, RFSTR)
+        outfiles['tree_p2k_dirc.root'                     ] = 'tree_p2k_dirc/%06d/tree_p2k_dirc_%s.root' % (RUN, RFSTR)
+        outfiles['tree_p2pi_dirc.root'                    ] = 'tree_p2k_dirc/%06d/tree_ppi_dirc_%s.root' % (RUN, RFSTR)
+	#outfiles['TOF_TDC_shift_%06d.txt' % RUN           ] = 'TOF_TDC_shift/%06d/TOF_TDC_shift_%s.txt' % (RUN, RFSTR)
 	outfiles['hd_root_tofcalib.root'                  ] = 'hd_root_tofcalib/%06d/hd_root_tofcalib_%s.root' % (RUN, RFSTR)
 	#outfiles['hd_rawdata_%s.random.evio' % RFSTR      ] = 'random/%06d/hd_rawdata_%s.random.evio' % (RUN, RFSTR)
 	#outfiles['hd_rawdata_%s.BCAL-LED.evio' % RFSTR    ] = 'BCAL-LED/%06d/hd_rawdata_%s.BCAL-LED.evio' % (RUN, RFSTR)
 	#outfiles['hd_rawdata_%s.FCAL-LED.evio' % RFSTR    ] = 'FCAL-LED/%06d/hd_rawdata_%s.FCAL-LED.evio' % (RUN, RFSTR)
 	#outfiles['hd_rawdata_%s.sync.evio' % RFSTR        ] = 'sync/%06d/hd_rawdata_%s.sync' % (RUN, RFSTR)
-	outfiles['tree_TPOL.root'                         ] = 'TPOL_tree/%06d/tree_TPOL_%s.root' % (RUN, RFSTR)
+	#outfiles['tree_TPOL.root'                         ] = 'TPOL_tree/%06d/tree_TPOL_%s.root' % (RUN, RFSTR)
+        outfiles['pi0fcaltofskim.evio'                    ] = 'pi0fcaltofskim/%06d/pi0fcaltofskim_%s.evio' % (RUN, RFSTR)
+        outfiles['syncskim.evio'                          ] = 'syncskim/%06d/syncskim_%s.root' % (RUN, RFSTR)
+        outfiles['TPOL_tree.root'                         ] = 'TPOL_tree/%06d/TPOL_tree_%s.root' % (RUN, RFSTR)
 
 	return outfiles
 
