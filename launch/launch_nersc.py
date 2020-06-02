@@ -81,15 +81,15 @@ if not os.getenv('PYTHONPATH') : sys.path.append('/group/halld/Software/builds/L
 import mysql.connector
 
 
-TESTMODE       = True  # True=only print commands, but don't actually submit jobs
-#TESTMODE       = False  # True=only print commands, but don't actually submit jobs
+#TESTMODE       = True  # True=only print commands, but don't actually submit jobs
+TESTMODE       = False  # True=only print commands, but don't actually submit jobs
 VERBOSE        = 3     # 1 is default
 ### 2019-11 monitoring ver13
 ##RUNPERIOD    = '2018-01'
 RUNPERIOD    = '2019-11'
 #LAUNCHTYPE   = 'recon'  # 'offmon' or 'recon' 
 LAUNCHTYPE   = 'offmon'  # 'offmon' or 'recon' 
-VER          = '13'
+VER          = 'test_13'
 BATCH          = '01'
 #WORKFLOW       = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER+'_batch'+BATCH
 WORKFLOW       = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER+'_batch'+BATCH+'_igal'
@@ -98,7 +98,7 @@ NAME           = 'GLUEX_' + LAUNCHTYPE
 #RCDB_QUERY     = '@is_2018production and @status_approved'  # Comment out for all runs in range MINRUN-MAXRUN
 RCDB_QUERY     = '@is_dirc_production' # Comment out for all runs in range MINRUN-MAXRUN
 #RUNS           = [71463,71469,71724] # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
-RUNS           = [] # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
+RUNS           = [71350] # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
 MINRUN         = 71350   # If RUNS is empty, then RCDB queried for this range
 MAXRUN         = 71591   # If RUNS is empty, then RCDB queried for this range
 #MINRUN         = 41511   # If RUNS is empty, then RCDB queried for this range
