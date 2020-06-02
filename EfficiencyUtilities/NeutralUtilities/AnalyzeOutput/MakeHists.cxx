@@ -40,6 +40,10 @@
 
 Bool_t FCAL_STUDY=true; //true: look for one candidates in FCAL; false: look for one candidate in BCAL
 
+Int_t WHICH_PHOTON_INDEX=0; // For testing possible (but suspected non-) issue of double counting leading to inflated efficiencies
+// If only one photon is found, this variable is not relevant
+// If two photons are found: 0=count each photon once as spectator and test photon, 1=first photon ONLY as test photon, 2=second photon ONLY
+
 Int_t NBeamBunchesOutoftime = 2;
 
 // Double_t m1_pi0cut_lo = 0.08;
@@ -56,14 +60,15 @@ Double_t MISS_THETA_HICUT = 20.5; //FCAL
 // Double_t MISS_THETA_LOCUT = 8; // BCAL
 // Double_t MISS_THETA_HICUT = 38; //BCAL
 
-// Double_t MISS_E_MIN = 0.6; // Good for FCAL
-Double_t MISS_E_MIN = 0.0; // Try for FCAL
+Double_t MISS_E_MIN = 0.6; // Good for FCAL
+// Double_t MISS_E_MIN = 0.0; // Try for FCAL
 
 //Pick a number high enough to suppress rho -> pi+ pi- + fake photon or else missing spectrum (no second candidate) will get screwy!
 Double_t FOUND_E_MIN = 0.5; // Other pi0 photon must have at least this much energy. 0.8 in FCAL would be nice, statistics willing.
 
 Int_t N_E_BINS = 14; // FCAL
 Int_t N_THETA_BINS = 40; //FCAL
+Int_t N_PHI_BINS = 20; //FCAL+BCAL
 // Int_t N_E_BINS = 20; // BCAL
 // Int_t N_THETA_BINS = 11; //BCAL
 
@@ -76,6 +81,10 @@ Double_t gamma1_miss_Emin = 0.8; //For projecting into theta distribution, FCAL
 
 Bool_t USE_THROWN_4VEC=false; //true: replace all 4-vectors with thrown (but not other stuff like pi0 missing mass)
 // Bool_t USE_THROWN_4VEC=true; //true: replace all 4-vectors with thrown (but not other stuff like pi0 missing mass)
+
+Double_t ThrownDeltaPhi_gammastudy = 3.35; //In degrees
+Double_t ThrownDeltaTheta_gammastudy = 0.35; //In degrees
+
 
 Bool_t Redefine_FOUND_E_MIN_cut(Double_t new_val) {
 	FOUND_E_MIN = new_val;
@@ -206,6 +215,34 @@ Int_t GetThetaBinBCAL(Double_t my_theta) {
 	return my_bin;
 }
 
+Int_t GetPhiBin(Double_t my_phi) {
+	
+	Int_t my_bin = -1;
+	if(-180.<my_phi&&my_phi<-162.) my_bin = 0;
+	if(-162.<my_phi&&my_phi<-144.) my_bin = 1;
+	if(-144.<my_phi&&my_phi<-126.) my_bin = 2;
+	if(-126.<my_phi&&my_phi<-108.) my_bin = 3;
+	if(-108.<my_phi&&my_phi<-90.)  my_bin = 4;
+	if(-90.<my_phi&&my_phi<-72.)   my_bin = 5;
+	if(-72.<my_phi&&my_phi<-54.)   my_bin = 6;
+	if(-54.<my_phi&&my_phi<-36.)   my_bin = 7;
+	if(-36.<my_phi&&my_phi<-18.)   my_bin = 8;
+	if(-18.<my_phi&&my_phi<0.)     my_bin = 9;
+	if(0.<my_phi&&my_phi<18.)      my_bin = 10;
+	if(18.<my_phi&&my_phi<36.)     my_bin = 11;
+	if(36.<my_phi&&my_phi<54.)     my_bin = 12;
+	if(54.<my_phi&&my_phi<72.)     my_bin = 13;
+	if(72.<my_phi&&my_phi<90.)     my_bin = 14;
+	if(90.<my_phi&&my_phi<108.)    my_bin = 15;
+	if(108.<my_phi&&my_phi<126.)   my_bin = 16;
+	if(126.<my_phi&&my_phi<144.)   my_bin = 17;
+	if(144.<my_phi&&my_phi<162.)   my_bin = 18;
+	if(162.<my_phi&&my_phi<180.)   my_bin = 19;
+		
+	return my_bin;
+}
+
+
 
 Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown_info_hists = false, Long64_t max_events = 1000000000000) {
 	
@@ -319,6 +356,11 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 	Double_t two_gamma_opangle_thr;  if(make_thrown_info_hists) t_in->SetBranchAddress("two_gamma_opangle_thr",  &two_gamma_opangle_thr);
 	Double_t gam2_ThrRecon_opangle;  if(make_thrown_info_hists) t_in->SetBranchAddress("gam2_ThrRecon_opangle",  &gam2_ThrRecon_opangle);
 	
+	Double_t Gamma1_DeltaTheta; if(make_thrown_info_hists) t_in->SetBranchAddress("Gamma1_DeltaTheta",  &Gamma1_DeltaTheta);
+	Double_t Gamma1_DeltaPhi;   if(make_thrown_info_hists) t_in->SetBranchAddress("Gamma1_DeltaPhi",    &Gamma1_DeltaPhi);
+	Double_t Gamma2_DeltaTheta; if(make_thrown_info_hists) t_in->SetBranchAddress("Gamma2_DeltaTheta",  &Gamma2_DeltaTheta);
+	Double_t Gamma2_DeltaPhi;   if(make_thrown_info_hists) t_in->SetBranchAddress("Gamma2_DeltaPhi",    &Gamma2_DeltaPhi);
+	
 	
 	Long64_t nentries = t_in->GetEntries();
 	cout << "There are " << nentries <<  " events to get through" << endl;
@@ -408,6 +450,12 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 	TH1F* h_m1den_miss_omega_Thetabins_intime[N_THETA_BINS];
 	TH1F* h_m1den_miss_omega_Thetabins_outoftime[N_THETA_BINS];
 	TH1F* h_m1den_miss_omega_Thetabins_accidsub[N_THETA_BINS];
+	TH1F* h_m1num_miss_omega_Phibins_intime[N_PHI_BINS];
+	TH1F* h_m1num_miss_omega_Phibins_outoftime[N_PHI_BINS];
+	TH1F* h_m1num_miss_omega_Phibins_accidsub[N_PHI_BINS];
+	TH1F* h_m1den_miss_omega_Phibins_intime[N_PHI_BINS];
+	TH1F* h_m1den_miss_omega_Phibins_outoftime[N_PHI_BINS];
+	TH1F* h_m1den_miss_omega_Phibins_accidsub[N_PHI_BINS];
 	
 	TH1F* h_m2num_inv_omega_Ebins_intime[N_E_BINS];
 	TH1F* h_m2num_inv_omega_Ebins_outoftime[N_E_BINS];
@@ -421,6 +469,12 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 	TH1F* h_m2denineff_miss_omega_Thetabins_intime[N_THETA_BINS];
 	TH1F* h_m2denineff_miss_omega_Thetabins_outoftime[N_THETA_BINS];
 	TH1F* h_m2denineff_miss_omega_Thetabins_accidsub[N_THETA_BINS];
+	TH1F* h_m2num_inv_omega_Phibins_intime[N_PHI_BINS];
+	TH1F* h_m2num_inv_omega_Phibins_outoftime[N_PHI_BINS];
+	TH1F* h_m2num_inv_omega_Phibins_accidsub[N_PHI_BINS];
+	TH1F* h_m2denineff_miss_omega_Phibins_intime[N_PHI_BINS];
+	TH1F* h_m2denineff_miss_omega_Phibins_outoftime[N_PHI_BINS];
+	TH1F* h_m2denineff_miss_omega_Phibins_accidsub[N_PHI_BINS];
 	
  	for(int i =0; i<N_E_BINS; ++i) {
 		char asdfasdf[20];
@@ -460,6 +514,25 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 		h_m2denineff_miss_omega_Thetabins_outoftime[i] = new TH1F("h_m2denineff_miss_omega_Thetabins_outoftime"+index,"Mass Distribution",nbins_combined_hists,0.0,2.);		
 		h_m2denineff_miss_omega_Thetabins_accidsub[i] = new TH1F("h_m2denineff_miss_omega_Thetabins_accidsub"+index,"Mass Distribution",nbins_combined_hists,0.0,2.);		
 	}		
+ 	for(int i =0; i<N_PHI_BINS; ++i) {
+		char asdfasdf[20];
+		sprintf(asdfasdf,"%d",i);
+		TString index = asdfasdf;
+
+		h_m1num_miss_omega_Phibins_intime[i] = new TH1F("h_m1num_miss_omega_Phibins_intime"+index,"Mass Distribution",nbins_combined_hists,0.0,2.);		
+		h_m1num_miss_omega_Phibins_outoftime[i] = new TH1F("h_m1num_miss_omega_Phibins_outoftime"+index,"Mass Distribution",nbins_combined_hists,0.0,2.);		
+		h_m1num_miss_omega_Phibins_accidsub[i] = new TH1F("h_m1num_miss_omega_Phibins_accidsub"+index,"Mass Distribution",nbins_combined_hists,0.0,2.);		
+		h_m1den_miss_omega_Phibins_intime[i] = new TH1F("h_m1den_miss_omega_Phibins_intime"+index,"Mass Distribution",nbins_combined_hists,0.0,2.);		
+		h_m1den_miss_omega_Phibins_outoftime[i] = new TH1F("h_m1den_miss_omega_Phibins_outoftime"+index,"Mass Distribution",nbins_combined_hists,0.0,2.);		
+		h_m1den_miss_omega_Phibins_accidsub[i] = new TH1F("h_m1den_miss_omega_Phibins_accidsub"+index,"Mass Distribution",nbins_combined_hists,0.0,2.);		
+		
+		h_m2num_inv_omega_Phibins_intime[i] = new TH1F("h_m2num_inv_omega_Phibins_intime"+index,"Mass Distribution",nbins_combined_hists,0.0,2.);		
+		h_m2num_inv_omega_Phibins_outoftime[i] = new TH1F("h_m2num_inv_omega_Phibins_outoftime"+index,"Mass Distribution",nbins_combined_hists,0.0,2.);		
+		h_m2num_inv_omega_Phibins_accidsub[i] = new TH1F("h_m2num_inv_omega_Phibins_accidsub"+index,"Mass Distribution",nbins_combined_hists,0.0,2.);		
+		h_m2denineff_miss_omega_Phibins_intime[i] = new TH1F("h_m2denineff_miss_omega_Phibins_intime"+index,"Mass Distribution",nbins_combined_hists,0.0,2.);		
+		h_m2denineff_miss_omega_Phibins_outoftime[i] = new TH1F("h_m2denineff_miss_omega_Phibins_outoftime"+index,"Mass Distribution",nbins_combined_hists,0.0,2.);		
+		h_m2denineff_miss_omega_Phibins_accidsub[i] = new TH1F("h_m2denineff_miss_omega_Phibins_accidsub"+index,"Mass Distribution",nbins_combined_hists,0.0,2.);		
+	}		
 
 	//Show cuts around missing pi0, which helps exclusivity
 	TH1F* h_miss_pi0_all_intime = new TH1F("h_miss_pi0_all_intime","Mass Distribution",nbins_combined_hists,0.0,0.3);		
@@ -483,6 +556,15 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 	TH1F* h_gam1_DeltaTheta = NULL;
 	TH1F* h_gam2_DeltaPhi = NULL;
 	TH1F* h_gam2_DeltaTheta = NULL;
+	TH1F* h_gam1_gam2thr_DeltaPhi = NULL;
+	TH1F* h_gam1_gam2thr_DeltaTheta = NULL;
+	TH1F* h_gam2_gam1thr_DeltaPhi = NULL;
+	TH1F* h_gam2_gam1thr_DeltaTheta = NULL;
+	
+	TH2F* h_gam2_DeltaAngle = NULL;
+	TH2F* h_gam2_gam1thr_DeltaAngle = NULL;
+	TH2F* h_gam2_DeltaAngle_postcuts = NULL;
+	TH2F* h_gam2_gam1thr_DeltaAngle_postcuts = NULL;
 	
 	if(make_thrown_info_hists) {
 		h_gam1_thrown_theta_inrange = new TH1F("h_gam1_thrown_theta_inrange","Thrown Theta",nbins_combined_hists,0.0,15.);	
@@ -499,8 +581,27 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 		h_gam1_DeltaTheta = new TH1F("h_gam1_DeltaTheta","#Delta#phi thrown vs found, gamma1",nbins_combined_hists*10,-180.,180.);	
 		h_gam2_DeltaPhi = new TH1F("h_gam2_DeltaPhi",    "#Delta#phi thrown vs found, gamma2",nbins_combined_hists*10,-180.,180.);	
 		h_gam2_DeltaTheta = new TH1F("h_gam2_DeltaTheta","#Delta#phi thrown vs found, gamma2",nbins_combined_hists*10,-180.,180.);	
+		h_gam1_gam2thr_DeltaPhi = new TH1F("h_gam1_gam2thr_DeltaPhi",    "#Delta#phi thrown vs found, gamma1",nbins_combined_hists*10,-180.,180.);	
+		h_gam1_gam2thr_DeltaTheta = new TH1F("h_gam1_gam2thr_DeltaTheta","#Delta#phi thrown vs found, gamma1",nbins_combined_hists*10,-180.,180.);	
+		h_gam2_gam1thr_DeltaPhi = new TH1F("h_gam2_gam1thr_DeltaPhi",    "#Delta#phi thrown vs found, gamma2",nbins_combined_hists*10,-180.,180.);	
+		h_gam2_gam1thr_DeltaTheta = new TH1F("h_gam2_gam1thr_DeltaTheta","#Delta#phi thrown vs found, gamma2",nbins_combined_hists*10,-180.,180.);	
+	
+		h_gam2_DeltaAngle = new TH2F("h_gam2_DeltaAngle","#Delta#phi thrown vs found, gamma2",nbins_combined_hists,-180.,180.,nbins_combined_hists,-180.,180.);	
+		h_gam2_gam1thr_DeltaAngle = new TH2F("h_gam2_gam1thr_DeltaAngle","#Delta#phi thrown vs found, gamma2",nbins_combined_hists,-180.,180.,nbins_combined_hists,-180.,180.);	
+		h_gam2_DeltaAngle_postcuts = new TH2F("h_gam2_DeltaAngle_postcuts","#Delta#phi thrown vs found, gamma2",nbins_combined_hists,-180.,180.,nbins_combined_hists,-180.,180.);	
+		h_gam2_gam1thr_DeltaAngle_postcuts = new TH2F("h_gam2_gam1thr_DeltaAngle_postcuts","#Delta#phi thrown vs found, gamma2",nbins_combined_hists,-180.,180.,nbins_combined_hists,-20.,20.);	
+	
 	}
 	
+	
+	Int_t last_combo_event=-1;
+	Int_t last_combo_run = -1;
+	Bool_t second_combo_or_more = false;
+	Double_t spectator_showerE_firstcombo = -1;
+	
+	
+	
+	set<Int_t> events_in_run; //For uniqueness checking
 	for(size_t i =0; i<nentries; ++i) {
 		t_in->GetEntry(i);
 		if(i%100000==0) cout << "Entry: "  << i << endl;
@@ -509,7 +610,45 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 			break;			
 		}
 		
+		
+		//Figure out if the current combo in loop is the first for event or not.
+		//If so, grab spectator photon energy E to compare in the future.
+		//If not, look to see whether we should skip this combo or not.
+		if(last_combo_event != Event) second_combo_or_more = false;
+		if(last_combo_event==Event) second_combo_or_more = true;
+		
+		if(!second_combo_or_more) spectator_showerE_firstcombo = Gamma2_E;
+		
+		//HAVE TO SET HERE! (even though these aren't the "last" combo/run value yet.
+		// However there are continue statements that mean I can't put this at the end of the loop...
+		last_combo_event = Event;
+		last_combo_run = Run;
 
+		// if(!second_combo_or_more) cout << endl;
+		// cout << "Run: " << Run << endl;
+		// cout << "Event: " << Event << endl;
+		// cout << "beamE: " << beamE << " rf Delta t: " << rf_deltaT << endl;
+		// cout << "gam2_E: " << Gamma2_E << endl;
+		// cout << "Missing can index 0 Energy: " << MissingCan_E[0] << endl;		
+		// cout << "Difference: " << Gamma2_E-spectator_showerE_firstcombo << endl;
+		
+		//Case 1: skip if spectator DOESN'T match the first combo
+		// if roughly equal... kinematic fit moves them around a little based on beam photon selection, so Gamma2_E will wander a little bit
+		if(WHICH_PHOTON_INDEX==1 && fabs(Gamma2_E-spectator_showerE_firstcombo)>0.01  ) {
+			// cout << "Spectator energy for this combo doesn't match spectator photon for first combo in event, skipping..." << endl;
+			// cout << "Event: " << Event << " total combo " << i << endl;
+			continue;
+		}
+		// if(WHICH_PHOTON_INDEX==1 && fabs(Gamma2_E-spectator_showerE_firstcombo)<0.01 ) {
+			// cout << "Spectator for combo matches..." << endl;
+			// cout << "Event: " << Event << " total combo " << i << endl;
+		// }
+
+		//case 2: if it DOES match, skip it.
+		if(WHICH_PHOTON_INDEX==2 && fabs(Gamma2_E-spectator_showerE_firstcombo)<0.01  ) continue;
+		// if(WHICH_PHOTON_INDEX==2 && fabs(Gamma2_E-spectator_showerE_firstcombo)>0.01  ) {
+		// }
+		
 		TLorentzVector p4_pipl = TLorentzVector(PiPlus_px,PiPlus_py,PiPlus_pz,PiPlus_E);
 		TLorentzVector p4_pim = TLorentzVector(PiMinus_px,PiMinus_py,PiMinus_pz,PiMinus_E);
 		TLorentzVector p4_proton = TLorentzVector(Proton_px,Proton_py,Proton_pz,Proton_E);
@@ -529,6 +668,7 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 			p4_gam1_thr = TLorentzVector(Gamma1_px_th,Gamma1_py_th,Gamma1_pz_th,Gamma1_E_th);
 			p4_gam2_thr = TLorentzVector(Gamma2_px_th,Gamma2_py_th,Gamma2_pz_th,Gamma2_E_th);
 		}	
+		
 				
 		if(USE_THROWN_4VEC) {
 			p4_pipl = p4_pipl_thr;
@@ -539,6 +679,11 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 		}
 				
 		TLorentzVector p4_show = TLorentzVector(MissingCan_Px[0],MissingCan_Py[0],MissingCan_Pz[0],MissingCan_E[0]);
+				
+		Double_t gam1_gam2thr_DeltaTheta = (p4_gam2_thr.Theta()-p4_gam1.Theta())*180/3.14159;
+		Double_t gam1_gam2thr_DeltaPhi = (p4_gam2_thr.Phi()-p4_gam1.Phi())*180/3.14159;
+		Double_t gam2_gam1thr_DeltaTheta = (p4_gam1_thr.Theta()-p4_show.Theta())*180/3.14159;
+		Double_t gam2_gam1thr_DeltaPhi = (p4_gam1_thr.Phi()-p4_show.Phi())*180/3.14159;
 				
 		// Cuts on whole sample here
 		if(Gamma2_E<FOUND_E_MIN) continue;
@@ -554,6 +699,7 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 		Int_t my_theta_bin = -1;
 		if(FCAL_STUDY) my_theta_bin= GetThetaBin25FCAL(p4_gam1.Theta()*180./3.14159);
 		else my_theta_bin = GetThetaBinBCAL(p4_gam1.Theta()*180./3.14159);
+		Int_t my_phi_bin = GetPhiBin(p4_gam1.Phi()*180./3.14159);
 		
 		if(fabs(rf_deltaT)<2) {
 			h_all_missphoton_E_intime->Fill(p4_gam1.E());
@@ -588,6 +734,29 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 		if(p4_gam1.Theta()*180./3.14159 < MISS_THETA_LOCUT || p4_gam1.Theta()*180./3.14159 > MISS_THETA_HICUT) continue;
 		if(p4_gam1.E() < MISS_E_MIN) continue;
 		
+		Bool_t thrown_study_match_flag = true;
+		
+		Double_t smaller_DelPhi = Gamma1_DeltaPhi;
+		// if(fabs(gam2_gam1thr_DeltaPhi) <  fabs(Gamma1_DeltaPhi)) {
+			// smaller_DelPhi = gam1_gam2thr_DeltaPhi;
+		// }
+		Double_t smaller_DelTheta = Gamma1_DeltaTheta;
+		// if(fabs(gam1_gam2thr_DeltaTheta) <  fabs(Gamma1_DeltaTheta)) {
+			// smaller_DelTheta = gam1_gam2thr_DeltaTheta;
+		// }
+		
+		// = (fabs(Gamma2_DeltaPhi)>fabs(gam2_gam1thr_DeltaTheta)) ? gam2_gam1thr_DeltaTheta : Gamma2_DeltaPhi;
+		// Double_t smaller_DelTheta = (fabs(Gamma2_DeltaTheta)>fabs(gam2_gam1thr_DeltaTheta)) ? gam2_gam1thr_DeltaTheta : Gamma2_DeltaTheta;
+			
+		Double_t gam1_miss_phi_deg = p4_gam1.Phi()*180/3.14159;
+		
+		
+		// if(make_thrown_info_hists && fabs(Gamma2_DeltaTheta) > ThrownDeltaTheta_gammastudy && fabs(gam2_gam1thr_DeltaTheta) > ThrownDeltaTheta_gammastudy) thrown_study_match_flag = false;
+		// if(make_thrown_info_hists && fabs(Gamma2_DeltaPhi) > ThrownDeltaPhi_gammastudy && fabs(gam2_gam1thr_DeltaPhi) > ThrownDeltaPhi_gammastudy) thrown_study_match_flag = false;
+		if(make_thrown_info_hists && fabs(smaller_DelTheta) > ThrownDeltaTheta_gammastudy) thrown_study_match_flag = false;
+		if(make_thrown_info_hists && fabs(smaller_DelPhi) > ThrownDeltaPhi_gammastudy) thrown_study_match_flag = false;
+		
+		
 		// if(FCAL_STUDY && p4_gam1.Theta()*180./3.14159 > 13) continue; //Skip photons that point way outside FCAL
 		// if(!FCAL_STUDY && p4_gam1.Theta()*180./3.14159 < 10) continue; //Skip photons that point way outside BCAL
 				
@@ -598,10 +767,12 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 			h_m1den_miss_omega_intime->Fill(RecM_Proton); //One good shower required to get here
 			if(my_E_bin>=0&&my_E_bin<N_E_BINS&&p4_gam1.Theta()*180./3.14159>gamma1_miss_lotheta&&p4_gam1.Theta()*180./3.14159<gamma1_miss_hitheta) h_m1den_miss_omega_Ebins_intime[my_E_bin]->Fill(RecM_Proton);
 			if(my_theta_bin>=0&&my_theta_bin<N_THETA_BINS&&p4_gam1.E()>gamma1_miss_Emin) h_m1den_miss_omega_Thetabins_intime[my_theta_bin]->Fill(RecM_Proton);
+			if(my_phi_bin>=0&&my_theta_bin<N_PHI_BINS&&p4_gam1.E()>gamma1_miss_Emin&&p4_gam1.Theta()*180./3.14159>gamma1_miss_lotheta&&p4_gam1.Theta()*180./3.14159<gamma1_miss_hitheta) h_m1den_miss_omega_Phibins_intime[my_phi_bin]->Fill(RecM_Proton);
 			if(NFCALCandidates==0&&NBCALCandidates==0) {
 				h_m2denineff_miss_omega_intime->Fill(RecM_Proton);
 				if(my_E_bin>=0&&my_E_bin<N_E_BINS&&p4_gam1.Theta()*180./3.14159>gamma1_miss_lotheta&&p4_gam1.Theta()*180./3.14159<gamma1_miss_hitheta) h_m2denineff_miss_omega_Ebins_intime[my_E_bin]->Fill(RecM_Proton);
 				if(my_theta_bin>=0&&my_theta_bin<N_THETA_BINS&&p4_gam1.E()>gamma1_miss_Emin) h_m2denineff_miss_omega_Thetabins_intime[my_theta_bin]->Fill(RecM_Proton);
+				if(my_phi_bin>=0&&my_theta_bin<N_PHI_BINS&&p4_gam1.E()>gamma1_miss_Emin&&p4_gam1.Theta()*180./3.14159>gamma1_miss_lotheta&&p4_gam1.Theta()*180./3.14159<gamma1_miss_hitheta) h_m2denineff_miss_omega_Phibins_intime[my_phi_bin]->Fill(RecM_Proton);
 			}
 			if(make_thrown_info_hists) {
 				h_gam1_thrown_theta_inrange->Fill(p4_gam1_thr.Theta()*180./3.14159);
@@ -625,6 +796,11 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 					if(gam1_DeltaTheta<-3.14159) gam1_DeltaTheta+=3.14159; //keep within 180 degrees
 					if(gam1_DeltaTheta> 3.14159) gam1_DeltaTheta-=3.14159; //keep within 180 degrees
 					h_gam1_DeltaTheta->Fill(gam1_DeltaTheta*180./3.14159);
+					
+					h_gam1_gam2thr_DeltaTheta->Fill(gam1_gam2thr_DeltaTheta);
+					h_gam1_gam2thr_DeltaPhi->Fill(gam1_gam2thr_DeltaPhi);
+					h_gam2_gam1thr_DeltaTheta->Fill(gam2_gam1thr_DeltaTheta);
+					h_gam2_gam1thr_DeltaPhi->Fill(gam2_gam1thr_DeltaPhi);
 				}
 				
 				Double_t gam2_DeltaPhi = p4_gam2_thr.Phi()-p4_gam2.Phi();
@@ -636,6 +812,11 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 				if(gam2_DeltaTheta> 3.14159) gam2_DeltaTheta-=3.14159; //keep within 180 degrees
 				h_gam2_DeltaTheta->Fill(gam2_DeltaTheta*180./3.14159);
 				
+				h_gam2_DeltaAngle->Fill(Gamma2_DeltaPhi,Gamma2_DeltaTheta);
+				h_gam2_gam1thr_DeltaAngle->Fill(gam2_gam1thr_DeltaPhi,gam2_gam1thr_DeltaTheta);
+				if(thrown_study_match_flag) h_gam2_DeltaAngle_postcuts->Fill(Gamma2_DeltaPhi,Gamma2_DeltaTheta);
+				if(thrown_study_match_flag) h_gam2_gam1thr_DeltaAngle_postcuts->Fill(gam2_gam1thr_DeltaPhi,gam2_gam1thr_DeltaTheta);
+				
 			}
 		}
 		if(fabs(rf_deltaT)>2) {
@@ -645,10 +826,12 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 			h_m1den_miss_omega_outoftime->Fill(RecM_Proton); //One good shower required to get here
 			if(my_E_bin>=0&&my_E_bin<N_E_BINS&&p4_gam1.Theta()*180./3.14159>gamma1_miss_lotheta&&p4_gam1.Theta()*180./3.14159<gamma1_miss_hitheta) h_m1den_miss_omega_Ebins_outoftime[my_E_bin]->Fill(RecM_Proton);
 			if(my_theta_bin>=0&&my_theta_bin<N_THETA_BINS&&p4_gam1.E()>gamma1_miss_Emin) h_m1den_miss_omega_Thetabins_outoftime[my_theta_bin]->Fill(RecM_Proton);
+			if(my_phi_bin>=0&&my_theta_bin<N_PHI_BINS&&p4_gam1.E()>gamma1_miss_Emin&&p4_gam1.Theta()*180./3.14159>gamma1_miss_lotheta&&p4_gam1.Theta()*180./3.14159<gamma1_miss_hitheta) h_m1den_miss_omega_Phibins_outoftime[my_phi_bin]->Fill(RecM_Proton);
 			if(NFCALCandidates==0&&NBCALCandidates==0) {
 				h_m2denineff_miss_omega_outoftime->Fill(RecM_Proton);
 				if(my_E_bin>=0&&my_E_bin<N_E_BINS&&p4_gam1.Theta()*180./3.14159>gamma1_miss_lotheta&&p4_gam1.Theta()*180./3.14159<gamma1_miss_hitheta) h_m2denineff_miss_omega_Ebins_outoftime[my_E_bin]->Fill(RecM_Proton);
 				if(my_theta_bin>=0&&my_theta_bin<N_THETA_BINS&&p4_gam1.E()>gamma1_miss_Emin) h_m2denineff_miss_omega_Thetabins_outoftime[my_theta_bin]->Fill(RecM_Proton);
+				if(my_phi_bin>=0&&my_theta_bin<N_PHI_BINS&&p4_gam1.E()>gamma1_miss_Emin&&p4_gam1.Theta()*180./3.14159>gamma1_miss_lotheta&&p4_gam1.Theta()*180./3.14159<gamma1_miss_hitheta) h_m2denineff_miss_omega_Phibins_outoftime[my_phi_bin]->Fill(RecM_Proton);
 			}
 		}
 		
@@ -675,13 +858,15 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 				h_inv_pi0_all_intime->Fill(twogamma_can_mass[j]); //One good shower required to get here
 				if(twogamma_can_mass[j]>m1_pi0cut_lo&&twogamma_can_mass[j]<m1_pi0cut_hi&&fabs(DeltaPhi_wshow-180.)<m1_DeltaPhiCut) {
 					h_m1num_miss_omega_intime->Fill(RecM_Proton); //One good shower required to get here
-					if(my_E_bin>=0&&my_E_bin<N_E_BINS&&p4_gam1.Theta()*180./3.14159>gamma1_miss_lotheta&&p4_gam1.Theta()*180./3.14159<gamma1_miss_hitheta) h_m1num_miss_omega_Ebins_intime[my_E_bin]->Fill(RecM_Proton);
-					if(my_theta_bin>=0&&my_theta_bin<N_THETA_BINS&&p4_gam1.E()>gamma1_miss_Emin) h_m1num_miss_omega_Thetabins_intime[my_theta_bin]->Fill(RecM_Proton);
+					if(thrown_study_match_flag&&my_E_bin>=0&&my_E_bin<N_E_BINS&&p4_gam1.Theta()*180./3.14159>gamma1_miss_lotheta&&p4_gam1.Theta()*180./3.14159<gamma1_miss_hitheta) h_m1num_miss_omega_Ebins_intime[my_E_bin]->Fill(RecM_Proton);
+					if(thrown_study_match_flag&&my_theta_bin>=0&&my_theta_bin<N_THETA_BINS&&p4_gam1.E()>gamma1_miss_Emin) h_m1num_miss_omega_Thetabins_intime[my_theta_bin]->Fill(RecM_Proton);
+					if(thrown_study_match_flag&&my_phi_bin>=0&&my_theta_bin<N_PHI_BINS&&p4_gam1.E()>gamma1_miss_Emin&&p4_gam1.Theta()*180./3.14159>gamma1_miss_lotheta&&p4_gam1.Theta()*180./3.14159<gamma1_miss_hitheta) h_m1num_miss_omega_Phibins_intime[my_phi_bin]->Fill(RecM_Proton);
 				}
 				if(twogamma_can_mass[j]<m1_pi0cut_lo) h_inv_omega_badpi0_intime->Fill(threepi_can_mass[j]); //One good shower required to get here
 				h_m2num_inv_omega_intime->Fill(threepi_can_mass[j]); //One good shower required to get here
 				if(my_E_bin>=0&&my_E_bin<N_E_BINS&&p4_gam1.Theta()*180./3.14159>gamma1_miss_lotheta&&p4_gam1.Theta()*180./3.14159<gamma1_miss_hitheta) h_m2num_inv_omega_Ebins_intime[my_E_bin]->Fill(RecM_Proton);
 				if(my_theta_bin>=0&&my_theta_bin<N_THETA_BINS&&p4_gam1.E()>gamma1_miss_Emin) h_m2num_inv_omega_Thetabins_intime[my_theta_bin]->Fill(RecM_Proton);
+				if(my_phi_bin>=0&&my_theta_bin<N_PHI_BINS&&p4_gam1.E()>gamma1_miss_Emin&&p4_gam1.Theta()*180./3.14159>gamma1_miss_lotheta&&p4_gam1.Theta()*180./3.14159<gamma1_miss_hitheta) h_m2num_inv_omega_Phibins_intime[my_phi_bin]->Fill(RecM_Proton);
 				h_missing_omega_4scale_intime->Fill(RecM_Proton); //One good shower required to get here
 				if(twogamma_can_mass[j]>m1_pi0cut_lo&&twogamma_can_mass[j]<m1_pi0cut_hi&&fabs(DeltaPhi_wshow-180.)<m1_DeltaPhiCut) h2_MM_vs_invm_pi0cuts_intime->Fill(RecM_Proton,threepi_can_mass[j]); //One good shower required to get here
 				h2_MM_vs_invm_loose_intime->Fill(RecM_Proton,threepi_can_mass[j]); //One good shower required to get here
@@ -691,18 +876,23 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 				h_inv_pi0_all_outoftime->Fill(twogamma_can_mass[j]); //One good shower required to get here
 				if(twogamma_can_mass[j]>m1_pi0cut_lo&&twogamma_can_mass[j]<m1_pi0cut_hi&&fabs(DeltaPhi_wshow-180.)<m1_DeltaPhiCut) {
 					h_m1num_miss_omega_outoftime->Fill(RecM_Proton); //One good shower required to get here
-					if(my_E_bin>=0&&my_E_bin<N_E_BINS&&p4_gam1.Theta()*180./3.14159>gamma1_miss_lotheta&&p4_gam1.Theta()*180./3.14159<gamma1_miss_hitheta) h_m1num_miss_omega_Ebins_outoftime[my_E_bin]->Fill(RecM_Proton);
-					if(my_theta_bin>=0&&my_theta_bin<N_THETA_BINS&&p4_gam1.E()>gamma1_miss_Emin) h_m1num_miss_omega_Thetabins_outoftime[my_theta_bin]->Fill(RecM_Proton);
+					if(thrown_study_match_flag&&my_E_bin>=0&&my_E_bin<N_E_BINS&&p4_gam1.Theta()*180./3.14159>gamma1_miss_lotheta&&p4_gam1.Theta()*180./3.14159<gamma1_miss_hitheta) h_m1num_miss_omega_Ebins_outoftime[my_E_bin]->Fill(RecM_Proton);
+					if(thrown_study_match_flag&&my_theta_bin>=0&&my_theta_bin<N_THETA_BINS&&p4_gam1.E()>gamma1_miss_Emin) h_m1num_miss_omega_Thetabins_outoftime[my_theta_bin]->Fill(RecM_Proton);
+					if(thrown_study_match_flag&&my_phi_bin>=0&&my_theta_bin<N_PHI_BINS&&p4_gam1.E()>gamma1_miss_Emin&&p4_gam1.Theta()*180./3.14159>gamma1_miss_lotheta&&p4_gam1.Theta()*180./3.14159<gamma1_miss_hitheta) h_m1num_miss_omega_Phibins_outoftime[my_phi_bin]->Fill(RecM_Proton);
 				}
 				if(twogamma_can_mass[j]<m1_pi0cut_lo) h_inv_omega_badpi0_outoftime->Fill(threepi_can_mass[j]); //One good shower required to get here
 				h_m2num_inv_omega_outoftime->Fill(threepi_can_mass[j]); //One good shower required to get here
 				if(my_E_bin>=0&&my_E_bin<N_E_BINS&&p4_gam1.Theta()*180./3.14159>gamma1_miss_lotheta&&p4_gam1.Theta()*180./3.14159<gamma1_miss_hitheta) h_m2num_inv_omega_Ebins_outoftime[my_E_bin]->Fill(RecM_Proton);
 				if(my_theta_bin>=0&&my_theta_bin<N_THETA_BINS&&p4_gam1.E()>gamma1_miss_Emin) h_m2num_inv_omega_Thetabins_outoftime[my_theta_bin]->Fill(RecM_Proton);
+				if(my_phi_bin>=0&&my_theta_bin<N_PHI_BINS&&p4_gam1.E()>gamma1_miss_Emin&&p4_gam1.Theta()*180./3.14159>gamma1_miss_lotheta&&p4_gam1.Theta()*180./3.14159<gamma1_miss_hitheta) h_m2num_inv_omega_Phibins_outoftime[my_phi_bin]->Fill(RecM_Proton);
 				h_missing_omega_4scale_outoftime->Fill(RecM_Proton); //One good shower required to get here
 				if(twogamma_can_mass[j]>m1_pi0cut_lo&&twogamma_can_mass[j]<m1_pi0cut_hi&&fabs(DeltaPhi_wshow-180.)<m1_DeltaPhiCut) h2_MM_vs_invm_pi0cuts_outoftime->Fill(RecM_Proton,threepi_can_mass[j]); //One good shower required to get here
 				h2_MM_vs_invm_loose_outoftime->Fill(RecM_Proton,threepi_can_mass[j]); //One good shower required to get here
 			}
 		}
+		
+		
+		
 		
 	}
 	
@@ -748,6 +938,7 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 	h_miss_pi0_postcuts_outoftime->Sumw2();
 	
 	
+	
 	Double_t Delta_t_scalefactor = 1. / (2*NBeamBunchesOutoftime);
 	
 	
@@ -782,6 +973,8 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 	h_gamma2_E_all_accidsub->Add(h_gamma2_E_all_intime,h_gamma2_E_all_outoftime,1.,-1*Delta_t_scalefactor);
 	h_gamma2_E_vs_theta_all_accidsub->Add(h_gamma2_E_vs_theta_all_intime,h_gamma2_E_vs_theta_all_outoftime,1.,-1*Delta_t_scalefactor);
 	
+	
+	
  	for(int i =0; i<N_E_BINS; ++i) {
 		h_m1num_miss_omega_Ebins_intime[i]->Sumw2();
 		h_m1num_miss_omega_Ebins_outoftime[i]->Sumw2();
@@ -813,6 +1006,23 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 		h_m2num_inv_omega_Thetabins_accidsub[i]->Add(h_m2num_inv_omega_Thetabins_intime[i],h_m2num_inv_omega_Thetabins_outoftime[i],1.,-1*Delta_t_scalefactor);
 		h_m2denineff_miss_omega_Thetabins_accidsub[i]->Add(h_m2denineff_miss_omega_Thetabins_intime[i],h_m2denineff_miss_omega_Thetabins_outoftime[i],1.,-1*Delta_t_scalefactor);
 	}	
+ 	for(int i =0; i<N_PHI_BINS; ++i) {
+		h_m1num_miss_omega_Phibins_intime[i]->Sumw2();
+		h_m1num_miss_omega_Phibins_outoftime[i]->Sumw2();
+		h_m1den_miss_omega_Phibins_intime[i]->Sumw2();
+		h_m1den_miss_omega_Phibins_outoftime[i]->Sumw2();
+		h_m2num_inv_omega_Phibins_intime[i]->Sumw2();
+		h_m2num_inv_omega_Phibins_outoftime[i]->Sumw2();
+		h_m2denineff_miss_omega_Phibins_intime[i]->Sumw2();
+		h_m2denineff_miss_omega_Phibins_outoftime[i]->Sumw2();
+		
+		h_m1num_miss_omega_Phibins_accidsub[i]->Add(h_m1num_miss_omega_Phibins_intime[i],h_m1num_miss_omega_Phibins_outoftime[i],1.,-1*Delta_t_scalefactor);
+		h_m1den_miss_omega_Phibins_accidsub[i]->Add(h_m1den_miss_omega_Phibins_intime[i],h_m1den_miss_omega_Phibins_outoftime[i],1.,-1*Delta_t_scalefactor);
+		h_m2num_inv_omega_Phibins_accidsub[i]->Add(h_m2num_inv_omega_Phibins_intime[i],h_m2num_inv_omega_Phibins_outoftime[i],1.,-1*Delta_t_scalefactor);
+		h_m2denineff_miss_omega_Phibins_accidsub[i]->Add(h_m2denineff_miss_omega_Phibins_intime[i],h_m2denineff_miss_omega_Phibins_outoftime[i],1.,-1*Delta_t_scalefactor);
+	}	
+	
+
 	
 	TFile* outfile = new TFile( str_outfile, "RECREATE" );
 	outfile->cd();
@@ -852,6 +1062,7 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 	h_gamma2_E_all_accidsub->Write();
 	h_gamma2_E_vs_theta_all_accidsub->Write();
 
+	
 	for(int i =0; i<N_E_BINS; ++i) h_m1num_miss_omega_Ebins_accidsub[i]->Write();
 	for(int i =0; i<N_E_BINS; ++i) h_m1den_miss_omega_Ebins_accidsub[i]->Write();
 	for(int i =0; i<N_E_BINS; ++i) h_m2num_inv_omega_Ebins_accidsub[i]->Write();
@@ -860,6 +1071,11 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 	for(int i =0; i<N_THETA_BINS; ++i) h_m1den_miss_omega_Thetabins_accidsub[i]->Write();
 	for(int i =0; i<N_THETA_BINS; ++i) h_m2num_inv_omega_Thetabins_accidsub[i]->Write();
 	for(int i =0; i<N_THETA_BINS; ++i) h_m2denineff_miss_omega_Thetabins_accidsub[i]->Write();
+	for(int i =0; i<N_PHI_BINS; ++i) h_m1num_miss_omega_Phibins_accidsub[i]->Write();
+	for(int i =0; i<N_PHI_BINS; ++i) h_m1den_miss_omega_Phibins_accidsub[i]->Write();
+	for(int i =0; i<N_PHI_BINS; ++i) h_m2num_inv_omega_Phibins_accidsub[i]->Write();
+	for(int i =0; i<N_PHI_BINS; ++i) h_m2denineff_miss_omega_Phibins_accidsub[i]->Write();
+	
 	
 	if(make_thrown_info_hists) {
 		h_gam1_thrown_theta_inrange->Write();
@@ -876,7 +1092,18 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 		h_gam1_DeltaTheta->Write();
 		h_gam2_DeltaPhi->Write();
 		h_gam2_DeltaTheta->Write();
+		h_gam1_gam2thr_DeltaPhi->Write();
+		h_gam1_gam2thr_DeltaTheta->Write();
+		h_gam2_gam1thr_DeltaPhi->Write();
+		h_gam2_gam1thr_DeltaTheta->Write();
+		
+		h_gam2_DeltaAngle->Write();
+		h_gam2_gam1thr_DeltaAngle->Write();
+		h_gam2_DeltaAngle_postcuts->Write();
+		h_gam2_gam1thr_DeltaAngle_postcuts->Write();
 	}
+	
+	
 	
 	
 	outfile->Close();
