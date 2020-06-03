@@ -1,0 +1,7 @@
+SHELL=/bin/tcsh
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+MAILTO=sdobbs
+HOME=/home/gxproj5
+LOGDIR=/home/gxproj5/halld/monitoring/log
+
+40 * * * * /home/gxproj5/monitoring/process/check_monitoring_data.csh
