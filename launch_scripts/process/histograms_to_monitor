@@ -1,0 +1,57 @@
+# CDC
+cdc_raw_intpp
+cdc_int
+cdc_intpp
+cdc_raw_t 
+cdc_ped
+cdc_raw_intpp_vs_n
+cdc_raw_t_vs_n
+cdc_ped_vs_n
+cdc_windata_ped_vs_n
+# BCAL
+bcal_shower_plane
+deltaTVsCell
+# SC
+st_sec_adc_dhit
+st_pi_dhit
+st_pt_dhit
+# FCAL
+digHitE
+digT
+digOcc2D
+# FDC
+#fdcow
+#fdcos
+# PS
+pse
+pst
+pso
+# PSC
+psce
+psct
+psco
+# PSPair
+PS_E
+#TAGH
+DigiHit_tdcTime
+DigiHit_RawIntegral
+DigiHit_PedestalVsSlotID
+#TAGM
+tagm_hit_seen
+tagm_hit_time
+tagm_adc_pint
+tagm_adc_mult
+tdc_adc_all
+t_adc_all
+adc_rf_all
+# TOF
+tofe
+toft
+tofo1
+tofo2
+# RECONSTRUCTION
+NumGoodReconstructedParticles
+# LOW LEVEL
+f1tdc_unlocked
+f1tdc_bad_output_fifo
+f1tdc_bad_hit_fifo

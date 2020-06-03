@@ -1,0 +1,17 @@
+# Example for PID cut study: Analysis How To's (JRS 6/1/20): jrsteven@jlab.org
+
+# This example shows how to use the AnalyzeCutAction tool to fill mass histograms for pi0 -> gg under differing PID requirements.  The yields can be extracted to show how they depend on the individual cuts.  Python scripts display the standard PID plots and make some data/MC comparisons
+
+# Step 0) Include your analysis channel in the launch with loosened PID cuts (https://halldweb.jlab.org/wiki-private/index.php/Spring_2017_Analysis_Launch#Version38), or run the analysis yourself over the REST files with those conditions.
+
+# Step 1) Produce Analysis TTrees for your MC sample under the same conditions as the data in Step 0): e.g. using the script run_MC_pid_syst.csh in this How To.  Note: this may require batch jobs for large samples.
+
+# Step 2) Open your reaction's ROOT tree and run the DSelector using the AnalyzeCutAction to compare the PID cuts (do this for data and MC).  
+root -l -b -q runSelector.C
+
+# Step 3) Use the python script to make standard PID plots (prior to default cuts) for all particles in your reaction.  Note: there are options to change the momentum slice for 1D plots, etc. in the script.  Feel free to change them or send requests for other options.
+python -b plotPIDdataMC.py 
+
+# Step 4) Use the python script to extract particle yields for each PID cut being applied.  Note: You'll need to define a fit range, background function, etc. for your specific reaction, but the procedure for looping over the different PID cut conditions should be the same for all reactions.
+python -b plotPIDyields.py
+

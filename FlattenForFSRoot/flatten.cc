@@ -44,6 +44,7 @@ int FSMCExtras(int numThrown, int pids[]);
 TFile* gInputFile;
 TFile* gOutputFile;
 double  gChi2DOFCut;
+double  gShQualityCut;
 int  gNumUnusedTracksCut;
 int  gNumUnusedNeutralsCut;
 int  gNumNeutralHyposCut;
@@ -67,9 +68,11 @@ int main(int argc, char** argv){
   cout << "The final state is determined automatically from the input file." << endl << endl;
   cout << "Usage:" << endl;
   cout << "  flatten  -in    <input file name>                     (required)" << endl;
-  cout << "           -out   <output file name>                    (required)" << endl;
+  cout << "           -out   <output file name or none>            (default: none)" << endl;
+  cout << "                   (if none, just print info and quit)"   << endl;
   cout << "           -mc    [is this mc?  0 or 1]                 (default: 0)" << endl;
   cout << "           -chi2  [optional Chi2/DOF cut value]         (default: 1000)" << endl;
+  cout << "           -shQuality  [optional shower quality cut value] (no default)" << endl;
   cout << "           -numUnusedTracks   [optional cut (<= cut)]   (no default)" << endl;
   cout << "           -numUnusedNeutrals [optional cut (<= cut)]   (no default)" << endl;
   cout << "           -numNeutralHypos   [optional cut (<= cut)]   (no default)" << endl;
@@ -79,22 +82,23 @@ int main(int argc, char** argv){
   cout << "Notes:" << endl;
   cout << "  * the input tree name should contain \"_Tree\" (if this standard" << endl;
   cout << "     changes in the GlueX code, this code can be easily modified)" << endl;
-  cout << "  * the output tree name is ntFSGlueX (for now) " << endl;
-  cout << "      [it might be better to eventually use a FSCode, for example]" << endl;
+  cout << "  * the output tree name is ntFSGlueX_[code2]_[code1], where [code1] " << endl;
+  cout << "      and [code2] specify the final state (Documentation/GlueXFSRootFormat.pdf)" << endl;
   cout << "  * this works for a large variety of final states (but not all)" << endl;
   cout << "  * the \"safe\" option first reads a limited number of variables" << endl;
   cout << "      from the tree, then does checks on array sizes, etc.," << endl;
   cout << "      then reads in the rest of the tree -- this is slower, but avoids" << endl;
   cout << "      segmentation faults if array sizes are exceeded" << endl;
   cout << "***********************************************************" << endl << endl;
-  if (argc < 5){
+  if (argc < 3){
      cout << "ERROR: wrong number of arguments -- see usage notes above" << endl;
      exit(0);
   }
   TString inFileName("");
-  TString outFileName("");
+  TString outFileName("none");
   gIsMC = false;
   gChi2DOFCut = 1000.0;
+  gShQualityCut = -1;
   gNumUnusedTracksCut = -1;
   gNumUnusedNeutralsCut = -1;
   gNumNeutralHyposCut = -1;
@@ -107,6 +111,7 @@ int main(int argc, char** argv){
     if (argi == "-out") outFileName = argi1;
     if (argi == "-mc"){ if (argi1 == "1") gIsMC = true; }
     if (argi == "-chi2"){ gChi2DOFCut = atof(argi1); }
+    if (argi == "-shQuality"){ gShQualityCut = atof(argi1); }
     if (argi == "-numUnusedTracks"){ gNumUnusedTracksCut = atoi(argi1); }
     if (argi == "-numUnusedNeutrals"){ gNumUnusedNeutralsCut = atoi(argi1); }
     if (argi == "-numNeutralHypos"){ gNumNeutralHyposCut = atoi(argi1); }
@@ -119,6 +124,7 @@ int main(int argc, char** argv){
   cout << "  output file:           " << outFileName << endl;
   cout << "  MC?                    " << gIsMC << endl;
   cout << "  chi2/dof cut:          " << gChi2DOFCut << endl;
+  cout << "  shower quality cut:    " << gShQualityCut << endl;
   cout << "  numUnusedTracks cut:   " << gNumUnusedTracksCut << endl;
   cout << "  numUnusedNeutrals cut: " << gNumUnusedNeutralsCut << endl;
   cout << "  numNeutralHypos cut:   " << gNumNeutralHyposCut << endl;
@@ -141,7 +147,8 @@ int main(int argc, char** argv){
 void ConvertFile(TString inFileName, TString outFileName){
   int nTrees = 0;
   gInputFile  = new TFile(inFileName);
-  gOutputFile = new TFile(outFileName,"recreate");
+  gOutputFile = NULL;
+  if (outFileName != "none") gOutputFile = new TFile(outFileName,"recreate");
   TList* fileList = gInputFile->GetListOfKeys();
   for (int i = 0; i < fileList->GetEntries(); i++){
     TString treeName(fileList->At(i)->GetName());
@@ -155,7 +162,7 @@ void ConvertFile(TString inFileName, TString outFileName){
     }
   }
   gInputFile->Close();
-  gOutputFile->Close();
+  if (outFileName != "none") gOutputFile->Close();
   if (nTrees == 0){
     cout << "WARNING: could not find any trees" << endl;
   }
@@ -173,7 +180,6 @@ void ConvertTree(TString treeName){
 
     // input and output tree names
   TString inNT(treeName);
-  //TString outNT("nt");  outNT += inNT;  outNT.Replace(outNT.Index("_Tree"),5,"");
   TString outNT("ntFSGlueX");
 
     // setup for the input tree
@@ -262,6 +268,7 @@ void ConvertTree(TString treeName){
      // **********************************************************************
 
   cout << endl << endl << "PERFORMING CHECKS ON THE FINAL STATE:" << endl << endl;
+  bool checkFSOkay = true;
   {
     if (decayProductMap.size() == 0){
       cout << endl << "  ERROR: no final state partices found" << endl;
@@ -283,26 +290,33 @@ void ConvertTree(TString treeName){
       }
       if (motherFSType == "pi0" && (daughterNames.size() != 2 || 
             !(daughterFSTypes[0] == "gamma" && daughterFSTypes[1] == "gamma"))){
-        cout << "  ERROR: unrecognized pi0 decay" << endl;
+        cout << "  ERROR: unrecognized pi0 decay" << endl;  checkFSOkay = false;
       }
       if (motherFSType == "eta" && (daughterNames.size() != 2 || 
             !(daughterFSTypes[0] == "gamma" && daughterFSTypes[1] == "gamma"))){
-        cout << "  ERROR: unrecognized eta decay" << endl;
+        cout << "  ERROR: unrecognized eta decay" << endl;  checkFSOkay = false;
       }
       if (motherFSType == "Ks" && (daughterNames.size() != 2 || 
             !((daughterFSTypes[0] == "pi+" && daughterFSTypes[1] == "pi-") || 
               (daughterFSTypes[1] == "pi+" && daughterFSTypes[0] == "pi-")))){
-        cout << "  ERROR: unrecognized Ks decay" << endl;
+        cout << "  ERROR: unrecognized Ks decay" << endl;  checkFSOkay = false;
       }
       if (motherFSType == "Lambda" && (daughterNames.size() != 2 || 
             !((daughterFSTypes[0] == "p+" && daughterFSTypes[1] == "pi-") || 
               (daughterFSTypes[1] == "p+" && daughterFSTypes[0] == "pi-")))){
-        cout << "  ERROR: unrecognized Lambda decay" << endl;
+        cout << "  ERROR: unrecognized Lambda decay" << endl;  checkFSOkay = false;
       }
       if (motherFSType == "ALambda" && (daughterNames.size() != 2 || 
             !((daughterFSTypes[0] == "p-" && daughterFSTypes[1] == "pi+") || 
               (daughterFSTypes[1] == "p-" && daughterFSTypes[0] == "pi+")))){
-        cout << "  ERROR: unrecognized ALambda decay" << endl;
+        cout << "  ERROR: unrecognized ALambda decay" << endl;  checkFSOkay = false;
+      }
+      if (motherName.Contains("Decaying") && motherFSType != "pi0"
+                                          && motherFSType != "eta"
+                                          && motherFSType != "Ks"
+                                          && motherFSType != "Lambda"
+                                          && motherFSType != "ALambda"){
+        cout << "  ERROR: unrecognized decaying particle: " << motherName << endl;  checkFSOkay = false;
       }
     }
   }
@@ -374,6 +388,15 @@ void ConvertTree(TString treeName){
   cout << "  DecayCode2    = " << reconstructedFSCode.second << endl;
   cout << "  numFSNeutrals = " << numFSNeutrals << endl << endl;
 
+  outNT += "_";
+  outNT += reconstructedFSCode.second;
+  outNT += "_";
+  outNT += reconstructedFSCode.first;
+
+  if (!checkFSOkay){
+    cout << "ERROR: problem parsing this final state." << endl;
+    exit(0);
+  }
 
      // **********************************************************************
      // STEP 1F:  make maps from names to indices
@@ -406,6 +429,8 @@ void ConvertTree(TString treeName){
    // **********************************************************************
    // STEP 2:  SET UP TO READ THE INPUT TREE (IN ANALYSIS TREE FORMAT)
    // **********************************************************************
+
+   if (!gOutputFile) return;
 
         // ******************************
         // ***** 2A. SIMULATED DATA *****
@@ -855,6 +880,7 @@ void ConvertTree(TString treeName){
 
         // particle information
 
+      bool cutDueToParticleInfo = false;
       for (unsigned int im = 0; im < orderedParticleNames.size(); im++){
       for (unsigned int id = 0; id < orderedParticleNames[im].size(); id++){
         TString name = orderedParticleNames[im][id];
@@ -904,6 +930,7 @@ void ConvertTree(TString treeName){
             outMCPz[pIndex] = p4->Pz();
             outMCEn[pIndex] = p4->E(); }
           outShQuality[pIndex] = inNeutralHypo__ShowerQuality[(inNeutralIndex[pIndex][ic])];
+          if (outShQuality[pIndex] < gShQualityCut) cutDueToParticleInfo = true;
         }
 
           // decaying to charged tracks
@@ -1006,6 +1033,7 @@ void ConvertTree(TString treeName){
 
         // make cuts
 
+      if (cutDueToParticleInfo) continue;
       if (outChi2DOF > gChi2DOFCut) continue;
       int numUnusedNeutrals = inNumNeutralHypos - numFSNeutrals;
       if ((gNumUnusedTracksCut   >= 0) && (outNumUnusedTracks   > gNumUnusedTracksCut)) continue;
