@@ -18,7 +18,7 @@ static const int MAXTHROWN    =  20*2;
 static const int MAXBEAM      =  20*2;
 static const int MAXTRACKS    =  50*1;
 static const int MAXNEUTRALS  =  15*2;
-static const int MAXCOMBOS    = 100*20;
+static const int MAXCOMBOS    = 100*50;
 static const int MAXPARTICLES =  MAXTRACKS + MAXNEUTRALS;
 
   // main routines to do the conversions
