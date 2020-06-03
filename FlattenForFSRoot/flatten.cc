@@ -695,7 +695,7 @@ void ConvertTree(TString treeName){
     // loop over the input tree
 
   Long64_t nEntries = inTree->GetEntries();
-  cout << "LOOPING OVER " << nEntries << " EVENTS..." << endl;
+  cout << "LOOPING OVER " << nEntries << " ENTRIES..." << endl;
   for (Long64_t iEntry = 0; iEntry < nEntries; iEntry++){
     if ((iEntry+1) % 10000 == 0) cout << "entry = " << iEntry+1 << "  (" << (100.0*(iEntry+1))/nEntries << " percent)" << endl;
 
@@ -1076,7 +1076,7 @@ void ConvertTree(TString treeName){
   cout << endl << endl << "WRITING THE OUTPUT TREE..." << endl;
   gOutputFile->cd();
   outTree.Write();
-  cout << "FINISHED" << endl << endl;
+  cout << "FINISHED (entries = )" << nEntries << endl << endl;
 
 }
 
