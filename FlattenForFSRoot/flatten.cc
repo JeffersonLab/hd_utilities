@@ -74,8 +74,8 @@ int main(int argc, char** argv){
   cout << "           -mc    [is this mc?  0 or 1]                 (default: 0)" << endl;
   cout << "           -chi2  [optional Chi2/DOF cut value]         (default: 1000)" << endl;
   cout << "           -shQuality  [optional shower quality cut value] (no default)" << endl;
-  cout << "           -massWindows  [pi0, eta, (A)Lambda, Ks windows] (no default)" << endl;
-  cout << "                          (uses most constrained four-momenta)" << endl;
+  cout << "           -massWindows  [pi0, eta, (A)Lambda, Ks windows (GeV)] (no default)" << endl;
+  cout << "                        (uses the most constrained four-momenta)" << endl;
   cout << "           -numUnusedTracks   [optional cut (<= cut)]   (no default)" << endl;
   cout << "           -numUnusedNeutrals [optional cut (<= cut)]   (no default)" << endl;
   cout << "           -numNeutralHypos   [optional cut (<= cut)]   (no default)" << endl;
