@@ -22,8 +22,16 @@ if not os.path.exists(plotDir):
 
 # default dE/dx cut for plotting on 2D distribution
 fMinProton_dEdx = TF1("fMinProton_dEdx", "exp(-1.*[0]*x + [1]) + [2]", 0., 10.) # cut for dEdx curve
-fMinProton_dEdx.SetParameters(5.2, 3.0, 0.9)
+fMinProton_dEdx.SetParameters(4.0, 2.25, 1.0)
 fMinProton_dEdx.SetLineColor(2)
+
+fMaxPion_dEdx = TF1("fMaxPion_dEdx", "exp(-1.*[0]*x + [1]) + [2]", 0., 10.) # cut for dEdx curve
+fMaxPion_dEdx.SetParameters(7.0, 3.0, 6.2)
+fMaxPion_dEdx.SetLineColor(2)
+
+fMaxElectron_dEdx = TF1("fMaxElectron_dEdx", "[0]", 0., 10.) # cut for dEdx curve
+fMaxElectron_dEdx.SetParameter(0,5.5)
+fMaxElectron_dEdx.SetLineColor(2)
 
 
 # Parser needs
@@ -41,7 +49,7 @@ maxSliceP = 1.0
 # Insert your input files here for Data and MC
 files = []
 files.append(TFile.Open("hist_sum_30730_30788.root")) # Data
-files.append(TFile.Open("hist_sum_30274_31057_sim_g4.root")) #MC
+files.append(TFile.Open("hist_sum_30730_30788_sim_g4.root")) #MC
 
 # Open file and get list of keys
 f = files[0]
@@ -123,7 +131,12 @@ for hist,particle in zip(hists,particles):
         h.Draw("colz")
         
         if "CDC dE/dx" in h.GetYaxis().GetTitle():
-            fMinProton_dEdx.Draw("same")
+            if h.GetTitle() == "p":
+                fMinProton_dEdx.Draw("same")
+            elif "e^" in h.GetTitle():
+                fMaxElectron_dEdx.Draw("same")
+            else:
+                fMaxPion_dEdx.Draw("same")
         
         ifile += 1
     ihist += 1
