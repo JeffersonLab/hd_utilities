@@ -16,9 +16,9 @@ using namespace std;
   //     (if the sizes are too big, strange behavior sometimes results)
 static const int MAXTHROWN    =  20*2;
 static const int MAXBEAM      =  20*2;
-static const int MAXTRACKS    =  50*2;
-static const int MAXNEUTRALS  =  15*4;
-static const int MAXCOMBOS    = 100*10;
+static const int MAXTRACKS    =  50*1;
+static const int MAXNEUTRALS  =  15*2;
+static const int MAXCOMBOS    = 100*50;
 static const int MAXPARTICLES =  MAXTRACKS + MAXNEUTRALS;
 
   // main routines to do the conversions
@@ -45,6 +45,7 @@ TFile* gInputFile;
 TFile* gOutputFile;
 double  gChi2DOFCut;
 double  gShQualityCut;
+double  gMassWindows;
 int  gNumUnusedTracksCut;
 int  gNumUnusedNeutralsCut;
 int  gNumNeutralHyposCut;
@@ -73,6 +74,8 @@ int main(int argc, char** argv){
   cout << "           -mc    [is this mc?  0 or 1]                 (default: 0)" << endl;
   cout << "           -chi2  [optional Chi2/DOF cut value]         (default: 1000)" << endl;
   cout << "           -shQuality  [optional shower quality cut value] (no default)" << endl;
+  cout << "           -massWindows  [pi0, eta, (A)Lambda, Ks windows (GeV)] (no default)" << endl;
+  cout << "                        (uses the most constrained four-momenta)" << endl;
   cout << "           -numUnusedTracks   [optional cut (<= cut)]   (no default)" << endl;
   cout << "           -numUnusedNeutrals [optional cut (<= cut)]   (no default)" << endl;
   cout << "           -numNeutralHypos   [optional cut (<= cut)]   (no default)" << endl;
@@ -99,6 +102,7 @@ int main(int argc, char** argv){
   gIsMC = false;
   gChi2DOFCut = 1000.0;
   gShQualityCut = -1;
+  gMassWindows = -1;
   gNumUnusedTracksCut = -1;
   gNumUnusedNeutralsCut = -1;
   gNumNeutralHyposCut = -1;
@@ -112,6 +116,7 @@ int main(int argc, char** argv){
     if (argi == "-mc"){ if (argi1 == "1") gIsMC = true; }
     if (argi == "-chi2"){ gChi2DOFCut = atof(argi1); }
     if (argi == "-shQuality"){ gShQualityCut = atof(argi1); }
+    if (argi == "-massWindows"){ gMassWindows = atof(argi1); }
     if (argi == "-numUnusedTracks"){ gNumUnusedTracksCut = atoi(argi1); }
     if (argi == "-numUnusedNeutrals"){ gNumUnusedNeutralsCut = atoi(argi1); }
     if (argi == "-numNeutralHypos"){ gNumNeutralHyposCut = atoi(argi1); }
@@ -125,6 +130,7 @@ int main(int argc, char** argv){
   cout << "  MC?                    " << gIsMC << endl;
   cout << "  chi2/dof cut:          " << gChi2DOFCut << endl;
   cout << "  shower quality cut:    " << gShQualityCut << endl;
+  cout << "  mass windows:          " << gMassWindows << endl;
   cout << "  numUnusedTracks cut:   " << gNumUnusedTracksCut << endl;
   cout << "  numUnusedNeutrals cut: " << gNumUnusedNeutralsCut << endl;
   cout << "  numNeutralHypos cut:   " << gNumNeutralHyposCut << endl;
@@ -689,7 +695,7 @@ void ConvertTree(TString treeName){
     // loop over the input tree
 
   Long64_t nEntries = inTree->GetEntries();
-  cout << "LOOPING OVER " << nEntries << " EVENTS..." << endl;
+  cout << "LOOPING OVER " << nEntries << " ENTRIES..." << endl;
   for (Long64_t iEntry = 0; iEntry < nEntries; iEntry++){
     if ((iEntry+1) % 10000 == 0) cout << "entry = " << iEntry+1 << "  (" << (100.0*(iEntry+1))/nEntries << " percent)" << endl;
 
@@ -959,6 +965,14 @@ void ConvertTree(TString treeName){
             outMCPy[pIndex] = p4a->Py() + p4b->Py();
             outMCPz[pIndex] = p4a->Pz() + p4b->Pz();
             outMCEn[pIndex] = p4a->E()  + p4b->E(); }
+          if (gMassWindows > 0){
+            double mass = sqrt(pow(outEn[pIndex],2)-pow(outPx[pIndex],2)-
+                               pow(outPy[pIndex],2)-pow(outPz[pIndex],2));
+            if ((FSParticleType(name) == "Lambda") || (FSParticleType(name) == "ALambda"))
+              if (abs(mass-1.115683) > gMassWindows/2.0) cutDueToParticleInfo = true;
+            if (FSParticleType(name) == "Ks")
+              if (abs(mass-0.497611) > gMassWindows/2.0) cutDueToParticleInfo = true;
+          }
         }
 
           // decaying to neutral particles
@@ -987,6 +1001,14 @@ void ConvertTree(TString treeName){
             outMCPy[pIndex] = p4a->Py() + p4b->Py();
             outMCPz[pIndex] = p4a->Pz() + p4b->Pz();
             outMCEn[pIndex] = p4a->E()  + p4b->E(); }
+          if (gMassWindows > 0){
+            double mass = sqrt(pow(outEn[pIndex],2)-pow(outPx[pIndex],2)-
+                               pow(outPy[pIndex],2)-pow(outPz[pIndex],2));
+            if (FSParticleType(name) == "eta")
+              if (abs(mass-0.547862) > gMassWindows/2.0) cutDueToParticleInfo = true;
+            if (FSParticleType(name) == "pi0")
+              if (abs(mass-0.134977) > gMassWindows/2.0) cutDueToParticleInfo = true;
+          }
         }
 
       }}
@@ -1054,7 +1076,7 @@ void ConvertTree(TString treeName){
   cout << endl << endl << "WRITING THE OUTPUT TREE..." << endl;
   gOutputFile->cd();
   outTree.Write();
-  cout << "FINISHED" << endl << endl;
+  cout << "FINISHED (entries = )" << nEntries << endl << endl;
 
 }
 
