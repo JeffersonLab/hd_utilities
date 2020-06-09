@@ -1,4 +1,5 @@
 import os
+import sys
 from ROOT import gDirectory,gStyle,TFile,TCanvas,TF1,TLegend
 
 # define function to get list of string keys in a directory
@@ -11,10 +12,6 @@ TFile.GetKeyNames = GetKeyNames
 # some basic setup for canvases and legends
 gStyle.SetOptStat(0)
 leg = TLegend(0.6,0.7,0.9,0.9)
-
-cc2D = TCanvas("cc2D","cc2D",800,400)
-cc2D.Divide(2,1)
-cc1D = TCanvas("cc1D","cc1D",600,400)
 
 plotDir = "plots/"
 if not os.path.exists(plotDir):
@@ -33,23 +30,44 @@ fMaxElectron_dEdx = TF1("fMaxElectron_dEdx", "[0]", 0., 10.) # cut for dEdx curv
 fMaxElectron_dEdx.SetParameter(0,5.5)
 fMaxElectron_dEdx.SetLineColor(2)
 
-
-# Parser needs
-## Files name and label from text input (defines canvas size and labels)
+# Parser could set these from command line:
 ## Momentum range for given particle?
 ## DeltaT range to zoom in
 
 pidPath = "Hist_ParticleID_Initial"
 maxDeltaT = 2.5
-minP = 0.0
-maxP = 2.5
+minProtonPrange = 0.0
+maxProtonPrange = 2.5
 minSliceP = 0.8
 maxSliceP = 1.0
 
-# Insert your input files here for Data and MC
+print len(sys.argv)
+print str(sys.argv)
+
+# Get list of ROOT histogram files (and labels) to include from input text file
 files = []
-files.append(TFile.Open("hist_sum_30730_30788.root")) # Data
-files.append(TFile.Open("hist_sum_30730_30788_sim_g4.root")) #MC
+labels = []
+finput = open("input_file_labels.txt")
+inputlines = finput.read().splitlines()
+for line in inputlines:
+    input_list = line.split(",")
+    print input_list
+    files.append(TFile.Open(input_list[0]))
+    labels.append(input_list[1])
+
+nfiles = len(files)
+
+if nfiles == 0 or nfiles > 6:
+    exit
+
+# Setup canvases
+cc2D = TCanvas("cc2D","cc2D",800,400)
+cc1D = TCanvas("cc1D","cc1D",600,400)
+if nfiles < 4: # single row of panels
+    cc2D.Divide(nfiles,1)
+else: # double row of panels
+    cc2D.SetWindowSize(800, 800)
+    cc2D.Divide(nfiles,2)
 
 # Open file and get list of keys
 f = files[0]
@@ -82,9 +100,8 @@ for hist,particle in zip(hists,particles):
     projMinBin = 0
     projMaxBin = 999
     norm = 0
-    
-    
-    for file in files:
+        
+    for file,label in zip(files,labels):
         h = file.Get(hist)
         
         if "DeltaT" in hist:
@@ -108,7 +125,7 @@ for hist,particle in zip(hists,particles):
                 h1D.Draw("pe")
                 
                 if ihist == 0:
-                    leg.AddEntry(h1D,"Data","p")
+                    leg.AddEntry(h1D,label,"p")
                     
             else: # MC specific values
                 h1D = h.ProjectionY("%d" % ifile,projMinBin,projMaxBin)
@@ -120,14 +137,15 @@ for hist,particle in zip(hists,particles):
                 h1D.Draw("pe same")
                 
                 if ihist == 0:
-                    leg.AddEntry(h1D,"MC","p")
+                    leg.AddEntry(h1D,label,"p")
                     
                 leg.Draw("same")
                 
             if "Proton" in particle:
-                h.GetXaxis().SetRangeUser(minP,maxP)
+                h.GetXaxis().SetRangeUser(minProtonPrange,maxProtonPrange)
         
         cc2D.cd(ifile+1)
+        h.SetTitle(label+": "+h.GetTitle())
         h.Draw("colz")
         
         if "CDC dE/dx" in h.GetYaxis().GetTitle():
