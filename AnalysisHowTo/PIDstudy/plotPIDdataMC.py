@@ -52,6 +52,8 @@ def main():
 
     # set parser options if available
     (options, args) = parser.parse_args(sys.argv)
+    #parser.print_help()
+
     if options.path:
         pidPath = options.path
     if options.plotmin:
