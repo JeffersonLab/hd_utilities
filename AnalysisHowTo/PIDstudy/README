@@ -9,8 +9,24 @@
 # Step 2) Open your reaction's ROOT tree and run the DSelector using the AnalyzeCutAction to compare the PID cuts (do this for data and MC).  
 root -l -b -q runSelector.C
 
-# Step 3) Use the python script to make standard PID plots (prior to default cuts) for all particles in your reaction.  Note: there are options to change the momentum slice for 1D plots, etc. in the script.  Feel free to change them or send requests for other options.
-python -b plotPIDdataMC.py 
+# Step 3) Use the python script to make standard PID plots (prior to default cuts) for all particles in your reaction.  Note: there are options to change the momentum slice for 1D plots, etc. in the script that can be set by command line parameters (see usage below)
+./plotPIDdataMC.py 
+
+#Usage: plotPIDdataMC.py --path pidPath --proton-plotmin plotMin --proton-plotmax plotMax --min-slice minSliceP --max-slice maxSliceP --timerange maxDeltaT
+#
+#Options:
+#  -h, --help            show this help message and exit
+#  -p PATH, --path=PATH  Path to PID histogram directory
+#  -a PLOTMIN, --proton-plotmin=PLOTMIN
+#                        Minimum proton plot momentum
+#  -b PLOTMAX, --proton-plotmax=PLOTMAX
+#                        Maximum proton plot momentum
+#  -c MINSLICE, --min-slice=MINSLICE
+#                        Minimum momentum for 1D projection
+#  -d MAXSLICE, --max-slice=MAXSLICE
+#                        Maximum momentum for 1D projection
+#  -t TRANGE, --trange=TRANGE
+#                        Timing |DeltaT| maximum
 
 # Step 4) Use the python script to extract particle yields for each PID cut being applied.  Note: You'll need to define a fit range, background function, etc. for your specific reaction, but the procedure for looping over the different PID cut conditions should be the same for all reactions.
 python -b plotPIDyields.py
