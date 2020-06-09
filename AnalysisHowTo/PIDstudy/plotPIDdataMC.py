@@ -67,7 +67,7 @@ if nfiles < 4: # single row of panels
     cc2D.Divide(nfiles,1)
 else: # double row of panels
     cc2D.SetWindowSize(800, 800)
-    cc2D.Divide(nfiles,2)
+    cc2D.Divide(nfiles/2,2)
 
 # Open file and get list of keys
 f = files[0]
