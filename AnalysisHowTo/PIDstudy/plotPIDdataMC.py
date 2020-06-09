@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import os,sys
 from optparse import OptionParser
-from ROOT import gDirectory,gStyle,TFile,TCanvas,TF1,TLegend
+from ROOT import gDirectory,gStyle,gROOT,TFile,TCanvas,TF1,TLegend
 
 # define function to get list of string keys in a directory
 def GetKeyNames( self, dir = "" ):
@@ -13,6 +13,7 @@ TFile.GetKeyNames = GetKeyNames
 def main():
 
     # some basic setup for canvases and legends
+    gROOT.SetBatch(1)
     gStyle.SetOptStat(0)
     leg = TLegend(0.6,0.7,0.9,0.9)
     
@@ -49,6 +50,7 @@ def main():
     parser.add_option("-c","--min-slice", dest="minslice", help="Minimum momentum for 1D projection")
     parser.add_option("-d","--max-slice", dest="maxslice", help="Maximum momentum for 1D projection")
     parser.add_option("-t","--trange", dest="trange", help="Timing |DeltaT| maximum")
+    parser.add_option("-v","--verbose", action="store_true", default=False, dest="verbose", help="Verbose mode (see canvases produced)")
 
     # set parser options if available
     (options, args) = parser.parse_args(sys.argv)
@@ -66,6 +68,9 @@ def main():
         maxSliceP = float(options.maxslice)
     if options.trange:
         maxDeltaT = float(options.trange)
+    if options.verbose:
+        print("verbose")
+        gROOT.SetBatch(0)
 
     # Get list of ROOT histogram files (and labels) to include from input text file
     files = []
@@ -74,7 +79,7 @@ def main():
     inputlines = finput.read().splitlines()
     for line in inputlines:
         input_list = line.split(",")
-        print input_list
+        #print input_list
         files.append(TFile.Open(input_list[0]))
         labels.append(input_list[1])
         
