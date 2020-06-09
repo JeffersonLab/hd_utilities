@@ -145,9 +145,8 @@ for hist,particle in zip(hists,particles):
                 h.GetXaxis().SetRangeUser(minProtonPrange,maxProtonPrange)
         
         cc2D.cd(ifile+1)
-        h.SetTitle(label+": "+h.GetTitle())
         h.Draw("colz")
-        
+
         if "CDC dE/dx" in h.GetYaxis().GetTitle():
             if h.GetTitle() == "p":
                 fMinProton_dEdx.Draw("same")
@@ -155,7 +154,9 @@ for hist,particle in zip(hists,particles):
                 fMaxElectron_dEdx.Draw("same")
             else:
                 fMaxPion_dEdx.Draw("same")
-        
+                
+        h.SetTitle(label+": "+h.GetTitle())
+
         ifile += 1
     ihist += 1
     
