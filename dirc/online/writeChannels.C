@@ -234,7 +234,7 @@ void writeChannels(int run = 71311, int DAC = 100, bool unityGain = false, bool 
 
     // load equalized gain from Andrew's TOT analysis
     ifstream equalizeTOTfile;
-    equalizeTOTfile.open("dT_Equalized_Gains_v2.txt");
+    equalizeTOTfile.open("dT_Equalized_Gains.txt");
     string myChannel[6912], equalizeTOTgain[2][6912], myNorthGain[6912];
     if(equalizeTOTfile.is_open()) {
         for(int i = 0; i < 6912*3; ++i){
