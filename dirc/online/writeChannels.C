@@ -24,8 +24,8 @@ pixel::pixel(int locMod, int locChan, int locSlot, int locFiber, int locRow, int
 void writeChannels(int run = 71311, int DAC = 100, bool unityGain = false, bool minGain = false, bool equalizeTOT = false) {
     
     gStyle->SetOptStat(11111111);
-    gSystem->Exec("mkdir maps");
-    gSystem->Exec("mkdir config");
+    gSystem->Exec("mkdir -p maps");
+    gSystem->Exec("mkdir -p config");
     
     TCanvas *cc = new TCanvas("cc", "cc", 1000, 800);
     cc->Divide(2,2);
@@ -235,7 +235,7 @@ void writeChannels(int run = 71311, int DAC = 100, bool unityGain = false, bool 
     // load equalized gain from Andrew's TOT analysis
     ifstream equalizeTOTfile;
     equalizeTOTfile.open("dT_Equalized_Gains.txt");
-    string myChannel[6912], equalizeTOTgain[2][6912], myNorthGain[6912];
+    string myChannel[6912], equalizeTOTgain[2][6912];
     if(equalizeTOTfile.is_open()) {
         for(int i = 0; i < 6912*3; ++i){
             equalizeTOTfile >> myChannel[i];
@@ -273,12 +273,13 @@ void writeChannels(int run = 71311, int DAC = 100, bool unityGain = false, bool 
                     int pmtcol = j/8;
                     int globpixel = (pmtrow*64 + pmtcol*64*18) + i + (j - 8*pmtcol)*8;
                     
-                    int ibox = 0;
-                    if(locPixel.slot == 3 || (locPixel.slot == 4 && locPixel.fiber < 12)) ibox = 1;
+                    int ibox = 1; // South OB default
+                    if(locPixel.slot == 3 || (locPixel.slot == 4 && locPixel.fiber < 12)) ibox = 0; // slot/fibers for North OB
                     
                     if(equalizeTOT) {
                         cout<<"equalize TOT "<<globpixel<<" gain="<<locPixel.gain<<endl;
                         pixels.at(ipix).gain = atoi(equalizeTOTgain[ibox][globpixel].data());
+                        locPixel = pixels.at(ipix);
                         cout<<"new gain="<<locPixel.gain<<endl;
                     }
                     
@@ -372,8 +373,8 @@ void writeChannels(int run = 71311, int DAC = 100, bool unityGain = false, bool 
         for(int ifiber=0; ifiber<24; ifiber++) {
             //if(islot==4 && ifiber<12) continue;  // for South only
             
-            int ibox = 0;
-            if(islot == 3 || (islot == 4 && ifiber < 12)) ibox = 1;
+            int ibox = 1;
+            if(islot == 3 || (islot == 4 && ifiber < 12)) ibox = 0;
             
             configfile<<"########################"<<endl;
             configfile<<"SSP_FIBER   "<<ifiber<<endl;
@@ -446,14 +447,14 @@ void writeChannels(int run = 71311, int DAC = 100, bool unityGain = false, bool 
     TCanvas *dd = new TCanvas("dd", "dd", 1600, 600);
     gStyle->SetOptStat(0);
     
-    TString box = "S";
+    TString box = "N";
     TFile *fout = new TFile("maps.root","recreate");
-    TText *tx = new TLatex(-20, -8, "South OB");
+    TText *tx = new TLatex(-20, -8, "North OB");
     tx->SetTextSize(0.09);
     for(int ibox=0; ibox<2; ibox++) {
         if(ibox == 1) {
-            box = "N";
-            tx->SetText(-20, -8, "North OB");
+            box = "S";
+            tx->SetText(-20, -8, "South OB");
         }
         hGainMap[ibox]->SetMinimum(0);
         hGainMap[ibox]->SetMaximum(500);
