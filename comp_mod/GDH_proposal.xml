@@ -20,7 +20,7 @@ Assume 90kHz entire time
 =====================================================================
 runningTimeOnFloor
 
-Assume 27 PAC days of production running
+Assume 27 PAC days of production running, so a total of 54 running days
 
 =====================================================================
 runningEfficiency
@@ -153,7 +153,7 @@ here:  https://halldweb.jlab.org/wiki/index.php/GlueX-II_and_DIRC_ERR )
 -->
 <compMod>
 <parameter name="triggerRate" value="90e3" units="Hz"/>
-<parameter name="runningTimeOnFloor" value="27.0" units="days"/>
+<parameter name="runningTimeOnFloor" value="54.0" units="days"/>
 <parameter name="runningEfficiency" value="0.50"/>
 <parameter name="eventsize" value="13.0" units="kB"/>
 <parameter name="eventsPerRun" value="400" units="Mevent"/>
