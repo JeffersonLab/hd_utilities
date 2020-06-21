@@ -1076,7 +1076,7 @@ void ConvertTree(TString treeName){
   cout << endl << endl << "WRITING THE OUTPUT TREE..." << endl;
   gOutputFile->cd();
   outTree.Write();
-  cout << "FINISHED (entries = )" << nEntries << endl << endl;
+  cout << "FINISHED (entries = " << nEntries << ")" << endl << endl;
 
 }
 
