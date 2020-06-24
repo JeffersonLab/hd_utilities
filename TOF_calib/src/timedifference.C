@@ -72,12 +72,13 @@ void timedifference(int Run, int REF, int REFPLANE){
   double dummy;
   for (int n=0; n<NPMTS; n++){
     INF >> idx;
-    for (int s=0;s<17;s++) {
+    for (int s=0;s<15;s++) {
       INF >> FitPar[n][s];
     }
     INF>>dummy; // this is the chi2 of both fits
   }
   INF.close();
+  double ReferenceLoc = 1500.;  // this is the reference ADC value to calibrate to. any walk correction is zero to this point
 
   TFile *ROOTFile = new TFile(ROOTFileName);
   TTree *t3 = (TTree*)ROOTFile->Get("TOFcalib/t3");
@@ -154,43 +155,42 @@ void timedifference(int Run, int REF, int REFPLANE){
 	  int idxR = idxL + BARS_PER_PLANE;
 
 	  // apply walk correction
-	  int DOFF = 0;
-	  if (PEAKL[n]>FitPar[idxL][16]){
-	    DOFF = 8;
+	  double ADCval = PEAKL[n];
+	  if (ADCval>4090){
+	    ADCval = 4090;
 	  }
-	  double a1 = FitPar[idxL][0+DOFF]
-	    +FitPar[idxL][2+DOFF]*TMath::Power(PEAKL[n],-0.5) 
-	    +FitPar[idxL][4+DOFF]*TMath::Power(PEAKL[n],-0.33) 
-	    +FitPar[idxL][6+DOFF]*TMath::Power(PEAKL[n],-0.2);
-	  if (PEAKL[n]>4095){
-	    a1 += 0.55;
-	  }
-
-	  DOFF = 8;
-	  double a2 = FitPar[idxL][0+DOFF]
-	    +FitPar[idxL][2+DOFF]*TMath::Power(1500.,-0.5) 
-	    +FitPar[idxL][4+DOFF]*TMath::Power(1500.,-0.33) 
-	    +FitPar[idxL][6+DOFF]*TMath::Power(1500.,-0.2);
-
+	  double a1 = FitPar[idxL][0]
+	    +FitPar[idxL][2]/ADCval
+	    +FitPar[idxL][4]/ADCval/ADCval
+	    +FitPar[idxL][6]/ADCval/ADCval/ADCval/ADCval
+	    +FitPar[idxL][8]/TMath::Sqrt(ADCval);
+	  
+	  // ReferenceLoc is chosen to be 1500. ADC counts
+	  double a2 = FitPar[idxL][0]
+	    +FitPar[idxL][2]/ReferenceLoc
+	    +FitPar[idxL][4]/ReferenceLoc/ReferenceLoc
+	    +FitPar[idxL][6]/ReferenceLoc/ReferenceLoc/ReferenceLoc/ReferenceLoc
+	    +FitPar[idxL][8]/TMath::Sqrt(ReferenceLoc);
+	  
 	  float tcL = a1 - a2;
-
-	  DOFF = 0;
-	  if (PEAKR[n]>FitPar[idxR][16]){
-	    DOFF = 8;
-	  }	  
-	  a1 = FitPar[idxR][0+DOFF]
-	    +FitPar[idxR][2+DOFF]*TMath::Power(PEAKR[n],-0.5) 
-	    +FitPar[idxR][4+DOFF]*TMath::Power(PEAKR[n],-0.33) 
-	    +FitPar[idxR][6+DOFF]*TMath::Power(PEAKR[n],-0.2);
-	  if (PEAKR[n]>4095){
-	    a1 += 0.55;
+	  
+	  ADCval = PEAKR[n];
+	  if (ADCval>4090){
+	    ADCval = 4090;
 	  }
+	  a1 = FitPar[idxR][0]
+	    +FitPar[idxR][2]/ADCval
+	    +FitPar[idxR][4]/ADCval/ADCval
+	    +FitPar[idxR][6]/ADCval/ADCval/ADCval/ADCval
+	    +FitPar[idxR][8]/TMath::Sqrt(ADCval);
 
-	  DOFF = 8;
-	  a2 = FitPar[idxR][0+DOFF]
-	    +FitPar[idxR][2+DOFF]*TMath::Power(1500.,-0.5) 
-	    +FitPar[idxR][4+DOFF]*TMath::Power(1500.,-0.33) 
-	    +FitPar[idxR][6+DOFF]*TMath::Power(1500.,-0.2);
+	  // ReferenceLoc is chosen to be 1500. ADC counts
+	  a2 = FitPar[idxR][0]
+	    +FitPar[idxR][2]/ReferenceLoc
+	    +FitPar[idxR][4]/ReferenceLoc/ReferenceLoc
+	    +FitPar[idxR][6]/ReferenceLoc/ReferenceLoc/ReferenceLoc/ReferenceLoc
+	    +FitPar[idxR][8]/TMath::Sqrt(ReferenceLoc);
+
 
 	  float tcR = a1 - a2; 
 
@@ -229,11 +229,11 @@ void timedifference(int Run, int REF, int REFPLANE){
 
     if (hp->Integral(1,hp->GetNbinsX()-2)>100){
 
-      if (j-2<6){
+      if (j-2<8){
 	hp->Rebin(4);
 	hp->GetXaxis()->SetRangeUser(-12.,-3.);
       }
-      if (j-2>BARS_PER_PLANE-6){
+      if (j-2>BARS_PER_PLANE-8){
 	hp->Rebin(4);
 	hp->GetXaxis()->SetRangeUser(3.,12.);
       }
