@@ -34,6 +34,10 @@ int NSHORTS = 0;
 int BARS_PER_PLANE = 0; // including 2 short padeles being one
 int PMTS_PER_PLANE = 0; 
 
+
+int REFPADLE = 16;  // was 18
+
+
 TH1F *histdt;
 int DEBUG = 2;  // 0: not print outs, 2: generate plots in pdf, 99: user interupt after draw on screen
 double getmt(int , int , double* ,int );
@@ -63,16 +67,16 @@ void meantime2(int RunNumber){
   // <s> = 1/N Sum(dMT_k - dMT_18)_i  sum over all i
   // this average number is the meatime offsets between paddle k and paddle 18 in plane 0
   for (int k=1;k<BARS_PER_PLANE/2 - NSHORTS/4 + 1;k++){    
-    MTPlane0[k-1] = getmt(18,k,MTPlane1,RunNumber);
+    MTPlane0[k-1] = getmt(REFPADLE,k,MTPlane1,RunNumber);
   }
   for (int k=BARS_PER_PLANE/2 + NSHORTS/4 + 1;k<BARS_PER_PLANE+1;k++){    
-    MTPlane0[k-1] = getmt(18,k,MTPlane1,RunNumber);
+    MTPlane0[k-1] = getmt(REFPADLE,k,MTPlane1,RunNumber);
   }
-  MTPlane0[18-1] = 0.;  // this is the reference paddle!
+  MTPlane0[REFPADLE-1] = 0.;  // this is the reference paddle!
 
   ofstream OUTF;
   char of[128];
-  sprintf(of,"calibration%d/mtparameters_plane0_ref18.dat",RunNumber);
+  sprintf(of,"calibration%d/mtparameters_plane0_ref%d.dat",RunNumber, REFPADLE);
   OUTF.open(of);
   if (OUTF){
     for (int k=0; k<BARS_PER_PLANE; k++){

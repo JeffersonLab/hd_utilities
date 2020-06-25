@@ -5,7 +5,9 @@ set RUN = $1
 mkdir calibration$RUN
 
 # do walk correction
-root -b -q "src/walk1.C+($RUN)"
+root -b -q "src/walk1.C+($RUN)" >& calibration$RUN/walkfit.log
+echo "cat walkfit.log:"
+cat calibration$RUN/walkfit.log
 
 # do mean time determination
 ./domeantime.csh $RUN &
