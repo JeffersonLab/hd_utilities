@@ -49,7 +49,10 @@ double  gMassWindows;
 int  gNumUnusedTracksCut;
 int  gNumUnusedNeutralsCut;
 int  gNumNeutralHyposCut;
+int  gInputIsMC;
 bool gIsMC;
+bool gIsMCAna;
+bool gIsMCGen;
 bool gSafe;
 bool gPrint;
 
@@ -71,7 +74,8 @@ int main(int argc, char** argv){
   cout << "  flatten  -in    <input file name>                     (required)" << endl;
   cout << "           -out   <output file name or none>            (default: none)" << endl;
   cout << "                   (if none, just print info and quit)"   << endl;
-  cout << "           -mc    [is this mc?  0 or 1]                 (default: 0)" << endl;
+  cout << "           -mc    [is this mc? -1, 0, or 1]             (default: -1)" << endl;
+  cout << "                   (-1: determine automatically; 0: no; 1: yes)"   << endl;
   cout << "           -chi2  [optional Chi2/DOF cut value]         (default: 1000)" << endl;
   cout << "           -shQuality  [optional shower quality cut value] (no default)" << endl;
   cout << "           -massWindows  [pi0, eta, (A)Lambda, Ks windows (GeV)] (no default)" << endl;
@@ -99,7 +103,10 @@ int main(int argc, char** argv){
   }
   TString inFileName("");
   TString outFileName("none");
+  gInputIsMC = -1;
   gIsMC = false;
+  gIsMCAna = false;
+  gIsMCGen = false;
   gChi2DOFCut = 1000.0;
   gShQualityCut = -1;
   gMassWindows = -1;
@@ -113,7 +120,8 @@ int main(int argc, char** argv){
     TString argi1(argv[i+1]);
     if (argi == "-in")  inFileName = argi1;
     if (argi == "-out") outFileName = argi1;
-    if (argi == "-mc"){ if (argi1 == "1") gIsMC = true; }
+    if (argi == "-mc"){ if (argi1 == "1") gInputIsMC = 1; 
+                        if (argi1 == "0") gInputIsMC = 0; }
     if (argi == "-chi2"){ gChi2DOFCut = atof(argi1); }
     if (argi == "-shQuality"){ gShQualityCut = atof(argi1); }
     if (argi == "-massWindows"){ gMassWindows = atof(argi1); }
@@ -127,7 +135,7 @@ int main(int argc, char** argv){
   cout << "INPUT PARAMETERS:" << endl << endl;
   cout << "  input file:            " << inFileName << endl;
   cout << "  output file:           " << outFileName << endl;
-  cout << "  MC?                    " << gIsMC << endl;
+  cout << "  MC?                    " << gInputIsMC << endl;
   cout << "  chi2/dof cut:          " << gChi2DOFCut << endl;
   cout << "  shower quality cut:    " << gShQualityCut << endl;
   cout << "  mass windows:          " << gMassWindows << endl;
@@ -204,36 +212,70 @@ void ConvertTree(TString treeName){
 
   double inTargetCenterZ = -1.0;
   {
+    bool hasRunNumber = false;
+    bool hasNumNeutralHypos = false;
+    bool hasNumThrown = false;
+    TObjArray* branchArray = inTree->GetListOfBranches();
+    int nBranches = inTree->GetNbranches();
+    for (int i = 0; i < nBranches; i++){
+      TString branch = branchArray->At(i)->GetName();
+      if (branch == "RunNumber") hasRunNumber = true;
+      if (branch == "NumNeutralHypos") hasNumNeutralHypos = true;
+      if (branch == "NumThrown") hasNumThrown = true;
+    }
+    if (hasRunNumber){ cout << "  OK: found RunNumber" << endl; }
+    else { cout << "  ERROR:  could not find RunNumber" << endl; exit(0); }
+    if (hasNumNeutralHypos){ cout << "  OK: found NumNeutralHypos" << endl; }
+    else { cout << "  OK: no NumNeutralHypos" << endl; }
+    if (hasNumThrown){ cout << "  OK: found NumThrown" << endl; }
+    else { cout << "  OK: no NumThrown" << endl; }
+    if (!hasNumNeutralHypos && !hasNumThrown){
+      cout << "  ERROR: no NumNeutralHypos and no NumThrown" << endl; exit(0); }
+    gIsMC    = hasNumThrown;
+    gIsMCGen = hasNumThrown && !hasNumNeutralHypos;
+    gIsMCAna = hasNumThrown && hasNumNeutralHypos;
+    if (!gIsMC){ cout << "    ==> treating this as ANALYZED DATA" << endl; } 
+    if (gIsMCGen){ cout << "    ==> treating this as THROWN MC" << endl; } 
+    if (gIsMCAna){ cout << "    ==> treating this as ANALYZED MC" << endl; } 
+    if (gInputIsMC == 1 && !gIsMC){
+      cout << "  OVERRIDING ERROR: format incompatible with MC" << endl; exit(0); }
+    if (gInputIsMC == 0 && gIsMCGen){
+      cout << "  OVERRIDING ERROR: format incompatible with ANALYZED DATA" << endl; exit(0); }
+    if (gInputIsMC == 0 && gIsMCAna){
+      gIsMC = false; gIsMCGen = false; gIsMCAna = false;
+      cout << "    OVERRIDING: treating this as ANALYZED DATA instead" << endl; }
     TList* userInfo = inTree->GetUserInfo();
         if (userInfo){ cout << "  OK: found UserInfo" << endl; }
         else { cout << "  ERROR:  could not find UserInfo" << endl; exit(0); }
-    TList* rootMothers = (TList*) userInfo->FindObject("ParticleNameList");
-        if (rootMothers){ cout << "  OK: found ParticleNameList" << endl; }
-        else { cout << "  ERROR:  could not find ParticleNameList" << endl; exit(0); }
-    TMap* rootDecayProductMap = (TMap*) userInfo->FindObject("DecayProductMap");
-        if (rootDecayProductMap){ cout << "  OK: found DecayProductMap" << endl; }
-        else { cout << "  ERROR:  could not find DecayProductMap" << endl; exit(0); }
-    TMap* rootNameToPIDMap = (TMap*) userInfo->FindObject("NameToPIDMap");
-        if (rootNameToPIDMap){ cout << "  OK: found NameToPIDMap" << endl; }
-        else { cout << "  ERROR:  could not find NameToPIDMap" << endl; exit(0); }
-    TMap* miscInfo = (TMap*) userInfo->FindObject("MiscInfoMap");
-        if (miscInfo){ cout << "  OK: found MiscInfoMap" << endl; }
-        else { cout << "  ERROR:  could not find MiscInfoMap" << endl; exit(0); }
-    TObjString* kinFitType = (TObjString*) miscInfo->GetValue("KinFitType");
-        if (kinFitType->GetString() != "" && 
-            kinFitType->GetString() != "0")
-             { cout << "  OK: found KinFitType = "  << kinFitType->GetString() << endl; }
-        else { cout << "  ERROR: bad KinFitType = " << kinFitType->GetString() << endl; exit(0); }
-    TObjString* tosTCZ = (TObjString*) miscInfo->GetValue("Target__CenterZ");
-        if (tosTCZ) 
-             { cout << "  OK: found Target__CenterZ = "  << tosTCZ->GetString() << endl; }
-        else { cout << "  ERROR: could not find Target__CenterZ " << endl; exit(0); }
-    TString tsTCZ(tosTCZ->GetString());
-        if (tsTCZ.IsFloat())
-             { string sTCZ(""); for (int i=0; i<tsTCZ.Length(); i++){ sTCZ += tsTCZ[i]; }
-               inTargetCenterZ = atof(sTCZ.c_str()); 
-               cout << "            inTargetCenterZ = " << inTargetCenterZ << endl; }
-        else { cout << "  ERROR: Target__CenterZ is not a number" << endl; exit(0); }
+    if (!gIsMCGen){
+      TList* rootMothers = (TList*) userInfo->FindObject("ParticleNameList");
+          if (rootMothers){ cout << "  OK: found ParticleNameList" << endl; }
+          else { cout << "  ERROR:  could not find ParticleNameList" << endl; exit(0); }
+      TMap* rootDecayProductMap = (TMap*) userInfo->FindObject("DecayProductMap");
+          if (rootDecayProductMap){ cout << "  OK: found DecayProductMap" << endl; }
+          else { cout << "  ERROR:  could not find DecayProductMap" << endl; exit(0); }
+      TMap* rootNameToPIDMap = (TMap*) userInfo->FindObject("NameToPIDMap");
+          if (rootNameToPIDMap){ cout << "  OK: found NameToPIDMap" << endl; }
+          else { cout << "  ERROR:  could not find NameToPIDMap" << endl; exit(0); }
+      TMap* miscInfo = (TMap*) userInfo->FindObject("MiscInfoMap");
+          if (miscInfo){ cout << "  OK: found MiscInfoMap" << endl; }
+          else { cout << "  ERROR:  could not find MiscInfoMap" << endl; exit(0); }
+      TObjString* kinFitType = (TObjString*) miscInfo->GetValue("KinFitType");
+          if (kinFitType->GetString() != "" && 
+              kinFitType->GetString() != "0")
+               { cout << "  OK: found KinFitType = "  << kinFitType->GetString() << endl; }
+          else { cout << "  ERROR: bad KinFitType = " << kinFitType->GetString() << endl; exit(0); }
+      TObjString* tosTCZ = (TObjString*) miscInfo->GetValue("Target__CenterZ");
+          if (tosTCZ) 
+               { cout << "  OK: found Target__CenterZ = "  << tosTCZ->GetString() << endl; }
+          else { cout << "  ERROR: could not find Target__CenterZ " << endl; exit(0); }
+      TString tsTCZ(tosTCZ->GetString());
+          if (tsTCZ.IsFloat())
+               { string sTCZ(""); for (int i=0; i<tsTCZ.Length(); i++){ sTCZ += tsTCZ[i]; }
+                 inTargetCenterZ = atof(sTCZ.c_str()); 
+                 cout << "            inTargetCenterZ = " << inTargetCenterZ << endl; }
+          else { cout << "  ERROR: Target__CenterZ is not a number" << endl; exit(0); }
+    }
   }
 
 
@@ -244,7 +286,8 @@ void ConvertTree(TString treeName){
   cout << endl << endl << "READING PARTICLE NAMES FROM THE ROOT FILE:" << endl << endl;
 
   map< TString, vector<TString> > decayProductMap;  // from mothers to daughters (glueXNames)
-  {
+  if (gIsMCGen){ cout << "  skipping since this is thrown MC" << endl; }
+  if (!gIsMCGen){
     TList* userInfo = inTree->GetUserInfo();
     vector<TString> eraseVector; // (to remove double-counting)
     TList* rootMothers = (TList*) userInfo->FindObject("ParticleNameList");
@@ -275,7 +318,8 @@ void ConvertTree(TString treeName){
 
   cout << endl << endl << "PERFORMING CHECKS ON THE FINAL STATE:" << endl << endl;
   bool checkFSOkay = true;
-  {
+  if (gIsMCGen){ cout << "  skipping since this is thrown MC" << endl; }
+  if (!gIsMCGen){
     if (decayProductMap.size() == 0){
       cout << endl << "  ERROR: no final state partices found" << endl;
       exit(0);
@@ -334,7 +378,8 @@ void ConvertTree(TString treeName){
 
   cout << endl << endl << "READING PDG NUMBERS FROM THE ROOT FILE:" << endl << endl;
   //map< TString, int > nameToPIDMap;  // map from name to PDG ID (not used)
-  {
+  if (gIsMCGen){ cout << "  skipping since this is thrown MC" << endl; }
+  if (!gIsMCGen){
     TList* userInfo = inTree->GetUserInfo();
     TMap* rootNameToPIDMap = (TMap*) userInfo->FindObject("NameToPIDMap");
     TMapIter tmapIter(rootNameToPIDMap);
@@ -461,13 +506,13 @@ void ConvertTree(TString treeName){
   Int_t  inThrown__PID[MAXTHROWN] = {};   
       if (gIsMC) inTree->SetBranchAddress("Thrown__PID", inThrown__PID);
   Int_t  inThrown__MatchID[MAXTHROWN] = {};   
-      if (gIsMC) inTree->SetBranchAddress("Thrown__MatchID", inThrown__MatchID);
+      if (gIsMCAna) inTree->SetBranchAddress("Thrown__MatchID", inThrown__MatchID);
   Float_t  inThrown__MatchFOM[MAXTHROWN] = {};   
-      if (gIsMC) inTree->SetBranchAddress("Thrown__MatchFOM", inThrown__MatchFOM);
+      if (gIsMCAna) inTree->SetBranchAddress("Thrown__MatchFOM", inThrown__MatchFOM);
   TClonesArray *inThrown__P4 = NULL;
       if (gIsMC) inThrown__P4 = new TClonesArray("TLorentzVector", MAXTHROWN);
-      if (gIsMC) inTree->GetBranch       ("Thrown__P4")->SetAutoDelete(kFALSE);
-      if (gIsMC) inTree->SetBranchAddress("Thrown__P4",&(inThrown__P4));
+      if (gIsMCAna) inTree->GetBranch       ("Thrown__P4")->SetAutoDelete(kFALSE);
+      if (gIsMCAna) inTree->SetBranchAddress("Thrown__P4",&(inThrown__P4));
 
 
 
@@ -482,49 +527,49 @@ void ConvertTree(TString treeName){
   ULong64_t inEventNumber = 0;
       inTree->SetBranchAddress("EventNumber", &inEventNumber);
   TLorentzVector* inX4_Production = NULL;
-      inTree->SetBranchAddress("X4_Production", &inX4_Production);
+      if (!gIsMCGen) inTree->SetBranchAddress("X4_Production", &inX4_Production);
   UInt_t inNumBeam = 0;
-      inTree->SetBranchAddress("NumBeam", &inNumBeam);
+      if (!gIsMCGen) inTree->SetBranchAddress("NumBeam", &inNumBeam);
   UInt_t inNumChargedHypos = 0;
-      inTree->SetBranchAddress("NumChargedHypos", &inNumChargedHypos);
+      if (!gIsMCGen) inTree->SetBranchAddress("NumChargedHypos", &inNumChargedHypos);
   UInt_t inNumNeutralHypos = 0; 
-      inTree->SetBranchAddress("NumNeutralHypos", &inNumNeutralHypos);
+      if (!gIsMCGen) inTree->SetBranchAddress("NumNeutralHypos", &inNumNeutralHypos);
   UInt_t inNumCombos = 0;
-      inTree->SetBranchAddress("NumCombos", &inNumCombos);
+      if (!gIsMCGen) inTree->SetBranchAddress("NumCombos", &inNumCombos);
   UChar_t inNumUnusedTracks = 0;
-      inTree->SetBranchAddress("NumUnusedTracks", &inNumUnusedTracks);
+      if (!gIsMCGen) inTree->SetBranchAddress("NumUnusedTracks", &inNumUnusedTracks);
   Bool_t inIsThrownTopology = false;
-      if (gIsMC) inTree->SetBranchAddress("IsThrownTopology", &inIsThrownTopology);
+      if (!gIsMCGen) if (gIsMC) inTree->SetBranchAddress("IsThrownTopology", &inIsThrownTopology);
 
 
         //   *** Beam Particles (indexed using ComboBeam__BeamIndex) ***
 
   TClonesArray *inBeam__P4_Measured = new TClonesArray("TLorentzVector",MAXBEAM);
-      inTree->GetBranch       ("Beam__P4_Measured")->SetAutoDelete(kFALSE);
-      inTree->SetBranchAddress("Beam__P4_Measured", &(inBeam__P4_Measured));
+      if (!gIsMCGen) inTree->GetBranch       ("Beam__P4_Measured")->SetAutoDelete(kFALSE);
+      if (!gIsMCGen) inTree->SetBranchAddress("Beam__P4_Measured", &(inBeam__P4_Measured));
   TClonesArray *inBeam__X4_Measured = new TClonesArray("TLorentzVector",MAXBEAM);
-      inTree->GetBranch       ("Beam__X4_Measured")->SetAutoDelete(kFALSE);
-      inTree->SetBranchAddress("Beam__X4_Measured", &(inBeam__X4_Measured));
+      if (!gIsMCGen) inTree->GetBranch       ("Beam__X4_Measured")->SetAutoDelete(kFALSE);
+      if (!gIsMCGen) inTree->SetBranchAddress("Beam__X4_Measured", &(inBeam__X4_Measured));
 
 
         //   *** Charged Track Hypotheses (indexed using <particleName>__ChargedIndex) ***
 
   TClonesArray *inChargedHypo__P4_Measured = new TClonesArray("TLorentzVector",MAXTRACKS);
-      inTree->GetBranch       ("ChargedHypo__P4_Measured")->SetAutoDelete(kFALSE);
-      inTree->SetBranchAddress("ChargedHypo__P4_Measured",&(inChargedHypo__P4_Measured));
+      if (!gIsMCGen) inTree->GetBranch       ("ChargedHypo__P4_Measured")->SetAutoDelete(kFALSE);
+      if (!gIsMCGen) inTree->SetBranchAddress("ChargedHypo__P4_Measured",&(inChargedHypo__P4_Measured));
   Float_t inChargedHypo__ChiSq_Tracking[MAXTRACKS] = {}; 
-      inTree->SetBranchAddress("ChargedHypo__ChiSq_Tracking", inChargedHypo__ChiSq_Tracking);
+      if (!gIsMCGen) inTree->SetBranchAddress("ChargedHypo__ChiSq_Tracking", inChargedHypo__ChiSq_Tracking);
   UInt_t  inChargedHypo__NDF_Tracking[MAXTRACKS] = {};   
-      inTree->SetBranchAddress("ChargedHypo__NDF_Tracking", inChargedHypo__NDF_Tracking);
+      if (!gIsMCGen) inTree->SetBranchAddress("ChargedHypo__NDF_Tracking", inChargedHypo__NDF_Tracking);
 
 
         //   *** Neutral Particle Hypotheses (indexed using <particleName>__NeutralIndex) ***
 
   TClonesArray *inNeutralHypo__P4_Measured = new TClonesArray("TLorentzVector",MAXNEUTRALS);
-      inTree->GetBranch       ("NeutralHypo__P4_Measured")->SetAutoDelete(kFALSE);
-      inTree->SetBranchAddress("NeutralHypo__P4_Measured",&(inNeutralHypo__P4_Measured));
+      if (!gIsMCGen) inTree->GetBranch       ("NeutralHypo__P4_Measured")->SetAutoDelete(kFALSE);
+      if (!gIsMCGen) inTree->SetBranchAddress("NeutralHypo__P4_Measured",&(inNeutralHypo__P4_Measured));
   Float_t inNeutralHypo__ShowerQuality[MAXNEUTRALS] = {};
-      inTree->SetBranchAddress("NeutralHypo__ShowerQuality", inNeutralHypo__ShowerQuality);
+      if (!gIsMCGen) inTree->SetBranchAddress("NeutralHypo__ShowerQuality", inNeutralHypo__ShowerQuality);
 
 
         // ************************************
@@ -534,24 +579,24 @@ void ConvertTree(TString treeName){
         //   *** Particle-Independent Data (indexed by combo) ***
 
   Float_t inRFTime_Measured[MAXCOMBOS] = {};
-      inTree->SetBranchAddress("RFTime_Measured", inRFTime_Measured);  
+      if (!gIsMCGen) inTree->SetBranchAddress("RFTime_Measured", inRFTime_Measured);  
   //Float_t inRFTime_KinFit[MAXCOMBOS] = {};
   //    inTree->SetBranchAddress("RFTime_KinFit", inRFTime_KinFit);  
   Float_t inChiSq_KinFit[MAXCOMBOS] = {};
-      inTree->SetBranchAddress("ChiSq_KinFit", inChiSq_KinFit);
+      if (!gIsMCGen) inTree->SetBranchAddress("ChiSq_KinFit", inChiSq_KinFit);
   UInt_t inNDF_KinFit[MAXCOMBOS] = {};
-      inTree->SetBranchAddress("NDF_KinFit", inNDF_KinFit);
+      if (!gIsMCGen) inTree->SetBranchAddress("NDF_KinFit", inNDF_KinFit);
   Float_t inEnergy_Unused[MAXCOMBOS] = {};
-      inTree->SetBranchAddress("Energy_UnusedShowers", inEnergy_Unused);
+      if (!gIsMCGen) inTree->SetBranchAddress("Energy_UnusedShowers", inEnergy_Unused);
 
 
         //   *** Combo Beam Particles (indexed by combo) ***
 
   Int_t inBeamIndex[MAXCOMBOS] = {};
-      inTree->SetBranchAddress("ComboBeam__BeamIndex", inBeamIndex);
+      if (!gIsMCGen) inTree->SetBranchAddress("ComboBeam__BeamIndex", inBeamIndex);
   TClonesArray *inBeam__P4_KinFit = new TClonesArray("TLorentzVector",MAXCOMBOS);
-      inTree->GetBranch       ("ComboBeam__P4_KinFit")->SetAutoDelete(kFALSE);
-      inTree->SetBranchAddress("ComboBeam__P4_KinFit", &(inBeam__P4_KinFit));
+      if (!gIsMCGen) inTree->GetBranch       ("ComboBeam__P4_KinFit")->SetAutoDelete(kFALSE);
+      if (!gIsMCGen) inTree->SetBranchAddress("ComboBeam__P4_KinFit", &(inBeam__P4_KinFit));
 
 
         //   *** Combo Tracks ***
@@ -609,40 +654,40 @@ void ConvertTree(TString treeName){
 
     // non-particle information
 
-  double outRunNumber;        outTree.Branch("Run",             &outRunNumber,       "Run/D");
-  double outEventNumber;      outTree.Branch("Event",           &outEventNumber,     "Event/D");
-  double outChi2;             outTree.Branch("Chi2",            &outChi2,            "Chi2/D");
-  double outChi2DOF;          outTree.Branch("Chi2DOF",         &outChi2DOF,         "Chi2DOF/D");
-  double outRFTime;           outTree.Branch("RFTime",          &outRFTime,          "RFTime/D");
-  double outRFDeltaT;         outTree.Branch("RFDeltaT",        &outRFDeltaT,        "RFDeltaT/D");
-  double outEnUnusedSh;       outTree.Branch("EnUnusedSh",      &outEnUnusedSh,      "EnUnusedSh/D");
-  double outNumUnusedTracks;  outTree.Branch("NumUnusedTracks", &outNumUnusedTracks, "NumUnusedTracks/D");
-  double outNumNeutralHypos;  outTree.Branch("NumNeutralHypos", &outNumNeutralHypos, "NumNeutralHypos/D");
-  double outNumBeam;          outTree.Branch("NumBeam",         &outNumBeam,         "NumBeam/D");
-  double outNumCombos;        outTree.Branch("NumCombos",       &outNumCombos,       "NumCombos/D");
-  double outProdVx;           outTree.Branch("ProdVx",          &outProdVx,          "ProdVx/D");
-  double outProdVy;           outTree.Branch("ProdVy",          &outProdVy,          "ProdVy/D");
-  double outProdVz;           outTree.Branch("ProdVz",          &outProdVz,          "ProdVz/D");
-  double outProdVt;           outTree.Branch("ProdVt",          &outProdVt,          "ProdVt/D");
-  double outPxPB;             outTree.Branch("PxPB",            &outPxPB,            "PxPB/D");
-  double outPyPB;             outTree.Branch("PyPB",            &outPyPB,            "PyPB/D");
-  double outPzPB;             outTree.Branch("PzPB",            &outPzPB,            "PzPB/D");
-  double outEnPB;             outTree.Branch("EnPB",            &outEnPB,            "EnPB/D");
-  double outRPxPB;            outTree.Branch("RPxPB",           &outRPxPB,           "RPxPB/D");
-  double outRPyPB;            outTree.Branch("RPyPB",           &outRPyPB,           "RPyPB/D");
-  double outRPzPB;            outTree.Branch("RPzPB",           &outRPzPB,           "RPzPB/D");
-  double outREnPB;            outTree.Branch("REnPB",           &outREnPB,           "REnPB/D");
+  double outRunNumber;                       outTree.Branch("Run",             &outRunNumber,       "Run/D");
+  double outEventNumber;                     outTree.Branch("Event",           &outEventNumber,     "Event/D");
+  double outChi2;             if (!gIsMCGen) outTree.Branch("Chi2",            &outChi2,            "Chi2/D");
+  double outChi2DOF;          if (!gIsMCGen) outTree.Branch("Chi2DOF",         &outChi2DOF,         "Chi2DOF/D");
+  double outRFTime;           if (!gIsMCGen) outTree.Branch("RFTime",          &outRFTime,          "RFTime/D");
+  double outRFDeltaT;         if (!gIsMCGen) outTree.Branch("RFDeltaT",        &outRFDeltaT,        "RFDeltaT/D");
+  double outEnUnusedSh;       if (!gIsMCGen) outTree.Branch("EnUnusedSh",      &outEnUnusedSh,      "EnUnusedSh/D");
+  double outNumUnusedTracks;  if (!gIsMCGen) outTree.Branch("NumUnusedTracks", &outNumUnusedTracks, "NumUnusedTracks/D");
+  double outNumNeutralHypos;  if (!gIsMCGen) outTree.Branch("NumNeutralHypos", &outNumNeutralHypos, "NumNeutralHypos/D");
+  double outNumBeam;          if (!gIsMCGen) outTree.Branch("NumBeam",         &outNumBeam,         "NumBeam/D");
+  double outNumCombos;        if (!gIsMCGen) outTree.Branch("NumCombos",       &outNumCombos,       "NumCombos/D");
+  double outProdVx;           if (!gIsMCGen) outTree.Branch("ProdVx",          &outProdVx,          "ProdVx/D");
+  double outProdVy;           if (!gIsMCGen) outTree.Branch("ProdVy",          &outProdVy,          "ProdVy/D");
+  double outProdVz;           if (!gIsMCGen) outTree.Branch("ProdVz",          &outProdVz,          "ProdVz/D");
+  double outProdVt;           if (!gIsMCGen) outTree.Branch("ProdVt",          &outProdVt,          "ProdVt/D");
+  double outPxPB;             if (!gIsMCGen) outTree.Branch("PxPB",            &outPxPB,            "PxPB/D");
+  double outPyPB;             if (!gIsMCGen) outTree.Branch("PyPB",            &outPyPB,            "PyPB/D");
+  double outPzPB;             if (!gIsMCGen) outTree.Branch("PzPB",            &outPzPB,            "PzPB/D");
+  double outEnPB;             if (!gIsMCGen) outTree.Branch("EnPB",            &outEnPB,            "EnPB/D");
+  double outRPxPB;            if (!gIsMCGen) outTree.Branch("RPxPB",           &outRPxPB,           "RPxPB/D");
+  double outRPyPB;            if (!gIsMCGen) outTree.Branch("RPyPB",           &outRPyPB,           "RPyPB/D");
+  double outRPzPB;            if (!gIsMCGen) outTree.Branch("RPzPB",           &outRPzPB,           "RPzPB/D");
+  double outREnPB;            if (!gIsMCGen) outTree.Branch("REnPB",           &outREnPB,           "REnPB/D");
 
     // MC information
 
-  double outMCPxPB;        if (gIsMC) outTree.Branch("MCPxPB",      &outMCPxPB,      "MCPxPB/D");
-  double outMCPyPB;        if (gIsMC) outTree.Branch("MCPyPB",      &outMCPyPB,      "MCPyPB/D");
-  double outMCPzPB;        if (gIsMC) outTree.Branch("MCPzPB",      &outMCPzPB,      "MCPzPB/D");
+  double outMCPxPB;        if (gIsMCAna) outTree.Branch("MCPxPB",      &outMCPxPB,      "MCPxPB/D");
+  double outMCPyPB;        if (gIsMCAna) outTree.Branch("MCPyPB",      &outMCPyPB,      "MCPyPB/D");
+  double outMCPzPB;        if (gIsMCAna) outTree.Branch("MCPzPB",      &outMCPzPB,      "MCPzPB/D");
   double outMCEnPB;        if (gIsMC) outTree.Branch("MCEnPB",      &outMCEnPB,      "MCEnPB/D");
   double outMCDecayCode1;  if (gIsMC) outTree.Branch("MCDecayCode1",&outMCDecayCode1,"MCDecayCode1/D");
   double outMCDecayCode2;  if (gIsMC) outTree.Branch("MCDecayCode2",&outMCDecayCode2,"MCDecayCode2/D");
   double outMCExtras;      if (gIsMC) outTree.Branch("MCExtras",    &outMCExtras,    "MCExtras/D");
-  double outMCSignal;      if (gIsMC) outTree.Branch("MCSignal",    &outMCSignal,    "MCSignal/D");
+  double outMCSignal;      if (gIsMCAna) outTree.Branch("MCSignal",    &outMCSignal,    "MCSignal/D");
 
     // particle information
 
@@ -717,11 +762,11 @@ void ConvertTree(TString treeName){
       if (gIsMC) inTree->SetBranchStatus("NumThrown",1);
       inTree->SetBranchStatus("RunNumber",1);
       inTree->SetBranchStatus("EventNumber",1);
-      inTree->SetBranchStatus("NumBeam",1);
-      inTree->SetBranchStatus("NumChargedHypos",1);
-      inTree->SetBranchStatus("NumNeutralHypos",1);
-      inTree->SetBranchStatus("NumCombos",1);
-      inTree->SetBranchStatus("NumUnusedTracks",1);
+      if (!gIsMCGen) inTree->SetBranchStatus("NumBeam",1);
+      if (!gIsMCGen) inTree->SetBranchStatus("NumChargedHypos",1);
+      if (!gIsMCGen) inTree->SetBranchStatus("NumNeutralHypos",1);
+      if (!gIsMCGen) inTree->SetBranchStatus("NumCombos",1);
+      if (!gIsMCGen) inTree->SetBranchStatus("NumUnusedTracks",1);
       inTree->GetEntry(iEntry);
       int numUnusedNeutrals = inNumNeutralHypos - numFSNeutrals;
       if ((gNumUnusedTracksCut   >= 0) && (inNumUnusedTracks   > gNumUnusedTracksCut)) continue;
@@ -793,7 +838,7 @@ void ConvertTree(TString treeName){
           (outMCExtras < 0.1)) outMCSignal = 1;
         // do some checks on the MC information
       bool mcProblems = false;
-      if (outMCSignal > 0.1){
+      if (!gIsMCGen && outMCSignal > 0.1){
           // check orderedThrownIndices
         if (orderedThrownIndices.size() != orderedParticleNames.size()){
           cout << "ERROR: problem with size of orderedThrownIndices" << endl;
@@ -820,6 +865,7 @@ void ConvertTree(TString treeName){
         cout << "  NumThrown = " << inNumThrown << endl;
         cout << "  GeneratedEnergy = " << inThrownBeam__GeneratedEnergy << endl;
         cout << "  FSCode = " << outMCDecayCode2 << "_" << outMCDecayCode1 << endl;
+        cout << "  MCExtras = " << outMCExtras << endl;
         cout << "  IsThrownTopology = " << inIsThrownTopology << endl;
         for (int i = 0; i < inNumThrown; i++){      
           cout << "    THROWN INDEX = " << i << endl;
@@ -839,6 +885,7 @@ void ConvertTree(TString treeName){
 
       // loop over combos
 
+    if (gIsMCGen) inNumCombos = 1;
     for (UInt_t ic = 0; ic < inNumCombos; ic++){
 
         // non-particle information
@@ -846,6 +893,7 @@ void ConvertTree(TString treeName){
       TLorentzVector *p4, *p4a, *p4b, *x4;
       outRunNumber       = inRunNumber;
       outEventNumber     = inEventNumber;
+      if (!gIsMCGen){
       outNumUnusedTracks = inNumUnusedTracks;
       outNumNeutralHypos = inNumNeutralHypos;
       outNumBeam         = inNumBeam;
@@ -877,7 +925,7 @@ void ConvertTree(TString treeName){
       outRPxPB = p4->Px();
       outRPyPB = p4->Py();
       outRPzPB = p4->Pz();
-      outREnPB = p4->E();
+      outREnPB = p4->E();}
           if (gIsMC){
       outMCPxPB = 0.0;
       outMCPyPB = 0.0;
@@ -1015,7 +1063,7 @@ void ConvertTree(TString treeName){
 
       // print some information (for debugging only)
 
-      if ((iEntry < 5) && (gPrint)){
+      if ((iEntry < 5) && (gPrint) && !gIsMCGen){
         cout << "  *******************************" << endl;
         cout << "  **** INFO FOR EVENT " << iEntry+1 << " ****" << endl;
         cout << "  *******************************" << endl;
@@ -1048,7 +1096,7 @@ void ConvertTree(TString treeName){
                << mass << "  " << rmass << endl;
         }}
       }
-      if (iEntry+1 == 5 && ic+1 == inNumCombos && gPrint){ 
+      if (iEntry+1 == 5 && ic+1 == inNumCombos && gPrint && !gIsMCGen){ 
         cout << endl << endl << "DONE PRINTING TEST INFORMATION FOR FIVE EVENTS" << endl << endl;
         cout << "CONTINUING THE CONVERSION... " << endl << endl;
       }
