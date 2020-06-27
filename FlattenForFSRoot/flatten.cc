@@ -41,7 +41,7 @@ pair<int,int> FSCode(vector< vector<int> > pdgIDs);
 vector< vector<int> > OrderedThrownIndices(int numThrown, int pids[], int parentIndices[]);
 int FSMCExtras(int numThrown, int pids[]);
 
-  // global input parameters
+  // global input parameters and derived parameters
 TFile* gInputFile;
 TFile* gOutputFile;
 double  gChi2DOFCut;
@@ -51,11 +51,21 @@ int  gNumUnusedTracksCut;
 int  gNumUnusedNeutralsCut;
 int  gNumNeutralHyposCut;
 int  gInputIsMC;
+TString gMCTag;
+TString gMCTagExtras;
+TString gMCTagDecayCode2;
+TString gMCTagDecayCode1;
 bool gIsMC;
 bool gIsMCAna;
 bool gIsMCGen;
+bool gIsMCGenTag;
 bool gSafe;
 bool gPrint;
+
+  // derived global parameters to control output
+bool gUseParticles;
+bool gUseMCParticles;
+bool gUseMCInfo;
 
 
 // **************************************
@@ -73,10 +83,12 @@ int main(int argc, char** argv){
   cout << "The final state is determined automatically from the input file." << endl << endl;
   cout << "Usage:" << endl;
   cout << "  flatten  -in    <input file name>                     (required)" << endl;
-  cout << "           -out   <output file name or none>            (default: none)" << endl;
+  cout << "           -out   [output file name or none]            (default: none)" << endl;
   cout << "                   (if none, just print info and quit)"   << endl;
   cout << "           -mc    [is this mc? -1, 0, or 1]             (default: -1)" << endl;
   cout << "                   (-1: determine automatically; 0: no; 1: yes)"   << endl;
+  cout << "           -mctag [MCExtras_MCDecayCode2_MCDecayCode1]  (default: none)" << endl;
+  cout << "                   (pick out a single final state from MC)"  << endl;
   cout << "           -chi2  [optional Chi2/DOF cut value]         (default: 1000)" << endl;
   cout << "           -shQuality  [optional shower quality cut value] (no default)" << endl;
   cout << "           -massWindows  [pi0, eta, (A)Lambda, Ks windows (GeV)] (no default)" << endl;
@@ -108,6 +120,11 @@ int main(int argc, char** argv){
   gIsMC = false;
   gIsMCAna = false;
   gIsMCGen = false;
+  gIsMCGenTag = false;
+  gMCTag = "";
+  gMCTagExtras = "";
+  gMCTagDecayCode2 = "";
+  gMCTagDecayCode1 = "";
   gChi2DOFCut = 1000.0;
   gShQualityCut = -1;
   gMassWindows = -1;
@@ -123,6 +140,7 @@ int main(int argc, char** argv){
     if (argi == "-out") outFileName = argi1;
     if (argi == "-mc"){ if (argi1 == "1") gInputIsMC = 1; 
                         if (argi1 == "0") gInputIsMC = 0; }
+    if (argi == "-mctag"){ gMCTag = argi1; }
     if (argi == "-chi2"){ gChi2DOFCut = atof(argi1); }
     if (argi == "-shQuality"){ gShQualityCut = atof(argi1); }
     if (argi == "-massWindows"){ gMassWindows = atof(argi1); }
@@ -132,11 +150,27 @@ int main(int argc, char** argv){
     if (argi == "-safe"){ if (argi1 == "0") gSafe = false; }
     if (argi == "-print"){ if (argi1 == "1") gPrint = true; }
   }
+  if (gMCTag == "none") gMCTag = "";
+  if (gMCTag != ""){
+    int numUnderscores = 0;
+    for (int j = 0; j < gMCTag.Length(); j++){
+      TString digit = TString(gMCTag[j]);
+      if (digit == "_") numUnderscores++;
+      if (numUnderscores == 0 && digit.IsDigit()) gMCTagExtras += digit;
+      if (numUnderscores == 1 && digit.IsDigit()) gMCTagDecayCode2 += digit;
+      if (numUnderscores == 2 && digit.IsDigit()) gMCTagDecayCode1 += digit;
+    }
+  }
   cout << endl;
   cout << "INPUT PARAMETERS:" << endl << endl;
   cout << "  input file:            " << inFileName << endl;
   cout << "  output file:           " << outFileName << endl;
   cout << "  MC?                    " << gInputIsMC << endl;
+  if (gMCTag != "")
+  cout << "  MC Tag:                " << gMCTagExtras << "_" << gMCTagDecayCode2 
+                                                      << "_" << gMCTagDecayCode1 << endl;
+  if (gMCTag == "")
+  cout << "  MC Tag:                " << "none" << endl;
   cout << "  chi2/dof cut:          " << gChi2DOFCut << endl;
   cout << "  shower quality cut:    " << gShQualityCut << endl;
   cout << "  mass windows:          " << gMassWindows << endl;
@@ -148,6 +182,11 @@ int main(int argc, char** argv){
   if ((inFileName == "") || (outFileName == "")){
      cout << "ERROR: specify input and output files -- see usage notes above" << endl;
      exit(0);
+  }
+  if ((gMCTag != "") && 
+      GlueXDecayProductMap(gMCTagDecayCode1.Atoi(),gMCTagDecayCode2.Atoi()).size() == 0){
+    cout << "ERROR: no particles corresponding to mctag = " << gMCTag << endl;
+    exit(0);
   }
   ConvertFile(inFileName,outFileName);
   return 0;
@@ -245,10 +284,21 @@ void ConvertTree(TString treeName){
     if (gInputIsMC == 0 && gIsMCAna){
       gIsMC = false; gIsMCGen = false; gIsMCAna = false;
       cout << "    OVERRIDING: treating this as ANALYZED DATA instead" << endl; }
+    if (gIsMCGen && gMCTag != "") gIsMCGenTag = true;
+    gUseParticles = (gIsMCAna || !gIsMC);
+    gUseMCParticles = (gIsMCAna || gIsMCGenTag);
+    gUseMCInfo = (gIsMC);
+    cout << "      info to include in output..." << endl;
+    cout << "          particle info:  "; 
+      if (gUseParticles){ cout << "YES"; } else{ cout << "NO"; } cout << endl;
+    cout << "          MC particle info:  "; 
+      if (gUseMCParticles){ cout << "YES"; } else{ cout << "NO"; } cout << endl;
+    cout << "          MC info:  "; 
+      if (gUseMCInfo){ cout << "YES"; } else{ cout << "NO"; } cout << endl;
     TList* userInfo = inTree->GetUserInfo();
         if (userInfo){ cout << "  OK: found UserInfo" << endl; }
         else { cout << "  ERROR:  could not find UserInfo" << endl; exit(0); }
-    if (!gIsMCGen){
+    if (gUseParticles){
       TList* rootMothers = (TList*) userInfo->FindObject("ParticleNameList");
           if (rootMothers){ cout << "  OK: found ParticleNameList" << endl; }
           else { cout << "  ERROR:  could not find ParticleNameList" << endl; exit(0); }
@@ -287,8 +337,7 @@ void ConvertTree(TString treeName){
   cout << endl << endl << "READING PARTICLE NAMES FROM THE ROOT FILE:" << endl << endl;
 
   map< TString, vector<TString> > decayProductMap;  // from mothers to daughters (glueXNames)
-  if (gIsMCGen){ cout << "  skipping since this is thrown MC" << endl; }
-  if (!gIsMCGen){
+  if (gUseParticles){
     TList* userInfo = inTree->GetUserInfo();
     vector<TString> eraseVector; // (to remove double-counting)
     TList* rootMothers = (TList*) userInfo->FindObject("ParticleNameList");
@@ -312,6 +361,16 @@ void ConvertTree(TString treeName){
       decayProductMap.erase(eraseVector[i]);
     }
   }
+  if (!gUseParticles && gUseMCParticles){
+    cout << "  skipping, setting particles using mctag instead" << endl;
+    decayProductMap = GlueXDecayProductMap(gMCTagDecayCode1.Atoi(),gMCTagDecayCode2.Atoi());
+  }
+  if (gUseParticles || gUseMCParticles){
+    if (decayProductMap.size() == 0){
+      cout << endl << "  ERROR: no final state partices found" << endl;
+      exit(0);
+    }
+  }
 
      // **********************************************************************
      // STEP 1C:  perform checks on the final state
@@ -319,12 +378,8 @@ void ConvertTree(TString treeName){
 
   cout << endl << endl << "PERFORMING CHECKS ON THE FINAL STATE:" << endl << endl;
   bool checkFSOkay = true;
-  if (gIsMCGen){ cout << "  skipping since this is thrown MC" << endl; }
-  if (!gIsMCGen){
-    if (decayProductMap.size() == 0){
-      cout << endl << "  ERROR: no final state partices found" << endl;
-      exit(0);
-    }
+  if (decayProductMap.size() == 0){ cout << "  skipping, no final state particles" << endl; }
+  else{
     for (map<TString, vector<TString> >::const_iterator mItr = decayProductMap.begin();
          mItr != decayProductMap.end(); mItr++){
       TString motherName = mItr->first;
@@ -379,8 +434,8 @@ void ConvertTree(TString treeName){
 
   cout << endl << endl << "READING PDG NUMBERS FROM THE ROOT FILE:" << endl << endl;
   //map< TString, int > nameToPIDMap;  // map from name to PDG ID (not used)
-  if (gIsMCGen){ cout << "  skipping since this is thrown MC" << endl; }
-  if (!gIsMCGen){
+  if (!gUseParticles){ cout << "  skipping, not using particle information" << endl; }
+  else{
     TList* userInfo = inTree->GetUserInfo();
     TMap* rootNameToPIDMap = (TMap*) userInfo->FindObject("NameToPIDMap");
     TMapIter tmapIter(rootNameToPIDMap);
@@ -402,7 +457,8 @@ void ConvertTree(TString treeName){
   cout << endl << endl << "PUTTING PARTICLES IN THE RIGHT ORDER AND SETTING INDICES:" << endl << endl;
 
   vector< vector<TString> > orderedParticleNames;  // (glueXNames)
-  {
+  if (decayProductMap.size() == 0){ cout << "  skipping, no final state particles" << endl; }
+  else{
     for (map<TString, vector<TString> >::const_iterator mItr = decayProductMap.begin();
          mItr != decayProductMap.end(); mItr++){
       if (FSParticleType(mItr->first) != "--"){
