@@ -32,6 +32,7 @@ TString FSParticleType(TString glueXParticleType);
 TString GlueXParticleClass(TString glueXParticleType);
 int GlueXNeutralsCounter(TString glueXParticleType);
 int PDGIDNumber(TString glueXParticleType);
+map<TString, vector<TString> > GlueXDecayProductMap(int fsCode1, int fsCode2);
 int FSParticleOrder(TString glueXParticleType);
 int FSParticleOrder(int pdgID);
 pair<int,int> FSCode(vector< vector<TString> > glueXParticleTypes);
@@ -1514,3 +1515,60 @@ pair<int,int> FSCode(vector< vector<int> > pdgIDs){
 }
 
 
+map<TString, vector<TString> > GlueXDecayProductMap(int fsCode1, int fsCode2){
+  map<TString, vector<TString> > gluexMap;
+  int n[16];
+  n[ 0] =   (fsCode1%10);
+  n[ 1] = (((fsCode1%100)-(fsCode1%10))/10);
+  n[ 2] = (((fsCode1%1000)-(fsCode1%100))/100);
+  n[ 3] = (((fsCode1%10000)-(fsCode1%1000))/1000);
+  n[ 4] = (((fsCode1%100000)-(fsCode1%10000))/10000);
+  n[ 5] = (((fsCode1%1000000)-(fsCode1%100000))/100000);
+  n[ 6] = (((fsCode1%10000000)-(fsCode1%1000000))/1000000);
+  n[ 7] =   (fsCode2%10);
+  n[ 8] = (((fsCode2%100)-(fsCode2%10))/10);
+  n[ 9] = (((fsCode2%1000)-(fsCode2%100))/100);
+  n[10] = (((fsCode2%10000)-(fsCode2%1000))/1000);
+  n[11] = (((fsCode2%100000)-(fsCode2%10000))/10000);
+  n[12] = (((fsCode2%1000000)-(fsCode2%100000))/100000);
+  n[13] = (((fsCode2%10000000)-(fsCode2%1000000))/1000000);
+  n[14] = (((fsCode2%100000000)-(fsCode2%10000000))/10000000);
+  n[15] = (((fsCode2%1000000000)-(fsCode2%100000000))/100000000);
+  int pNumber = 0;
+  for (int i = 0; i < 16; i++){
+    for (int j = 0; j < n[i]; j++){
+      TString name("");
+      if (i == 15) name = "Lambda";
+      if (i == 14) name = "AntiLambda";
+      if (i == 13) name = "Positron";
+      if (i == 12) name = "Electron";
+      if (i == 11) name = "MuonPlus";
+      if (i == 10) name = "MuonMinus";
+      if (i ==  9) name = "Proton";
+      if (i ==  8) name = "AntiProton";
+      if (i ==  7) name = "Eta";
+      if (i ==  6) name = "Photon";
+      if (i ==  5) name = "KPlus";
+      if (i ==  4) name = "KMinus";
+      if (i ==  3) name = "KShort";
+      if (i ==  2) name = "PiPlus";
+      if (i ==  1) name = "PiMinus";
+      if (i ==  0) name = "Pi0";
+      name += (pNumber++);
+      TString tmp("");
+      vector<TString> names;
+      if (name.Contains("Pi0")){ tmp = "Photon"; tmp += (pNumber++); names.push_back(tmp);
+                                 tmp = "Photon"; tmp += (pNumber++); names.push_back(tmp); }
+      if (name.Contains("Eta")){ tmp = "Photon"; tmp += (pNumber++); names.push_back(tmp);
+                                 tmp = "Photon"; tmp += (pNumber++); names.push_back(tmp); }
+      if (name.Contains("KShort")){ tmp = "PiPlus";  tmp += (pNumber++); names.push_back(tmp);
+                                    tmp = "PiMinus"; tmp += (pNumber++); names.push_back(tmp); }
+      if (name.Contains("Lambda")){ tmp = "Proton";  tmp += (pNumber++); names.push_back(tmp);
+                                    tmp = "PiMinus"; tmp += (pNumber++); names.push_back(tmp); }
+      if (name.Contains("AntiLambda")){ tmp = "AntiProton";  tmp += (pNumber++); names.push_back(tmp);
+                                        tmp = "PiPlus";      tmp += (pNumber++); names.push_back(tmp); }
+      gluexMap[name] = names;
+    }
+  }
+  return gluexMap;
+}
