@@ -822,7 +822,7 @@ void ConvertTree(TString treeName){
 
     if (gSafe){
       inTree->SetBranchStatus("*",0);
-      if (gUseMCParticles) inTree->SetBranchStatus("NumThrown",1);
+      if (gUseMCInfo) inTree->SetBranchStatus("NumThrown",1);
       inTree->SetBranchStatus("RunNumber",1);
       inTree->SetBranchStatus("EventNumber",1);
       if (gUseParticles) inTree->SetBranchStatus("NumBeam",1);
@@ -956,7 +956,7 @@ void ConvertTree(TString treeName){
 
       // loop over combos
 
-    if (gUseMCParticles && !gUseParticles) inNumCombos = 1;
+    if (gUseMCInfo && !gUseParticles) inNumCombos = 1;
     for (UInt_t ic = 0; ic < inNumCombos; ic++){
 
         // non-particle information
@@ -1211,8 +1211,16 @@ void ConvertTree(TString treeName){
   cout << endl << endl << "WRITING THE OUTPUT TREE..." << endl;
   gOutputFile->cd();
   outTree.Write();
-  cout << "FINISHED (entries = " << nEntries << ")" << endl << endl;
-
+  cout << endl;
+  cout << "**************" << endl;
+  cout << "FINISHED" << endl;
+  cout << "**************" << endl;
+  cout << "  total entries = " << nEntries << endl;
+  cout << "  kept entries = " << outTree.GetEntries() << endl;
+  cout << "  fraction = ";
+  if (nEntries > 0){ cout << (double)outTree.GetEntries()/nEntries << endl; }
+  else { cout << " undefined" << endl; }
+  cout << endl;
 }
 
 
