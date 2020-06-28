@@ -39,7 +39,10 @@ pair<int,int> FSCode(vector< vector<TString> > glueXParticleTypes);
 pair<int,int> FSCode(vector< vector<int> > pdgIDs);
   // utility functions for MC truth parsing
 vector< vector<int> > OrderedThrownIndices(int numThrown, int pids[], int parentIndices[]);
+void DisplayMCThrown(int numThrown, int pids[], int parentIndices[]);
 int FSMCExtras(int numThrown, int pids[]);
+int BaryonNumber(int fsCode1, int fsCode2, int mcExtras = 0);
+int Charge(int fsCode1, int fsCode2, int mcExtras = 0);
 
   // global input parameters and derived parameters
 TFile* gInputFile;
@@ -908,45 +911,44 @@ void ConvertTree(TString treeName){
             (outMCExtras < 0.1)) outMCSignal = 1;
       }
         // do some checks on the MC information
-      bool mcProblems = false;
+      bool mcError = false;  bool mcWarning = false;
       if (gUseMCParticles && outMCSignal > 0.1){
           // check orderedThrownIndices
         if (orderedThrownIndices.size() != orderedParticleNames.size()){
           cout << "ERROR: problem with size of orderedThrownIndices" << endl;
-          mcProblems = true;
+          mcError = true;
         }
         for (unsigned int i = 0; i < orderedThrownIndices.size(); i++){
           if (orderedThrownIndices[i].size() != orderedParticleNames[i].size()){
             cout << "ERROR: problem with size of orderedThrownIndices" << endl;
-            mcProblems = true;
+            mcError = true;
           }
         }
       }
+     if (BaryonNumber((int)outMCDecayCode1,(int)outMCDecayCode2,(int)outMCExtras) != 1)
+       { mcWarning = true; cout << "WARNING: problem with baryon number?" << endl; }
+     if (Charge((int)outMCDecayCode1,(int)outMCDecayCode2,(int)outMCExtras) != 1)
+       { mcWarning = true; cout << "WARNING: problem with electric charge?" << endl; }
       //if (((outMCSignal > 0.1)&&!inIsThrownTopology) ||
       //    ((outMCSignal < 0.1)&& inIsThrownTopology)){
       //  cout << "ERROR: MCSignal does not match IsThrownTopology" << endl;
-      //  mcProblems = true;
+      //  mcWarning = true;
       //}
         // print a few events to make sure MC makes sense
-      if (((iEntry < 5) && gPrint) || mcProblems == true){
+      if (((iEntry < 5) && gPrint) || mcError || mcWarning){
       //if (gIsMC && (iEntry < 5||inIsThrownTopology)){
         cout << endl << endl;
-        if (mcProblems) cout << "WARNING: problems with the truth parsing (see below)..." << endl;
+        if (mcError||mcWarning) cout << "WARNING: problems with the truth parsing (see below)..." << endl;
         cout << "  **** TRUTH INFO STUDY FOR EVENT " << iEntry+1 << " ****" << endl;
         cout << "  NumThrown = " << inNumThrown << endl;
         cout << "  GeneratedEnergy = " << inThrownBeam__GeneratedEnergy << endl;
-        cout << "  FSCode = " << outMCDecayCode2 << "_" << outMCDecayCode1 << endl;
+        cout << "  FSCode = " << (int)outMCDecayCode2 << "_" << (int)outMCDecayCode1 << endl;
         cout << "  MCExtras = " << outMCExtras << endl;
         cout << "  IsThrownTopology = " << inIsThrownTopology << endl;
-        for (int i = 0; i < inNumThrown; i++){      
-          cout << "    THROWN INDEX = " << i << endl;
-          cout << "      PID = " << inThrown__PID[i] << endl;
-          cout << "      PDG Name = " << PDGReadableName(inThrown__PID[i]) << endl;
-          cout << "      Parent Index = " << inThrown__ParentIndex[i] << endl;
-        }
+        DisplayMCThrown(inNumThrown,inThrown__PID,inThrown__ParentIndex);
         cout << endl << endl;
       }
-      if (mcProblems == true){
+      if (mcError){
         cout << "ERROR: problem with MC truth parsing" << endl;
         exit(0);
       }
@@ -1294,6 +1296,12 @@ static const int kpdgKstar0     = 313;
 static const int kpdgAntiKstar0 = -313;
 static const int kpdgLambda     = 3122;
 static const int kpdgALambda    = -3122;
+static const int kpdgSigmap     = 3222;
+static const int kpdgSigma0     = 3212;
+static const int kpdgSigmam     = 3112;
+static const int kpdgASigmam    = -3222;
+static const int kpdgASigma0    = -3212;
+static const int kpdgASigmap    = -3112;
 static const int kpdgDp         = 411;
 static const int kpdgDm         = -411;
 static const int kpdgD0         = 421;
@@ -1357,6 +1365,12 @@ TString PDGReadableName(int id){
   else if (id == kpdgAntiKstar0) name = "K*0";
   else if (id == kpdgLambda)     name = "Lambda";
   else if (id == kpdgALambda)    name = "ALambda";
+  else if (id == kpdgSigmap)     name = "Sigma+";
+  else if (id == kpdgSigma0)     name = "Sigma0";
+  else if (id == kpdgSigmam)     name = "Sigma-";
+  else if (id == kpdgASigmam)    name = "ASigma-";
+  else if (id == kpdgASigma0)    name = "ASigma0";
+  else if (id == kpdgASigmap)    name = "ASigma+";
   else if (id == kpdgDp)         name = "D+";
   else if (id == kpdgDm)         name = "D-";
   else if (id == kpdgD0)         name = "D0";
@@ -1369,6 +1383,41 @@ TString PDGReadableName(int id){
     name += id;
   }
   return name;
+}
+
+void DisplayMCThrown(int numThrown, int pids[], int parentIndices[]){
+  cout << "  LIST OF THROWN PARTICLES: " << endl;
+  for (int i = 0; i < numThrown; i++){      
+    cout << "    THROWN INDEX = " << i << endl;
+    cout << "      PID = " << pids[i] << endl;
+    cout << "      PDG Name = " << PDGReadableName(pids[i]) << endl;
+    cout << "      Parent Index = " << parentIndices[i] << endl;
+  }
+  vector< pair<int,int> > firstList;
+  for (int index = 0; index < numThrown; index++){
+    if (parentIndices[index] == -1) firstList.push_back(pair<int,int>(index,0));
+  }
+  vector< pair<int,int> > thrownList = firstList;
+  for (int iter = 1; iter <= 5; iter++){
+    vector< pair<int,int> > tempList = thrownList;  thrownList.clear();
+    for (unsigned int i = 0; i < tempList.size(); i++){
+      thrownList.push_back(tempList[i]);
+      if (tempList[i].second == iter-1){
+        for (int index = 0; index < numThrown; index++){
+          if (parentIndices[index] == tempList[i].first)
+            thrownList.push_back(pair<int,int>(index,iter));
+        }
+      }
+    }
+  }
+  cout << "  ORDERED LIST OF THROWN PARTICLES" << endl;
+  for (unsigned int i = 0; i < thrownList.size(); i++){
+    int iter = thrownList[i].second;
+    for (int j = 0; j < iter+1; j++){ cout << "   "; }
+    cout << PDGReadableName(pids[thrownList[i].first]);
+    cout << " (id = " << pids[thrownList[i].first] << ")";
+    cout << " (index = " << thrownList[i].first << ")" << endl;
+  }
 }
 
 
@@ -1460,6 +1509,32 @@ int FSMCExtras(int numThrown, int pids[]){
   return mcExtras;
 }
 
+int BaryonNumber(int fsCode1, int fsCode2, int mcExtras){
+  int baryonNumber = 0;
+  baryonNumber += (((mcExtras%100)-(mcExtras%10))/10); // neutron
+  baryonNumber -= (((mcExtras%10)-(mcExtras%1))/1); // anti-neutron
+  baryonNumber += (((fsCode2%1000000000)-(fsCode2%100000000))/100000000); // Lambda
+  baryonNumber -= (((fsCode2%100000000)-(fsCode2%10000000))/10000000); // anti-Lambda
+  baryonNumber += (((fsCode2%1000)-(fsCode2%100))/100); // proton
+  baryonNumber -= (((fsCode2%100)-(fsCode2%10))/10); // anti-proton
+  baryonNumber += fsCode1*0;
+  return baryonNumber;
+}
+
+int Charge(int fsCode1, int fsCode2, int mcExtras){
+  int charge = 0;
+  charge += (((fsCode2%10000000)-(fsCode2%1000000))/1000000);  // e+
+  charge -= (((fsCode2%1000000)-(fsCode2%100000))/100000);  // e-
+  charge += (((fsCode2%100000)-(fsCode2%10000))/10000);  // mu+
+  charge -= (((fsCode2%10000)-(fsCode2%1000))/1000);  // mu-
+  charge += (((fsCode2%1000)-(fsCode2%100))/100);  // p+
+  charge -= (((fsCode2%100)-(fsCode2%10))/10);  // p-
+  charge += (((fsCode1%1000000)-(fsCode1%100000))/100000);  // K+
+  charge -= (((fsCode1%100000)-(fsCode1%10000))/10000);  // K-
+  charge += (((fsCode1%1000)-(fsCode1%100))/100);  // pi+
+  charge -= (((fsCode1%100)-(fsCode1%10))/10);  // pi-
+  return charge;
+}
 
 
 TString FSParticleType(TString glueXParticleType){
