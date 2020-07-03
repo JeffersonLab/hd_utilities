@@ -295,7 +295,7 @@ void writeChannels(int run = 71311, int DAC = 100, bool unityGain = false, bool 
                     hEqualizedGain[ibox]->SetBinContent(globpixel+1, locPixel.gain);
                     
                     // set efficiency for CCDB
-                    effic[globpixel] = locPixel.effic;
+                    effic[globpixel + ibox*6912] = locPixel.effic;
                     
                     int DAQmonFiber = (locPixel.slot-3)*24 + locPixel.fiber; // - 36.; (need to subtract 36 for Spring 2019 threshold scans)
                     int ASICnum = j/8;
