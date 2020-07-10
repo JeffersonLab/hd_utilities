@@ -7,7 +7,7 @@ import math
 
 #opts, args = getopt.getopt(sys.argv[1:],"0:1:R:yY")
 
-OK = 1
+OK = 0
 loc = './'
 
 files = []
@@ -21,11 +21,14 @@ dbs.append("timewalk_parms_NEWAMP")
 files.append("tofpaddles_propagation_speed_run")
 dbs.append("propagation_speed_NEWAMP") 
 
+files.append("tdc_adc_time_offsets_run")
+dbs.append("adc_timing_offsets") 
+
 DIRS = []
 RUNS = []
 Cnts = 0
 for d in os.listdir(loc):
-    if d.startswith('calibration3'):
+    if d.startswith('calibration7'):
         r = d[11:16]
 
         nfiles = 0
@@ -46,13 +49,13 @@ RUNS.sort()
 
 for r in range(0,Cnts):
     RunNumber0 = str(RUNS[r])
-    RunNumber1 = '39999'
+    RunNumber1 = '71358'
     if r<Cnts-1:
         RunNumber1 = str(RUNS[r+1]-1)
 
-    for k in range(0,3):    
+    for k in range(0,4):    
         thedir = loc+DIRS[r]
-        cmd = "ccdb add -r "+RunNumber0+"-"+RunNumber1+"   /TOF/"+dbs[k]+"   "+thedir+"/"+files[k]+RunNumber0+".DB"
+        cmd = "ccdb add -v beni -r "+RunNumber0+"-"+RunNumber1+"   /TOF2/"+dbs[k]+"   "+thedir+"/"+files[k]+RunNumber0+".DB"
         print cmd
         if (OK):
             os.system(cmd)

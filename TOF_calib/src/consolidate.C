@@ -41,6 +41,9 @@ int BARS_PER_PLANE = 0; // including 2 short padeles being one
 int PMTS_PER_PLANE = 0; 
 int NSHORTS = 0;       // number of short paddles per plane
 
+
+int REFPADDLE = 16; // was 18
+
 void consolidate(int RunNumber){
   // 3 input files
   // mean time both planes: mtparameters_plane0_ref18.dat
@@ -60,7 +63,7 @@ void consolidate(int RunNumber){
   double DeltaTimes[2][100];
 
   char inf[128];
-  sprintf(inf,"calibration%d/mtparameters_plane0_ref18.dat",RunNumber);
+  sprintf(inf,"calibration%d/mtparameters_plane0_ref%d.dat",RunNumber, REFPADDLE);
   cout<<"read data from: "<<inf<<endl;
 
   ifstream INF;

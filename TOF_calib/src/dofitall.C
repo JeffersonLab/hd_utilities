@@ -386,10 +386,11 @@ void dofitall(int R , int dbgmode){
     sprintf(hnam,"xTvsEPMT%d",k);
     sprintf(htit,"XPos vs PMTIntegral %d",k);
 
-    if ((TMath::Abs(k+1 - BARS_PER_PLANE/2 - 0.5)<NSHORTS/4) || 
-	(TMath::Abs(k+1 - BARS_PER_PLANE   - BARS_PER_PLANE/2 - 0.5)<NSHORTS/4) ||
-	(TMath::Abs(k+1 - 2*BARS_PER_PLANE - BARS_PER_PLANE/2 - 0.5)<NSHORTS/4) ||
-	(TMath::Abs(k+1 - 3*BARS_PER_PLANE - BARS_PER_PLANE/2 - 0.5)<NSHORTS/4)){
+    int plane = k/(NPMTS/2);
+    int side = (k - (NPMTS/2*plane))/(NPMTS/4);
+    int paddle = k - plane*(NPMTS/2) - side*(NPMTS/4);
+
+    if ( TMath::Abs(paddle - (NPMTS/8-0.5)) < NSHORTS/4 ){
       //if ( (k==21) || (k==22) || (k==21+44) || (k==22+44) || (k==21+88) || (k==22+88) || (k==21+44+88) || (k==22+44+88)){
       xTvsEPMT[k] = new TH2D(hnam,htit,200, 0., 24000., BARS_PER_PLANE, 0., (double)BARS_PER_PLANE);
     } else {
@@ -426,15 +427,15 @@ void dofitall(int R , int dbgmode){
       
       for (int k=0;k<NSHORTS/2;k++){
 	char hnam[128];
-	sprintf(hnam,"Timing%d",k+4*side+8*pla);
+	sprintf(hnam,"Timing%d",k + NSHORTS/2*side + NSHORTS*pla);
 	char htit[128];
 	int pl = pla;
 	int u = side;
 	int pad = BARS_PER_PLANE/2 - 1 + k;
 	sprintf(htit,"PMT_time - MT_REF plane %d Paddle %d pmtside %d",pl,pad,u);
-	Timings[k + 4*side + 8*pla] = new TH1F(hnam,htit,500,-10.,10.);
+	Timings[k + NSHORTS/2*side + NSHORTS*pla] = new TH1F(hnam,htit,500,-15.,15.);
 	//Timings[k] = new TH1F(hnam,htit,200,-6.,0.);
-	Timings[k + 4*side + 8*pla]->GetXaxis()->SetTitle("T-MTref [ns]");
+	Timings[k + NSHORTS/2*side + NSHORTS*pla]->GetXaxis()->SetTitle("T-MTref [ns]");
       }
     }
   }
@@ -515,12 +516,15 @@ void dofitall(int R , int dbgmode){
   INF.open(fnam);
   for (int k=0;k<NPMTS;k++){
     INF >> idx;
-    for (int s=0;s<17;s++) {
+    for (int s=0;s<15;s++) {
       INF >> WalkPar[k][s];
     }
     INF>>dummy; // this is the chi2 of both fits
   }
   INF.close();
+  double ReferenceLoc = 1500.;  // this is the reference ADC value to calibrate to. any walk correction is zero to this point
+ 
+
 
   // create histograms!!!!!! here!!!!!
   int Event;
@@ -638,44 +642,42 @@ void dofitall(int R , int dbgmode){
 
 	  
 	  // apply walk correction
-	  int DOFF = 0;
-	  if (PEAKL[n]>WalkPar[hid1][16]){
-	    DOFF = 8;
+	  double ADCval = PEAKL[n];
+	  if (ADCval>4090){
+	    ADCval = 4090;
 	  }
-	  double a1 = WalkPar[hid1][0+DOFF]
-	    +WalkPar[hid1][2+DOFF]*TMath::Power(PEAKL[n],-0.5) 
-	    +WalkPar[hid1][4+DOFF]*TMath::Power(PEAKL[n],-0.33) 
-	    +WalkPar[hid1][6+DOFF]*TMath::Power(PEAKL[n],-0.2);
-	  if (PEAKL[n]>4095){
-	    a1 += 0.55;
-	  }
-
-	  DOFF = 8;
-	  double a2 = WalkPar[hid1][0+DOFF]
-	    +WalkPar[hid1][2+DOFF]*TMath::Power(1500.,-0.5) 
-	    +WalkPar[hid1][4+DOFF]*TMath::Power(1500.,-0.33) 
-	    +WalkPar[hid1][6+DOFF]*TMath::Power(1500.,-0.2);
-
-	  float tcL = a1 - a2;
-
-	  // apply walk correction
-	  DOFF = 0;
-	  if (PEAKR[n]>WalkPar[hid2][16]){
-	    DOFF = 8;
-	  }
-	  a1 = WalkPar[hid2][0+DOFF]
-	    +WalkPar[hid2][2+DOFF]*TMath::Power(PEAKR[n],-0.5) 
-	    +WalkPar[hid2][4+DOFF]*TMath::Power(PEAKR[n],-0.33) 
-	    +WalkPar[hid2][6+DOFF]*TMath::Power(PEAKR[n],-0.2);
-	  if (PEAKR[n]>4095){
-	    a1 += 0.55;
-	  }
+	  double a1 = WalkPar[hid1][0]
+	    +WalkPar[hid1][2]/ADCval
+	    +WalkPar[hid1][4]/ADCval/ADCval
+	    +WalkPar[hid1][6]/ADCval/ADCval/ADCval/ADCval
+	    +WalkPar[hid1][8]/TMath::Sqrt(ADCval);
 	  
-	  DOFF = 8;
-	  a2 = WalkPar[hid2][0+DOFF]
-	    +WalkPar[hid2][2+DOFF]*TMath::Power(1500.,-0.5) 
-	    +WalkPar[hid2][4+DOFF]*TMath::Power(1500.,-0.33) 
-	    +WalkPar[hid2][6+DOFF]*TMath::Power(1500.,-0.2);
+	  // ReferenceLoc is chosen to be 1500. ADC counts
+	  double a2 = WalkPar[hid1][0]
+	    +WalkPar[hid1][2]/ReferenceLoc
+	    +WalkPar[hid1][4]/ReferenceLoc/ReferenceLoc
+	    +WalkPar[hid1][6]/ReferenceLoc/ReferenceLoc/ReferenceLoc/ReferenceLoc
+	    +WalkPar[hid1][8]/TMath::Sqrt(ReferenceLoc);
+	  
+	  float tcL = a1 - a2;
+	  
+	  ADCval = PEAKR[n];
+	  if (ADCval>4090){
+	    ADCval = 4090;
+	  }
+	  a1 = WalkPar[hid2][0]
+	    +WalkPar[hid2][2]/ADCval
+	    +WalkPar[hid2][4]/ADCval/ADCval
+	    +WalkPar[hid2][6]/ADCval/ADCval/ADCval/ADCval
+	    +WalkPar[hid2][8]/TMath::Sqrt(ADCval);
+
+	  // ReferenceLoc is chosen to be 1500. ADC counts
+	  a2 = WalkPar[hid2][0]
+	    +WalkPar[hid2][2]/ReferenceLoc
+	    +WalkPar[hid2][4]/ReferenceLoc/ReferenceLoc
+	    +WalkPar[hid2][6]/ReferenceLoc/ReferenceLoc/ReferenceLoc/ReferenceLoc
+	    +WalkPar[hid2][8]/TMath::Sqrt(ReferenceLoc);
+
 
 	  float tcR = a1 - a2; 
 
@@ -692,6 +694,7 @@ void dofitall(int R , int dbgmode){
 	  double xT = (tR-tL)/2.*Speeds[idx];
 	  double xE = TMath::Log(pmtL/pmtR)/2.*100.;
 	  double E0 = TMath::Sqrt(pmtL*pmtR)*TMath::Exp(126./100.);
+	  //cout<<kk<<" "<<idx<<" "<<hid1<<" " <<hid2<<endl; 
 	  if (E0>350.)
 	    xTvsxE[idx]->Fill(xE,xT);
 
@@ -711,6 +714,8 @@ void dofitall(int R , int dbgmode){
 	  corr = TMath::Exp(-dist/76.) +  TMath::Exp(-dist/485.); 
 	  xTvsEPMTcorr[hid2]->Fill(pmtR/corr,126.+xT);
 	  
+	  //cout<<".... AT LOC 1"<<endl;
+
 	  if (TMath::Abs(DT)<0.25){
 	    if (paddle < BARS_PER_PLANE/2 - NSHORTS/4){ // overlaps with R/D
 	      CenterHits[plane][1]++;
@@ -738,6 +743,8 @@ void dofitall(int R , int dbgmode){
       }
     } //loop over all full paddles
 
+    //cout<<".... AT LOC 2"<<endl;
+
     for (int i=0; i<NsinglesA; i++) {
       int plane = PlaneSA[i];
       int paddle = PaddleSA[i];
@@ -746,34 +753,37 @@ void dofitall(int R , int dbgmode){
       int p = 1;
       int s = side;
 
+      //cout<<"S: "<<idx<<endl;
+
       float T = TDCST[i];
 
       // get walk correction
-      int DOFF = 0;
-      if (PEAK[i]>WalkPar[idx][16]){
-	DOFF = 8;
+      double ADCval = PEAKL[i];
+      if (ADCval>4090){
+	ADCval = 4090;
       }
-      double a1 = WalkPar[idx][0+DOFF]
-	+WalkPar[idx][2+DOFF]*TMath::Power(PEAK[i],-0.5) 
-	+WalkPar[idx][4+DOFF]*TMath::Power(PEAK[i],-0.33) 
-	+WalkPar[idx][6+DOFF]*TMath::Power(PEAK[i],-0.2);
-      if (PEAK[i]>4095){
-	a1 += 0.55;
-      }
+      double a1 = WalkPar[idx][0]
+	+WalkPar[idx][2]/ADCval
+	+WalkPar[idx][4]/ADCval/ADCval
+	+WalkPar[idx][6]/ADCval/ADCval/ADCval/ADCval
+	+WalkPar[idx][8]/TMath::Sqrt(ADCval);
       
-      DOFF = 8;
-      double a2 = WalkPar[idx][0+DOFF]
-	+WalkPar[idx][2+DOFF]*TMath::Power(1500.,-0.5) 
-	+WalkPar[idx][4+DOFF]*TMath::Power(1500.,-0.33) 
-	+WalkPar[idx][6+DOFF]*TMath::Power(1500.,-0.2);
-      
+      // ReferenceLoc is chosen to be 1500. ADC counts
+      double a2 = WalkPar[idx][0]
+	+WalkPar[idx][2]/ReferenceLoc
+	+WalkPar[idx][4]/ReferenceLoc/ReferenceLoc
+	+WalkPar[idx][6]/ReferenceLoc/ReferenceLoc/ReferenceLoc/ReferenceLoc
+	+WalkPar[idx][8]/TMath::Sqrt(ReferenceLoc);
+	  
       float walk = a1 - a2;
-
+      
       T -= walk;
-
+      
       if (plane){
 	p = 0;
       }
+      //cout<<"S1: "<<p<<"  "<<s<<endl;
+
       if (CenterHits[p][s]){
 	if (OF[i]<1){
 	  if (side){ 
@@ -788,7 +798,11 @@ void dofitall(int R , int dbgmode){
 	    }
 	  }
 	}
-	int idxt = plane*NSHORTS + (paddle-(BARS_PER_PLANE/2-1)) + side*NSHORTS/2;
+	int idxt = plane*NSHORTS + (paddle-(BARS_PER_PLANE/2)) + side*NSHORTS/2;
+	if (NSHORTS>4){
+	  idxt++;
+	}
+	//cout<<"idxt = "<<idxt<<"   "<<paddle<<"  "<<endl;
 	Timings[idxt]->Fill(T - MeanTimeRef[p][s] );
       }
 
@@ -799,6 +813,9 @@ void dofitall(int R , int dbgmode){
 	}
       }
     }
+    //cout<<".... AT LOC 4"<<endl;
+
+    
   }
   cout<<"Finished reading root file. closing file"<<endl;
   //f->Close();
@@ -823,7 +840,7 @@ void dofitall(int R , int dbgmode){
     if (Timings[n]->GetEntries()<500){
       int plane = n/NSHORTS;
       int u = (n-plane*NSHORTS)/(NSHORTS/2);
-      int pad = BARS_PER_PLANE/2-1 + (n - u*NSHORTS/2 - plane*NSHORTS);
+      int pad = BARS_PER_PLANE/2 - (NSHORTS/4) + (n - u*NSHORTS/2 - plane*NSHORTS);
       OUTF1<<plane<<"  "<<pad<<" "<<"  "<<u<<"  0.0"<<"  0.0"<<endl;
       continue;
     }
@@ -845,7 +862,7 @@ void dofitall(int R , int dbgmode){
     OffsetPMTsig[n] = sig;
     int plane = n/NSHORTS;
     int u = (n-plane*NSHORTS)/(NSHORTS/2);
-    int pad = BARS_PER_PLANE/2 -1  + (n - u*NSHORTS/2 - plane*NSHORTS);
+    int pad = BARS_PER_PLANE/2 - (NSHORTS/4)  + (n - u*NSHORTS/2 - plane*NSHORTS);
     OUTF1<<plane<<"  "<<pad<<" "<<"  "<<u<<"  "<<max<<"  "<<sig<<endl;
     if (DEBUG == 77){
       Timings[n]->Draw();
@@ -853,7 +870,8 @@ void dofitall(int R , int dbgmode){
       getchar();
     }
 
-    int indx = plane*PMTS_PER_PLANE + u*BARS_PER_PLANE + pad-1;
+    int indx = plane*PMTS_PER_PLANE + u*BARS_PER_PLANE + pad;
+
     PMTOffsets[indx] = max;
 
   }
