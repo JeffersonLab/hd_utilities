@@ -30,3 +30,5 @@ Processing:
 2. Edit the script plot_compare2DEff.C to point to the appropriate data and MC root files to obtain comparison plots of data and MC.
    > root -l
    > .x plot_compare2DEff.C 
+
+Note that the scripts streamline.csh and streamline_gen.csh can be edited to peform the actions described above. The jana.config file contains directives to run the event filter with hd_root.
