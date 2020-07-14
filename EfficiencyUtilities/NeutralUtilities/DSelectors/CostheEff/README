@@ -1,0 +1,34 @@
+Steps to run DSelector to determine the photon reconstruction efficiencies using the Costhe Eff method.
+July 13, 2020
+
+The is a preliminary setup for Data and MC is a little different:
+
+Data setup:
+
+i. For the data, one starts with the output trees of the event filter specifying for the reaction 1_14__7_8_9_14 (g p -> pi0 pi+ pi- p). The are generated as part
+   of the GlueX analysis launches. The files are found for example in /cache/halld/RunPeriod-2017-01/analysis/ver27/tree_pi0pippim__B4/merged/tree*.root.
+
+MC setup:
+
+i. Events are generated with the output of g p -> pi0 pi+ pi- p and simulated using HDGeant4.
+   For FCAL, use g p -> omega p events with a Bslope = 6 GeV2. Examples of the output can be found at 
+             /cache/halld/gluex_simulations/REQUESTED_MC/gen_omega_3pi_efficiency_2017_01_20200525020622pm/hddm/dana_rest_gen_amp_*.hddm
+   For BCAL, FCAL/BCAL, use g p  -> pi0 pi+ pi- p, where M(pi0pi+pi-) peaks at about 1.2 GeV with a wide distribution, and B = 2.5 GeV-2. Examples can be found at 
+             /cache/halld/gluex_simulations/REQUESTED_MC/2017/gen_amp__3piHighMass_t2.5__G4_20190501054440pm/hddm/*.hddm
+
+ii. The REST (.hddm) files must be processed with the reaction filter to produce root trees. This is accomplished with the following command:
+    > hd_root ${indir}dana_rest_gen_amp_${run}.hddm --config=jana.config, where ${indir} is the residing directory and ${run} is the run_file identifier.
+
+
+Processing:
+
+1. The data and/or the MC root trees are processed using the DSelector as follows:
+   > root -b -q tree_pi0pippim__B4.root 'call_DSelector.C("DSelector_pi0pippim__B4_ver21.C+")'
+   Save the output root histograms to the desired ${outdir} direcgtory
+   > cp DSelector_pi0pippim__B4.root ${outdir}/DSelector_pi0pippim__B4_gen_amp_${run}.root
+
+2. Edit the script plot_compare2DEff.C to point to the appropriate data and MC root files to obtain comparison plots of data and MC.
+   > root -l
+   > .x plot_compare2DEff.C 
+
+Note that the scripts streamline.csh and streamline_gen.csh can be edited to peform the actions described above. The jana.config file contains directives to run the event filter with hd_root.
