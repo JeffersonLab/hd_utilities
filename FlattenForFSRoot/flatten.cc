@@ -1513,7 +1513,7 @@ vector< vector<int> > OrderedThrownIndices(int numThrown, int pids[], int parent
 vector<int> MCDecayParticles(int numThrown, int pids[], int parentIndices[]){
   vector<int> mcDecayParticles;
   for (int index = 0; index < numThrown; index++){
-    if (parentIndices[index] == -1) mcDecayParticles.push_back(index);
+    if (parentIndices[index] == -1) mcDecayParticles.push_back(pids[index]);
   }
   if (mcDecayParticles.size() < 2) return mcDecayParticles;
   for (unsigned int i = 0; i < mcDecayParticles.size()-1; i++){
