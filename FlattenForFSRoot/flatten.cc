@@ -39,6 +39,7 @@ pair<int,int> FSCode(vector< vector<TString> > glueXParticleTypes);
 pair<int,int> FSCode(vector< vector<int> > pdgIDs);
   // utility functions for MC truth parsing
 vector< vector<int> > OrderedThrownIndices(int numThrown, int pids[], int parentIndices[]);
+vector<int> MCDecayParticles(int numThrown, int pids[], int parentIndices[]);
 void DisplayMCThrown(int numThrown, int pids[], int parentIndices[]);
 int FSMCExtras(int numThrown, int pids[]);
 int BaryonNumber(int fsCode1, int fsCode2, int mcExtras = 0);
@@ -753,6 +754,14 @@ void ConvertTree(TString treeName){
   double outMCDecayCode2;  if (gUseMCInfo) outTree.Branch("MCDecayCode2",&outMCDecayCode2,"MCDecayCode2/D");
   double outMCExtras;      if (gUseMCInfo) outTree.Branch("MCExtras",    &outMCExtras,    "MCExtras/D");
   double outMCSignal;      if (gUseMCParticles&&gUseParticles) outTree.Branch("MCSignal", &outMCSignal, "MCSignal/D");
+  double outMCDecayParticle1;   double outMCDecayParticle2;   double outMCDecayParticle3;
+  double outMCDecayParticle4;   double outMCDecayParticle5;   double outMCDecayParticle6;
+  if (gUseMCInfo) outTree.Branch("MCDecayParticle1",&outMCDecayParticle1,"MCDecayParticle1/D");
+  if (gUseMCInfo) outTree.Branch("MCDecayParticle2",&outMCDecayParticle2,"MCDecayParticle2/D");
+  if (gUseMCInfo) outTree.Branch("MCDecayParticle3",&outMCDecayParticle3,"MCDecayParticle3/D");
+  if (gUseMCInfo) outTree.Branch("MCDecayParticle4",&outMCDecayParticle4,"MCDecayParticle4/D");
+  if (gUseMCInfo) outTree.Branch("MCDecayParticle5",&outMCDecayParticle5,"MCDecayParticle5/D");
+  if (gUseMCInfo) outTree.Branch("MCDecayParticle6",&outMCDecayParticle6,"MCDecayParticle6/D");
 
     // particle information
 
@@ -897,6 +906,14 @@ void ConvertTree(TString treeName){
       outMCDecayCode1 = fsCode.first;
       outMCDecayCode2 = fsCode.second;
       outMCExtras = FSMCExtras(inNumThrown,inThrown__PID);
+        // set MCDecayParticle information
+      vector<int> mcDecayParticles = MCDecayParticles(inNumThrown,inThrown__PID,inThrown__ParentIndex);
+      outMCDecayParticle1 = 0;  if (mcDecayParticles.size() >= 1) outMCDecayParticle1 = mcDecayParticles[1-1];
+      outMCDecayParticle2 = 0;  if (mcDecayParticles.size() >= 2) outMCDecayParticle2 = mcDecayParticles[2-1];
+      outMCDecayParticle3 = 0;  if (mcDecayParticles.size() >= 3) outMCDecayParticle3 = mcDecayParticles[3-1];
+      outMCDecayParticle4 = 0;  if (mcDecayParticles.size() >= 4) outMCDecayParticle4 = mcDecayParticles[4-1];
+      outMCDecayParticle5 = 0;  if (mcDecayParticles.size() >= 5) outMCDecayParticle5 = mcDecayParticles[5-1];
+      outMCDecayParticle6 = 0;  if (mcDecayParticles.size() >= 6) outMCDecayParticle6 = mcDecayParticles[6-1];
         // select a specific final state
       if (gMCTag != ""){
         if (gMCTagExtras.Atoi() != (int) outMCExtras) continue;
@@ -1490,6 +1507,24 @@ vector< vector<int> > OrderedThrownIndices(int numThrown, int pids[], int parent
     }
   }
   return orderedThrownIndices;
+}
+
+
+vector<int> MCDecayParticles(int numThrown, int pids[], int parentIndices[]){
+  vector<int> mcDecayParticles;
+  for (int index = 0; index < numThrown; index++){
+    if (parentIndices[index] == -1) mcDecayParticles.push_back(index);
+  }
+  if (mcDecayParticles.size() < 2) return mcDecayParticles;
+  for (unsigned int i = 0; i < mcDecayParticles.size()-1; i++){
+  for (unsigned int j = i+1; j < mcDecayParticles.size(); j++){
+    if (mcDecayParticles[i] > mcDecayParticles[j]){
+      int temp = mcDecayParticles[i];
+      mcDecayParticles[i] = mcDecayParticles[j];
+      mcDecayParticles[j] = temp;
+    }
+  }}
+  return mcDecayParticles;
 }
 
 

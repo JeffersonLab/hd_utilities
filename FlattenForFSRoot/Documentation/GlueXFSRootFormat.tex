@@ -39,7 +39,7 @@ The {\tt GlueX} {\tt FSRoot} format is a flat {\tt TTree} format.  All variables
 
 
 \section{Final States}
-\label{sec:numbering}
+\label{sec:fs}
 
 The {\tt FSRoot} format can hold information from any final state composed of a combination of $\Lambda$~(decaying to $p\pi^-$), $\overline\Lambda$~(decaying to $\overline{p}\pi^+$), $e^+$, $e^-$, $\mu^+$, $\mu^-$, $p$, $\bar{p}$, $\eta$~(decaying to $\gamma\gamma$), $\gamma$, $K^+$, $K^-$,
 $K^0_S$~(decaying to $\pi^+\pi^-$), $\pi^+$, $\pi^-$, and $\pi^0$~(decaying to $\gamma\gamma$). 
@@ -120,7 +120,7 @@ Track information is written out for every reconstructed track that is part of a
 
 
 \section{Shower Information}
-\label{sec:nt:track}
+\label{sec:nt:shower}
 
 Shower information is written out for every reconstructed shower that is part of a final state.  The postfix {\tt P(n)} follows the same convention as for the four-momenta (section~\ref{sec:nt:momentum}).
 \begin{verbatim}
@@ -129,7 +129,7 @@ Shower information is written out for every reconstructed shower that is part of
 
 
 \section{MC Truth Information}
-\label{sec:nt:track}
+\label{sec:nt:truth}
 
 The following variables can be used to help keep track of truth information.
 
@@ -147,6 +147,22 @@ The following variables can be used to help keep track of truth information.
                      0 otherwise
 \end{verbatim}
 
+The {\tt MCDecayParticle} variables are an ordered list of the PDG ID numbers of the particles coming from the initial reaction.  
+For example, for $\gamma p \to \pi^+ \pi^- p$, 
+{\tt MCDecayParticle1} is -211 (for the $\pi^-$); 
+{\tt MCDecayParticle2} is 211 (for the $\pi^+$); 
+{\tt MCDecayParticle3} is 2212 (for the $p$);
+and all the others are zero.  
+These variables are meant to help distinguish between reactions with different resonances but the same final state (for example $\gamma p \to \rho p$ vs. $\gamma p \to \pi^+ \pi^- p$), but many resonances are not currently included in the analysis trees.
+
+\begin{verbatim}
+  MCDecayParticle1:  the PDG ID of the 1st particle
+  MCDecayParticle2:  the PDG ID of the 2nd particle
+  MCDecayParticle3:  the PDG ID of the 3rd particle
+  MCDecayParticle4:  the PDG ID of the 4th particle
+  MCDecayParticle5:  the PDG ID of the 5th particle
+  MCDecayParticle6:  the PDG ID of the 6th particle
+\end{verbatim}
 
 \section{Final State Numbering}
 \label{sec:numbering}
