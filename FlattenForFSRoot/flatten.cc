@@ -844,9 +844,11 @@ void ConvertTree(TString treeName){
       if (gUseParticles) inTree->SetBranchStatus("NumUnusedTracks",1);
       inTree->GetEntry(iEntry);
       int numUnusedNeutrals = inNumNeutralHypos - numFSNeutrals;
-      if ((gNumUnusedTracksCut   >= 0) && (inNumUnusedTracks   > gNumUnusedTracksCut)) continue;
-      if ((gNumUnusedNeutralsCut >= 0) && (  numUnusedNeutrals > gNumUnusedNeutralsCut)) continue;
-      if ((gNumNeutralHyposCut   >= 0) && (inNumNeutralHypos   > gNumNeutralHyposCut)) continue;
+      if (gUseParticles){
+        if ((gNumUnusedTracksCut   >= 0) && (inNumUnusedTracks   > gNumUnusedTracksCut)) continue;
+        if ((gNumUnusedNeutralsCut >= 0) && (  numUnusedNeutrals > gNumUnusedNeutralsCut)) continue;
+        if ((gNumNeutralHyposCut   >= 0) && (inNumNeutralHypos   > gNumNeutralHyposCut)) continue;
+      }
       if ((inNumThrown > MAXTHROWN) ||
           (inNumBeam > MAXBEAM) ||
           (inNumChargedHypos > MAXTRACKS) || 
@@ -1209,13 +1211,14 @@ void ConvertTree(TString treeName){
 
         // make cuts
 
-      if (cutDueToParticleInfo) continue;
-      if (outChi2DOF > gChi2DOFCut) continue;
-      int numUnusedNeutrals = inNumNeutralHypos - numFSNeutrals;
-      if ((gNumUnusedTracksCut   >= 0) && (outNumUnusedTracks   > gNumUnusedTracksCut)) continue;
-      if ((gNumUnusedNeutralsCut >= 0) && (   numUnusedNeutrals > gNumUnusedNeutralsCut)) continue;
-      if ((gNumNeutralHyposCut   >= 0) && (outNumNeutralHypos   > gNumNeutralHyposCut)) continue;
-
+      if (gUseParticles){
+        if (cutDueToParticleInfo) continue;
+        if (outChi2DOF > gChi2DOFCut) continue;
+        int numUnusedNeutrals = inNumNeutralHypos - numFSNeutrals;
+        if ((gNumUnusedTracksCut   >= 0) && (outNumUnusedTracks   > gNumUnusedTracksCut)) continue;
+        if ((gNumUnusedNeutralsCut >= 0) && (   numUnusedNeutrals > gNumUnusedNeutralsCut)) continue;
+        if ((gNumNeutralHyposCut   >= 0) && (outNumNeutralHypos   > gNumNeutralHyposCut)) continue;
+      }
 
         // fill the tree
 
