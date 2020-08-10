@@ -73,6 +73,12 @@ def main():
     EMAX = 12.0
     UNIFORM = False
 
+    # Constants
+    TARGETLENGTH = 29.5 # length in CM
+    Navagadro = 6.02214e23 # atoms/mol
+    units_g_mg = 1e-3
+    units_cm2_b = 1e-24 # 1e-24 cm^2 = 1 barn
+
     pp = pprint.PrettyPrinter(indent=4)
 
     # Define command line options
@@ -99,6 +105,8 @@ def main():
 		     help="Uniform option")
     parser.add_option("-r","--rest-ver", dest="rest_ver",
                      help="REST version option")
+    parser.add_option("-l","--target-length", dest="length",
+                     help="Target length (in cm)")
 
     (options, args) = parser.parse_args(sys.argv)
 
@@ -132,6 +140,8 @@ def main():
 	UNIFORM = True
     if options.rest_ver:
 	RESTVERSION = options.rest_ver
+    if options.length:
+        TARGETLENTH = float(options.length)
 
     # Run-dependent defaults for RCDB query
     if RCDB_QUERY != RCDB_QUERY_USER:
@@ -193,8 +203,8 @@ def main():
     tagh_scaled_energy = array('f')
 
     if UNIFORM:
-	htagged_flux = TH1F("tagged_flux_uniform", "Uniform tagged flux; Photon Beam Energy (GeV); Flux", NBINS, EMIN, EMAX)
-    htagged_fluxErr = TH1F("tagged_flux", "Tagged flux; Photon Beam Energy (GeV); Flux", NBINS, EMIN, EMAX)
+	htagged_flux = TH1F("tagged_flux_uniform", "Uniform tagged flux; Photon Beam Energy (GeV); Flux (# photons on target)", NBINS, EMIN, EMAX)
+    htagged_fluxErr = TH1F("tagged_flux", "Tagged flux; Photon Beam Energy (GeV); Flux (# photons on target)", NBINS, EMIN, EMAX)
     htagged_fluxErr.Sumw2()
 
     # Loop over runs
@@ -329,6 +339,39 @@ def main():
 	htagged_flux.Divide(fPSAcceptance);
     htagged_fluxErr.Divide(fPSAcceptance);
 
+    # Get density factor from CCDB
+    density = 0.0
+    density_err = 0.0
+    try:
+        density_assignment = ccdb_conn.get_assignment("/TARGET/density", run.number, VARIATION, CALIBTIME)
+        density_table = density_assignment.constant_set.data_table
+        if float(density_table[0][0]) > 0.0: # check that livetimes are non-zero
+            density = float(density_table[0][0])
+            density_err = float(density_table[0][1])
+    except:
+        print("couldn't find density for run %s" % RUN)
+        exit
+
+    print("Target length = %0.2f cm" % TARGETLENGTH)
+    #print("Target density = %0.2f +/- %0.2f mg/cm^3" % (density, density_err))
+
+    # Compute target length to comput luminosity
+    targetScatteringCenters = density * TARGETLENGTH * Navagadro * units_cm2_b * units_g_mg
+    targetScatteringCenters_err = targetScatteringCenters * density_err/density
+    print("Target scattering center = %0.3f +/- %0.3f b^-1" % (targetScatteringCenters,targetScatteringCenters_err))
+    htagged_lumiErr = htagged_fluxErr.Clone("tagged_lumi")
+    htagged_lumiErr.Reset()
+    htagged_lumiErr.SetTitle("Tagged luminosity (pb^{-1}); Photon Beam Energy (GeV); Luminosity (pb^{-1})")
+    for i in range(1,htagged_fluxErr.GetNbinsX()):
+        lumi = htagged_fluxErr.GetBinContent(i) * targetScatteringCenters / 1e12
+        if htagged_fluxErr.GetBinContent(i) <= 0.0:
+            continue
+        fluxErr = htagged_fluxErr.GetBinError(i)/htagged_fluxErr.GetBinContent(i)
+        targetErr = targetScatteringCenters_err/targetScatteringCenters
+        lumiErr = lumi * math.sqrt(fluxErr*fluxErr + targetErr*targetErr)
+        htagged_lumiErr.SetBinContent(i,lumi)
+        htagged_lumiErr.SetBinError(i,lumiErr)
+
     # Initialize output file
     OUTPUT_FILENAME = "flux"
     if RCDB_POLARIZATION != "":
@@ -341,6 +384,7 @@ def main():
     if UNIFORM:
 	htagged_flux.Write()
     htagged_fluxErr.Write()
+    htagged_lumiErr.Write()
     fout.Close()
     
 
