@@ -361,6 +361,7 @@ def main():
     print("Target scattering center = %0.3f +/- %0.3f b^-1" % (targetScatteringCenters,targetScatteringCenters_err))
     htagged_lumiErr = htagged_fluxErr.Clone("tagged_lumi")
     htagged_lumiErr.Reset()
+    htagged_lumiErr.Sumw2()
     htagged_lumiErr.SetTitle("Tagged luminosity (pb^{-1}); Photon Beam Energy (GeV); Luminosity (pb^{-1})")
     for i in range(1,htagged_fluxErr.GetNbinsX()):
         lumi = htagged_fluxErr.GetBinContent(i) * targetScatteringCenters / 1e12
