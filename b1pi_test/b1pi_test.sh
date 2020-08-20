@@ -121,6 +121,7 @@ cat - << EOF > control.in
 INFILE 'b1_pi.hddm'
 TRIG ${NEVENTS}
 OUTFILE 'hdgeant.hddm'
+BEAM 12. 9.0 0.0012 76.00 0.005 10.e-9 20.e-6 1e-3 -0.0 +0.0
 RNDM 123
 HADR 1
 
@@ -131,7 +132,7 @@ then
     echo "Running hdgeant4 ..."
     rm -f run.mac
     cat > run.mac <<EOF
-/run/beamOn 100000
+/run/beamOn ${NEVENTS}
 EOF
     command="hdgeant4 run.mac"
 else
