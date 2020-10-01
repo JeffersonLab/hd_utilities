@@ -1,0 +1,30 @@
+For fitting and plotting the fitted amplitudes copy the data, generated, accepted monte carlo samples and .cfg file used in fitting in one directory and use the codes from this directory to do the following steps:
+
+Copy "split_mass_t" directory with its files to "/src/programs/AmplitudeAnalysis" folder in your halld_sim, if it isn't there, and build it to create corresponding executable.
+Divide data to differnt M and t bins by modifying the names of .cfg and data files in divideData.pl and executing it in the terminal:
+1. divideData.pl
+Do the fitting by running:
+2. driveFit.pl
+Copy "plot_etapi_delta_mass_t_bins_matchamps_SPDG_allamps" directory with its files to "/src/programs/AmplitudeAnalysis" folder in your halld_sim and build it to create corresponding executable.
+Then you can retrive the fittied amplitudes and phase differnces from fitresults and write them to a file by doing:
+3. plot_etapi_delta_mass_t_bins_matchamps_SPDG_allamps -o etaprimepi0_fit.txt
+Finally you can plot the results using the python code below. It takes as an argument the list of the waves , number of M bins, number of t bins, the name of the .txt file from above and names of the phase differences written to a file 
+4. python Drawing_waves_M_t_bins.py "S0pl S0pl P0pl P0pl P1pl P1pl  D0pl D0pl D1pl D1pl D2pl D2pl G0pl G0pl G1pl G1pl" 45 4 etaprimepi0_fit.txt "PhaseP0S0 PhaseP0P1 PhaseP0D0 PhaseP0D1 PhaseP0D2 PhaseP0G0 PhaseP0G1"
+
+
+
+
+
+
+Calculation and plotting of moments
+To calculate moments in terms of fitted amplitudes for differnt M and t  bins and write into a file do based on equations A9 and D8 from Mathiew et. al. :
+1.project_moments_polarized -o etaprimepi0_moments.txt
+Can also use the code that calculates moments in terms of amplitudes using general expression in terms of SDMES and Clebcsh Goron coefficients called "Pol_moments_viafittedPW" based on Vincents codes or my code "project_moments_SPD_etapi0_posepsilon" that uses explicit formulas and is applicable for M>0,epsilon>0, SPD waveset.
+To draw moments use the following python script that takes as arguments number of M bins, number of t bins and the .txt file from above
+2.python Drawing_moments_M_t_bins.py 45 4 etaprimepi0_moments.txt
+3. To plot two different results together do:
+root -l Plot_graphs_together.C++
+
+Also one can look at the unnormalized moments by doing Monte Carlo integration, where each of the events in the data are weighted by corresponding wight to abtain the distribution of corresponding moment based on the Eq. 13 of Mathiew et. al.
+4. Histogram moments by weighting events from data (code from Rebecca)
+root -l plotMoments.C++
