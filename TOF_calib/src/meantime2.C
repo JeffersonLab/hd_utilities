@@ -28,6 +28,15 @@
 #include <iostream>
 
 using namespace std;
+#define NumPMTMax 200
+int NPMTS = 0;
+int NSHORTS = 0;
+int BARS_PER_PLANE = 0; // including 2 short padeles being one
+int PMTS_PER_PLANE = 0; 
+
+
+int REFPADLE = 16;  // was 18
+
 
 TH1F *histdt;
 int DEBUG = 2;  // 0: not print outs, 2: generate plots in pdf, 99: user interupt after draw on screen
@@ -35,32 +44,45 @@ double getmt(int , int , double* ,int );
 
 void meantime2(int RunNumber){
 
-  double MTPlane0[44];
-  double MTPlane1[44];
-  MTPlane0[21] = 0.;
-  MTPlane0[22] = 0.;
-  MTPlane1[21] = 0.;
-  MTPlane1[22] = 0.;
+  NPMTS = 176;                 // TOF1 geometry 
+  NSHORTS = 4;
+  if (RunNumber>69999){
+    NPMTS = 184;               // TOF2 geometry
+    NSHORTS = 8;
+  }
+  BARS_PER_PLANE = NPMTS/4;
+  PMTS_PER_PLANE = NPMTS/2;
+
+  double MTPlane0[100];
+  double MTPlane1[100];
+
+
+  for (int k=(BARS_PER_PLANE/2) - NSHORTS/4; k<(BARS_PER_PLANE/2) + NSHORTS/4; k++){  
+    MTPlane0[k] = 0.;
+    MTPlane0[k] = 0.;
+    MTPlane1[k] = 0.;
+    MTPlane1[k] = 0.;
+  }
   // determine average mean time differences between the reference paddle 18 and paddle k
   // <s> = 1/N Sum(dMT_k - dMT_18)_i  sum over all i
   // this average number is the meatime offsets between paddle k and paddle 18 in plane 0
-  for (int k=1;k<22;k++){    
-    MTPlane0[k-1] = getmt(18,k,MTPlane1,RunNumber);
+  for (int k=1;k<BARS_PER_PLANE/2 - NSHORTS/4 + 1;k++){    
+    MTPlane0[k-1] = getmt(REFPADLE,k,MTPlane1,RunNumber);
   }
-  for (int k=24;k<45;k++){    
-    MTPlane0[k-1] = getmt(18,k,MTPlane1,RunNumber);
+  for (int k=BARS_PER_PLANE/2 + NSHORTS/4 + 1;k<BARS_PER_PLANE+1;k++){    
+    MTPlane0[k-1] = getmt(REFPADLE,k,MTPlane1,RunNumber);
   }
-  MTPlane0[18-1] = 0.;
+  MTPlane0[REFPADLE-1] = 0.;  // this is the reference paddle!
 
   ofstream OUTF;
   char of[128];
-  sprintf(of,"calibration%d/mtparameters_plane0_ref18.dat",RunNumber);
+  sprintf(of,"calibration%d/mtparameters_plane0_ref%d.dat",RunNumber, REFPADLE);
   OUTF.open(of);
   if (OUTF){
-    for (int k=0; k<44; k++){
+    for (int k=0; k<BARS_PER_PLANE; k++){
       OUTF<<k<<"  "<<" 0   "<<MTPlane0[k]<<endl;
     }
-    for (int k=0; k<44; k++){
+    for (int k=0; k<BARS_PER_PLANE; k++){
       OUTF<<k<<"  "<<" 1   "<<MTPlane1[k]<<endl;
     }
   }
@@ -75,7 +97,7 @@ void meantime2(int RunNumber){
 
 double getmt(int p1, int p2, double *mtref,int RunNumber) {
 
-  double PPos[2][44];
+  double PPos[2][100];
   int REFPAD[2] = {p1,p2};
   int REFPLANE = 0;
 
@@ -87,13 +109,13 @@ double getmt(int p1, int p2, double *mtref,int RunNumber) {
     int dummy;
     double dummy1;
     if (IF){
-      for (int n=0;n<44;n++){
+      for (int n=0;n<BARS_PER_PLANE;n++){
 	IF>>dummy>>PPos[k][n]>>dummy1;
       }
     }
     IF.close();
   }
-  for (int n=0;n<44;n++){
+  for (int n=0;n<BARS_PER_PLANE;n++){
     mtref[n] = PPos[0][n];
   }
   
@@ -105,14 +127,7 @@ double getmt(int p1, int p2, double *mtref,int RunNumber) {
 
   // fill histogram with differences
 
-  int OFFSET = 17 - (int)(p2/2);
-  if (OFFSET<0)
-    OFFSET = 0;
-  if (p2>22){
-    OFFSET = 6+(p2-22)/2;
-  }
-  OFFSET = 0;
-  for (int n=0+OFFSET;n<44-OFFSET;n++){
+  for (int n=0;n<BARS_PER_PLANE;n++){
     float tdiff = PPos[0][n] -  PPos[1][n];
     histdt->Fill(tdiff);
   }

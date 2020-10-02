@@ -10,7 +10,7 @@ use DBI;
 $user = "diskmanager";
 $password = "";
 $database = "diskManagement";
-$hostname = "localhost";
+$hostname = "hallddb";
 
 $seconds_per_year = 365.25*24*60*60;
 

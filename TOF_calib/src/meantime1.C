@@ -31,16 +31,42 @@ using namespace std;
 TH2F *dMT;
 int DEBUG = 2; // 1: show plots, 2: save plots, 99: save plots and interupt 
 
+#define NumPMTMax 200
+int NPMTS = 0;
+int BARS_PER_PLANE = 0; // including 2 short padeles being one
+int PMTS_PER_PLANE = 0; 
+
 int NOWALK = 0;
-int REFPAD = 18;
+int REFPAD = 16; // was 18
 int REFPLANE = 0;
 int RunNumber;
+
+// nominal geomtry
+double TOF1Geom[44] = {-123., -117., -111., -105., -99., -93., -87., -81., -75., -69., -63., -57., -51., 
+		       -45., -39., -33., -27., -21., -15., -10.5, -7.5, -3., 3., 7.5, 10.5, 15., 21., 27., 33., 
+		       39., 45., 51., 57., 63., 69., 75., 81., 87., 93., 99., 105., 111., 117., 123.};
+
+double TOF2Geom[46] = {-123., -117., -111., -105., -99., -93., -87., -81., -75., -69., -63., -57., -51., 
+		       -45., -39., -33., -27., -21.75, -17.25, -13.5, -10.5, -6.75, -2.25, 2.25, 6.75, 10.5, 
+		       13.5, 17.25, 21.75, 27., 33., 
+		       39., 45., 51., 57., 63., 69., 75., 81., 87., 93., 99., 105., 111., 117., 123.};
+
+double *PTOFG;
 
 void findpeak(double*, double*);
 
 void meantime1(int Run, int REF, int RefPlane){
   
   RunNumber = Run;
+  NPMTS = 176;                 // TOF1 geometry 
+  PTOFG = TOF1Geom;
+  if (RunNumber>69999){
+    NPMTS = 184;               // TOF2 geometry
+    PTOFG = TOF2Geom;
+  }
+  BARS_PER_PLANE = NPMTS/4;
+  PMTS_PER_PLANE = NPMTS/2;
+
   char ROOTFileName[128];
   sprintf(ROOTFileName,"localdir/tofdata_run%d.root",RunNumber);
   if (RunNumber == 99999)
@@ -55,7 +81,7 @@ void meantime1(int Run, int REF, int RefPlane){
 
   // create dMT thefirst time
   if (dMT==NULL){
-    dMT = new TH2F("dMT","Mean Time Difference",300, -10.,10.,44,0.,44.);
+    dMT = new TH2F("dMT","Mean Time Difference",300, -10.,10., BARS_PER_PLANE,0.,(float)BARS_PER_PLANE);
   }
 
   dMT->Reset();
@@ -69,29 +95,34 @@ void meantime1(int Run, int REF, int RefPlane){
   ifstream INF;
   INF.open(inf);
   int idx;
-  double FitPar[176][17];
-  double dummy;
-  for (int n=0; n<176; n++){
+  double FitPar[NumPMTMax][17];
+  double ReferenceLoc,dummy;
+  for (int n=0; n<NPMTS; n++){
     INF >> idx;
-    for (int s=0;s<17;s++) {
+    for (int s=0;s<16;s++) {
       INF >> FitPar[n][s];
     }
-    INF>>dummy; // this is the chi2 of both fits
   }
   INF.close();
+  ReferenceLoc = 1500.;  // this is the reference ADC value to calibrate to. any walk correction is zero to this point
+
+  if (DEBUG>2){
+    cout<<"Walk fit parameters:"<<endl;
+    for (int n=0; n<NPMTS; n++){
+      cout<<n<<"   ";
+      for (int j=0;j<16;j++){
+	cout<<FitPar[n][j]<<"    ";
+      }
+      cout<<endl;
+    }
+  }
+
 
   // define xpos of the reference paddle by geometry
+  // this does not need to be acurate only ball park
+  //
   int REFPADi = REFPAD-1;
-  float xpos= 999.;
-  if (REFPADi<19){
-    xpos = -15. - 6.0*(18. - REFPADi);
-  } else if (REFPADi>24) {
-    xpos = 15. + 6.0*(REFPADi-24.);
-  } else if (REFPADi<21){
-    xpos = -7.5 - 3.0*(20. - REFPADi);
-  } else if (REFPADi>22){
-    xpos = 7.5 + 3.0*(REFPADi-23.);
-  }
+  float xpos= PTOFG[REFPADi];
 
   // prepare root file and tree to read from 
   TFile *ROOTFile = new TFile(ROOTFileName);
@@ -168,47 +199,45 @@ void meantime1(int Run, int REF, int RefPlane){
 	if ( (PlaneA[n] == REFPLANE) && 
 	     (PaddleA[n] == REFPAD) ) {
 
-	  int idxL = REFPLANE*88 + PaddleA[n]-1;
-	  int idxR = idxL + 44;
+	  int idxL = REFPLANE*PMTS_PER_PLANE + PaddleA[n]-1;
+	  int idxR = idxL + BARS_PER_PLANE;
 
 	  // calculate walk correction for TDC times
-	  int DOFF = 0;
-	  if (PEAKL[n]>FitPar[idxL][16]){
-	    DOFF = 8;
+	  double ADCval = PEAKL[n];
+	  if (ADCval>4090){
+	    ADCval = 4090;
 	  }
-	  double a1 = FitPar[idxL][0+DOFF]
-	    +FitPar[idxL][2+DOFF]*TMath::Power(PEAKL[n],-0.5) 
-	    +FitPar[idxL][4+DOFF]*TMath::Power(PEAKL[n],-0.33) 
-	    +FitPar[idxL][6+DOFF]*TMath::Power(PEAKL[n],-0.2);
-	  if (PEAKL[n]>4095){
-	    a1 += 0.55;
-	  }
+	  double a1 = FitPar[idxL][0]
+	    +FitPar[idxL][2]/ADCval
+	    +FitPar[idxL][4]/ADCval/ADCval
+	    +FitPar[idxL][6]/ADCval/ADCval/ADCval/ADCval
+	    +FitPar[idxL][8]/TMath::Sqrt(ADCval);
 
-	  DOFF = 8;
-	  double a2 = FitPar[idxL][0+DOFF]
-	    +FitPar[idxL][2+DOFF]*TMath::Power(1500.,-0.5) 
-	    +FitPar[idxL][4+DOFF]*TMath::Power(1500.,-0.33) 
-	    +FitPar[idxL][6+DOFF]*TMath::Power(1500.,-0.2);
+	  // ReferenceLoc is chosen to be 1500. ADC counts
+	  double a2 = FitPar[idxL][0]
+	    +FitPar[idxL][2]/ReferenceLoc
+	    +FitPar[idxL][4]/ReferenceLoc/ReferenceLoc
+	    +FitPar[idxL][6]/ReferenceLoc/ReferenceLoc/ReferenceLoc/ReferenceLoc
+	    +FitPar[idxL][8]/TMath::Sqrt(ReferenceLoc);
 
 	  float tcL = a1 - a2;
 
-	  DOFF = 0;
-	  if (PEAKR[n]>FitPar[idxR][16]){
-	    DOFF = 8;
-	  }	  
-	  a1 = FitPar[idxR][0+DOFF]
-	    +FitPar[idxR][2+DOFF]*TMath::Power(PEAKR[n],-0.5) 
-	    +FitPar[idxR][4+DOFF]*TMath::Power(PEAKR[n],-0.33) 
-	    +FitPar[idxR][6+DOFF]*TMath::Power(PEAKR[n],-0.2);
-	  if (PEAKR[n]>4095){
-	    a1 += 0.55;
+	  ADCval = PEAKR[n];
+	  if (ADCval>4090){
+	    ADCval = 4090;
 	  }
+	  a1 = FitPar[idxR][0]
+	    +FitPar[idxR][2]/ADCval
+	    +FitPar[idxR][4]/ADCval/ADCval
+	    +FitPar[idxR][6]/ADCval/ADCval/ADCval/ADCval
+	    +FitPar[idxR][8]/TMath::Sqrt(ADCval);
 
-	  DOFF = 8;
-	  a2 = FitPar[idxR][0+DOFF]
-	    +FitPar[idxR][2+DOFF]*TMath::Power(1500.,-0.5) 
-	    +FitPar[idxR][4+DOFF]*TMath::Power(1500.,-0.33) 
-	    +FitPar[idxR][6+DOFF]*TMath::Power(1500.,-0.2);
+	  // ReferenceLoc is chosen to be 1500. ADC counts
+	  a2 = FitPar[idxR][0]
+	    +FitPar[idxR][2]/ReferenceLoc
+	    +FitPar[idxR][4]/ReferenceLoc/ReferenceLoc
+	    +FitPar[idxR][6]/ReferenceLoc/ReferenceLoc/ReferenceLoc/ReferenceLoc
+	    +FitPar[idxR][8]/TMath::Sqrt(ReferenceLoc);
 
 	  float tcR = a1 - a2; 
 
@@ -231,52 +260,51 @@ void meantime1(int Run, int REF, int RefPlane){
 	if (Plane[n] == THEPLANE){
 	  for (int i=0; i<NhitsA; i++){
 	    if ((PlaneA[i] == THEPLANE) && (PaddleA[i] == Paddle[n])){
-	      int idxL = 88 * THEPLANE + PaddleA[i]-1;
-	      int idxR =  idxL + 44;
+	      int idxL = PMTS_PER_PLANE * THEPLANE + PaddleA[i]-1;
+	      int idxR =  idxL + BARS_PER_PLANE;
 
 	      // calculate walk correction for TDC times
-	      int DOFF = 0;
-	      if (PEAKL[n]>FitPar[idxL][16]){
-		DOFF = 8;
+	      double ADCval = PEAKL[n];
+	      if (ADCval>4090){
+		ADCval = 4090;
 	      }
-	      double a1 = FitPar[idxL][0+DOFF]
-		+FitPar[idxL][2+DOFF]*TMath::Power(PEAKL[n],-0.5) 
-		+FitPar[idxL][4+DOFF]*TMath::Power(PEAKL[n],-0.33) 
-		+FitPar[idxL][6+DOFF]*TMath::Power(PEAKL[n],-0.2);
-	      if (PEAKL[n]>4095){
-		a1 += 0.55;
-	      }
-
-	      DOFF = 8;
-	      double a2 = FitPar[idxL][0+DOFF]
-		+FitPar[idxL][2+DOFF]*TMath::Power(1500.,-0.5) 
-		+FitPar[idxL][4+DOFF]*TMath::Power(1500.,-0.33) 
-		+FitPar[idxL][6+DOFF]*TMath::Power(1500.,-0.2);
+	      double a1 = FitPar[idxL][0]
+		+FitPar[idxL][2]/ADCval
+		+FitPar[idxL][4]/ADCval/ADCval
+		+FitPar[idxL][6]/ADCval/ADCval/ADCval/ADCval
+		+FitPar[idxL][8]/TMath::Sqrt(ADCval);
+	      
+	      // ReferenceLoc is chosen to be 1500. ADC counts
+	      double a2 = FitPar[idxL][0]
+		+FitPar[idxL][2]/ReferenceLoc
+		+FitPar[idxL][4]/ReferenceLoc/ReferenceLoc
+		+FitPar[idxL][6]/ReferenceLoc/ReferenceLoc/ReferenceLoc/ReferenceLoc
+		+FitPar[idxL][8]/TMath::Sqrt(ReferenceLoc);
 	      
 	      float tcL = a1 - a2;
 	      
-	      DOFF = 0;
-	      if (PEAKR[n]>FitPar[idxR][16]){
-		DOFF = 8;
-	      }	  
-	      a1 = FitPar[idxR][0+DOFF]
-		+FitPar[idxR][2+DOFF]*TMath::Power(PEAKR[n],-0.5) 
-		+FitPar[idxR][4+DOFF]*TMath::Power(PEAKR[n],-0.33) 
-		+FitPar[idxR][6+DOFF]*TMath::Power(PEAKR[n],-0.2);
-	      if (PEAKR[n]>4095){
-		a1 += 0.55;
+	      ADCval = PEAKR[n];
+	      if (ADCval>4090){
+		ADCval = 4090;
 	      }
 
-	      DOFF = 8;
-	      a2 = FitPar[idxR][0+DOFF]
-		+FitPar[idxR][2+DOFF]*TMath::Power(1500.,-0.5) 
-		+FitPar[idxR][4+DOFF]*TMath::Power(1500.,-0.33) 
-		+FitPar[idxR][6+DOFF]*TMath::Power(1500.,-0.2);
+	      a1 = FitPar[idxR][0]
+		+FitPar[idxR][2]/ADCval
+		+FitPar[idxR][4]/ADCval/ADCval
+		+FitPar[idxR][6]/ADCval/ADCval/ADCval/ADCval
+		+FitPar[idxR][8]/TMath::Sqrt(ADCval);
+	      
+	      // ReferenceLoc is chosen to be 1500. ADC counts
+	      a2 = FitPar[idxR][0]
+		+FitPar[idxR][2]/ReferenceLoc
+		+FitPar[idxR][4]/ReferenceLoc/ReferenceLoc
+		+FitPar[idxR][6]/ReferenceLoc/ReferenceLoc/ReferenceLoc/ReferenceLoc
+		+FitPar[idxR][8]/TMath::Sqrt(ReferenceLoc);
 	      
 	      float tcR = a1 - a2; 
 	      
 	      float tcorr = tcR + tcL;
-
+	      	      
 	      //cout<<tcorr<<"  "<<ADCL[i]<<"  "<<ADCR[i]<<endl;
 	      if (!NOWALK) {
 		MT_Pad = MeanTime[n] - tcorr/2.;
@@ -294,13 +322,13 @@ void meantime1(int Run, int REF, int RefPlane){
 	}  
       }
     }
-
+    
   }
-
+  
   ROOTFile->Close();
-
-  double ppos[44];
-  double psig[44];
+  
+  double ppos[100];
+  double psig[100];
   // find the peaks in all the 1-d projections of the 2-d histogram
   findpeak(ppos,psig);
   
@@ -309,7 +337,7 @@ void meantime1(int Run, int REF, int RefPlane){
   ofstream OF;
   OF.open(of);
   if (OF){
-    for (int n=0;n<44;n++){
+    for (int n=0;n<BARS_PER_PLANE;n++){
       OF<<n<<" "<<ppos[n]<<" "<<psig[n]<<endl;
     }
   }
@@ -318,8 +346,7 @@ void meantime1(int Run, int REF, int RefPlane){
 
 void findpeak(double *MTPosition, double *MTSigma){
 
-
-  // loop over all 44 bins of the vertical axis of the 2-d histograms
+  // loop over all BARS_PER_PLANE bins of the vertical axis of the 2-d histograms
   // these are the paddles orthogonal to the reference paddle.
   // find the peak in these 1-d distributions using Gaussian fits.
   
@@ -330,7 +357,7 @@ void findpeak(double *MTPosition, double *MTSigma){
   }
 
 
-  for (int k=1;k<45;k++ ){
+  for (int k=1; k<BARS_PER_PLANE+1; k++ ){
 
     TH1D *h = dMT->ProjectionX("h",k,k);
 
@@ -338,6 +365,10 @@ void findpeak(double *MTPosition, double *MTSigma){
     double sig = 0;
 
     if (h->GetEntries()>100){
+
+      if (h->GetEntries()<2500){
+	h->Rebin(2);
+      }
       
       //cout<<"Paddle: "<<k<<endl;
       TSpectrum *speaks = new TSpectrum(4);
@@ -368,27 +399,22 @@ void findpeak(double *MTPosition, double *MTSigma){
 
       double maxc = max;
       double bw = h->GetBinWidth(1);
-      double loli = maxc - 4.*bw;
-      double hili = maxc + 4.*bw;
-      if (loli<-10){
-	loli = -10.;
-      }
-      if (hili>10.){
-	hili = 10.;
-      }
+      double loli = maxc - 8.*bw;
+      double hili = maxc + 8.*bw;
+
 
       h->Fit("gaus","QR","",loli,hili);
       TF1 *f1 = h->GetFunction("gaus");
       pos = f1->GetParameter(1);
       sig = f1->GetParameter(2);
-      hili = pos + 1*sig;
-      loli = pos - 1*sig;
+      hili = pos + 1.3*sig;
+      loli = pos - 1.3*sig;
       h->Fit("gaus","QR","",loli,hili);
       f1 = h->GetFunction("gaus");
       pos = f1->GetParameter(1);
       sig = f1->GetParameter(2);
-      hili = pos + 0.9*sig;
-      loli = pos - 0.9*sig;
+      hili = pos + 1.*sig;
+      loli = pos - 1.*sig;
       h->Fit("gaus","QR","",loli,hili);
       f1 = h->GetFunction("gaus");
       pos = f1->GetParameter(1);      

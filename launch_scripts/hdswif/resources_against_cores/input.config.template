@@ -1,0 +1,22 @@
+# Key/value pairs are separated by white space
+# Lines starting with # and empty lines are ignored
+# Only the first two values are evaluated,
+# so for lines like
+# KEYVALUE VALUE1 VALUE2
+# VALUE2 is ignored
+
+PROJECT                       gluex
+TRACK                         reconstruction
+OS                            centos65
+
+NCORES                        NNN
+DISK                          40
+RAM                           8
+TIMELIMIT                     24
+
+JOBNAMEBASE                   offmon_[NCORES]
+RUNPERIOD                     RRR
+VERSION                       VVV
+OUTPUT_TOPDIR                 /volatile/halld/offline_monitoring/RunPeriod-RUNPERIOD/ver[VERSION]/[NCORES] # Example of other variables included in variable
+SCRIPTFILE                    /home/gxproj5/halld/hdswif/script.sh                                  # Must specify full path
+ENVFILE                       /home/gxproj5/halld/hdswif/setup_jlab-2015-03.csh                     # Must specify full path

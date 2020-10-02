@@ -1,0 +1,48 @@
+# BCAL
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/BCAL_Eff/bcal_hist_eff.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/BCAL_inv_mass/bcal_inv_mass.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/BCAL_inv_mass/bcal_fcal_inv_mass.C
+# HLDETECTORTIMING
+#/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Calibration/HLDetectorTiming/HistMacro_CalorimeterTiming.C
+#/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Calibration/HLDetectorTiming/HistMacro_PIDSystemTiming.C
+#/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Calibration/HLDetectorTiming/HistMacro_TaggerRFAlignment.C
+#/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Calibration/HLDetectorTiming/HistMacro_TaggerSCAlignment.C
+#/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Calibration/HLDetectorTiming/HistMacro_TaggerTiming.C
+#/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Calibration/HLDetectorTiming/HistMacro_TrackMatchedTiming.C
+# RECONSTRUCTION
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_NumHighLevelObjects.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_NumLowLevelObjects_p1.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_NumLowLevelObjects_p2.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_EventInfo.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_TOFReconstruction_p1.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_TOFReconstruction_p2.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_SCReconstruction_p1.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_SCReconstruction_p2.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_FCALReconstruction_p1.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_FCALReconstruction_p2.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_FCALReconstruction_p3.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_BCALReconstruction_p1.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_BCALReconstruction_p2.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_BCALReconstruction_p3.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_Tracking_p1.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_Tracking_p2.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_Tracking_p3.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_TrackMultiplicity.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_Kinematics_p1.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_Kinematics_p2.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_Matching_BCAL.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_Matching_FCAL.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_Matching_SC.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/monitoring_hists/HistMacro_Matching_TOF.C
+# ANALYSIS
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/p2pi_hists/HistMacro_p2pi_pmiss.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/p2pi_hists/HistMacro_p2pi_preco1.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/p3pi_hists/HistMacro_p3pi_preco_2FCAL.C
+/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/Analysis/p3pi_hists/HistMacro_p3pi_preco_FCAL-BCAL.C
+# TRIGGER
+#/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/L1_online/l1_ancilary.C
+#/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/L1_online/l1_fcal_bcal.C
+#/work/halld2/home/gxproj5/builds//sim-recon/monitoring_launch/src/plugins/monitoring/L1_online/l1_rate.C 
+#/work/halld2/home/sdobbs/Software/sim-recon/sim-recon.git/src/plugins/monitoring/L1_online/l1_ancilary.C
+#/work/halld2/home/sdobbs/Software/sim-recon/sim-recon.git/src/plugins/monitoring/L1_online/l1_fcal_bcal.C
+#/work/halld2/home/sdobbs/Software/sim-recon/sim-recon.git/src/plugins/monitoring/L1_online/l1_rate.C

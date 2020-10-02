@@ -20,13 +20,16 @@
 #include <TFitResultPtr.h>
 #include <fstream>
 #include <iostream>
+#include <TLine.h>
 
 using namespace std;
 
-TH2F *Twalk[176];
-TF1 *AllFits[2][176];
-TGraphErrors *onedplots[176];
+#define NumPMTMax 200
 
+int NPMTS = 0;
+TH2F *Twalk[NumPMTMax];
+TF1 *AllFits[2][NumPMTMax];
+TGraphErrors *onedplots[NumPMTMax];
 
 int DEBUG = 2; // 2 = make plots, 99 = interupt
 
@@ -34,29 +37,81 @@ double  fithist(TH2F*, double*, int , int, int, int);
 TGraphErrors *mkprof(TH2F*, int);
 int RunNumber ;
 
+int BARS_PER_PLANE = 0; // including 2 short padeles being one
+int PMTS_PER_PLANE = 0; 
+
+
+float CenterTime = 69.;
+
 void walk1(int Run){
-  
   RunNumber = Run;
+  NPMTS = 176;            // TOF 1 geometry
+
+  char TOFDIRcmd[128];
+  sprintf(TOFDIRcmd, "ccdb dump TOF/base_time_offset:%d > calib.log", RunNumber);
+
+  if (RunNumber>69999){
+    NPMTS = 184;          // TOF 2 geometry
+    sprintf(TOFDIRcmd, "ccdb dump TOF2/base_time_offset:%d > calib.log", RunNumber);
+  }
+  BARS_PER_PLANE = NPMTS/4;
+  PMTS_PER_PLANE = NPMTS/2;
+
+  // first get base time offset from ccdb data base
+  system(TOFDIRcmd);
+  ifstream INF1("calib.log");
+  if (INF1 == NULL){
+    cout<<"Error no calibration file found! BAIL NOW!"<<endl;
+    return;
+  }
+  string dummy1;
+  getline( INF1, dummy1);
+  float ADCoffset = 0.;
+  float TDCoffset = 0.;
+  INF1>>ADCoffset>>TDCoffset;
+  INF1.close();
+
+  cout<<"ADC and TDC global time offsets(from ccdb): "<<ADCoffset<< "  " << TDCoffset<<endl;
+  //  return;
+
+
   char ROOTFileName[128];
-  sprintf(ROOTFileName,"localdir/run%d/hd_root_tofcalib.root",RunNumber);
+  //sprintf(ROOTFileName,"localdir/run%d/hd_root_tofcalib.root",RunNumber);
   sprintf(ROOTFileName,"localdir/tofdata_run%d.root",RunNumber);
   if (RunNumber == 99999)
     sprintf(ROOTFileName,"localdir/big%d.root",RunNumber);
 
-  // create a 2-d histogram for each PMT (176) with horizontal axis ADC
+  TFile *ROOTFile = new TFile(ROOTFileName);
+  TH2D *TDCtime2d = (TH2D*) ROOTFile->Get("TOFcalib/TOFTDCtime");
+  TH2D *ADCtime2d = (TH2D*) ROOTFile->Get("TOFcalib/TOFADCtime");
+  TH1D *TDCpj = (TH1D*)TDCtime2d->ProjectionX("TDCpj", 1, TDCtime2d->GetYaxis()->GetNbins());
+  TH1D *ADCpj = (TH1D*)ADCtime2d->ProjectionX("ADCpj", 1, ADCtime2d->GetYaxis()->GetNbins());
+
+  int mbt = TDCpj->GetMaximumBin();
+  int mba = ADCpj->GetMaximumBin();
+  float c = TDCpj->GetBinCenter(mbt) - ADCpj->GetBinCenter(mba);
+  float l1 = (float)((int)c - 50);
+  float l2 = (float)((int)c + 50);
+
+  CenterTime = c+15;
+
+  ROOTFile->Close();
+
+  // create a 2-d histogram for each PMT  with horizontal axis ADC
   // and vertical axis timedifference 
-  for (int n=0; n<176; n++){
+  for (int n=0; n<NPMTS; n++){
     char hnam[128];
     sprintf(hnam,"Twalk%d",n);
     char htit[128];
     sprintf(htit,"E vs. T %d",n);
-    Twalk[n] = new TH2F(hnam,htit,200, 0.,4096., 500, 250.,310.);
-    //Twalk[n] = new TH2F(hnam,htit,200, 0.,24000., 500, 250.,350.);
+    //Twalk[n] = new TH2F(hnam,htit,200, 0.,4096., 500, 250.,310.);
+    //Twalk[n] = new TH2F(hnam,htit,200, 0., 4096., 1000, l1, l2);
+    Twalk[n] = new TH2F(hnam,htit,200, 0., 4096., 400, -10., 10.);
     Twalk[n]->GetXaxis()->SetTitle("Signal Amplitude [adc]");
   }
 
-  // prepare root file and tree for reading
-  TFile *ROOTFile = new TFile(ROOTFileName);
+  // prepare root tree for reading
+  ROOTFile = new TFile(ROOTFileName);
   TTree *t3 = (TTree*)ROOTFile->Get("TOFcalib/t3");
   int MaxHits = 100;
   int Event;
@@ -172,12 +227,12 @@ void walk1(int Run){
 
 	  float pmtL = PEAKL[n];
 	  float pmtR = PEAKR[n];
-	  float tL = MeanTime[i]-TimeDiff[i];
-	  float tR = MeanTime[i]+TimeDiff[i];
-	  float adcTL = MeanTimeA[n]-TimeDiffA[n] ;
-	  float adcTR = MeanTimeA[n]+TimeDiffA[n] ;
-	  int hid1 = plane*88 + paddle - 1;
-	  int hid2 = plane*88 + 44 + paddle - 1;
+	  float tL = MeanTime[i]-TimeDiff[i] + TDCoffset;
+	  float tR = MeanTime[i]+TimeDiff[i] + TDCoffset;
+	  float adcTL = MeanTimeA[n]-TimeDiffA[n] + ADCoffset ;
+	  float adcTR = MeanTimeA[n]+TimeDiffA[n] + ADCoffset ;
+	  int hid1 = plane*PMTS_PER_PLANE + paddle - 1;
+	  int hid2 = plane*PMTS_PER_PLANE + BARS_PER_PLANE + paddle - 1;
 	  //cout<<tL-adcTL<<endl;
 	  if ( (!OFR[n]) && (!OFL[n]) ){
 	    //bool c = (((tL-adcTL+THESHIFT)>248.) && (pmtL>3000)) || ((tL-adcTL+THESHIFT)<240.);
@@ -205,9 +260,9 @@ void walk1(int Run){
 	     (s == LRA[n])) {	  
 	  
 	  float pmt = PEAK[n];
-	  float adct = TADCS[n]; 
-	  float tdct = TDCST[i];
-	  int idx = 88*plane + s*44 + paddle -1;
+	  float adct = TADCS[n] + ADCoffset; 
+	  float tdct = TDCST[i] + TDCoffset;
+	  int idx = plane*PMTS_PER_PLANE + s*BARS_PER_PLANE + paddle -1;
 	  if (!OF[n]){
 	    //bool c = (((tdct-adct+THESHIFT)>248.) && (pmt>2000)) || ((tdct-adct+THESHIFT)<240.);
 	    //if (!c)
@@ -221,20 +276,33 @@ void walk1(int Run){
   ROOTFile->Close();
   cout<<".... done reading"<<endl;
 
-  // now do the walk determintion for all 176 PMTs
-  double FitPar[176][17];
+  if (1) {
+    char rfile[128];
+    sprintf(rfile,"calibration%d/walk_histos_run%d.root",RunNumber,RunNumber);
+    TFile *Rout = new TFile(rfile,"RECREATE");
+    Rout->cd();
+    for (int k=0;k<NPMTS;k++){ 
+      Twalk[k]->Write(); 
+    }  
+
+    Rout->Close();
+  }
+
+  // now do the walk determintion for all PMTs
+  double FitPar[NumPMTMax][17];
   double allp[17];
-  double CHI2[176];
-  for (int n=0; n<176; n++){
-    if (Twalk[n]->GetEntries()>100){
+  double CHI2[NumPMTMax];
+  for (int n=0; n<NPMTS; n++){
+    TH1F *hpjy = (TH1F*)Twalk[n]->ProjectionY("hpjy", 195, 195);
+    if (((Twalk[n]->GetEntries()>100) || hpjy->GetEntries()>10) ){
       // fit 2-D histogram using profile 
-      int plane  = n/88;
-      int side = (n - 88*plane)/44;
-      int paddle = n - 88*plane - side*44;
+      int plane  = n/PMTS_PER_PLANE;
+      int side = (n - PMTS_PER_PLANE*plane)/BARS_PER_PLANE;
+      int paddle = n - PMTS_PER_PLANE*plane - side*BARS_PER_PLANE;
       cout<<"Paddle "<<n<< ": do walk fit"<<endl; 
       CHI2[n] = fithist(Twalk[n], allp, plane, paddle, side, n);
 
-      for (int i=0;i<17;i++){
+      for (int i=0;i<16;i++){
 	FitPar[n][i] = allp[i];
       }
     } else {
@@ -243,59 +311,70 @@ void walk1(int Run){
       }
     }
   }
+  
   char outf[128];
   sprintf(outf, "calibration%d/tof_walk_parameters_run%d.dat",RunNumber,RunNumber);
   ofstream OUTF;
   OUTF.open(outf);
-  TH1D *MeanOffset = new TH1D("MeanOffsetTDC","Mean TDC Time Offset w.r.t. ADCs",500, 220., 320.);
+  TH1D *MeanOffsetTDC = new TH1D("MeanOffsetTDC","Walk Correction Value at ADC = 1500",
+			      500, -500., 500);
+  MeanOffsetTDC->GetXaxis()->SetTitle("walk corr. at ADC=1500 [ns]");
   ofstream OUTF1;
   sprintf(outf, "calibration%d/tof_TDC_ADC_timediff_run%d.dat",RunNumber,RunNumber);
   OUTF1.open(outf);
-  double TheOffsets[176];
-  for (int n=0; n<176; n++){
+  double TheOffsets[NumPMTMax];
+  for (int n=0; n<NPMTS; n++){
     OUTF<<n;
-    for (int s=0;s<17;s++){
+    for (int s=0;s<16;s++){
       OUTF<<"   "<<FitPar[n][s];
     }
-    OUTF<<"    "<<CHI2[n]<<endl;
+    OUTF<<endl;
 
-    TheOffsets[n] = FitPar[n][8]
-      +FitPar[n][10]*TMath::Power(1500.,-0.5) 
-      +FitPar[n][12]*TMath::Power(1500.,-0.33) 
-      +FitPar[n][14]*TMath::Power(1500.,-0.2);
+    TheOffsets[n] = FitPar[n][0]
+      +FitPar[n][2]/1500. 
+      +FitPar[n][4]/1500./1500.
+      +FitPar[n][6]/1500./1500./1500./1500.
+      +FitPar[n][8]/TMath::Sqrt(1500.);
 
-    MeanOffset->Fill(TheOffsets[n]);
+    MeanOffsetTDC->Fill(TheOffsets[n]);
     OUTF1<<n<<"  "<<TheOffsets[n]<<"       "<<CHI2[n]<<endl;
   }
+
   OUTF.close();
   OUTF1.close();
 
   // create DB file to loaded to ccdb data base
   sprintf(outf, "calibration%d/tof_walk_parameters_run%d.DB",RunNumber,RunNumber);
   OUTF.open(outf);
-  for (int n=0; n<176; n++){
-    OUTF<< FitPar[n][0]<<"   " << FitPar[n][2] 
-	<<"   "<< FitPar[n][4]<<"   "<< FitPar[n][6]
-	<<"   "<< FitPar[n][8]<<"   " << FitPar[n][10] 
-	<<"   "<< FitPar[n][12]<<"   "<< FitPar[n][14]
-	<<"   "<< FitPar[n][16]
-	<<"  1500."<<endl ;
+  for (int n=0; n<NPMTS; n++){
+    for (int j=0;j<7; j++){
+      OUTF<< FitPar[n][j*2]<<"   ";
+    }
+    OUTF<<FitPar[n][14]<<"  "<<FitPar[n][15]; // chi2 and start if fit of F1    
+    OUTF<<"  1500."<<endl ;    // chose as reference.
   }
+
+  OUTF.close();
+
+  // make marker to specify the vesion of walk correction used:
+  sprintf(outf, "calibration%d/walkcortype.log", RunNumber);
+  OUTF.open(outf);
+  OUTF<<"4"<<endl;
   OUTF.close();
   
-  MeanOffset->Draw();
+  MeanOffsetTDC->Draw();
   sprintf(outf,"plots/meanoffset_tADCminustTDC_run%d.pdf",RunNumber);
   gPad->SaveAs(outf);
   
   // calculate offsets for TDC vs. ADC and mean global offset
   // between TDC and ADC
-  double mean = MeanOffset->GetMean();
-  double rms = MeanOffset->GetRMS();
+  double mean = MeanOffsetTDC->GetMean();
+  double rms = MeanOffsetTDC->GetRMS();
   double loli = mean-3.*rms;
   double hili = mean+3.*rms;
-  MeanOffset->Fit("gaus","RQ","",loli,hili);
-  MeanOffset->Draw();
-  double CenterOffset = MeanOffset->GetFunction("gaus")->GetParameter(1);
+  MeanOffsetTDC->Fit("gaus","RQ","",loli,hili);
+  MeanOffsetTDC->Draw();
+  double CenterOffset = MeanOffsetTDC->GetFunction("gaus")->GetParameter(1);
   //cout<<CenterOffset<<endl;
 
   // the ADC global time offset minus this value give the TDC global time offset
@@ -308,7 +387,7 @@ void walk1(int Run){
   OUTF.open(outf);
   // CenterOffset is mean time offset between ADC and TDC
   // TheOffsets[n] is nth pmt offset w.r.t. CenterOffset
-  for (int n=0; n<176; n++){
+  for (int n=0; n<NPMTS; n++){
     OUTF<<CenterOffset-TheOffsets[n]<<endl;
   }
   OUTF.close();
@@ -317,19 +396,21 @@ void walk1(int Run){
   sprintf(rfile,"calibration%d/walk_results_run%d.root",RunNumber,RunNumber);
   TFile *Rout = new TFile(rfile,"RECREATE");
   Rout->cd();
-  for (unsigned int k=0;k<176;k++){ 
-    Twalk[k]->Write();    
-    onedplots[k]->Write();
-  }  
-  for (unsigned int k=0;k<176;k++){ 
+  for (int k=0;k<NPMTS;k++){ 
+    Twalk[k]->Write(); 
+    if (onedplots[k]){
+      onedplots[k]->Write();
+    }
+  }
+  for (int k=0;k<NPMTS;k++){ 
     if (AllFits[0][k]){
       AllFits[0][k]->Write();
-      if (AllFits[1][k]){
-	AllFits[1][k]->Write();
-      }
     }
- }  
-  MeanOffset->Write();
+    if (AllFits[1][k]){
+      AllFits[1][k]->Write();
+    }
+  }  
+  MeanOffsetTDC->Write();
   Rout->Close();
 
 }
@@ -337,105 +418,110 @@ void walk1(int Run){
 double fithist(TH2F *hist, double *allp, int plane, int paddle, int side, int idx){
 
   // make profile plot from hist
-  TGraphErrors *grnew = mkprof(hist, idx);
-  onedplots[idx] = grnew;
+  TGraphErrors *graph = mkprof(hist, idx);
+  onedplots[idx] = graph;
   
-  //two independend fit functions for two regions
-  TF1 *f1 = new TF1("f1", "[0]+ [1]*pow(x,-0.5) + [2]*pow(x,-0.33)+ [3]*pow(x,-0.2)",150.,500.);
-  TF1 *f2 = new TF1("f2", "[0]+ [1]*pow(x,-0.5) + [2]*pow(x,-0.33)+ [3]*pow(x,-0.2)",200.,3950.);
-
-  // determine the connection point between the two regions of fit
-  TH1D *response = hist->ProjectionX("response", 1,hist->GetYaxis()->GetNbins()-1);
-  double max = response->GetBinContent(6);
-  int k = 16;
-  while (response->GetBinContent(k)<max){
-    max = response->GetBinContent(k);
-    cout<<k<<"  "<<max<<endl;
-    k++;
-  }
-  double ConectPoint = response->GetBinCenter(k+20);
-  if (ConectPoint<300){
-    ConectPoint = 300.;
-  }
-
-  int NFits = 0;
-
- StartOfFit:
-
-  f1->SetParameter(0, 286.);
-  f1->SetParameter(1, 100.);
-  f1->SetParameter(2, -11.);
-  f1->SetParameter(3, -1.);
-
-  f1->SetParLimits(0, 270., 300.);
-
-  f2->SetParameter(0, 286.);
-  f2->SetParameter(1, 100.);
-  f2->SetParameter(2, -11.);
-  f2->SetParameter(3, -1.);
-
-  f2->SetParLimits(0, 200., 300.);
+  // new fit functions with total number of fit parameters 5+2 = 7
+  TF1 *f1 = new TF1("f1", "[0] + [1]/x + [2]/(x*x) + [3]/(x*x)/(x*x) + [4]/sqrt(x)",150.,4000.);
+  TF1 *F1 = new TF1("F1", "[0] + [1]/x + [2]/(x*x) + [3]/(x*x)/(x*x) + [4]/sqrt(x)",150.,4000.);
+  TF1 *f2 = new TF1("f2", "[0] +  [1]*x", 1500., 4000.);
+  TF1 *F2 = new TF1("F2", "[0] +  [1]*x", 1500., 4000.);
   
+  f1->SetParameter(0, 1.);
+  f1->SetParameter(1, 1.);
+  f1->SetParameter(2, 1.);
+  f1->SetParameter(3, 1.);
+  f1->SetParameter(4, 1.);
+  
+  cout<<"Fit f1 for PMT: "<<idx<<endl;
+  // get 3rd bin in X of the graph
+  double ax, ay;
+  graph->GetPoint(2, ax, ay);
+  f1->SetParLimits(0,-100, ay+(TMath::Abs(ay)*0.5));
+  float f1limit = ax-1.;
+  cout<<"start fit at "<<ax<<endl;
+  TFitResultPtr res = (TFitResultPtr)graph->Fit(f1, "SQ", "R", f1limit, 3900.);
+  double Chi2 = res->Chi2() / res->Ndf(); 
+  cout<<"chi2 = "<<Chi2<<endl;
+  if (Chi2>100){
+    f1->SetParameter(0, 1.);
+    f1->SetParameter(1, 1.);
+    f1->SetParameter(2, 1.);
+    f1->SetParameter(3, 1.);
+    f1->SetParameter(4, 1.);
+    res = (TFitResultPtr)graph->Fit(f1, "SQ", "R", f1limit, 3000.);
+    Chi2 = res->Chi2() / res->Ndf(); 
+    cout<<"chi2 = "<<Chi2<<endl;
+  }
+  TF1 *fres = (TF1*)graph->GetFunction("f1");
+  for (int k=0;k<5;k++){
+    F1->SetParameter(k, fres->GetParameter(k));
+    allp[2*k] = fres->GetParameter(k);
+    allp[2*k+1] = fres->GetParError(k);
+  }
+  F1->SetLineColor(4);
 
-  TFitResultPtr r = grnew->Fit(f1, "QS", "R", 150., ConectPoint+10.);
-  double *l = grnew->GetY();
-  double ll = *l;
-  grnew->GetYaxis()->SetRangeUser(ll-8., ll*1.01);
-  TF1 *thefit = grnew->GetFunction("f1");
+  f2->SetParameter(0, 1.);
+  f2->SetParameter(1, -0.001);
+  int nbins = graph->GetN();
+  graph->GetPoint(nbins-1, ax, ay);
+  if (ax<2000.){
+    for (int k=0;k<2;k++){
+      allp[2*k+10] = 0.;
+      allp[2*k+1+10] = 0.;
+      AllFits[1][idx] = (TF1*)f2->Clone();
+      allp[15] = f1limit;
+      allp[14] = Chi2;
+    }
+    return Chi2;
+  }
+  
+  cout<<"Fit f2 for PMT: "<<idx<<endl;
+  TFitResultPtr res1 = graph->Fit(f2, "SQ", "R", 2000., 3900.);
+  Chi2 += res->Chi2() / res->Ndf(); 
+  fres = (TF1*)graph->GetFunction("f2");
+
+  int OFFS = 10;
+  for (int k=0;k<2;k++){
+    F2->SetParameter(k, fres->GetParameter(k));
+    allp[2*k+OFFS] = fres->GetParameter(k);
+    allp[2*k+1+OFFS] = fres->GetParError(k);
+  }
+  F2->SetLineColor(2);
+
   char fitnam[128];
   sprintf(fitnam,"fit1hist%d",idx);
-  thefit->SetName(fitnam);
-  AllFits[0][idx] = (TF1*)thefit->Clone();
+  F1->SetName(fitnam);
+  AllFits[0][idx] = (TF1*)F1->Clone();
   AllFits[0][idx]->SetLineColor(4);
-  double chi2 =  r->Chi2() / r->Ndf(); 
-  for (int k=0;k<4;k++){
-    allp[2*k] = thefit->GetParameter(k);
-    allp[2*k+1] = thefit->GetParError(k);
-    //cout<< allp[2*k]<<"  "<<allp[2*k+1]<<endl;
-  }
-  double P1 = thefit->Eval(ConectPoint);
 
-  r = grnew->Fit(f2, "SQ", "R", ConectPoint-10., 3900.);
-  thefit = grnew->GetFunction("f2");
   sprintf(fitnam,"fit2hist%d",idx);
-  thefit->SetName(fitnam);
-  AllFits[1][idx] = (TF1*)thefit->Clone();
-  chi2 +=  r->Chi2() / r->Ndf(); 
-  chi2 /=2;
-  int OFFS = 8;
-  for (int k=0;k<4;k++){
-    allp[2*k+OFFS] = thefit->GetParameter(k);
-    allp[2*k+1+OFFS] = thefit->GetParError(k);
-    //cout<< allp[2*k]<<"  "<<allp[2*k+1]<<endl;
-  }
-  allp[16] = ConectPoint;
-
-  double P2 = thefit->Eval(ConectPoint); 
-  cout<<"Delta t at ConectPoint: "<<P1-P2<<endl;
-  if (TMath::Abs(P1-P2)>0.025){
-    cout<<"Missmatch > 25ps! shift Connectpoint and redo fit"<<endl;
-    if (NFits<6){
-      NFits++;
-      ConectPoint -= 50.;
-      goto StartOfFit;
-    }
-      
-  }
-
+  F2->SetName(fitnam);
+  AllFits[1][idx] = (TF1*)F2->Clone();
+  allp[15] = f1limit;
+  allp[14] = Chi2;
 
   if (DEBUG) {
     hist->Draw("colz");
+    gPad->SetLogz(1);
     char hnam[128];
     sprintf(hnam,"Time vs Energy with Walk Correction Fit PMT %d", idx);
     hist->SetTitle(hnam);
     hist->GetXaxis()->SetTitle("ADC Amplitude");
     hist->GetYaxis()->SetTitle("Time Difference T_{TDC}-T_{ADC} [ns]");
-    grnew->Draw("same AP");
-    grnew->GetXaxis()->SetRangeUser(20.,1200.);
+    graph->Draw("same AP");
+    graph->GetXaxis()->SetRangeUser(20., 4000.);
     gPad->SetGrid();
     gPad->Update();
-    AllFits[0][idx]->Draw("same");
-    AllFits[1][idx]->Draw("same");
+
+    F1->SetLineColor(2);
+    F1->SetLineWidth(2);
+    F1->Draw("same");
+    F2->SetLineColor(4);
+    F2->SetLineWidth(4);
+    F2->Draw("same");
+
+    gPad->Update();
 
     if (DEBUG>90){
       if (!(idx%5)||(DEBUG>98))
@@ -449,7 +535,7 @@ double fithist(TH2F *hist, double *allp, int plane, int paddle, int side, int id
 
   }
 
-  return chi2;
+  return Chi2;
 }
 
 TGraphErrors *mkprof(TH2F *h, int id){
@@ -461,26 +547,64 @@ TGraphErrors *mkprof(TH2F *h, int id){
   double dY[600];
 
   int cnt = 0;
-  for (int k=7;k<nbins;k++){
+  cout<<"Create profile histogram for PMT: "<<id<<endl;
+  for (int k=5;k<nbins;k++){
 
     X[cnt] = h->GetXaxis()->GetBinCenter(k);
     TH1D *p = (TH1D*)h->ProjectionY("p",k,k);
 
-    if (p->GetEntries()<10){
+    if (p->GetEntries()<50){
       continue;
     }
 
+    if (p->GetMaximum()<1){
+      continue;
+    }
+    
     int mb = p->GetMaximumBin();
     double max = p->GetBinCenter(mb);
     double maxold = max;
     double hili = max + 4.*p->GetBinWidth(mb);
     double loli = max - 4.*p->GetBinWidth(mb);
+
+    // quit if limits are off
+    if ( (hili > p->GetBinCenter(p->GetXaxis()->GetNbins()) ) || 
+	 (loli < p->GetBinCenter(1)) ){
+      continue;
+    }
+
+    // quit if no data in range
+    double SUM = 0;
+    for (int j=p->FindBin(loli); j<p->FindBin(hili)+1; j++){
+      SUM += p->GetBinContent(j);
+    }
+    if (SUM<10){
+      continue;
+    }
+
     p->Fit("gaus","Q","R",loli,hili);
+
     TF1 *f = p->GetFunction("gaus");
     max = f->GetParameter(1);
     double sig = f->GetParameter(2);
     loli = max - 1.5*sig;
     hili = max + 1.5*sig;
+
+    // quit if limits are off
+    if ( (hili > p->GetBinCenter(p->GetXaxis()->GetNbins()) ) || 
+	 (loli < p->GetBinCenter(1)) ){
+      continue;
+    }
+
+    //quit if no data in range
+    SUM = 0;
+    for (int j=p->FindBin(loli); j<p->FindBin(hili)+1; j++){
+      SUM += p->GetBinContent(j);
+    }
+    if (SUM<10){
+      continue;
+    }
+
     p->Fit("gaus","Q","R",loli,hili);
     f = p->GetFunction("gaus");
 

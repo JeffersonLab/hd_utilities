@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="Wyatt Campbell" />
+  <title>GlueX FCAL Damage Analysis</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">GlueX FCAL Damage Analysis</h1>
+<p class="author">Wyatt Campbell</p>
+<p class="date">2019 July 25</p>
+</header>
+<h1 id="table-of-contents">Table of Contents</h1>
+<ol type="1">
+<li><p><a href="#intro">Analysis of LED data</a></p></li>
+<li><p><a href="#build">Build System</a></p></li>
+<li><p><a href="#data">Data Structure</a><br />
+</p></li>
+</ol>
+<ol type="i">
+<li><a href="#processout">processrun data format</a><br />
+</li>
+<li><a href="#doubleout">doubleratio data format</a><br />
+</li>
+<li><a href="#chainout">chainify data format</a></li>
+</ol>
+<ol start="4" type="1">
+<li><a href="#frontend">Front Ends</a><br />
+</li>
+</ol>
+<ol type="i">
+<li><a href="#batch">Front End Batch Files</a></li>
+</ol>
+<ol start="5" type="1">
+<li><p><a href="#analysis">Analysis Code</a></p></li>
+<li><p><a href="#macros">ROOT Macros</a><br />
+</p></li>
+</ol>
+<ol type="i">
+<li><a href="#utility">Utility Header</a></li>
+</ol>
+<ol start="7" type="1">
+<li><a href="#config">Configuration</a><br />
+</li>
+</ol>
+<ol type="i">
+<li><a href="#datapath">processrun output</a><br />
+</li>
+<li><a href="#treename">Tree Names</a><br />
+</li>
+<li><a href="#globals">Globals</a><br />
+</li>
+<li><a href="#settings">Color Settings</a><br />
+1. <a href="#bpoint">Branch Points</a><br />
+2. <a href="#colorset">Color Settings</a><br />
+3. <a href="#colorind">Color Indices</a></li>
+</ol>
+<h1 id="analysis-of-led-data"><a name="intro"></a>Analysis of LED data</h1>
+<p>In order to monitor radiation damage on the FCAL, data from the LED pulsars are used. The FCAL is split into ten concentric rings around the beam hole, all 11.6 cm wide. Each pulsar color setting is analyzed independently. The settings are:<br />
+1. Violet LEDs, low voltage<br />
+2. Blue LEDs, low voltage<br />
+3. Green LEDs<br />
+4. Violet LEDs, high voltage<br />
+5. Blue LEDs, high voltage</p>
+<p>The analysis normalizes each run to a 20 cm wide ring on the FCAL detector (at 60 cm - 80 cm radius, it is assumed no damage occurs in this area) in that run. After normalization, the FCAL response to LEDs throughout time can be found. The analysis produces “double ratios” of the normalized ring value in a run to the normalized ring value of the initial run. The code allows for color settings to be changed between runs on a per-ring basis, but if such a color setting change occurs all rings with a run number lower that the change will be compared to the run with the lowest run number <em>with that same color setting in that ring</em>. Similarly, all rings in runs later than the change will be compared to the ring in the run with the lowest run number for the new color setting (i.e. they will be compared to the next run after the change).</p>
+<p>Finally, series of runs are averaged. A sequence of n runs can be averaged into a single value, called a chain. For example, 5 runs (about half a day of data) can be combined into a single chain, which retains the run number that is chronologically first out of the 5 runs (e.g. Runs 8, 9, 11, 24, and 67 would combine into a chain with run number 8). Chains never cross over color setting boundaries (e.g. Runs 8, 9, 11, 24, and 67 would only make a chain with 8, 9, 11, and 24 if the color settings changed between 24 and 67).</p>
+<h1 id="build-system"><a name="build"></a>Build System</h1>
+<p>This code uses a simple makefile for compilation. <code>root-config</code> is used to link the code against ROOT. Note that the default compiler flags for gcc contain very strict warnings which may need to be toned down by adjusting the WFLAGS variable in the <a href="./Makefile">makefile</a>. All source files are contained in <a href="./src">src</a></p>
+<p>There are four types of files in the source tree:<br />
+1. Front ends. These files end with <code>.cc</code>. They are compiled into executables with the same file name (sans the <code>.cc</code> extension) and linked against the analysis code object files. 2. ROOT macros. These files end with <code>.C</code> (note the upper case). These files are not compiled. Instead, they are loaded into ROOT as macro files with ROOT’s Cling interpreter. 3. Analysis code. These files end with <code>.cpp</code>. They are compiled into object files. If you want to use the code without the front ends, grab the <code>.cpp</code> files and the headers they need. 4. Header files. These end in <code>.h</code> or <code>.hpp</code>. The makefile automatically decides which source files requires which headers.</p>
+<h1 id="data-structure"><a name="output"></a>Data structure</h1>
+<p>Each stage of this analysis utilizes a different ROOT TTree structure for output. Below the output formats of each stage is described.</p>
+<h2 id="processruns-output-format"><a name="processout"></a>processruns output format</h2>
+<ul>
+<li>The tree name is <code>fcalRings</code>.</li>
+<li>Each entry in the tree is a single run.</li>
+<li><code>run</code> is an Int_t that contains the run number for this entry.</li>
+<li><code>norm</code> is a Float_t that contains the normalization area average for that run.</li>
+<li><code>nrms</code> is a Float_t that is the <strong>standard error</strong> of <code>norm</code></li>
+<li><code>ncount</code> is an Int_t that is the number of input data puts used to create the normalization average.</li>
+<li><code>rings</code> is an Int_t that contains the number of rings that were active during the run.</li>
+<li><code>ringavg</code> is an array that contains <code>rings</code> Float_t’s. Each array value is the average value of a ring over the run.</li>
+<li><code>ringrms</code> is an array that contains <code>rings</code> Float_t’s, each one the <strong>standard error</strong> of the corresponding <code>ringavg</code> value (<em>e.g.</em> <code>ringrms[1]</code> contains the standard error for <code>ringavg[1]</code>).</li>
+<li><code>ringcnt</code> is an array that contains <code>rings</code> Int_t’s, each one the number of input data points that went into the corresponding <code>ringavg</code> value (<em>e.g.</em> <code>ringcnt[2]</code> contains the number of input points for <code>ringavg[2]</code>).</li>
+<li><code>ringid</code> is an array that contains <code>rings</code> Int_t’s. Each array value is the ring id of the corresponding ringavg vale. Ring ids start at 0 for the inner most ring and go up by one for each consecutive ring (<em>i.e.</em> for 10 rings the inner most ring is id 0, the next ring from the center is ring 1, <em>etc.</em> up to ring 9 around the edge of the detector). <code>ringid[0]</code> tells you what ring <code>ringavg[0]</code> corresponds to, <code>ringid[1]</code> tells you what ring <code>ringavg[1]</code> corresponds to, <em>etc</em>.</li>
+</ul>
+<h2 id="doubleratio-output-format"><a name="doubleout"></a>doubleratio output format</h2>
+<ul>
+<li>The tree name is <code>fcalRingRatios</code>.</li>
+<li>Each entry in the tree is a single run.</li>
+<li><code>run</code> is an Int_t that contains the run number for the entry.</li>
+<li><code>rationum</code> is an Int_t that contains the number of single ratios (<em>i.e.</em> normalized ring values) in this entry.</li>
+<li><code>ratio</code> is an arary of <code>rationum</code> Float_t’s. Each array value is the normalized value for a ring.</li>
+<li><code>ratiorms</code> is an array of <code>rationum</code> Float_t’s, each one the <strong>standard error</strong> of the corresponding <code>ratio</code> value (<em>e.g.</em> <code>ratiorms[1]</code> contains the standard error for <code>ratio[1]</code>)</li>
+<li><code>ratiocounts</code> is an array of <code>rationum</code> Int_t’s, each one the number of input data points that went into the corresponding <code>ratio</code> value (<em>e.g.</em> <code>ratiocounts[1]</code> contains the number of input data points for <code>ratio[1]</code>)</li>
+<li><code>ratioid</code> is an array of <code>rationum</code> Int_t’s. Each array entry in <code>ratioid</code> is the ring id for the corresponding data in <code>ratio</code> (Ring ids start at 0 for the inner most ring and sequentially increase so that the outer most ring is ring id 9). That is, <code>ringid[1]</code> tells you which ring <code>ratio[1]</code> actually corresponds to.</li>
+<li><code>drationum</code>, <code>dratio</code>, <code>dratiorms</code>, <code>dratiocounts</code>, and <code>dratioid</code> are exactly the same as their counterparts with out the d- prefix, but refer to double ratio data (i.e. normalized ring values divided by initial normalized ring value) instead of the simple single ratios.</li>
+</ul>
+<h2 id="chainify-output-format"><a name="chainout"></a>chainify output format</h2>
+<ul>
+<li>The tree name is <code>fcalRingChains</code></li>
+<li>Each entry in the tree is a chain (<em>i.e.</em> the average of consecutive runs)</li>
+<li><code>run</code> is an Int_t that contains the run number for the <em>first</em> run in the entry’s chain.</li>
+<li><code>ringnum</code> is an Int_t that contains the number of rings active in this chain.</li>
+<li><code>ringavg</code> is an array of <code>ringnum</code> Float_t’s. Each array value is the average double ratio for a ring in this chain.</li>
+<li><code>ringrms</code> is an array of <code>ringnum</code> Float_t’s. Each array value is the <strong>standard error</strong> of the corresponding <code>ringavg</code> value (<em>e.g.</em> <code>ringrms[1]</code> is the standard error of <code>ringavg[1]</code>)</li>
+<li><code>ringcount</code> is an array of <code>ringnum</code> Int_t’s. Each array value is the number of input data points that went into the corresponding double ratio value (<em>e.g.</em> <code>ringnum[1]</code> is the number of input data points that went into <code>ringavg[1]</code>)</li>
+<li><code>ringid</code> is an array of <code>ringnum</code> Int_t’s. Each array value is the ring id if the corresponding value in <code>ringavg</code>. (<em>e.g.</em> <code>ringid[1]</code> is the ring id for <code>ringavg[1]</code>). A ring id starts at 0 for the inner most ring and increases by one for each successive ring (<em>e.g.</em> the outer most ring id for 10 rings is 9).</li>
+</ul>
+<h1 id="front-ends"><a name="frontend"></a>Front Ends</h1>
+<p>These programs take in GlueX LED data from an <code>fcalBlockHits</code> TTree and finds trends over time. The analysis front-ends available are:</p>
+<ol type="1">
+<li><a href="./src/fcal_processruns.cc"><code>fcal_processruns</code></a> which takes an input file of a GlueX run and breaks it into five sets of data, one for each LED color setting. The output data for each colors contains the average for the normalization area in that run and averages for each of the FCAL detector rings over that run.</li>
+</ol>
+<ul>
+<li>The only command line argument is the input ROOT file</li>
+<li>By default, the output is set to be to files `data/data_{violet_low,blue_low,green,violet_high,blue_high}.root</li>
+<li>This is designed to run in parallel on many inputs at once, so file mutexing is automatically done using POSIX’s <code>lockf</code> function. The lock files also appear in “data/”</li>
+</ul>
+<ol start="2" type="1">
+<li><a href="./src/fcal_doubleratio.cc"><code>fcal_doubleratio</code></a> which takes the output files of <a href="./src/fcal_processruns.cc"><code>fcal_processruns</code></a> and creates the double ratios from the run averages and normalization areas.</li>
+</ol>
+<ul>
+<li>Takes as arguments the input and output ROOT files. These paths may be the same.</li>
+<li>This is designed to run on separate color files, so no file mutexing is done. Do not run two instances in parallel with the same output file (if the output is the same as the input, no other instances can read from the same file in parallel, either)</li>
+</ul>
+<ol start="3" type="1">
+<li><a href="./src/fcal_chainify.cc"><code>fcal_chainify</code></a> which takes the output files of <a href="./src/fcal_doubleratio.cc"><code>fcal_doubleratio</code></a> and creates chains out of them.</li>
+</ol>
+<ul>
+<li>Takes as arguments the input ROOT file, the output ROOT file (which may be the same as the input), and the number of runs to combine into each chain.</li>
+<li>This is designed to run on separate color files, so no file mutexing is done. Do not run two instances in parallel with the same output file (if the output is the same as the input, no other instances can read from the same file in parallel, either)</li>
+</ul>
+<h2 id="front-end-batch-files"><a name="batch"></a>Front End Batch Files</h2>
+<p>The <code>.sh</code> files are examples on how to run the front ends from a script. These files were used on the IU Bloomington Stanley compute cluster to analyze Fall 2018 data. Use them as an example on how to run the code in parallel correctly.</p>
+<h1 id="analysis-code"><a name="analysis"></a>Analysis Code</h1>
+<p>This is an explanation of all of the <code>.cpp</code> files in the source tree.</p>
+<ol type="1">
+<li><p><a href="./src/DFCALGeometry.cpp"><code>DFCALGeometry.cpp</code></a> is a class from Matthew Shepherd. It is used to connect FCAL channel numbers into physical locations on the FCAL (i.e. channel id to physical row,column on the detector). It is also used to find the distance from the center of the detector.</p></li>
+<li><p><a href="./src/processrun.cpp"><code>processrun.cpp</code></a> is the class that takes input run data and transforms it into the ring and normalization area averages.</p></li>
+</ol>
+<ul>
+<li>The input file is open for the lifetime of the class.</li>
+<li>The data writing routine automatically sorts the different LED colors into their own files.</li>
+<li>the POSIX file locking to allow for parallel access to the same output file is done internally.</li>
+<li>The lock files remain after the code executes; scripts are responsible for deleting them (this is because there is no way for any one instance of the code to know if the other instances are done).</li>
+<li>The constructor takes in the input ROOT file path and input ROOT tree name as parameters.</li>
+<li>std::runtime_exception is thrown if the input or output files are inaccessible, or if the ROOT tree can not be found.</li>
+</ul>
+<ol start="3" type="1">
+<li><a href="./src/doubleratio.cpp"><code>doubleratio.cpp</code></a> is the class that the ring and normalization averages and creates the double ratios.</li>
+</ol>
+<ul>
+<li>The input file is open for the lifetime of the class.</li>
+<li>The constructor takes in the input ROOT file path and the output ROOT file path</li>
+</ul>
+<h1 id="root-macros"><a name="macros"></a>ROOT Macros</h1>
+<p>ROOT macro functions are contained in <a href="./src/rootscripts.C"><code>rootscripts.C</code></a> The functions are:</p>
+<ol type="1">
+<li><code>DetectorGraph</code> - Given a run data file and radius range (by default 0 cm to 117 cm, the whole graph), make a 2D color histogram of the average block responses over that run.</li>
+<li><code>RunExists</code> - Given a color, check to see if a run exists in the data set for that color</li>
+<li><code>MakeGraphs</code> - Given a data file and ring, make the graph of double ratios over a series of chains</li>
+<li><code>WriteGraphs</code> - Save graphs for all rings in a specified file. File must not already exist</li>
+<li><code>WriteMultigraphs</code> - Take in a ROOT file of graphs as written by <code>WriteGraphs</code>. Combine the high voltage blue, high voltage violet, and green LED data into a multigraph, looking at the specified ring.</li>
+<li><code>WriteAllMultigraphs</code> - Calls <code>WriteMultigraphs</code> for every ring.</li>
+</ol>
+<p><strong>Note</strong> These functions assume default output files from the analysis code. If this is not the case, edit the <code>GetDataPath</code> function to get the correct paths (and change the tree names if required).</p>
+<h2 id="utility-header"><a name="utility"></a>Utility Header</h2>
+<p>The file <code>ledutility</code> contains many globals and helper functions for this code base. See <a href="#globals">Configuration - Globals</a> for more information.</p>
+<h1 id="configuration"><a name="config"></a>Configuration</h1>
+<h2 id="processruns-output"><a name="datapath"></a>processruns output</h2>
+<p>The per-color output files of <code>processruns</code> is stored in one place. In the <a href="./src/processrun.cpp"><code>ProcessRun::DataPath(COLOR col)</code></a> function, change the return values from the default paths to the desired paths.<br />
+- If you change the directory of the output, change the <code>mkdir</code> call in <a href="./src/processrun.cpp"><code>ProcessRun::WriteAvgs</code></a> to <code>mkdir("new director")</code>. - If the new paths are not in a subdirectory, comment out the <code>mkdir</code> call. - If the new paths are in nested subdirectories (<em>e.g</em> “data/leddata/file.root”), change the <code>mkdir</code> calls to iteratively make the directories (<em>e.g.</em>, <code>mkdir("data", 0777); mkdir("data/leddata", 0777);</code>)</p>
+<p><strong>The lockfile paths must be in the same directory as the data paths</strong> If you change the data path directory, also change the lock path directories in <a href="./src/processrun.cpp"><code>ProcessRun::LockPath(COLOR col)</code></a></p>
+<h2 id="tree-names"><a name="treename"></a>Tree Names</h2>
+<p>The tree names for output can be modified for all classes. Furthermore, the tree names for input can be modified easily for all classes except <code>processrun</code>. In all cases, changing the names are as simple as changing a single value in the class constructor.<br />
+1. <code>processrun</code> - Change <code>otree("fcalRings")</code> to <code>otree("OUTPUT TREENAME")</code> in the constructor initializer list <a href="./src/processrun.cpp">process.cpp:20</a> 2. <code>doubleratio</code> - Change <code>intreename("fcalRings")</code> to <code>intreename("INPUT TREENAME")</code> and <code>outtreename("fcalRingRatios")</code> to <code>outtreename("OUTPUT TREENAME")</code> in the constructor initializer list <a href="./src/doubleratio.cpp">doubleratio.cpp:13</a> 3. <code>chainify</code> - Change <code>intreename("fcalRings")</code> to <code>intreename("INPUT TREENAME")</code> and <code>outtreename("fcalRingRatios")</code> to <code>outtreename("OUTPUT TREENAME")</code> in the constructor initializer list <a href="./src/chainify.cpp">chainify.cpp:18</a></p>
+<p><strong>Note</strong> If you change the output of one stage, remember to change the input of the next stage as well.</p>
+<h2 id="globals"><a name="globals"></a>Globals</h2>
+<p>Many globals for the code are defined in <a href="./src/ledutility.hpp"><code>ledutility.hpp</code></a>. All of these variables are under <code>namespace FCALLED</code>. These variables are static so they can be used as compile-time constants that compilers will likely optimize. In addition to globals, there are a few tiny static utility functions defined under the namespace.</p>
+<p>The constants are:</p>
+<ol type="1">
+<li><code>COLOR</code> - an enum of the different LED colors.</li>
+<li><code>BranchTitle</code> - Make the title of a branch with a variable array size</li>
+<li><code>bigbuffer</code> - The size of buffer needed to read in data from <code>fcalBlockHits</code>.</li>
+<li><code>numchans</code> - The number of detector channels on the FCAL</li>
+<li><code>numrings</code> - The number of rings to split the detector into</li>
+<li><code>ring_range</code> - The positions of the rings. If you wanted ring 0 to go from 10 cm to 40 cm, you’d set ring_range[0] to 25 cm (the midpoint of the edges).</li>
+<li><code>noise_cutoff</code> - Minimum energy an event needs to be considered valid.</li>
+<li><code>epsil</code> - The epsilon used for comparing if variables are equal to 0.</li>
+<li><code>innerdiam</code> - The inner radius of the normalization area.</li>
+<li><code>outerdiam</code> - The outer radius of the normalization area.</li>
+<li><code>ring_size</code> - The number of blocks in each ring. The best way to generate this constant is to set the correct <code>numrings</code> and <code>ring_range</code>, then use a ROOT macro to go through all the FCAL channels, counting how many channels end up in each ring using <code>DFCALGeometry</code> and <code>FCALLED::GetRing</code></li>
+<li><code>norm_size</code> - The number of blocks in the normalization area. The best way to generate this constant is with a ROOT macro as described above.</li>
+<li><code>numbranchpoints</code> - The number of places the color settings change</li>
+<li><code>branchpoints</code> - A 2D array of the run numbers of where the settings changes happens. The first index into this array is the ring id, the second index is the branch point number. Learn more in <a href="#settings">Configuration - Color Settings</a></li>
+<li><code>numcolors</code> - The number of colors present. If you change this, remember to actually change the <code>FCALLED::COLOR</code> enum to include the new colors</li>
+<li><code>numcoloptions</code> - The number of different color settings present in the data. Learn more in <a href="#settings">Configuration - Color Settings</a></li>
+<li><code>col_range</code> - Definitions for the different color settings. A 2D array where the first index is the color setting number and the second is the color. The numbers specified are the eTot peaks of each color. The order they appear in is determined by <code>FCALLED::ColorRange</code> and <code>FCALLED::RangeColor</code>. Learn more in <a href="#settings">Configuration - Color Settings</a>.</li>
+<li><code>col_indices</code> - a 2D array that specifies which color settings to use for what rings at what times. Learn more in <a href="#settings">Configuration - Color Settings</a>.</li>
+<li><code>GetNormSection</code> - Take in a run and a ring, return what color setting that ring is in for that run</li>
+<li><code>GetColor</code> - Given an event`s eTot, run number, and ring id, get the appropiate color</li>
+<li><code>GetRing</code> - Given a radius, get the appropiate ring</li>
+<li><code>RangeColor</code> - Given a color id, get the enum value</li>
+<li><code>ColorRange</code> - Given a color enum, get the color id</li>
+</ol>
+<h2 id="color-settings"><a name="settings"></a>Color Settings</h2>
+<p><strong>Note: it is important to remember to change all color globals if the you change the number of colors from 5</strong> The affected things are: <code>numcolors</code>, <code>COLOR</code>, <code>RangeColor</code>, <code>ColorRange</code></p>
+<p>In <a href="./src/ledutility.hpp"><code>ledutility.hpp</code></a>, there is the ability to specify how color settings change over time. The code will automatically handle any amount of color setting changes once changed in that header. The color settings have the ability to occur on a per-ring basis. Furthermore, it is possible to specify a “color change” where the LED settings do not actually change. This is useful if some other variable changes (like the PMT settings). The code will then just treat the change as a separation point where runs before and runs after should not be compared with a double ratio. The components for this system are:</p>
+<h3 id="branch-points"><a name="bpoint"></a>Branch Points</h3>
+<p>A branch point is the point at which the color settings change. The number of branch points is set with <code>FCALLED::numbranchpoints</code>. This must be set to the maximum number of branch points any of the rings have. To change the branch points per ring:</p>
+<ol type="1">
+<li><p>Change the nth inner ring to the chronological list of branch points for that ring. For example, setting the points for ring id 2 requires changing the array <code>branchpoints[2]</code>.</p></li>
+<li><p>Pad the lists with 0’s. If a ring has fewer branch points than <code>FCALLED::numbranchpoints</code>, pad the front of <code>branchpoints[ringid]</code> with 0’s. For example, if ring id 2 had only one branch point at run 555, but <code>FCALLED::numbranchpoints</code> is 3, then <code>branchpoints[2]</code> would be: <code>{0, 0, 555}</code>.</p></li>
+</ol>
+<h3 id="color-settings-1"><a name="colorset"></a>Color Settings</h3>
+<p><code>col_range</code> contains a list of possible color settings for the data, in no particular order. Every entry into <code>col_range</code> is an array of <code>FCALLED::numcolors</code> size. The entries into this subarray are the eTot peaks for that color. For example, if in the eTot histogram of a run color 3 peaks at 6000, then <code>subarray[3]</code> would be 6000.</p>
+<p>Here’s a fuller example. Say you have data with two colors and two distinct color settings. color 0 in the first setting has an eTot peak of 5000, and color 1 has a peak of 6000. In the second setting, color 0 has a peak of 7000 and color 1 has a peak of 8000. Then <code>color_range</code> would be:<br />
+<code>{ {5000, 6000}, {7000, 8000}}</code>, where the order of the subarrays is arbitrary.</p>
+<p><code>numcoloptions</code> contains the total number of color options (<em>i.e.</em> The outer index of <code>col_range</code>. In the last example, it would have been 2 since there were two distinct settings).</p>
+<h3 id="color-indices"><a name="colorind"></a>Color Indices</h3>
+<p>Color indices link a specific run period to a color setting. <code>col_indices</code> contains this data. It is a 2D array, with the first index being the ring id. The second dimension of the array must be <code>numbranchpoints + 1</code> in size, to specify the regions of the data before branch point 0, from branch point 0 to branch point 1, <em>etc.</em> (including beyond the last branch point).</p>
+<p>Set the value of <code>col_indcies[ring id]\[region]</code> to be the color setting index you want that ring to use in that region between branch points.</p>
+<p>For example, if you want ring id 0 to use the 3rd color setting in <code>col_range</code> in the region between branch points 3 and 4, you’d set <code>col_indicies\[0]\[3]</code> to <code>3</code>.</p>
+<p>For rings with zero padding at the front of the <code>branchpoints</code>, pad the front of the <code>color_indices</code> entry with the first entry to be used. For example, imagine ring id 3 had a branch point at run 555. The setting to be used before this point was index 1, and the setting to be used after was index 0. Furthermore, suppose that <code>numbranchpoints</code> was 3 so that the branch points of ring id 3 had to be padded to <code>{0, 0, 555}</code>. Then the <code>col_indices</code> for ring id 3 would be <code>{1, 1, 1, 0}</code>. The padded 0’s were set to be the same index as the region below run 555.</p>
+</body>
+</html>

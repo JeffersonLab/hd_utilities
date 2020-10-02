@@ -11,18 +11,32 @@ from array import array
 from datetime import datetime
 import pprint
 import math
+import MySQLdb
 
 import ccdb
 from ccdb import Directory, TypeTable, Assignment, ConstantSet
 
 def LoadCCDB():
     sqlite_connect_str = "mysql://ccdb_user@hallddb.jlab.org/ccdb"
-    #sqlite_connect_str = "sqlite:////work/halld2/home/jrsteven/tables/hd_utilities/psflux/ccdb.sqlite"
     provider = ccdb.AlchemyProvider()                           # this class has all CCDB manipulation functions
     provider.connect(sqlite_connect_str)                        # use usual connection string to connect to database
     provider.authentication.current_user_name = "psflux_user"   # to have a name in logs
 
     return provider
+
+def loadCCDBContextList(runPeriod, restVer):
+    dbhost = "hallddb.jlab.org"
+    dbuser = 'datmon'
+    dbpass = ''
+    dbname = 'data_monitoring'
+
+    conn=MySQLdb.connect(host=dbhost, user=dbuser, db=dbname)
+    curs=conn.cursor()    
+
+    cmd = "SELECT revision,ccdb_context FROM version_info WHERE run_period=%s AND data_type='recon' AND revision<=%s ORDER BY revision DESC"
+    curs.execute(cmd, [runPeriod, restVer])
+    rows=curs.fetchall()
+    return rows
 
 def PSAcceptance(x, par):
 
@@ -37,12 +51,18 @@ def PSAcceptance(x, par):
     return 0.
 
 def main():
+
     # Defaults
     RCDB_QUERY = "@is_production and @status_approved"
     RCDB_POLARIZATION = "" # AMO, PARA or PERP
     RCDB_POL_ANGLE = "" # 0, 45, 90, 135 (only 2017 and later)
     VARIATION = "default"
     CALIBTIME = datetime.now()
+    RESTVERSION = 999
+
+    RCDB_QUERY_USER = RCDB_QUERY
+    CALIBTIME_USER = CALIBTIME
+    CALIBTIME_ENERGY = CALIBTIME
 
     BEGINRUN = 1
     ENDRUN = 100000000
@@ -77,6 +97,8 @@ def main():
                      help="CCDB calibtime Y-M-D-h-min-s")
     parser.add_option("-u","--uniform", dest="uniform",
 		     help="Uniform option")
+    parser.add_option("-r","--rest-ver", dest="rest_ver",
+                     help="REST version option")
 
     (options, args) = parser.parse_args(sys.argv)
 
@@ -99,18 +121,55 @@ def main():
     if options.emax:
         EMAX = float(options.emax)
     if options.rcdb_query:
-	RCDB_QUERY = options.rcdb_query
+	RCDB_QUERY_USER = options.rcdb_query
     if options.calib_time:
         try:
-            CALIBTIME = datetime.strptime(options.calib_time, "%Y-%m-%d-%H-%M-%S")
+            CALIBTIME_USER = datetime.strptime(options.calib_time, "%Y-%m-%d-%H-%M-%S")
         except:
             print "Calibration time format: Y-M-D-h-min-s"
             sys.exit(0)
     if options.uniform:
 	UNIFORM = True
+    if options.rest_ver:
+	RESTVERSION = options.rest_ver
+
+    # Run-dependent defaults for RCDB query
+    if RCDB_QUERY != RCDB_QUERY_USER:
+	RCDB_QUERY = RCDB_QUERY_USER
+    else:
+	if int(options.begin_run) >= 40000: # run periods in 2018+
+		RCDB_QUERY = "@is_2018production and @status_approved"
+    print "RCDB quergy = " + RCDB_QUERY
+
+    # REST production dependent CCDB calibtime
+    if CALIBTIME != CALIBTIME_USER:
+    	CALIBTIME = CALIBTIME_USER
+	CALIBTIME_ENERGY = CALIBTIME_USER
+    else: # get run period by run number
+	runPeriod = "test"
+	begin_run = int(options.begin_run)
+	if begin_run < 20000: 
+		runPeriod = "RunPeriod-2016-02"
+	elif begin_run < 40000:
+		runPeriod = "RunPeriod-2017-01"
+        elif begin_run < 50000:
+		runPeriod = "RunPeriod-2018-01"
+        elif begin_run < 60000: 
+		runPeriod = "RunPeriod-2018-08"
+        elif begin_run < 70000:
+		runPeriod = "RunPeriod-2019-01"
+	elif begin_run < 80000:
+                runPeriod = "RunPeriod-2019-11"
+	contextList = loadCCDBContextList(runPeriod,RESTVERSION)
+	RESTVERSION = contextList[0][0] # get REST version number from DB
+	context = contextList[0][1] # get full JANA_CALIB_CONTEXT list from DB
+	startCalibTime = context.find("calibtime")
+	calibTimeString = context[startCalibTime+10:-1]
+	CALIBTIME_ENERGY = datetime.strptime(calibTimeString , "%Y-%m-%d-%H-%M-%S")
+	print "CCDB calibtime for energy to match REST ver%02d" % RESTVERSION + " = " + CALIBTIME_ENERGY.strftime("%Y-%m-%d-%H-%M-%S")
 
     # Load CCDB
-    print "CCDB calibtime = " + CALIBTIME.strftime("%Y-%m-%d-%H-%M-%S")
+    print "CCDB calibtime for flux = " + CALIBTIME.strftime("%Y-%m-%d-%H-%M-%S")
     ccdb_conn = LoadCCDB()
 
     # Load RCDB
@@ -192,17 +251,17 @@ def main():
     	scale = livetime_ratio * 1./((7/9.) * radiationLength);
 
         try:
-            photon_endpoint_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/endpoint_energy", run.number, VARIATION, CALIBTIME)
+            photon_endpoint_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/endpoint_energy", run.number, VARIATION, CALIBTIME_ENERGY)
             photon_endpoint = photon_endpoint_assignment.constant_set.data_table
 
             tagm_tagged_flux_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/pair_spectrometer/lumi/tagm/tagged", run.number, VARIATION, CALIBTIME)
             tagm_tagged_flux = tagm_tagged_flux_assignment.constant_set.data_table
-            tagm_scaled_energy_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/microscope/scaled_energy_range", run.number, VARIATION, CALIBTIME)
+            tagm_scaled_energy_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/microscope/scaled_energy_range", run.number, VARIATION, CALIBTIME_ENERGY)
             tagm_scaled_energy = tagm_scaled_energy_assignment.constant_set.data_table
             
             tagh_tagged_flux_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/pair_spectrometer/lumi/tagh/tagged", run.number, VARIATION, CALIBTIME)
             tagh_tagged_flux = tagh_tagged_flux_assignment.constant_set.data_table
-            tagh_scaled_energy_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/hodoscope/scaled_energy_range", run.number, VARIATION, CALIBTIME)
+            tagh_scaled_energy_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/hodoscope/scaled_energy_range", run.number, VARIATION, CALIBTIME_ENERGY)
             tagh_scaled_energy = tagh_scaled_energy_assignment.constant_set.data_table
         except:
             print "Missing flux for run number = %d, contact jrsteven@jlab.org" % run.number 

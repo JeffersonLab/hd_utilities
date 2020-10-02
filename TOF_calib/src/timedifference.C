@@ -29,11 +29,23 @@ using namespace std;
 
 TH2D *histTD;
 int DEBUG = 2; //1: plot histogram, 2: plot and save, 99: interupt
+
 int RunNumber; 
+#define NumPMTMax 200
+int NPMTS = 0;
+int BARS_PER_PLANE = 0; // including 2 short padeles being one
+int PMTS_PER_PLANE = 0; 
 
 void timedifference(int Run, int REF, int REFPLANE){
   
   RunNumber = Run;
+  NPMTS = 176;            // TOF 1 geometry
+  if (RunNumber>69999){
+    NPMTS = 184;          // TOF 2 geometry
+  }
+  BARS_PER_PLANE = NPMTS/4;
+  PMTS_PER_PLANE = NPMTS/2;
+
   char ROOTFileName[128];
   sprintf(ROOTFileName,"localdir/tofdata_run%d.root",RunNumber);
   if (RunNumber == 99999)
@@ -56,16 +68,17 @@ void timedifference(int Run, int REF, int REFPLANE){
   ifstream INF;
   INF.open(inf);
   int idx;
-  double FitPar[176][17];
+  double FitPar[200][17];
   double dummy;
-  for (int n=0; n<176; n++){
+  for (int n=0; n<NPMTS; n++){
     INF >> idx;
-    for (int s=0;s<17;s++) {
+    for (int s=0;s<15;s++) {
       INF >> FitPar[n][s];
     }
     INF>>dummy; // this is the chi2 of both fits
   }
   INF.close();
+  double ReferenceLoc = 1500.;  // this is the reference ADC value to calibrate to. any walk correction is zero to this point
 
   TFile *ROOTFile = new TFile(ROOTFileName);
   TTree *t3 = (TTree*)ROOTFile->Get("TOFcalib/t3");
@@ -138,47 +151,46 @@ void timedifference(int Run, int REF, int REFPLANE){
 	if ( (PlaneA[n] == REFPLANE) && 
 	     (PaddleA[n] == REFPAD) ) {
 
-	  int idxL = REFPLANE*88 + REFPAD-1;
-	  int idxR = idxL + 44;
+	  int idxL = REFPLANE*PMTS_PER_PLANE + REFPAD-1;
+	  int idxR = idxL + BARS_PER_PLANE;
 
 	  // apply walk correction
-	  int DOFF = 0;
-	  if (PEAKL[n]>FitPar[idxL][16]){
-	    DOFF = 8;
+	  double ADCval = PEAKL[n];
+	  if (ADCval>4090){
+	    ADCval = 4090;
 	  }
-	  double a1 = FitPar[idxL][0+DOFF]
-	    +FitPar[idxL][2+DOFF]*TMath::Power(PEAKL[n],-0.5) 
-	    +FitPar[idxL][4+DOFF]*TMath::Power(PEAKL[n],-0.33) 
-	    +FitPar[idxL][6+DOFF]*TMath::Power(PEAKL[n],-0.2);
-	  if (PEAKL[n]>4095){
-	    a1 += 0.55;
-	  }
-
-	  DOFF = 8;
-	  double a2 = FitPar[idxL][0+DOFF]
-	    +FitPar[idxL][2+DOFF]*TMath::Power(1500.,-0.5) 
-	    +FitPar[idxL][4+DOFF]*TMath::Power(1500.,-0.33) 
-	    +FitPar[idxL][6+DOFF]*TMath::Power(1500.,-0.2);
-
+	  double a1 = FitPar[idxL][0]
+	    +FitPar[idxL][2]/ADCval
+	    +FitPar[idxL][4]/ADCval/ADCval
+	    +FitPar[idxL][6]/ADCval/ADCval/ADCval/ADCval
+	    +FitPar[idxL][8]/TMath::Sqrt(ADCval);
+	  
+	  // ReferenceLoc is chosen to be 1500. ADC counts
+	  double a2 = FitPar[idxL][0]
+	    +FitPar[idxL][2]/ReferenceLoc
+	    +FitPar[idxL][4]/ReferenceLoc/ReferenceLoc
+	    +FitPar[idxL][6]/ReferenceLoc/ReferenceLoc/ReferenceLoc/ReferenceLoc
+	    +FitPar[idxL][8]/TMath::Sqrt(ReferenceLoc);
+	  
 	  float tcL = a1 - a2;
-
-	  DOFF = 0;
-	  if (PEAKR[n]>FitPar[idxR][16]){
-	    DOFF = 8;
-	  }	  
-	  a1 = FitPar[idxR][0+DOFF]
-	    +FitPar[idxR][2+DOFF]*TMath::Power(PEAKR[n],-0.5) 
-	    +FitPar[idxR][4+DOFF]*TMath::Power(PEAKR[n],-0.33) 
-	    +FitPar[idxR][6+DOFF]*TMath::Power(PEAKR[n],-0.2);
-	  if (PEAKR[n]>4095){
-	    a1 += 0.55;
+	  
+	  ADCval = PEAKR[n];
+	  if (ADCval>4090){
+	    ADCval = 4090;
 	  }
+	  a1 = FitPar[idxR][0]
+	    +FitPar[idxR][2]/ADCval
+	    +FitPar[idxR][4]/ADCval/ADCval
+	    +FitPar[idxR][6]/ADCval/ADCval/ADCval/ADCval
+	    +FitPar[idxR][8]/TMath::Sqrt(ADCval);
 
-	  DOFF = 8;
-	  a2 = FitPar[idxR][0+DOFF]
-	    +FitPar[idxR][2+DOFF]*TMath::Power(1500.,-0.5) 
-	    +FitPar[idxR][4+DOFF]*TMath::Power(1500.,-0.33) 
-	    +FitPar[idxR][6+DOFF]*TMath::Power(1500.,-0.2);
+	  // ReferenceLoc is chosen to be 1500. ADC counts
+	  a2 = FitPar[idxR][0]
+	    +FitPar[idxR][2]/ReferenceLoc
+	    +FitPar[idxR][4]/ReferenceLoc/ReferenceLoc
+	    +FitPar[idxR][6]/ReferenceLoc/ReferenceLoc/ReferenceLoc/ReferenceLoc
+	    +FitPar[idxR][8]/TMath::Sqrt(ReferenceLoc);
+
 
 	  float tcR = a1 - a2; 
 
@@ -202,9 +214,10 @@ void timedifference(int Run, int REF, int REFPLANE){
 
   ROOTFile->Close();
 
-  double tpos[44];
-  double dtpos[44];
-  for (int j=3; j<3+44; j++){
+  double tpos[100];
+  double dtpos[100];
+  // NOTE THE OFFSET OF 3!!!!!!!!!
+  for (int j=3; j<3+BARS_PER_PLANE; j++){
     double p = 0.;
     double dp = 0.;
     tpos[j-3] = p;
@@ -216,11 +229,12 @@ void timedifference(int Run, int REF, int REFPLANE){
 
     if (hp->Integral(1,hp->GetNbinsX()-2)>100){
 
-
-      if (j<6){
+      if (j-2<8){
+	hp->Rebin(4);
 	hp->GetXaxis()->SetRangeUser(-12.,-3.);
       }
-      if (j>38){
+      if (j-2>BARS_PER_PLANE-8){
+	hp->Rebin(4);
 	hp->GetXaxis()->SetRangeUser(3.,12.);
       }
 
@@ -234,42 +248,73 @@ void timedifference(int Run, int REF, int REFPLANE){
       }
       //printf("Found %d candidate peaks to fit\n",nfound);
       double *xpeaks = speaks->GetPositionX();
+      double *ypeaks = speaks->GetPositionY();
 
       // for paddles on the left of the center take left most peak
       // for paddles on the right of the center take right most peak
       double max = 100.;
-      if (j>24){
-	max = -100.;
-      }
+
+      double MaxPeak = 0;
+      int MaxPeakLoc=0;
+      double MinXloc = 999999;
+      double MaxXloc = 0;
+      int MinXlocPos = 0;
+      int MaxXlocPos = 0;
       for (int pp=0;pp<nfound;pp++) {
 	double xp = xpeaks[pp];
-	if (j<24) {
-	  if (xp<max){
-	    max = xp;
-	  }	
+	double yp = ypeaks[pp];
+	if (yp>MaxPeak){
+	  MaxPeak = yp;
+	  MaxPeakLoc = pp;
+	}
+	if (xp<MinXloc){
+	  MinXloc = xp;
+	  MinXlocPos = pp;
+	}
+	if (xp>MaxXloc){
+	  MaxXloc =xp;
+	  MaxXlocPos = pp;
+	}
+      }
+
+      if (TMath::Abs(REFPAD-BARS_PER_PLANE/2)>4){
+	max = xpeaks[MaxPeakLoc];
+      } else {
+	if (j-2<=BARS_PER_PLANE/2){
+	  max = MinXloc;
 	} else {
-	  if (xp>max){
-	    max = xp;
-	  }	
+	  max = MaxXloc;
 	}
       }
 
       double bw = hp->GetBinWidth(1);
-      double hili = max + 10.*bw;
-      double loli = max - 10.*bw;
+      double hili = max + 15.*bw;
+      double loli = max - 15.*bw;
+      if ((j-2<BARS_PER_PLANE/2)){
+	hili = max + 8*bw;
+      } else {
+	loli = max - 8*bw;
+      }
 
       hp->Fit("gaus","RQ0","",loli,hili);
       TF1 *f1 = hp->GetFunction("gaus");
+      if (DEBUG>2){
+	hp->Draw();
+	gPad->Update();
+	gPad->SetGrid();
+	cout<<"MAX is at "<<max<<endl;
+	getchar();
+      }
+
       p = f1->GetParameter(1);
       double s = f1->GetParameter(2);
-      hili = p+s*1.2;
-      loli = p-s*1.2;
-      if ((j>19) && (j<24))
-	hili = p+s*0.7;
-      if ((j>23) && (j<30))
-	loli = p-s*0.7;
-      
-
+      hili = p+s*1.5;
+      loli = p-s*1.5;
+      if ((j-2<BARS_PER_PLANE/2))
+	hili = p+s*0.9;
+      else {
+	loli = p-s*0.9;
+      }
 
       hp->Fit("gaus","RQ","",loli,hili);
       f1 = hp->GetFunction("gaus");
@@ -279,6 +324,8 @@ void timedifference(int Run, int REF, int REFPLANE){
       if (DEBUG>2) {
 	hp->Draw();
 	gPad->Update();
+
+	cout<<"j ="<< j << "   BARS_PER_PLANE="<<BARS_PER_PLANE<<endl;
 	getchar();
       }
 
@@ -316,7 +363,7 @@ void timedifference(int Run, int REF, int REFPLANE){
 	  hp->Draw();
 	  gPad->SetGrid();
 	  gPad->Update();
-	  getchar();
+	  //getchar();
 	}
       }
     } else {
@@ -330,10 +377,11 @@ void timedifference(int Run, int REF, int REFPLANE){
 
   char of[128];
   sprintf(of,"calibration%d/deltat_tpos_refpad%dplane%d.dat",RunNumber,REF,REFPLANE);
-  ofstream OF(of, ofstream::out);
+  ofstream OF(of, std::ofstream::out);
 
   if (OF){
-    for (int n=0; n<44; n++){ 
+    cout<<"Write time difference results to file: "<<REF<<" "<<REFPLANE<<endl;
+    for (int n=0; n<BARS_PER_PLANE; n++){ 
       OF<<n<<"  "<<tpos[n]<<"  "<<dtpos[n]<<endl;
     }
   } else {
