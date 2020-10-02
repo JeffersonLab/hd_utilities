@@ -1,0 +1,235 @@
+<!--
+
+NERSC-AY2021-B
+
+This estimates values corresponding to the data sets we plan to process
+at NERSC in Allocation Year 2021. The computational needs for NERSC
+AY2021 will be made up of multiple
+parts:
+
+A. Processing of the part of RunPeriod-2019-11 data taken in the summer
+of 2020
+
+B. The processing of SRC data to be taken in 2021
+
+C. Reprocessing of older GlueX data
+
+The processing of PrimEx data is not included as that was considered small
+enough to be done on the JLab SciComp farm.
+
+Note that many values here are taken from NERSC-AY2021-A.xml. Also, the
+simulation and analysis values are not fleshed out at all since this
+is only concerned with REST production at NERSC.
+
+The SRC running is expected to be 55 calendar days according to an
+e-mail from Alex S. on Sep. 28,2020. This will occur in the later half
+of the year so it my not be possible to actually process it before the
+end of AY2021.
+
+
+=====================================================================
+triggerRate
+
+Assume 85kHz entire time
+
+=====================================================================
+runningTimeOnFloor
+
+See note above. We use 55 days.
+
+=====================================================================
+runningEfficiency
+
+Nominally, the acclerator runs at around 50%-60% efficiency.
+
+Some periods were very unstable beam with lots of trips while others
+had very stable beam. This number also needs to integrate target and
+run transistion times as well as special runs.
+
+Looking at the scicomp tape usage for the period 8/3/2020-9/21/2020
+it shows 1.736PB of halld raw data. I adjust this effciency to give
+close to that amount given the above settings. This is 36.3%
+
+
+=====================================================================
+eventsize
+
+Run 73230 file 314 HOSS events (Physics + PS) for 20GB file gives
+12.72kB. Using this with the event rate gives less than the 1.25GB/s
+I recall being reported while on shift. Round this up to 13kB/event
+to make that come out a little closer.
+
+=====================================================================
+eventsPerRun
+
+Production runs lasted 2hr. For a good production run with stable
+beam there were >500M events. Guidance on counting house white
+board gave 900M for 2 runs or 450M per run. A quick scan of the
+HOSS DB webpage shows a lot of runs with 450M-470M events. There
+were quite a few runs with much less too though (ended early?)
+
+Based on this I somewhat arbitrarily choose 450M.
+
+=====================================================================
+compressionFactor
+
+We have never adopted a compression scheme so leave this at 1.0
+
+=====================================================================
+RESTfraction
+
+Looking at REST files in:
+
+ /cache/halld/offline_monitoring/RunPeriod-2019-11/ver20/REST
+ 
+ they are around 5.9GB. This gives a REST fraction of 0.295
+
+n.b. This is the ratio of the REST file size to the uncompressed
+raw data size.
+
+=====================================================================
+goodRunFraction
+
+Looking at the first 3 batches of the winter part of RunPeriod-2019-11
+I see these goo run fractions based on what was marked in RCDB for final
+production running:
+
+batch 01 46.9%
+batch 02 66.7%
+batch 03 73.2%
+
+I assume here that the fraction increased as running became more stable
+during the run period. For the summer data, I assume this stablized at
+75%.
+
+=====================================================================
+reconstructionRate
+
+This is the effective reconstruction rate per core. For winter data from
+RunPeriod-2019-11 being processed at PSC now, jobs are taking ~4.6hr
+using 28 cores. This averages out to 3.23Hz per core
+
+
+
+Following values used for RunPeriod-2018-01 estimate assume 5.5Hz.
+
+=====================================================================
+reconPasses
+
+Assume only a single reconstruction pass.
+
+=====================================================================
+analysisRate
+
+We do not plan to do analysis passes at NERSC. To effectively disable
+this, set it to a very high number.
+
+OLD: We use the rate for RunPeriod-2017-01 of 75Hz
+
+=====================================================================
+analysisPasses
+
+We do not plan to do analysis passes at NERSC. To disable set to 0
+
+OLD: We use the empirical value for RunPeriod-2017-01 of 2.82
+
+=====================================================================
+cores
+
+The SciComp farm has the equivalent of about 16k cores (adjusted
+for performance). GlueX gets something like 40% of that or 6.4k.
+This is not really relevant for NERSC though.
+
+=====================================================================
+incomingData
+
+proportional to number of runs
+
+Number of files per run analyzed for the "incoming data" jobs. This
+is always 5.
+
+=====================================================================
+calibRate
+
+proportinal to time on floor
+
+This value represents the number of Mhr of CPU used per week of running
+to calibrate the detector. The value of 0.530 is taken from the
+RunPeriod-2017-01 number.
+
+=====================================================================
+offlineMonitoring
+
+proportional to number of runs
+
+The value of 0.00800 is taken from the RunPeriod-2017-01 number.
+
+=====================================================================
+miscUserStudies
+
+proportional to time to process all files of single run
+
+This value is used to capture the CPU usage by all of the various users
+that is attributed to the gluex project. Some of this should probably
+go under calibRate, but it is very hard to categorize which parts of
+this should go there.
+
+It is assumed here that these are jobs that run over all files from a
+small number of runs in order to do special studies. The amount of CPU
+required is therefore proportional to the time it takes to process a
+single production run.
+
+The value of 810 is taken from the RunPeriod-2017-01 number.
+
+=====================================================================
+simulationRate
+
+This is based on a very rough value Thomas B. gave of 40ms/event for
+bggen events with real data background mixed in. Note that adding the
+background this way significantly reduced the compute time required
+from previous models.
+
+=====================================================================
+simulationpasses
+
+Number of times we will need to repeat simulation. This value of
+2 is an old estimate.
+
+=====================================================================
+simulatedPerRawEvent
+
+Number of simulated events needed for each raw data event (production
+runs only) This is assumed to be 2 simulated events for each signal
+event in the raw data stream. We estimate about 20% of the raew data
+is reconstructable (see "GlueX at High Intensity" talk slide 10
+here:  https://halldweb.jlab.org/wiki/index.php/GlueX-II_and_DIRC_ERR )
+
+
+-->
+<compMod>
+<parameter name="triggerRate" value="85e3" units="Hz"/>
+<parameter name="runningTimeOnFloor" value="55.0" units="days"/>
+<parameter name="runningEfficiency" value="0.363"/>
+<parameter name="eventsize" value="13" units="kB"/>
+<parameter name="eventsPerRun" value="450" units="Mevent"/>
+<parameter name="compressionFactor" value="1.0"/>
+<parameter name="RESTfraction" value="0.295"/>
+
+<parameter name="reconstructionRate" value="3.23" units="Hz"/>
+<parameter name="reconPasses" value="1.0"/>
+<parameter name="goodRunFraction" value="0.75"/>
+<parameter name="NERSC_unitsPerFile" value="880"/>
+<parameter name="PSC_unitsPerFile" value="156.8"/>
+<parameter name="analysisRate" value="1.0E10" units="Hz"/>
+<parameter name="analysisPasses" value="0"/>
+<parameter name="cores" value="6400"/>
+<parameter name="incomingData" value="5" units="files"/>
+<parameter name="calibRate" value="0.250" units="Mhr/week"/>
+<parameter name="offlineMonitoring" value="0.00800" units="Mhr/run"/>
+<parameter name="miscUserStudies" value="810"/>
+
+<parameter name="simulationRate" value="25" units="Hz"/>
+<parameter name="simulationpasses" value="2"/>
+<parameter name="simulatedPerRawEvent" value="0.4"/>
+</compMod>
+
