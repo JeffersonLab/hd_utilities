@@ -1603,6 +1603,7 @@ int Charge(int fsCode1, int fsCode2, int mcExtras){
 
 
 TString FSParticleType(TString glueXParticleType){
+  if (glueXParticleType.Contains("Missing"))     return TString("--");
   if (glueXParticleType.Contains("AntiLambda"))  return TString("ALambda");
   if (glueXParticleType.Contains("Lambda"))      return TString("Lambda");
   if (glueXParticleType.Contains("Positron"))    return TString("e+");
