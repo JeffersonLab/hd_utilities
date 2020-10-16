@@ -70,6 +70,7 @@ bool gPrint;
 bool gUseParticles;
 bool gUseMCParticles;
 bool gUseMCInfo;
+bool gUseKinFit;
 
 
 // **************************************
@@ -316,10 +317,10 @@ void ConvertTree(TString treeName){
           if (miscInfo){ cout << "  OK: found MiscInfoMap" << endl; }
           else { cout << "  ERROR:  could not find MiscInfoMap" << endl; exit(0); }
       TObjString* kinFitType = (TObjString*) miscInfo->GetValue("KinFitType");
-          if (kinFitType->GetString() != "" && 
-              kinFitType->GetString() != "0")
-               { cout << "  OK: found KinFitType = "  << kinFitType->GetString() << endl; }
-          else { cout << "  ERROR: bad KinFitType = " << kinFitType->GetString() << endl; exit(0); }
+          if (kinFitType && kinFitType->GetString() != "")
+               { cout << "  OK: found KinFitType = " << kinFitType->GetString() << endl; }
+          else { cout << "  ERROR:  could not find KinFitType" << endl; exit(0); }
+      gUseKinFit = (kinFitType->GetString() != "0");
       TObjString* tosTCZ = (TObjString*) miscInfo->GetValue("Target__CenterZ");
           if (tosTCZ) 
                { cout << "  OK: found Target__CenterZ = "  << tosTCZ->GetString() << endl; }
@@ -646,11 +647,11 @@ void ConvertTree(TString treeName){
   Float_t inRFTime_Measured[MAXCOMBOS] = {};
       if (gUseParticles) inTree->SetBranchAddress("RFTime_Measured", inRFTime_Measured);  
   //Float_t inRFTime_KinFit[MAXCOMBOS] = {};
-  //    if (gUseParticles) inTree->SetBranchAddress("RFTime_KinFit", inRFTime_KinFit);  
+  //    if (gUseParticles && gUseKinFit) inTree->SetBranchAddress("RFTime_KinFit", inRFTime_KinFit);  
   Float_t inChiSq_KinFit[MAXCOMBOS] = {};
-      if (gUseParticles) inTree->SetBranchAddress("ChiSq_KinFit", inChiSq_KinFit);
+      if (gUseParticles && gUseKinFit) inTree->SetBranchAddress("ChiSq_KinFit", inChiSq_KinFit);
   UInt_t inNDF_KinFit[MAXCOMBOS] = {};
-      if (gUseParticles) inTree->SetBranchAddress("NDF_KinFit", inNDF_KinFit);
+      if (gUseParticles && gUseKinFit) inTree->SetBranchAddress("NDF_KinFit", inNDF_KinFit);
   Float_t inEnergy_Unused[MAXCOMBOS] = {};
       if (gUseParticles) inTree->SetBranchAddress("Energy_UnusedShowers", inEnergy_Unused);
 
@@ -660,9 +661,9 @@ void ConvertTree(TString treeName){
   Int_t inBeamIndex[MAXCOMBOS] = {};
       if (gUseParticles) inTree->SetBranchAddress("ComboBeam__BeamIndex", inBeamIndex);
   TClonesArray *inBeam__P4_KinFit;
-      if (gUseParticles) inBeam__P4_KinFit = new TClonesArray("TLorentzVector",MAXCOMBOS);
-      if (gUseParticles) inTree->GetBranch       ("ComboBeam__P4_KinFit")->SetAutoDelete(kFALSE);
-      if (gUseParticles) inTree->SetBranchAddress("ComboBeam__P4_KinFit", &(inBeam__P4_KinFit));
+      if (gUseParticles && gUseKinFit) inBeam__P4_KinFit = new TClonesArray("TLorentzVector",MAXCOMBOS);
+      if (gUseParticles && gUseKinFit) inTree->GetBranch       ("ComboBeam__P4_KinFit")->SetAutoDelete(kFALSE);
+      if (gUseParticles && gUseKinFit) inTree->SetBranchAddress("ComboBeam__P4_KinFit", &(inBeam__P4_KinFit));
 
 
         //   *** Combo Tracks ***
@@ -683,9 +684,9 @@ void ConvertTree(TString treeName){
 
       if (GlueXParticleClass(name) == "Charged"){
         TString var_P4_KinFit(name); var_P4_KinFit += "__P4_KinFit";
-            if (gUseParticles) inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
-            if (gUseParticles) inTree->GetBranch       (var_P4_KinFit)->SetAutoDelete(kFALSE);
-            if (gUseParticles) inTree->SetBranchAddress(var_P4_KinFit,&(inP4_KinFit[pIndex]));
+            if (gUseParticles && gUseKinFit) inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
+            if (gUseParticles && gUseKinFit) inTree->GetBranch       (var_P4_KinFit)->SetAutoDelete(kFALSE);
+            if (gUseParticles && gUseKinFit) inTree->SetBranchAddress(var_P4_KinFit,&(inP4_KinFit[pIndex]));
         TString var_ChargedIndex(name);  var_ChargedIndex += "__ChargedIndex";  
             if (gUseParticles) inTree->SetBranchAddress(var_ChargedIndex,inChargedIndex[pIndex]);
       }
@@ -694,9 +695,9 @@ void ConvertTree(TString treeName){
 
       if (GlueXParticleClass(name) == "Neutral"){
         TString var_P4_KinFit(name); var_P4_KinFit += "__P4_KinFit";
-            if (gUseParticles) inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
-            if (gUseParticles) inTree->GetBranch       (var_P4_KinFit)->SetAutoDelete(kFALSE);
-            if (gUseParticles) inTree->SetBranchAddress(var_P4_KinFit,&(inP4_KinFit[pIndex]));
+            if (gUseParticles && gUseKinFit) inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
+            if (gUseParticles && gUseKinFit) inTree->GetBranch       (var_P4_KinFit)->SetAutoDelete(kFALSE);
+            if (gUseParticles && gUseKinFit) inTree->SetBranchAddress(var_P4_KinFit,&(inP4_KinFit[pIndex]));
         TString var_NeutralIndex(name);  var_NeutralIndex += "__NeutralIndex";  
             if (gUseParticles) inTree->SetBranchAddress(var_NeutralIndex,inNeutralIndex[pIndex]);
       }
@@ -722,8 +723,10 @@ void ConvertTree(TString treeName){
 
   double outRunNumber;                           outTree.Branch("Run",             &outRunNumber,       "Run/D");
   double outEventNumber;                         outTree.Branch("Event",           &outEventNumber,     "Event/D");
-  double outChi2;             if (gUseParticles) outTree.Branch("Chi2",            &outChi2,            "Chi2/D");
-  double outChi2DOF;          if (gUseParticles) outTree.Branch("Chi2DOF",         &outChi2DOF,         "Chi2DOF/D");
+  double outChi2;             if (gUseParticles && gUseKinFit) 
+                                                 outTree.Branch("Chi2",            &outChi2,            "Chi2/D");
+  double outChi2DOF;          if (gUseParticles && gUseKinFit)
+                                                 outTree.Branch("Chi2DOF",         &outChi2DOF,         "Chi2DOF/D");
   double outRFTime;           if (gUseParticles) outTree.Branch("RFTime",          &outRFTime,          "RFTime/D");
   double outRFDeltaT;         if (gUseParticles) outTree.Branch("RFDeltaT",        &outRFDeltaT,        "RFDeltaT/D");
   double outEnUnusedSh;       if (gUseParticles) outTree.Branch("EnUnusedSh",      &outEnUnusedSh,      "EnUnusedSh/D");
@@ -735,10 +738,14 @@ void ConvertTree(TString treeName){
   double outProdVy;           if (gUseParticles) outTree.Branch("ProdVy",          &outProdVy,          "ProdVy/D");
   double outProdVz;           if (gUseParticles) outTree.Branch("ProdVz",          &outProdVz,          "ProdVz/D");
   double outProdVt;           if (gUseParticles) outTree.Branch("ProdVt",          &outProdVt,          "ProdVt/D");
-  double outPxPB;             if (gUseParticles) outTree.Branch("PxPB",            &outPxPB,            "PxPB/D");
-  double outPyPB;             if (gUseParticles) outTree.Branch("PyPB",            &outPyPB,            "PyPB/D");
-  double outPzPB;             if (gUseParticles) outTree.Branch("PzPB",            &outPzPB,            "PzPB/D");
-  double outEnPB;             if (gUseParticles) outTree.Branch("EnPB",            &outEnPB,            "EnPB/D");
+  double outPxPB;             if (gUseParticles && gUseKinFit)
+                                                 outTree.Branch("PxPB",            &outPxPB,            "PxPB/D");
+  double outPyPB;             if (gUseParticles && gUseKinFit)
+                                                 outTree.Branch("PyPB",            &outPyPB,            "PyPB/D");
+  double outPzPB;             if (gUseParticles && gUseKinFit)
+                                                 outTree.Branch("PzPB",            &outPzPB,            "PzPB/D");
+  double outEnPB;             if (gUseParticles && gUseKinFit)
+                                                 outTree.Branch("EnPB",            &outEnPB,            "EnPB/D");
   double outRPxPB;            if (gUseParticles) outTree.Branch("RPxPB",           &outRPxPB,           "RPxPB/D");
   double outRPyPB;            if (gUseParticles) outTree.Branch("RPyPB",           &outRPyPB,           "RPyPB/D");
   double outRPzPB;            if (gUseParticles) outTree.Branch("RPzPB",           &outRPzPB,           "RPzPB/D");
@@ -776,11 +783,13 @@ void ConvertTree(TString treeName){
       TString name = orderedParticleNames[im][id];
       int pIndex = mapGlueXNameToParticleIndex[name];
       TString fsIndex = mapGlueXNameToFSIndex[name];
-      if (gUseParticles){
+      if (gUseParticles && gUseKinFit){
         TString vPx("PxP");   vPx  += fsIndex; outTree.Branch(vPx, &outPx [pIndex],vPx+"/D");
         TString vPy("PyP");   vPy  += fsIndex; outTree.Branch(vPy, &outPy [pIndex],vPy+"/D");
         TString vPz("PzP");   vPz  += fsIndex; outTree.Branch(vPz, &outPz [pIndex],vPz+"/D");
         TString vEn("EnP");   vEn  += fsIndex; outTree.Branch(vEn, &outEn [pIndex],vEn+"/D");
+      }
+      if (gUseParticles){
         TString vRPx("RPxP"); vRPx += fsIndex; outTree.Branch(vRPx,&outRPx[pIndex],vRPx+"/D");
         TString vRPy("RPyP"); vRPy += fsIndex; outTree.Branch(vRPy,&outRPy[pIndex],vRPy+"/D");
         TString vRPz("RPzP"); vRPz += fsIndex; outTree.Branch(vRPz,&outRPz[pIndex],vRPz+"/D");
@@ -826,7 +835,7 @@ void ConvertTree(TString treeName){
     if (gUseParticles) inBeam__X4_Measured->Clear();
     if (gUseParticles) inChargedHypo__P4_Measured->Clear();
     if (gUseParticles) inNeutralHypo__P4_Measured->Clear();
-    if (gUseParticles) inBeam__P4_KinFit->Clear();
+    if (gUseParticles && gUseKinFit) inBeam__P4_KinFit->Clear();
     for (unsigned int i = 0; i < MAXPARTICLES; i++){ if (inP4_KinFit[i]) inP4_KinFit[i]->Clear(); }
 
 
@@ -990,9 +999,11 @@ void ConvertTree(TString treeName){
         outNumNeutralHypos = inNumNeutralHypos;
         outNumBeam         = inNumBeam;
         outNumCombos       = inNumCombos;
-        outChi2        = inChiSq_KinFit[ic];
-        outChi2DOF     = -1; if (inNDF_KinFit[ic]>0.0) outChi2DOF = outChi2/inNDF_KinFit[ic];
-        //outRFTime      = inRFTime_KinFit[ic];
+        if (gUseKinFit){
+          outChi2        = inChiSq_KinFit[ic];
+          outChi2DOF     = -1; if (inNDF_KinFit[ic]>0.0) outChi2DOF = outChi2/inNDF_KinFit[ic];
+          //outRFTime      = inRFTime_KinFit[ic];
+        }
         outRFTime      = inRFTime_Measured[ic];
                 //   line from jon z. for timing info:
                 //  Double_t rf_timing = locBeamX4_Measured.T() - (dComboWrapper->Get_RFTime_Measured() 
@@ -1008,11 +1019,13 @@ void ConvertTree(TString treeName){
         outProdVy      = inX4_Production->Y();
         outProdVz      = inX4_Production->Z();
         outProdVt      = inX4_Production->T();
-            p4 = (TLorentzVector*)inBeam__P4_KinFit->At(ic);
-        outPxPB = p4->Px();
-        outPyPB = p4->Py();
-        outPzPB = p4->Pz();
-        outEnPB = p4->E();
+        if (gUseKinFit){
+              p4 = (TLorentzVector*)inBeam__P4_KinFit->At(ic);
+          outPxPB = p4->Px();
+          outPyPB = p4->Py();
+          outPzPB = p4->Pz();
+          outEnPB = p4->E();
+        }
             p4 = (TLorentzVector*)inBeam__P4_Measured->At(inBeamIndex[ic]);
         outRPxPB = p4->Px();
         outRPyPB = p4->Py();
@@ -1040,12 +1053,14 @@ void ConvertTree(TString treeName){
           // charged tracks
 
         if (GlueXParticleClass(name) == "Charged"){ 
-          if (gUseParticles){
+          if (gUseParticles && gUseKinFit){
             p4 = (TLorentzVector*)inP4_KinFit[pIndex]->At(ic);
               outPx[pIndex] = p4->Px();
               outPy[pIndex] = p4->Py();
               outPz[pIndex] = p4->Pz();
               outEn[pIndex] = p4->E();
+          }
+          if (gUseParticles){
             p4 = (TLorentzVector*)inChargedHypo__P4_Measured->At(inChargedIndex[pIndex][ic]);
               outRPx[pIndex] = p4->Px();
               outRPy[pIndex] = p4->Py();
@@ -1066,12 +1081,14 @@ void ConvertTree(TString treeName){
           // neutral particles
 
         if (GlueXParticleClass(name) == "Neutral"){ 
-          if (gUseParticles){
+          if (gUseParticles && gUseKinFit){
             p4 = (TLorentzVector*)inP4_KinFit[pIndex]->At(ic);
               outPx[pIndex] = p4->Px();
               outPy[pIndex] = p4->Py();
               outPz[pIndex] = p4->Pz();
               outEn[pIndex] = p4->E();
+          }
+          if (gUseParticles){
             p4 = (TLorentzVector*)inNeutralHypo__P4_Measured->At(inNeutralIndex[pIndex][ic]);
               outRPx[pIndex] = p4->Px();
               outRPy[pIndex] = p4->Py();
@@ -1096,13 +1113,15 @@ void ConvertTree(TString treeName){
           int pIndex2 = mapGlueXNameToParticleIndex[orderedParticleNames[im][2]];
           int tIndex1;  if (gUseMCParticles && outMCSignal > 0.1) tIndex1 = orderedThrownIndices[im][1];
           int tIndex2;  if (gUseMCParticles && outMCSignal > 0.1) tIndex2 = orderedThrownIndices[im][2];
-          if (gUseParticles){
+          if (gUseParticles && gUseKinFit){
             p4a = (TLorentzVector*)inP4_KinFit[pIndex1]->At(ic);
             p4b = (TLorentzVector*)inP4_KinFit[pIndex2]->At(ic);
               outPx[pIndex] = p4a->Px() + p4b->Px();
               outPy[pIndex] = p4a->Py() + p4b->Py();
               outPz[pIndex] = p4a->Pz() + p4b->Pz();
               outEn[pIndex] = p4a->E()  + p4b->E();
+          }
+          if (gUseParticles){
             p4a = (TLorentzVector*)inChargedHypo__P4_Measured->At(inChargedIndex[pIndex1][ic]);
             p4b = (TLorentzVector*)inChargedHypo__P4_Measured->At(inChargedIndex[pIndex2][ic]);
               outRPx[pIndex] = p4a->Px() + p4b->Px();
@@ -1110,7 +1129,10 @@ void ConvertTree(TString treeName){
               outRPz[pIndex] = p4a->Pz() + p4b->Pz();
               outREn[pIndex] = p4a->E()  + p4b->E();
             if (gMassWindows > 0){
-              double mass = sqrt(pow(outEn[pIndex],2)-pow(outPx[pIndex],2)-
+              double mass = sqrt(pow(outREn[pIndex],2)-pow(outRPx[pIndex],2)-
+                                 pow(outRPy[pIndex],2)-pow(outRPz[pIndex],2));
+              if (gUseKinFit)
+                     mass = sqrt(pow(outEn[pIndex],2)-pow(outPx[pIndex],2)-
                                  pow(outPy[pIndex],2)-pow(outPz[pIndex],2));
               if ((FSParticleType(name) == "Lambda") || (FSParticleType(name) == "ALambda"))
                 if (abs(mass-1.115683) > gMassWindows/2.0) cutDueToParticleInfo = true;
@@ -1135,13 +1157,15 @@ void ConvertTree(TString treeName){
           int pIndex2 = mapGlueXNameToParticleIndex[orderedParticleNames[im][2]];
           int tIndex1;  if (gUseMCParticles && outMCSignal > 0.1) tIndex1 = orderedThrownIndices[im][1];
           int tIndex2;  if (gUseMCParticles && outMCSignal > 0.1) tIndex2 = orderedThrownIndices[im][2];
-          if (gUseParticles){
+          if (gUseParticles && gUseKinFit){
             p4a = (TLorentzVector*)inP4_KinFit[pIndex1]->At(ic);
             p4b = (TLorentzVector*)inP4_KinFit[pIndex2]->At(ic);
               outPx[pIndex] = p4a->Px() + p4b->Px();
               outPy[pIndex] = p4a->Py() + p4b->Py();
               outPz[pIndex] = p4a->Pz() + p4b->Pz();
               outEn[pIndex] = p4a->E()  + p4b->E();
+          }
+          if (gUseParticles){
             p4a = (TLorentzVector*)inNeutralHypo__P4_Measured->At(inNeutralIndex[pIndex1][ic]);
             p4b = (TLorentzVector*)inNeutralHypo__P4_Measured->At(inNeutralIndex[pIndex2][ic]);
               outRPx[pIndex] = p4a->Px() + p4b->Px();
@@ -1149,7 +1173,10 @@ void ConvertTree(TString treeName){
               outRPz[pIndex] = p4a->Pz() + p4b->Pz();
               outREn[pIndex] = p4a->E()  + p4b->E();
             if (gMassWindows > 0){
-              double mass = sqrt(pow(outEn[pIndex],2)-pow(outPx[pIndex],2)-
+              double mass = sqrt(pow(outREn[pIndex],2)-pow(outRPx[pIndex],2)-
+                                 pow(outRPy[pIndex],2)-pow(outRPz[pIndex],2));
+              if (gUseKinFit)
+                     mass = sqrt(pow(outEn[pIndex],2)-pow(outPx[pIndex],2)-
                                  pow(outPy[pIndex],2)-pow(outPz[pIndex],2));
               if (FSParticleType(name) == "eta")
                 if (abs(mass-0.547862) > gMassWindows/2.0) cutDueToParticleInfo = true;
@@ -1190,10 +1217,10 @@ void ConvertTree(TString treeName){
           TString name = orderedParticleNames[im][id];
           int pIndex = mapGlueXNameToParticleIndex[name];
           TString fsIndex = mapGlueXNameToFSIndex[name];
-          double px = outPx[pIndex];
-          double py = outPy[pIndex];
-          double pz = outPz[pIndex];
-          double en = outEn[pIndex];
+          double px = outRPx[pIndex];  if (gUseKinFit) px = outPx[pIndex];
+          double py = outRPy[pIndex];  if (gUseKinFit) py = outPy[pIndex];
+          double pz = outRPz[pIndex];  if (gUseKinFit) pz = outPz[pIndex];
+          double en = outREn[pIndex];  if (gUseKinFit) en = outEn[pIndex];
           double mass = sqrt(fabs(en*en - px*px - py*py - pz*pz));
           double rpx = outRPx[pIndex];
           double rpy = outRPy[pIndex];
@@ -1213,7 +1240,7 @@ void ConvertTree(TString treeName){
 
       if (gUseParticles){
         if (cutDueToParticleInfo) continue;
-        if (outChi2DOF > gChi2DOFCut) continue;
+        if (gUseKinFit && outChi2DOF > gChi2DOFCut) continue;
         int numUnusedNeutrals = inNumNeutralHypos - numFSNeutrals;
         if ((gNumUnusedTracksCut   >= 0) && (outNumUnusedTracks   > gNumUnusedTracksCut)) continue;
         if ((gNumUnusedNeutralsCut >= 0) && (   numUnusedNeutrals > gNumUnusedNeutralsCut)) continue;
@@ -1576,6 +1603,7 @@ int Charge(int fsCode1, int fsCode2, int mcExtras){
 
 
 TString FSParticleType(TString glueXParticleType){
+  if (glueXParticleType.Contains("Missing"))     return TString("--");
   if (glueXParticleType.Contains("AntiLambda"))  return TString("ALambda");
   if (glueXParticleType.Contains("Lambda"))      return TString("Lambda");
   if (glueXParticleType.Contains("Positron"))    return TString("e+");
