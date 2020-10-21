@@ -1,0 +1,28 @@
+
+1. python divideData_Mass_t_Bins_Bootstrap.py (after setting .cfg for fit)
+2. Copy fit_TEMPLATE.csh and fit_TEMPLATE.py and script_Fit.py(change basedir inside) to EtaPi_fit/script
+Create a workflow to submit jobs:
+3.swif create -workflow bootstrap_SPD
+Submit jobs:
+4.python script_Fit.py
+Run jobs:
+5.0 swif run -workflow bootstrap_SPD
+Check status of jobs:
+5.1 swif status bootstrap_SPD
+5.1.1 If there are timout jobs you can add 2h and resubmit
+      swif modify-jobs -workflow bootstrap_SPD -time add 2h -problems AUGER-TIMEOUT
+   Or simply resubmit
+      swif retry-jobs -workflow bootstrap_SPD -problems AUGER-TIMEOUT
+After jobs are successfully finished delete workflow:      
+5.2 swif cancel -delete -workflow bootstrap_SPD
+Copy "Bootstrap_plot_etapi_delta_SPDG_allamps_mass_t_bins" directory with its files to "/src/programs/AmplitudeAnalysis" folder in your halld_sim, if it isn't there, and build it to create corresponding executable.
+To calculate moments in terms of fitted amplitudes for N bottstrapping samples of differnt M and t  bins  based on equations A9 and D8 from Mathiew et. al. and write into a file do:
+6.Bootstrap_plot_etapi_delta_SPDG_allamps_mass_t_bins  -o etapi_fit.txt
+To draw the moments with uncertainties from bootstrapping use the code below givin as an argument number of M bins, number of t bins, directory with bootstrapping samples and the file that contains moments calculated using fitted amplitudes from fitting original data sample
+7.python Drawing_moment_Bootstrap_errors_M_t_bins.py 45 4 100 EtaPi_fit/  etaprimepi0_moments_SPDG_allamps.txt
+
+
+in order to compare the moments calculated using fitted amplitudes with good starting parametrs to moments
+calculated with bad starting parameters that have uncertainties calculated with bootstraping I use the code
+
+Plot_graphs_together.C
