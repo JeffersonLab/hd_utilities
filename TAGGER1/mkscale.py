@@ -11,11 +11,14 @@
 
 import os,sys,getopt
 
-loc = 'localdir/spring19/'
-sfile = 'hd_root'
-sfilen = '1'
-ID = 1
+
+# use the following as default
+sfile = 'pstreeresults_run'
+sfilen = '2'
+ID = 2
+
 Period = 0
+loc = 'localdir/spring19/'
 
 # option 1 is default
 opts, args = getopt.getopt(sys.argv[1:],"12p:P:")
@@ -24,11 +27,27 @@ for opt,arg in opts:
         sfile = 'pstreeresults_run'
         sfilen = '2'
         ID = 2
+    if opt in ("-1"):
+        sfile = 'hd_root'
+        sfilen = '1'
+        ID = 1
     if opt in ("-p","-P"):
         Period = int(arg)
 
-if Period<5:
-    print "Requires option: -P x (x=5,6,7)"
+if Period<1:
+    print "Requires option: -P x (x=1,2,3,4,5,6,7)"
+
+if Period == 1:  # runs starting at 60000
+    loc = 'localdir/spring16/'
+
+if Period == 2:  # runs starting at 60000
+    loc = 'localdir/spring17/'
+
+if Period == 3:  # runs starting at 60000
+    loc = 'localdir/fall17/'
+
+if Period == 4:  # runs starting at 60000
+    loc = 'localdir/spring18/'
 
 if Period == 5:  # runs starting at 60000
     loc = 'localdir/fall18/'
@@ -43,7 +62,7 @@ FileList = []
 for f in os.listdir(loc):
     if f.startswith(sfile):
         fsize = os.path.getsize(loc+f)
-        if fsize > 900000:
+        if fsize > 900000: # make sure there is some data in the file
             FileList.append(f)
 
 FileList.sort()

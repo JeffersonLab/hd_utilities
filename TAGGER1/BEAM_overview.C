@@ -44,14 +44,24 @@ void BEAM_overview(int R, int ID) {
       sprintf(outfile,"accidental_scaling_factors_TAGG_spring18.dat");
     }
   } else if ((R>29999) && (R<40000)){
+    sprintf(period, "localdir/fall17");
+    sprintf(outfile,"accidental_scaling_factors_BEAM_fall17.dat");
+    if (ID == 2){
+      sprintf(outfile,"accidental_scaling_factors_TAGG_fall17.dat");
+    }
+  } else if ((R>19999) && (R<30000)){
     sprintf(period, "localdir/spring17");
     sprintf(outfile,"accidental_scaling_factors_BEAM_spring17.dat");
     if (ID == 2){
       sprintf(outfile,"accidental_scaling_factors_TAGG_spring17.dat");
     }
+  } else if ((R>9999) && (R<20000)){
+    sprintf(period, "localdir/spring16");
+    sprintf(outfile,"accidental_scaling_factors_BEAM_spring16.dat");
+    if (ID == 2){
+      sprintf(outfile,"accidental_scaling_factors_TAGG_spring16.dat");
+    }
   }
-
-
 
   double ScalingFactors[10];
   double BunchScale = 20.;
@@ -63,6 +73,7 @@ void BEAM_overview(int R, int ID) {
     BunchScale = 2.;
   }
 
+  // IMPORTANT: THIS VALUE HAS TO MATCH WHAT IS USED IN THE PLUGIN "TAGGER1"
   BunchScale = 8.;
 
   TFile *RF = new TFile( inf, "READ");
