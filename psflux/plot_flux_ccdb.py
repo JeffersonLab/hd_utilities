@@ -310,7 +310,7 @@ def main():
 
             bin_energy = htagged_fluxErr.FindBin(tagm_energy)
             previous_bincontent = htagged_fluxErr.GetBinContent(bin_energy)
-            previous_binerror = math.sqrt(htagged_fluxErr.GetBinError(bin_energy)) # error^2 stored in histogram
+            previous_binerror = htagged_fluxErr.GetBinError(bin_energy)
 
             current_bincontent = float(tagm_flux[1]) * scale / psAccept
             current_binerror = float(tagm_flux[2]) * scale / psAccept
@@ -345,7 +345,7 @@ def main():
 
 	    bin_energy = htagged_fluxErr.FindBin(tagh_energy)
 	    previous_bincontent = htagged_fluxErr.GetBinContent(bin_energy)
-	    previous_binerror = math.sqrt(htagged_fluxErr.GetBinError(bin_energy)) # error^2 stored in histogram
+	    previous_binerror = htagged_fluxErr.GetBinError(bin_energy)
 
             current_bincontent = float(tagh_flux[1]) * scale / psAccept
             current_binerror = float(tagh_flux[2]) * scale / psAccept
