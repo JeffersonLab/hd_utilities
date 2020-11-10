@@ -1,5 +1,5 @@
 #!/bin/bash
-nevents=50000
+nevents=100000
 date_file=/u/scratch/$USER/b1pi_date.txt
 if [ ! -f $date_file ] ; then
     echo date file $date_file not found, exiting
