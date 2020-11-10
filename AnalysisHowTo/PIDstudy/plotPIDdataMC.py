@@ -113,7 +113,8 @@ def main():
             
             for hist in histKeyList:
                 print("Histogram for particle:", hist)
-                if "DIRC" in hist or "Beta" in hist: # skip DIRC and Best histograms for now
+                if "DIRC" in hist or "Beta" in hist or "hower" in hist: 
+                    # skip DIRC, beta, preshower, and vertex histograms for now
                     continue
                     
                 particles.append(particle)
@@ -189,8 +190,15 @@ def main():
     
         # print plots
         cc2D.Print("%s%s.pdf" % (plotDir,hist.replace("/","_")))
+        cc2D.Print("%sPIDSummary2D.pdf(" % plotDir)
         if plot1D:
-            cc1D.Print("%spSlice%0.2f-%0.2f_%s.pdf" % (plotDir,minSliceP,maxSliceP,hist.replace("/","_")))
+            cc1D.Print("%sHist_pSlice%0.2f-%0.2f_%s.pdf" % (plotDir,minSliceP,maxSliceP,hist.replace("/","_")))
+            cc1D.Print("%sPIDSummary_pSlice%0.2f-%0.2f.pdf(" % (plotDir,minSliceP,maxSliceP))
+
+    # add final page to close summary PDF
+    cc2D.Print("%sPIDSummary2D.pdf)" % plotDir)
+    cc1D.Print("%sPIDSummary_pSlice%0.2f-%0.2f.pdf)" % (plotDir,minSliceP,maxSliceP))
+        
 
 ## main function 
 if __name__ == "__main__":
