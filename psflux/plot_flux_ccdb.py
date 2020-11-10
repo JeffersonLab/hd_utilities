@@ -4,7 +4,7 @@
 # Author: Justin Stevens (jrsteven@jlab.org)
 
 import os,sys
-from ROOT import TFile,TGraph,TH1F,TF1,gRandom
+from ROOT import TFile,TGraph,TH1D,TF1,gRandom
 import rcdb
 from optparse import OptionParser
 from array import array
@@ -43,10 +43,10 @@ def PSAcceptance(x, par):
     min = par[1]
     max = par[2]
 
-    if x[0] > 2*min and x[0] < min + max:
-        return par[0]*(1-2*min/x[0])
+    if x[0] > 2.*min and x[0] < min + max:
+        return par[0]*(1-2.*min/x[0])
     elif x[0] >= min + max:
-        return par[0]*(2*max/x[0] - 1)
+        return par[0]*(2.*max/x[0] - 1)
     
     return 0.
 
@@ -147,8 +147,13 @@ def main():
     if RCDB_QUERY != RCDB_QUERY_USER:
 	RCDB_QUERY = RCDB_QUERY_USER
     else:
-	if int(options.begin_run) >= 40000: # run periods in 2018+
-		RCDB_QUERY = "@is_2018production and @status_approved"
+	if int(options.begin_run) >= 40000 and int(options.begin_run) < 60000: 
+            # 2018-01 and 2018-11 run periods 
+            RCDB_QUERY = "@is_2018production and @status_approved"
+        if int(options.begin_run) >= 70000: 
+            # 2019-11 run period
+            RCDB_QUERY = "@is_dirc_production and @status_approved"
+    
     print "RCDB quergy = " + RCDB_QUERY
 
     # REST production dependent CCDB calibtime
@@ -196,16 +201,17 @@ def main():
         print("There are no runs matching the query \""+RCDB_QUERY +"\" between runs "+str(BEGINRUN)+" and "+str(ENDRUN))
         return
 
-    photon_endpoint = array('f')
-    tagm_tagged_flux = array('f')
-    tagm_scaled_energy = array('f')
-    tagh_tagged_flux = array('f')
-    tagh_scaled_energy = array('f')
+    photon_endpoint = array('d')
+    tagm_tagged_flux = array('d')
+    tagm_scaled_energy = array('d')
+    tagh_tagged_flux = array('d')
+    tagh_scaled_energy = array('d')
 
     if UNIFORM:
-	htagged_flux = TH1F("tagged_flux_uniform", "Uniform tagged flux; Photon Beam Energy (GeV); Flux (# photons on target)", NBINS, EMIN, EMAX)
-    htagged_fluxErr = TH1F("tagged_flux", "Tagged flux; Photon Beam Energy (GeV); Flux (# photons on target)", NBINS, EMIN, EMAX)
-    htagged_fluxErr.Sumw2()
+	htagged_flux = TH1D("tagged_flux_uniform", "Uniform tagged flux; Photon Beam Energy (GeV); Flux (# photons on target)", NBINS, EMIN, EMAX)
+    htagged_fluxErr = TH1D("tagged_flux", "Tagged flux; Photon Beam Energy (GeV); Flux (# photons on target)", NBINS, EMIN, EMAX)
+    htagm_fluxErr = TH1D("tagm_flux", "Tagged flux; TAGM Column; Flux", 102, 1, 103)
+    htagh_fluxErr = TH1D("tagh_flux", "Tagged flux; TAGH Counter; Flux", 274, 1, 275)
 
     # Loop over runs
     for run in runs:
@@ -267,19 +273,30 @@ def main():
             tagm_tagged_flux_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/pair_spectrometer/lumi/tagm/tagged", run.number, VARIATION, CALIBTIME)
             tagm_tagged_flux = tagm_tagged_flux_assignment.constant_set.data_table
             tagm_scaled_energy_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/microscope/scaled_energy_range", run.number, VARIATION, CALIBTIME_ENERGY)
-            tagm_scaled_energy = tagm_scaled_energy_assignment.constant_set.data_table
+            tagm_scaled_energy_table = tagm_scaled_energy_assignment.constant_set.data_table
             
             tagh_tagged_flux_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/pair_spectrometer/lumi/tagh/tagged", run.number, VARIATION, CALIBTIME)
             tagh_tagged_flux = tagh_tagged_flux_assignment.constant_set.data_table
             tagh_scaled_energy_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/hodoscope/scaled_energy_range", run.number, VARIATION, CALIBTIME_ENERGY)
-            tagh_scaled_energy = tagh_scaled_energy_assignment.constant_set.data_table
+            tagh_scaled_energy_table = tagh_scaled_energy_assignment.constant_set.data_table
         except:
             print "Missing flux for run number = %d, contact jrsteven@jlab.org" % run.number 
             sys.exit(0)
 
+        # PS acceptance correction
+        fPSAcceptance = TF1("PSAcceptance", PSAcceptance, 2.0, 12.0, 3);
+        
+        # Get parameters from CCDB 
+        PS_accept_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/pair_spectrometer/lumi/PS_accept", run.number, VARIATION, CALIBTIME)
+        PS_accept = PS_accept_assignment.constant_set.data_table
+        fPSAcceptance.SetParameters(float(PS_accept[0][0]), float(PS_accept[0][1]), float(PS_accept[0][2]));
+
         # fill tagm histogram
-	for tagm_flux, tagm_scaled_energy in zip(tagm_tagged_flux, tagm_scaled_energy):
+	for tagm_flux, tagm_scaled_energy in zip(tagm_tagged_flux, tagm_scaled_energy_table):
 	    tagm_energy = float(photon_endpoint[0][0])*(float(tagm_scaled_energy[1])+float(tagm_scaled_energy[2]))/2.
+            psAccept = fPSAcceptance.Eval(tagm_energy)
+            if psAccept <= 0.0:
+                continue
 
 	    if UNIFORM:
 	            tagm_energy_low = float(photon_endpoint[0][0])*(float(tagm_scaled_energy[1]))
@@ -288,21 +305,28 @@ def main():
 		    i = 0
 		    while i <= flux:
 			energy = tagm_energy_low + gRandom.Uniform(tagm_energy_high-tagm_energy_low)
-		    	htagged_flux.Fill(energy,scale)
+		    	htagged_flux.Fill(energy,scale/fPSAcceptance.Eval(energy))
 			i += 1
 
             bin_energy = htagged_fluxErr.FindBin(tagm_energy)
             previous_bincontent = htagged_fluxErr.GetBinContent(bin_energy)
             previous_binerror = math.sqrt(htagged_fluxErr.GetBinError(bin_energy)) # error^2 stored in histogram
-            new_bincontent = previous_bincontent + float(tagm_flux[1]) * scale
-            new_binerror = math.sqrt(previous_binerror*previous_binerror + float(tagm_flux[2])*float(tagm_flux[2])*scale*scale) 
+
+            current_bincontent = float(tagm_flux[1]) * scale / psAccept
+            current_binerror = float(tagm_flux[2]) * scale / psAccept
+            new_bincontent = previous_bincontent + current_bincontent
+            new_binerror = math.sqrt(previous_binerror*previous_binerror + current_binerror*current_binerror) 
 	    htagged_fluxErr.SetBinContent(bin_energy, new_bincontent)
             htagged_fluxErr.SetBinError(bin_energy, new_binerror)
+            htagm_fluxErr.Fill(tagm_flux[0], current_bincontent)
         
         # fill tagh histogram
 	previous_energy_scaled_low = 999. # keep track of low energy bin boundry to avoid overlaps
-	for tagh_flux, tagh_scaled_energy in zip(tagh_tagged_flux, tagh_scaled_energy):
+	for tagh_flux, tagh_scaled_energy in zip(tagh_tagged_flux, tagh_scaled_energy_table):
             tagh_energy = float(photon_endpoint[0][0])*(float(tagh_scaled_energy[1])+float(tagh_scaled_energy[2]))/2.
+            psAccept = fPSAcceptance.Eval(tagh_energy)
+            if psAccept <= 0.0:
+                continue
 
 	    if UNIFORM:
 		    tagh_energy_low = float(photon_endpoint[0][0])*(float(tagh_scaled_energy[1]))
@@ -314,7 +338,7 @@ def main():
 	            i = 0
 	            while i <= flux:
 	                energy = tagh_energy_low + gRandom.Uniform(tagh_energy_high-tagh_energy_low)
-	                htagged_flux.Fill(energy,scale)
+	                htagged_flux.Fill(energy,scale/fPSAcceptance.Eval(energy))
 	                i += 1
 
 		    previous_energy_scaled_low = tagh_energy_low
@@ -322,22 +346,14 @@ def main():
 	    bin_energy = htagged_fluxErr.FindBin(tagh_energy)
 	    previous_bincontent = htagged_fluxErr.GetBinContent(bin_energy)
 	    previous_binerror = math.sqrt(htagged_fluxErr.GetBinError(bin_energy)) # error^2 stored in histogram
-	    new_bincontent = previous_bincontent + float(tagh_flux[1]) * scale
-	    new_binerror = math.sqrt(previous_binerror*previous_binerror + float(tagh_flux[2])*float(tagh_flux[2])*scale*scale)
+
+            current_bincontent = float(tagh_flux[1]) * scale / psAccept
+            current_binerror = float(tagh_flux[2]) * scale / psAccept
+	    new_bincontent = previous_bincontent + current_bincontent
+	    new_binerror = math.sqrt(previous_binerror*previous_binerror + current_binerror*current_binerror)
 	    htagged_fluxErr.SetBinContent(bin_energy, new_bincontent)
 	    htagged_fluxErr.SetBinError(bin_energy, new_binerror)
-
-    # PS acceptance correction
-    fPSAcceptance = TF1("PSAcceptance", PSAcceptance, 2.0, 12.0, 3);
-
-    # Get parameters from CCDB 
-    PS_accept_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/pair_spectrometer/lumi/PS_accept", run.number, VARIATION, CALIBTIME)
-    PS_accept = PS_accept_assignment.constant_set.data_table
-    fPSAcceptance.SetParameters(float(PS_accept[0][0]), float(PS_accept[0][1]), float(PS_accept[0][2]));
-
-    if UNIFORM:
-	htagged_flux.Divide(fPSAcceptance);
-    htagged_fluxErr.Divide(fPSAcceptance);
+            htagh_fluxErr.Fill(tagh_flux[0], current_bincontent)
 
     # Get density factor from CCDB
     density = 0.0
@@ -353,15 +369,14 @@ def main():
         exit
 
     print("Target length = %0.2f cm" % TARGETLENGTH)
-    #print("Target density = %0.2f +/- %0.2f mg/cm^3" % (density, density_err))
+    print("Target density = %0.2f +/- %0.2f mg/cm^3" % (density, density_err))
 
-    # Compute target length to comput luminosity
+    # Compute target length to compute luminosity
     targetScatteringCenters = density * TARGETLENGTH * Navagadro * units_cm2_b * units_g_mg
     targetScatteringCenters_err = targetScatteringCenters * density_err/density
     print("Target scattering center = %0.3f +/- %0.3f b^-1" % (targetScatteringCenters,targetScatteringCenters_err))
     htagged_lumiErr = htagged_fluxErr.Clone("tagged_lumi")
     htagged_lumiErr.Reset()
-    htagged_lumiErr.Sumw2()
     htagged_lumiErr.SetTitle("Tagged luminosity (pb^{-1}); Photon Beam Energy (GeV); Luminosity (pb^{-1})")
     for i in range(1,htagged_fluxErr.GetNbinsX()):
         lumi = htagged_fluxErr.GetBinContent(i) * targetScatteringCenters / 1e12
@@ -386,6 +401,8 @@ def main():
 	htagged_flux.Write()
     htagged_fluxErr.Write()
     htagged_lumiErr.Write()
+    htagm_fluxErr.Write()
+    htagh_fluxErr.Write()
     fout.Close()
     
 
