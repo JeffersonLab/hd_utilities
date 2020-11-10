@@ -242,7 +242,9 @@ void walk1(int Run){
 	    //cout<< tL-adcTL+THESHIFT<<endl;
 	    //c = (((tR-adcTR+THESHIFT)>248) && (pmtR>3000)) || ((tR-adcTR+THESHIFT)<240.);
 	    //if (!c)
+
 	    Twalk[hid2]->Fill(pmtR, tR-adcTR+THESHIFT);
+	    
 	  }
 	  
 	}
