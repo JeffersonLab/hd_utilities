@@ -21,7 +21,7 @@ use DBI;
 #
 # connect to database
 #
-$host = 'hallddb';
+$host = 'localhost';
 $user = 'diskmanager';
 $password = '';
 $database = 'diskManagement';
