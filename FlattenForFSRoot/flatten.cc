@@ -1345,13 +1345,13 @@ void ConvertTree(TString treeName, bool update){
 
     // clean memory (or try to, delete doesn't work here)
 
-  if (inThrown__P4)  inThrown__P4.Clear();
-  if (inBeam__P4_Measured)  inBeam__P4_Measured.Clear();
-  if (inBeam__X4_Measured)  inBeam__X4_Measured.Clear();
-  if (inChargedHypo__P4_Measured)  inChargedHypo__P4_Measured.Clear();
-  if (inNeutralHypo__P4_Measured)  inNeutralHypo__P4_Measured.Clear();
-  if (inBeam__P4_KinFit)  inBeam__P4_KinFit.Clear();
-  for (unsigned int i = 0; i < MAXPARTICLES; i++){ if (inP4_KinFit[i]) inP4_KinFit[i].Clear(); }
+  if (inThrown__P4)  inThrown__P4->Clear();
+  if (inBeam__P4_Measured)  inBeam__P4_Measured->Clear();
+  if (inBeam__X4_Measured)  inBeam__X4_Measured->Clear();
+  if (inChargedHypo__P4_Measured)  inChargedHypo__P4_Measured->Clear();
+  if (inNeutralHypo__P4_Measured)  inNeutralHypo__P4_Measured->Clear();
+  if (inBeam__P4_KinFit)  inBeam__P4_KinFit->Clear();
+  for (unsigned int i = 0; i < MAXPARTICLES; i++){ if (inP4_KinFit[i]) inP4_KinFit[i]->Clear(); }
 
 }
 
