@@ -318,7 +318,7 @@ def main():
             new_binerror = math.sqrt(previous_binerror*previous_binerror + current_binerror*current_binerror) 
 	    htagged_fluxErr.SetBinContent(bin_energy, new_bincontent)
             htagged_fluxErr.SetBinError(bin_energy, new_binerror)
-            htagm_fluxErr.Fill(tagm_flux[0], current_bincontent)
+            htagm_fluxErr.Fill(int(tagm_flux[0]), current_bincontent)
         
         # fill tagh histogram
 	previous_energy_scaled_low = 999. # keep track of low energy bin boundry to avoid overlaps
@@ -353,7 +353,7 @@ def main():
 	    new_binerror = math.sqrt(previous_binerror*previous_binerror + current_binerror*current_binerror)
 	    htagged_fluxErr.SetBinContent(bin_energy, new_bincontent)
 	    htagged_fluxErr.SetBinError(bin_energy, new_binerror)
-            htagh_fluxErr.Fill(tagh_flux[0], current_bincontent)
+            htagh_fluxErr.Fill(int(tagh_flux[0]), current_bincontent)
 
     # Get density factor from CCDB
     density = 0.0
