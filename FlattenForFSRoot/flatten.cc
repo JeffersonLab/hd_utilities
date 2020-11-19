@@ -65,7 +65,7 @@ bool gIsMCAna;
 bool gIsMCGen;
 bool gIsMCGenTag;
 bool gSafe;
-bool gPrint;
+int gPrint;
 
   // derived global parameters to control output
 TString gOutputNT;
@@ -115,7 +115,8 @@ int main(int argc, char** argv){
   cout << "           -numUnusedNeutrals [optional cut (<= cut)]   (no default)" << endl;
   cout << "           -numNeutralHypos   [optional cut (<= cut)]   (no default)" << endl;
   cout << "           -safe  [check array sizes?  0 or 1]          (default: 1)" << endl;
-  cout << "           -print [print extra info to screen? 0 or 1]  (default: 0)" << endl;
+  cout << "           -print [print to screen: " << endl; 
+  cout << "                   -1 (less); 0 (regular); 1 (more)]    (default: 0)" << endl;
   cout << endl;
   cout << "Notes:" << endl;
   cout << "  * multiple input files can be specified using wildcards, but they"  << endl;
@@ -152,7 +153,7 @@ int main(int argc, char** argv){
   gNumUnusedNeutralsCut = -1;
   gNumNeutralHyposCut = -1;
   gSafe = true;
-  gPrint = false;
+  gPrint = 0;
   TString flag = "";
   for (int i = 0; i < argc; i++){
     TString argi(argv[i]);
@@ -175,7 +176,7 @@ int main(int argc, char** argv){
     if (flag == "-numUnusedNeutrals"){ gNumUnusedNeutralsCut = atoi(argi); }
     if (flag == "-numNeutralHypos"){ gNumNeutralHyposCut = atoi(argi); }
     if (flag == "-safe"){ if (argi == "0") gSafe = false; }
-    if (flag == "-print"){ if (argi == "1") gPrint = true; }
+    if (flag == "-print"){ gPrint = atoi(argi); }
   }
   if (gMCTag == "none") gMCTag = "";
   if (gMCTag != ""){
@@ -959,10 +960,10 @@ void ConvertTree(TString treeName, bool update){
 
      // print some information (for debugging only)
 
-    if ((iEntry+1 == 1) && (gPrint)){ 
+    if ((iEntry+1 == 1) && (gPrint == 1)){ 
       cout << endl << "PRINTING TEST INFORMATION FOR FIVE EVENTS..." << endl << endl;
     }
-    if ((iEntry < 5) && (gPrint)){
+    if ((iEntry < 5) && (gPrint == 1)){
       cout << endl << endl;
       cout << "  ***************************" << endl;
       cout << "  ******* NEW EVENT " << iEntry+1 << " *******" << endl;
@@ -1026,16 +1027,16 @@ void ConvertTree(TString treeName, bool update){
         }
       }
      if (BaryonNumber((int)outMCDecayCode1,(int)outMCDecayCode2,(int)outMCExtras) != 1)
-       { mcWarning = true; cout << "WARNING: problem with baryon number?" << endl; }
+       { mcWarning = true; cout << "WARNING: problem with baryon number in MC" << endl; }
      if (Charge((int)outMCDecayCode1,(int)outMCDecayCode2,(int)outMCExtras) != 1)
-       { mcWarning = true; cout << "WARNING: problem with electric charge?" << endl; }
+       { mcWarning = true; cout << "WARNING: problem with electric charge in MC" << endl; }
       //if (((outMCSignal > 0.1)&&!inIsThrownTopology) ||
       //    ((outMCSignal < 0.1)&& inIsThrownTopology)){
       //  cout << "ERROR: MCSignal does not match IsThrownTopology" << endl;
       //  mcWarning = true;
       //}
         // print a few events to make sure MC makes sense
-      if (((iEntry < 5) && gPrint) || mcError || mcWarning){
+      if (((iEntry < 5) && gPrint == 1) || (mcError) || (mcWarning && gPrint >= 0)){
       //if (gIsMC && (iEntry < 5||inIsThrownTopology)){
         cout << endl << endl;
         if (mcError||mcWarning) cout << "WARNING: problems with the truth parsing (see below)..." << endl;
@@ -1270,7 +1271,7 @@ void ConvertTree(TString treeName, bool update){
 
       // print some information (for debugging only)
 
-      if ((iEntry < 5) && (gPrint) && (gUseParticles)){
+      if ((iEntry < 5) && (gPrint == 1) && (gUseParticles)){
         cout << "  *******************************" << endl;
         cout << "  **** INFO FOR EVENT " << iEntry+1 << " ****" << endl;
         cout << "  *******************************" << endl;
@@ -1303,7 +1304,7 @@ void ConvertTree(TString treeName, bool update){
                << mass << "  " << rmass << endl;
         }}
       }
-      if (iEntry+1 == 5 && ic+1 == inNumCombos && gPrint && gUseParticles){ 
+      if (iEntry+1 == 5 && ic+1 == inNumCombos && (gPrint == 1) && gUseParticles){ 
         cout << endl << endl << "DONE PRINTING TEST INFORMATION FOR FIVE EVENTS" << endl << endl;
         cout << "CONTINUING THE CONVERSION... " << endl << endl;
       }
