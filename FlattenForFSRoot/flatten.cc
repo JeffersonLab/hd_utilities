@@ -22,11 +22,12 @@ static const int MAXCOMBOS    = 100*50;
 static const int MAXPARTICLES =  MAXTRACKS + MAXNEUTRALS;
 
   // main routines to do the conversions
-void ConvertFile(TString inFileName, TString outFileName);
-void ConvertTree(TString treeName);
+void ConvertFile(TString inFileName, bool update);
+void ConvertTree(TString treeName, bool update);
 
   // utility functions (collected at the end of this file) 
   //   [containing mostly conversions between conventions]
+void SetDBranch (TTree* tree, TString name, double& variable, bool update);
 TString PDGReadableName(int pdgID);
 TString FSParticleType(TString glueXParticleType);
 TString GlueXParticleClass(TString glueXParticleType);
@@ -64,13 +65,25 @@ bool gIsMCAna;
 bool gIsMCGen;
 bool gIsMCGenTag;
 bool gSafe;
-bool gPrint;
+int gPrint;
 
   // derived global parameters to control output
+TString gOutputNT;
 bool gUseParticles;
 bool gUseMCParticles;
 bool gUseMCInfo;
 bool gUseKinFit;
+
+  // copies of the same global parameters 
+  //  to check for consistency when using multiple files
+TString gOutputNTLastFile;
+bool gUseParticlesLastFile;
+bool gUseMCParticlesLastFile;
+bool gUseMCInfoLastFile;
+bool gUseKinFitLastFile;
+
+  // event counter
+int gTotalEntries;
 
 
 // **************************************
@@ -102,9 +115,12 @@ int main(int argc, char** argv){
   cout << "           -numUnusedNeutrals [optional cut (<= cut)]   (no default)" << endl;
   cout << "           -numNeutralHypos   [optional cut (<= cut)]   (no default)" << endl;
   cout << "           -safe  [check array sizes?  0 or 1]          (default: 1)" << endl;
-  cout << "           -print [print extra info to screen? 0 or 1]  (default: 0)" << endl;
+  cout << "           -print [print to screen: " << endl; 
+  cout << "                   -1 (less); 0 (regular); 1 (more)]    (default: 0)" << endl;
   cout << endl;
   cout << "Notes:" << endl;
+  cout << "  * multiple input files can be specified using wildcards, but they"  << endl;
+  cout << "     should all be of the same type (same final state, MC or data, etc) " << endl;
   cout << "  * the input tree name should contain \"_Tree\" (if this standard" << endl;
   cout << "     changes in the GlueX code, this code can be easily modified)" << endl;
   cout << "  * the output tree name is ntFSGlueX_[code2]_[code1], where [code1] " << endl;
@@ -119,7 +135,7 @@ int main(int argc, char** argv){
      cout << "ERROR: wrong number of arguments -- see usage notes above" << endl;
      exit(0);
   }
-  TString inFileName("");
+  vector<TString> inFileNames;
   TString outFileName("none");
   gInputIsMC = -1;
   gIsMC = false;
@@ -137,23 +153,30 @@ int main(int argc, char** argv){
   gNumUnusedNeutralsCut = -1;
   gNumNeutralHyposCut = -1;
   gSafe = true;
-  gPrint = false;
-  for (int i = 0; i < argc-1; i++){
+  gPrint = 0;
+  TString flag = "";
+  for (int i = 0; i < argc; i++){
     TString argi(argv[i]);
-    TString argi1(argv[i+1]);
-    if (argi == "-in")  inFileName = argi1;
-    if (argi == "-out") outFileName = argi1;
-    if (argi == "-mc"){ if (argi1 == "1") gInputIsMC = 1; 
-                        if (argi1 == "0") gInputIsMC = 0; }
-    if (argi == "-mctag"){ gMCTag = argi1; }
-    if (argi == "-chi2"){ gChi2DOFCut = atof(argi1); }
-    if (argi == "-shQuality"){ gShQualityCut = atof(argi1); }
-    if (argi == "-massWindows"){ gMassWindows = atof(argi1); }
-    if (argi == "-numUnusedTracks"){ gNumUnusedTracksCut = atoi(argi1); }
-    if (argi == "-numUnusedNeutrals"){ gNumUnusedNeutralsCut = atoi(argi1); }
-    if (argi == "-numNeutralHypos"){ gNumNeutralHyposCut = atoi(argi1); }
-    if (argi == "-safe"){ if (argi1 == "0") gSafe = false; }
-    if (argi == "-print"){ if (argi1 == "1") gPrint = true; }
+    if ((argi == "-in")||(argi == "-out")||(argi == "-mc")||(argi == "-mctag")
+        ||(argi == "-chi2")||(argi == "-shQuality")||(argi == "-massWindows")
+        ||(argi == "-numUnusedTracks")||(argi == "-numUnusedNeutrals")
+        ||(argi == "-numNeutralHypos")||(argi == "-safe")||(argi == "-print")){
+      flag = argi;
+      continue;
+    }
+    if (flag == "-in")  inFileNames.push_back(argi);
+    if (flag == "-out") outFileName = argi;
+    if (flag == "-mc"){ if (argi == "1") gInputIsMC = 1; 
+                        if (argi == "0") gInputIsMC = 0; }
+    if (flag == "-mctag"){ gMCTag = argi; }
+    if (flag == "-chi2"){ gChi2DOFCut = atof(argi); }
+    if (flag == "-shQuality"){ gShQualityCut = atof(argi); }
+    if (flag == "-massWindows"){ gMassWindows = atof(argi); }
+    if (flag == "-numUnusedTracks"){ gNumUnusedTracksCut = atoi(argi); }
+    if (flag == "-numUnusedNeutrals"){ gNumUnusedNeutralsCut = atoi(argi); }
+    if (flag == "-numNeutralHypos"){ gNumNeutralHyposCut = atoi(argi); }
+    if (flag == "-safe"){ if (argi == "0") gSafe = false; }
+    if (flag == "-print"){ gPrint = atoi(argi); }
   }
   if (gMCTag == "none") gMCTag = "";
   if (gMCTag != ""){
@@ -168,7 +191,10 @@ int main(int argc, char** argv){
   }
   cout << endl;
   cout << "INPUT PARAMETERS:" << endl << endl;
-  cout << "  input file:            " << inFileName << endl;
+  cout << "  input files:           " << endl;
+  for (unsigned int i = 0; i < inFileNames.size(); i++){
+    cout << "    (" << i+1 <<") " << inFileNames[i] << endl;
+  }
   cout << "  output file:           " << outFileName << endl;
   cout << "  MC?                    " << gInputIsMC << endl;
   if (gMCTag != "")
@@ -184,7 +210,7 @@ int main(int argc, char** argv){
   cout << "  numNeutralHypos cut:   " << gNumNeutralHyposCut << endl;
   cout << "  safe mode?             " << gSafe << endl;
   cout << endl;
-  if ((inFileName == "") || (outFileName == "")){
+  if ((inFileNames.size() == 0) || (outFileName == "")){
      cout << "ERROR: specify input and output files -- see usage notes above" << endl;
      exit(0);
   }
@@ -193,7 +219,19 @@ int main(int argc, char** argv){
     cout << "ERROR: no particles corresponding to mctag = " << gMCTag << endl;
     exit(0);
   }
-  ConvertFile(inFileName,outFileName);
+  gOutputFile = NULL;
+  if (outFileName != "none") gOutputFile = new TFile(outFileName,"RECREATE");
+  for (unsigned int i = 0; i < inFileNames.size(); i++){
+    bool update = false;  if (i != 0) update = true;
+    cout << endl;
+    cout << "******************************************************\n"
+            "  CONVERTING FILE NUMBER " << (i+1) << ":\n"
+            "   " + inFileNames[i] + "\n"
+            "******************************************************\n" << endl;
+    ConvertFile(inFileNames[i],update);
+  }
+  if (gOutputFile) gOutputFile->Close();
+  if (gOutputFile) delete gOutputFile;
   return 0;
 }
 
@@ -203,16 +241,14 @@ int main(int argc, char** argv){
 //   ConvertFile
 // **************************************
 
-void ConvertFile(TString inFileName, TString outFileName){
+void ConvertFile(TString inFileName, bool update){
   int nTrees = 0;
   gInputFile  = new TFile(inFileName);
-  gOutputFile = NULL;
-  if (outFileName != "none") gOutputFile = new TFile(outFileName,"recreate");
   TList* fileList = gInputFile->GetListOfKeys();
   for (int i = 0; i < fileList->GetEntries(); i++){
     TString treeName(fileList->At(i)->GetName());
     if (treeName.Contains("_Tree")){
-      if (nTrees == 0) ConvertTree(treeName);
+      if (nTrees == 0) ConvertTree(treeName, update);
       if (nTrees >= 1){
         cout << "WARNING: found more than one tree -- only converted the first" << endl;
         cout << "           extra tree = " << treeName << endl;
@@ -221,10 +257,10 @@ void ConvertFile(TString inFileName, TString outFileName){
     }
   }
   gInputFile->Close();
-  if (outFileName != "none") gOutputFile->Close();
   if (nTrees == 0){
     cout << "WARNING: could not find any trees" << endl;
   }
+  if (gInputFile) delete gInputFile;
 }
 
 
@@ -233,13 +269,13 @@ void ConvertFile(TString inFileName, TString outFileName){
 //   ConvertTree:  all the work is done here
 // **************************************
 
-void ConvertTree(TString treeName){
+void ConvertTree(TString treeName, bool update){
 
   cout << endl << "CONVERTING THE TREE NAMED: " << treeName << endl;
 
     // input and output tree names
   TString inNT(treeName);
-  TString outNT("ntFSGlueX");
+  gOutputNT = "ntFSGlueX";
 
     // setup for the input tree
   TTree *inTree = (TTree*) gInputFile->Get(inNT);
@@ -501,10 +537,10 @@ void ConvertTree(TString treeName){
   cout << "  DecayCode2    = " << reconstructedFSCode.second << endl;
   cout << "  numFSNeutrals = " << numFSNeutrals << endl << endl;
 
-  outNT += "_";
-  outNT += reconstructedFSCode.second;
-  outNT += "_";
-  outNT += reconstructedFSCode.first;
+  gOutputNT += "_";
+  gOutputNT += reconstructedFSCode.second;
+  gOutputNT += "_";
+  gOutputNT += reconstructedFSCode.first;
 
   if (!checkFSOkay){
     cout << "ERROR: problem parsing this final state." << endl;
@@ -534,8 +570,37 @@ void ConvertTree(TString treeName){
     }
     cout << endl;
     }
-    cout << endl << endl << endl;
+    cout << endl;
   }
+
+
+     // **********************************************************************
+     // STEP 1G:  check for consistency between this file and the last
+     // **********************************************************************
+
+  if (update){
+    cout << endl << "CHECKING FOR CONSISTENCY BETWEEN THIS FILE AND THE LAST:" << endl << endl;
+    if ((gOutputNT       != gOutputNTLastFile) ||
+        (gUseParticles   != gUseParticlesLastFile) ||
+        (gUseMCParticles != gUseMCParticlesLastFile) ||
+        (gUseMCInfo      != gUseMCInfoLastFile) ||
+        (gUseKinFit      != gUseKinFitLastFile)){
+      cout << "WARNING:  This file doesn't match the last...  skipping." << endl;
+      cout << "  gOutputNT       = " << gOutputNT       << " " << gOutputNTLastFile << endl;
+      cout << "  gUseParticles   = " << gUseParticles   << " " << gUseParticlesLastFile << endl;
+      cout << "  gUseMCParticles = " << gUseMCParticles << " " << gUseMCParticlesLastFile << endl;
+      cout << "  gUseMCInfo      = " << gUseMCInfo      << " " << gUseMCInfoLastFile << endl;
+      cout << "  gUseKinFit      = " << gUseKinFit      << " " << gUseKinFitLastFile << endl;
+      return;
+    }
+    cout << "  consistency OK" << endl << endl;
+  }
+  gOutputNTLastFile       = gOutputNT;
+  gUseParticlesLastFile   = gUseParticles;
+  gUseMCParticlesLastFile = gUseMCParticles;
+  gUseMCInfoLastFile      = gUseMCInfo;
+  gUseKinFitLastFile      = gUseKinFit;
+  cout << endl << endl;
 
 
 
@@ -717,58 +782,64 @@ void ConvertTree(TString treeName){
    // **********************************************************************
 
   gOutputFile->cd();
-  TTree outTree(outNT, outNT);
+  TTree *outTree = NULL;
+  if (!update) outTree = new TTree(gOutputNT, gOutputNT);
+  if (update) outTree = (TTree*) gOutputFile->Get(gOutputNT);
+  if (!outTree){
+    cout << "WARNING:  problem with the output tree...  skipping this file." << endl;
+    return;
+  }
 
     // non-particle information
 
-  double outRunNumber;                           outTree.Branch("Run",             &outRunNumber,       "Run/D");
-  double outEventNumber;                         outTree.Branch("Event",           &outEventNumber,     "Event/D");
+  double outRunNumber;                           SetDBranch(outTree,"Run",             outRunNumber,       update);
+  double outEventNumber;                         SetDBranch(outTree,"Event",           outEventNumber,     update);
   double outChi2;             if (gUseParticles && gUseKinFit) 
-                                                 outTree.Branch("Chi2",            &outChi2,            "Chi2/D");
+                                                 SetDBranch(outTree,"Chi2",            outChi2,            update);
   double outChi2DOF;          if (gUseParticles && gUseKinFit)
-                                                 outTree.Branch("Chi2DOF",         &outChi2DOF,         "Chi2DOF/D");
-  double outRFTime;           if (gUseParticles) outTree.Branch("RFTime",          &outRFTime,          "RFTime/D");
-  double outRFDeltaT;         if (gUseParticles) outTree.Branch("RFDeltaT",        &outRFDeltaT,        "RFDeltaT/D");
-  double outEnUnusedSh;       if (gUseParticles) outTree.Branch("EnUnusedSh",      &outEnUnusedSh,      "EnUnusedSh/D");
-  double outNumUnusedTracks;  if (gUseParticles) outTree.Branch("NumUnusedTracks", &outNumUnusedTracks, "NumUnusedTracks/D");
-  double outNumNeutralHypos;  if (gUseParticles) outTree.Branch("NumNeutralHypos", &outNumNeutralHypos, "NumNeutralHypos/D");
-  double outNumBeam;          if (gUseParticles) outTree.Branch("NumBeam",         &outNumBeam,         "NumBeam/D");
-  double outNumCombos;        if (gUseParticles) outTree.Branch("NumCombos",       &outNumCombos,       "NumCombos/D");
-  double outProdVx;           if (gUseParticles) outTree.Branch("ProdVx",          &outProdVx,          "ProdVx/D");
-  double outProdVy;           if (gUseParticles) outTree.Branch("ProdVy",          &outProdVy,          "ProdVy/D");
-  double outProdVz;           if (gUseParticles) outTree.Branch("ProdVz",          &outProdVz,          "ProdVz/D");
-  double outProdVt;           if (gUseParticles) outTree.Branch("ProdVt",          &outProdVt,          "ProdVt/D");
+                                                 SetDBranch(outTree,"Chi2DOF",         outChi2DOF,         update);
+  double outRFTime;           if (gUseParticles) SetDBranch(outTree,"RFTime",          outRFTime,          update);
+  double outRFDeltaT;         if (gUseParticles) SetDBranch(outTree,"RFDeltaT",        outRFDeltaT,        update);
+  double outEnUnusedSh;       if (gUseParticles) SetDBranch(outTree,"EnUnusedSh",      outEnUnusedSh,      update);
+  double outNumUnusedTracks;  if (gUseParticles) SetDBranch(outTree,"NumUnusedTracks", outNumUnusedTracks, update);
+  double outNumNeutralHypos;  if (gUseParticles) SetDBranch(outTree,"NumNeutralHypos", outNumNeutralHypos, update);
+  double outNumBeam;          if (gUseParticles) SetDBranch(outTree,"NumBeam",         outNumBeam,         update);
+  double outNumCombos;        if (gUseParticles) SetDBranch(outTree,"NumCombos",       outNumCombos,       update);
+  double outProdVx;           if (gUseParticles) SetDBranch(outTree,"ProdVx",          outProdVx,          update);
+  double outProdVy;           if (gUseParticles) SetDBranch(outTree,"ProdVy",          outProdVy,          update);
+  double outProdVz;           if (gUseParticles) SetDBranch(outTree,"ProdVz",          outProdVz,          update);
+  double outProdVt;           if (gUseParticles) SetDBranch(outTree,"ProdVt",          outProdVt,          update);
   double outPxPB;             if (gUseParticles && gUseKinFit)
-                                                 outTree.Branch("PxPB",            &outPxPB,            "PxPB/D");
+                                                 SetDBranch(outTree,"PxPB",            outPxPB,            update);
   double outPyPB;             if (gUseParticles && gUseKinFit)
-                                                 outTree.Branch("PyPB",            &outPyPB,            "PyPB/D");
+                                                 SetDBranch(outTree,"PyPB",            outPyPB,            update);
   double outPzPB;             if (gUseParticles && gUseKinFit)
-                                                 outTree.Branch("PzPB",            &outPzPB,            "PzPB/D");
+                                                 SetDBranch(outTree,"PzPB",            outPzPB,            update);
   double outEnPB;             if (gUseParticles && gUseKinFit)
-                                                 outTree.Branch("EnPB",            &outEnPB,            "EnPB/D");
-  double outRPxPB;            if (gUseParticles) outTree.Branch("RPxPB",           &outRPxPB,           "RPxPB/D");
-  double outRPyPB;            if (gUseParticles) outTree.Branch("RPyPB",           &outRPyPB,           "RPyPB/D");
-  double outRPzPB;            if (gUseParticles) outTree.Branch("RPzPB",           &outRPzPB,           "RPzPB/D");
-  double outREnPB;            if (gUseParticles) outTree.Branch("REnPB",           &outREnPB,           "REnPB/D");
+                                                 SetDBranch(outTree,"EnPB",            outEnPB,            update);
+  double outRPxPB;            if (gUseParticles) SetDBranch(outTree,"RPxPB",           outRPxPB,           update);
+  double outRPyPB;            if (gUseParticles) SetDBranch(outTree,"RPyPB",           outRPyPB,           update);
+  double outRPzPB;            if (gUseParticles) SetDBranch(outTree,"RPzPB",           outRPzPB,           update);
+  double outREnPB;            if (gUseParticles) SetDBranch(outTree,"REnPB",           outREnPB,           update);
 
     // MC information
 
-  double outMCPxPB;        if (gUseMCParticles) outTree.Branch("MCPxPB",      &outMCPxPB,      "MCPxPB/D");
-  double outMCPyPB;        if (gUseMCParticles) outTree.Branch("MCPyPB",      &outMCPyPB,      "MCPyPB/D");
-  double outMCPzPB;        if (gUseMCParticles) outTree.Branch("MCPzPB",      &outMCPzPB,      "MCPzPB/D");
-  double outMCEnPB;        if (gUseMCInfo) outTree.Branch("MCEnPB",      &outMCEnPB,      "MCEnPB/D");
-  double outMCDecayCode1;  if (gUseMCInfo) outTree.Branch("MCDecayCode1",&outMCDecayCode1,"MCDecayCode1/D");
-  double outMCDecayCode2;  if (gUseMCInfo) outTree.Branch("MCDecayCode2",&outMCDecayCode2,"MCDecayCode2/D");
-  double outMCExtras;      if (gUseMCInfo) outTree.Branch("MCExtras",    &outMCExtras,    "MCExtras/D");
-  double outMCSignal;      if (gUseMCParticles&&gUseParticles) outTree.Branch("MCSignal", &outMCSignal, "MCSignal/D");
+  double outMCPxPB;        if (gUseMCParticles) SetDBranch(outTree,"MCPxPB",      outMCPxPB,      update);
+  double outMCPyPB;        if (gUseMCParticles) SetDBranch(outTree,"MCPyPB",      outMCPyPB,      update);
+  double outMCPzPB;        if (gUseMCParticles) SetDBranch(outTree,"MCPzPB",      outMCPzPB,      update);
+  double outMCEnPB;        if (gUseMCInfo) SetDBranch(outTree,"MCEnPB",      outMCEnPB,      update);
+  double outMCDecayCode1;  if (gUseMCInfo) SetDBranch(outTree,"MCDecayCode1",outMCDecayCode1,update);
+  double outMCDecayCode2;  if (gUseMCInfo) SetDBranch(outTree,"MCDecayCode2",outMCDecayCode2,update);
+  double outMCExtras;      if (gUseMCInfo) SetDBranch(outTree,"MCExtras",    outMCExtras,    update);
+  double outMCSignal;      if (gUseMCParticles&&gUseParticles) SetDBranch(outTree,"MCSignal", outMCSignal, update);
   double outMCDecayParticle1;   double outMCDecayParticle2;   double outMCDecayParticle3;
   double outMCDecayParticle4;   double outMCDecayParticle5;   double outMCDecayParticle6;
-  if (gUseMCInfo) outTree.Branch("MCDecayParticle1",&outMCDecayParticle1,"MCDecayParticle1/D");
-  if (gUseMCInfo) outTree.Branch("MCDecayParticle2",&outMCDecayParticle2,"MCDecayParticle2/D");
-  if (gUseMCInfo) outTree.Branch("MCDecayParticle3",&outMCDecayParticle3,"MCDecayParticle3/D");
-  if (gUseMCInfo) outTree.Branch("MCDecayParticle4",&outMCDecayParticle4,"MCDecayParticle4/D");
-  if (gUseMCInfo) outTree.Branch("MCDecayParticle5",&outMCDecayParticle5,"MCDecayParticle5/D");
-  if (gUseMCInfo) outTree.Branch("MCDecayParticle6",&outMCDecayParticle6,"MCDecayParticle6/D");
+  if (gUseMCInfo) SetDBranch(outTree,"MCDecayParticle1",outMCDecayParticle1,update);
+  if (gUseMCInfo) SetDBranch(outTree,"MCDecayParticle2",outMCDecayParticle2,update);
+  if (gUseMCInfo) SetDBranch(outTree,"MCDecayParticle3",outMCDecayParticle3,update);
+  if (gUseMCInfo) SetDBranch(outTree,"MCDecayParticle4",outMCDecayParticle4,update);
+  if (gUseMCInfo) SetDBranch(outTree,"MCDecayParticle5",outMCDecayParticle5,update);
+  if (gUseMCInfo) SetDBranch(outTree,"MCDecayParticle6",outMCDecayParticle6,update);
 
     // particle information
 
@@ -784,29 +855,29 @@ void ConvertTree(TString treeName){
       int pIndex = mapGlueXNameToParticleIndex[name];
       TString fsIndex = mapGlueXNameToFSIndex[name];
       if (gUseParticles && gUseKinFit){
-        TString vPx("PxP");   vPx  += fsIndex; outTree.Branch(vPx, &outPx [pIndex],vPx+"/D");
-        TString vPy("PyP");   vPy  += fsIndex; outTree.Branch(vPy, &outPy [pIndex],vPy+"/D");
-        TString vPz("PzP");   vPz  += fsIndex; outTree.Branch(vPz, &outPz [pIndex],vPz+"/D");
-        TString vEn("EnP");   vEn  += fsIndex; outTree.Branch(vEn, &outEn [pIndex],vEn+"/D");
+        TString vPx("PxP");   vPx  += fsIndex; SetDBranch(outTree,vPx, outPx [pIndex],update);
+        TString vPy("PyP");   vPy  += fsIndex; SetDBranch(outTree,vPy, outPy [pIndex],update);
+        TString vPz("PzP");   vPz  += fsIndex; SetDBranch(outTree,vPz, outPz [pIndex],update);
+        TString vEn("EnP");   vEn  += fsIndex; SetDBranch(outTree,vEn, outEn [pIndex],update);
       }
       if (gUseParticles){
-        TString vRPx("RPxP"); vRPx += fsIndex; outTree.Branch(vRPx,&outRPx[pIndex],vRPx+"/D");
-        TString vRPy("RPyP"); vRPy += fsIndex; outTree.Branch(vRPy,&outRPy[pIndex],vRPy+"/D");
-        TString vRPz("RPzP"); vRPz += fsIndex; outTree.Branch(vRPz,&outRPz[pIndex],vRPz+"/D");
-        TString vREn("REnP"); vREn += fsIndex; outTree.Branch(vREn,&outREn[pIndex],vREn+"/D");
+        TString vRPx("RPxP"); vRPx += fsIndex; SetDBranch(outTree,vRPx,outRPx[pIndex],update);
+        TString vRPy("RPyP"); vRPy += fsIndex; SetDBranch(outTree,vRPy,outRPy[pIndex],update);
+        TString vRPz("RPzP"); vRPz += fsIndex; SetDBranch(outTree,vRPz,outRPz[pIndex],update);
+        TString vREn("REnP"); vREn += fsIndex; SetDBranch(outTree,vREn,outREn[pIndex],update);
         if (GlueXParticleClass(name) == "Charged"){
-          TString vTkNDF("TkNDFP");   vTkNDF  += fsIndex; outTree.Branch(vTkNDF, &outTkNDF [pIndex],vTkNDF+"/D");
-          TString vTkChi2("TkChi2P"); vTkChi2 += fsIndex; outTree.Branch(vTkChi2,&outTkChi2[pIndex],vTkChi2+"/D");
+          TString vTkNDF("TkNDFP");   vTkNDF  += fsIndex; SetDBranch(outTree,vTkNDF, outTkNDF [pIndex],update);
+          TString vTkChi2("TkChi2P"); vTkChi2 += fsIndex; SetDBranch(outTree,vTkChi2,outTkChi2[pIndex],update);
         }
         if (GlueXParticleClass(name) == "Neutral"){
-          TString vQual("ShQualityP"); vQual += fsIndex; outTree.Branch(vQual, &outShQuality[pIndex], vQual+"/D");
+          TString vQual("ShQualityP"); vQual += fsIndex; SetDBranch(outTree,vQual, outShQuality[pIndex], update);
         }
       }
       if (gUseMCParticles){
-        TString vMCPx("MCPxP"); vMCPx += fsIndex; outTree.Branch(vMCPx,&outMCPx[pIndex],vMCPx+"/D");
-        TString vMCPy("MCPyP"); vMCPy += fsIndex; outTree.Branch(vMCPy,&outMCPy[pIndex],vMCPy+"/D");
-        TString vMCPz("MCPzP"); vMCPz += fsIndex; outTree.Branch(vMCPz,&outMCPz[pIndex],vMCPz+"/D");
-        TString vMCEn("MCEnP"); vMCEn += fsIndex; outTree.Branch(vMCEn,&outMCEn[pIndex],vMCEn+"/D");
+        TString vMCPx("MCPxP"); vMCPx += fsIndex; SetDBranch(outTree,vMCPx,outMCPx[pIndex],update);
+        TString vMCPy("MCPyP"); vMCPy += fsIndex; SetDBranch(outTree,vMCPy,outMCPy[pIndex],update);
+        TString vMCPz("MCPzP"); vMCPz += fsIndex; SetDBranch(outTree,vMCPz,outMCPz[pIndex],update);
+        TString vMCEn("MCEnP"); vMCEn += fsIndex; SetDBranch(outTree,vMCEn,outMCEn[pIndex],update);
       }
     }
     }
@@ -823,12 +894,14 @@ void ConvertTree(TString treeName){
 
     // loop over the input tree
 
+  if (!update) gTotalEntries = 0;
   Long64_t nEntries = inTree->GetEntries();
+  gTotalEntries += nEntries;
   cout << "LOOPING OVER " << nEntries << " ENTRIES..." << endl;
   for (Long64_t iEntry = 0; iEntry < nEntries; iEntry++){
     if ((iEntry+1) % 10000 == 0) cout << "entry = " << iEntry+1 << "  (" << (100.0*(iEntry+1))/nEntries << " percent)" << endl;
 
-      // clear arrays (from ROOT documentation)
+      // clear arrays (from ROOT documentation, see $ROOTSYS/tutorials/tree/tcl.C, also for SetAutoDelete, etc.)
 
     if (gUseMCParticles) inThrown__P4->Clear();
     if (gUseParticles) inBeam__P4_Measured->Clear();
@@ -887,10 +960,10 @@ void ConvertTree(TString treeName){
 
      // print some information (for debugging only)
 
-    if ((iEntry+1 == 1) && (gPrint)){ 
+    if ((iEntry+1 == 1) && (gPrint == 1)){ 
       cout << endl << "PRINTING TEST INFORMATION FOR FIVE EVENTS..." << endl << endl;
     }
-    if ((iEntry < 5) && (gPrint)){
+    if ((iEntry < 5) && (gPrint == 1)){
       cout << endl << endl;
       cout << "  ***************************" << endl;
       cout << "  ******* NEW EVENT " << iEntry+1 << " *******" << endl;
@@ -954,16 +1027,16 @@ void ConvertTree(TString treeName){
         }
       }
      if (BaryonNumber((int)outMCDecayCode1,(int)outMCDecayCode2,(int)outMCExtras) != 1)
-       { mcWarning = true; cout << "WARNING: problem with baryon number?" << endl; }
+       { mcWarning = true; cout << "WARNING: problem with baryon number in MC" << endl; }
      if (Charge((int)outMCDecayCode1,(int)outMCDecayCode2,(int)outMCExtras) != 1)
-       { mcWarning = true; cout << "WARNING: problem with electric charge?" << endl; }
+       { mcWarning = true; cout << "WARNING: problem with electric charge in MC" << endl; }
       //if (((outMCSignal > 0.1)&&!inIsThrownTopology) ||
       //    ((outMCSignal < 0.1)&& inIsThrownTopology)){
       //  cout << "ERROR: MCSignal does not match IsThrownTopology" << endl;
       //  mcWarning = true;
       //}
         // print a few events to make sure MC makes sense
-      if (((iEntry < 5) && gPrint) || mcError || mcWarning){
+      if (((iEntry < 5) && gPrint == 1) || (mcError) || (mcWarning && gPrint >= 0)){
       //if (gIsMC && (iEntry < 5||inIsThrownTopology)){
         cout << endl << endl;
         if (mcError||mcWarning) cout << "WARNING: problems with the truth parsing (see below)..." << endl;
@@ -1198,7 +1271,7 @@ void ConvertTree(TString treeName){
 
       // print some information (for debugging only)
 
-      if ((iEntry < 5) && (gPrint) && (gUseParticles)){
+      if ((iEntry < 5) && (gPrint == 1) && (gUseParticles)){
         cout << "  *******************************" << endl;
         cout << "  **** INFO FOR EVENT " << iEntry+1 << " ****" << endl;
         cout << "  *******************************" << endl;
@@ -1231,7 +1304,7 @@ void ConvertTree(TString treeName){
                << mass << "  " << rmass << endl;
         }}
       }
-      if (iEntry+1 == 5 && ic+1 == inNumCombos && gPrint && gUseParticles){ 
+      if (iEntry+1 == 5 && ic+1 == inNumCombos && (gPrint == 1) && gUseParticles){ 
         cout << endl << endl << "DONE PRINTING TEST INFORMATION FOR FIVE EVENTS" << endl << endl;
         cout << "CONTINUING THE CONVERSION... " << endl << endl;
       }
@@ -1249,7 +1322,7 @@ void ConvertTree(TString treeName){
 
         // fill the tree
 
-      outTree.Fill();
+      outTree->Fill();
 
     }
 
@@ -1259,17 +1332,31 @@ void ConvertTree(TString treeName){
 
   cout << endl << endl << "WRITING THE OUTPUT TREE..." << endl;
   gOutputFile->cd();
-  outTree.Write();
+  outTree->Write("",TObject::kOverwrite);
   cout << endl;
   cout << "**************" << endl;
   cout << "FINISHED" << endl;
   cout << "**************" << endl;
-  cout << "  total entries = " << nEntries << endl;
-  cout << "  kept entries = " << outTree.GetEntries() << endl;
+  cout << "  total events = " << gTotalEntries << endl;
+  cout << "  kept entries = " << outTree->GetEntries() << endl;
   cout << "  fraction = ";
-  if (nEntries > 0){ cout << (double)outTree.GetEntries()/nEntries << endl; }
+  if (gTotalEntries > 0){ cout << (double)outTree->GetEntries()/gTotalEntries << endl; }
   else { cout << " undefined" << endl; }
   cout << endl;
+
+    // clean memory (or try to, delete doesn't work here)
+    //    * all seems fine in top without deletes or Clears,
+    //        even for large numbers of files
+    //    * not sure how ROOT handles these, ignore for now
+
+  //if (inThrown__P4)  inThrown__P4->Clear();
+  //if (inBeam__P4_Measured)  inBeam__P4_Measured->Clear();
+  //if (inBeam__X4_Measured)  inBeam__X4_Measured->Clear();
+  //if (inChargedHypo__P4_Measured)  inChargedHypo__P4_Measured->Clear();
+  //if (inNeutralHypo__P4_Measured)  inNeutralHypo__P4_Measured->Clear();
+  //if (inBeam__P4_KinFit)  inBeam__P4_KinFit->Clear();
+  //for (unsigned int i = 0; i < MAXPARTICLES; i++){ if (inP4_KinFit[i]) inP4_KinFit[i]->Clear(); }
+
 }
 
 
@@ -1290,6 +1377,13 @@ void ConvertTree(TString treeName){
 // **************************************
 //   utility functions
 // **************************************
+
+
+void SetDBranch (TTree* tree, TString name, double& variable, bool update){
+  TString name2 = name + "/D";
+  if (!update) tree->Branch(name, &variable, name2);
+  if (update) tree->SetBranchAddress(name,&variable);
+}
 
 
 static const int kpdgPsi2S      = 100443;     
