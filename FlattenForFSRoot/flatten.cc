@@ -849,6 +849,10 @@ int main(int argc, char** argv){
 
     if (gSafe){
       Long64_t localEntry = gInTree->LoadTree(iEntry);
+      if (localEntry < 0){
+        cout << "WARNING: Problem reading this event!  Skipping!" << endl;
+        continue;
+      }
       brRunNumber->GetEntry(localEntry);
       brEventNumber->GetEntry(localEntry);
       if (gUseMCInfo) brNumThrown->GetEntry(localEntry);
