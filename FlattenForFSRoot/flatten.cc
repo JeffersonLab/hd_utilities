@@ -829,10 +829,11 @@ int main(int argc, char** argv){
 
     // loop over the input tree
 
-  Long64_t nEntries = gInTree->GetEntries();
-  cout << "LOOPING OVER " << nEntries << " ENTRIES..." << endl;
-  for (Long64_t iEntry = 0; iEntry < nEntries; iEntry++){
-    if ((iEntry+1) % 10000 == 0) cout << "entry = " << iEntry+1 << "  (" << (100.0*(iEntry+1))/nEntries << " percent)" << endl;
+  Long64_t gInNEntries = gInTree->GetEntries();
+  TString gInFileName("");
+  cout << "LOOPING OVER " << gInNEntries << " ENTRIES..." << endl;
+  for (Long64_t iEntry = 0; iEntry < gInNEntries; iEntry++){
+    if ((iEntry+1) % 10000 == 0) cout << "entry = " << iEntry+1 << "  (" << (100.0*(iEntry+1))/gInNEntries << " percent)" << endl;
 
       // clear arrays (from ROOT documentation, see $ROOTSYS/tutorials/tree/tcl.C, also for SetAutoDelete, etc.)
 
@@ -849,6 +850,11 @@ int main(int argc, char** argv){
 
     if (gSafe){
       Long64_t localEntry = gInTree->LoadTree(iEntry);
+      TString fileName = gInTree->GetFile()->GetName();
+      if (fileName != gInFileName){
+        gInFileName = fileName;
+        cout << "Starting file: " << gInFileName << endl;
+      } 
       if (localEntry < 0){
         cout << "WARNING: Problem reading this event!  Skipping!" << endl;
         continue;
@@ -1273,10 +1279,10 @@ int main(int argc, char** argv){
   cout << "**************" << endl;
   cout << "FINISHED" << endl;
   cout << "**************" << endl;
-  cout << "  total events = " << nEntries << endl;
+  cout << "  total events = " << gInNEntries << endl;
   cout << "  kept entries = " << gOutTree->GetEntriesFast() << endl;
   cout << "  fraction = ";
-  if (nEntries > 0){ cout << (double)gOutTree->GetEntriesFast()/nEntries << endl; }
+  if (gInNEntries > 0){ cout << (double)gOutTree->GetEntriesFast()/gInNEntries << endl; }
   else { cout << " undefined" << endl; }
   cout << endl;
   gOutputFile->Close();
