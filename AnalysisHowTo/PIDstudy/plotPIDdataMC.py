@@ -39,8 +39,12 @@ def main():
     maxDeltaT = 2.5
     minProtonPrange = 0.0
     maxProtonPrange = 2.5
-    minSliceP = 0.8
-    maxSliceP = 1.0
+    #minSliceP = 0.8
+    #maxSliceP = 1.0
+    #numSlices = 1
+    minSliceP = 0.6
+    maxSliceP = 2.
+    numSlices = 7
 
     # Parser could set these from command line:
     parser = OptionParser(usage = "plotPIDdataMC.py --path pidPath --proton-plotmin plotMin --proton-plotmax plotMax --min-slice minSliceP --max-slice maxSliceP --timerange maxDeltaT")
@@ -49,6 +53,7 @@ def main():
     parser.add_option("-b","--proton-plotmax", dest="plotmax", help="Maximum proton plot momentum")
     parser.add_option("-c","--min-slice", dest="minslice", help="Minimum momentum for 1D projection")
     parser.add_option("-d","--max-slice", dest="maxslice", help="Maximum momentum for 1D projection")
+    parser.add_option("-n","--num-slices", dest="numslices", help="Number of 1D projection slices to make")
     parser.add_option("-t","--trange", dest="trange", help="Timing |DeltaT| maximum")
     parser.add_option("-v","--verbose", action="store_true", default=False, dest="verbose", help="Verbose mode (see canvases produced)")
 
@@ -89,7 +94,10 @@ def main():
 
     # Setup canvases
     cc2D = TCanvas("cc2D","cc2D",800,400)
-    cc1D = TCanvas("cc1D","cc1D",600,400)
+    cc1Ds = []
+    for x in xrange(numSlices):
+	    cc1D = TCanvas("cc1D_%d"%(x+1),"cc1D_%d"%(x+1),600,400)
+	    cc1Ds.append(cc1D)
     if nfiles < 4: # single row of panels
         cc2D.Divide(nfiles,1)
     else: # double row of panels
@@ -113,12 +121,13 @@ def main():
             
             for hist in histKeyList:
                 print("Histogram for particle:", hist)
-                if "DIRC" in hist or "Beta" in hist or "hower" in hist: 
-                    # skip DIRC, beta, preshower, and vertex histograms for now
+                if "DIRC" in hist or "Beta" in hist: # skip DIRC and Best histograms for now
                     continue
                     
                 particles.append(particle)
                 hists.append(pidPath+"/"+step+"/"+particle+"/"+hist)
+
+	# numSlices
 
     # make plots for each histogram in the list
     ihist = 0
@@ -140,34 +149,48 @@ def main():
             if plot1D:
                 
                 # 1D projection
-                cc1D.cd()
+                #cc1D.cd()
                 if ifile == 0: #Data specific values
-                    projMinBin = h.ProjectionX().FindBin(minSliceP);
-                    projMaxBin = h.ProjectionX().FindBin(maxSliceP);
-                    h1D = h.ProjectionY("%s" % hist,projMinBin,projMaxBin)
-                    h1D.SetTitle(h.GetTitle()+": %0.2f < p < %0.2f GeV" % (minSliceP,maxSliceP))
-                    h1D.SetLineColor(ifile+1)
-                    h1D.SetMarkerColor(ifile+1)
-                    h1D.SetMarkerStyle(20)
-                    norm = h1D.GetMaximum()
-                    h1D.Draw("pe")
+                    projMinBin = h.ProjectionX().FindBin(minSliceP)
+                    projMaxBin = h.ProjectionX().FindBin(maxSliceP)
+                    binStep = (projMaxBin-projMinBin) / numSlices
+                    pStep = (maxSliceP-minSliceP) / numSlices
                     
-                    if ihist == 0:
-                        leg.AddEntry(h1D,label,"p")
+                    minBin = projMinBin
+                    minSlice = minSliceP
+                    for slice in xrange(numSlices):
+						cc1Ds[slice].cd()
+						h1D = h.ProjectionY("%s_%d" % (hist,slice+1),minBin,minBin+binStep)
+						h1D.SetTitle(h.GetTitle()+": %0.2f < p < %0.2f GeV" % (minSlice,minSlice+pStep))
+						h1D.SetLineColor(ifile+1)
+						h1D.SetMarkerColor(ifile+1)
+						h1D.SetMarkerStyle(20)
+						norm = h1D.GetMaximum()
+						h1D.Draw("pe")
+					
+						if ihist == 0:
+							leg.AddEntry(h1D,label,"p")
+						
+						minBin = minBin+binStep
+						minSlice = minSlice+pStep
                     
                 else: # MC specific values
-                    h1D = h.ProjectionY("%d" % ifile,projMinBin,projMaxBin)
-                    if h1D.GetMaximum() > 0:
-                        h1D.Scale(norm/h1D.GetMaximum())
-                    h1D.SetLineColor(ifile+1)
-                    h1D.SetMarkerColor(ifile+1)
-                    h1D.SetMarkerStyle(20)
-                    h1D.Draw("pe same")
-                
-                    if ihist == 0:
-                        leg.AddEntry(h1D,label,"p")
-                    
-                        leg.Draw("same")
+                    minBin = projMinBin
+                    minSlice = minSliceP
+                    for slice in xrange(numSlices):
+						cc1Ds[slice].cd()
+						h1D = h.ProjectionY("%s_%d" % (ifile,slice+1),minBin,minBin+binStep)
+						if h1D.GetMaximum() > 0:
+							h1D.Scale(norm/h1D.GetMaximum())
+						h1D.SetLineColor(ifile+1)
+						h1D.SetMarkerColor(ifile+1)
+						h1D.SetMarkerStyle(20)
+						h1D.Draw("pe same")
+				
+						if ihist == 0:
+							leg.AddEntry(h1D,label,"p")
+					
+							leg.Draw("same")
                 
             if "Proton" in particle:
                 h.GetXaxis().SetRangeUser(minProtonPrange,maxProtonPrange)
@@ -190,15 +213,11 @@ def main():
     
         # print plots
         cc2D.Print("%s%s.pdf" % (plotDir,hist.replace("/","_")))
-        cc2D.Print("%sPIDSummary2D.pdf(" % plotDir)
         if plot1D:
-            cc1D.Print("%sHist_pSlice%0.2f-%0.2f_%s.pdf" % (plotDir,minSliceP,maxSliceP,hist.replace("/","_")))
-            cc1D.Print("%sPIDSummary_pSlice%0.2f-%0.2f.pdf(" % (plotDir,minSliceP,maxSliceP))
-
-    # add final page to close summary PDF
-    cc2D.Print("%sPIDSummary2D.pdf)" % plotDir)
-    cc1D.Print("%sPIDSummary_pSlice%0.2f-%0.2f.pdf)" % (plotDir,minSliceP,maxSliceP))
-        
+			minSlice = minSliceP
+			for slice in xrange(numSlices):
+				cc1Ds[slice].Print("%spSlice%0.2f-%0.2f_%s.pdf" % (plotDir,minSlice,minSlice+pStep,hist.replace("/","_")))
+				minSlice = minSlice+pStep
 
 ## main function 
 if __name__ == "__main__":
