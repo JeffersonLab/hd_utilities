@@ -745,7 +745,7 @@ int main(int argc, char** argv){
   double outEnUnusedSh;       if (gUseParticles) gOutTree->Branch("EnUnusedSh",      &outEnUnusedSh);
   double outNumUnusedTracks;  if (gUseParticles) gOutTree->Branch("NumUnusedTracks", &outNumUnusedTracks);
   double outNumNeutralHypos;  if (gUseParticles) gOutTree->Branch("NumNeutralHypos", &outNumNeutralHypos);
-  double outPolarization;     if (gUsePolarization) SetDBranch(outTree,"PolarizationAngle", outPolarization, update);
+  double outPolarization;     if (gUsePolarization) gOutTree->Branch("PolarizationAngle", &outPolarization);
   double outNumBeam;          if (gUseParticles) gOutTree->Branch("NumBeam",         &outNumBeam);
   double outNumCombos;        if (gUseParticles) gOutTree->Branch("NumCombos",       &outNumCombos);
   double outProdVx;           if (gUseParticles) gOutTree->Branch("ProdVx",          &outProdVx);
