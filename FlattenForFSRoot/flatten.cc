@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 #include "TFile.h"
 #include "TTree.h"
 #include "TChain.h"
@@ -8,6 +9,7 @@
 #include "TList.h"
 #include "TMap.h"
 #include "TIterator.h"
+#include "TSystem.h"
 using namespace std;
 
 
@@ -41,6 +43,7 @@ void DisplayMCThrown(int numThrown, int pids[], int parentIndices[]);
 int FSMCExtras(int numThrown, int pids[]);
 int BaryonNumber(int fsCode1, int fsCode2, int mcExtras = 0);
 int Charge(int fsCode1, int fsCode2, int mcExtras = 0);
+bool GetPolarizationAngle(int runNumber, int& polarizationAngle);
 
 
 
@@ -72,6 +75,7 @@ int main(int argc, char** argv){
   cout << "           -numUnusedTracks   [optional cut (<= cut)]   (default: -1 (no cut))" << endl;
   cout << "           -numUnusedNeutrals [optional cut (<= cut)]   (default: -1 (no cut))" << endl;
   cout << "           -numNeutralHypos   [optional cut (<= cut)]   (default: -1 (no cut))" << endl;
+  cout << "           -usePolarization   [get polarization angle from RCDB? 0 or 1]   (default: 0)" << endl;
   cout << "           -safe  [check array sizes?  0 or 1]          (default: 1)" << endl;
   cout << "           -print [print to screen: " << endl; 
   cout << "                   -1 (less); 0 (regular); 1 (more)]    (default: 0)" << endl;
@@ -113,6 +117,7 @@ int main(int argc, char** argv){
   int gNumUnusedNeutralsCut = -1;
   int gNumNeutralHyposCut = -1;
   bool gSafe = true;
+  bool gUsePolarization = 0;
   int gPrint = 0;
   {
   TString flag = "";
@@ -120,7 +125,7 @@ int main(int argc, char** argv){
     TString argi(argv[i]);
     if ((argi == "-in")||(argi == "-out")||(argi == "-mc")||(argi == "-mctag")
         ||(argi == "-chi2")||(argi == "-shQuality")||(argi == "-massWindows")
-        ||(argi == "-numUnusedTracks")||(argi == "-numUnusedNeutrals")
+        ||(argi == "-numUnusedTracks")||(argi == "-usePolarization")||(argi == "-numUnusedNeutrals")
         ||(argi == "-numNeutralHypos")||(argi == "-safe")||(argi == "-print")){
       flag = argi;
       continue;
@@ -136,6 +141,7 @@ int main(int argc, char** argv){
     if (flag == "-numUnusedTracks"){ gNumUnusedTracksCut = atoi(argi); }
     if (flag == "-numUnusedNeutrals"){ gNumUnusedNeutralsCut = atoi(argi); }
     if (flag == "-numNeutralHypos"){ gNumNeutralHyposCut = atoi(argi); }
+    if (flag == "-usePolarization"){ if (argi == "1") gUsePolarization = true; }
     if (flag == "-safe"){ if (argi == "0") gSafe = false; }
     if (flag == "-print"){ gPrint = atoi(argi); }
   }
@@ -169,6 +175,7 @@ int main(int argc, char** argv){
   cout << "  numUnusedTracks cut:   " << gNumUnusedTracksCut << endl;
   cout << "  numUnusedNeutrals cut: " << gNumUnusedNeutralsCut << endl;
   cout << "  numNeutralHypos cut:   " << gNumNeutralHyposCut << endl;
+  cout << "  use polarization?      " << gUsePolarization << endl;
   cout << "  safe mode?             " << gSafe << endl;
   cout << endl;
   if ((gInFileNames.size() == 0) || (gOutFileName == "")){
@@ -738,6 +745,7 @@ int main(int argc, char** argv){
   double outEnUnusedSh;       if (gUseParticles) gOutTree->Branch("EnUnusedSh",      &outEnUnusedSh);
   double outNumUnusedTracks;  if (gUseParticles) gOutTree->Branch("NumUnusedTracks", &outNumUnusedTracks);
   double outNumNeutralHypos;  if (gUseParticles) gOutTree->Branch("NumNeutralHypos", &outNumNeutralHypos);
+  double outPolarization;     if (gUsePolarization) SetDBranch(outTree,"PolarizationAngle", outPolarization, update);
   double outNumBeam;          if (gUseParticles) gOutTree->Branch("NumBeam",         &outNumBeam);
   double outNumCombos;        if (gUseParticles) gOutTree->Branch("NumCombos",       &outNumCombos);
   double outProdVx;           if (gUseParticles) gOutTree->Branch("ProdVx",          &outProdVx);
@@ -831,6 +839,7 @@ int main(int argc, char** argv){
 
   Long64_t gInNEntries = gInTree->GetEntries();
   TString gInFileName("");
+  int currPol; // hold polarization value for the entire run (assuming one run per tree!)
   cout << "LOOPING OVER " << gInNEntries << " ENTRIES..." << endl;
   for (Long64_t iEntry = 0; iEntry < gInNEntries; iEntry++){
     if ((iEntry+1) % 10000 == 0) cout << "entry = " << iEntry+1 << "  (" << (100.0*(iEntry+1))/gInNEntries << " percent)" << endl;
@@ -1009,6 +1018,17 @@ int main(int argc, char** argv){
       TLorentzVector *p4, *p4a, *p4b, *x4;
       outRunNumber       = inRunNumber;
       outEventNumber     = inEventNumber;
+      if(gUsePolarization) {
+        if(iEntry==0) {
+          if(GetPolarizationAngle(inRunNumber, currPol)) {
+            outPolarization = currPol;
+          } else {
+            outPolarization = -1;
+          }
+        } else {
+          outPolarization = currPol;
+        }
+      }
       if (gUseParticles){
         outNumUnusedTracks = inNumUnusedTracks;
         outNumNeutralHypos = inNumNeutralHypos;
@@ -1837,4 +1857,38 @@ map<TString, vector<TString> > GlueXDecayProductMap(int fsCode1, int fsCode2){
     }
   }
   return gluexMap;
+}
+
+bool GetPolarizationAngle(int runNumber, int& polarizationAngle)
+{
+  //RCDB environment must be setup!!
+    
+  //Pipe the current constant into this function
+  ostringstream locCommandStream;
+  locCommandStream << "rcnd " << runNumber << " polarization_angle";
+  FILE* locInputFile = gSystem->OpenPipe(locCommandStream.str().c_str(), "r");
+  if(locInputFile == NULL)
+    return false;
+    
+  //get the first line
+  char buff[1024];
+  if(fgets(buff, sizeof(buff), locInputFile) == NULL)
+    return 0;
+  istringstream locStringStream(buff);
+    
+  //Close the pipe
+  gSystem->ClosePipe(locInputFile);
+    
+  //extract it
+  string locPolarizationAngleString;
+  if(!(locStringStream >> locPolarizationAngleString))
+    return false;
+    
+  // convert string to integer
+  polarizationAngle = atoi(locPolarizationAngleString.c_str());
+  // amorphous runs have the value -1
+  if (polarizationAngle == -1)
+    return false;
+
+  return true;
 }
