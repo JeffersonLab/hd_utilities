@@ -252,7 +252,11 @@ def main():
 	#	print livetime_ratio
 	
 	# Conversion factors for total flux
-	converterThickness = run.get_condition('polarimeter_converter').value # 75 or 750 micron
+	converterThicknessTable = run.get_condition('polarimeter_converter') # 75 or 750 micron
+	converterThickness = ""
+	if converterThicknessTable:
+		converterThickness = converterThicknessTable.value		
+
 	converterLength = 0 
 	if converterThickness == "Be 75um": # default is 75 um
 		converterLength = 75e-6
@@ -260,6 +264,8 @@ def main():
     		converterLength = 750e-6
 	elif run.number > 10633 and run.number < 10694: # no coverter in RCDB, but 75 um from logbook
 		converterLength = 75e-6 
+	elif run.number > 71915 and run.number < 71940: # no coverter in RCDB, but 75 um from logbook
+		converterLength = 75e-6
 	else:
 		print "Unknown converter thickness"
     	berilliumRL = 35.28e-2 # 35.28 cm
