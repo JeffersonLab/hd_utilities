@@ -209,6 +209,11 @@ void doadctimeoffsets(int Run){
           int idx1 = plane*PMTS_PER_PLANE + paddle - 1;    // north/top
           int idx2 = plane*PMTS_PER_PLANE + BARS_PER_PLANE + paddle - 1;   //south/bottom
 
+	  if (0) {
+	    if ( (idx2 == 63) && (PEAKR[n]<300))
+	      continue;
+	  }
+
 	  if ( (OFR[n]) || (OFL[n]) ){
 	    continue;
 	  }

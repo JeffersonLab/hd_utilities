@@ -636,6 +636,7 @@ void dofitall(int R , int dbgmode){
           int hid1 = plane*PMTS_PER_PLANE + paddle - 1;
           int hid2 = plane*PMTS_PER_PLANE + BARS_PER_PLANE + paddle - 1;
 
+
 	  // apply TDC offsets
 	  tL -= PMTOffsets[hid1];
 	  tR -= PMTOffsets[hid2];
