@@ -266,6 +266,7 @@ def main():
 		converterLength = 75e-6 
 	else:
 		print "Unknown converter thickness"
+		sys.exit(0)
 
     	berilliumRL = 35.28e-2 # 35.28 cm
     	radiationLength = converterLength/berilliumRL;
