@@ -264,10 +264,9 @@ def main():
     		converterLength = 750e-6
 	elif run.number > 10633 and run.number < 10694: # no coverter in RCDB, but 75 um from logbook
 		converterLength = 75e-6 
-	elif run.number > 71915 and run.number < 71940: # no coverter in RCDB, but 75 um from logbook
-		converterLength = 75e-6
 	else:
 		print "Unknown converter thickness"
+
     	berilliumRL = 35.28e-2 # 35.28 cm
     	radiationLength = converterLength/berilliumRL;
     	scale = livetime_ratio * 1./((7/9.) * radiationLength);
