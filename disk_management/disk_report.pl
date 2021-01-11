@@ -195,7 +195,7 @@ if (!$userid) {
 	$age_size = round($row[0]/$seconds_per_year);
 	$user = getpwuid($row[1]);
 	if (! $user) {$user = "uid=$row[1]";}
-	print "<tr><td>$i<td>$age_size<td>$user\n";
+	print "<tr><td>$i<td>$age_size<td><a href=\"${directory_label}_${user}.html\">$user</a>\n";
 	$i++;
     }
     print "</table>\n";
