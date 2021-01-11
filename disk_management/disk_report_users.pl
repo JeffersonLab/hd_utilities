@@ -8,6 +8,7 @@ $output_dir = $ARGV[1];
 $dir_table = $directory_label . "_dir";
 $file_table = $directory_label . "_file";
 $update_time_table = $directory_label . "_updateTime";
+$dmdir = "/home/marki/git/hd_utilities/disk_management";
 
 $user = "diskmanager";
 $password = "";
@@ -26,7 +27,7 @@ while (@row = $sth->fetchrow_array) {
     $user = getpwuid($row[1]);
     if (! $user) {$user = "uid=$row[1]";}
     print "creating report for user = $user, rank = $i, GB-years = $age_size\n";
-    system("./disk_report.pl -u $user $directory_label > ${output_dir}/${directory_label}_${user}.html");
+    system("$dmdir/disk_report.pl -u $user $directory_label > ${output_dir}/${directory_label}_${user}.html");
     $i++;
 }
 
