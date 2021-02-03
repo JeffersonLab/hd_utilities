@@ -141,7 +141,7 @@ def main():
     if options.rest_ver:
 	RESTVERSION = options.rest_ver
     if options.length:
-        TARGETLENTH = float(options.length)
+        TARGETLENGTH = float(options.length)
 
     # Run-dependent defaults for RCDB query
     if RCDB_QUERY != RCDB_QUERY_USER:
