@@ -673,7 +673,10 @@ int main(int argc, char** argv){
       if (gUseParticles && gUseKinFit) inBeam__P4_KinFit = new TClonesArray("TLorentzVector",MAXCOMBOS);
       if (gUseParticles && gUseKinFit) gInTree->GetBranch       ("ComboBeam__P4_KinFit")->SetAutoDelete(kFALSE);
       if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress("ComboBeam__P4_KinFit", &(inBeam__P4_KinFit));
-
+  TClonesArray *inBeam__X4_KinFit;
+      if (gUseParticles && gUseKinFit) inBeam__X4_KinFit = new TClonesArray("TLorentzVector",MAXCOMBOS);
+      if (gUseParticles && gUseKinFit) gInTree->GetBranch       ("ComboBeam__X4_KinFit")->SetAutoDelete(kFALSE);
+      if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress("ComboBeam__X4_KinFit", &(inBeam__X4_KinFit));
 
         //   *** Combo Tracks ***
         //   *** Combo Neutrals ***
@@ -683,6 +686,8 @@ int main(int argc, char** argv){
   TClonesArray *inP4_KinFit[MAXPARTICLES] = {}; 
   Int_t inChargedIndex[MAXPARTICLES][MAXCOMBOS] = {};
   Int_t inNeutralIndex[MAXPARTICLES][MAXCOMBOS] = {};
+  TClonesArray *inX4[MAXPARTICLES] = {};
+  Float_t inPathLengthSigma[MAXPARTICLES][MAXCOMBOS] = {};
   {
     for (unsigned int im = 0; im < gOrderedParticleNames.size(); im++){
     for (unsigned int id = 0; id < gOrderedParticleNames[im].size(); id++){
@@ -714,6 +719,19 @@ int main(int argc, char** argv){
         //   *** Combo Decaying Particles ***
 
       if (GlueXParticleClass(name).Contains("Decaying")){
+      }
+
+      if (GlueXParticleClass(name) == "DecayingToCharged"){
+        TString var_X4(name); var_X4 += "__X4";
+            if (gUseParticles && gUseKinFit) inX4[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
+            if (gUseParticles && gUseKinFit) gInTree->GetBranch       (var_X4)->SetAutoDelete(kFALSE);
+            if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress(var_X4,&(inX4[pIndex]));
+        TString var_P4_KinFit(name); var_P4_KinFit += "__P4_KinFit"; // read-only for signed flight length
+            if (gUseParticles && gUseKinFit) inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
+            if (gUseParticles && gUseKinFit) gInTree->GetBranch       (var_P4_KinFit)->SetAutoDelete(kFALSE);
+            if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress(var_P4_KinFit,&(inP4_KinFit[pIndex]));
+        TString var_PathLengthSigma(name);  var_PathLengthSigma += "__PathLengthSigma"; // read-only for flight significance
+            if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress(var_PathLengthSigma,inPathLengthSigma[pIndex]);
       }
 
     }
@@ -789,6 +807,7 @@ int main(int argc, char** argv){
   double   outPx[MAXPARTICLES]={},   outPy[MAXPARTICLES]={},   outPz[MAXPARTICLES]={},   outEn[MAXPARTICLES]={};
   double  outRPx[MAXPARTICLES]={},  outRPy[MAXPARTICLES]={},  outRPz[MAXPARTICLES]={},  outREn[MAXPARTICLES]={};
   double outMCPx[MAXPARTICLES]={}, outMCPy[MAXPARTICLES]={}, outMCPz[MAXPARTICLES]={}, outMCEn[MAXPARTICLES]={};
+  double outFlightLength[MAXPARTICLES]={}, outFlightSignificance[MAXPARTICLES]={};
   double outTkChi2[MAXPARTICLES]={}, outTkNDF[MAXPARTICLES]={};
   double outShQuality[MAXPARTICLES]={};
   {
@@ -822,6 +841,12 @@ int main(int argc, char** argv){
         TString vMCPz("MCPzP"); vMCPz += fsIndex; gOutTree->Branch(vMCPz,&outMCPz[pIndex]);
         TString vMCEn("MCEnP"); vMCEn += fsIndex; gOutTree->Branch(vMCEn,&outMCEn[pIndex]);
       }
+      if (GlueXParticleClass(name) == "DecayingToCharged"){
+        if (gUseParticles && gUseKinFit){
+          TString vFlightLength      ("FlightLengthP");       vFlightLength       += fsIndex; gOutTree->Branch(vFlightLength,      &outFlightLength      [pIndex]);
+          TString vFlightSignificance("FlightSignificanceP"); vFlightSignificance += fsIndex; gOutTree->Branch(vFlightSignificance,&outFlightSignificance[pIndex]);
+        }
+      }
     }
     }
   }
@@ -852,8 +877,9 @@ int main(int argc, char** argv){
     if (gUseParticles) inChargedHypo__P4_Measured->Clear();
     if (gUseParticles) inNeutralHypo__P4_Measured->Clear();
     if (gUseParticles && gUseKinFit) inBeam__P4_KinFit->Clear();
+    if (gUseParticles && gUseKinFit) inBeam__X4_KinFit->Clear();
     for (unsigned int i = 0; i < MAXPARTICLES; i++){ if (inP4_KinFit[i]) inP4_KinFit[i]->Clear(); }
-
+    for (unsigned int i = 0; i < MAXPARTICLES; i++){ if (inX4[i]) inX4[i]->Clear(); }
 
       // if running in safe mode, first check array sizes
 
@@ -1015,7 +1041,7 @@ int main(int argc, char** argv){
 
         // non-particle information
 
-      TLorentzVector *p4, *p4a, *p4b, *x4;
+      TLorentzVector *p4, *p4a, *p4b, *x4, *x4a, *x4b;
       outRunNumber       = inRunNumber;
       outEventNumber     = inEventNumber;
       if(gUsePolarization) {
@@ -1138,6 +1164,24 @@ int main(int argc, char** argv){
               outMCPy[pIndex] = p4->Py();
               outMCPz[pIndex] = p4->Pz();
               outMCEn[pIndex] = p4->E(); 
+          }
+        }
+
+        // vertex information
+
+        if (gUseKinFit){
+        }
+
+        if (GlueXParticleClass(name) == "DecayingToCharged"){
+          if (gUseParticles && gUseKinFit){
+            x4a = (TLorentzVector*)inBeam__X4_KinFit->At(ic); // independent of pIndex
+            x4b = (TLorentzVector*)inX4[pIndex]->At(ic);
+            *x4 = *x4b - *x4a;
+            p4  = (TLorentzVector*)inP4_KinFit[pIndex]->At(ic);
+            outFlightLength[pIndex] = (x4->Vect()).Mag();
+            if ( (x4->Angle(p4->Vect()))/TMath::Pi() > 0.5 )
+              outFlightLength[pIndex] = -outFlightLength[pIndex];
+            outFlightSignificance[pIndex] = outFlightLength[pIndex]/inPathLengthSigma[pIndex][ic];
           }
         }
 
