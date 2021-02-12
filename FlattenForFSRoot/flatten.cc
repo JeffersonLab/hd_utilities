@@ -678,6 +678,7 @@ int main(int argc, char** argv){
       if (gUseParticles && gUseKinFit) gInTree->GetBranch       ("ComboBeam__X4_KinFit")->SetAutoDelete(kFALSE);
       if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress("ComboBeam__X4_KinFit", &(inBeam__X4_KinFit));
 
+
         //   *** Combo Tracks ***
         //   *** Combo Neutrals ***
         //   *** Combo Decaying Particles ***
@@ -807,7 +808,7 @@ int main(int argc, char** argv){
   double   outPx[MAXPARTICLES]={},   outPy[MAXPARTICLES]={},   outPz[MAXPARTICLES]={},   outEn[MAXPARTICLES]={};
   double  outRPx[MAXPARTICLES]={},  outRPy[MAXPARTICLES]={},  outRPz[MAXPARTICLES]={},  outREn[MAXPARTICLES]={};
   double outMCPx[MAXPARTICLES]={}, outMCPy[MAXPARTICLES]={}, outMCPz[MAXPARTICLES]={}, outMCEn[MAXPARTICLES]={};
-  double outFlightLength[MAXPARTICLES]={}, outFlightSignificance[MAXPARTICLES]={};
+  double outVeeL[MAXPARTICLES]={}, outVeeLSigma[MAXPARTICLES]={};
   double outTkChi2[MAXPARTICLES]={}, outTkNDF[MAXPARTICLES]={};
   double outShQuality[MAXPARTICLES]={};
   {
@@ -843,8 +844,8 @@ int main(int argc, char** argv){
       }
       if (GlueXParticleClass(name) == "DecayingToCharged"){
         if (gUseParticles && gUseKinFit){
-          TString vFlightLength      ("FlightLengthP");       vFlightLength       += fsIndex; gOutTree->Branch(vFlightLength,      &outFlightLength      [pIndex]);
-          TString vFlightSignificance("FlightSignificanceP"); vFlightSignificance += fsIndex; gOutTree->Branch(vFlightSignificance,&outFlightSignificance[pIndex]);
+          TString vVeeL      ("VeeLP");       vVeeL       += fsIndex; gOutTree->Branch(vVeeL,      &outVeeL      [pIndex]);
+          TString vVeeLSigma ("VeeLSigmaP");  vVeeLSigma  += fsIndex; gOutTree->Branch(vVeeLSigma, &outVeeLSigma [pIndex]);
         }
       }
     }
@@ -880,6 +881,7 @@ int main(int argc, char** argv){
     if (gUseParticles && gUseKinFit) inBeam__X4_KinFit->Clear();
     for (unsigned int i = 0; i < MAXPARTICLES; i++){ if (inP4_KinFit[i]) inP4_KinFit[i]->Clear(); }
     for (unsigned int i = 0; i < MAXPARTICLES; i++){ if (inX4[i]) inX4[i]->Clear(); }
+
 
       // if running in safe mode, first check array sizes
 
@@ -1178,10 +1180,13 @@ int main(int argc, char** argv){
             x4b = (TLorentzVector*)inX4[pIndex]->At(ic);
             *x4 = *x4b - *x4a;
             p4  = (TLorentzVector*)inP4_KinFit[pIndex]->At(ic);
-            outFlightLength[pIndex] = (x4->Vect()).Mag();
+            outVeeL[pIndex] = (x4->Vect()).Mag();
             if ( (x4->Angle(p4->Vect()))/TMath::Pi() > 0.5 )
-              outFlightLength[pIndex] = -outFlightLength[pIndex];
-            outFlightSignificance[pIndex] = outFlightLength[pIndex]/inPathLengthSigma[pIndex][ic];
+              outVeeL[pIndex] = -outVeeL[pIndex];
+            if ( inPathLengthSigma[pIndex][ic] < 1.0e-6 )
+              outVeeLSigma[pIndex] = -10000.;
+            else
+              outVeeLSigma[pIndex] = outVeeL[pIndex]/inPathLengthSigma[pIndex][ic];
           }
         }
 
