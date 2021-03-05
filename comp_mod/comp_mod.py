@@ -40,6 +40,10 @@ UnitsExpected['calibRate']          = 'Mhr/week'
 UnitsExpected['offlineMonitoring']  = 'Mhr/run'
 UnitsExpected['simulationRate']     = 'Hz'
 
+# defaults values for variable that may not be present in all files
+NERSC_unitsPerFile = 880
+PSC_unitsPerFile   = 156.8
+
 # input values (with unit checks
 DOMTree = xml.dom.minidom.parse(INPUTFILE)
 compMod = DOMTree.documentElement
@@ -101,6 +105,7 @@ TOTAL_CPU_REAL_DATA = reconstructionTimeAllCores_Mhr + analysisCPU_Mhr + calibCP
 
 TOTAL_CPU_Mhr = TOTAL_CPU_REAL_DATA + simulationTimeTotal_Mhr
 TOTAL_TAPE_PB = rawDataVolume_PB + RESTDataVolume_PB + AnalysisDataVolume_PB + simulationDataVolume_PB
+
 
 NERSC_units_total = NERSC_unitsPerFile*(reconstructionTimeAllCores_Mhr/cpuFile_Mhr)/1.0E6
 PSC_units_total = PSC_unitsPerFile*(reconstructionTimeAllCores_Mhr/cpuFile_Mhr)/1.0E6

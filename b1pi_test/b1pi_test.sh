@@ -103,8 +103,6 @@ echo B1PI_TEST_DIR = $B1PI_TEST_DIR
 echo RUN = $RUN
 echo SEED = $SEED
 
-export JANA_CALIB_CONTEXT="variation=mc"
-
 echo "Copying script files and macros ..."
 cp -pv $B1PI_TEST_DIR/* .
 cp -pv $B1PI_TEST_DIR/macros/* .

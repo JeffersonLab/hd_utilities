@@ -66,6 +66,7 @@ Double_t MISS_E_MIN = 0.6; // Good for FCAL
 //Pick a number high enough to suppress rho -> pi+ pi- + fake photon or else missing spectrum (no second candidate) will get screwy!
 Double_t FOUND_E_MIN = 0.5; // Other pi0 photon must have at least this much energy. 0.8 in FCAL would be nice, statistics willing.
 
+//Efficiency in this many bins
 Int_t N_E_BINS = 14; // FCAL
 Int_t N_THETA_BINS = 40; //FCAL
 Int_t N_PHI_BINS = 20; //FCAL+BCAL
@@ -82,6 +83,11 @@ Double_t gamma1_miss_Emin = 0.8; //For projecting into theta distribution, FCAL
 Bool_t USE_THROWN_4VEC=false; //true: replace all 4-vectors with thrown (but not other stuff like pi0 missing mass)
 // Bool_t USE_THROWN_4VEC=true; //true: replace all 4-vectors with thrown (but not other stuff like pi0 missing mass)
 
+
+// MC data: if we want to match reconstructed photons to thrown, do so with geometric matching
+//          (useful for 
+/////// Delta Theta (thrown - recon) must be less than this cut
+/////// Similar for Delta phi
 Double_t ThrownDeltaPhi_gammastudy = 3.35; //In degrees
 Double_t ThrownDeltaTheta_gammastudy = 0.35; //In degrees
 
@@ -256,7 +262,9 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 	TFile* f_in = new TFile(str_infile);
 	TTree* t_in = (TTree*)f_in->FindObjectAny("p3pi_FCALStudy");
 	
-
+	/// ************************************************************************************************************************
+	// Setup branches to read in
+	/// ************************************************************************************************************************
 	Double_t RecM_Proton;    t_in->SetBranchAddress("RecM_Proton",&RecM_Proton);
 	Double_t RecM_Proton_pkf;    t_in->SetBranchAddress("RecM_Proton_pkf",&RecM_Proton_pkf);
 	Double_t threepi_mass;    t_in->SetBranchAddress("threepi_mass",&threepi_mass);
@@ -360,12 +368,23 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 	Double_t Gamma1_DeltaPhi;   if(make_thrown_info_hists) t_in->SetBranchAddress("Gamma1_DeltaPhi",    &Gamma1_DeltaPhi);
 	Double_t Gamma2_DeltaTheta; if(make_thrown_info_hists) t_in->SetBranchAddress("Gamma2_DeltaTheta",  &Gamma2_DeltaTheta);
 	Double_t Gamma2_DeltaPhi;   if(make_thrown_info_hists) t_in->SetBranchAddress("Gamma2_DeltaPhi",    &Gamma2_DeltaPhi);
-	
+	/// ************************************************************************************************************************
+	// End setting up branches
+	/// ************************************************************************************************************************
+    
+    
 	
 	Long64_t nentries = t_in->GetEntries();
 	cout << "There are " << nentries <<  " events to get through" << endl;
-	
-	//Define histograms here
+    
+    
+    
+    
+    
+    
+	/// ************************************************************************************************************************
+	// Begin defining histograms here
+	/// ************************************************************************************************************************
 	TH1F* h_all_missphoton_E_intime = new TH1F("h_all_missphoton_E_intime","Mass Distribution",nbins_combined_hists,0.0,10.);		
 	TH1F* h_all_missphoton_E_outoftime = new TH1F("h_all_missphoton_E_outoftime","Mass Distribution",nbins_combined_hists,0.0,10.);		
 	TH1F* h_all_missphoton_E_accidsub = new TH1F("h_all_missphoton_E_accidsub","Mass Distribution",nbins_combined_hists,0.0,10.);		
@@ -593,6 +612,28 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 	
 	}
 	
+	/// ************************************************************************************************************************
+	// Finally, we are done defining histograms
+	/// ************************************************************************************************************************
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 	
 	Int_t last_combo_event=-1;
 	Int_t last_combo_run = -1;
@@ -602,6 +643,9 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 	
 	
 	set<Int_t> events_in_run; //For uniqueness checking
+    
+    
+    // Begin our big loop through the ROOT tree...
 	for(size_t i =0; i<nentries; ++i) {
 		t_in->GetEntry(i);
 		if(i%100000==0) cout << "Entry: "  << i << endl;
@@ -610,45 +654,37 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 			break;			
 		}
 		
+        
+        
+        
+        /// ************************************************************************************************************************
+        // SANITY CHECK: ONLY ALLOW ONE PHOTON INDEX BE THE MISSING....
+        // If you leave default WHICH_PHOTON_INDEX=0, this section does nothing
+        /// ************************************************************************************************************************
 		
-		//Figure out if the current combo in loop is the first for event or not.
+        //Figure out if the current combo in loop is the first for event or not.
 		//If so, grab spectator photon energy E to compare in the future.
 		//If not, look to see whether we should skip this combo or not.
 		if(last_combo_event != Event) second_combo_or_more = false;
 		if(last_combo_event==Event) second_combo_or_more = true;
-		
 		if(!second_combo_or_more) spectator_showerE_firstcombo = Gamma2_E;
-		
-		//HAVE TO SET HERE! (even though these aren't the "last" combo/run value yet.
-		// However there are continue statements that mean I can't put this at the end of the loop...
+		//////HAVE TO SET HERE! (even though these aren't the "last" combo/run value yet.
+		////// However there are continue statements that mean I can't put this at the end of the loop...
 		last_combo_event = Event;
 		last_combo_run = Run;
-
-		// if(!second_combo_or_more) cout << endl;
-		// cout << "Run: " << Run << endl;
-		// cout << "Event: " << Event << endl;
-		// cout << "beamE: " << beamE << " rf Delta t: " << rf_deltaT << endl;
-		// cout << "gam2_E: " << Gamma2_E << endl;
-		// cout << "Missing can index 0 Energy: " << MissingCan_E[0] << endl;		
-		// cout << "Difference: " << Gamma2_E-spectator_showerE_firstcombo << endl;
-		
 		//Case 1: skip if spectator DOESN'T match the first combo
 		// if roughly equal... kinematic fit moves them around a little based on beam photon selection, so Gamma2_E will wander a little bit
-		if(WHICH_PHOTON_INDEX==1 && fabs(Gamma2_E-spectator_showerE_firstcombo)>0.01  ) {
-			// cout << "Spectator energy for this combo doesn't match spectator photon for first combo in event, skipping..." << endl;
-			// cout << "Event: " << Event << " total combo " << i << endl;
-			continue;
-		}
-		// if(WHICH_PHOTON_INDEX==1 && fabs(Gamma2_E-spectator_showerE_firstcombo)<0.01 ) {
-			// cout << "Spectator for combo matches..." << endl;
-			// cout << "Event: " << Event << " total combo " << i << endl;
-		// }
-
+		if(WHICH_PHOTON_INDEX==1 && fabs(Gamma2_E-spectator_showerE_firstcombo)>0.01  ) continue;
 		//case 2: if it DOES match, skip it.
 		if(WHICH_PHOTON_INDEX==2 && fabs(Gamma2_E-spectator_showerE_firstcombo)<0.01  ) continue;
-		// if(WHICH_PHOTON_INDEX==2 && fabs(Gamma2_E-spectator_showerE_firstcombo)>0.01  ) {
-		// }
-		
+        
+        /// ************************************************************************************************************************
+        // END SANITY CHECK
+        /// ************************************************************************************************************************
+        
+        
+        
+        //Root trees are 
 		TLorentzVector p4_pipl = TLorentzVector(PiPlus_px,PiPlus_py,PiPlus_pz,PiPlus_E);
 		TLorentzVector p4_pim = TLorentzVector(PiMinus_px,PiMinus_py,PiMinus_pz,PiMinus_E);
 		TLorentzVector p4_proton = TLorentzVector(Proton_px,Proton_py,Proton_pz,Proton_E);
@@ -669,7 +705,7 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 			p4_gam2_thr = TLorentzVector(Gamma2_px_th,Gamma2_py_th,Gamma2_pz_th,Gamma2_E_th);
 		}	
 		
-				
+        // Use thrown values for 4-momentum everywhere if true
 		if(USE_THROWN_4VEC) {
 			p4_pipl = p4_pipl_thr;
 			p4_pim = p4_pim_thr;
@@ -685,6 +721,12 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 		Double_t gam2_gam1thr_DeltaTheta = (p4_gam1_thr.Theta()-p4_show.Theta())*180/3.14159;
 		Double_t gam2_gam1thr_DeltaPhi = (p4_gam1_thr.Phi()-p4_show.Phi())*180/3.14159;
 				
+                
+                
+        /// ************************************************************************************************************************
+        // CUTS CUTS CUTS
+        // (and fill some diagnostic histograms
+        /// ************************************************************************************************************************
 		// Cuts on whole sample here
 		if(Gamma2_E<FOUND_E_MIN) continue;
 		//Extra effective PID
@@ -718,48 +760,36 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 			h_gamma2_E_vs_theta_all_outoftime->Fill(p4_gam2.Theta()*180./3.14159,p4_gam2.E());
 		}
 				
-		//Don't seem to clean up sample...
-		// if(PiPlus_TrackingChi2_ndf>2) continue;
-		// if(PiMinus_TrackingChi2_ndf>2) continue;
-		// if(Proton_TrackingChi2_ndf>2) continue;
+		//Don't seem to clean up sample much...
 		if(kinfit_chi2_ndf>30) continue;
-		
 		h_rf_deltaT_all->Fill(rf_deltaT);
 		if(fabs(rf_deltaT)>2) h_rf_deltaT_outoftime->Fill(rf_deltaT);
-				
 		if(twogamma_mass_pkf<pi0_MMcut_lo||twogamma_mass_pkf>pi0_MMcut_hi) continue;
 		if(FCAL_STUDY && (NFCALCandidates>1 || NBCALCandidates > 0) ) continue; //Match old selection and shorten.
 		if(!FCAL_STUDY && (NFCALCandidates>0 || NBCALCandidates > 1) ) continue; //Match old selection and shorten.
-		
 		if(p4_gam1.Theta()*180./3.14159 < MISS_THETA_LOCUT || p4_gam1.Theta()*180./3.14159 > MISS_THETA_HICUT) continue;
 		if(p4_gam1.E() < MISS_E_MIN) continue;
-		
-		Bool_t thrown_study_match_flag = true;
-		
+        /// ************************************************************************************************************************
+        // END CUTS
+        /// ************************************************************************************************************************
+        
+        
+        //
+		Bool_t thrown_study_match_flag = true; // True: shower and thrown photon geometrically match. False: shower belongs to something else.
 		Double_t smaller_DelPhi = Gamma1_DeltaPhi;
-		// if(fabs(gam2_gam1thr_DeltaPhi) <  fabs(Gamma1_DeltaPhi)) {
-			// smaller_DelPhi = gam1_gam2thr_DeltaPhi;
-		// }
 		Double_t smaller_DelTheta = Gamma1_DeltaTheta;
-		// if(fabs(gam1_gam2thr_DeltaTheta) <  fabs(Gamma1_DeltaTheta)) {
-			// smaller_DelTheta = gam1_gam2thr_DeltaTheta;
-		// }
-		
-		// = (fabs(Gamma2_DeltaPhi)>fabs(gam2_gam1thr_DeltaTheta)) ? gam2_gam1thr_DeltaTheta : Gamma2_DeltaPhi;
-		// Double_t smaller_DelTheta = (fabs(Gamma2_DeltaTheta)>fabs(gam2_gam1thr_DeltaTheta)) ? gam2_gam1thr_DeltaTheta : Gamma2_DeltaTheta;
-			
 		Double_t gam1_miss_phi_deg = p4_gam1.Phi()*180/3.14159;
 		
 		
-		// if(make_thrown_info_hists && fabs(Gamma2_DeltaTheta) > ThrownDeltaTheta_gammastudy && fabs(gam2_gam1thr_DeltaTheta) > ThrownDeltaTheta_gammastudy) thrown_study_match_flag = false;
-		// if(make_thrown_info_hists && fabs(Gamma2_DeltaPhi) > ThrownDeltaPhi_gammastudy && fabs(gam2_gam1thr_DeltaPhi) > ThrownDeltaPhi_gammastudy) thrown_study_match_flag = false;
 		if(make_thrown_info_hists && fabs(smaller_DelTheta) > ThrownDeltaTheta_gammastudy) thrown_study_match_flag = false;
 		if(make_thrown_info_hists && fabs(smaller_DelPhi) > ThrownDeltaPhi_gammastudy) thrown_study_match_flag = false;
-		
-		
-		// if(FCAL_STUDY && p4_gam1.Theta()*180./3.14159 > 13) continue; //Skip photons that point way outside FCAL
-		// if(!FCAL_STUDY && p4_gam1.Theta()*180./3.14159 < 10) continue; //Skip photons that point way outside BCAL
-				
+
+                
+        /// ************************************************************************************************************************
+        // HISTOGRAMS: Section 1
+        //// Fill histograms: method 1 denominator and method 2 inefficiency
+        //// Cuts: must fall in fiducial region of FCAL (for studying E, missing photon middle of FCAL) and (for studying theta, min. missing photon energy) 
+        /// ************************************************************************************************************************
 		if(fabs(rf_deltaT)<2) {
 			h_miss_pi0_postcuts_intime->Fill(twogamma_mass_pkf);
 			h_accepted_missphoton_E_intime->Fill(p4_gam1.E());
@@ -834,9 +864,28 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 				if(my_phi_bin>=0&&my_theta_bin<N_PHI_BINS&&p4_gam1.E()>gamma1_miss_Emin&&p4_gam1.Theta()*180./3.14159>gamma1_miss_lotheta&&p4_gam1.Theta()*180./3.14159<gamma1_miss_hitheta) h_m2denineff_miss_omega_Phibins_outoftime[my_phi_bin]->Fill(RecM_Proton);
 			}
 		}
+        /// ************************************************************************************************************************
+        // End histograms section 1
+        /// ************************************************************************************************************************
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        /// ************************************************************************************************************************
+        // HISTOGRAMS: Section 2
+        //// Fill histograms: method 1 numerator and method 2 efficient portion
+        //// Cuts: must fall in fiducial region of FCAL (for studying E, missing photon middle of FCAL) and (for studying theta, min. missing photon energy) 
+        //// More cuts: must satisfy pi0 mass cuts (default: extremely loose), and possibly deltaPhi cut (default cut: accept all)
+        /// ************************************************************************************************************************
 		
-		//Loop over shower candidates
- 		for (size_t j =0; j<NumNeutralCombosSaved; ++j) {
+        //Loop over shower candidates
+ 		// By default, there is actually only 0 or 1 candidates, but historically we tried to consider 2+ candidate showers (hence the loop)
+        for (size_t j =0; j<NumNeutralCombosSaved; ++j) {
 						
 						
 			if(MissingCan_E[j] < 0.0001) break; // No filled entries past this point
@@ -890,13 +939,18 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 				h2_MM_vs_invm_loose_outoftime->Fill(RecM_Proton,threepi_can_mass[j]); //One good shower required to get here
 			}
 		}
-		
+        /// ************************************************************************************************************************
+        // End histograms section 1
+        /// ************************************************************************************************************************
 		
 		
 		
 	}
 	
 	cout << "Finished on run " << Run << endl;
+
+
+    // Setup statistical uncertainties
 
 	h_all_missphoton_E_intime->Sumw2();
 	h_all_missphoton_E_outoftime->Sumw2();
@@ -939,9 +993,10 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 	
 	
 	
+    /// ************************************************************************************************************************
+    // Begin accidental subtraction
+    /// ************************************************************************************************************************
 	Double_t Delta_t_scalefactor = 1. / (2*NBeamBunchesOutoftime);
-	
-	
 	h_all_missphoton_E_accidsub->Add(h_all_missphoton_E_intime,h_all_missphoton_E_outoftime,1.,-1*Delta_t_scalefactor);
 	h_all_missphoton_theta_accidsub->Add(h_all_missphoton_theta_intime,h_all_missphoton_theta_outoftime,1.,-1*Delta_t_scalefactor);
 	h_accepted_missphoton_E_accidsub->Add(h_accepted_missphoton_E_intime,h_accepted_missphoton_E_outoftime,1.,-1*Delta_t_scalefactor);
@@ -1021,9 +1076,13 @@ Int_t MakeOmegaHists(TString str_infile, TString str_outfile, Bool_t make_thrown
 		h_m2num_inv_omega_Phibins_accidsub[i]->Add(h_m2num_inv_omega_Phibins_intime[i],h_m2num_inv_omega_Phibins_outoftime[i],1.,-1*Delta_t_scalefactor);
 		h_m2denineff_miss_omega_Phibins_accidsub[i]->Add(h_m2denineff_miss_omega_Phibins_intime[i],h_m2denineff_miss_omega_Phibins_outoftime[i],1.,-1*Delta_t_scalefactor);
 	}	
-	
+    /// ************************************************************************************************************************
+    // End accidental subtraction
+    /// ************************************************************************************************************************
 
 	
+    
+    //Save histograms to output file
 	TFile* outfile = new TFile( str_outfile, "RECREATE" );
 	outfile->cd();
 	
