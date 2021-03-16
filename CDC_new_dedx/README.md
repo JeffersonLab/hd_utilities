@@ -2,6 +2,8 @@
 
 This contains an example DSelector to apply space-charge correction to CDC dE/dx, and the two data files that it needs.  No correction is made to MC data.
 
+It requires gluex_root_analysis version containing PR 143, more recent than 1.16.0.
+
 There are two varieties of dE/dx, one using the pulse height and the other using pulse integral.  The pulse height version provides better separation at theta close to 90 degrees. See [DocDB 4693](https://halldweb.jlab.org/doc-private/DocDB/ShowDocument?docid=4693), particularly the comparison chart near the end. 
 
 It might be necessary to increase the dE/dx from amplitude by an additional 6 to 10% and decrease the dE/dx from integral 6 to 10% in order to match the MC well.
