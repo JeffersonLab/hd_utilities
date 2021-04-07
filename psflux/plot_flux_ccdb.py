@@ -372,7 +372,9 @@ def main():
 	            i = 0
 	            while i <= flux:
 	                energy = tagh_energy_low + gRandom.Uniform(tagh_energy_high-tagh_energy_low)
-	                htagged_flux.Fill(energy,scale/fPSAcceptance.Eval(energy))
+                        ps_acceptance = fPSAcceptance.Eval(energy)
+                        if ps_acceptance > 0:
+                            htagged_flux.Fill(energy,scale/fPSAcceptance.Eval(energy))
 	                i += 1
 
 		    previous_energy_scaled_low = tagh_energy_low
