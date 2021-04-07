@@ -289,6 +289,7 @@ def main():
             print "Missing flux for run number = %d, contact jrsteven@jlab.org" % run.number 
             sys.exit(0)
 
+            
         # PS acceptance correction
         fPSAcceptance = TF1("PSAcceptance", PSAcceptance, 2.0, 12.0, 3);
         
@@ -297,9 +298,25 @@ def main():
         PS_accept = PS_accept_assignment.constant_set.data_table
         fPSAcceptance.SetParameters(float(PS_accept[0][0]), float(PS_accept[0][1]), float(PS_accept[0][2]));
 
+        # Get corrections to tagger calib for run > 60000 (PrimEx,GlueX-II)
+        photon_endpoint_calib = array('d')
+        calibrated_endpoint = False
+        try:
+            photon_endpoint_calib_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/hodoscope/endpoint_calib", run.number, VARIATION, CALIBTIME_ENERGY)
+            photon_endpoint_calib = photon_endpoint_calib_assignment.constant_set.data_table
+            photon_endpoint_delta_E = float(photon_endpoint[0][0]) - float(photon_endpoint_calib[0][0])
+            calibrated_endpoint = True
+        except:
+            if run.number > 60000:
+                print "Missing endpoint calibration for run "+run.number
+                sys.exit(0)
+
         # fill tagm histogram
 	for tagm_flux, tagm_scaled_energy in zip(tagm_tagged_flux, tagm_scaled_energy_table):
 	    tagm_energy = float(photon_endpoint[0][0])*(float(tagm_scaled_energy[1])+float(tagm_scaled_energy[2]))/2.
+            if calibrated_endpoint:
+                tagm_energy = float(photon_endpoint_calib[0][0])*(float(tagm_scaled_energy[1])+float(tagm_scaled_energy[2]))/2. + photon_endpoint_delta_E
+
             psAccept = fPSAcceptance.Eval(tagm_energy)
             if psAccept <= 0.0:
                 continue
@@ -307,7 +324,11 @@ def main():
 	    if UNIFORM:
 	            tagm_energy_low = float(photon_endpoint[0][0])*(float(tagm_scaled_energy[1]))
 		    tagm_energy_high = float(photon_endpoint[0][0])*(float(tagm_scaled_energy[2]))
-		    flux = float(tagm_flux[1])
+                    if calibrated_endpoint:
+                        tagm_energy_low = float(photon_endpoint_calib[0][0])*(float(tagm_scaled_energy[1])) + photon_endpoint_delta_E
+                        tagm_energy_high = float(photon_endpoint_calib[0][0])*(float(tagm_scaled_energy[2])) + photon_endpoint_delta_E
+	
+                    flux = float(tagm_flux[1])
 		    i = 0
 		    while i <= flux:
 			energy = tagm_energy_low + gRandom.Uniform(tagm_energy_high-tagm_energy_low)
@@ -330,6 +351,9 @@ def main():
 	previous_energy_scaled_low = 999. # keep track of low energy bin boundry to avoid overlaps
 	for tagh_flux, tagh_scaled_energy in zip(tagh_tagged_flux, tagh_scaled_energy_table):
             tagh_energy = float(photon_endpoint[0][0])*(float(tagh_scaled_energy[1])+float(tagh_scaled_energy[2]))/2.
+            if calibrated_endpoint:
+                tagh_energy = float(photon_endpoint_calib[0][0])*(float(tagh_scaled_energy[1])+float(tagh_scaled_energy[2]))/2. + photon_endpoint_delta_E
+
             psAccept = fPSAcceptance.Eval(tagh_energy)
             if psAccept <= 0.0:
                 continue
@@ -337,6 +361,10 @@ def main():
 	    if UNIFORM:
 		    tagh_energy_low = float(photon_endpoint[0][0])*(float(tagh_scaled_energy[1]))
  	    	    tagh_energy_high = float(photon_endpoint[0][0])*(float(tagh_scaled_energy[2]))
+                    if calibrated_endpoint:
+                        tagh_energy_low = float(photon_endpoint_calib[0][0])*(float(tagh_scaled_energy[1])) + photon_endpoint_delta_E
+                        tagh_energy_high = float(photon_endpoint_calib[0][0])*(float(tagh_scaled_energy[2])) + photon_endpoint_delta_E
+
 		    if previous_energy_scaled_low < tagh_energy_high:
 			tagh_energy_high = previous_energy_scaled_low
 
