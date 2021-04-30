@@ -10,6 +10,7 @@
 #include "TMap.h"
 #include "TIterator.h"
 #include "TSystem.h"
+#include "TObjString.h"
 using namespace std;
 
 
@@ -76,6 +77,8 @@ int main(int argc, char** argv){
   cout << "           -numUnusedNeutrals [optional cut (<= cut)]   (default: -1 (no cut))" << endl;
   cout << "           -numNeutralHypos   [optional cut (<= cut)]   (default: -1 (no cut))" << endl;
   cout << "           -usePolarization   [get polarization angle from RCDB? 0 or 1]   (default: 0)" << endl;
+  cout << "           -mcChecks  [check for baryon number violation, etc.," << endl; 
+  cout << "                       when parsing truth information?  0 or 1] (default: 1)" << endl;
   cout << "           -safe  [check array sizes?  0 or 1]          (default: 1)" << endl;
   cout << "           -print [print to screen: " << endl; 
   cout << "                   -1 (less); 0 (regular); 1 (more)]    (default: 0)" << endl;
@@ -117,7 +120,8 @@ int main(int argc, char** argv){
   int gNumUnusedNeutralsCut = -1;
   int gNumNeutralHyposCut = -1;
   bool gSafe = true;
-  bool gUsePolarization = 0;
+  bool gUsePolarization = false;
+  bool gMCChecks = true;
   int gPrint = 0;
   {
   TString flag = "";
@@ -126,6 +130,7 @@ int main(int argc, char** argv){
     if ((argi == "-in")||(argi == "-out")||(argi == "-mc")||(argi == "-mctag")
         ||(argi == "-chi2")||(argi == "-shQuality")||(argi == "-massWindows")
         ||(argi == "-numUnusedTracks")||(argi == "-usePolarization")||(argi == "-numUnusedNeutrals")
+        ||(argi == "-mcChecks")
         ||(argi == "-numNeutralHypos")||(argi == "-safe")||(argi == "-print")){
       flag = argi;
       continue;
@@ -142,6 +147,7 @@ int main(int argc, char** argv){
     if (flag == "-numUnusedNeutrals"){ gNumUnusedNeutralsCut = atoi(argi); }
     if (flag == "-numNeutralHypos"){ gNumNeutralHyposCut = atoi(argi); }
     if (flag == "-usePolarization"){ if (argi == "1") gUsePolarization = true; }
+    if (flag == "-mcChecks"){ if (argi == "0") gMCChecks = false; }
     if (flag == "-safe"){ if (argi == "0") gSafe = false; }
     if (flag == "-print"){ gPrint = atoi(argi); }
   }
@@ -176,6 +182,7 @@ int main(int argc, char** argv){
   cout << "  numUnusedNeutrals cut: " << gNumUnusedNeutralsCut << endl;
   cout << "  numNeutralHypos cut:   " << gNumNeutralHyposCut << endl;
   cout << "  use polarization?      " << gUsePolarization << endl;
+  cout << "  MC checks?             " << gMCChecks << endl;
   cout << "  safe mode?             " << gSafe << endl;
   cout << endl;
   if ((gInFileNames.size() == 0) || (gOutFileName == "")){
@@ -727,11 +734,7 @@ int main(int argc, char** argv){
             if (gUseParticles && gUseKinFit) inX4[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
             if (gUseParticles && gUseKinFit) gInTree->GetBranch       (var_X4)->SetAutoDelete(kFALSE);
             if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress(var_X4,&(inX4[pIndex]));
-        TString var_P4_KinFit(name); var_P4_KinFit += "__P4_KinFit"; // read-only for signed flight length
-            if (gUseParticles && gUseKinFit) inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
-            if (gUseParticles && gUseKinFit) gInTree->GetBranch       (var_P4_KinFit)->SetAutoDelete(kFALSE);
-            if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress(var_P4_KinFit,&(inP4_KinFit[pIndex]));
-        TString var_PathLengthSigma(name);  var_PathLengthSigma += "__PathLengthSigma"; // read-only for flight significance
+        TString var_PathLengthSigma(name);  var_PathLengthSigma += "__PathLengthSigma";
             if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress(var_PathLengthSigma,inPathLengthSigma[pIndex]);
       }
 
@@ -1005,9 +1008,9 @@ int main(int argc, char** argv){
           }
         }
       }
-     if (BaryonNumber((int)outMCDecayCode1,(int)outMCDecayCode2,(int)outMCExtras) != 1)
+     if (gMCChecks && BaryonNumber((int)outMCDecayCode1,(int)outMCDecayCode2,(int)outMCExtras) != 1)
        { mcWarning = true; cout << "WARNING: problem with baryon number in MC (for details, use -print 1)" << endl; }
-     if (Charge((int)outMCDecayCode1,(int)outMCDecayCode2,(int)outMCExtras) != 1)
+     if (gMCChecks && Charge((int)outMCDecayCode1,(int)outMCDecayCode2,(int)outMCExtras) != 1)
        { mcWarning = true; cout << "WARNING: problem with electric charge in MC (for details, use -print 1)" << endl; }
       //if (((outMCSignal > 0.1)&&!inIsThrownTopology) ||
       //    ((outMCSignal < 0.1)&& inIsThrownTopology)){
@@ -1174,21 +1177,6 @@ int main(int argc, char** argv){
         if (gUseKinFit){
         }
 
-        if (GlueXParticleClass(name) == "DecayingToCharged"){
-          if (gUseParticles && gUseKinFit){
-            x4a = (TLorentzVector*)inBeam__X4_KinFit->At(ic); // independent of pIndex
-            x4b = (TLorentzVector*)inX4[pIndex]->At(ic);
-            *x4 = *x4b - *x4a;
-            p4  = (TLorentzVector*)inP4_KinFit[pIndex]->At(ic);
-            outVeeL[pIndex] = (x4->Vect()).Mag();
-            if ( (x4->Angle(p4->Vect()))/TMath::Pi() > 0.5 )
-              outVeeL[pIndex] = -outVeeL[pIndex];
-            if ( inPathLengthSigma[pIndex][ic] < 1.0e-6 )
-              outVeeLSigma[pIndex] = -10000.;
-            else
-              outVeeLSigma[pIndex] = outVeeL[pIndex]/inPathLengthSigma[pIndex][ic];
-          }
-        }
 
           // decaying to charged tracks
 
@@ -1200,10 +1188,21 @@ int main(int argc, char** argv){
           if (gUseParticles && gUseKinFit){
             p4a = (TLorentzVector*)inP4_KinFit[pIndex1]->At(ic);
             p4b = (TLorentzVector*)inP4_KinFit[pIndex2]->At(ic);
+            *p4 = *p4a + *p4b;
               outPx[pIndex] = p4a->Px() + p4b->Px();
               outPy[pIndex] = p4a->Py() + p4b->Py();
               outPz[pIndex] = p4a->Pz() + p4b->Pz();
               outEn[pIndex] = p4a->E()  + p4b->E();
+            x4a = (TLorentzVector*)inBeam__X4_KinFit->At(ic);
+            x4b = (TLorentzVector*)inX4[pIndex]->At(ic);
+            *x4 = *x4b - *x4a;
+            outVeeL[pIndex] = (x4->Vect()).Mag();
+            if ( (x4->Angle(p4->Vect()))/TMath::Pi() > 0.5 )
+              outVeeL[pIndex] = -outVeeL[pIndex];
+            if ( inPathLengthSigma[pIndex][ic] < 1.0e-6 )
+              outVeeLSigma[pIndex] = -10000.;
+            else
+              outVeeLSigma[pIndex] = outVeeL[pIndex]/inPathLengthSigma[pIndex][ic];
           }
           if (gUseParticles){
             p4a = (TLorentzVector*)inChargedHypo__P4_Measured->At(inChargedIndex[pIndex1][ic]);
