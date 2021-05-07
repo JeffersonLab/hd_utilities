@@ -5,13 +5,13 @@
 // Creator: zihlmann (on Linux ifarm1901.jlab.org 3.10.0-1062.4.1.el7.x86_64 x86_64)
 //
 
-#include "JEventProcessor_cppFMWPC.h"
-using namespace jana;
 
 
 // Routine used to create our JEventProcessor
 #include <JANA/JApplication.h>
 #include <JANA/JFactory.h>
+using namespace jana;
+#include "JEventProcessor_cppFMWPC.h"
 extern "C"{
   void InitPlugin(JApplication *app){
     InitJANAPlugin(app);
