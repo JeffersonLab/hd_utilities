@@ -229,7 +229,7 @@ sub round {
 # parse options
 #
 sub parse_options {
-    getopts('u:');
+    getopts('u:n:');
     if ($opt_u) {
 	$userid = `id -u $opt_u`;
 	chomp $userid;
@@ -237,6 +237,11 @@ sub parse_options {
 	$userid = 0
     }
     #print "userid = $userid\n;"
+    if ($opt_n) {
+	$nlines = $opt_n;
+    } else {
+	$nlines = 10; # default number of lines
+    }
 }
 #
 # end of file
