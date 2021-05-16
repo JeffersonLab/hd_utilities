@@ -66,8 +66,7 @@ make_query($dbh_db, \$sth);
 #
 # collect the data
 #
-#$find_dir_command = "find $starting_directory/ -xdev \\( \\(";
-$find_dir_command = "find $starting_directory/ -maxdepth 2 -xdev \\( \\(";
+$find_dir_command = "find $starting_directory/ -xdev \\( \\(";
 $find_dir_command .= " -path $starting_directory/.snapshot";
 $find_dir_command .= " -o -path /cache/halld/example";
 $find_dir_command .= " -o -path /volatile/halld/example";
