@@ -43,7 +43,7 @@ if ($userid) {
 print $q->h2("Largest Files"), "\n";
               #############
 
-$sql = "select $file_table.size, filename, atime, $file_table.uid, dirname from $dir_table, $file_table where $dir_table.id = dirId $user_file_clause order by $file_table.size desc limit 10;";
+$sql = "select $file_table.size, filename, atime, $file_table.uid, dirname from $dir_table, $file_table where $dir_table.id = dirId $user_file_clause order by $file_table.size desc limit $nlines;";
 make_query($dbh, \$sth);
 print "<table border>\n";
 print "<tr><th>Rank<th>Size (GB)<th>File<th>Last Access Time<th>Owner<th>Directory\n";
@@ -60,7 +60,7 @@ print "</table>\n";
 print $q->h2("Oldest Files"), "\n";
               ############
 
-$sql = "select atime, filename, $file_table.size, $file_table.uid, dirname from $dir_table, $file_table where $dir_table.id = dirId $user_file_clause order by atime limit 10;";
+$sql = "select atime, filename, $file_table.size, $file_table.uid, dirname from $dir_table, $file_table where $dir_table.id = dirId $user_file_clause order by atime limit $nlines;";
 make_query($dbh, \$sth);
 print "<table border>\n";
 print "<tr><th>Rank<th>Last Access Time<th>File<th>Size (GB)<th>Owner<th>Directory\n";
@@ -77,7 +77,7 @@ print "</table>\n";
 print $q->h2("Files with Greatest Size &times; Age"), "\n";
               ####################################
 
-$sql = "select ($file_table.size*1.e-9)*(unix_timestamp(now()) - unix_timestamp(atime)) as gby, filename, $file_table.size, atime, $dir_table.uid, dirname from $dir_table, $file_table where $dir_table.id = dirId $user_file_clause order by gby desc limit 10;";
+$sql = "select ($file_table.size*1.e-9)*(unix_timestamp(now()) - unix_timestamp(atime)) as gby, filename, $file_table.size, atime, $dir_table.uid, dirname from $dir_table, $file_table where $dir_table.id = dirId $user_file_clause order by gby desc limit $nlines;";
 make_query($dbh, \$sth);
 print "<table border>\n";
 print "<tr><th>Rank<th>Size&times;Age (GB-years)<th>File<th>Size (GB)<th>Last Access Time<th>Owner<th>Directory\n";
@@ -94,7 +94,7 @@ print "</table>\n";
 
 print $q->h2("Largest Directories"), "\nExcludes files in sub-directories\n";
               ###################
-$sql = "select sum($file_table.size) as dirsize, dirname, $dir_table.uid from $dir_table, $file_table where dirId = $dir_table.id $user_dir_clause group by dirId order by dirsize desc limit 10;";
+$sql = "select sum($file_table.size) as dirsize, dirname, $dir_table.uid from $dir_table, $file_table where dirId = $dir_table.id $user_dir_clause group by dirId order by dirsize desc limit $nlines;";
 make_query($dbh, \$sth);
 print "<table border>\n";
 print "<tr><th>Rank<th>Size (GB)<th>Directory<th>Owner\n";
@@ -112,7 +112,7 @@ print $q->h2("Directories with Greatest Average Age"),
               ##########################################
     "\nExcludes files in sub-directories, size-weighted average age of all files in directory\n";
 
-$sql = "select sum(($file_table.size*1.e-9)*(unix_timestamp(now()) - unix_timestamp(atime)))/sum($file_table.size)*1.e9 as aveage, dirname, $dir_table.uid from $dir_table, $file_table where $dir_table.id = dirId $user_dir_clause group by dirId order by aveage desc limit 10;";
+$sql = "select sum(($file_table.size*1.e-9)*(unix_timestamp(now()) - unix_timestamp(atime)))/sum($file_table.size)*1.e9 as aveage, dirname, $dir_table.uid from $dir_table, $file_table where $dir_table.id = dirId $user_dir_clause group by dirId order by aveage desc limit $nlines;";
 make_query($dbh, \$sth);
 print "<table border>\n";
 print "<tr><th>Rank<th>Age (years)<th>Directory<th>Owner\n";
@@ -130,7 +130,7 @@ print $q->h2("Directories with Greatest Size &times; Age"),
               ##########################################
     "\nExcludes files in sub-directories, age &times; size summed over all files in directory\n";
 
-$sql = "select sum(($file_table.size*1.e-9)*(unix_timestamp(now()) - unix_timestamp(atime))) as sumgby, dirname, $dir_table.uid from $dir_table, $file_table where $dir_table.id = dirId $user_dir_clause group by dirId order by sumgby desc limit 10;";
+$sql = "select sum(($file_table.size*1.e-9)*(unix_timestamp(now()) - unix_timestamp(atime))) as sumgby, dirname, $dir_table.uid from $dir_table, $file_table where $dir_table.id = dirId $user_dir_clause group by dirId order by sumgby desc limit $nlines;";
 make_query($dbh, \$sth);
 print "<table border>\n";
 print "<tr><th>Rank<th>Size&times;Age (GB-years)<th>Directory<th>Owner\n";
@@ -150,7 +150,7 @@ if (!$userid) {
                   ###############################
     "\nSum of all files owned by user";
 
-    $sql = "select sum($file_table.size) as sumsize, $file_table.uid from $file_table group by $file_table.uid order by sumsize desc limit 10;";
+    $sql = "select sum($file_table.size) as sumsize, $file_table.uid from $file_table group by $file_table.uid order by sumsize desc limit $nlines;";
     make_query($dbh, \$sth);
     print "<table border>\n";
     print "<tr><th>Rank<th>Total Size (GB)<th>User";
@@ -168,7 +168,7 @@ if (!$userid) {
                   ######################################
     "Size-weighted average age of all files owned by user\n";
 
-    $sql = "select sum(($file_table.size*1.e-9)*(unix_timestamp(now())-unix_timestamp(atime)))/sum($file_table.size)*1.e9 as aveage, $file_table.uid from $file_table group by $file_table.uid order by aveage desc limit 10;";
+    $sql = "select sum(($file_table.size*1.e-9)*(unix_timestamp(now())-unix_timestamp(atime)))/sum($file_table.size)*1.e9 as aveage, $file_table.uid from $file_table group by $file_table.uid order by aveage desc limit $nlines;";
     make_query($dbh, \$sth);
     print "<table border>\n";
     print "<tr><th>Rank<th>Age (years)<th>User\n";
@@ -186,7 +186,7 @@ if (!$userid) {
                   ######################################
     "\nAge &times; size summed over all files owned by user\n";
 
-    $sql = "select sum(($file_table.size*1.e-9)*(unix_timestamp(now())-unix_timestamp(atime))) as sumgby, $file_table.uid from $file_table group by $file_table.uid order by sumgby desc limit 10;";
+    $sql = "select sum(($file_table.size*1.e-9)*(unix_timestamp(now())-unix_timestamp(atime))) as sumgby, $file_table.uid from $file_table group by $file_table.uid order by sumgby desc limit $nlines;";
     make_query($dbh, \$sth);
     print "<table border>\n";
     print "<tr><th>Rank<th>Size&times;Age (GB-years)<th>User\n";
@@ -229,7 +229,11 @@ sub round {
 # parse options
 #
 sub parse_options {
-    getopts('u:n:');
+    getopts('hu:n:');
+    if ($opt_h) {
+	print_usage();
+	exit 0;
+    }
     if ($opt_u) {
 	$userid = `id -u $opt_u`;
 	chomp $userid;
@@ -242,6 +246,12 @@ sub parse_options {
     } else {
 	$nlines = 10; # default number of lines
     }
+}
+sub print_usage {
+    print <<EOM;
+disk_report.pl [-h] [-u username] [-n number-of-lines-per-category] database-tag
+  example: disk_report.pl -u torvalds -n 20 work
+EOM
 }
 #
 # end of file
