@@ -118,6 +118,16 @@ Track information is written out for every reconstructed track that is part of a
   TkNDFP(n):    number of degrees of freedom for the track fit
 \end{verbatim}
 
+If PID information is requested, the following variables are added to the tree:
+\begin{verbatim}
+  TkTOFBetaP(n):   beta from the TOF (using kinematic fit if available)
+  TkTOFChi2P(n):   chi2 from the TOF (using kinematic fit if available)
+  TkDEDXCDCP(n):   DEDX from the CDC
+  TkDEDXFDCP(n):   DEDX from the FDC
+  TkDEDXChi2P(n):  chi2 for the DEDX measurement
+  TkDEDXNDFP(n):   NDF for the DEDX measurement
+\end{verbatim}
+
 
 \section{Shower Information}
 \label{sec:nt:shower}
