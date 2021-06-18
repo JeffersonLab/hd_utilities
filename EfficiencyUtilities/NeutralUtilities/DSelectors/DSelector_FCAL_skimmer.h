@@ -56,6 +56,7 @@ class DSelector_FCAL_skimmer : public DSelector
 		Long64_t jz_counter;
 		Int_t jz_PolDirection;
 		Int_t jz_NumUnusedCombosSaved;
+        Float_t jz_UnusedPhotonThetaCut;
 		
 	ClassDef(DSelector_FCAL_skimmer, 0);
 };

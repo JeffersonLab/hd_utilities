@@ -155,18 +155,18 @@ here:  https://halldweb.jlab.org/wiki/index.php/GlueX-II_and_DIRC_ERR )
 <compMod>
 <parameter name="triggerRate" value="90e3" units="Hz"/>
 <parameter name="runningTimeOnFloor" value="79.0" units="days"/>
-<parameter name="runningEfficiency" value="0.50"/>
+<parameter name="runningEfficiency" value="0.58"/>
 <parameter name="eventsize" value="13.0" units="kB"/>
 <parameter name="eventsPerRun" value="400" units="Mevent"/>
-<parameter name="compressionFactor" value="2.0"/>
-<parameter name="RESTfraction" value="0.15"/>
+<parameter name="compressionFactor" value="1.0"/>
+<parameter name="RESTfraction" value="0.40"/>
 
-<parameter name="reconstructionRate" value="5.5" units="Hz"/>
-<parameter name="reconPasses" value="2.0"/>
+<parameter name="reconstructionRate" value="3.05" units="Hz"/>
+<parameter name="reconPasses" value="1.0"/>
 <parameter name="goodRunFraction" value="0.85"/>
 <parameter name="analysisRate" value="75.0" units="Hz"/>
 <parameter name="analysisPasses" value="2.82"/>
-<parameter name="cores" value="10000"/>
+<parameter name="cores" value="12000"/>
 <parameter name="incomingData" value="5" units="files"/>
 <parameter name="calibRate" value="0.250" units="Mhr/week"/>
 <parameter name="offlineMonitoring" value="0.00800" units="Mhr/run"/>

@@ -1,12 +1,16 @@
 #include <iostream>
+#include <sstream>
 #include "TFile.h"
 #include "TTree.h"
+#include "TChain.h"
 #include "TClonesArray.h"
 #include "TLorentzVector.h"
 #include "TString.h"
 #include "TList.h"
 #include "TMap.h"
 #include "TIterator.h"
+#include "TSystem.h"
+#include "TObjString.h"
 using namespace std;
 
 
@@ -21,10 +25,6 @@ static const int MAXNEUTRALS  =  15*2;
 static const int MAXCOMBOS    = 100*50;
 static const int MAXPARTICLES =  MAXTRACKS + MAXNEUTRALS;
 
-  // main routines to do the conversions
-void ConvertFile(TString inFileName, TString outFileName);
-void ConvertTree(TString treeName);
-
   // utility functions (collected at the end of this file) 
   //   [containing mostly conversions between conventions]
 TString PDGReadableName(int pdgID);
@@ -32,26 +32,20 @@ TString FSParticleType(TString glueXParticleType);
 TString GlueXParticleClass(TString glueXParticleType);
 int GlueXNeutralsCounter(TString glueXParticleType);
 int PDGIDNumber(TString glueXParticleType);
+map<TString, vector<TString> > GlueXDecayProductMap(int fsCode1, int fsCode2);
 int FSParticleOrder(TString glueXParticleType);
 int FSParticleOrder(int pdgID);
 pair<int,int> FSCode(vector< vector<TString> > glueXParticleTypes);
 pair<int,int> FSCode(vector< vector<int> > pdgIDs);
   // utility functions for MC truth parsing
 vector< vector<int> > OrderedThrownIndices(int numThrown, int pids[], int parentIndices[]);
+vector<int> MCDecayParticles(int numThrown, int pids[], int parentIndices[]);
+void DisplayMCThrown(int numThrown, int pids[], int parentIndices[]);
 int FSMCExtras(int numThrown, int pids[]);
+int BaryonNumber(int fsCode1, int fsCode2, int mcExtras = 0);
+int Charge(int fsCode1, int fsCode2, int mcExtras = 0);
+bool GetPolarizationAngle(int runNumber, int& polarizationAngle);
 
-  // global input parameters
-TFile* gInputFile;
-TFile* gOutputFile;
-double  gChi2DOFCut;
-double  gShQualityCut;
-double  gMassWindows;
-int  gNumUnusedTracksCut;
-int  gNumUnusedNeutralsCut;
-int  gNumNeutralHyposCut;
-bool gIsMC;
-bool gSafe;
-bool gPrint;
 
 
 // **************************************
@@ -69,20 +63,30 @@ int main(int argc, char** argv){
   cout << "The final state is determined automatically from the input file." << endl << endl;
   cout << "Usage:" << endl;
   cout << "  flatten  -in    <input file name>                     (required)" << endl;
-  cout << "           -out   <output file name or none>            (default: none)" << endl;
+  cout << "           -out   [output file name or none]            (default: none)" << endl;
   cout << "                   (if none, just print info and quit)"   << endl;
-  cout << "           -mc    [is this mc?  0 or 1]                 (default: 0)" << endl;
+  cout << "           -mc    [is this mc? -1, 0, or 1]             (default: -1)" << endl;
+  cout << "                   (-1: determine automatically; 0: no; 1: yes)"   << endl;
+  cout << "           -mctag [MCExtras_MCDecayCode2_MCDecayCode1]  (default: none)" << endl;
+  cout << "                   (pick out a single final state from MC)"  << endl;
   cout << "           -chi2  [optional Chi2/DOF cut value]         (default: 1000)" << endl;
-  cout << "           -shQuality  [optional shower quality cut value] (no default)" << endl;
-  cout << "           -massWindows  [pi0, eta, (A)Lambda, Ks windows (GeV)] (no default)" << endl;
+  cout << "           -shQuality  [optional shower quality cut value] (default: -1 (no cut))" << endl;
+  cout << "           -massWindows  [pi0, eta, (A)Lambda, Ks windows (GeV)] (default: -1 (no cut))" << endl;
   cout << "                        (uses the most constrained four-momenta)" << endl;
-  cout << "           -numUnusedTracks   [optional cut (<= cut)]   (no default)" << endl;
-  cout << "           -numUnusedNeutrals [optional cut (<= cut)]   (no default)" << endl;
-  cout << "           -numNeutralHypos   [optional cut (<= cut)]   (no default)" << endl;
+  cout << "           -numUnusedTracks   [optional cut (<= cut)]   (default: -1 (no cut))" << endl;
+  cout << "           -numUnusedNeutrals [optional cut (<= cut)]   (default: -1 (no cut))" << endl;
+  cout << "           -numNeutralHypos   [optional cut (<= cut)]   (default: -1 (no cut))" << endl;
+  cout << "           -usePolarization   [get polarization angle from RCDB? 0 or 1]   (default: 0)" << endl;
+  cout << "           -addPID    [include PID info in the output tree? 0 or 1]   (default: 0)" << endl;
+  cout << "           -mcChecks  [check for baryon number violation, etc.," << endl; 
+  cout << "                       when parsing truth information?  0 or 1] (default: 1)" << endl;
   cout << "           -safe  [check array sizes?  0 or 1]          (default: 1)" << endl;
-  cout << "           -print [print extra info to screen? 0 or 1]  (default: 0)" << endl;
+  cout << "           -print [print to screen: " << endl; 
+  cout << "                   -1 (less); 0 (regular); 1 (more)]    (default: 0)" << endl;
   cout << endl;
   cout << "Notes:" << endl;
+  cout << "  * multiple input files can be specified using wildcards, but they"  << endl;
+  cout << "     should all be of the same type (same final state, MC or data, etc) " << endl;
   cout << "  * the input tree name should contain \"_Tree\" (if this standard" << endl;
   cout << "     changes in the GlueX code, this code can be easily modified)" << endl;
   cout << "  * the output tree name is ntFSGlueX_[code2]_[code1], where [code1] " << endl;
@@ -97,155 +101,257 @@ int main(int argc, char** argv){
      cout << "ERROR: wrong number of arguments -- see usage notes above" << endl;
      exit(0);
   }
-  TString inFileName("");
-  TString outFileName("none");
-  gIsMC = false;
-  gChi2DOFCut = 1000.0;
-  gShQualityCut = -1;
-  gMassWindows = -1;
-  gNumUnusedTracksCut = -1;
-  gNumUnusedNeutralsCut = -1;
-  gNumNeutralHyposCut = -1;
-  gSafe = true;
-  gPrint = false;
-  for (int i = 0; i < argc-1; i++){
+
+
+   // **********************************************************************
+   // STEP 1:  PARSE THE COMMAND LINE ARGUMENTS
+   // **********************************************************************
+
+  vector<TString> gInFileNames;
+  TString gOutFileName("none");
+  int gInputIsMC = -1;
+  TString gMCTag = "";
+  TString gMCTagExtras = "0";
+  TString gMCTagDecayCode2 = "0";
+  TString gMCTagDecayCode1 = "0";
+  double gChi2DOFCut = 1000.0;
+  double gShQualityCut = -1;
+  double gMassWindows = -1;
+  int gNumUnusedTracksCut = -1;
+  int gNumUnusedNeutralsCut = -1;
+  int gNumNeutralHyposCut = -1;
+  bool gSafe = true;
+  bool gUsePolarization = false;
+  bool gAddPID = false;
+  bool gMCChecks = true;
+  int gPrint = 0;
+  {
+  TString flag = "";
+  for (int i = 0; i < argc; i++){
     TString argi(argv[i]);
-    TString argi1(argv[i+1]);
-    if (argi == "-in")  inFileName = argi1;
-    if (argi == "-out") outFileName = argi1;
-    if (argi == "-mc"){ if (argi1 == "1") gIsMC = true; }
-    if (argi == "-chi2"){ gChi2DOFCut = atof(argi1); }
-    if (argi == "-shQuality"){ gShQualityCut = atof(argi1); }
-    if (argi == "-massWindows"){ gMassWindows = atof(argi1); }
-    if (argi == "-numUnusedTracks"){ gNumUnusedTracksCut = atoi(argi1); }
-    if (argi == "-numUnusedNeutrals"){ gNumUnusedNeutralsCut = atoi(argi1); }
-    if (argi == "-numNeutralHypos"){ gNumNeutralHyposCut = atoi(argi1); }
-    if (argi == "-safe"){ if (argi1 == "0") gSafe = false; }
-    if (argi == "-print"){ if (argi1 == "1") gPrint = true; }
+    if ((argi == "-in")||(argi == "-out")||(argi == "-mc")||(argi == "-mctag")
+        ||(argi == "-chi2")||(argi == "-shQuality")||(argi == "-massWindows")
+        ||(argi == "-numUnusedTracks")||(argi == "-usePolarization")||(argi == "-numUnusedNeutrals")
+        ||(argi == "-mcChecks")||(argi == "-addPID")
+        ||(argi == "-numNeutralHypos")||(argi == "-safe")||(argi == "-print")){
+      flag = argi;
+      continue;
+    }
+    if (flag == "-in")  gInFileNames.push_back(argi);
+    if (flag == "-out") gOutFileName = argi;
+    if (flag == "-mc"){ if (argi == "1") gInputIsMC = 1; 
+                        if (argi == "0") gInputIsMC = 0; }
+    if (flag == "-mctag"){ gMCTag = argi; }
+    if (flag == "-chi2"){ gChi2DOFCut = atof(argi); }
+    if (flag == "-shQuality"){ gShQualityCut = atof(argi); }
+    if (flag == "-massWindows"){ gMassWindows = atof(argi); }
+    if (flag == "-numUnusedTracks"){ gNumUnusedTracksCut = atoi(argi); }
+    if (flag == "-numUnusedNeutrals"){ gNumUnusedNeutralsCut = atoi(argi); }
+    if (flag == "-numNeutralHypos"){ gNumNeutralHyposCut = atoi(argi); }
+    if (flag == "-usePolarization"){ if (argi == "1") gUsePolarization = true; }
+    if (flag == "-addPID"){ if (argi == "1") gAddPID = true; }
+    if (flag == "-mcChecks"){ if (argi == "0") gMCChecks = false; }
+    if (flag == "-safe"){ if (argi == "0") gSafe = false; }
+    if (flag == "-print"){ gPrint = atoi(argi); }
+  }
+  if (gMCTag == "none") gMCTag = "";
+  if (gMCTag != ""){
+    int numUnderscores = 0;
+    for (int j = 0; j < gMCTag.Length(); j++){
+      TString digit = TString(gMCTag[j]);
+      if (digit == "_") numUnderscores++;
+      if (numUnderscores == 0 && digit.IsDigit()) gMCTagExtras += digit;
+      if (numUnderscores == 1 && digit.IsDigit()) gMCTagDecayCode2 += digit;
+      if (numUnderscores == 2 && digit.IsDigit()) gMCTagDecayCode1 += digit;
+    }
   }
   cout << endl;
   cout << "INPUT PARAMETERS:" << endl << endl;
-  cout << "  input file:            " << inFileName << endl;
-  cout << "  output file:           " << outFileName << endl;
-  cout << "  MC?                    " << gIsMC << endl;
+  cout << "  input files:           " << endl;
+  for (unsigned int i = 0; i < gInFileNames.size(); i++){
+    cout << "    (" << i+1 <<") " << gInFileNames[i] << endl;
+  }
+  cout << "  output file:           " << gOutFileName << endl;
+  cout << "  MC?                    " << gInputIsMC << endl;
+  if (gMCTag != "")
+  cout << "  MC Tag:                " << gMCTagExtras << "_" << gMCTagDecayCode2 
+                                                      << "_" << gMCTagDecayCode1 << endl;
+  if (gMCTag == "")
+  cout << "  MC Tag:                " << "none" << endl;
   cout << "  chi2/dof cut:          " << gChi2DOFCut << endl;
   cout << "  shower quality cut:    " << gShQualityCut << endl;
   cout << "  mass windows:          " << gMassWindows << endl;
   cout << "  numUnusedTracks cut:   " << gNumUnusedTracksCut << endl;
   cout << "  numUnusedNeutrals cut: " << gNumUnusedNeutralsCut << endl;
   cout << "  numNeutralHypos cut:   " << gNumNeutralHyposCut << endl;
+  cout << "  use polarization?      " << gUsePolarization << endl;
+  cout << "  use PID?               " << gAddPID << endl;
+  cout << "  MC checks?             " << gMCChecks << endl;
   cout << "  safe mode?             " << gSafe << endl;
   cout << endl;
-  if ((inFileName == "") || (outFileName == "")){
+  if ((gInFileNames.size() == 0) || (gOutFileName == "")){
      cout << "ERROR: specify input and output files -- see usage notes above" << endl;
      exit(0);
   }
-  ConvertFile(inFileName,outFileName);
-  return 0;
-}
-
-
-
-// **************************************
-//   ConvertFile
-// **************************************
-
-void ConvertFile(TString inFileName, TString outFileName){
-  int nTrees = 0;
-  gInputFile  = new TFile(inFileName);
-  gOutputFile = NULL;
-  if (outFileName != "none") gOutputFile = new TFile(outFileName,"recreate");
-  TList* fileList = gInputFile->GetListOfKeys();
-  for (int i = 0; i < fileList->GetEntries(); i++){
-    TString treeName(fileList->At(i)->GetName());
-    if (treeName.Contains("_Tree")){
-      if (nTrees == 0) ConvertTree(treeName);
-      if (nTrees >= 1){
-        cout << "WARNING: found more than one tree -- only converted the first" << endl;
-        cout << "           extra tree = " << treeName << endl;
-      }
-      nTrees++;
-    }
+  if ((gMCTag != "") && 
+      GlueXDecayProductMap(gMCTagDecayCode1.Atoi(),gMCTagDecayCode2.Atoi()).size() == 0){
+    cout << "ERROR: no particles corresponding to mctag = " << gMCTag << endl;
+    exit(0);
   }
-  gInputFile->Close();
-  if (outFileName != "none") gOutputFile->Close();
-  if (nTrees == 0){
-    cout << "WARNING: could not find any trees" << endl;
   }
-}
-
-
-
-// **************************************
-//   ConvertTree:  all the work is done here
-// **************************************
-
-void ConvertTree(TString treeName){
-
-  cout << endl << "CONVERTING THE TREE NAMED: " << treeName << endl;
-
-    // input and output tree names
-  TString inNT(treeName);
-  TString outNT("ntFSGlueX");
-
-    // setup for the input tree
-  TTree *inTree = (TTree*) gInputFile->Get(inNT);
 
 
    // **********************************************************************
-   // STEP 1:  PARSE FINAL STATE INFORMATION USING THE USER INFO IN THE TREE
+   // STEP 2:  SET UP THE INPUT AND OUTPUT FILES
    // **********************************************************************
 
      // **********************************************************************
-     // STEP 1A:  simple checks on the input root file
+     // STEP 2A:  set up the output file
+     // **********************************************************************
+
+  TFile* gOutputFile = NULL;
+  if (gOutFileName != "none") gOutputFile = new TFile(gOutFileName,"RECREATE");
+
+     // **********************************************************************
+     // STEP 2B:  set up the input tree
+     // **********************************************************************
+
+  TChain* gInTree = NULL;
+  TTree* gInTreeFirst = NULL;
+  {
+    TString inTreeName = "";
+    int nTrees = 0;
+    TFile* inputFile  = new TFile(gInFileNames[0]);
+    TList* fileList = inputFile->GetListOfKeys();
+    for (int i = 0; i < fileList->GetEntries(); i++){
+      TString treeName(fileList->At(i)->GetName());
+      if (treeName.Contains("_Tree")){
+        nTrees++;
+        if (nTrees == 1) inTreeName = treeName;
+        if (nTrees >= 2){
+          cout << "WARNING: found more than one tree -- only converting the first" << endl;
+          cout << "           extra tree = " << treeName << endl;
+        }
+      }
+    }
+    if (nTrees == 0){
+      cout << "ERROR: could not find any trees" << endl;
+      exit(0);
+    }
+    gInTreeFirst = (TTree*) inputFile->Get(inTreeName);
+    gInTree = new TChain(inTreeName);
+    for (unsigned int i = 0; i < gInFileNames.size(); i++){
+      gInTree->Add(gInFileNames[i]);
+    }
+  }
+
+   // **********************************************************************
+   // STEP 3:  PARSE FINAL STATE INFORMATION USING THE USER INFO IN THE TREE
+   // **********************************************************************
+
+     // **********************************************************************
+     // STEP 3A:  simple checks on the input root file
      // **********************************************************************
 
   cout << endl << endl << "DOING SIMPLE CHECKS ON THE INPUT ROOT FILE:" << endl << endl;
 
   double inTargetCenterZ = -1.0;
+  bool gUseParticles;
+  bool gUseMCParticles;
+  bool gUseMCInfo;
+  bool gUseKinFit;
   {
-    TList* userInfo = inTree->GetUserInfo();
+    bool isMC = false;
+    bool isMCAna = false;
+    bool isMCGen = false;
+    bool isMCGenTag = false;
+    bool hasRunNumber = false;
+    bool hasNumNeutralHypos = false;
+    bool hasNumThrown = false;
+    TObjArray* branchArray = gInTreeFirst->GetListOfBranches();
+    int nBranches = gInTreeFirst->GetNbranches();
+    for (int i = 0; i < nBranches; i++){
+      TString branch = branchArray->At(i)->GetName();
+      if (branch == "RunNumber") hasRunNumber = true;
+      if (branch == "NumNeutralHypos") hasNumNeutralHypos = true;
+      if (branch == "NumThrown") hasNumThrown = true;
+    }
+    if (hasRunNumber){ cout << "  OK: found RunNumber" << endl; }
+    else { cout << "  ERROR:  could not find RunNumber" << endl; exit(0); }
+    if (hasNumNeutralHypos){ cout << "  OK: found NumNeutralHypos" << endl; }
+    else { cout << "  OK: no NumNeutralHypos" << endl; }
+    if (hasNumThrown){ cout << "  OK: found NumThrown" << endl; }
+    else { cout << "  OK: no NumThrown" << endl; }
+    if (!hasNumNeutralHypos && !hasNumThrown){
+      cout << "  ERROR: no NumNeutralHypos and no NumThrown" << endl; exit(0); }
+    isMC    = hasNumThrown;
+    isMCGen = hasNumThrown && !hasNumNeutralHypos;
+    isMCAna = hasNumThrown && hasNumNeutralHypos;
+    if (!isMC){ cout << "    ==> treating this as ANALYZED DATA" << endl; } 
+    if (isMCGen){ cout << "    ==> treating this as THROWN MC" << endl; } 
+    if (isMCAna){ cout << "    ==> treating this as ANALYZED MC" << endl; } 
+    if (gInputIsMC == 1 && !isMC){
+      cout << "  OVERRIDING ERROR: format incompatible with MC" << endl; exit(0); }
+    if (gInputIsMC == 0 && isMCGen){
+      cout << "  OVERRIDING ERROR: format incompatible with ANALYZED DATA" << endl; exit(0); }
+    if (gInputIsMC == 0 && isMCAna){
+      isMC = false; isMCGen = false; isMCAna = false;
+      cout << "    OVERRIDING: treating this as ANALYZED DATA instead" << endl; }
+    if (isMCGen && gMCTag != "") isMCGenTag = true;
+    gUseParticles = (isMCAna || !isMC);
+    gUseMCParticles = (isMCAna || isMCGenTag);
+    gUseMCInfo = (isMC);
+    cout << "      info to include in output..." << endl;
+    cout << "          particle info:  "; 
+      if (gUseParticles){ cout << "YES"; } else{ cout << "NO"; } cout << endl;
+    cout << "          MC particle info:  "; 
+      if (gUseMCParticles){ cout << "YES"; } else{ cout << "NO"; } cout << endl;
+    cout << "          MC info:  "; 
+      if (gUseMCInfo){ cout << "YES"; } else{ cout << "NO"; } cout << endl;
+    TList* userInfo = gInTreeFirst->GetUserInfo();
         if (userInfo){ cout << "  OK: found UserInfo" << endl; }
         else { cout << "  ERROR:  could not find UserInfo" << endl; exit(0); }
-    TList* rootMothers = (TList*) userInfo->FindObject("ParticleNameList");
-        if (rootMothers){ cout << "  OK: found ParticleNameList" << endl; }
-        else { cout << "  ERROR:  could not find ParticleNameList" << endl; exit(0); }
-    TMap* rootDecayProductMap = (TMap*) userInfo->FindObject("DecayProductMap");
-        if (rootDecayProductMap){ cout << "  OK: found DecayProductMap" << endl; }
-        else { cout << "  ERROR:  could not find DecayProductMap" << endl; exit(0); }
-    TMap* rootNameToPIDMap = (TMap*) userInfo->FindObject("NameToPIDMap");
-        if (rootNameToPIDMap){ cout << "  OK: found NameToPIDMap" << endl; }
-        else { cout << "  ERROR:  could not find NameToPIDMap" << endl; exit(0); }
-    TMap* miscInfo = (TMap*) userInfo->FindObject("MiscInfoMap");
-        if (miscInfo){ cout << "  OK: found MiscInfoMap" << endl; }
-        else { cout << "  ERROR:  could not find MiscInfoMap" << endl; exit(0); }
-    TObjString* kinFitType = (TObjString*) miscInfo->GetValue("KinFitType");
-        if (kinFitType->GetString() != "" && 
-            kinFitType->GetString() != "0")
-             { cout << "  OK: found KinFitType = "  << kinFitType->GetString() << endl; }
-        else { cout << "  ERROR: bad KinFitType = " << kinFitType->GetString() << endl; exit(0); }
-    TObjString* tosTCZ = (TObjString*) miscInfo->GetValue("Target__CenterZ");
-        if (tosTCZ) 
-             { cout << "  OK: found Target__CenterZ = "  << tosTCZ->GetString() << endl; }
-        else { cout << "  ERROR: could not find Target__CenterZ " << endl; exit(0); }
-    TString tsTCZ(tosTCZ->GetString());
-        if (tsTCZ.IsFloat())
-             { string sTCZ(""); for (int i=0; i<tsTCZ.Length(); i++){ sTCZ += tsTCZ[i]; }
-               inTargetCenterZ = atof(sTCZ.c_str()); 
-               cout << "            inTargetCenterZ = " << inTargetCenterZ << endl; }
-        else { cout << "  ERROR: Target__CenterZ is not a number" << endl; exit(0); }
+    if (gUseParticles){
+      TList* rootMothers = (TList*) userInfo->FindObject("ParticleNameList");
+          if (rootMothers){ cout << "  OK: found ParticleNameList" << endl; }
+          else { cout << "  ERROR:  could not find ParticleNameList" << endl; exit(0); }
+      TMap* rootDecayProductMap = (TMap*) userInfo->FindObject("DecayProductMap");
+          if (rootDecayProductMap){ cout << "  OK: found DecayProductMap" << endl; }
+          else { cout << "  ERROR:  could not find DecayProductMap" << endl; exit(0); }
+      TMap* rootNameToPIDMap = (TMap*) userInfo->FindObject("NameToPIDMap");
+          if (rootNameToPIDMap){ cout << "  OK: found NameToPIDMap" << endl; }
+          else { cout << "  ERROR:  could not find NameToPIDMap" << endl; exit(0); }
+      TMap* miscInfo = (TMap*) userInfo->FindObject("MiscInfoMap");
+          if (miscInfo){ cout << "  OK: found MiscInfoMap" << endl; }
+          else { cout << "  ERROR:  could not find MiscInfoMap" << endl; exit(0); }
+      TObjString* kinFitType = (TObjString*) miscInfo->GetValue("KinFitType");
+          if (kinFitType && kinFitType->GetString() != "")
+               { cout << "  OK: found KinFitType = " << kinFitType->GetString() << endl; }
+          else { cout << "  ERROR:  could not find KinFitType" << endl; exit(0); }
+      gUseKinFit = (kinFitType->GetString() != "0");
+      TObjString* tosTCZ = (TObjString*) miscInfo->GetValue("Target__CenterZ");
+          if (tosTCZ) 
+               { cout << "  OK: found Target__CenterZ = "  << tosTCZ->GetString() << endl; }
+          else { cout << "  ERROR: could not find Target__CenterZ " << endl; exit(0); }
+      TString tsTCZ(tosTCZ->GetString());
+          if (tsTCZ.IsFloat())
+               { string sTCZ(""); for (int i=0; i<tsTCZ.Length(); i++){ sTCZ += tsTCZ[i]; }
+                 inTargetCenterZ = atof(sTCZ.c_str()); 
+                 cout << "            inTargetCenterZ = " << inTargetCenterZ << endl; }
+          else { cout << "  ERROR: Target__CenterZ is not a number" << endl; exit(0); }
+    }
   }
 
 
      // **********************************************************************
-     // STEP 1B:  extract particle names from the root file 
+     // STEP 3B:  extract particle names from the root file 
      // **********************************************************************
 
   cout << endl << endl << "READING PARTICLE NAMES FROM THE ROOT FILE:" << endl << endl;
 
-  map< TString, vector<TString> > decayProductMap;  // from mothers to daughters (glueXNames)
-  {
-    TList* userInfo = inTree->GetUserInfo();
+  map< TString, vector<TString> > gDecayProductMap;  // from mothers to daughters (glueXNames)
+  if (gUseParticles){
+    TList* userInfo = gInTreeFirst->GetUserInfo();
     vector<TString> eraseVector; // (to remove double-counting)
     TList* rootMothers = (TList*) userInfo->FindObject("ParticleNameList");
     TMap* rootDecayProductMap = (TMap*) userInfo->FindObject("DecayProductMap");
@@ -262,26 +368,34 @@ void ConvertTree(TString treeName){
           eraseVector.push_back(rootDaughter->GetString());
         }
       }
-      decayProductMap[rootMother->GetString()] = daughters;
+      gDecayProductMap[rootMother->GetString()] = daughters;
     }
     for (unsigned int i = 0; i < eraseVector.size(); i++){
-      decayProductMap.erase(eraseVector[i]);
+      gDecayProductMap.erase(eraseVector[i]);
+    }
+  }
+  if (!gUseParticles && gUseMCParticles){
+    cout << "  skipping, setting particles using mctag instead" << endl;
+    gDecayProductMap = GlueXDecayProductMap(gMCTagDecayCode1.Atoi(),gMCTagDecayCode2.Atoi());
+  }
+  if (gUseParticles || gUseMCParticles){
+    if (gDecayProductMap.size() == 0){
+      cout << endl << "  ERROR: no final state partices found" << endl;
+      exit(0);
     }
   }
 
      // **********************************************************************
-     // STEP 1C:  perform checks on the final state
+     // STEP 3C:  perform checks on the final state
      // **********************************************************************
 
   cout << endl << endl << "PERFORMING CHECKS ON THE FINAL STATE:" << endl << endl;
-  bool checkFSOkay = true;
-  {
-    if (decayProductMap.size() == 0){
-      cout << endl << "  ERROR: no final state partices found" << endl;
-      exit(0);
-    }
-    for (map<TString, vector<TString> >::const_iterator mItr = decayProductMap.begin();
-         mItr != decayProductMap.end(); mItr++){
+
+  bool gCheckFSOkay = true;
+  if (gDecayProductMap.size() == 0){ cout << "  skipping, no final state particles" << endl; }
+  else{
+    for (map<TString, vector<TString> >::const_iterator mItr = gDecayProductMap.begin();
+         mItr != gDecayProductMap.end(); mItr++){
       TString motherName = mItr->first;
       TString motherFSType = FSParticleType(motherName);
       if (motherFSType == "--") motherFSType = "** NOT USED **";
@@ -296,46 +410,47 @@ void ConvertTree(TString treeName){
       }
       if (motherFSType == "pi0" && (daughterNames.size() != 2 || 
             !(daughterFSTypes[0] == "gamma" && daughterFSTypes[1] == "gamma"))){
-        cout << "  ERROR: unrecognized pi0 decay" << endl;  checkFSOkay = false;
+        cout << "  ERROR: unrecognized pi0 decay" << endl;  gCheckFSOkay = false;
       }
       if (motherFSType == "eta" && (daughterNames.size() != 2 || 
             !(daughterFSTypes[0] == "gamma" && daughterFSTypes[1] == "gamma"))){
-        cout << "  ERROR: unrecognized eta decay" << endl;  checkFSOkay = false;
+        cout << "  ERROR: unrecognized eta decay" << endl;  gCheckFSOkay = false;
       }
       if (motherFSType == "Ks" && (daughterNames.size() != 2 || 
             !((daughterFSTypes[0] == "pi+" && daughterFSTypes[1] == "pi-") || 
               (daughterFSTypes[1] == "pi+" && daughterFSTypes[0] == "pi-")))){
-        cout << "  ERROR: unrecognized Ks decay" << endl;  checkFSOkay = false;
+        cout << "  ERROR: unrecognized Ks decay" << endl;  gCheckFSOkay = false;
       }
       if (motherFSType == "Lambda" && (daughterNames.size() != 2 || 
             !((daughterFSTypes[0] == "p+" && daughterFSTypes[1] == "pi-") || 
               (daughterFSTypes[1] == "p+" && daughterFSTypes[0] == "pi-")))){
-        cout << "  ERROR: unrecognized Lambda decay" << endl;  checkFSOkay = false;
+        cout << "  ERROR: unrecognized Lambda decay" << endl;  gCheckFSOkay = false;
       }
       if (motherFSType == "ALambda" && (daughterNames.size() != 2 || 
             !((daughterFSTypes[0] == "p-" && daughterFSTypes[1] == "pi+") || 
               (daughterFSTypes[1] == "p-" && daughterFSTypes[0] == "pi+")))){
-        cout << "  ERROR: unrecognized ALambda decay" << endl;  checkFSOkay = false;
+        cout << "  ERROR: unrecognized ALambda decay" << endl;  gCheckFSOkay = false;
       }
       if (motherName.Contains("Decaying") && motherFSType != "pi0"
                                           && motherFSType != "eta"
                                           && motherFSType != "Ks"
                                           && motherFSType != "Lambda"
                                           && motherFSType != "ALambda"){
-        cout << "  ERROR: unrecognized decaying particle: " << motherName << endl;  checkFSOkay = false;
+        cout << "  ERROR: unrecognized decaying particle: " << motherName << endl;  gCheckFSOkay = false;
       }
     }
   }
 
 
      // **********************************************************************
-     // STEP 1D:  extract PDG numbers from the root file (not used, just checking)
+     // STEP 3D:  extract PDG numbers from the root file (not used, just checking)
      // **********************************************************************
 
   cout << endl << endl << "READING PDG NUMBERS FROM THE ROOT FILE:" << endl << endl;
-  //map< TString, int > nameToPIDMap;  // map from name to PDG ID (not used)
-  {
-    TList* userInfo = inTree->GetUserInfo();
+
+  if (!gUseParticles){ cout << "  skipping, not using particle information" << endl; }
+  else{
+    TList* userInfo = gInTreeFirst->GetUserInfo();
     TMap* rootNameToPIDMap = (TMap*) userInfo->FindObject("NameToPIDMap");
     TMapIter tmapIter(rootNameToPIDMap);
     TObjString* rootName = (TObjString*) tmapIter();
@@ -350,15 +465,16 @@ void ConvertTree(TString treeName){
 
 
      // **********************************************************************
-     // STEP 1E:  put the particle names in the right order 
+     // STEP 3E:  put the particle names in the right order 
      // **********************************************************************
 
   cout << endl << endl << "PUTTING PARTICLES IN THE RIGHT ORDER AND SETTING INDICES:" << endl << endl;
 
-  vector< vector<TString> > orderedParticleNames;  // (glueXNames)
-  {
-    for (map<TString, vector<TString> >::const_iterator mItr = decayProductMap.begin();
-         mItr != decayProductMap.end(); mItr++){
+  vector< vector<TString> > gOrderedParticleNames;  // (glueXNames)
+  if (gDecayProductMap.size() == 0){ cout << "  skipping, no final state particles" << endl; }
+  else{
+    for (map<TString, vector<TString> >::const_iterator mItr = gDecayProductMap.begin();
+         mItr != gDecayProductMap.end(); mItr++){
       if (FSParticleType(mItr->first) != "--"){
         vector<TString> vp;
         vp.push_back(mItr->first);
@@ -371,187 +487,215 @@ void ConvertTree(TString treeName){
             vp.push_back(addp[0]);  vp.push_back(addp[1]);
           }
         }
-        orderedParticleNames.push_back(vp);
+        gOrderedParticleNames.push_back(vp);
       }
     }
-    for (unsigned int i = 0; i < orderedParticleNames.size(); i++){
-      for (unsigned int j = i + 1; j < orderedParticleNames.size(); j++){
-        if (FSParticleOrder(orderedParticleNames[j][0]) >
-            FSParticleOrder(orderedParticleNames[i][0])){
-          vector<TString> temp = orderedParticleNames[i];
-          orderedParticleNames[i] = orderedParticleNames[j];
-          orderedParticleNames[j] = temp;
+    for (unsigned int i = 0; i < gOrderedParticleNames.size(); i++){
+      for (unsigned int j = i + 1; j < gOrderedParticleNames.size(); j++){
+        if (FSParticleOrder(gOrderedParticleNames[j][0]) >
+            FSParticleOrder(gOrderedParticleNames[i][0])){
+          vector<TString> temp = gOrderedParticleNames[i];
+          gOrderedParticleNames[i] = gOrderedParticleNames[j];
+          gOrderedParticleNames[j] = temp;
         }
       }
     }
   }
-  pair<int,int> reconstructedFSCode = FSCode(orderedParticleNames);
-  int numFSNeutrals = 0;
-  for (unsigned int i = 0; i < orderedParticleNames.size(); i++){
-    numFSNeutrals += GlueXNeutralsCounter(orderedParticleNames[i][0]);
+  pair<int,int> gReconstructedFSCode = FSCode(gOrderedParticleNames);
+  int gNumFSNeutrals = 0;
+  for (unsigned int i = 0; i < gOrderedParticleNames.size(); i++){
+    gNumFSNeutrals += GlueXNeutralsCounter(gOrderedParticleNames[i][0]);
   }
-  cout << "  DecayCode1    = " << reconstructedFSCode.first << endl;
-  cout << "  DecayCode2    = " << reconstructedFSCode.second << endl;
-  cout << "  numFSNeutrals = " << numFSNeutrals << endl << endl;
 
-  outNT += "_";
-  outNT += reconstructedFSCode.second;
-  outNT += "_";
-  outNT += reconstructedFSCode.first;
+  TString gOutTreeName = "ntFSGlueX";
+  gOutTreeName += "_";
+  gOutTreeName += gReconstructedFSCode.second;
+  gOutTreeName += "_";
+  gOutTreeName += gReconstructedFSCode.first;
 
-  if (!checkFSOkay){
+  cout << endl;
+  cout << "  DecayCode1    = " << gReconstructedFSCode.first << endl;
+  cout << "  DecayCode2    = " << gReconstructedFSCode.second << endl;
+  cout << "  NumFSNeutrals = " << gNumFSNeutrals << endl;
+  cout << "  OutTreeName   = " << gOutTreeName << endl << endl;
+
+  if (!gCheckFSOkay){
     cout << "ERROR: problem parsing this final state." << endl;
     exit(0);
   }
 
      // **********************************************************************
-     // STEP 1F:  make maps from names to indices
+     // STEP 3F:  make maps from names to indices
      // **********************************************************************
 
-  map<TString, TString> mapGlueXNameToFSIndex;
-  map<TString, int> mapGlueXNameToParticleIndex;
-
+  map<TString, TString> gMapGlueXNameToFSIndex;
+  map<TString, int> gMapGlueXNameToParticleIndex;
   {
     int particleIndex = 0;
-    for (unsigned int im = 0; im < orderedParticleNames.size(); im++){
-    for (unsigned int id = 0; id < orderedParticleNames[im].size(); id++){
-      TString name = orderedParticleNames[im][id];
+    for (unsigned int im = 0; im < gOrderedParticleNames.size(); im++){
+    for (unsigned int id = 0; id < gOrderedParticleNames[im].size(); id++){
+      TString name = gOrderedParticleNames[im][id];
       TString fsIndex("");  fsIndex += (im+1);
       if (id == 1) fsIndex += "a";
       if (id == 2) fsIndex += "b";
       cout << fsIndex << ". ";
       cout << name << " ";
-      mapGlueXNameToFSIndex[name] = fsIndex;
-      mapGlueXNameToParticleIndex[name] = particleIndex++;
-      cout << "(" << mapGlueXNameToParticleIndex[name] << ")   ";
+      gMapGlueXNameToFSIndex[name] = fsIndex;
+      gMapGlueXNameToParticleIndex[name] = particleIndex++;
+      cout << "(" << gMapGlueXNameToParticleIndex[name] << ")   ";
     }
     cout << endl;
     }
-    cout << endl << endl << endl;
+    cout << endl;
   }
 
 
 
    // **********************************************************************
-   // STEP 2:  SET UP TO READ THE INPUT TREE (IN ANALYSIS TREE FORMAT)
+   // STEP 4:  SET UP TO READ THE INPUT TREE (IN ANALYSIS TREE FORMAT)
    // **********************************************************************
 
-   if (!gOutputFile) return;
+   if (!gOutputFile) return 0;
 
         // ******************************
-        // ***** 2A. SIMULATED DATA *****
+        // ***** 4A. SIMULATED DATA *****
         // ******************************
 
         //   *** Thrown Non-Particle Data ***
 
   UInt_t inNumThrown = 0;
-      if (gIsMC) inTree->SetBranchAddress("NumThrown", &inNumThrown);
+      TBranch* brNumThrown = nullptr;
+      if (gUseMCInfo) gInTree->SetBranchAddress("NumThrown", &inNumThrown, &brNumThrown);
 
 
         //   *** Thrown Beam Particle ***
 
   Float_t inThrownBeam__GeneratedEnergy = -1.0;
-      if (gIsMC) inTree->SetBranchAddress("ThrownBeam__GeneratedEnergy", &inThrownBeam__GeneratedEnergy);
+      if (gUseMCInfo) gInTree->SetBranchAddress("ThrownBeam__GeneratedEnergy", &inThrownBeam__GeneratedEnergy);
 
 
         //   *** Thrown Products ***
 
   Int_t  inThrown__ParentIndex[MAXTHROWN] = {};   
-      if (gIsMC) inTree->SetBranchAddress("Thrown__ParentIndex", inThrown__ParentIndex);
+      if (gUseMCInfo) gInTree->SetBranchAddress("Thrown__ParentIndex", inThrown__ParentIndex);
   Int_t  inThrown__PID[MAXTHROWN] = {};   
-      if (gIsMC) inTree->SetBranchAddress("Thrown__PID", inThrown__PID);
+      if (gUseMCInfo) gInTree->SetBranchAddress("Thrown__PID", inThrown__PID);
   Int_t  inThrown__MatchID[MAXTHROWN] = {};   
-      if (gIsMC) inTree->SetBranchAddress("Thrown__MatchID", inThrown__MatchID);
+      if (gUseMCParticles&&gUseParticles) gInTree->SetBranchAddress("Thrown__MatchID", inThrown__MatchID);
   Float_t  inThrown__MatchFOM[MAXTHROWN] = {};   
-      if (gIsMC) inTree->SetBranchAddress("Thrown__MatchFOM", inThrown__MatchFOM);
+      if (gUseMCParticles&&gUseParticles) gInTree->SetBranchAddress("Thrown__MatchFOM", inThrown__MatchFOM);
   TClonesArray *inThrown__P4 = NULL;
-      if (gIsMC) inThrown__P4 = new TClonesArray("TLorentzVector", MAXTHROWN);
-      if (gIsMC) inTree->GetBranch       ("Thrown__P4")->SetAutoDelete(kFALSE);
-      if (gIsMC) inTree->SetBranchAddress("Thrown__P4",&(inThrown__P4));
+      if (gUseMCParticles) inThrown__P4 = new TClonesArray("TLorentzVector", MAXTHROWN);
+      if (gUseMCParticles) gInTree->GetBranch       ("Thrown__P4")->SetAutoDelete(kFALSE);
+      if (gUseMCParticles) gInTree->SetBranchAddress("Thrown__P4",&(inThrown__P4));
 
 
 
         // **************************************
-        // ***** 2B. COMBO-INDEPENDENT DATA *****
+        // ***** 4B. COMBO-INDEPENDENT DATA *****
         // **************************************
 
         //   *** Non-Particle Data ***
 
   UInt_t inRunNumber = 0;        
-      inTree->SetBranchAddress("RunNumber", &inRunNumber);
+      TBranch* brRunNumber = nullptr;
+      gInTree->SetBranchAddress("RunNumber", &inRunNumber,&brRunNumber);
   ULong64_t inEventNumber = 0;
-      inTree->SetBranchAddress("EventNumber", &inEventNumber);
+      TBranch* brEventNumber = nullptr;
+      gInTree->SetBranchAddress("EventNumber", &inEventNumber,&brEventNumber);
   TLorentzVector* inX4_Production = NULL;
-      inTree->SetBranchAddress("X4_Production", &inX4_Production);
+      if (gUseParticles) gInTree->SetBranchAddress("X4_Production", &inX4_Production);
   UInt_t inNumBeam = 0;
-      inTree->SetBranchAddress("NumBeam", &inNumBeam);
+      TBranch* brNumBeam = nullptr;
+      if (gUseParticles) gInTree->SetBranchAddress("NumBeam", &inNumBeam,&brNumBeam);
   UInt_t inNumChargedHypos = 0;
-      inTree->SetBranchAddress("NumChargedHypos", &inNumChargedHypos);
+      TBranch* brNumChargedHypos = nullptr;
+      if (gUseParticles) gInTree->SetBranchAddress("NumChargedHypos", &inNumChargedHypos,&brNumChargedHypos);
   UInt_t inNumNeutralHypos = 0; 
-      inTree->SetBranchAddress("NumNeutralHypos", &inNumNeutralHypos);
+      TBranch* brNumNeutralHypos = nullptr;
+      if (gUseParticles) gInTree->SetBranchAddress("NumNeutralHypos", &inNumNeutralHypos,&brNumNeutralHypos);
   UInt_t inNumCombos = 0;
-      inTree->SetBranchAddress("NumCombos", &inNumCombos);
+      TBranch* brNumCombos = nullptr;
+      if (gUseParticles) gInTree->SetBranchAddress("NumCombos", &inNumCombos,&brNumCombos);
   UChar_t inNumUnusedTracks = 0;
-      inTree->SetBranchAddress("NumUnusedTracks", &inNumUnusedTracks);
+      TBranch* brNumUnusedTracks = nullptr;
+      if (gUseParticles) gInTree->SetBranchAddress("NumUnusedTracks", &inNumUnusedTracks,&brNumUnusedTracks);
   Bool_t inIsThrownTopology = false;
-      if (gIsMC) inTree->SetBranchAddress("IsThrownTopology", &inIsThrownTopology);
+      if (gUseParticles&&gUseMCParticles) gInTree->SetBranchAddress("IsThrownTopology", &inIsThrownTopology);
 
 
         //   *** Beam Particles (indexed using ComboBeam__BeamIndex) ***
 
-  TClonesArray *inBeam__P4_Measured = new TClonesArray("TLorentzVector",MAXBEAM);
-      inTree->GetBranch       ("Beam__P4_Measured")->SetAutoDelete(kFALSE);
-      inTree->SetBranchAddress("Beam__P4_Measured", &(inBeam__P4_Measured));
-  TClonesArray *inBeam__X4_Measured = new TClonesArray("TLorentzVector",MAXBEAM);
-      inTree->GetBranch       ("Beam__X4_Measured")->SetAutoDelete(kFALSE);
-      inTree->SetBranchAddress("Beam__X4_Measured", &(inBeam__X4_Measured));
+  TClonesArray *inBeam__P4_Measured;
+      if (gUseParticles) inBeam__P4_Measured = new TClonesArray("TLorentzVector",MAXBEAM);
+      if (gUseParticles) gInTree->GetBranch       ("Beam__P4_Measured")->SetAutoDelete(kFALSE);
+      if (gUseParticles) gInTree->SetBranchAddress("Beam__P4_Measured", &(inBeam__P4_Measured));
+  TClonesArray *inBeam__X4_Measured;
+      if (gUseParticles) inBeam__X4_Measured = new TClonesArray("TLorentzVector",MAXBEAM);
+      if (gUseParticles) gInTree->GetBranch       ("Beam__X4_Measured")->SetAutoDelete(kFALSE);
+      if (gUseParticles) gInTree->SetBranchAddress("Beam__X4_Measured", &(inBeam__X4_Measured));
 
 
         //   *** Charged Track Hypotheses (indexed using <particleName>__ChargedIndex) ***
 
-  TClonesArray *inChargedHypo__P4_Measured = new TClonesArray("TLorentzVector",MAXTRACKS);
-      inTree->GetBranch       ("ChargedHypo__P4_Measured")->SetAutoDelete(kFALSE);
-      inTree->SetBranchAddress("ChargedHypo__P4_Measured",&(inChargedHypo__P4_Measured));
+  TClonesArray *inChargedHypo__P4_Measured;
+      if (gUseParticles) inChargedHypo__P4_Measured = new TClonesArray("TLorentzVector",MAXTRACKS);
+      if (gUseParticles) gInTree->GetBranch       ("ChargedHypo__P4_Measured")->SetAutoDelete(kFALSE);
+      if (gUseParticles) gInTree->SetBranchAddress("ChargedHypo__P4_Measured",&(inChargedHypo__P4_Measured));
   Float_t inChargedHypo__ChiSq_Tracking[MAXTRACKS] = {}; 
-      inTree->SetBranchAddress("ChargedHypo__ChiSq_Tracking", inChargedHypo__ChiSq_Tracking);
+      if (gUseParticles) gInTree->SetBranchAddress("ChargedHypo__ChiSq_Tracking", inChargedHypo__ChiSq_Tracking);
   UInt_t  inChargedHypo__NDF_Tracking[MAXTRACKS] = {};   
-      inTree->SetBranchAddress("ChargedHypo__NDF_Tracking", inChargedHypo__NDF_Tracking);
+      if (gUseParticles) gInTree->SetBranchAddress("ChargedHypo__NDF_Tracking", inChargedHypo__NDF_Tracking);
+  UInt_t  inChargedHypo__NDF_DCdEdx[MAXTRACKS] = {};   
+      if (gUseParticles && gAddPID) gInTree->SetBranchAddress("ChargedHypo__NDF_DCdEdx", inChargedHypo__NDF_DCdEdx);
+  Float_t inChargedHypo__ChiSq_DCdEdx[MAXTRACKS] = {}; 
+      if (gUseParticles && gAddPID) gInTree->SetBranchAddress("ChargedHypo__ChiSq_DCdEdx", inChargedHypo__ChiSq_DCdEdx);
+  Float_t inChargedHypo__dEdx_CDC[MAXTRACKS] = {}; 
+      if (gUseParticles && gAddPID) gInTree->SetBranchAddress("ChargedHypo__dEdx_CDC", inChargedHypo__dEdx_CDC);
+  Float_t inChargedHypo__dEdx_FDC[MAXTRACKS] = {}; 
+      if (gUseParticles && gAddPID) gInTree->SetBranchAddress("ChargedHypo__dEdx_FDC", inChargedHypo__dEdx_FDC);
 
 
         //   *** Neutral Particle Hypotheses (indexed using <particleName>__NeutralIndex) ***
 
-  TClonesArray *inNeutralHypo__P4_Measured = new TClonesArray("TLorentzVector",MAXNEUTRALS);
-      inTree->GetBranch       ("NeutralHypo__P4_Measured")->SetAutoDelete(kFALSE);
-      inTree->SetBranchAddress("NeutralHypo__P4_Measured",&(inNeutralHypo__P4_Measured));
+  TClonesArray *inNeutralHypo__P4_Measured;
+      if (gUseParticles) inNeutralHypo__P4_Measured = new TClonesArray("TLorentzVector",MAXNEUTRALS);
+      if (gUseParticles) gInTree->GetBranch       ("NeutralHypo__P4_Measured")->SetAutoDelete(kFALSE);
+      if (gUseParticles) gInTree->SetBranchAddress("NeutralHypo__P4_Measured",&(inNeutralHypo__P4_Measured));
   Float_t inNeutralHypo__ShowerQuality[MAXNEUTRALS] = {};
-      inTree->SetBranchAddress("NeutralHypo__ShowerQuality", inNeutralHypo__ShowerQuality);
+      if (gUseParticles) gInTree->SetBranchAddress("NeutralHypo__ShowerQuality", inNeutralHypo__ShowerQuality);
 
 
         // ************************************
-        // ***** 2C. COMBO-DEPENDENT DATA *****
+        // ***** 4C. COMBO-DEPENDENT DATA *****
         // ************************************
 
         //   *** Particle-Independent Data (indexed by combo) ***
 
   Float_t inRFTime_Measured[MAXCOMBOS] = {};
-      inTree->SetBranchAddress("RFTime_Measured", inRFTime_Measured);  
+      if (gUseParticles) gInTree->SetBranchAddress("RFTime_Measured", inRFTime_Measured);  
   //Float_t inRFTime_KinFit[MAXCOMBOS] = {};
-  //    inTree->SetBranchAddress("RFTime_KinFit", inRFTime_KinFit);  
+  //    if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress("RFTime_KinFit", inRFTime_KinFit);  
   Float_t inChiSq_KinFit[MAXCOMBOS] = {};
-      inTree->SetBranchAddress("ChiSq_KinFit", inChiSq_KinFit);
+      if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress("ChiSq_KinFit", inChiSq_KinFit);
   UInt_t inNDF_KinFit[MAXCOMBOS] = {};
-      inTree->SetBranchAddress("NDF_KinFit", inNDF_KinFit);
+      if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress("NDF_KinFit", inNDF_KinFit);
   Float_t inEnergy_Unused[MAXCOMBOS] = {};
-      inTree->SetBranchAddress("Energy_UnusedShowers", inEnergy_Unused);
+      if (gUseParticles) gInTree->SetBranchAddress("Energy_UnusedShowers", inEnergy_Unused);
 
 
         //   *** Combo Beam Particles (indexed by combo) ***
 
   Int_t inBeamIndex[MAXCOMBOS] = {};
-      inTree->SetBranchAddress("ComboBeam__BeamIndex", inBeamIndex);
-  TClonesArray *inBeam__P4_KinFit = new TClonesArray("TLorentzVector",MAXCOMBOS);
-      inTree->GetBranch       ("ComboBeam__P4_KinFit")->SetAutoDelete(kFALSE);
-      inTree->SetBranchAddress("ComboBeam__P4_KinFit", &(inBeam__P4_KinFit));
+      if (gUseParticles) gInTree->SetBranchAddress("ComboBeam__BeamIndex", inBeamIndex);
+  TClonesArray *inBeam__P4_KinFit;
+      if (gUseParticles && gUseKinFit) inBeam__P4_KinFit = new TClonesArray("TLorentzVector",MAXCOMBOS);
+      if (gUseParticles && gUseKinFit) gInTree->GetBranch       ("ComboBeam__P4_KinFit")->SetAutoDelete(kFALSE);
+      if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress("ComboBeam__P4_KinFit", &(inBeam__P4_KinFit));
+  TClonesArray *inBeam__X4_KinFit;
+      if (gUseParticles && gUseKinFit) inBeam__X4_KinFit = new TClonesArray("TLorentzVector",MAXCOMBOS);
+      if (gUseParticles && gUseKinFit) gInTree->GetBranch       ("ComboBeam__X4_KinFit")->SetAutoDelete(kFALSE);
+      if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress("ComboBeam__X4_KinFit", &(inBeam__X4_KinFit));
 
 
         //   *** Combo Tracks ***
@@ -561,33 +705,45 @@ void ConvertTree(TString treeName){
 
   TClonesArray *inP4_KinFit[MAXPARTICLES] = {}; 
   Int_t inChargedIndex[MAXPARTICLES][MAXCOMBOS] = {};
+  Float_t inBeta_Timing[MAXPARTICLES][MAXCOMBOS] = {};
+  Float_t inChiSq_Timing[MAXPARTICLES][MAXCOMBOS] = {};
   Int_t inNeutralIndex[MAXPARTICLES][MAXCOMBOS] = {};
+  TClonesArray *inX4[MAXPARTICLES] = {};
+  Float_t inPathLengthSigma[MAXPARTICLES][MAXCOMBOS] = {};
   {
-    for (unsigned int im = 0; im < orderedParticleNames.size(); im++){
-    for (unsigned int id = 0; id < orderedParticleNames[im].size(); id++){
-      TString name = orderedParticleNames[im][id];
-      int pIndex = mapGlueXNameToParticleIndex[name];
+    for (unsigned int im = 0; im < gOrderedParticleNames.size(); im++){
+    for (unsigned int id = 0; id < gOrderedParticleNames[im].size(); id++){
+      TString name = gOrderedParticleNames[im][id];
+      int pIndex = gMapGlueXNameToParticleIndex[name];
 
         //   *** Combo Tracks ***
 
       if (GlueXParticleClass(name) == "Charged"){
         TString var_P4_KinFit(name); var_P4_KinFit += "__P4_KinFit";
-            inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
-            inTree->GetBranch       (var_P4_KinFit)->SetAutoDelete(kFALSE);
-            inTree->SetBranchAddress(var_P4_KinFit,&(inP4_KinFit[pIndex]));
+            if (gUseParticles && gUseKinFit) inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
+            if (gUseParticles && gUseKinFit) gInTree->GetBranch       (var_P4_KinFit)->SetAutoDelete(kFALSE);
+            if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress(var_P4_KinFit,&(inP4_KinFit[pIndex]));
         TString var_ChargedIndex(name);  var_ChargedIndex += "__ChargedIndex";  
-            inTree->SetBranchAddress(var_ChargedIndex,inChargedIndex[pIndex]);
+            if (gUseParticles) gInTree->SetBranchAddress(var_ChargedIndex,inChargedIndex[pIndex]);
+        TString var_Beta_Timing(name);  
+            if (gUseParticles && !gUseKinFit) var_Beta_Timing += "__Beta_Timing_Measured";
+            if (gUseParticles &&  gUseKinFit) var_Beta_Timing += "__Beta_Timing_KinFit";
+            if (gUseParticles && gAddPID) gInTree->SetBranchAddress(var_Beta_Timing,inBeta_Timing[pIndex]);
+        TString var_ChiSq_Timing(name);  
+            if (gUseParticles && !gUseKinFit) var_ChiSq_Timing += "__ChiSq_Timing_Measured";
+            if (gUseParticles &&  gUseKinFit) var_ChiSq_Timing += "__ChiSq_Timing_KinFit";
+            if (gUseParticles && gAddPID) gInTree->SetBranchAddress(var_ChiSq_Timing,inChiSq_Timing[pIndex]);
       }
 
         //   *** Combo Neutrals ***
 
       if (GlueXParticleClass(name) == "Neutral"){
         TString var_P4_KinFit(name); var_P4_KinFit += "__P4_KinFit";
-            inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
-            inTree->GetBranch       (var_P4_KinFit)->SetAutoDelete(kFALSE);
-            inTree->SetBranchAddress(var_P4_KinFit,&(inP4_KinFit[pIndex]));
+            if (gUseParticles && gUseKinFit) inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
+            if (gUseParticles && gUseKinFit) gInTree->GetBranch       (var_P4_KinFit)->SetAutoDelete(kFALSE);
+            if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress(var_P4_KinFit,&(inP4_KinFit[pIndex]));
         TString var_NeutralIndex(name);  var_NeutralIndex += "__NeutralIndex";  
-            inTree->SetBranchAddress(var_NeutralIndex,inNeutralIndex[pIndex]);
+            if (gUseParticles) gInTree->SetBranchAddress(var_NeutralIndex,inNeutralIndex[pIndex]);
       }
 
         //   *** Combo Decaying Particles ***
@@ -595,89 +751,138 @@ void ConvertTree(TString treeName){
       if (GlueXParticleClass(name).Contains("Decaying")){
       }
 
+      if (GlueXParticleClass(name) == "DecayingToCharged"){
+        TString var_X4(name); var_X4 += "__X4";
+            if (gUseParticles && gUseKinFit) inX4[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
+            if (gUseParticles && gUseKinFit) gInTree->GetBranch       (var_X4)->SetAutoDelete(kFALSE);
+            if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress(var_X4,&(inX4[pIndex]));
+        TString var_PathLengthSigma(name);  var_PathLengthSigma += "__PathLengthSigma";
+            if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress(var_PathLengthSigma,inPathLengthSigma[pIndex]);
+      }
+
     }
     }
   }
 
 
    // **********************************************************************
-   // STEP 3:  SET UP THE OUTPUT TREE INFORMATION (IN FSROOT FORMAT)
+   // STEP 5:  SET UP THE OUTPUT TREE INFORMATION (IN FSROOT FORMAT)
    // **********************************************************************
 
   gOutputFile->cd();
-  TTree outTree(outNT, outNT);
+  TTree *gOutTree = new TTree(gOutTreeName, gOutTreeName);
+  if (!gOutTree){
+    cout << "ERROR:  problem with the output tree." << endl;
+    exit(0);
+  }
 
     // non-particle information
 
-  double outRunNumber;        outTree.Branch("Run",             &outRunNumber,       "Run/D");
-  double outEventNumber;      outTree.Branch("Event",           &outEventNumber,     "Event/D");
-  double outChi2;             outTree.Branch("Chi2",            &outChi2,            "Chi2/D");
-  double outChi2DOF;          outTree.Branch("Chi2DOF",         &outChi2DOF,         "Chi2DOF/D");
-  double outRFTime;           outTree.Branch("RFTime",          &outRFTime,          "RFTime/D");
-  double outRFDeltaT;         outTree.Branch("RFDeltaT",        &outRFDeltaT,        "RFDeltaT/D");
-  double outEnUnusedSh;       outTree.Branch("EnUnusedSh",      &outEnUnusedSh,      "EnUnusedSh/D");
-  double outNumUnusedTracks;  outTree.Branch("NumUnusedTracks", &outNumUnusedTracks, "NumUnusedTracks/D");
-  double outNumNeutralHypos;  outTree.Branch("NumNeutralHypos", &outNumNeutralHypos, "NumNeutralHypos/D");
-  double outNumBeam;          outTree.Branch("NumBeam",         &outNumBeam,         "NumBeam/D");
-  double outNumCombos;        outTree.Branch("NumCombos",       &outNumCombos,       "NumCombos/D");
-  double outProdVx;           outTree.Branch("ProdVx",          &outProdVx,          "ProdVx/D");
-  double outProdVy;           outTree.Branch("ProdVy",          &outProdVy,          "ProdVy/D");
-  double outProdVz;           outTree.Branch("ProdVz",          &outProdVz,          "ProdVz/D");
-  double outProdVt;           outTree.Branch("ProdVt",          &outProdVt,          "ProdVt/D");
-  double outPxPB;             outTree.Branch("PxPB",            &outPxPB,            "PxPB/D");
-  double outPyPB;             outTree.Branch("PyPB",            &outPyPB,            "PyPB/D");
-  double outPzPB;             outTree.Branch("PzPB",            &outPzPB,            "PzPB/D");
-  double outEnPB;             outTree.Branch("EnPB",            &outEnPB,            "EnPB/D");
-  double outRPxPB;            outTree.Branch("RPxPB",           &outRPxPB,           "RPxPB/D");
-  double outRPyPB;            outTree.Branch("RPyPB",           &outRPyPB,           "RPyPB/D");
-  double outRPzPB;            outTree.Branch("RPzPB",           &outRPzPB,           "RPzPB/D");
-  double outREnPB;            outTree.Branch("REnPB",           &outREnPB,           "REnPB/D");
+  double outRunNumber;                           gOutTree->Branch("Run",             &outRunNumber);
+  double outEventNumber;                         gOutTree->Branch("Event",           &outEventNumber);
+  double outChi2;             if (gUseParticles && gUseKinFit) 
+                                                 gOutTree->Branch("Chi2",            &outChi2);
+  double outChi2DOF;          if (gUseParticles && gUseKinFit)
+                                                 gOutTree->Branch("Chi2DOF",         &outChi2DOF);
+  double outRFTime;           if (gUseParticles) gOutTree->Branch("RFTime",          &outRFTime);
+  double outRFDeltaT;         if (gUseParticles) gOutTree->Branch("RFDeltaT",        &outRFDeltaT);
+  double outEnUnusedSh;       if (gUseParticles) gOutTree->Branch("EnUnusedSh",      &outEnUnusedSh);
+  double outNumUnusedTracks;  if (gUseParticles) gOutTree->Branch("NumUnusedTracks", &outNumUnusedTracks);
+  double outNumNeutralHypos;  if (gUseParticles) gOutTree->Branch("NumNeutralHypos", &outNumNeutralHypos);
+  double outPolarization;     if (gUsePolarization) gOutTree->Branch("PolarizationAngle", &outPolarization);
+  double outNumBeam;          if (gUseParticles) gOutTree->Branch("NumBeam",         &outNumBeam);
+  double outNumCombos;        if (gUseParticles) gOutTree->Branch("NumCombos",       &outNumCombos);
+  double outProdVx;           if (gUseParticles) gOutTree->Branch("ProdVx",          &outProdVx);
+  double outProdVy;           if (gUseParticles) gOutTree->Branch("ProdVy",          &outProdVy);
+  double outProdVz;           if (gUseParticles) gOutTree->Branch("ProdVz",          &outProdVz);
+  double outProdVt;           if (gUseParticles) gOutTree->Branch("ProdVt",          &outProdVt);
+  double outPxPB;             if (gUseParticles && gUseKinFit)
+                                                 gOutTree->Branch("PxPB",            &outPxPB);
+  double outPyPB;             if (gUseParticles && gUseKinFit)
+                                                 gOutTree->Branch("PyPB",            &outPyPB);
+  double outPzPB;             if (gUseParticles && gUseKinFit)
+                                                 gOutTree->Branch("PzPB",            &outPzPB);
+  double outEnPB;             if (gUseParticles && gUseKinFit)
+                                                 gOutTree->Branch("EnPB",            &outEnPB);
+  double outRPxPB;            if (gUseParticles) gOutTree->Branch("RPxPB",           &outRPxPB);
+  double outRPyPB;            if (gUseParticles) gOutTree->Branch("RPyPB",           &outRPyPB);
+  double outRPzPB;            if (gUseParticles) gOutTree->Branch("RPzPB",           &outRPzPB);
+  double outREnPB;            if (gUseParticles) gOutTree->Branch("REnPB",           &outREnPB);
 
     // MC information
 
-  double outMCPxPB;        if (gIsMC) outTree.Branch("MCPxPB",      &outMCPxPB,      "MCPxPB/D");
-  double outMCPyPB;        if (gIsMC) outTree.Branch("MCPyPB",      &outMCPyPB,      "MCPyPB/D");
-  double outMCPzPB;        if (gIsMC) outTree.Branch("MCPzPB",      &outMCPzPB,      "MCPzPB/D");
-  double outMCEnPB;        if (gIsMC) outTree.Branch("MCEnPB",      &outMCEnPB,      "MCEnPB/D");
-  double outMCDecayCode1;  if (gIsMC) outTree.Branch("MCDecayCode1",&outMCDecayCode1,"MCDecayCode1/D");
-  double outMCDecayCode2;  if (gIsMC) outTree.Branch("MCDecayCode2",&outMCDecayCode2,"MCDecayCode2/D");
-  double outMCExtras;      if (gIsMC) outTree.Branch("MCExtras",    &outMCExtras,    "MCExtras/D");
-  double outMCSignal;      if (gIsMC) outTree.Branch("MCSignal",    &outMCSignal,    "MCSignal/D");
+  double outMCPxPB;        if (gUseMCParticles) gOutTree->Branch("MCPxPB", &outMCPxPB);
+  double outMCPyPB;        if (gUseMCParticles) gOutTree->Branch("MCPyPB", &outMCPyPB);
+  double outMCPzPB;        if (gUseMCParticles) gOutTree->Branch("MCPzPB", &outMCPzPB);
+  double outMCEnPB;        if (gUseMCInfo) gOutTree->Branch("MCEnPB",      &outMCEnPB);
+  double outMCDecayCode1;  if (gUseMCInfo) gOutTree->Branch("MCDecayCode1",&outMCDecayCode1);
+  double outMCDecayCode2;  if (gUseMCInfo) gOutTree->Branch("MCDecayCode2",&outMCDecayCode2);
+  double outMCExtras;      if (gUseMCInfo) gOutTree->Branch("MCExtras",    &outMCExtras);
+  double outMCSignal;      if (gUseMCParticles&&gUseParticles) gOutTree->Branch("MCSignal", &outMCSignal);
+  double outMCDecayParticle1;   double outMCDecayParticle2;   double outMCDecayParticle3;
+  double outMCDecayParticle4;   double outMCDecayParticle5;   double outMCDecayParticle6;
+  if (gUseMCInfo) gOutTree->Branch("MCDecayParticle1",&outMCDecayParticle1);
+  if (gUseMCInfo) gOutTree->Branch("MCDecayParticle2",&outMCDecayParticle2);
+  if (gUseMCInfo) gOutTree->Branch("MCDecayParticle3",&outMCDecayParticle3);
+  if (gUseMCInfo) gOutTree->Branch("MCDecayParticle4",&outMCDecayParticle4);
+  if (gUseMCInfo) gOutTree->Branch("MCDecayParticle5",&outMCDecayParticle5);
+  if (gUseMCInfo) gOutTree->Branch("MCDecayParticle6",&outMCDecayParticle6);
 
     // particle information
 
   double   outPx[MAXPARTICLES]={},   outPy[MAXPARTICLES]={},   outPz[MAXPARTICLES]={},   outEn[MAXPARTICLES]={};
   double  outRPx[MAXPARTICLES]={},  outRPy[MAXPARTICLES]={},  outRPz[MAXPARTICLES]={},  outREn[MAXPARTICLES]={};
   double outMCPx[MAXPARTICLES]={}, outMCPy[MAXPARTICLES]={}, outMCPz[MAXPARTICLES]={}, outMCEn[MAXPARTICLES]={};
+  double outVeeL[MAXPARTICLES]={}, outVeeLSigma[MAXPARTICLES]={};
   double outTkChi2[MAXPARTICLES]={}, outTkNDF[MAXPARTICLES]={};
+  double outTkDEDXChi2[MAXPARTICLES]={}, outTkDEDXNDF[MAXPARTICLES]={}; 
+  double outTkDEDXCDC[MAXPARTICLES]={}, outTkDEDXFDC[MAXPARTICLES]={}; 
+  double outTkTOFBeta[MAXPARTICLES]={}, outTkTOFChi2[MAXPARTICLES]={}; 
   double outShQuality[MAXPARTICLES]={};
   {
-    for (unsigned int im = 0; im < orderedParticleNames.size(); im++){
-    for (unsigned int id = 0; id < orderedParticleNames[im].size(); id++){
-      TString name = orderedParticleNames[im][id];
-      int pIndex = mapGlueXNameToParticleIndex[name];
-      TString fsIndex = mapGlueXNameToFSIndex[name];
-      TString vPx("PxP"); vPx += fsIndex; outTree.Branch(vPx,&outPx[pIndex],vPx+"/D");
-      TString vPy("PyP"); vPy += fsIndex; outTree.Branch(vPy,&outPy[pIndex],vPy+"/D");
-      TString vPz("PzP"); vPz += fsIndex; outTree.Branch(vPz,&outPz[pIndex],vPz+"/D");
-      TString vEn("EnP"); vEn += fsIndex; outTree.Branch(vEn,&outEn[pIndex],vEn+"/D");
-      TString vRPx("RPxP"); vRPx += fsIndex; outTree.Branch(vRPx,&outRPx[pIndex],vRPx+"/D");
-      TString vRPy("RPyP"); vRPy += fsIndex; outTree.Branch(vRPy,&outRPy[pIndex],vRPy+"/D");
-      TString vRPz("RPzP"); vRPz += fsIndex; outTree.Branch(vRPz,&outRPz[pIndex],vRPz+"/D");
-      TString vREn("REnP"); vREn += fsIndex; outTree.Branch(vREn,&outREn[pIndex],vREn+"/D");
-      TString vMCPx("MCPxP"); vMCPx += fsIndex; if (gIsMC) outTree.Branch(vMCPx,&outMCPx[pIndex],vMCPx+"/D");
-      TString vMCPy("MCPyP"); vMCPy += fsIndex; if (gIsMC) outTree.Branch(vMCPy,&outMCPy[pIndex],vMCPy+"/D");
-      TString vMCPz("MCPzP"); vMCPz += fsIndex; if (gIsMC) outTree.Branch(vMCPz,&outMCPz[pIndex],vMCPz+"/D");
-      TString vMCEn("MCEnP"); vMCEn += fsIndex; if (gIsMC) outTree.Branch(vMCEn,&outMCEn[pIndex],vMCEn+"/D");
-      if (GlueXParticleClass(name) == "Charged"){
-        TString vTkNDF("TkNDFP"); vTkNDF += fsIndex;
-            outTree.Branch(vTkNDF,&outTkNDF[pIndex],vTkNDF+"/D");
-        TString vTkChi2("TkChi2P"); vTkChi2 += fsIndex;
-            outTree.Branch(vTkChi2,&outTkChi2[pIndex],vTkChi2+"/D");
+    for (unsigned int im = 0; im < gOrderedParticleNames.size(); im++){
+    for (unsigned int id = 0; id < gOrderedParticleNames[im].size(); id++){
+      TString name = gOrderedParticleNames[im][id];
+      int pIndex = gMapGlueXNameToParticleIndex[name];
+      TString fsIndex = gMapGlueXNameToFSIndex[name];
+      if (gUseParticles && gUseKinFit){
+        TString vPx("PxP");   vPx  += fsIndex; gOutTree->Branch(vPx, &outPx [pIndex]);
+        TString vPy("PyP");   vPy  += fsIndex; gOutTree->Branch(vPy, &outPy [pIndex]);
+        TString vPz("PzP");   vPz  += fsIndex; gOutTree->Branch(vPz, &outPz [pIndex]);
+        TString vEn("EnP");   vEn  += fsIndex; gOutTree->Branch(vEn, &outEn [pIndex]);
       }
-      if (GlueXParticleClass(name) == "Neutral"){
-        TString vQual("ShQualityP"); vQual += fsIndex;
-            outTree.Branch(vQual, &outShQuality[pIndex], vQual+"/D");
+      if (gUseParticles){
+        TString vRPx("RPxP"); vRPx += fsIndex; gOutTree->Branch(vRPx,&outRPx[pIndex]);
+        TString vRPy("RPyP"); vRPy += fsIndex; gOutTree->Branch(vRPy,&outRPy[pIndex]);
+        TString vRPz("RPzP"); vRPz += fsIndex; gOutTree->Branch(vRPz,&outRPz[pIndex]);
+        TString vREn("REnP"); vREn += fsIndex; gOutTree->Branch(vREn,&outREn[pIndex]);
+        if (GlueXParticleClass(name) == "Charged"){
+          TString vTkNDF("TkNDFP");   vTkNDF  += fsIndex; gOutTree->Branch(vTkNDF, &outTkNDF [pIndex]);
+          TString vTkChi2("TkChi2P"); vTkChi2 += fsIndex; gOutTree->Branch(vTkChi2,&outTkChi2[pIndex]);
+        }
+        if (gAddPID && GlueXParticleClass(name) == "Charged"){
+          TString vTkTOFBeta ("TkTOFBetaP");  vTkTOFBeta  += fsIndex; gOutTree->Branch(vTkTOFBeta, &outTkTOFBeta[pIndex]);
+          TString vTkTOFChi2 ("TkTOFChi2P");  vTkTOFChi2  += fsIndex; gOutTree->Branch(vTkTOFChi2, &outTkTOFChi2[pIndex]);
+          TString vTkDEDXChi2("TkDEDXChi2P"); vTkDEDXChi2 += fsIndex; gOutTree->Branch(vTkDEDXChi2,&outTkDEDXChi2[pIndex]);
+          TString vTkDEDXNDF("TkDEDXNDFP");   vTkDEDXNDF  += fsIndex; gOutTree->Branch(vTkDEDXNDF, &outTkDEDXNDF [pIndex]);
+          TString vTkDEDXCDC("TkDEDXCDCP");   vTkDEDXCDC  += fsIndex; gOutTree->Branch(vTkDEDXCDC, &outTkDEDXCDC [pIndex]);
+          TString vTkDEDXFDC("TkDEDXFDCP");   vTkDEDXFDC  += fsIndex; gOutTree->Branch(vTkDEDXFDC, &outTkDEDXFDC [pIndex]);
+        }
+        if (GlueXParticleClass(name) == "Neutral"){
+          TString vQual("ShQualityP"); vQual += fsIndex; gOutTree->Branch(vQual, &outShQuality[pIndex]);
+        }
+      }
+      if (gUseMCParticles){
+        TString vMCPx("MCPxP"); vMCPx += fsIndex; gOutTree->Branch(vMCPx,&outMCPx[pIndex]);
+        TString vMCPy("MCPyP"); vMCPy += fsIndex; gOutTree->Branch(vMCPy,&outMCPy[pIndex]);
+        TString vMCPz("MCPzP"); vMCPz += fsIndex; gOutTree->Branch(vMCPz,&outMCPz[pIndex]);
+        TString vMCEn("MCEnP"); vMCEn += fsIndex; gOutTree->Branch(vMCEn,&outMCEn[pIndex]);
+      }
+      if (GlueXParticleClass(name) == "DecayingToCharged"){
+        if (gUseParticles && gUseKinFit){
+          TString vVeeL      ("VeeLP");       vVeeL       += fsIndex; gOutTree->Branch(vVeeL,      &outVeeL      [pIndex]);
+          TString vVeeLSigma ("VeeLSigmaP");  vVeeLSigma  += fsIndex; gOutTree->Branch(vVeeLSigma, &outVeeLSigma [pIndex]);
+        }
       }
     }
     }
@@ -686,7 +891,7 @@ void ConvertTree(TString treeName){
 
 
    // **********************************************************************
-   // STEP 4:  DO THE CONVERSION
+   // STEP 6:  DO THE CONVERSION
    // **********************************************************************
 
   cout << "STARTING THE CONVERSION: " << endl << endl;
@@ -694,73 +899,86 @@ void ConvertTree(TString treeName){
 
     // loop over the input tree
 
-  Long64_t nEntries = inTree->GetEntries();
-  cout << "LOOPING OVER " << nEntries << " ENTRIES..." << endl;
-  for (Long64_t iEntry = 0; iEntry < nEntries; iEntry++){
-    if ((iEntry+1) % 10000 == 0) cout << "entry = " << iEntry+1 << "  (" << (100.0*(iEntry+1))/nEntries << " percent)" << endl;
+  Long64_t gInNEntries = gInTree->GetEntries();
+  TString gInFileName("");
+  int currPol; // hold polarization value for the entire run (assuming one run per tree!)
+  cout << "LOOPING OVER " << gInNEntries << " ENTRIES..." << endl;
+  for (Long64_t iEntry = 0; iEntry < gInNEntries; iEntry++){
+    if ((iEntry+1) % 10000 == 0) cout << "entry = " << iEntry+1 << "  (" << (100.0*(iEntry+1))/gInNEntries << " percent)" << endl;
 
-      // clear arrays (from ROOT documentation)
+      // clear arrays (from ROOT documentation, see $ROOTSYS/tutorials/tree/tcl.C, also for SetAutoDelete, etc.)
 
-    if (gIsMC) inThrown__P4->Clear();
-    inBeam__P4_Measured->Clear();
-    inBeam__X4_Measured->Clear();
-    inChargedHypo__P4_Measured->Clear();
-    inNeutralHypo__P4_Measured->Clear();
-    inBeam__P4_KinFit->Clear();
+    if (gUseMCParticles) inThrown__P4->Clear();
+    if (gUseParticles) inBeam__P4_Measured->Clear();
+    if (gUseParticles) inBeam__X4_Measured->Clear();
+    if (gUseParticles) inChargedHypo__P4_Measured->Clear();
+    if (gUseParticles) inNeutralHypo__P4_Measured->Clear();
+    if (gUseParticles && gUseKinFit) inBeam__P4_KinFit->Clear();
+    if (gUseParticles && gUseKinFit) inBeam__X4_KinFit->Clear();
     for (unsigned int i = 0; i < MAXPARTICLES; i++){ if (inP4_KinFit[i]) inP4_KinFit[i]->Clear(); }
+    for (unsigned int i = 0; i < MAXPARTICLES; i++){ if (inX4[i]) inX4[i]->Clear(); }
 
 
       // if running in safe mode, first check array sizes
 
     if (gSafe){
-      inTree->SetBranchStatus("*",0);
-      if (gIsMC) inTree->SetBranchStatus("NumThrown",1);
-      inTree->SetBranchStatus("RunNumber",1);
-      inTree->SetBranchStatus("EventNumber",1);
-      inTree->SetBranchStatus("NumBeam",1);
-      inTree->SetBranchStatus("NumChargedHypos",1);
-      inTree->SetBranchStatus("NumNeutralHypos",1);
-      inTree->SetBranchStatus("NumCombos",1);
-      inTree->SetBranchStatus("NumUnusedTracks",1);
-      inTree->GetEntry(iEntry);
-      int numUnusedNeutrals = inNumNeutralHypos - numFSNeutrals;
-      if ((gNumUnusedTracksCut   >= 0) && (inNumUnusedTracks   > gNumUnusedTracksCut)) continue;
-      if ((gNumUnusedNeutralsCut >= 0) && (  numUnusedNeutrals > gNumUnusedNeutralsCut)) continue;
-      if ((gNumNeutralHyposCut   >= 0) && (inNumNeutralHypos   > gNumNeutralHyposCut)) continue;
-      if (((gIsMC) && (inNumThrown > MAXTHROWN)) ||
+      Long64_t localEntry = gInTree->LoadTree(iEntry);
+      TString fileName = gInTree->GetFile()->GetName();
+      if (fileName != gInFileName){
+        gInFileName = fileName;
+        cout << "Starting file: " << gInFileName << endl;
+      } 
+      if (localEntry < 0){
+        cout << "WARNING: Problem reading this event!  Skipping!" << endl;
+        continue;
+      }
+      brRunNumber->GetEntry(localEntry);
+      brEventNumber->GetEntry(localEntry);
+      if (gUseMCInfo) brNumThrown->GetEntry(localEntry);
+      if (gUseParticles) brNumBeam->GetEntry(localEntry);
+      if (gUseParticles) brNumChargedHypos->GetEntry(localEntry);
+      if (gUseParticles) brNumNeutralHypos->GetEntry(localEntry);
+      if (gUseParticles) brNumCombos->GetEntry(localEntry);
+      if (gUseParticles) brNumUnusedTracks->GetEntry(localEntry);
+      int numUnusedNeutrals = inNumNeutralHypos - gNumFSNeutrals;
+      if (gUseParticles){
+        if ((gNumUnusedTracksCut   >= 0) && (inNumUnusedTracks   > gNumUnusedTracksCut)) continue;
+        if ((gNumUnusedNeutralsCut >= 0) && (  numUnusedNeutrals > gNumUnusedNeutralsCut)) continue;
+        if ((gNumNeutralHyposCut   >= 0) && (inNumNeutralHypos   > gNumNeutralHyposCut)) continue;
+      }
+      if ((inNumThrown > MAXTHROWN) ||
           (inNumBeam > MAXBEAM) ||
           (inNumChargedHypos > MAXTRACKS) || 
           (inNumNeutralHypos > MAXNEUTRALS) ||
           (inNumCombos > MAXCOMBOS)){
-        cout << endl;
-        cout << "WARNING:  Array sizes will be exceeded!  Skipping event!" << endl;
-        cout << "   Entry           = " << iEntry << endl;
-        cout << "   Run             = " << inRunNumber << endl;
-        cout << "   Event           = " << inEventNumber << endl;
-        if (gIsMC) 
-        cout << "   NumThrown       = " << inNumThrown << endl;
-        cout << "   NumBeam         = " << inNumBeam << endl;
-        cout << "   NumChargedHypos = " << inNumChargedHypos << endl;
-        cout << "   NumNeutralHypos = " << inNumNeutralHypos << endl;
-        cout << "   NumCombos       = " << inNumCombos << endl;
-        cout << endl;
+        cout << "WARNING:  Array sizes will be exceeded!  Skipping event! (for details, use -print 1)" << endl;
+        if (gPrint > 0){
+          cout << "   Entry           = " << iEntry << endl;
+          cout << "   Run             = " << inRunNumber << endl;
+          cout << "   Event           = " << inEventNumber << endl;
+          cout << "   NumThrown       = " << inNumThrown << endl;
+          cout << "   NumBeam         = " << inNumBeam << endl;
+          cout << "   NumChargedHypos = " << inNumChargedHypos << endl;
+          cout << "   NumNeutralHypos = " << inNumNeutralHypos << endl;
+          cout << "   NumCombos       = " << inNumCombos << endl;
+          cout << endl;
+        }
         continue;
       }
-      inTree->SetBranchStatus("*",1);
     }
 
 
       // get entries from the input tree
 
-    inTree->GetEntry(iEntry);
+    gInTree->GetEntry(iEntry);
 
 
      // print some information (for debugging only)
 
-    if ((iEntry+1 == 1) && (gPrint)){ 
+    if ((iEntry+1 == 1) && (gPrint == 1)){ 
       cout << endl << "PRINTING TEST INFORMATION FOR FIVE EVENTS..." << endl << endl;
     }
-    if ((iEntry < 5) && (gPrint)){
+    if ((iEntry < 5) && (gPrint == 1)){
       cout << endl << endl;
       cout << "  ***************************" << endl;
       cout << "  ******* NEW EVENT " << iEntry+1 << " *******" << endl;
@@ -774,7 +992,7 @@ void ConvertTree(TString treeName){
     vector< vector<int> > orderedThrownIndices;
     vector< vector<int> > orderedThrownPDGNumbers;
 
-    if (gIsMC){
+    if (gUseMCInfo){
         // set indices
       orderedThrownIndices = OrderedThrownIndices(inNumThrown,inThrown__PID,inThrown__ParentIndex);
       orderedThrownPDGNumbers = orderedThrownIndices;
@@ -787,49 +1005,66 @@ void ConvertTree(TString treeName){
       outMCDecayCode1 = fsCode.first;
       outMCDecayCode2 = fsCode.second;
       outMCExtras = FSMCExtras(inNumThrown,inThrown__PID);
-      outMCSignal = 0;
-      if ((reconstructedFSCode.first == fsCode.first) &&
-          (reconstructedFSCode.second == fsCode.second) &&
-          (outMCExtras < 0.1)) outMCSignal = 1;
+        // set MCDecayParticle information
+      vector<int> mcDecayParticles = MCDecayParticles(inNumThrown,inThrown__PID,inThrown__ParentIndex);
+      outMCDecayParticle1 = 0;  if (mcDecayParticles.size() >= 1) outMCDecayParticle1 = mcDecayParticles[1-1];
+      outMCDecayParticle2 = 0;  if (mcDecayParticles.size() >= 2) outMCDecayParticle2 = mcDecayParticles[2-1];
+      outMCDecayParticle3 = 0;  if (mcDecayParticles.size() >= 3) outMCDecayParticle3 = mcDecayParticles[3-1];
+      outMCDecayParticle4 = 0;  if (mcDecayParticles.size() >= 4) outMCDecayParticle4 = mcDecayParticles[4-1];
+      outMCDecayParticle5 = 0;  if (mcDecayParticles.size() >= 5) outMCDecayParticle5 = mcDecayParticles[5-1];
+      outMCDecayParticle6 = 0;  if (mcDecayParticles.size() >= 6) outMCDecayParticle6 = mcDecayParticles[6-1];
+        // select a specific final state
+      if (gMCTag != ""){
+        if (gMCTagExtras.Atoi() != (int) outMCExtras) continue;
+        if (gMCTagDecayCode1.Atoi() != (int) outMCDecayCode1) continue;
+        if (gMCTagDecayCode2.Atoi() != (int) outMCDecayCode2) continue;
+      }
+        // check that the generated final state matches the reconstructed final state 
+      if (gUseMCParticles){
+        outMCSignal = 0;
+        if ((gReconstructedFSCode.first == fsCode.first) &&
+            (gReconstructedFSCode.second == fsCode.second) &&
+            (outMCExtras < 0.1)) outMCSignal = 1;
+      }
         // do some checks on the MC information
-      bool mcProblems = false;
-      if (outMCSignal > 0.1){
+      bool mcError = false;  bool mcWarning = false;
+      if (gUseMCParticles && outMCSignal > 0.1){
           // check orderedThrownIndices
-        if (orderedThrownIndices.size() != orderedParticleNames.size()){
+        if (orderedThrownIndices.size() != gOrderedParticleNames.size()){
           cout << "ERROR: problem with size of orderedThrownIndices" << endl;
-          mcProblems = true;
+          mcError = true;
         }
         for (unsigned int i = 0; i < orderedThrownIndices.size(); i++){
-          if (orderedThrownIndices[i].size() != orderedParticleNames[i].size()){
+          if (orderedThrownIndices[i].size() != gOrderedParticleNames[i].size()){
             cout << "ERROR: problem with size of orderedThrownIndices" << endl;
-            mcProblems = true;
+            mcError = true;
           }
         }
       }
+     if (gMCChecks && BaryonNumber((int)outMCDecayCode1,(int)outMCDecayCode2,(int)outMCExtras) != 1)
+       { mcWarning = true; cout << "WARNING: problem with baryon number in MC (for details, use -print 1)" << endl; }
+     if (gMCChecks && Charge((int)outMCDecayCode1,(int)outMCDecayCode2,(int)outMCExtras) != 1)
+       { mcWarning = true; cout << "WARNING: problem with electric charge in MC (for details, use -print 1)" << endl; }
       //if (((outMCSignal > 0.1)&&!inIsThrownTopology) ||
       //    ((outMCSignal < 0.1)&& inIsThrownTopology)){
       //  cout << "ERROR: MCSignal does not match IsThrownTopology" << endl;
-      //  mcProblems = true;
+      //  mcWarning = true;
       //}
         // print a few events to make sure MC makes sense
-      if (((iEntry < 5) && gPrint) || mcProblems == true){
-      //if (gIsMC && (iEntry < 5||inIsThrownTopology)){
+      if (((iEntry < 5) && gPrint == 1) || (mcError) || (mcWarning && gPrint > 0)){
+      //if (isMC && (iEntry < 5||inIsThrownTopology)){
         cout << endl << endl;
-        if (mcProblems) cout << "WARNING: problems with the truth parsing (see below)..." << endl;
+        if (mcError||mcWarning) cout << "WARNING: problems with the truth parsing (see below)..." << endl;
         cout << "  **** TRUTH INFO STUDY FOR EVENT " << iEntry+1 << " ****" << endl;
         cout << "  NumThrown = " << inNumThrown << endl;
         cout << "  GeneratedEnergy = " << inThrownBeam__GeneratedEnergy << endl;
-        cout << "  FSCode = " << outMCDecayCode2 << "_" << outMCDecayCode1 << endl;
+        cout << "  FSCode = " << (int)outMCDecayCode2 << "_" << (int)outMCDecayCode1 << endl;
+        cout << "  MCExtras = " << outMCExtras << endl;
         cout << "  IsThrownTopology = " << inIsThrownTopology << endl;
-        for (int i = 0; i < inNumThrown; i++){      
-          cout << "    THROWN INDEX = " << i << endl;
-          cout << "      PID = " << inThrown__PID[i] << endl;
-          cout << "      PDG Name = " << PDGReadableName(inThrown__PID[i]) << endl;
-          cout << "      Parent Index = " << inThrown__ParentIndex[i] << endl;
-        }
+        DisplayMCThrown(inNumThrown,inThrown__PID,inThrown__ParentIndex);
         cout << endl << endl;
       }
-      if (mcProblems == true){
+      if (mcError){
         cout << "ERROR: problem with MC truth parsing" << endl;
         exit(0);
       }
@@ -839,175 +1074,247 @@ void ConvertTree(TString treeName){
 
       // loop over combos
 
+    if (gUseMCInfo && !gUseParticles) inNumCombos = 1;
     for (UInt_t ic = 0; ic < inNumCombos; ic++){
 
         // non-particle information
 
-      TLorentzVector *p4, *p4a, *p4b, *x4;
+      TLorentzVector *p4, *p4a, *p4b, *x4, *x4a, *x4b;
       outRunNumber       = inRunNumber;
       outEventNumber     = inEventNumber;
-      outNumUnusedTracks = inNumUnusedTracks;
-      outNumNeutralHypos = inNumNeutralHypos;
-      outNumBeam         = inNumBeam;
-      outNumCombos       = inNumCombos;
-      outChi2        = inChiSq_KinFit[ic];
-      outChi2DOF     = -1; if (inNDF_KinFit[ic]>0.0) outChi2DOF = outChi2/inNDF_KinFit[ic];
-      //outRFTime      = inRFTime_KinFit[ic];
-      outRFTime      = inRFTime_Measured[ic];
-              //   line from jon z. for timing info:
-              //  Double_t rf_timing = locBeamX4_Measured.T() - (dComboWrapper->Get_RFTime_Measured() 
-              //     + (locBeamX4_Measured.Z()- dComboWrapper->Get_TargetCenter().Z())/29.9792458 );
-          x4 = (TLorentzVector*)inBeam__X4_Measured->At(inBeamIndex[ic]);
-          double tB  = x4->T();
-          double tRF = inRFTime_Measured[ic];
-          double zB  = x4->Z();
-          double zT  = inTargetCenterZ;
-      outRFDeltaT    = tB - (tRF + (zB - zT)/29.9792458);
-      outEnUnusedSh  = inEnergy_Unused[ic];
-      outProdVx      = inX4_Production->X();
-      outProdVy      = inX4_Production->Y();
-      outProdVz      = inX4_Production->Z();
-      outProdVt      = inX4_Production->T();
-          p4 = (TLorentzVector*)inBeam__P4_KinFit->At(ic);
-      outPxPB = p4->Px();
-      outPyPB = p4->Py();
-      outPzPB = p4->Pz();
-      outEnPB = p4->E();
-          p4 = (TLorentzVector*)inBeam__P4_Measured->At(inBeamIndex[ic]);
-      outRPxPB = p4->Px();
-      outRPyPB = p4->Py();
-      outRPzPB = p4->Pz();
-      outREnPB = p4->E();
-          if (gIsMC){
-      outMCPxPB = 0.0;
-      outMCPyPB = 0.0;
-      outMCPzPB = inThrownBeam__GeneratedEnergy;
-      outMCEnPB = inThrownBeam__GeneratedEnergy; }
+      if(gUsePolarization) {
+        if(iEntry==0) {
+          if(GetPolarizationAngle(inRunNumber, currPol)) {
+            outPolarization = currPol;
+          } else {
+            outPolarization = -1;
+          }
+        } else {
+          outPolarization = currPol;
+        }
+      }
+      if (gUseParticles){
+        outNumUnusedTracks = inNumUnusedTracks;
+        outNumNeutralHypos = inNumNeutralHypos;
+        outNumBeam         = inNumBeam;
+        outNumCombos       = inNumCombos;
+        if (gUseKinFit){
+          outChi2        = inChiSq_KinFit[ic];
+          outChi2DOF     = -1; if (inNDF_KinFit[ic]>0.0) outChi2DOF = outChi2/inNDF_KinFit[ic];
+          //outRFTime      = inRFTime_KinFit[ic];
+        }
+        outRFTime      = inRFTime_Measured[ic];
+                //   line from jon z. for timing info:
+                //  Double_t rf_timing = locBeamX4_Measured.T() - (dComboWrapper->Get_RFTime_Measured() 
+                //     + (locBeamX4_Measured.Z()- dComboWrapper->Get_TargetCenter().Z())/29.9792458 );
+            x4 = (TLorentzVector*)inBeam__X4_Measured->At(inBeamIndex[ic]);
+            double tB  = x4->T();
+            double tRF = inRFTime_Measured[ic];
+            double zB  = x4->Z();
+            double zT  = inTargetCenterZ;
+        outRFDeltaT    = tB - (tRF + (zB - zT)/29.9792458);
+        outEnUnusedSh  = inEnergy_Unused[ic];
+        outProdVx      = inX4_Production->X();
+        outProdVy      = inX4_Production->Y();
+        outProdVz      = inX4_Production->Z();
+        outProdVt      = inX4_Production->T();
+        if (gUseKinFit){
+              p4 = (TLorentzVector*)inBeam__P4_KinFit->At(ic);
+          outPxPB = p4->Px();
+          outPyPB = p4->Py();
+          outPzPB = p4->Pz();
+          outEnPB = p4->E();
+        }
+            p4 = (TLorentzVector*)inBeam__P4_Measured->At(inBeamIndex[ic]);
+        outRPxPB = p4->Px();
+        outRPyPB = p4->Py();
+        outRPzPB = p4->Pz();
+        outREnPB = p4->E();
+      }
+      if (gUseMCParticles){
+        outMCPxPB = 0.0;
+        outMCPyPB = 0.0;
+        outMCPzPB = inThrownBeam__GeneratedEnergy;
+      }
+      if (gUseMCInfo){
+        outMCEnPB = inThrownBeam__GeneratedEnergy;
+      }
 
         // particle information
 
       bool cutDueToParticleInfo = false;
-      for (unsigned int im = 0; im < orderedParticleNames.size(); im++){
-      for (unsigned int id = 0; id < orderedParticleNames[im].size(); id++){
-        TString name = orderedParticleNames[im][id];
-        int pIndex = mapGlueXNameToParticleIndex[name];
-        int tIndex; if (gIsMC && outMCSignal > 0.1) tIndex = orderedThrownIndices[im][id];
+      for (unsigned int im = 0; im < gOrderedParticleNames.size(); im++){
+      for (unsigned int id = 0; id < gOrderedParticleNames[im].size(); id++){
+        TString name = gOrderedParticleNames[im][id];
+        int pIndex = gMapGlueXNameToParticleIndex[name];
+        int tIndex; if (gUseMCParticles && outMCSignal > 0.1) tIndex = orderedThrownIndices[im][id];
 
           // charged tracks
 
         if (GlueXParticleClass(name) == "Charged"){ 
-          p4 = (TLorentzVector*)inP4_KinFit[pIndex]->At(ic);
-            outPx[pIndex] = p4->Px();
-            outPy[pIndex] = p4->Py();
-            outPz[pIndex] = p4->Pz();
-            outEn[pIndex] = p4->E();
-          p4 = (TLorentzVector*)inChargedHypo__P4_Measured->At(inChargedIndex[pIndex][ic]);
-            outRPx[pIndex] = p4->Px();
-            outRPy[pIndex] = p4->Py();
-            outRPz[pIndex] = p4->Pz();
-            outREn[pIndex] = p4->E();
-          if (gIsMC && outMCSignal > 0.1){
-          p4 = (TLorentzVector*)inThrown__P4->At(tIndex);
-            outMCPx[pIndex] = p4->Px();
-            outMCPy[pIndex] = p4->Py();
-            outMCPz[pIndex] = p4->Pz();
-            outMCEn[pIndex] = p4->E(); }
-          outTkNDF [pIndex] = inChargedHypo__NDF_Tracking  [(inChargedIndex[pIndex][ic])];
-          outTkChi2[pIndex] = inChargedHypo__ChiSq_Tracking[(inChargedIndex[pIndex][ic])];
+          if (gUseParticles && gUseKinFit){
+            p4 = (TLorentzVector*)inP4_KinFit[pIndex]->At(ic);
+              outPx[pIndex] = p4->Px();
+              outPy[pIndex] = p4->Py();
+              outPz[pIndex] = p4->Pz();
+              outEn[pIndex] = p4->E();
+          }
+          if (gUseParticles){
+            p4 = (TLorentzVector*)inChargedHypo__P4_Measured->At(inChargedIndex[pIndex][ic]);
+              outRPx[pIndex] = p4->Px();
+              outRPy[pIndex] = p4->Py();
+              outRPz[pIndex] = p4->Pz();
+              outREn[pIndex] = p4->E();
+            outTkNDF [pIndex] = inChargedHypo__NDF_Tracking  [(inChargedIndex[pIndex][ic])];
+            outTkChi2[pIndex] = inChargedHypo__ChiSq_Tracking[(inChargedIndex[pIndex][ic])];
+            if (gAddPID){
+              outTkTOFBeta[pIndex] = inBeta_Timing[pIndex][ic];
+              outTkTOFChi2[pIndex] = inChiSq_Timing[pIndex][ic];
+              outTkDEDXChi2[pIndex] = inChargedHypo__ChiSq_DCdEdx[(inChargedIndex[pIndex][ic])];
+              outTkDEDXNDF [pIndex] = inChargedHypo__NDF_DCdEdx  [(inChargedIndex[pIndex][ic])];
+              outTkDEDXCDC [pIndex] = inChargedHypo__dEdx_CDC    [(inChargedIndex[pIndex][ic])];
+              outTkDEDXFDC [pIndex] = inChargedHypo__dEdx_FDC    [(inChargedIndex[pIndex][ic])];
+            }
+          }
+          if (gUseMCParticles && outMCSignal > 0.1){
+            p4 = (TLorentzVector*)inThrown__P4->At(tIndex);
+              outMCPx[pIndex] = p4->Px();
+              outMCPy[pIndex] = p4->Py();
+              outMCPz[pIndex] = p4->Pz();
+              outMCEn[pIndex] = p4->E(); 
+          }
         }
 
           // neutral particles
 
         if (GlueXParticleClass(name) == "Neutral"){ 
-          p4 = (TLorentzVector*)inP4_KinFit[pIndex]->At(ic);
-            outPx[pIndex] = p4->Px();
-            outPy[pIndex] = p4->Py();
-            outPz[pIndex] = p4->Pz();
-            outEn[pIndex] = p4->E();
-          p4 = (TLorentzVector*)inNeutralHypo__P4_Measured->At(inNeutralIndex[pIndex][ic]);
-            outRPx[pIndex] = p4->Px();
-            outRPy[pIndex] = p4->Py();
-            outRPz[pIndex] = p4->Pz();
-            outREn[pIndex] = p4->E();
-          if (gIsMC && outMCSignal > 0.1){
-          p4 = (TLorentzVector*)inThrown__P4->At(tIndex);
-            outMCPx[pIndex] = p4->Px();
-            outMCPy[pIndex] = p4->Py();
-            outMCPz[pIndex] = p4->Pz();
-            outMCEn[pIndex] = p4->E(); }
-          outShQuality[pIndex] = inNeutralHypo__ShowerQuality[(inNeutralIndex[pIndex][ic])];
-          if (outShQuality[pIndex] < gShQualityCut) cutDueToParticleInfo = true;
+          if (gUseParticles && gUseKinFit){
+            p4 = (TLorentzVector*)inP4_KinFit[pIndex]->At(ic);
+              outPx[pIndex] = p4->Px();
+              outPy[pIndex] = p4->Py();
+              outPz[pIndex] = p4->Pz();
+              outEn[pIndex] = p4->E();
+          }
+          if (gUseParticles){
+            p4 = (TLorentzVector*)inNeutralHypo__P4_Measured->At(inNeutralIndex[pIndex][ic]);
+              outRPx[pIndex] = p4->Px();
+              outRPy[pIndex] = p4->Py();
+              outRPz[pIndex] = p4->Pz();
+              outREn[pIndex] = p4->E();
+            outShQuality[pIndex] = inNeutralHypo__ShowerQuality[(inNeutralIndex[pIndex][ic])];
+            if (outShQuality[pIndex] < gShQualityCut) cutDueToParticleInfo = true;
+          }
+          if (gUseMCParticles && outMCSignal > 0.1){
+            p4 = (TLorentzVector*)inThrown__P4->At(tIndex);
+              outMCPx[pIndex] = p4->Px();
+              outMCPy[pIndex] = p4->Py();
+              outMCPz[pIndex] = p4->Pz();
+              outMCEn[pIndex] = p4->E(); 
+          }
         }
+
+        // vertex information
+
+        if (gUseKinFit){
+        }
+
 
           // decaying to charged tracks
 
         if (GlueXParticleClass(name) == "DecayingToCharged"){ 
-          int pIndex1 = mapGlueXNameToParticleIndex[orderedParticleNames[im][1]];
-          int pIndex2 = mapGlueXNameToParticleIndex[orderedParticleNames[im][2]];
-          int tIndex1;  if (gIsMC && outMCSignal > 0.1) tIndex1 = orderedThrownIndices[im][1];
-          int tIndex2;  if (gIsMC && outMCSignal > 0.1) tIndex2 = orderedThrownIndices[im][2];
-          p4a = (TLorentzVector*)inP4_KinFit[pIndex1]->At(ic);
-          p4b = (TLorentzVector*)inP4_KinFit[pIndex2]->At(ic);
-            outPx[pIndex] = p4a->Px() + p4b->Px();
-            outPy[pIndex] = p4a->Py() + p4b->Py();
-            outPz[pIndex] = p4a->Pz() + p4b->Pz();
-            outEn[pIndex] = p4a->E()  + p4b->E();
-          p4a = (TLorentzVector*)inChargedHypo__P4_Measured->At(inChargedIndex[pIndex1][ic]);
-          p4b = (TLorentzVector*)inChargedHypo__P4_Measured->At(inChargedIndex[pIndex2][ic]);
-            outRPx[pIndex] = p4a->Px() + p4b->Px();
-            outRPy[pIndex] = p4a->Py() + p4b->Py();
-            outRPz[pIndex] = p4a->Pz() + p4b->Pz();
-            outREn[pIndex] = p4a->E()  + p4b->E();
-          if (gIsMC && outMCSignal > 0.1){
-          p4a = (TLorentzVector*)inThrown__P4->At(tIndex1);
-          p4b = (TLorentzVector*)inThrown__P4->At(tIndex2);
-            outMCPx[pIndex] = p4a->Px() + p4b->Px();
-            outMCPy[pIndex] = p4a->Py() + p4b->Py();
-            outMCPz[pIndex] = p4a->Pz() + p4b->Pz();
-            outMCEn[pIndex] = p4a->E()  + p4b->E(); }
-          if (gMassWindows > 0){
-            double mass = sqrt(pow(outEn[pIndex],2)-pow(outPx[pIndex],2)-
-                               pow(outPy[pIndex],2)-pow(outPz[pIndex],2));
-            if ((FSParticleType(name) == "Lambda") || (FSParticleType(name) == "ALambda"))
-              if (abs(mass-1.115683) > gMassWindows/2.0) cutDueToParticleInfo = true;
-            if (FSParticleType(name) == "Ks")
-              if (abs(mass-0.497611) > gMassWindows/2.0) cutDueToParticleInfo = true;
+          int pIndex1 = gMapGlueXNameToParticleIndex[gOrderedParticleNames[im][1]];
+          int pIndex2 = gMapGlueXNameToParticleIndex[gOrderedParticleNames[im][2]];
+          int tIndex1;  if (gUseMCParticles && outMCSignal > 0.1) tIndex1 = orderedThrownIndices[im][1];
+          int tIndex2;  if (gUseMCParticles && outMCSignal > 0.1) tIndex2 = orderedThrownIndices[im][2];
+          if (gUseParticles && gUseKinFit){
+            p4a = (TLorentzVector*)inP4_KinFit[pIndex1]->At(ic);
+            p4b = (TLorentzVector*)inP4_KinFit[pIndex2]->At(ic);
+            *p4 = *p4a + *p4b;
+              outPx[pIndex] = p4a->Px() + p4b->Px();
+              outPy[pIndex] = p4a->Py() + p4b->Py();
+              outPz[pIndex] = p4a->Pz() + p4b->Pz();
+              outEn[pIndex] = p4a->E()  + p4b->E();
+            x4a = (TLorentzVector*)inBeam__X4_KinFit->At(ic);
+            x4b = (TLorentzVector*)inX4[pIndex]->At(ic);
+            *x4 = *x4b - *x4a;
+            outVeeL[pIndex] = (x4->Vect()).Mag();
+            if ( (x4->Angle(p4->Vect()))/TMath::Pi() > 0.5 )
+              outVeeL[pIndex] = -outVeeL[pIndex];
+            if ( inPathLengthSigma[pIndex][ic] < 1.0e-6 )
+              outVeeLSigma[pIndex] = -10000.;
+            else
+              outVeeLSigma[pIndex] = outVeeL[pIndex]/inPathLengthSigma[pIndex][ic];
+          }
+          if (gUseParticles){
+            p4a = (TLorentzVector*)inChargedHypo__P4_Measured->At(inChargedIndex[pIndex1][ic]);
+            p4b = (TLorentzVector*)inChargedHypo__P4_Measured->At(inChargedIndex[pIndex2][ic]);
+              outRPx[pIndex] = p4a->Px() + p4b->Px();
+              outRPy[pIndex] = p4a->Py() + p4b->Py();
+              outRPz[pIndex] = p4a->Pz() + p4b->Pz();
+              outREn[pIndex] = p4a->E()  + p4b->E();
+            if (gMassWindows > 0){
+              double mass = sqrt(pow(outREn[pIndex],2)-pow(outRPx[pIndex],2)-
+                                 pow(outRPy[pIndex],2)-pow(outRPz[pIndex],2));
+              if (gUseKinFit)
+                     mass = sqrt(pow(outEn[pIndex],2)-pow(outPx[pIndex],2)-
+                                 pow(outPy[pIndex],2)-pow(outPz[pIndex],2));
+              if ((FSParticleType(name) == "Lambda") || (FSParticleType(name) == "ALambda"))
+                if (abs(mass-1.115683) > gMassWindows/2.0) cutDueToParticleInfo = true;
+              if (FSParticleType(name) == "Ks")
+                if (abs(mass-0.497611) > gMassWindows/2.0) cutDueToParticleInfo = true;
+            }
+          }
+          if (gUseMCParticles && outMCSignal > 0.1){
+            p4a = (TLorentzVector*)inThrown__P4->At(tIndex1);
+            p4b = (TLorentzVector*)inThrown__P4->At(tIndex2);
+              outMCPx[pIndex] = p4a->Px() + p4b->Px();
+              outMCPy[pIndex] = p4a->Py() + p4b->Py();
+              outMCPz[pIndex] = p4a->Pz() + p4b->Pz();
+              outMCEn[pIndex] = p4a->E()  + p4b->E();
           }
         }
 
           // decaying to neutral particles
 
         if (GlueXParticleClass(name) == "DecayingToNeutral"){ 
-          int pIndex1 = mapGlueXNameToParticleIndex[orderedParticleNames[im][1]];
-          int pIndex2 = mapGlueXNameToParticleIndex[orderedParticleNames[im][2]];
-          int tIndex1;  if (gIsMC && outMCSignal > 0.1) tIndex1 = orderedThrownIndices[im][1];
-          int tIndex2;  if (gIsMC && outMCSignal > 0.1) tIndex2 = orderedThrownIndices[im][2];
-          p4a = (TLorentzVector*)inP4_KinFit[pIndex1]->At(ic);
-          p4b = (TLorentzVector*)inP4_KinFit[pIndex2]->At(ic);
-            outPx[pIndex] = p4a->Px() + p4b->Px();
-            outPy[pIndex] = p4a->Py() + p4b->Py();
-            outPz[pIndex] = p4a->Pz() + p4b->Pz();
-            outEn[pIndex] = p4a->E()  + p4b->E();
-          p4a = (TLorentzVector*)inNeutralHypo__P4_Measured->At(inNeutralIndex[pIndex1][ic]);
-          p4b = (TLorentzVector*)inNeutralHypo__P4_Measured->At(inNeutralIndex[pIndex2][ic]);
-            outRPx[pIndex] = p4a->Px() + p4b->Px();
-            outRPy[pIndex] = p4a->Py() + p4b->Py();
-            outRPz[pIndex] = p4a->Pz() + p4b->Pz();
-            outREn[pIndex] = p4a->E()  + p4b->E(); 
-          if (gIsMC && outMCSignal > 0.1){
-          p4a = (TLorentzVector*)inThrown__P4->At(tIndex1);
-          p4b = (TLorentzVector*)inThrown__P4->At(tIndex2);
-            outMCPx[pIndex] = p4a->Px() + p4b->Px();
-            outMCPy[pIndex] = p4a->Py() + p4b->Py();
-            outMCPz[pIndex] = p4a->Pz() + p4b->Pz();
-            outMCEn[pIndex] = p4a->E()  + p4b->E(); }
-          if (gMassWindows > 0){
-            double mass = sqrt(pow(outEn[pIndex],2)-pow(outPx[pIndex],2)-
-                               pow(outPy[pIndex],2)-pow(outPz[pIndex],2));
-            if (FSParticleType(name) == "eta")
-              if (abs(mass-0.547862) > gMassWindows/2.0) cutDueToParticleInfo = true;
-            if (FSParticleType(name) == "pi0")
-              if (abs(mass-0.134977) > gMassWindows/2.0) cutDueToParticleInfo = true;
+          int pIndex1 = gMapGlueXNameToParticleIndex[gOrderedParticleNames[im][1]];
+          int pIndex2 = gMapGlueXNameToParticleIndex[gOrderedParticleNames[im][2]];
+          int tIndex1;  if (gUseMCParticles && outMCSignal > 0.1) tIndex1 = orderedThrownIndices[im][1];
+          int tIndex2;  if (gUseMCParticles && outMCSignal > 0.1) tIndex2 = orderedThrownIndices[im][2];
+          if (gUseParticles && gUseKinFit){
+            p4a = (TLorentzVector*)inP4_KinFit[pIndex1]->At(ic);
+            p4b = (TLorentzVector*)inP4_KinFit[pIndex2]->At(ic);
+              outPx[pIndex] = p4a->Px() + p4b->Px();
+              outPy[pIndex] = p4a->Py() + p4b->Py();
+              outPz[pIndex] = p4a->Pz() + p4b->Pz();
+              outEn[pIndex] = p4a->E()  + p4b->E();
+          }
+          if (gUseParticles){
+            p4a = (TLorentzVector*)inNeutralHypo__P4_Measured->At(inNeutralIndex[pIndex1][ic]);
+            p4b = (TLorentzVector*)inNeutralHypo__P4_Measured->At(inNeutralIndex[pIndex2][ic]);
+              outRPx[pIndex] = p4a->Px() + p4b->Px();
+              outRPy[pIndex] = p4a->Py() + p4b->Py();
+              outRPz[pIndex] = p4a->Pz() + p4b->Pz();
+              outREn[pIndex] = p4a->E()  + p4b->E();
+            if (gMassWindows > 0){
+              double mass = sqrt(pow(outREn[pIndex],2)-pow(outRPx[pIndex],2)-
+                                 pow(outRPy[pIndex],2)-pow(outRPz[pIndex],2));
+              if (gUseKinFit)
+                     mass = sqrt(pow(outEn[pIndex],2)-pow(outPx[pIndex],2)-
+                                 pow(outPy[pIndex],2)-pow(outPz[pIndex],2));
+              if (FSParticleType(name) == "eta")
+                if (abs(mass-0.547862) > gMassWindows/2.0) cutDueToParticleInfo = true;
+              if (FSParticleType(name) == "pi0")
+                if (abs(mass-0.134977) > gMassWindows/2.0) cutDueToParticleInfo = true;
+            }
+          }
+          if (gUseMCParticles && outMCSignal > 0.1){
+            p4a = (TLorentzVector*)inThrown__P4->At(tIndex1);
+            p4b = (TLorentzVector*)inThrown__P4->At(tIndex2);
+              outMCPx[pIndex] = p4a->Px() + p4b->Px();
+              outMCPy[pIndex] = p4a->Py() + p4b->Py();
+              outMCPz[pIndex] = p4a->Pz() + p4b->Pz();
+              outMCEn[pIndex] = p4a->E()  + p4b->E();
           }
         }
 
@@ -1015,12 +1322,12 @@ void ConvertTree(TString treeName){
 
       // print some information (for debugging only)
 
-      if ((iEntry < 5) && (gPrint)){
+      if ((iEntry < 5) && (gPrint == 1) && (gUseParticles)){
         cout << "  *******************************" << endl;
         cout << "  **** INFO FOR EVENT " << iEntry+1 << " ****" << endl;
         cout << "  *******************************" << endl;
         cout << "EVENT: " << inEventNumber << " (combo no. " << ic+1 << ")" << endl;
-        if (gIsMC) cout << "  NumThrown = " << inNumThrown << endl;
+        cout << "  NumThrown = " << inNumThrown << endl;
         cout << "  NumChargedHypos = " << inNumChargedHypos << endl;
         cout << "  NumNeutralHypos = " << inNumNeutralHypos << endl;
         cout << "  NumBeam   = " << inNumBeam << endl;
@@ -1029,15 +1336,15 @@ void ConvertTree(TString treeName){
                                   << inX4_Production->Y() << " " 
                                   << inX4_Production->Z() << " " 
                                   << inX4_Production->T() << endl; 
-        for (unsigned int im = 0; im < orderedParticleNames.size(); im++){
-        for (unsigned int id = 0; id < orderedParticleNames[im].size(); id++){
-          TString name = orderedParticleNames[im][id];
-          int pIndex = mapGlueXNameToParticleIndex[name];
-          TString fsIndex = mapGlueXNameToFSIndex[name];
-          double px = outPx[pIndex];
-          double py = outPy[pIndex];
-          double pz = outPz[pIndex];
-          double en = outEn[pIndex];
+        for (unsigned int im = 0; im < gOrderedParticleNames.size(); im++){
+        for (unsigned int id = 0; id < gOrderedParticleNames[im].size(); id++){
+          TString name = gOrderedParticleNames[im][id];
+          int pIndex = gMapGlueXNameToParticleIndex[name];
+          TString fsIndex = gMapGlueXNameToFSIndex[name];
+          double px = outRPx[pIndex];  if (gUseKinFit) px = outPx[pIndex];
+          double py = outRPy[pIndex];  if (gUseKinFit) py = outPy[pIndex];
+          double pz = outRPz[pIndex];  if (gUseKinFit) pz = outPz[pIndex];
+          double en = outREn[pIndex];  if (gUseKinFit) en = outEn[pIndex];
           double mass = sqrt(fabs(en*en - px*px - py*py - pz*pz));
           double rpx = outRPx[pIndex];
           double rpy = outRPy[pIndex];
@@ -1048,24 +1355,25 @@ void ConvertTree(TString treeName){
                << mass << "  " << rmass << endl;
         }}
       }
-      if (iEntry+1 == 5 && ic+1 == inNumCombos && gPrint){ 
+      if (iEntry+1 == 5 && ic+1 == inNumCombos && (gPrint == 1) && gUseParticles){ 
         cout << endl << endl << "DONE PRINTING TEST INFORMATION FOR FIVE EVENTS" << endl << endl;
         cout << "CONTINUING THE CONVERSION... " << endl << endl;
       }
 
         // make cuts
 
-      if (cutDueToParticleInfo) continue;
-      if (outChi2DOF > gChi2DOFCut) continue;
-      int numUnusedNeutrals = inNumNeutralHypos - numFSNeutrals;
-      if ((gNumUnusedTracksCut   >= 0) && (outNumUnusedTracks   > gNumUnusedTracksCut)) continue;
-      if ((gNumUnusedNeutralsCut >= 0) && (   numUnusedNeutrals > gNumUnusedNeutralsCut)) continue;
-      if ((gNumNeutralHyposCut   >= 0) && (outNumNeutralHypos   > gNumNeutralHyposCut)) continue;
-
+      if (gUseParticles){
+        if (cutDueToParticleInfo) continue;
+        if (gUseKinFit && outChi2DOF > gChi2DOFCut) continue;
+        int numUnusedNeutrals = inNumNeutralHypos - gNumFSNeutrals;
+        if ((gNumUnusedTracksCut   >= 0) && (outNumUnusedTracks   > gNumUnusedTracksCut)) continue;
+        if ((gNumUnusedNeutralsCut >= 0) && (   numUnusedNeutrals > gNumUnusedNeutralsCut)) continue;
+        if ((gNumNeutralHyposCut   >= 0) && (outNumNeutralHypos   > gNumNeutralHyposCut)) continue;
+      }
 
         // fill the tree
 
-      outTree.Fill();
+      gOutTree->Fill();
 
     }
 
@@ -1075,8 +1383,31 @@ void ConvertTree(TString treeName){
 
   cout << endl << endl << "WRITING THE OUTPUT TREE..." << endl;
   gOutputFile->cd();
-  outTree.Write();
-  cout << "FINISHED (entries = " << nEntries << ")" << endl << endl;
+  gOutTree->Write();
+  cout << endl;
+  cout << "**************" << endl;
+  cout << "FINISHED" << endl;
+  cout << "**************" << endl;
+  cout << "  total events = " << gInNEntries << endl;
+  cout << "  kept entries = " << gOutTree->GetEntriesFast() << endl;
+  cout << "  fraction = ";
+  if (gInNEntries > 0){ cout << (double)gOutTree->GetEntriesFast()/gInNEntries << endl; }
+  else { cout << " undefined" << endl; }
+  cout << endl;
+  gOutputFile->Close();
+
+    // clean memory (or try to, delete doesn't work here)
+    //    * all seems fine in top without deletes or Clears,
+    //        even for large numbers of files
+    //    * not sure how ROOT handles these, ignore for now
+
+  //if (inThrown__P4)  inThrown__P4->Clear();
+  //if (inBeam__P4_Measured)  inBeam__P4_Measured->Clear();
+  //if (inBeam__X4_Measured)  inBeam__X4_Measured->Clear();
+  //if (inChargedHypo__P4_Measured)  inChargedHypo__P4_Measured->Clear();
+  //if (inNeutralHypo__P4_Measured)  inNeutralHypo__P4_Measured->Clear();
+  //if (inBeam__P4_KinFit)  inBeam__P4_KinFit->Clear();
+  //for (unsigned int i = 0; i < MAXPARTICLES; i++){ if (inP4_KinFit[i]) inP4_KinFit[i]->Clear(); }
 
 }
 
@@ -1098,6 +1429,7 @@ void ConvertTree(TString treeName){
 // **************************************
 //   utility functions
 // **************************************
+
 
 
 static const int kpdgPsi2S      = 100443;     
@@ -1151,6 +1483,12 @@ static const int kpdgKstar0     = 313;
 static const int kpdgAntiKstar0 = -313;
 static const int kpdgLambda     = 3122;
 static const int kpdgALambda    = -3122;
+static const int kpdgSigmap     = 3222;
+static const int kpdgSigma0     = 3212;
+static const int kpdgSigmam     = 3112;
+static const int kpdgASigmam    = -3222;
+static const int kpdgASigma0    = -3212;
+static const int kpdgASigmap    = -3112;
 static const int kpdgDp         = 411;
 static const int kpdgDm         = -411;
 static const int kpdgD0         = 421;
@@ -1214,6 +1552,12 @@ TString PDGReadableName(int id){
   else if (id == kpdgAntiKstar0) name = "K*0";
   else if (id == kpdgLambda)     name = "Lambda";
   else if (id == kpdgALambda)    name = "ALambda";
+  else if (id == kpdgSigmap)     name = "Sigma+";
+  else if (id == kpdgSigma0)     name = "Sigma0";
+  else if (id == kpdgSigmam)     name = "Sigma-";
+  else if (id == kpdgASigmam)    name = "ASigma-";
+  else if (id == kpdgASigma0)    name = "ASigma0";
+  else if (id == kpdgASigmap)    name = "ASigma+";
   else if (id == kpdgDp)         name = "D+";
   else if (id == kpdgDm)         name = "D-";
   else if (id == kpdgD0)         name = "D0";
@@ -1226,6 +1570,41 @@ TString PDGReadableName(int id){
     name += id;
   }
   return name;
+}
+
+void DisplayMCThrown(int numThrown, int pids[], int parentIndices[]){
+  cout << "  LIST OF THROWN PARTICLES: " << endl;
+  for (int i = 0; i < numThrown; i++){      
+    cout << "    THROWN INDEX = " << i << endl;
+    cout << "      PID = " << pids[i] << endl;
+    cout << "      PDG Name = " << PDGReadableName(pids[i]) << endl;
+    cout << "      Parent Index = " << parentIndices[i] << endl;
+  }
+  vector< pair<int,int> > firstList;
+  for (int index = 0; index < numThrown; index++){
+    if (parentIndices[index] == -1) firstList.push_back(pair<int,int>(index,0));
+  }
+  vector< pair<int,int> > thrownList = firstList;
+  for (int iter = 1; iter <= 5; iter++){
+    vector< pair<int,int> > tempList = thrownList;  thrownList.clear();
+    for (unsigned int i = 0; i < tempList.size(); i++){
+      thrownList.push_back(tempList[i]);
+      if (tempList[i].second == iter-1){
+        for (int index = 0; index < numThrown; index++){
+          if (parentIndices[index] == tempList[i].first)
+            thrownList.push_back(pair<int,int>(index,iter));
+        }
+      }
+    }
+  }
+  cout << "  ORDERED LIST OF THROWN PARTICLES" << endl;
+  for (unsigned int i = 0; i < thrownList.size(); i++){
+    int iter = thrownList[i].second;
+    for (int j = 0; j < iter+1; j++){ cout << "   "; }
+    cout << PDGReadableName(pids[thrownList[i].first]);
+    cout << " (id = " << pids[thrownList[i].first] << ")";
+    cout << " (index = " << thrownList[i].first << ")" << endl;
+  }
 }
 
 
@@ -1301,6 +1680,24 @@ vector< vector<int> > OrderedThrownIndices(int numThrown, int pids[], int parent
 }
 
 
+vector<int> MCDecayParticles(int numThrown, int pids[], int parentIndices[]){
+  vector<int> mcDecayParticles;
+  for (int index = 0; index < numThrown; index++){
+    if (parentIndices[index] == -1) mcDecayParticles.push_back(pids[index]);
+  }
+  if (mcDecayParticles.size() < 2) return mcDecayParticles;
+  for (unsigned int i = 0; i < mcDecayParticles.size()-1; i++){
+  for (unsigned int j = i+1; j < mcDecayParticles.size(); j++){
+    if (mcDecayParticles[i] > mcDecayParticles[j]){
+      int temp = mcDecayParticles[i];
+      mcDecayParticles[i] = mcDecayParticles[j];
+      mcDecayParticles[j] = temp;
+    }
+  }}
+  return mcDecayParticles;
+}
+
+
 int FSMCExtras(int numThrown, int pids[]){
   int mcExtras = 0;
   for (int i = 0; i < numThrown; i++){
@@ -1317,9 +1714,36 @@ int FSMCExtras(int numThrown, int pids[]){
   return mcExtras;
 }
 
+int BaryonNumber(int fsCode1, int fsCode2, int mcExtras){
+  int baryonNumber = 0;
+  baryonNumber += (((mcExtras%100)-(mcExtras%10))/10); // neutron
+  baryonNumber -= (((mcExtras%10)-(mcExtras%1))/1); // anti-neutron
+  baryonNumber += (((fsCode2%1000000000)-(fsCode2%100000000))/100000000); // Lambda
+  baryonNumber -= (((fsCode2%100000000)-(fsCode2%10000000))/10000000); // anti-Lambda
+  baryonNumber += (((fsCode2%1000)-(fsCode2%100))/100); // proton
+  baryonNumber -= (((fsCode2%100)-(fsCode2%10))/10); // anti-proton
+  baryonNumber += fsCode1*0;
+  return baryonNumber;
+}
+
+int Charge(int fsCode1, int fsCode2, int mcExtras){
+  int charge = 0;
+  charge += (((fsCode2%10000000)-(fsCode2%1000000))/1000000);  // e+
+  charge -= (((fsCode2%1000000)-(fsCode2%100000))/100000);  // e-
+  charge += (((fsCode2%100000)-(fsCode2%10000))/10000);  // mu+
+  charge -= (((fsCode2%10000)-(fsCode2%1000))/1000);  // mu-
+  charge += (((fsCode2%1000)-(fsCode2%100))/100);  // p+
+  charge -= (((fsCode2%100)-(fsCode2%10))/10);  // p-
+  charge += (((fsCode1%1000000)-(fsCode1%100000))/100000);  // K+
+  charge -= (((fsCode1%100000)-(fsCode1%10000))/10000);  // K-
+  charge += (((fsCode1%1000)-(fsCode1%100))/100);  // pi+
+  charge -= (((fsCode1%100)-(fsCode1%10))/10);  // pi-
+  return charge;
+}
 
 
 TString FSParticleType(TString glueXParticleType){
+  if (glueXParticleType.Contains("Missing"))     return TString("--");
   if (glueXParticleType.Contains("AntiLambda"))  return TString("ALambda");
   if (glueXParticleType.Contains("Lambda"))      return TString("Lambda");
   if (glueXParticleType.Contains("Positron"))    return TString("e+");
@@ -1466,3 +1890,94 @@ pair<int,int> FSCode(vector< vector<int> > pdgIDs){
 }
 
 
+map<TString, vector<TString> > GlueXDecayProductMap(int fsCode1, int fsCode2){
+  map<TString, vector<TString> > gluexMap;
+  int n[16];
+  n[ 0] =   (fsCode1%10);
+  n[ 1] = (((fsCode1%100)-(fsCode1%10))/10);
+  n[ 2] = (((fsCode1%1000)-(fsCode1%100))/100);
+  n[ 3] = (((fsCode1%10000)-(fsCode1%1000))/1000);
+  n[ 4] = (((fsCode1%100000)-(fsCode1%10000))/10000);
+  n[ 5] = (((fsCode1%1000000)-(fsCode1%100000))/100000);
+  n[ 6] = (((fsCode1%10000000)-(fsCode1%1000000))/1000000);
+  n[ 7] =   (fsCode2%10);
+  n[ 8] = (((fsCode2%100)-(fsCode2%10))/10);
+  n[ 9] = (((fsCode2%1000)-(fsCode2%100))/100);
+  n[10] = (((fsCode2%10000)-(fsCode2%1000))/1000);
+  n[11] = (((fsCode2%100000)-(fsCode2%10000))/10000);
+  n[12] = (((fsCode2%1000000)-(fsCode2%100000))/100000);
+  n[13] = (((fsCode2%10000000)-(fsCode2%1000000))/1000000);
+  n[14] = (((fsCode2%100000000)-(fsCode2%10000000))/10000000);
+  n[15] = (((fsCode2%1000000000)-(fsCode2%100000000))/100000000);
+  int pNumber = 0;
+  for (int i = 0; i < 16; i++){
+    for (int j = 0; j < n[i]; j++){
+      TString name("");
+      if (i == 15) name = "Lambda";
+      if (i == 14) name = "AntiLambda";
+      if (i == 13) name = "Positron";
+      if (i == 12) name = "Electron";
+      if (i == 11) name = "MuonPlus";
+      if (i == 10) name = "MuonMinus";
+      if (i ==  9) name = "Proton";
+      if (i ==  8) name = "AntiProton";
+      if (i ==  7) name = "Eta";
+      if (i ==  6) name = "Photon";
+      if (i ==  5) name = "KPlus";
+      if (i ==  4) name = "KMinus";
+      if (i ==  3) name = "KShort";
+      if (i ==  2) name = "PiPlus";
+      if (i ==  1) name = "PiMinus";
+      if (i ==  0) name = "Pi0";
+      name += (pNumber++);
+      TString tmp("");
+      vector<TString> names;
+      if (name.Contains("Pi0")){ tmp = "Photon"; tmp += (pNumber++); names.push_back(tmp);
+                                 tmp = "Photon"; tmp += (pNumber++); names.push_back(tmp); }
+      if (name.Contains("Eta")){ tmp = "Photon"; tmp += (pNumber++); names.push_back(tmp);
+                                 tmp = "Photon"; tmp += (pNumber++); names.push_back(tmp); }
+      if (name.Contains("KShort")){ tmp = "PiPlus";  tmp += (pNumber++); names.push_back(tmp);
+                                    tmp = "PiMinus"; tmp += (pNumber++); names.push_back(tmp); }
+      if (name.Contains("Lambda")){ tmp = "Proton";  tmp += (pNumber++); names.push_back(tmp);
+                                    tmp = "PiMinus"; tmp += (pNumber++); names.push_back(tmp); }
+      if (name.Contains("AntiLambda")){ tmp = "AntiProton";  tmp += (pNumber++); names.push_back(tmp);
+                                        tmp = "PiPlus";      tmp += (pNumber++); names.push_back(tmp); }
+      gluexMap[name] = names;
+    }
+  }
+  return gluexMap;
+}
+
+bool GetPolarizationAngle(int runNumber, int& polarizationAngle)
+{
+  //RCDB environment must be setup!!
+    
+  //Pipe the current constant into this function
+  ostringstream locCommandStream;
+  locCommandStream << "rcnd " << runNumber << " polarization_angle";
+  FILE* locInputFile = gSystem->OpenPipe(locCommandStream.str().c_str(), "r");
+  if(locInputFile == NULL)
+    return false;
+    
+  //get the first line
+  char buff[1024];
+  if(fgets(buff, sizeof(buff), locInputFile) == NULL)
+    return 0;
+  istringstream locStringStream(buff);
+    
+  //Close the pipe
+  gSystem->ClosePipe(locInputFile);
+    
+  //extract it
+  string locPolarizationAngleString;
+  if(!(locStringStream >> locPolarizationAngleString))
+    return false;
+    
+  // convert string to integer
+  polarizationAngle = atoi(locPolarizationAngleString.c_str());
+  // amorphous runs have the value -1
+  if (polarizationAngle == -1)
+    return false;
+
+  return true;
+}
