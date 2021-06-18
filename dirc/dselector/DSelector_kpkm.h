@@ -1,5 +1,5 @@
-#ifndef DSelector_pippim_h
-#define DSelector_pippim_h
+#ifndef DSelector_kpkm_h
+#define DSelector_kpkm_h
 
 #include <iostream>
 
@@ -10,12 +10,12 @@
 #include "TH1I.h"
 #include "TH2I.h"
 
-class DSelector_pippim : public DSelector
+class DSelector_kpkm : public DSelector
 {
 	public:
 
-		DSelector_pippim(TTree* locTree = NULL) : DSelector(locTree){}
-		virtual ~DSelector_pippim(){}
+		DSelector_kpkm(TTree* locTree = NULL) : DSelector(locTree){}
+		virtual ~DSelector_kpkm(){}
 
 		void Init(TTree *tree);
 		Bool_t Process(Long64_t entry);
@@ -35,29 +35,29 @@ class DSelector_pippim : public DSelector
 		//Step 0
 		DParticleComboStep* dStep0Wrapper;
 		DBeamParticle* dComboBeamWrapper;
-		DChargedTrackHypothesis* dPiPlusWrapper;
-		DChargedTrackHypothesis* dPiMinusWrapper;
+		DChargedTrackHypothesis* dKPlusWrapper;
+		DChargedTrackHypothesis* dKMinusWrapper;
 		DChargedTrackHypothesis* dProtonWrapper;
 
 		// DEFINE YOUR HISTOGRAMS HERE
 		// EXAMPLES:
 		TH1I* dHist_MissingMassSquared;
 		TH1I* dHist_BeamEnergy;
-		TH2F* dHist_PiPlusDIRCXY, *dHist_PiMinusDIRCXY;
-		TH2F* dHist_PiPlusDIRCThetaCVsP, *dHist_PiMinusDIRCThetaCVsP;
+		TH2F* dHist_KPlusDIRCXY, *dHist_KMinusDIRCXY;
+		TH2F* dHist_KPlusDIRCThetaCVsP, *dHist_KMinusDIRCThetaCVsP;
 		TH2F *dHist_Ldiff;
 
-	ClassDef(DSelector_pippim, 0);
+	ClassDef(DSelector_kpkm, 0);
 };
 
-void DSelector_pippim::Get_ComboWrappers(void)
+void DSelector_kpkm::Get_ComboWrappers(void)
 {
 	//Step 0
 	dStep0Wrapper = dComboWrapper->Get_ParticleComboStep(0);
 	dComboBeamWrapper = static_cast<DBeamParticle*>(dStep0Wrapper->Get_InitialParticle());
-	dPiPlusWrapper = static_cast<DChargedTrackHypothesis*>(dStep0Wrapper->Get_FinalParticle(0));
-	dPiMinusWrapper = static_cast<DChargedTrackHypothesis*>(dStep0Wrapper->Get_FinalParticle(1));
+	dKPlusWrapper = static_cast<DChargedTrackHypothesis*>(dStep0Wrapper->Get_FinalParticle(0));
+	dKMinusWrapper = static_cast<DChargedTrackHypothesis*>(dStep0Wrapper->Get_FinalParticle(1));
 	dProtonWrapper = static_cast<DChargedTrackHypothesis*>(dStep0Wrapper->Get_FinalParticle(2));
 }
 
-#endif // DSelector_pippim_h
+#endif // DSelector_kpkm_h
