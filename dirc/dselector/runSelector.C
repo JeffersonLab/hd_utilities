@@ -6,7 +6,7 @@
 #include "TString.h"
 #include "TSystem.h"
    
-void runSelector(TString runNumber = "72422", TString myPath = "/cache/halld/RunPeriod-2019-11/analysis/ver01/tree_pippim__B4/merged/") 
+void runSelector(TString runNumber = "72422", TString myPath = "/cache/halld/RunPeriod-2019-11/analysis/ver01/tree_kpkm__B4/merged/") 
 {
   // Load DSelector library
   gROOT->ProcessLine(".x $(ROOT_ANALYSIS_HOME)/scripts/Load_DSelector.C");
@@ -16,7 +16,7 @@ void runSelector(TString runNumber = "72422", TString myPath = "/cache/halld/Run
   TString sampleDir = myPath;
   cout<<"running selector on files in: "<<sampleDir.Data()<<endl;
   
-  TChain *chain = new TChain("pippim__B4_Tree");
+  TChain *chain = new TChain("kpkm__B4_Tree");
   TSystemDirectory dir(sampleDir, sampleDir);
   TList *files = dir.GetListOfFiles();
   int ifile = 0;
@@ -49,7 +49,7 @@ void runSelector(TString runNumber = "72422", TString myPath = "/cache/halld/Run
 	  }
 
 	  cout<<"total entries in TChain = "<<chain->GetEntries()<<" from "<<ifile<<" files"<<endl;
-	  DPROOFLiteManager::Process_Chain(chain, "DSelector_pippim.C+", Proof_Nthreads, Form("hist_pippim_%s.acc.root", runNumber.Data()));
+	  DPROOFLiteManager::Process_Chain(chain, "DSelector_kpkm.C+", Proof_Nthreads, Form("hist_kpkm_%s.acc.root", runNumber.Data()));
   }
 
   return;
