@@ -1,4 +1,7 @@
 #!/usr/bin/env perl
+use Getopt::Std;
+
+parse_options();
 #
 # parameters
 #
@@ -66,7 +69,8 @@ make_query($dbh_db, \$sth);
 #
 # collect the data
 #
-$find_dir_command = "find $starting_directory/ -xdev \\( \\(";
+$find_dir_command = "find $starting_directory/ ";
+$find_dir_command .= "$mindepth $maxdepth -xdev \\( \\(";
 $find_dir_command .= " -path $starting_directory/.snapshot";
 $find_dir_command .= " -o -path /cache/halld/example";
 $find_dir_command .= " -o -path /volatile/halld/example";
@@ -148,6 +152,26 @@ sub make_query {
         or die "Can't execute the query $sql\n error: $sth->errstr\n";
     
     return 0;
+}
+#
+# parse options
+#
+sub parse_options {
+    getopts('hn:x:');
+    if ($opt_h) {
+	print_usage();
+	exit 0;
+    }
+    if ($opt_n) {
+	$mindepth = "-mindepth $opt_n";
+    } else {
+	$mindepth = "";
+    }
+    if ($opt_x) {
+	$maxdepth = "-maxdepth $opt_x";
+    } else {
+	$maxdepth = "";
+    }
 }
 
 sub print_usage_message {
