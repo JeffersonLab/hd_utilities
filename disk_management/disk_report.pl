@@ -59,7 +59,7 @@ $sizagest_files_hash{title} = "Files with Greatest Size &times; Age";
 $sizagest_files_hash{comment} = "";
 @saf_headings = ("Rank", "Size&times;Age (GB-years)", "File", "Size (GB)", "Last Access Time", "User", "Directory");
 $sizagest_files_hash{headings} = \@saf_headings;
-$sizagest_files_hash{query} = "select format(($file_table.size*1.e-9)*(unix_timestamp(now()) - unix_timestamp(atime))/$seconds_per_year, 2) as gby, filename, format($file_table.size/1.e9, 2), atime, $dir_table.uid, dirname from $dir_table, $file_table where $dir_table.id = dirId $user_file_clause order by $file_table.size*(unix_timestamp(now()) - unix_timestamp(atime)) desc limit $nlines;";
+$sizagest_files_hash{query} = "select format(($file_table.size*1.e-9)*(unix_timestamp(now()) - unix_timestamp(atime))/$seconds_per_year, 2) as gby, filename, format($file_table.size/1.e9, 2), atime, $dir_table.uid, dirname from $dir_table, $file_table where $dir_table.id = dirId $user_file_clause order by cast($file_table.size as double)*cast((unix_timestamp(now()) - unix_timestamp(atime)) as double) desc limit $nlines;";
 
 %largest_dirs_hash = ();
 $largest_dirs_hash{title} = "Largest Directories";
@@ -80,7 +80,7 @@ $sizagest_dirs_hash{title} = "Directories with Greatest Size &times; Age";
 $sizagest_dirs_hash{comment} = "Excludes files in sub-directories, age &times; size summed over all files in directory";
 @sad_headings = ("Rank", "Size&times;Age (GB-years)", "Directory", "User");
 $sizagest_dirs_hash{headings} = \@sad_headings;
-$sizagest_dirs_hash{query} = "select format(sum(($file_table.size*1.e-9)*(unix_timestamp(now()) - unix_timestamp(atime)))/$seconds_per_year, 2) as sumgby, dirname, $dir_table.uid from $dir_table, $file_table where $dir_table.id = dirId $user_dir_clause group by dirId order by sum(($file_table.size)*(unix_timestamp(now()) - unix_timestamp(atime))) desc limit $nlines;";
+$sizagest_dirs_hash{query} = "select format(sum(($file_table.size*1.e-9)*(unix_timestamp(now()) - unix_timestamp(atime)))/$seconds_per_year, 2) as sumgby, dirname, $dir_table.uid from $dir_table, $file_table where $dir_table.id = dirId $user_dir_clause group by dirId order by sum(cast($file_table.size as double)*cast(unix_timestamp(now()) - unix_timestamp(atime) as double)) desc limit $nlines;";
 
 %largest_users_hash = ();
 $largest_users_hash{title} = "Largest Total File Size by User";
@@ -101,8 +101,7 @@ $sizagest_users_hash{title} = "Largest Total Size &times; Age by User";
 $sizagest_users_hash{comment} = "Age &times; size summed over all files owned by user";
 @sau_headings = ("Rank", "Size&times;Age (GB-years)", "User");
 $sizagest_users_hash{headings} = \@sau_headings;
-$sizagest_users_hash{query} = "select format(sum(($file_table.size*1.e-9)*(unix_timestamp(now())-unix_timestamp(atime)))/$seconds_per_year, 2) as sumgby, $file_table.uid from $file_table group by $file_table.uid order by sum(($file_table.size)*(unix_timestamp(now())-unix_timestamp(atime))) desc limit $nlines;";
-#select sum(($file_table.size*1.e-9)*(unix_timestamp(now())-unix_timestamp(atime))) as sumgby, $file_table.uid from $file_table group by $file_table.uid order by sumgby desc limit $nlines;
+$sizagest_users_hash{query} = "select format(sum(($file_table.size*1.e-9)*(unix_timestamp(now())-unix_timestamp(atime)))/$seconds_per_year, 2) as sumgby, $file_table.uid from $file_table group by $file_table.uid order by sum(cast($file_table.size as double)*cast(unix_timestamp(now())-unix_timestamp(atime) as double)) desc limit $nlines;";
 
 do_one_section(\%largest_files_hash);
 do_one_section(\%oldest_files_hash);
