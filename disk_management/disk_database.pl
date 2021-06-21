@@ -35,98 +35,105 @@ if (defined $dbh_db) {
 } else {
     die "Could not connect to the database server, exiting.\n";
 }
+if ($begin) {
 #
 # drop the tables
 #
-$sql = "drop table if exists $dir_table, $file_table, $update_time_table;";
-make_query($dbh_db, \$sth);
+    $sql = "drop table if exists $dir_table, $file_table, $update_time_table;";
+    make_query($dbh_db, \$sth);
 #
 # re-create tables
 #
-$sql = "create table $dir_table (
-       id int primary key auto_increment,
-       dirname varchar(256),
-       size int,
-       uid smallint
-);";
-make_query($dbh_db, \$sth);
-$sql = "create table $file_table (
-       id int primary key auto_increment,
-       filename varchar(256),
-       dirId int,
-       atime datetime,
-       mtime datetime,
-       size bigint,
-       uid smallint
-);";
-make_query($dbh_db, \$sth);
-$sql = "create table $update_time_table (
-updateTime timestamp
-);";
-make_query($dbh_db, \$sth);
-$sql = "insert into $update_time_table set updateTime = NULL;";
-make_query($dbh_db, \$sth);
+    $sql = "create table $dir_table (
+       	 id int primary key auto_increment,
+       	 dirname varchar(256),
+       	 size int,
+       	 uid smallint
+	 );";
+    make_query($dbh_db, \$sth);
+    $sql = "create table $file_table (
+       	 id int primary key auto_increment,
+       	 filename varchar(256),
+       	 dirId int,
+       	 atime datetime,
+       	 mtime datetime,
+       	 size bigint,
+       	 uid smallint
+	 );";
+    make_query($dbh_db, \$sth);
+    $sql = "create table $update_time_table (
+    	 updateTime timestamp
+	 );";
+    make_query($dbh_db, \$sth);
+    $sql = "insert into $update_time_table set updateTime = NULL;";
+    make_query($dbh_db, \$sth);
+}
 #
 # collect the data
 #
-$find_dir_command = "find $starting_directory/ ";
-$find_dir_command .= "$mindepth $maxdepth -xdev \\( \\(";
-$find_dir_command .= " -path $starting_directory/.snapshot";
-$find_dir_command .= " -o -path /cache/halld/example";
-$find_dir_command .= " -o -path /volatile/halld/example";
-$find_dir_command .= " \\) -prune \\) -o \\( -type d -print \\) |";
-print "find_dir_command = $find_dir_command\n";
-open (FINDDIR, $find_dir_command);
-$idebug = 0;
-$jdebug = 0;
-while ($dirname = <FINDDIR>) {
-    if (!($idebug%1000)) {print "$idebug: dirname = $dirname";}
-    chomp $dirname;
-    @stat = stat($dirname);
-    $sql = "insert into $dir_table set dirname = \"$dirname\", uid = $stat[4], size = $stat[7];";
-    #print $sql, "\n";
-    make_query($dbh_db, \$sth);
-    $sql = "select last_insert_id();";
-    make_query($dbh_db, \$sth);
-    @row = $sth->fetchrow_array;
-    $last_id = $row[0];
-    $dirname =~ s/ /\\ /g; # escape space
-    $dirname =~ s/\(/\\\(/g; # escape (
-    $dirname =~ s/\)/\\\)/g; # escape )
-    $dirname =~ s/&/\\&/g; # escape &
-    $dirname =~ s/\$/\\\$/g; # escape $
-    $dirname =~ s/>/\\>/g; # escape >
-    $dirname =~ s/</\\</g; # escape <
-    open (FINDFILE, "find $dirname -maxdepth 1 -type f |");
-    while ($filename = <FINDFILE>) {
-	chomp $filename;
-	if (!($jdebug%10000)) {print "$jdebug: $filename\n";}
-	@stat = stat($filename);
-	if (@stat) {
-	    @token = split(/\//, $filename);
-	    $file_no_path = $token[$#token];
-	    #print "file_no_path = $file_no_path\n";
-	    $file_no_path =~ s/\\/\\\\/g; # escape backslash
-	    $sql = "insert into $file_table set filename = \"$file_no_path\", dirId = $last_id, atime = from_unixtime($stat[8]), mtime = from_unixtime($stat[9]), size = $stat[7], uid = $stat[4];";
-	    make_query($dbh_db, \$sth);
-	} else {
-	    print "cannot stat $filename in $dirname\n";
+if ($begin || $append) {
+    $find_dir_command = "find $starting_directory/ ";
+    $find_dir_command .= "$mindepth $maxdepth -xdev \\( \\(";
+    $find_dir_command .= " -path $starting_directory/.snapshot";
+    $find_dir_command .= " -o -path /cache/halld/example";
+    $find_dir_command .= " -o -path /volatile/halld/example";
+    $find_dir_command .= " \\) -prune \\) -o \\( -type d -print \\) |";
+    print "find_dir_command = $find_dir_command\n";
+    open (FINDDIR, $find_dir_command);
+    $idebug = 0;
+    $jdebug = 0;
+    while ($dirname = <FINDDIR>) {
+	if (!($idebug%1000)) {print "$idebug: dirname = $dirname";}
+	chomp $dirname;
+	@stat = stat($dirname);
+	$sql = "insert into $dir_table set dirname = \"$dirname\", uid = $stat[4], size = $stat[7];";
+	#print $sql, "\n";
+	make_query($dbh_db, \$sth);
+	$sql = "select last_insert_id();";
+	make_query($dbh_db, \$sth);
+	@row = $sth->fetchrow_array;
+	$last_id = $row[0];
+	$dirname =~ s/ /\\ /g; # escape space
+	$dirname =~ s/\(/\\\(/g; # escape (
+	$dirname =~ s/\)/\\\)/g; # escape )
+	$dirname =~ s/&/\\&/g; # escape &
+	$dirname =~ s/\$/\\\$/g; # escape $
+	$dirname =~ s/>/\\>/g; # escape >
+	$dirname =~ s/</\\</g; # escape <
+	open (FINDFILE, "find $dirname -maxdepth 1 -type f |");
+	while ($filename = <FINDFILE>) {
+	    chomp $filename;
+	    if (!($jdebug%10000)) {print "$jdebug: $filename\n";}
+	    @stat = stat($filename);
+	    if (@stat) {
+		@token = split(/\//, $filename);
+		$file_no_path = $token[$#token];
+		#print "file_no_path = $file_no_path\n";
+		$file_no_path =~ s/\\/\\\\/g; # escape backslash
+		$sql = "insert into $file_table set filename = \"$file_no_path\", dirId = $last_id, atime = from_unixtime($stat[8]), mtime = from_unixtime($stat[9]), size = $stat[7], uid = $stat[4];";
+		make_query($dbh_db, \$sth);
+	    } else {
+		print "cannot stat $filename in $dirname\n";
+	    }
+	    $jdebug++;
 	}
-	$jdebug++;
+	close(FINDFILE);
+	$idebug++;
+	#    print "DEBUG: $idebug directories done\n";
+	#    if ($idebug == 1000) {last;}
     }
-    close(FINDFILE);
-    $idebug++;
-#    print "DEBUG: $idebug directories done\n";
-#    if ($idebug == 1000) {last;}
 }
-$sql = "drop table if exists $dir_table_final, $file_table_final, $update_time_table_final;";
-make_query($dbh_db, \$sth);
-$sql = "rename table $dir_table to $dir_table_final;";
-make_query($dbh_db, \$sth);
-$sql = "rename table $file_table to $file_table_final;";
-make_query($dbh_db, \$sth);
-$sql = "rename table $update_time_table to $update_time_table_final;";
-make_query($dbh_db, \$sth);
+
+if ($finish) {
+    $sql = "drop table if exists $dir_table_final, $file_table_final, $update_time_table_final;";
+    make_query($dbh_db, \$sth);
+    $sql = "rename table $dir_table to $dir_table_final;";
+    make_query($dbh_db, \$sth);
+    $sql = "rename table $file_table to $file_table_final;";
+    make_query($dbh_db, \$sth);
+    $sql = "rename table $update_time_table to $update_time_table_final;";
+    make_query($dbh_db, \$sth);
+}
 $sth = 0;
 #
 # disconnect from database server
@@ -157,7 +164,7 @@ sub make_query {
 # parse options
 #
 sub parse_options {
-    getopts('hn:x:');
+    getopts('hn:x:baf');
     if ($opt_h) {
 	print_usage();
 	exit 0;
@@ -171,6 +178,26 @@ sub parse_options {
 	$maxdepth = "-maxdepth $opt_x";
     } else {
 	$maxdepth = "";
+    }
+    if ($opt_b) {
+	$begin = 1;
+    } else {
+	$begin = 0;
+    }
+    if ($opt_a) {
+	$append = 1;
+    } else {
+	$append = 0;
+    }
+    if ($opt_f) {
+	$finish = 1;
+    } else {
+	$finish = 0;
+    }
+    if (! $begin && ! $append && ! $finish) {
+	$begin = 1;
+	$append = 1;
+	$finish = 1;
     }
 }
 
