@@ -196,10 +196,9 @@ sub do_one_section {
 	    $user = getpwuid($row[$iu]);
 	    if (! $user) {
 		$user = "uid=$row[$iu]";
-		$user_href = $row[$iu];
 	    }
 	    if ($add_href) {
-		$row[$iu] = "${href_prefix}${user_href}${href_middle}${user}${href_suffix}";
+		$row[$iu] = "${href_prefix}${user}${href_middle}${user}${href_suffix}";
 	    } else {
 		$row[$iu] = $user;
 	    }
