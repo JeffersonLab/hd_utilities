@@ -38,6 +38,7 @@ if ($userid) {
 } else {
     $user_file_clause = "";
     $user_dir_clause = "";
+    %users_to_report = ();
 }
 
 %largest_files_hash = ();
@@ -142,21 +143,26 @@ $sizagest_users_hash{query} = "select format(sum(($file_table.size*1.e-9)*(unix_
 			    order by sum(cast($file_table.size as double)*cast(unix_timestamp(now())-unix_timestamp(atime) as double)) desc
 			    limit $nlines;";
 
-do_one_section(\%largest_files_hash);
-do_one_section(\%oldest_files_hash);
-do_one_section(\%sizagest_files_hash);
-do_one_section(\%largest_dirs_hash);
-do_one_section(\%oldest_dirs_hash);
-do_one_section(\%sizagest_dirs_hash);
 if (!$userid) {
-    do_one_section(\%largest_users_hash);
-    do_one_section(\%oldest_users_hash);
     do_one_section(\%sizagest_users_hash, "href");
+    do_one_section(\%largest_users_hash, "href");
 }
+do_one_section(\%sizagest_dirs_hash);
+do_one_section(\%largest_dirs_hash);
+do_one_section(\%sizagest_files_hash);
+do_one_section(\%largest_files_hash);
 
 print $q->end_html;                  # end the HTML
     
 print "\n";
+
+if (!$userid) {
+    open(USER_REPORTS, "> ${directory_label}_user_reports.txt");
+    foreach $user_key (keys %users_to_report) {
+	print USER_REPORTS "$directory_label $user_key ${directory_label}_${user_key}.html\n";
+    }
+    close(USER_REPORTS)
+}
 
 exit;
 #
@@ -199,6 +205,7 @@ sub do_one_section {
 	    }
 	    if ($add_href) {
 		$row[$iu] = "${href_prefix}${user}${href_middle}${user}${href_suffix}";
+		$users_to_report{$user} = 1;
 	    } else {
 		$row[$iu] = $user;
 	    }
@@ -236,12 +243,14 @@ sub parse_options {
 	exit 0;
     }
     if ($opt_u) {
-	$userid = `id -u $opt_u`;
+	$username = $opt_u;
+	$userid = `id -u $username`;
+	if (!$userid) {$userid = 0;}
 	chomp $userid;
     } else {
 	$userid = 0
     }
-    #print "userid = $userid\n;"
+    #print "userid = $userid\n";
     if ($opt_n) {
 	$nlines = $opt_n;
     } else {
