@@ -143,9 +143,17 @@ $sizagest_users_hash{query} = "select format(sum(($file_table.size*1.e-9)*(unix_
 			    order by sum(cast($file_table.size as double)*cast(unix_timestamp(now())-unix_timestamp(atime) as double)) desc
 			    limit $nlines;";
 
+%fileest_users_hash = ();
+$fileest_users_hash{title} = "Largest Number of Files by User";
+$fileest_users_hash{comment} = "";
+@fu_headings = ("Rank", "Files", "User");
+$fileest_users_hash{headings} = \@fu_headings;
+$fileest_users_hash{query} = "select format(count(*), 0), uid, count(*) as c from work_max2_file group by uid order by c desc limit $nlines;";
+
 if (!$userid) {
     do_one_section(\%sizagest_users_hash, "href");
     do_one_section(\%largest_users_hash, "href");
+    do_one_section(\%fileest_users_hash, "href");
 }
 do_one_section(\%sizagest_dirs_hash);
 do_one_section(\%largest_dirs_hash);
