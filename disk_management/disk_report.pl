@@ -148,7 +148,11 @@ $fileest_users_hash{title} = "Largest Number of Files by User";
 $fileest_users_hash{comment} = "";
 @fu_headings = ("Rank", "Files", "User");
 $fileest_users_hash{headings} = \@fu_headings;
-$fileest_users_hash{query} = "select format(count(*), 0), uid, count(*) as c from work_max2_file group by uid order by c desc limit $nlines;";
+$fileest_users_hash{query} = "select format(count(*), 0), uid, count(*) as c
+                           from $file_table
+                           group by uid
+                           order by c desc
+                           limit $nlines;";
 
 if (!$userid) {
     do_one_section(\%sizagest_users_hash, "href");
