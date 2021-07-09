@@ -218,7 +218,6 @@ sub do_one_section {
     print HTML "\n";
     $i = 1;
     while (@row = $sth->fetchrow_array) {
-	print "1 = $row[1], 4 = $row[4]\n";
 	if ($iuser >= 0) {
 	    $iu = $iuser - 1;
 	    $user = getpwuid($row[$iu]);
