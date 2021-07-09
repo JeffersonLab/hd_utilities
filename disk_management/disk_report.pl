@@ -6,6 +6,8 @@ use Getopt::Std;
 
 parse_options();
 
+$this_script = $0;
+
 $directory_label = $ARGV[0];
 $dir_table = $directory_label . "_dir";
 $file_table = $directory_label . "_file";
@@ -20,9 +22,16 @@ $seconds_per_year = 365.25*24*60*60;
 
 $dbh = DBI->connect("DBI:mysql:$database:$hostname", $user, $password);
 
+if ($username) {
+    $html_file_name = "${directory_label}_${username}_report.html";
+} else {
+    $html_file_name = "${directory_label}_report.html";
+}
+open(HTML, ">$html_file_name");
+
 $q = new CGI;                        # create new CGI object
 $title = "Disk Usage Report: $directory_label";
-print
+print HTML
     $q->start_html($title), # start the HTML
     $q->h1($title),         # level 1 header
     "<p>File ages are from last access time.\n";
@@ -30,7 +39,7 @@ print
 $sql = "select updateTime from $update_time_table;";
 make_query($dbh, \$sth);
 @row = $sth->fetchrow_array;
-print "<p>Update time: $row[0]\n";
+print HTML "<p>Update time: $row[0]\n";
 
 if ($userid) {
     $user_file_clause = "and $file_table.uid = $userid";
@@ -164,16 +173,16 @@ do_one_section(\%largest_dirs_hash);
 do_one_section(\%sizagest_files_hash);
 do_one_section(\%largest_files_hash);
 
-print $q->end_html;                  # end the HTML
+print HTML $q->end_html;                  # end the HTML
     
-print "\n";
+print HTML "\n";
 
 if (!$userid) {
-    open(USER_REPORTS, "> ${directory_label}_user_reports.txt");
     foreach $user_key (keys %users_to_report) {
-	print USER_REPORTS "$directory_label $user_key ${directory_label}_${user_key}.html\n";
+	$command =  "$this_script -u $user_key -n $nlines_users $directory_label";
+	print "executing $command\n";
+	system($command);
     }
-    close(USER_REPORTS)
 }
 
 exit;
@@ -185,28 +194,28 @@ sub do_one_section {
     if ($_[1] eq "href") {
 	$add_href = 1;
 	$href_prefix = "<a href=\"${directory_label}_";
-	$href_middle = ".html\">";
+	$href_middle = "_report.html\">";
 	$href_suffix = "</a>";
     } else {
 	$add_href = 0;
     }
-    print $q->h2($section_hash{title}), "\n";
+    print HTML $q->h2($section_hash{title}), "\n";
     my $comment = $section_hash{comment};
-    if ($comment) {print $comment, "\n";}
+    if ($comment) {print HTML $comment, "\n";}
     $sql = $section_hash{query};
     make_query($dbh, \$sth);
-    print "<table border>\n";
+    print HTML "<table border>\n";
     @hray = @{$section_hash{headings}};
-    print "<tr>";
+    print HTML "<tr>";
     $iuser = -1; # no header is called "User"
     for ($ih = 0; $ih <= $#hray; $ih++) {
 	$hthis = $hray[$ih];
-	print "<th>$hthis";
+	print HTML "<th>$hthis";
 	if ($hthis eq "User") { # this column is a uid, mark it as such
 	    $iuser = $ih;
 	}
     }
-    print "\n";
+    print HTML "\n";
     $i = 1;
     while (@row = $sth->fetchrow_array) {
 	if ($iuser >= 0) {
@@ -222,14 +231,14 @@ sub do_one_section {
 		$row[$iu] = $user;
 	    }
 	}
-	print "<tr><td>$i";
+	print HTML "<tr><td>$i";
 	for ($ih = 0; $ih < $#hray; $ih++) {
-	    print "<td>$row[$ih]";
+	    print HTML "<td>$row[$ih]";
 	}
-	print "\n";
+	print HTML "\n";
 	$i++;
     }
-    print "</table>\n";
+    print HTML "</table>\n";
 }
 #
 # make a query
@@ -249,24 +258,37 @@ sub make_query {
 # parse options
 #
 sub parse_options {
-    getopts('hu:n:');
+    getopts('hu:n:m:');
     if ($opt_h) {
 	print_usage();
 	exit 0;
     }
     if ($opt_u) {
 	$username = $opt_u;
-	$userid = `id -u $username`;
+	if ($username =~ m/^uid=/) {
+	    #print ("username is likely of the form uid=1234\n");
+	    @tokens = split(/=/, $username);
+	    $userid = $tokens[1]; 
+	} else {
+	    $userid = `id -u $username`;
+	    chomp $userid;
+	}
 	if (!$userid) {$userid = 0;}
-	chomp $userid;
+	#print "$username, $userid\n"
     } else {
-	$userid = 0
+	$username = "";
+	$userid = 0;
     }
     #print "userid = $userid\n";
     if ($opt_n) {
 	$nlines = $opt_n;
     } else {
 	$nlines = 10; # default number of lines
+    }
+    if ($opt_m) {
+	$nlines_users = $opt_m;
+    } else {
+	$nlines_users = 20; # default number of lines
     }
 }
 sub print_usage {
