@@ -77,7 +77,7 @@ $sizagest_files_hash{title} = "Files with Greatest Size &times; Age";
 $sizagest_files_hash{comment} = "";
 @saf_headings = ("Rank", "Size&times;Age (GB-years)", "File", "Size (GB)", "Last Access Time", "User", "Directory");
 $sizagest_files_hash{headings} = \@saf_headings;
-$sizagest_files_hash{query} = "select format(($file_table.size*1.e-9)*(unix_timestamp(now()) - unix_timestamp(atime))/$seconds_per_year, 2) as gby, filename, format($file_table.size/1.e9, 2), atime, $dir_table.uid, dirname
+$sizagest_files_hash{query} = "select format(($file_table.size*1.e-9)*(unix_timestamp(now()) - unix_timestamp(atime))/$seconds_per_year, 2) as gby, filename, format($file_table.size/1.e9, 2), atime, $file_table.uid, dirname
 			    from $dir_table, $file_table 
 			    where $dir_table.id = dirId $user_file_clause
 			    order by cast($file_table.size as double)*cast((unix_timestamp(now()) - unix_timestamp(atime)) as double) desc
