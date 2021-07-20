@@ -177,7 +177,7 @@ print HTML $q->end_html;                  # end the HTML
     
 print HTML "\n";
 
-if (!$userid) {
+if (!$user_report) {
     foreach $user_key (keys %users_to_report) {
 	$command =  "$this_script -u $user_key -n $nlines_users $directory_label";
 	print "executing $command\n";
@@ -264,6 +264,7 @@ sub parse_options {
 	exit 0;
     }
     if ($opt_u) {
+	$user_report = 1;
 	$username = $opt_u;
 	if ($username =~ m/^uid=/) {
 	    #print ("username is likely of the form uid=1234\n");
@@ -276,6 +277,7 @@ sub parse_options {
 	if (!$userid) {$userid = 0;}
 	#print "$username, $userid\n"
     } else {
+	$user_report = 0;
 	$username = "";
 	$userid = 0;
     }
