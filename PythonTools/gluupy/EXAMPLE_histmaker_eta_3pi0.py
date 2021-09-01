@@ -9,11 +9,8 @@ from gluupy_histmaker import *
 # # # 2: arithmetic operator (examples: ">",  "<",  "==",   "!=" for greater than, less than, equals, and not equals )  
 # # # If a cut is supplied that doesn't follow this form, we exit early 
 ALL_CUTS_LIST = [
-	["p4_beam__E","Beam E > ",6.0],
-	["x4_prot_meas_z","Proton Z vertex (measured) > ",52.],
-	["x4_prot_meas_z","Proton Z vertex (measured) < ",78.],
-	["x4_prot_meas_R","Proton R vertex (measured) < ",1.5],
-	["p4_prot_pmag"  ,"Proton momentum > ",0.0],
+	["beam_p4_meas__E","Beam E > ",6.0],
+	["p_p4_pmag"  ,"Proton momentum > ",0.350],
 	["chi2_ndf","chi^2/ndf < ",5.0],
 ]
 
@@ -40,14 +37,14 @@ def main(argv):
 
 	# Reaction independent (assuming you reconstruct a proton)
 	# branch_names_to_use = [] # Empty list fetches all branches (will be slower)
-	branch_names_to_use = ["event","chi2_ndf", "accidweight","p4_beam__E","x4_beam_t","x4_prot_meas_x","x4_prot_meas_y","x4_prot_meas_z","p4_prot_meas_px","p4_prot_meas_py","p4_prot_meas_pz"]
+	branch_names_to_use = ["event","chi2_ndf", "accidweight","beam_p4_meas__E","p_p4_meas_px","p_p4_meas_py","p_p4_meas_pz",]
 	branch_names_to_use.extend(["eta_mass_meas","eta_mass_kin","pi0_1_mass_meas","pi0_2_mass_meas","pi0_3_mass_meas","pi0_1_mass_kin","pi0_2_mass_kin","pi0_3_mass_kin",])
 
 	# Get branches using uproot
 	branches_dict = GetBranchesUproot(args.infile_list[0],max_entries,branch_names_to_use) # Arguments: filename, OPTIONAL: max entries to parse (default=-1 => all entries), OPTIONAL: list of string branchnames to retrieve (default=get all branches)
 	# If you want to define any of your own branches, do so here
-	branches_dict["x4_prot_meas_R"] = np.sqrt( branches_dict["x4_prot_meas_x"]**2 + branches_dict["x4_prot_meas_y"]**2  )
-	branches_dict["p4_prot_pmag"] = np.sqrt( branches_dict["p4_prot_meas_px"]**2 + branches_dict["p4_prot_meas_px"]**2 + branches_dict["p4_prot_meas_px"]**2)
+	# branches_dict["x4_prot_meas_R"] = np.sqrt( branches_dict["x4_prot_meas_x"]**2 + branches_dict["x4_prot_meas_y"]**2  )
+	branches_dict["p_p4_pmag"] = np.sqrt( branches_dict["p_p4_meas_px"]**2 + branches_dict["p_p4_meas_py"]**2 + branches_dict["p_p4_meas_pz"]**2)
 
 	# Fill these histograms before any cuts (neglect FS weighting, some double counting will occur)
 	FillHistFromBranchDict(h_chi2_ndf_nocuts,branches_dict,"chi2_ndf",DoFSWeighting=False)

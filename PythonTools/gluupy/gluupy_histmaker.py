@@ -133,8 +133,8 @@ def GetBranchesUproot(fname,max_entries=-1,branchname_list=[]):
 	
 	# Always need these three arrays to calculate FS weights, add if not already there
 	if("event"      not in branches_to_retrieve): branches_to_retrieve.append("event")
-	if("p4_beam__E" not in branches_to_retrieve): branches_to_retrieve.append("p4_beam__E")
-	if("x4_beam_t"  not in branches_to_retrieve): branches_to_retrieve.append("x4_beam_t")
+	if("beam_p4_meas__E" not in branches_to_retrieve): branches_to_retrieve.append("beam_p4_meas__E")
+	if("beam_x4_meas_t"  not in branches_to_retrieve): branches_to_retrieve.append("beam_x4_meas_t")
 	
 	if(VERBOSE and len(branchname_list)==0): print "Retriving ALL branches from tree...\n All branches: " + str(branches_to_retrieve)
 	if(VERBOSE and len(branchname_list)!=0): print "Retriving only the following branches from tree " + str(branches_to_retrieve)
@@ -202,8 +202,8 @@ def GetFSWeights(array_dict):
 	nentries = len(array_dict["event"])
 
 	evt_diff = np.ediff1d(array_dict["event"],to_begin=-99) #Take difference of elem[i+1]-elem[i], tack a dummy value at the start. Performance seems better than sliced version of a[i]-a[i-1]
-	beamE_diff = np.ediff1d(array_dict["p4_beam__E"],to_begin=-99) #Take difference of elem[i+1]-elem[i], tack a dummy value at the start. Performance seems better than sliced version of a[i]-a[i-1]
-	beamT_diff = np.ediff1d(array_dict["x4_beam_t"],to_begin=-99) #Take difference of elem[i+1]-elem[i], tack a dummy value at the start. Performance seems better than sliced version of a[i]-a[i-1]
+	beamE_diff = np.ediff1d(array_dict["beam_p4_meas__E"],to_begin=-99) #Take difference of elem[i+1]-elem[i], tack a dummy value at the start. Performance seems better than sliced version of a[i]-a[i-1]
+	beamT_diff = np.ediff1d(array_dict["beam_x4_meas_t"],to_begin=-99) #Take difference of elem[i+1]-elem[i], tack a dummy value at the start. Performance seems better than sliced version of a[i]-a[i-1]
 	
 	# Calculate FS weight factors (if two combos accepted with same event_num and same beam photon, only difference is from FS particles, then use each with additional weight factor of 1/2 )
 	# # Solution inspired by: https://stackoverflow.com/questions/42129021/counting-consecutive-1s-in-numpy-array
