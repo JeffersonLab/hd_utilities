@@ -1938,7 +1938,8 @@ map<TString, vector<TString> > GlueXDecayProductMap(int fsCode1, int fsCode2){
                                  tmp = "Photon"; tmp += (pNumber++); names.push_back(tmp); }
       if (name.Contains("KShort")){ tmp = "PiPlus";  tmp += (pNumber++); names.push_back(tmp);
                                     tmp = "PiMinus"; tmp += (pNumber++); names.push_back(tmp); }
-      if (name.Contains("Lambda")){ tmp = "Proton";  tmp += (pNumber++); names.push_back(tmp);
+      if (name.Contains("Lambda")&&!name.Contains("AntiLambda"))
+                                  { tmp = "Proton";  tmp += (pNumber++); names.push_back(tmp);
                                     tmp = "PiMinus"; tmp += (pNumber++); names.push_back(tmp); }
       if (name.Contains("AntiLambda")){ tmp = "AntiProton";  tmp += (pNumber++); names.push_back(tmp);
                                         tmp = "PiPlus";      tmp += (pNumber++); names.push_back(tmp); }
