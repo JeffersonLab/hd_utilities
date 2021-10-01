@@ -16,6 +16,17 @@ Setup_Script()
 	perl -e "print qq(@INC)"
 	echo ""
 
+	# COPY CCDB SQLITE FILE TO LOCAL DISK
+	if [[ $CCDB_CONNECTION  == *"sqlite"* ]] ; then
+	    local SCRATCH=/scratch/slurm/${SLURM_JOB_ID}
+	    ls -l $SCRATCH
+	    local NEW_SQLITE=${SCRATCH}/ccdb.sqlite
+            cp -v ${CCDB_CONNECTION:10} $NEW_SQLITE
+            export CCDB_CONNECTION=sqlite:///$NEW_SQLITE
+            export JANA_CALIB_URL=sqlite:///$NEW_SQLITE
+            echo "JANA_CALIB_URL: " $JANA_CALIB_URL
+	fi
+
 	# COPY INPUT FILE TO WORKING DIRECTORY
 	# This step is necessary since the cache files will be created as soft links in the current directory, and we want to avoid large I/O processes.
 	# We first copy the input file to the current directory, then remove the link.
@@ -94,7 +105,7 @@ Save_ROOTFiles()
 	local NUM_FILES=`ls *.root 2>/dev/null | wc -l`
 	if [ $NUM_FILES -eq 0 ] ; then
 		echo "No additional ROOT files produced"
-		return
+		exit 1
 	fi
 
 	echo "Saving other ROOT files"
@@ -132,7 +143,7 @@ Run_Script()
 	# RUN ROOT
 	Extract_FileName $SELECTOR_NAME SELECTOR_FILE
 	cp ${SELECTOR_NAME}.* .
-	root -b -q $ROOT_SCRIPT'("'$INPUTFILE'", "'$TREE_NAME'", "'${SELECTOR_FILE}.C+'", '${NUM_THREADS}')'
+	root -b -q $ROOT_ANALYSIS_HOME/scripts/Load_DSelector.C $ROOT_SCRIPT'("'$INPUTFILE'", "'$TREE_NAME'", "'${SELECTOR_FILE}.C+'", '${NUM_THREADS}')'
 
 	# RETURN CODE
 	RETURN_CODE=$?
