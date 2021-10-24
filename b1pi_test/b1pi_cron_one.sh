@@ -41,11 +41,11 @@ mkdir -pv $RUN_DIR
 cd $RUN_DIR
 $B1PI_TEST_DIR/b1pi_test.sh -n $nevents -r $RUN -4
 echo \#count events
-echo \#count b1_pi.hddm `hddm_counter.pl b1_pi.hddm physicsEvent`
-echo \#count hdgeant.hddm `hddm_counter.pl hdgeant.hddm physicsEvent`
-echo \#count hdgeant_smeared.hddm `hddm_counter.pl hdgeant_smeared.hddm physicsEvent`
-echo \#count dana_rest.hddm `hddm_counter.pl dana_rest.hddm reconstructedPhysicsEvent`
-echo \#count dana_rest_b1pi.hddm `hddm_counter.pl dana_rest_b1pi.hddm reconstructedPhysicsEvent`
+echo \#count b1_pi.hddm `./hddm_counter.pl b1_pi.hddm physicsEvent`
+echo \#count hdgeant.hddm `./hddm_counter.pl hdgeant.hddm physicsEvent`
+echo \#count hdgeant_smeared.hddm `./hddm_counter.pl hdgeant_smeared.hddm physicsEvent`
+echo \#count dana_rest.hddm `./hddm_counter.pl dana_rest.hddm reconstructedPhysicsEvent`
+echo \#count dana_rest_b1pi.hddm `./hddm_counter.pl dana_rest_b1pi.hddm reconstructedPhysicsEvent`
 export PLOTDIR=/group/halld/www/halldweb/html/b1pi/$TODAYS_DATE/$BMS_OSNAME/Run$RUN
 mkdir -pv $PLOTDIR
 cp -v *.pdf *.gif *.html $PLOTDIR
