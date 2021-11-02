@@ -1,0 +1,15 @@
+src/libraries/include
+src/libraries/BCAL
+src/libraries/CCAL
+src/libraries/DANA
+src/libraries/DIRC
+src/libraries/EVENTSTORE
+src/libraries/FCAL
+src/libraries/HDGEOMETRY
+src/libraries/PAIR_SPECTROMETER
+src/libraries/PID
+src/libraries/START_COUNTER
+src/libraries/TAGGER
+src/libraries/TOF
+src/libraries/TRACKING
+src/libraries/TTAB
