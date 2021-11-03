@@ -2,8 +2,8 @@
 hd_interface=/home/marki/git/hd_interface
 hdi_conversion=/home/marki/git/hd_utilities/hdi_conversion
 rm -rf halld_recon h_to_move.txt
-#git clone git@github.com:jeffersonlab/halld_recon
-cp -pr halld_recon.save halld_recon # instead of clone for testing to save time
+git clone git@github.com:jeffersonlab/halld_recon
+#cp -pr halld_recon.save halld_recon # instead of clone for testing to save time
 cd halld_recon
 echo git filter-repo \\ > ../command.sh
 awk '{print "    --path "$1" \\"}' < $hdi_conversion/filter.txt >> ../command.sh
