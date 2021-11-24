@@ -67,17 +67,17 @@ source /group/halld/Software/build_scripts/gluex_env_nightly.csh 2019-10-08
 
 ## Python Version Notes:
 
-You need to use a version of Python compatible with that used in you ROOT installatin. If you get a python error when executing the script run this command to determine what version of python is used in you ROOT build
+You need to use a version of Python compatible with that used in your ROOT installation. If you get a python error when executing the script run this command to determine what version of python is used in your ROOT build
 
 root-config --python-version
 
 For older ROOT installations (6.08 or earlier) you will probably use python ver2.7, but for newer builds python ver3.6 is the default.  Now use the correct python version to execute the script
 
-python2.7 plot_flux_ccdb.py
+python2.7 plot_flux_ccdb.py ...
 
 or 
 
-python3.6 plot_flux_ccdb.py
+python3.6 plot_flux_ccdb.py ...
 
 ## The flux values in the MySQL CCDB are from:
 
