@@ -3,8 +3,10 @@ Python script for creating histograms of tagged and untagged PS flux: Justin Ste
 The tagged and untagged pair spectrometer flux and acceptance are stored in CCDB.  The command to obtain histograms of the flux is:
 
 ```
-plot_flux_ccdb.py --begin-run beginRun --end-run endRun --num-bins 100 --energy-min 6.0 --energy-max 12.0 --rest-ver 3
+python plot_flux_ccdb.py --begin-run beginRun --end-run endRun --num-bins 100 --energy-min 6.0 --energy-max 12.0 --rest-ver 3
 ```
+
+See below for notes on python version if you get an error with this command.
 
 ## Command line options:
 
@@ -45,6 +47,7 @@ https://halldweb.jlab.org/wiki-private/index.php/Spring_2016_Analysis_Launch
 https://halldweb.jlab.org/wiki-private/index.php/Spring_2017_Analysis_Launch  
 https://halldweb.jlab.org/wiki-private/index.php/Spring_2018_Analysis_Launch  
 https://halldweb.jlab.org/wiki-private/index.php/Fall_2018_Analysis_Launch  
+https://halldweb.jlab.org/wiki-private/index.php/Spring_2020_Analysis_Launch
 
 ## Prerequisites:
 
@@ -62,11 +65,24 @@ and for simplicity you can use the standard build_scripts procedure to set these
 source /group/halld/Software/build_scripts/gluex_env_nightly.csh 2019-10-08
 ```
 
-## Notes:
+## Python Version Notes:
 
-The flux values in the MySQL CCDB are from:
+You need to use a version of Python compatible with that used in you ROOT installatin. If you get a python error when executing the script run this command to determine what version of python is used in you ROOT build
 
-RunPeriod-2018-01: REST ver02 production  
-RunPeriod-2018-08: REST ver02 production  (ver00 for low-energy runs 51384-51457)  
+root-config --python-version
+
+For older ROOT installations (6.08 or earlier) you will probably use python ver2.7, but for newer builds python ver3.6 is the default.  Now use the correct python version to execute the script
+
+python2.7 plot_flux_ccdb.py
+
+or 
+
+python3.6 plot_flux_ccdb.py
+
+## The flux values in the MySQL CCDB are from:
+
+RunPeriod-2019-11: REST ver01 production
+RunPeriod-2018-08: REST ver02 production  
+RunPeriod-2018-01: REST ver02 production
 RunPeriod-2017-01: REST ver03 production  
 RunPeriod-2016-02: REST ver06 production  
