@@ -227,11 +227,10 @@ thisfile_timestamp = float(start_unixtime) + timediff
 
 dt_thisfile = datetime.fromtimestamp(thisfile_timestamp)
 
-print('start of run  '+dt_runstart.strftime("%Y-%m-%d %H:%M:%S"))
+print('prestart      '+dt_runstart.strftime("%Y-%m-%d %H:%M:%S"))
 print('start of file '+dt_thisfile.strftime("%Y-%m-%d %H:%M:%S"))
 
 if outf:
-    outf.write(dt_runstart.strftime("%Y-%m-%d %H:%M:%S")+'\n')
     outf.write(dt_thisfile.strftime("%Y-%m-%d %H:%M:%S")+'\n')
     if usedrcdb:
         outf.write('RCDB\n')
