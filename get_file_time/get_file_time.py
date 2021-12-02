@@ -15,7 +15,7 @@
 #
 # It then reads the timestamp for the first event in the supplied file, converts the difference in timestamps into difference in seconds, and adds that to the start time.
 #
-# If an output file is specified as the 2nd command line argument, the file time is written to that file, followed by 'RCDB' if RCDB was used to estimate the prestart time. 
+# If an output file is specified as the 2nd command line argument, the prestart time and file time are written to that file, followed by 'RCDB' if RCDB was used to estimate the prestart time. 
 #
 # Naomi Jarvis 1 Dec 2021
 
@@ -231,6 +231,7 @@ print('start of run  '+dt_runstart.strftime("%Y-%m-%d %H:%M:%S"))
 print('start of file '+dt_thisfile.strftime("%Y-%m-%d %H:%M:%S"))
 
 if outf:
+    outf.write(dt_runstart.strftime("%Y-%m-%d %H:%M:%S")+'\n')
     outf.write(dt_thisfile.strftime("%Y-%m-%d %H:%M:%S")+'\n')
     if usedrcdb:
         outf.write('RCDB\n')
