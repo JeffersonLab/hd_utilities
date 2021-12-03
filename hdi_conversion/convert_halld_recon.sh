@@ -1,10 +1,11 @@
 #!/bin/bash
 hd_interface=/home/marki/git/hd_interface
 hdi_conversion=/home/marki/git/hd_utilities/hdi_conversion
-rm -rf halld_recon
-git clone git@github.com:jeffersonlab/halld_recon
+repo_dir=hdi_interface_from_hdr
+rm -rf $repo_dir command.sh
+git clone -b for_hdi_conversion git@github.com:markito3/halld_recon $repo_dir
 #cp -pr halld_recon.save halld_recon # instead of clone for testing to save time
-cd halld_recon
+cd $repo_dir
 echo git filter-repo \\ > ../command.sh
 awk '{print "    --path "$1" \\"}' < $hdi_conversion/filter.txt >> ../command.sh
 echo >> ../command.sh
