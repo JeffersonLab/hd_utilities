@@ -220,6 +220,9 @@ void gettime(int REFID, int PLANEID,
     if (!(REFID%5)|| (DEBUG>98)) {
       sprintf(tnam,"plots/velocity_refpad%d_plane%d_run%d.pdf",REFID,PLANEID,RunNumber);	
       gPad->SaveAs(tnam);
+
+      sprintf(tnam,"C/velocity_refpad%d_plane%d_run%d.C",REFID,PLANEID,RunNumber);	
+      gPad->SaveAs(tnam);
       
       double chi2 = p2->GetChisquare();
       double ndeg = (double)p2->GetNumberFitPoints() - (double)p2->GetNumberFreeParameters();

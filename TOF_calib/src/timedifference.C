@@ -258,15 +258,31 @@ void timedifference(int Run, int REF, int REFPLANE){
 
     if (hp->Integral(1,hp->GetNbinsX()-2)>100){
 
-      hp->Rebin(2);
+      if (hp->GetEntries()<10000) {
+	hp->Rebin(16);
+      } else if (hp->GetEntries()<20000) {
+	hp->Rebin(8);
+      } else {
+	hp->Rebin(4);
+      }
 
       if (j-2<8){
-	hp->Rebin(4);
+	//hp->Rebin(4);
 	hp->GetXaxis()->SetRangeUser(-12.,-3.);
-      }
-      if (j-2>BARS_PER_PLANE-8){
-	hp->Rebin(4);
+      } else if (j-2<17){
+	//hp->Rebin(4);
+	hp->GetXaxis()->SetRangeUser(-12.,0.);
+      } else if (j-2<22){
+	//hp->Rebin(4);
+	hp->GetXaxis()->SetRangeUser(-12.,1.);
+      } else if (j-2>BARS_PER_PLANE-8){
+	//hp->Rebin(4);
 	hp->GetXaxis()->SetRangeUser(3.,12.);
+      } else if (j-2>BARS_PER_PLANE-17){
+	//hp->Rebin(4);
+	hp->GetXaxis()->SetRangeUser(-1.,12.);
+      } else {
+	//hp->Rebin(6);
       }
 
 
@@ -277,9 +293,9 @@ void timedifference(int Run, int REF, int REFPLANE){
       } else {
 	nfound = speaks->Search(hp,2,"nodraw",0.10);
       }
+
       //printf("Found %d candidate peaks to fit\n",nfound);
       double *xpeaks = speaks->GetPositionX();
-      double *ypeaks = speaks->GetPositionY();
 
       // for paddles on the left of the center take left most peak
       // for paddles on the right of the center take right most peak
@@ -291,33 +307,62 @@ void timedifference(int Run, int REF, int REFPLANE){
       double MaxXloc = -100000.;
       int MinXlocPos = 0;
       int MaxXlocPos = 0;
-      for (int pp=0;pp<nfound;pp++) {
-	double xp = xpeaks[pp];
-	double yp = ypeaks[pp];
-	if (yp>MaxPeak){
-	  MaxPeak = yp;
-	  MaxPeakLoc = pp;
-	}
-	if (xp<MinXloc){
+      
+      if (nfound == 1) {
+	double xp = xpeaks[0];
+	int b = hp->FindBin(xp);
+	double by = hp->GetBinContent(b);
+	max = xpeaks[0];
+	if (DEBUG>1) {
+	  cout<<"PeakID: 0    bin is: "<<hp->FindBin(max)
+	      <<"   content is "<<hp->GetBinContent(hp->FindBin(max))
+	      <<"   xposition = "<<max<<endl;
+	  MaxXloc = xp;
 	  MinXloc = xp;
-	  MinXlocPos = pp;
 	}
-	if (xp>MaxXloc){
-	  MaxXloc =xp;
-	  MaxXlocPos = pp;
+
+      } else if (nfound>1) {
+
+	for (int pp=0;pp<nfound;pp++) {
+	  double xp = xpeaks[pp];
+	  int b = hp->FindBin(xp);
+	  double by = hp->GetBinContent(b);
+	  if (DEBUG>1) {
+	    cout<<"PeakID: "<<pp<<"    bin is: "<<b
+		<<"   content is "<<by<<"   xposition = "<<xp<<endl;
+	  }
+	  if (by > MaxPeak){
+	    MaxPeak = by;
+	    MaxPeakLoc = pp;
+	  }
+	  if (xp<MinXloc){
+	    MinXloc = xp;
+	    MinXlocPos = pp;
+	  }
+	  if (xp>MaxXloc){
+	    MaxXloc =xp;
+	    MaxXlocPos = pp;
+	  }
 	}
-      }
+	
+	int maxPOS;
+	if (j-2<BARS_PER_PLANE/2){
+	  max = MinXloc;
+	  maxPOS = MinXlocPos;
+	} else {
+	  max = MaxXloc;
+	  maxPOS = MaxXlocPos;
+	}
+	
+	if ( (TMath::Abs(j-25)<7) && (maxPOS != MaxPeakLoc) ){
+	  if (DEBUG){
+	    cout<<"Change peak location from "<<max << " to " << MaxPeakLoc<<endl;
+	  }
+	  max = xpeaks[MaxPeakLoc];
+	}
 
-      /*
-      if (TMath::Abs(REFPAD-BARS_PER_PLANE/2)>4){
-	max = xpeaks[MaxPeakLoc];
       } else {
-      */
-
-      if (j-2<BARS_PER_PLANE/2){
-	max = MinXloc;
-      } else {
-	max = MaxXloc;
+	cout<<"Error! No peaks found"<<endl; 
       }
 
       if (DEBUG>98){
@@ -325,13 +370,18 @@ void timedifference(int Run, int REF, int REFPLANE){
 	gPad->Update();
 	gPad->SetGrid();
 	gPad->Update();
-	cout<<"MAX is at "<<max<<endl;
+	cout<<"MAX is at "<<max<<"     Max Peak is at: "<<xpeaks[MaxPeakLoc]<<endl;
 	getchar();
 	//sleep(1);
       }
+      
+      if (TMath::Abs(j-25)>10) {
+	if (max != xpeaks[MaxPeakLoc]){
+	  max = xpeaks[MaxPeakLoc];
+	}
+      }
 
-
-      if (TMath::Abs(max - GoodMax[j-2-1])>2.2){ // off by more than 1ns from expected postion TOO MUCH
+      if (TMath::Abs(max - GoodMax[j-2-1])>3.2){ // off by more than 1ns from expected postion TOO MUCH
 
 	cout<<"max out of range try to find better max for j-2="<<j-2<<endl;
 
@@ -341,12 +391,11 @@ void timedifference(int Run, int REF, int REFPLANE){
 	double minloc = 10000;
 	double maxloc = -10000;
 	double *xpeaks1 = speaks1->GetPositionX();
-	double *ypeaks1 = speaks1->GetPositionY();
+
 	int minid = -1;
 	int maxid = -1;
 	for (int pp=0;pp<nfound;pp++) {
-	  double xp = xpeaks[pp];
-	  double yp = ypeaks[pp];
+	  double xp = xpeaks1[pp];
 	  if (xp<minloc){
 	    minloc = xp;
 	    minid = pp;
@@ -365,12 +414,14 @@ void timedifference(int Run, int REF, int REFPLANE){
 
       }
 
-      cout<<"MINX MAXX: "<<MinXloc<<"  "<<MaxXloc<<"    j="<<j<<"     max="<<max<<endl;   
+      cout<<"MINX MAXX: "<<MinXloc<<"  "<<MaxXloc<<"    j="<<j
+	  <<"     max="<<max
+	  <<"     Nentries = "<<hp->GetEntries()<<endl;   
       //}
 
-      double bw = hp->GetBinWidth(1);
-      double hili = max + 10.*bw;
-      double loli = max - 10.*bw;
+      double bw = hp->GetBinWidth(10);
+      double hili = max + 5.*bw;
+      double loli = max - 5.*bw;
       if ((j-2<BARS_PER_PLANE/2)){
 	hili = max + 8*bw;
 	if (j-1 == 21) hili = max + 5*bw;
@@ -430,8 +481,8 @@ void timedifference(int Run, int REF, int REFPLANE){
 	}
       }
 
-  
-
+      hili = max + 3.*bw;
+      loli = max - 3.*bw;
 
       hp->Fit("gaus","RQ","",loli,hili);
       f1 = hp->GetFunction("gaus");
@@ -455,11 +506,15 @@ void timedifference(int Run, int REF, int REFPLANE){
 	    histTD->SetTitle(fnam);
 	    histTD->GetYaxis()->SetTitle("#Deltat [ns]");
 	    histTD->GetXaxis()->SetTitle("Paddle number [#]");
+	    histTD->SetStats(0);
 	    histTD->Draw("colz");
 	    gPad->SetGrid();
-	    gPad->SetLogz(1);
+	    //gPad->SetLogz(1);
 	    gPad->Update();
+	    //gPad->SaveAs("plots/test.root");
 	    sprintf(fnam,"plots/paddleNumber_vs_deltatRefPad%d_plane%d_run%d.pdf",REFPAD,REFPLANE,RunNumber);
+	    gPad->SaveAs(fnam);
+	    sprintf(fnam,"C/paddleNumber_vs_deltatRefPad%d_plane%d_run%d.C",REFPAD,REFPLANE,RunNumber);
 	    gPad->SaveAs(fnam);
 	  }
 	  if (!((j-3)%5) || (DEBUG>2)){
@@ -474,6 +529,8 @@ void timedifference(int Run, int REF, int REFPLANE){
 	    gPad->SetLogz(0);
 	    gPad->Update();
 	    sprintf(hnam1,"plots/deltat_fitposition_p%d_repad%d_plane%d_run%d.pdf",j-2,REFPAD,REFPLANE,RunNumber);
+	    gPad->SaveAs(hnam1);
+	    sprintf(hnam1,"C/deltat_fitposition_p%d_repad%d_plane%d_run%d.C",j-2,REFPAD,REFPLANE,RunNumber);
 	    gPad->SaveAs(hnam1);
 	  }
 	}
