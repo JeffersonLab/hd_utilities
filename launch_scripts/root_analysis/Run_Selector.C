@@ -5,18 +5,10 @@
 #include "TTree.h"
 #include "TDirectory.h"
 
-R__LOAD_LIBRARY(libDSelector)
-
 using namespace std;
 
 int Run_Selector(string locInputFileName, string locTreeName, string locSelectorName, unsigned int locNThreads)
 {
-	//Load library & headers
-	Long_t locResult = gROOT->ProcessLine(".x $ROOT_ANALYSIS_HOME/scripts/Load_DSelector.C");
-	cout << "load return code: " << locResult << endl;
-	if(locResult != 0)
-		return 999; //error loading, return
-
 	//tell it to compile selector (if user did not)
 	if(locSelectorName[locSelectorName.size() - 1] != '+')
 		locSelectorName += '+';
@@ -25,8 +17,10 @@ int Run_Selector(string locInputFileName, string locTreeName, string locSelector
 
 	if(locNThreads > 1) //USE PROOF
 	{
-		DPROOFLiteManager::Set_SandBox("./");
-		return (DPROOFLiteManager::Process_Tree(locInputFileName, locTreeName, locSelectorName, locNThreads) ? 0 : 999); //0 = success
+	  gEnv->SetValue("ProofLite.Sandbox", "$PWD/.proof/"); // write all intermediate files to the local directory
+	  DPROOFLiteManager::Set_SandBox("./"); // that does not work, as the proof session was already started
+	  
+	  return (DPROOFLiteManager::Process_Tree(locInputFileName, locTreeName, locSelectorName, locNThreads) ? 0 : 999); //0 = success
 	}
 
 	//process tree directly
