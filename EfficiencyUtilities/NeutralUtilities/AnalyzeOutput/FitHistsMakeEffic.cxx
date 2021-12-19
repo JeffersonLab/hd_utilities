@@ -46,6 +46,7 @@ Bool_t FCAL_STUDY=true; //true: look for one candidates in FCAL; false: look for
 
 Int_t N_E_BINS = 14; //FCAL
 Int_t N_THETA_BINS = 40; //FCAL
+Int_t N_PHI_BINS = 20; //FCAL+BCAL
 // Int_t N_E_BINS = 20; //BCAL
 // Int_t N_THETA_BINS = 11; //BCAL
 
@@ -321,11 +322,15 @@ Int_t FitOmegaHists(TString str_infile, TString str_outfile) {
 	TH1F* h_m1den_miss_omega_Ebins_accidsub[N_E_BINS];
 	TH1F* h_m1num_miss_omega_Thetabins_accidsub[N_THETA_BINS];
 	TH1F* h_m1den_miss_omega_Thetabins_accidsub[N_THETA_BINS];
+	TH1F* h_m1num_miss_omega_Phibins_accidsub[N_PHI_BINS];
+	TH1F* h_m1den_miss_omega_Phibins_accidsub[N_PHI_BINS];
 	
 	TH1F* h_m2num_inv_omega_Ebins_accidsub[N_E_BINS];
 	TH1F* h_m2denineff_miss_omega_Ebins_accidsub[N_E_BINS];
 	TH1F* h_m2num_inv_omega_Thetabins_accidsub[N_THETA_BINS];
 	TH1F* h_m2denineff_miss_omega_Thetabins_accidsub[N_THETA_BINS];
+	TH1F* h_m2num_inv_omega_Phibins_accidsub[N_PHI_BINS];
+	TH1F* h_m2denineff_miss_omega_Phibins_accidsub[N_PHI_BINS];
 	
  	for(int i =0; i<N_E_BINS; ++i) {
 		char asdfasdf[20];
@@ -347,6 +352,16 @@ Int_t FitOmegaHists(TString str_infile, TString str_outfile) {
 		h_m2num_inv_omega_Thetabins_accidsub[i] = 	(TH1F*)f_in->FindObjectAny("h_m2num_inv_omega_Thetabins_accidsub"+index);
 		h_m2denineff_miss_omega_Thetabins_accidsub[i] = 	(TH1F*)f_in->FindObjectAny("h_m2denineff_miss_omega_Thetabins_accidsub"+index);
 	}			
+ 	for(int i =0; i<N_PHI_BINS; ++i) {
+		char asdfasdf[20];
+		sprintf(asdfasdf,"%d",i);
+		TString index = asdfasdf;
+		
+		h_m1num_miss_omega_Phibins_accidsub[i] = 	(TH1F*)f_in->FindObjectAny("h_m1num_miss_omega_Phibins_accidsub"+index);
+		h_m1den_miss_omega_Phibins_accidsub[i] = 	(TH1F*)f_in->FindObjectAny("h_m1den_miss_omega_Phibins_accidsub"+index);
+		h_m2num_inv_omega_Phibins_accidsub[i] = 	(TH1F*)f_in->FindObjectAny("h_m2num_inv_omega_Phibins_accidsub"+index);
+		h_m2denineff_miss_omega_Phibins_accidsub[i] = 	(TH1F*)f_in->FindObjectAny("h_m2denineff_miss_omega_Phibins_accidsub"+index);
+	}			
 	
 	
 	
@@ -358,11 +373,17 @@ Int_t FitOmegaHists(TString str_infile, TString str_outfile) {
 	Double_t effic_err_m1_Thetabins[N_THETA_BINS];
 	Double_t effic_m2_Thetabins[N_THETA_BINS];
 	Double_t effic_err_m2_Thetabins[N_THETA_BINS];
+	Double_t effic_m1_Phibins[N_PHI_BINS];
+	Double_t effic_err_m1_Phibins[N_PHI_BINS];
+	Double_t effic_m2_Phibins[N_PHI_BINS];
+	Double_t effic_err_m2_Phibins[N_PHI_BINS];
 	
 	Double_t E_arr[N_E_BINS];
 	Double_t E_arr_err[N_E_BINS];
 	Double_t Theta_arr[N_THETA_BINS];
 	Double_t Theta_arr_err[N_THETA_BINS];
+	Double_t Phi_arr[N_PHI_BINS];
+	Double_t Phi_arr_err[N_PHI_BINS];
 	
 	Double_t chi2_m1_num_Ebins_arr[N_E_BINS];
 	Double_t chi2_m1_den_Ebins_arr[N_E_BINS];
@@ -372,6 +393,10 @@ Int_t FitOmegaHists(TString str_infile, TString str_outfile) {
 	Double_t chi2_m1_den_Thetabins_arr[N_THETA_BINS];
 	Double_t chi2_m2_inv_Thetabins_arr[N_THETA_BINS];
 	Double_t chi2_m2_ineff_Thetabins_arr[N_THETA_BINS];
+	Double_t chi2_m1_num_Phibins_arr[N_PHI_BINS];
+	Double_t chi2_m1_den_Phibins_arr[N_PHI_BINS];
+	Double_t chi2_m2_inv_Phibins_arr[N_PHI_BINS];
+	Double_t chi2_m2_ineff_Phibins_arr[N_PHI_BINS];
 	
 	
 	//Fit histograms
@@ -486,6 +511,88 @@ Int_t FitOmegaHists(TString str_infile, TString str_outfile) {
 		// cout << "chi2 m2_inv " << m2_inv_info[3] << endl;
 		// cout << "chi2 m2_ineff " << m2_ineff_info[3] << endl;
 		
+	}
+	
+	
+ 	for(int i =0; i<N_PHI_BINS; ++i) {
+		char asdfasdf[20];
+		sprintf(asdfasdf,"%d",i);
+		TString index = asdfasdf;
+		
+		Phi_arr[i] = -171+18*i;
+		Phi_arr_err[i] = 0.;
+		
+		cout << "Phi bin: " << Phi_arr[i] << endl;
+		
+		if(h_m1num_miss_omega_Phibins_accidsub[i]->GetEntries()<50 || h_m1den_miss_omega_Phibins_accidsub[i]->GetEntries()<50 || h_m2num_inv_omega_Phibins_accidsub[i]->GetEntries()<50 || h_m2denineff_miss_omega_Phibins_accidsub[i]->GetEntries()<50) {
+			effic_m1_Phibins[i] = 0;
+			effic_err_m1_Phibins[i] = 0;
+			effic_m2_Phibins[i] = 0;
+			effic_err_m2_Phibins[i] = 0;
+			chi2_m1_num_Phibins_arr[i] = 0;
+			chi2_m1_den_Phibins_arr[i] = 0;
+			chi2_m2_inv_Phibins_arr[i] = 0;
+			chi2_m2_ineff_Phibins_arr[i] = 0;
+			continue;
+		}
+		
+		
+		vector<Double_t> m1_num_info = jz_fitandsave_omega_MM_3gaus(h_m1num_miss_omega_Phibins_accidsub[i],"m1_num_Phibin_"+index);
+		vector<Double_t> m1_den_info = jz_fitandsave_omega_MM_3gaus(h_m1den_miss_omega_Phibins_accidsub[i],"m1_den_Phibin_"+index);
+		// vector<Double_t> m2_inv_info = jz_fitandsave_omega_MM_2gaus(h_m2num_inv_omega_Phibins_accidsub[i],"m2_inv_Phibin_"+index);
+		vector<Double_t> m2_inv_info = jz_fitandsave_omega_MM_3gaus(h_m2num_inv_omega_Phibins_accidsub[i],"m2_inv_Phibin_"+index);
+		vector<Double_t> m2_ineff_info = jz_fitandsave_omega_MM_3gaus(h_m2denineff_miss_omega_Phibins_accidsub[i],"m2_ineff_Phibin_"+index);
+	
+	
+		if(m1_num_info[0]==0||m1_den_info[0]==0) {
+			effic_m1_Phibins[i]=0;
+			effic_err_m1_Phibins[i]=0;
+		}
+		if(m2_inv_info[0]==0||m2_ineff_info[0]==0) {
+			effic_m2_Phibins[i]=0;
+			effic_err_m2_Phibins[i]=0;
+		}
+		
+	
+		effic_m1_Phibins[i] = m1_num_info[0]/m1_den_info[0];
+		effic_err_m1_Phibins[i] = effic_m1_Phibins[i]*sqrt( (m1_num_info[1]/m1_num_info[0])*(m1_num_info[1]/m1_num_info[0]) +(m1_den_info[1]/m1_den_info[0])*(m1_den_info[1]/m1_den_info[0])  );
+		
+		Double_t m2_den = (m2_inv_info[0]+m2_ineff_info[0]);
+		effic_m2_Phibins[i] = m2_inv_info[0]/ m2_den;
+		//Wrong!!! But I'm rushed right now, should fix to have proper cov stuff later
+		effic_err_m2_Phibins[i] = effic_m2_Phibins[i]*sqrt( (m2_inv_info[1]/m2_inv_info[0])*(m2_inv_info[1]/m2_inv_info[0]) + 1/m2_den  );
+	
+		chi2_m1_num_Phibins_arr[i] = m1_num_info[3];
+		chi2_m1_den_Phibins_arr[i] = m1_den_info[3];
+		chi2_m2_inv_Phibins_arr[i] = m2_inv_info[3];
+		chi2_m2_ineff_Phibins_arr[i] = m2_ineff_info[3];
+		
+		if(effic_m1_Phibins[i] > 1.3) {
+			effic_m1_Phibins[i] = 0;
+			effic_err_m1_Phibins[i] = 0;
+		}
+		if(effic_m2_Phibins[i] > 1.3) {
+			effic_m2_Phibins[i] = 0;
+			effic_err_m2_Phibins[i] = 0;
+		}
+		
+		// cout << "m1_num yield: " << m1_num_info[0] << endl;
+		// cout << "m1_den yield: " << m1_den_info[0] << endl;
+		// cout << "m1 efficiency: " << effic_m1_Thetabins[i] << endl;
+		// cout << "m2_inv yield: " << m2_inv_info[0] << endl;
+		// cout << "m2_ineff yield: " << m2_ineff_info[0] << endl;
+		// cout << "m2 efficiency: " << effic_m2_Thetabins[i] << endl;
+		
+		// cout << "Signal yield / total m1_num: " << m1_num_info[0]/h_m1num_miss_omega_Thetabins_accidsub[i]->GetEntries() << endl;
+		// cout << "Signal yield / total m1_den: " << m1_den_info[0]/h_m1den_miss_omega_Thetabins_accidsub[i]->GetEntries() << endl;
+		// cout << "Signal yield / total m2_inv: " << m2_inv_info[0]/h_m2num_inv_omega_Thetabins_accidsub[i]->GetEntries() << endl;
+		// cout << "Signal yield / total m2_ineff: " << m2_ineff_info[0]/h_m2denineff_miss_omega_Thetabins_accidsub[i]->GetEntries() << endl;
+	
+		// cout << "chi2 m1_num " << m1_num_info[3] << endl;
+		// cout << "chi2 m1_den " << m1_den_info[3] << endl;
+		// cout << "chi2 m2_inv " << m2_inv_info[3] << endl;
+		// cout << "chi2 m2_ineff " << m2_ineff_info[3] << endl;
+		
 		cout << "Done with fitting for bin: " << i << endl;
 	}
 	
@@ -499,15 +606,24 @@ Int_t FitOmegaHists(TString str_infile, TString str_outfile) {
 		cout << "Efficiency method 1: " << effic_m1_Thetabins[i] << " +- " << effic_err_m1_Thetabins[i] << endl;
 		cout << "Efficiency method 2: " << effic_m2_Thetabins[i] << " +- " << effic_err_m2_Thetabins[i] << endl;
 	}
+	for(int i =0; i<N_PHI_BINS; ++i) {
+		cout << "Phi bin: " << i << endl;
+		cout << "Efficiency method 1: " << effic_m1_Phibins[i] << " +- " << effic_err_m1_Phibins[i] << endl;
+		cout << "Efficiency method 2: " << effic_m2_Phibins[i] << " +- " << effic_err_m2_Phibins[i] << endl;
+	}
 	
 	TGraphErrors* gr_m1_effic_Ebins = new TGraphErrors(N_E_BINS,E_arr,effic_m1_Ebins,E_arr_err,effic_err_m1_Ebins);
 	gr_m1_effic_Ebins->SetName("gr_m1_effic_Ebins");
 	TGraphErrors* gr_m1_effic_Thetabins = new TGraphErrors(N_THETA_BINS,Theta_arr,effic_m1_Thetabins,Theta_arr_err,effic_err_m1_Thetabins);
 	gr_m1_effic_Thetabins->SetName("gr_m1_effic_Thetabins");
+	TGraphErrors* gr_m1_effic_Phibins = new TGraphErrors(N_PHI_BINS,Phi_arr,effic_m1_Phibins,Phi_arr_err,effic_err_m1_Phibins);
+	gr_m1_effic_Phibins->SetName("gr_m1_effic_Phibins");
 	TGraphErrors* gr_m2_effic_Ebins = new TGraphErrors(N_E_BINS,E_arr,effic_m2_Ebins,E_arr_err,effic_err_m2_Ebins);
 	gr_m2_effic_Ebins->SetName("gr_m2_effic_Ebins");
 	TGraphErrors* gr_m2_effic_Thetabins = new TGraphErrors(N_THETA_BINS,Theta_arr,effic_m2_Thetabins,Theta_arr_err,effic_err_m2_Thetabins);
 	gr_m2_effic_Thetabins->SetName("gr_m2_effic_Thetabins");
+	TGraphErrors* gr_m2_effic_Phibins = new TGraphErrors(N_PHI_BINS,Phi_arr,effic_m2_Phibins,Phi_arr_err,effic_err_m2_Phibins);
+	gr_m2_effic_Phibins->SetName("gr_m2_effic_Phibins");
 	
 	TGraph* gr_m1_num_chi2_Ebins = new TGraph(N_E_BINS,E_arr,chi2_m1_num_Ebins_arr);
 	TGraph* gr_m1_den_chi2_Ebins = new TGraph(N_E_BINS,E_arr,chi2_m1_den_Ebins_arr);
@@ -525,6 +641,14 @@ Int_t FitOmegaHists(TString str_infile, TString str_outfile) {
 	gr_m1_den_chi2_Thetabins->SetName("gr_m1_den_chi2_Thetabins");
 	gr_m2_inv_chi2_Thetabins->SetName("gr_m2_inv_chi2_Thetabins");
 	gr_m2_ineff_chi2_Thetabins->SetName("gr_m2_ineff_chi2_Thetabins");
+	TGraph* gr_m1_num_chi2_Phibins = new TGraph(N_PHI_BINS,Phi_arr,chi2_m1_num_Phibins_arr);
+	TGraph* gr_m1_den_chi2_Phibins = new TGraph(N_PHI_BINS,Phi_arr,chi2_m1_den_Phibins_arr);
+	TGraph* gr_m2_inv_chi2_Phibins = new TGraph(N_PHI_BINS,Phi_arr,chi2_m2_inv_Phibins_arr);
+	TGraph* gr_m2_ineff_chi2_Phibins = new TGraph(N_PHI_BINS,Phi_arr,chi2_m2_ineff_Phibins_arr);
+	gr_m1_num_chi2_Phibins->SetName("gr_m1_num_chi2_Phibins");
+	gr_m1_den_chi2_Phibins->SetName("gr_m1_den_chi2_Phibins");
+	gr_m2_inv_chi2_Phibins->SetName("gr_m2_inv_chi2_Phibins");
+	gr_m2_ineff_chi2_Phibins->SetName("gr_m2_ineff_chi2_Phibins");
 	
 	TFile* outfile = new TFile( str_outfile, "RECREATE" );
 	outfile->cd();
@@ -532,6 +656,8 @@ Int_t FitOmegaHists(TString str_infile, TString str_outfile) {
 	gr_m2_effic_Ebins->Write();
 	gr_m1_effic_Thetabins->Write();
 	gr_m2_effic_Thetabins->Write();
+	gr_m1_effic_Phibins->Write();
+	gr_m2_effic_Phibins->Write();
 	gr_m1_num_chi2_Ebins->Write();
 	gr_m1_den_chi2_Ebins->Write();
 	gr_m2_inv_chi2_Ebins->Write();
@@ -540,6 +666,10 @@ Int_t FitOmegaHists(TString str_infile, TString str_outfile) {
 	gr_m1_den_chi2_Thetabins->Write();
 	gr_m2_inv_chi2_Thetabins->Write();
 	gr_m2_ineff_chi2_Thetabins->Write();
+	gr_m1_num_chi2_Phibins->Write();
+	gr_m1_den_chi2_Phibins->Write();
+	gr_m2_inv_chi2_Phibins->Write();
+	gr_m2_ineff_chi2_Phibins->Write();
 	outfile->Close();
 	
 	return 0;

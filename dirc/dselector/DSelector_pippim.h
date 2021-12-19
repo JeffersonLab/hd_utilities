@@ -30,10 +30,6 @@ class DSelector_pippim : public DSelector
 		bool dIsPolarizedFlag; //else is AMO
 		bool dIsPARAFlag; //else is PERP or AMO
 
-		// ANALYZE CUT ACTIONS
-		// // Automatically makes mass histograms where one cut is missing
-		DHistogramAction_AnalyzeCutActions* dAnalyzeCutActions;
-
 		//CREATE REACTION-SPECIFIC PARTICLE ARRAYS
 
 		//Step 0
@@ -47,6 +43,9 @@ class DSelector_pippim : public DSelector
 		// EXAMPLES:
 		TH1I* dHist_MissingMassSquared;
 		TH1I* dHist_BeamEnergy;
+		TH2F* dHist_PiPlusDIRCXY, *dHist_PiMinusDIRCXY;
+		TH2F* dHist_PiPlusDIRCThetaCVsP, *dHist_PiMinusDIRCThetaCVsP;
+		TH2F *dHist_Ldiff;
 
 	ClassDef(DSelector_pippim, 0);
 };

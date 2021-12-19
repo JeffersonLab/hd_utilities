@@ -27,6 +27,7 @@ void DSelector_FCAL_skimmer::Init(TTree *locTree)
 	Get_ComboWrappers();
 	dPreviousRunNumber = 0;
 	jz_NumUnusedCombosSaved = 1;
+    jz_UnusedPhotonThetaCut = 0; // Degrees. Candidates that we try to match to missing photon: don't save photons below this theta.
 
 	/*********************************** EXAMPLE USER INITIALIZATION: ANALYSIS ACTIONS **********************************/
 
@@ -675,20 +676,36 @@ Bool_t DSelector_FCAL_skimmer::Process(Long64_t locEntry)
 			// if(my_DelTheta<-180) my_DelPhi+=180.;
 			// if(my_DelTheta>180)  my_DelPhi-=180.;
 			
-			//Candidate is reconstructed as different photon. Save.
-			dFlatTreeInterface->Fill_Fundamental<Double_t>("MissingCan_Px",dNeutralHypoWrapper->Get_P4_Measured().Px(),candidate_counter);
-			dFlatTreeInterface->Fill_Fundamental<Double_t>("MissingCan_Py",dNeutralHypoWrapper->Get_P4_Measured().Py(),candidate_counter);
-			dFlatTreeInterface->Fill_Fundamental<Double_t>("MissingCan_Pz",dNeutralHypoWrapper->Get_P4_Measured().Pz(),candidate_counter);
-			dFlatTreeInterface->Fill_Fundamental<Double_t>("MissingCan_E" ,dNeutralHypoWrapper->Get_P4_Measured().E() ,candidate_counter);
-			dFlatTreeInterface->Fill_Fundamental<Double_t>("MissingFound_Angle" ,dNeutralHypoWrapper->Get_P4_Measured().Vect().Angle(locMissingPhotonP4.Vect())*180./3.1415   ,candidate_counter);
-			dFlatTreeInterface->Fill_Fundamental<Double_t>("MissingFound_DelPhi" ,my_DelPhi   ,candidate_counter);
-			dFlatTreeInterface->Fill_Fundamental<Double_t>("MissingFound_DelTheta" ,my_DelTheta   ,candidate_counter);
-			dFlatTreeInterface->Fill_Fundamental<Int_t>("MissingCan_ISFCAL", shower_system, candidate_counter);
-			dFlatTreeInterface->Fill_Fundamental<Int_t>("CandidateCounter", candidate_counter, candidate_counter);
-			dFlatTreeInterface->Fill_Fundamental<Double_t>("threepi_can_mass" ,threepi_mass ,candidate_counter);
-			dFlatTreeInterface->Fill_Fundamental<Double_t>("twogamma_can_mass" ,(dNeutralHypoWrapper->Get_P4_Measured()+locPhotonP4).M() ,candidate_counter);
-			if(jz_get_thrown_info) dFlatTreeInterface->Fill_Fundamental<Double_t>("MissingCan_ThrOpangle" ,Missing_Thrown_opangle ,candidate_counter);
-			
+			//Candidate is reconstructed as different photon. Save, unless studying theta cut.
+            if(dNeutralHypoWrapper->Get_P4_Measured().Theta()*180./3.14159>jz_UnusedPhotonThetaCut) {
+                dFlatTreeInterface->Fill_Fundamental<Double_t>("MissingCan_Px",dNeutralHypoWrapper->Get_P4_Measured().Px(),candidate_counter);
+                dFlatTreeInterface->Fill_Fundamental<Double_t>("MissingCan_Py",dNeutralHypoWrapper->Get_P4_Measured().Py(),candidate_counter);
+                dFlatTreeInterface->Fill_Fundamental<Double_t>("MissingCan_Pz",dNeutralHypoWrapper->Get_P4_Measured().Pz(),candidate_counter);
+                dFlatTreeInterface->Fill_Fundamental<Double_t>("MissingCan_E" ,dNeutralHypoWrapper->Get_P4_Measured().E() ,candidate_counter);
+                dFlatTreeInterface->Fill_Fundamental<Double_t>("MissingFound_Angle" ,dNeutralHypoWrapper->Get_P4_Measured().Vect().Angle(locMissingPhotonP4.Vect())*180./3.1415   ,candidate_counter);
+                dFlatTreeInterface->Fill_Fundamental<Double_t>("MissingFound_DelPhi" ,my_DelPhi   ,candidate_counter);
+                dFlatTreeInterface->Fill_Fundamental<Double_t>("MissingFound_DelTheta" ,my_DelTheta   ,candidate_counter);
+                dFlatTreeInterface->Fill_Fundamental<Int_t>("MissingCan_ISFCAL", shower_system, candidate_counter);
+                dFlatTreeInterface->Fill_Fundamental<Int_t>("CandidateCounter", candidate_counter, candidate_counter);
+                dFlatTreeInterface->Fill_Fundamental<Double_t>("threepi_can_mass" ,threepi_mass ,candidate_counter);
+                dFlatTreeInterface->Fill_Fundamental<Double_t>("twogamma_can_mass" ,(dNeutralHypoWrapper->Get_P4_Measured()+locPhotonP4).M() ,candidate_counter);
+                if(jz_get_thrown_info) dFlatTreeInterface->Fill_Fundamental<Double_t>("MissingCan_ThrOpangle" ,Missing_Thrown_opangle ,candidate_counter);
+			}
+			//For studies where we reject candidate showers below theta cut, don't save photon info.
+            else {
+				dFlatTreeInterface->Fill_Fundamental<Double_t>("MissingCan_Px",-100.,candidate_counter);
+				dFlatTreeInterface->Fill_Fundamental<Double_t>("MissingCan_Py",-100.,candidate_counter);
+				dFlatTreeInterface->Fill_Fundamental<Double_t>("MissingCan_Pz",-100.,candidate_counter);
+				dFlatTreeInterface->Fill_Fundamental<Double_t>("MissingCan_E" ,-100. ,candidate_counter);
+				dFlatTreeInterface->Fill_Fundamental<Double_t>("MissingFound_Angle" ,-100. ,candidate_counter);
+				dFlatTreeInterface->Fill_Fundamental<Double_t>("MissingFound_DelPhi" ,-1000. ,candidate_counter);
+				dFlatTreeInterface->Fill_Fundamental<Double_t>("MissingFound_DelTheta" ,-1000. ,candidate_counter);
+				dFlatTreeInterface->Fill_Fundamental<Int_t>("MissingCan_ISFCAL", -100., candidate_counter);
+				dFlatTreeInterface->Fill_Fundamental<Int_t>("CandidateCounter", candidate_counter, candidate_counter);
+				dFlatTreeInterface->Fill_Fundamental<Double_t>("threepi_can_mass" ,-100. ,candidate_counter);
+				dFlatTreeInterface->Fill_Fundamental<Double_t>("twogamma_can_mass" ,-100. ,candidate_counter);
+				if(jz_get_thrown_info) 	dFlatTreeInterface->Fill_Fundamental<Double_t>("MissingCan_ThrOpangle" ,-100. ,candidate_counter);
+                }
 			
 			candidate_counter++;
 			curr_missing_can_p4 = dNeutralHypoWrapper->Get_P4_Measured();
@@ -726,11 +743,11 @@ Bool_t DSelector_FCAL_skimmer::Process(Long64_t locEntry)
 			dFlatTreeInterface->Fill_Fundamental<Double_t>("Gamma2_FOM",gam2_FOM);
 			
 			Double_t DeltaPhi_rad1 = my_p4_gam1_th.Phi() - dNeutralHypoWrapper->Get_P4_Measured().Phi();
-			if(DeltaPhi_rad<-3.14159) DeltaPhi_rad+=3.14159;
-			if(DeltaPhi_rad>3.14159) DeltaPhi_rad-=3.14159;
-			Double_t DeltaTheta_rad = p4_gam_th.Theta() - dNeutralHypoWrapper->Get_P4_Measured().Theta();
-			if(DeltaTheta_rad<-3.14159) DeltaTheta_rad+=3.14159;
-			if(DeltaTheta_rad>3.14159) DeltaTheta_rad-=3.14159;
+			if(DeltaPhi_rad1<-3.14159) DeltaPhi_rad1+=3.14159;
+			if(DeltaPhi_rad1>3.14159) DeltaPhi_rad1-=3.14159;
+			Double_t DeltaTheta_rad2 = my_p4_gam2_th.Theta() - dNeutralHypoWrapper->Get_P4_Measured().Theta();
+			if(DeltaTheta_rad2<-3.14159) DeltaTheta_rad2+=3.14159;
+			if(DeltaTheta_rad2>3.14159) DeltaTheta_rad2-=3.14159;
 			
 			
 			

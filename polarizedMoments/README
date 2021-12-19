@@ -1,0 +1,1 @@
+This script plots H(LM) moments by weighting each event by corresponding intensity as defined by Mathieu et al. in the paper accompanying this script. (See Equation 13). "blue" histograms correspond to unpolarized moments, "red" histograms correspond to polarized moments after the convention used in the paper (figure 2).

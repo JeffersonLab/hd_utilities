@@ -1,43 +1,42 @@
+void viewwalk(int run){
 
-
-void viewwalk(int PMT){
-
-
-  char datafile[128] = "walkparms.dat";
-
-  ifstream INF(datafile);
-  double DATAY[11][500];
-  double DATAX[500];
-  int cnt=0;
-  while (!INF.eof()){
-    INF>>DATAX[cnt];
-    for (int k=0;k<10;k++){
-      INF>>DATAY[k][cnt];
-    }
-    cnt++;
+  string location("");
+  int NPMTS = 184;
+  /*
+  if (run>69999){
+    location.append("calibration2019fall/");
+  } else if ((run<70000) && (run>59999)){
+    location.append("calib2019spring/");
+    NPMTS = 176;
   }
-  cnt--;
+  */
+  string dnam("calibration");
+  dnam += to_string(run);
+  dnam.append("/");
 
-  TCanvas *c1 = new TCanvas("c1", "Walk Parameters",1000, 1000);
+  string rootfile("walk_results_run");
+  rootfile += to_string(run);
+  rootfile.append(".root");
+  
+  string fnam = location+dnam+rootfile;
+  TFile *RF = new TFile(fnam.c_str(), "READ");
+  
+  
+  for (int k=0; k<NPMTS; k++){
+    string h2dnam("Twalk");
+    h2dnam += to_string(k);
+    TH2D *h2d = (TH2D*)RF->Get(h2dnam.c_str());
+    
+    string hfitnam("fit1hist");
+    hfitnam += to_string(k);
+    TF1 *f1 = (TF1*)RF->Get(hfitnam.c_str());
 
-
-  c1->Divide(4,3);
-
-  TGraphErrors *graphs[9];
-  char gtit[128];
-  for (int k=0;k<9;k++){
-    c1->cd(k+1);
-    graphs[k] = new TGraphErrors(cnt, DATAX, DATAY[k], NULL, NULL);
-    graphs[k]->GetXaxis()->SetTitle("run number [#]");
-    sprintf(gtit,"Walk Parameter %d of PMT %d",k, PMT);
-    graphs[k]->SetTitle(gtit);
-    graphs[k]->SetMarkerColor(4);
-    graphs[k]->SetMarkerStyle(21); 
-    graphs[k]->Draw("AP");
+    h2d->Draw("colz");
+    f1->Draw("same");
     gPad->Update();
+    getchar();
+
   }
 
-  sprintf(gtit,"figures/walkparameters_of_PMT_%d.pdf",PMT);
-  c1->SaveAs(gtit);
 
 }

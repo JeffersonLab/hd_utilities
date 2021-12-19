@@ -78,7 +78,11 @@ void doadctimeoffsets(int Run){
   // get global ADC and TDC time offsets from ccdb database;
   sprintf(fnam,"src/base_times.dat");
   char cmd[256];
-  sprintf(cmd,"ccdb dump /TOF/base_time_offset:%d:: > %s", RunNumber, fnam);
+  if (RunNumber < 70000){
+    sprintf(cmd,"ccdb dump /TOF/base_time_offset:%d:: > %s", RunNumber, fnam);
+  }else {
+    sprintf(cmd,"ccdb dump /TOF2/base_time_offset:%d:: > %s", RunNumber, fnam);
+  }
   system(cmd);
   INF.open(fnam);
   char dummy[128];
@@ -96,12 +100,13 @@ void doadctimeoffsets(int Run){
   INF.open(fnam);
   for (int k=0;k<NPMTS;k++){
     INF >> idx;
-    for (int s=0;s<17;s++) {
+    for (int s=0;s<15;s++) {
       INF >> WalkPar[k][s];
     }
     INF>>dummy; // this is the chi2 of both fits
   }
   INF.close();
+  double ReferenceLoc = 1500.;  // this is the reference ADC value to calibrate to. any walk correction is zero to this point
 
   TFile *f = new TFile(ROOTFILE,"READ");
   //f->ls();
@@ -204,6 +209,11 @@ void doadctimeoffsets(int Run){
           int idx1 = plane*PMTS_PER_PLANE + paddle - 1;    // north/top
           int idx2 = plane*PMTS_PER_PLANE + BARS_PER_PLANE + paddle - 1;   //south/bottom
 
+	  if (0) {
+	    if ( (idx2 == 63) && (PEAKR[n]<300))
+	      continue;
+	  }
+
 	  if ( (OFR[n]) || (OFL[n]) ){
 	    continue;
 	  }
@@ -213,45 +223,42 @@ void doadctimeoffsets(int Run){
           tR -= PMTOffsets[idx2];
 
           // apply walk correciton
-	  int DOFF = 0;
-	  if (PEAKL[n]>WalkPar[idx1][16]){
-	    DOFF = 8;
+	  double ADCval = PEAKL[n];
+	  if (ADCval>4090){
+	    ADCval = 4090;
 	  }
-	  double a1 = WalkPar[idx1][0+DOFF]
-            +WalkPar[idx1][2+DOFF]*TMath::Power(PEAKL[n],-0.5) 
-            +WalkPar[idx1][4+DOFF]*TMath::Power(PEAKL[n],-0.33) 
-            +WalkPar[idx1][6+DOFF]*TMath::Power(PEAKL[n],-0.2);
+	  double a1 = WalkPar[idx1][0]
+	    +WalkPar[idx1][2]/ADCval
+	    +WalkPar[idx1][4]/ADCval/ADCval
+	    +WalkPar[idx1][6]/ADCval/ADCval/ADCval/ADCval
+	    +WalkPar[idx1][8]/TMath::Sqrt(ADCval);
+	  
+	  // ReferenceLoc is chosen to be 1500. ADC counts
+	  double a2 = WalkPar[idx1][0]
+	    +WalkPar[idx1][2]/ReferenceLoc
+	    +WalkPar[idx1][4]/ReferenceLoc/ReferenceLoc
+	    +WalkPar[idx1][6]/ReferenceLoc/ReferenceLoc/ReferenceLoc/ReferenceLoc
+	    +WalkPar[idx1][8]/TMath::Sqrt(ReferenceLoc);
+	  
+	  float tcL = a1 - a2;
+	  
+	  ADCval = PEAKR[n];
+	  if (ADCval>4090){
+	    ADCval = 4090;
+	  }
+	  a1 = WalkPar[idx2][0]
+	    +WalkPar[idx2][2]/ADCval
+	    +WalkPar[idx2][4]/ADCval/ADCval
+	    +WalkPar[idx2][6]/ADCval/ADCval/ADCval/ADCval
+	    +WalkPar[idx2][8]/TMath::Sqrt(ADCval);
 
-	  if (PEAKL[n]>4095){
-	    a1 += 0.55; // overflow hits
-	  }
-	  
-	  DOFF = 8;
-          double a2 = WalkPar[idx1][0+DOFF]
-            +WalkPar[idx1][2+DOFF]*TMath::Power(1500.,-0.5) 
-            +WalkPar[idx1][4+DOFF]*TMath::Power(1500.,-0.33) 
-            +WalkPar[idx1][6+DOFF]*TMath::Power(1500.,-0.2);
-	  
-          double tcL = a1 - a2;
-	  
- 	  DOFF = 0;
-	  if (PEAKR[n]>WalkPar[idx2][16]){
-	    DOFF = 8;
-	  }
-	  a1 = WalkPar[idx2][0+DOFF]
-            +WalkPar[idx2][2+DOFF]*TMath::Power(PEAKR[n],-0.5) 
-            +WalkPar[idx2][4+DOFF]*TMath::Power(PEAKR[n],-0.33) 
-            +WalkPar[idx2][6+DOFF]*TMath::Power(PEAKR[n],-0.2);
-	  if (PEAKR[n]>4095){
-	    a1 += 0.55; // overflow hits
-	  }
-          
-	  DOFF = 8;
-          a2 = WalkPar[idx2][0+DOFF]
-            +WalkPar[idx2][2+DOFF]*TMath::Power(1500.,-0.5) 
-            +WalkPar[idx2][4+DOFF]*TMath::Power(1500.,-0.33) 
-            +WalkPar[idx2][6+DOFF]*TMath::Power(1500.,-0.2);
-	  
+	  // ReferenceLoc is chosen to be 1500. ADC counts
+	  a2 = WalkPar[idx2][0]
+	    +WalkPar[idx2][2]/ReferenceLoc
+	    +WalkPar[idx2][4]/ReferenceLoc/ReferenceLoc
+	    +WalkPar[idx2][6]/ReferenceLoc/ReferenceLoc/ReferenceLoc/ReferenceLoc
+	    +WalkPar[idx2][8]/TMath::Sqrt(ReferenceLoc);
+
           double tcR = a1 - a2;
 	  
 	  tL -= (float)tcL;
@@ -295,25 +302,23 @@ void doadctimeoffsets(int Run){
 	if ((PlaneST[j] == plane ) && (PaddleST[j] == paddle)){
 	  // found matching TDC hit
 	  // now apply walk correction to hit
-
-	  int DOFF = 0;
-	  if (PEAK[i]>WalkPar[idx][16]){
-	    DOFF = 8;
-	  }
-	  double a1 = WalkPar[idx][0+DOFF]
-            +WalkPar[idx][2+DOFF]*TMath::Power(PEAK[i],-0.5) 
-            +WalkPar[idx][4+DOFF]*TMath::Power(PEAK[i],-0.33) 
-            +WalkPar[idx][6+DOFF]*TMath::Power(PEAK[i],-0.2);
-          
-	  if (PEAK[i]>4095){
-	    a1 += 0.55; // overflow hits
+	  double ADCval = PEAK[i];
+	  if (ADCval>4090){
+	    ADCval = 4090;
 	  }
 
-	  DOFF = 8;
-	  double a2 = WalkPar[idx][0+DOFF]
-            +WalkPar[idx][2+DOFF]*TMath::Power(1500.,-0.5) 
-            +WalkPar[idx][4+DOFF]*TMath::Power(1500.,-0.33) 
-            +WalkPar[idx][6+DOFF]*TMath::Power(1500.,-0.2);
+	  double a1 = WalkPar[idx][0]
+	    +WalkPar[idx][2]/ADCval
+	    +WalkPar[idx][4]/ADCval/ADCval
+	    +WalkPar[idx][6]/ADCval/ADCval/ADCval/ADCval
+	    +WalkPar[idx][8]/TMath::Sqrt(ADCval);
+	  
+	  // ReferenceLoc is chosen to be 1500. ADC counts
+	  double a2 = WalkPar[idx][0]
+	    +WalkPar[idx][2]/ReferenceLoc
+	    +WalkPar[idx][4]/ReferenceLoc/ReferenceLoc
+	    +WalkPar[idx][6]/ReferenceLoc/ReferenceLoc/ReferenceLoc/ReferenceLoc
+	    +WalkPar[idx][8]/TMath::Sqrt(ReferenceLoc);
 	  
 	  double walk = a1 - a2;
 
@@ -349,7 +354,7 @@ void doadctimeoffsets(int Run){
 
     ADC_T_offsets[k] = 0.;
     //cout<<"bin "<<k+1<<endl;
-    TH1D *h = TDiff->ProjectionY("h",k+1,k+1);
+    TH1D *h = TDiffF->ProjectionY("h",k+1,k+1);
     if (h->GetEntries()>100){
 
       char hnam1[128];

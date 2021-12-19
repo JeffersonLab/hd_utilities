@@ -36,15 +36,40 @@ int NPMTS = 0;
 int BARS_PER_PLANE = 0; // including 2 short padeles being one
 int PMTS_PER_PLANE = 0; 
 
+double GoodMax46[46] = {-8.32894,   -7.90461,   -7.50287,   -7.10451,   -6.71452,   -6.31505, 
+			-5.92609,   -5.54767,   -5.16655,   -4.80322,   -4.42346,   -4.05127,   
+			-3.67765,   -3.30541, -2.93335,   -2.5596,    -2.19842,   -1.86964,   
+			-1.59219,   -1.36424,   -1.17633,   0.,   0.,   0.,  0.,   0.127368,   
+			0.313616,   0.542539,   0.826777,   1.14066,    1.51999,    1.8838,     
+			2.26335,  2.62937,    2.99592,    3.36639,    3.74159,    4.11813,    
+			4.50512,    4.87066,    5.26162,  5.64035,    6.03455,    6.42168,    
+			6.82834,    7.21001};
+
+double GoodMax44[44] = {   -8.19623,     -7.79666,     -7.39403,     -7.01673,     -6.61736,     -6.23234,   
+			   -5.85287,     -5.47775,     -5.10316,     -4.72913,     -4.35873,    -3.98374,  
+			   -3.61354,    -3.23543,    -2.86764,    -2.49516,    -2.11718,    -1.74356,  
+			   -1.38293,    -1.0965,     -0.909526,   0.,    0.,    0.0228085,    0.210944,   
+			   0.486436,     0.864817,     1.23786,      1.60965,      1.98247,      2.3538,     
+			   2.7172,       3.10519,      3.47743,      3.83941,      4.22042,      4.59204,    
+			   4.9624,      5.35841,      5.7274,       6.11531,      5.36404,     6.88482,    
+			   7.29651};    
+double *GoodMax;
+
 void timedifference(int Run, int REF, int REFPLANE){
   
   RunNumber = Run;
   NPMTS = 176;            // TOF 1 geometry
+  GoodMax = GoodMax44;
   if (RunNumber>69999){
     NPMTS = 184;          // TOF 2 geometry
+    GoodMax = GoodMax46;
   }
   BARS_PER_PLANE = NPMTS/4;
   PMTS_PER_PLANE = NPMTS/2;
+
+  if (TMath::Abs(REF - BARS_PER_PLANE/2 - 0.5 )<2.){
+    return;
+  }
 
   char ROOTFileName[128];
   sprintf(ROOTFileName,"localdir/tofdata_run%d.root",RunNumber);
@@ -72,12 +97,13 @@ void timedifference(int Run, int REF, int REFPLANE){
   double dummy;
   for (int n=0; n<NPMTS; n++){
     INF >> idx;
-    for (int s=0;s<17;s++) {
+    for (int s=0;s<15;s++) {
       INF >> FitPar[n][s];
     }
     INF>>dummy; // this is the chi2 of both fits
   }
   INF.close();
+  double ReferenceLoc = 1500.;  // this is the reference ADC value to calibrate to. any walk correction is zero to this point
 
   TFile *ROOTFile = new TFile(ROOTFileName);
   TTree *t3 = (TTree*)ROOTFile->Get("TOFcalib/t3");
@@ -153,44 +179,44 @@ void timedifference(int Run, int REF, int REFPLANE){
 	  int idxL = REFPLANE*PMTS_PER_PLANE + REFPAD-1;
 	  int idxR = idxL + BARS_PER_PLANE;
 
+
 	  // apply walk correction
-	  int DOFF = 0;
-	  if (PEAKL[n]>FitPar[idxL][16]){
-	    DOFF = 8;
+	  double ADCval = PEAKL[n];
+	  if (ADCval>4090){
+	    ADCval = 4090;
 	  }
-	  double a1 = FitPar[idxL][0+DOFF]
-	    +FitPar[idxL][2+DOFF]*TMath::Power(PEAKL[n],-0.5) 
-	    +FitPar[idxL][4+DOFF]*TMath::Power(PEAKL[n],-0.33) 
-	    +FitPar[idxL][6+DOFF]*TMath::Power(PEAKL[n],-0.2);
-	  if (PEAKL[n]>4095){
-	    a1 += 0.55;
-	  }
-
-	  DOFF = 8;
-	  double a2 = FitPar[idxL][0+DOFF]
-	    +FitPar[idxL][2+DOFF]*TMath::Power(1500.,-0.5) 
-	    +FitPar[idxL][4+DOFF]*TMath::Power(1500.,-0.33) 
-	    +FitPar[idxL][6+DOFF]*TMath::Power(1500.,-0.2);
-
+	  double a1 = FitPar[idxL][0]
+	    +FitPar[idxL][2]/ADCval
+	    +FitPar[idxL][4]/ADCval/ADCval
+	    +FitPar[idxL][6]/ADCval/ADCval/ADCval/ADCval
+	    +FitPar[idxL][8]/TMath::Sqrt(ADCval);
+	  
+	  // ReferenceLoc is chosen to be 1500. ADC counts
+	  double a2 = FitPar[idxL][0]
+	    +FitPar[idxL][2]/ReferenceLoc
+	    +FitPar[idxL][4]/ReferenceLoc/ReferenceLoc
+	    +FitPar[idxL][6]/ReferenceLoc/ReferenceLoc/ReferenceLoc/ReferenceLoc
+	    +FitPar[idxL][8]/TMath::Sqrt(ReferenceLoc);
+	  
 	  float tcL = a1 - a2;
-
-	  DOFF = 0;
-	  if (PEAKR[n]>FitPar[idxR][16]){
-	    DOFF = 8;
-	  }	  
-	  a1 = FitPar[idxR][0+DOFF]
-	    +FitPar[idxR][2+DOFF]*TMath::Power(PEAKR[n],-0.5) 
-	    +FitPar[idxR][4+DOFF]*TMath::Power(PEAKR[n],-0.33) 
-	    +FitPar[idxR][6+DOFF]*TMath::Power(PEAKR[n],-0.2);
-	  if (PEAKR[n]>4095){
-	    a1 += 0.55;
+	  
+	  ADCval = PEAKR[n];
+	  if (ADCval>4090){
+	    ADCval = 4090;
 	  }
+	  a1 = FitPar[idxR][0]
+	    +FitPar[idxR][2]/ADCval
+	    +FitPar[idxR][4]/ADCval/ADCval
+	    +FitPar[idxR][6]/ADCval/ADCval/ADCval/ADCval
+	    +FitPar[idxR][8]/TMath::Sqrt(ADCval);
 
-	  DOFF = 8;
-	  a2 = FitPar[idxR][0+DOFF]
-	    +FitPar[idxR][2+DOFF]*TMath::Power(1500.,-0.5) 
-	    +FitPar[idxR][4+DOFF]*TMath::Power(1500.,-0.33) 
-	    +FitPar[idxR][6+DOFF]*TMath::Power(1500.,-0.2);
+	  // ReferenceLoc is chosen to be 1500. ADC counts
+	  a2 = FitPar[idxR][0]
+	    +FitPar[idxR][2]/ReferenceLoc
+	    +FitPar[idxR][4]/ReferenceLoc/ReferenceLoc
+	    +FitPar[idxR][6]/ReferenceLoc/ReferenceLoc/ReferenceLoc/ReferenceLoc
+	    +FitPar[idxR][8]/TMath::Sqrt(ReferenceLoc);
+
 
 	  float tcR = a1 - a2; 
 
@@ -214,6 +240,9 @@ void timedifference(int Run, int REF, int REFPLANE){
 
   ROOTFile->Close();
 
+  TH1D *hproj1D = (TH1D*)histTD->ProjectionY("hproj1D",3, BARS_PER_PLANE+3);
+  double CenterOFF = hproj1D->GetMean();
+  cout<<"Center OFFSET "<<CenterOFF<<endl;
   double tpos[100];
   double dtpos[100];
   // NOTE THE OFFSET OF 3!!!!!!!!!
@@ -229,11 +258,13 @@ void timedifference(int Run, int REF, int REFPLANE){
 
     if (hp->Integral(1,hp->GetNbinsX()-2)>100){
 
-      if (j-2<6){
+      hp->Rebin(2);
+
+      if (j-2<8){
 	hp->Rebin(4);
 	hp->GetXaxis()->SetRangeUser(-12.,-3.);
       }
-      if (j-2>BARS_PER_PLANE-6){
+      if (j-2>BARS_PER_PLANE-8){
 	hp->Rebin(4);
 	hp->GetXaxis()->SetRangeUser(3.,12.);
       }
@@ -256,8 +287,8 @@ void timedifference(int Run, int REF, int REFPLANE){
 
       double MaxPeak = 0;
       int MaxPeakLoc=0;
-      double MinXloc = 999999;
-      double MaxXloc = 0;
+      double MinXloc = 999999.;
+      double MaxXloc = -100000.;
       int MinXlocPos = 0;
       int MaxXlocPos = 0;
       for (int pp=0;pp<nfound;pp++) {
@@ -277,24 +308,77 @@ void timedifference(int Run, int REF, int REFPLANE){
 	}
       }
 
+      /*
       if (TMath::Abs(REFPAD-BARS_PER_PLANE/2)>4){
 	max = xpeaks[MaxPeakLoc];
       } else {
-	if (j-2<=BARS_PER_PLANE/2){
-	  max = MinXloc;
-	} else {
-	  max = MaxXloc;
-	}
+      */
+
+      if (j-2<BARS_PER_PLANE/2){
+	max = MinXloc;
+      } else {
+	max = MaxXloc;
       }
 
+      if (DEBUG>98){
+	hp->Draw();
+	gPad->Update();
+	gPad->SetGrid();
+	gPad->Update();
+	cout<<"MAX is at "<<max<<endl;
+	getchar();
+	//sleep(1);
+      }
+
+
+      if (TMath::Abs(max - GoodMax[j-2-1])>2.2){ // off by more than 1ns from expected postion TOO MUCH
+
+	cout<<"max out of range try to find better max for j-2="<<j-2<<endl;
+
+	hp->GetXaxis()->SetRangeUser(GoodMax[j-2-1]-2.5, GoodMax[j-2-1]+2.5);
+	TSpectrum *speaks1 = new TSpectrum(6);
+	nfound = speaks1->Search(hp,2,"nodraw",0.10);
+	double minloc = 10000;
+	double maxloc = -10000;
+	double *xpeaks1 = speaks1->GetPositionX();
+	double *ypeaks1 = speaks1->GetPositionY();
+	int minid = -1;
+	int maxid = -1;
+	for (int pp=0;pp<nfound;pp++) {
+	  double xp = xpeaks[pp];
+	  double yp = ypeaks[pp];
+	  if (xp<minloc){
+	    minloc = xp;
+	    minid = pp;
+	  }
+	  if (xp>maxloc){
+	    maxloc = xp;
+	    maxid = pp;
+	  }
+	}
+
+	if (j-2<BARS_PER_PLANE/2){
+	  max = xpeaks[minid];
+	} else {
+	  max = xpeaks[maxid];
+	}
+
+      }
+
+      cout<<"MINX MAXX: "<<MinXloc<<"  "<<MaxXloc<<"    j="<<j<<"     max="<<max<<endl;   
+      //}
+
       double bw = hp->GetBinWidth(1);
-      double hili = max + 15.*bw;
-      double loli = max - 15.*bw;
+      double hili = max + 10.*bw;
+      double loli = max - 10.*bw;
       if ((j-2<BARS_PER_PLANE/2)){
 	hili = max + 8*bw;
+	if (j-1 == 21) hili = max + 5*bw;
       } else {
 	loli = max - 8*bw;
+	if (j-1 == 25) loli = max - 5*bw;
       }
+
 
       hp->Fit("gaus","RQ0","",loli,hili);
       TF1 *f1 = hp->GetFunction("gaus");
@@ -304,17 +388,50 @@ void timedifference(int Run, int REF, int REFPLANE){
 	gPad->SetGrid();
 	cout<<"MAX is at "<<max<<endl;
 	getchar();
+	//sleep(1);
       }
 
-      p = f1->GetParameter(1);
+      double sig1 = 1.2;
+      double sig2 = 1.;
+
+      //      p = f1->GetParameter(1);
+      p = max;
       double s = f1->GetParameter(2);
-      hili = p+s*1.5;
-      loli = p-s*1.5;
+      hili = p+s*sig1;
+      loli = p-s*sig1;
       if ((j-2<BARS_PER_PLANE/2))
-	hili = p+s*0.9;
+	hili = p+s*sig2;
       else {
-	loli = p-s*0.9;
+	loli = p-s*sig2;
       }
+
+      hp->Fit("gaus","RQ","",loli,hili);
+      f1 = hp->GetFunction("gaus");
+      p = f1->GetParameter(1);
+      dp = f1->GetParError(1);
+
+      if ( ((j-2)>16) && ((j-2)<30) ) {
+	sig1 = 1.2;
+	sig2 = .85;
+      }
+      hili = p+s*sig1;
+      loli = p-s*sig1;
+      if ((j-2<BARS_PER_PLANE/2)) {
+	hili = p+s*sig2;
+	if (j-2 == 21){
+	  hili = max + 5.*bw;
+	  loli = max - 8.*bw;
+	}
+      } else {
+	loli = p-s*sig2;
+	if (j-2 == 26){
+	  hili = max + 8.*bw;
+	  loli = max - 5.*bw;
+	}
+      }
+
+  
+
 
       hp->Fit("gaus","RQ","",loli,hili);
       f1 = hp->GetFunction("gaus");
@@ -327,6 +444,7 @@ void timedifference(int Run, int REF, int REFPLANE){
 
 	cout<<"j ="<< j << "   BARS_PER_PLANE="<<BARS_PER_PLANE<<endl;
 	getchar();
+	//sleep(1);
       }
 
       if (DEBUG) {
@@ -363,7 +481,7 @@ void timedifference(int Run, int REF, int REFPLANE){
 	  hp->Draw();
 	  gPad->SetGrid();
 	  gPad->Update();
-	  //getchar();
+	  getchar();
 	}
       }
     } else {

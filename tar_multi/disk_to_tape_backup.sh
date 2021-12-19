@@ -1,6 +1,6 @@
 #!/bin/bash
-source_dir=$1 # directory name to be archive with full path
-tar_multi=$2 # script to guide tar multi-volume archive making, extraction
+source_dir=$1 # directory name to be archived (use full path)
+tar_multi=$2 # script to guide tar multi-volume archive making/extraction
 size=$3 # maximum size of each tar file volume (suffix: G, M, or k)
 cache_dir=/cache/halld/home/backups$source_dir
 mkdir -pv $cache_dir
