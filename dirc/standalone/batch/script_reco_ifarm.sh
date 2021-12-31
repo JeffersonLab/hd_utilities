@@ -1,13 +1,18 @@
 #!/bin/csh
 
+setenv PATH /bin/
+setenv HOME /home/gxproj7/
+echo $PATH
+echo $HOME
+
 # SET INPUTS
-#setenv ENV_FILE $1
-#setenv INPUT_FILE $2
-#setenv LUT_FILE $3
-#setenv CODE_DIR $4
-#setenv OUT_DIR $5
-#setenv BAR $6
-#setenv BIN $7
+setenv ENV_FILE $1
+setenv INPUT_FILE $2
+setenv LUT_FILE $3
+setenv CODE_DIR $4
+setenv OUT_DIR $5
+setenv BAR $6
+setenv BIN $7
 
 # PRINT INPUTS
 echo "ENV_FILE          = $ENV_FILE"
