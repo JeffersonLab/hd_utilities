@@ -41,7 +41,7 @@ OS         = "centos79"       # Specify CentOS79 machines
 DATA_OUTPUT_BASE_DIR    = "/work/halld/home/%s/RunPeriod-2019-11/standalone/"%(os.environ['USER']) 
 
 # JOB EXECUTION
-SCRIPTFILE        = "/work/halld2/home/gxproj7/monitoring/builds/hd_utilities/dirc/standalone/batch/script_reco.sh"
+SCRIPTFILE        = "/work/halld2/home/gxproj7/monitoring/builds/hd_utilities/dirc/standalone/batch/script_reco_ifarm.sh"
 ENVFILE           = "/work/halld2/home/gxproj7/monitoring/builds/setup_gluex.csh"
 CODE_DIR          = "/work/halld2/home/gxproj7/monitoring/builds/hd_utilities/dirc/standalone/"
 INPUT_FILE        = "/volatile/halld/home/jrsteven/RunPeriod-2019-11/recon/ver01_pass03/merged/hd_root_72645_72679.root"
