@@ -1,5 +1,4 @@
 #define glx__sim
-//#include "../../../../halld_recon/master/src/plugins/Analysis/pid_dirc/DrcEvent.h"
 #include "DrcEvent.h"
 #include "DrcLutNode.h"
 #include "glxtools.C"
@@ -62,8 +61,8 @@ void FitRing(double &x0, double &y0, double &theta, TGraph gr) {
 }
 
 void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_05_avr.root",
-                 int ibar = 32, int ibin = 3, double moms = 3.5, double scan = 0, double dx = 0.0,
-                 double dy = 0, int vcorr = 2) {
+                 int ibar = 6, int ibin = 5, double moms = 3.5, double scan = 0, double dx = 0.0,
+                 double dy = 0, int vcorr = 0) {
 
   int indd = -1;
   const int nodes = glx_maxch;
@@ -154,9 +153,13 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
   double acorrAR[48][nbins][glx_npmt] = {{{0}}};
   double acorrTD[48][nbins][glx_npmt] = {{{0}}};
   double acorrTR[48][nbins][glx_npmt] = {{{0}}};
+  double asigmaAD[48][nbins][glx_npmt] = {{{0}}};
+  double asigmaAR[48][nbins][glx_npmt] = {{{0}}};
+  double asigmaTD[48][nbins][glx_npmt] = {{{0}}};
+  double asigmaTR[48][nbins][glx_npmt] = {{{0}}};
   double acorr3AD[48][nphi][ntheta] = {{{0}}};
   double acorr3AR[48][nphi][ntheta] = {{{0}}};
-  double corrAD, corrAR, sigmaAD, corrTD, corrTR;
+  double corrAD, corrAR, sigmaAD, corrTD, corrTR, sigmaTD, sigmaTR;
   int cor_level = 0, tb, tp, tt, tbin, level;
 
   TString corrfile = infile + ".corr.root";
@@ -177,6 +180,8 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
       ch.SetBranchAddress("zcorrAR", &corrAR);
       ch.SetBranchAddress("zcorrTD", &corrTD);
       ch.SetBranchAddress("zcorrTR", &corrTR);
+      ch.SetBranchAddress("zsigmaTD", &sigmaTD);
+      ch.SetBranchAddress("zsigmaTR", &sigmaTR);
       ch.SetBranchAddress("zsigmaAD", &sigmaAD);
 
       for (int i = 0; i < ch.GetEntries(); i++) {
@@ -187,6 +192,8 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
           acorrAR[tb][tbin][tp] = 0.001 * corrAR;
           acorrTD[tb][tbin][tp] = corrTD;
           acorrTR[tb][tbin][tp] = corrTR;
+	  asigmaTD[tb][tbin][tp] = sigmaTD;
+          asigmaTR[tb][tbin][tp] = sigmaTR;
         }
 
         std::cout << "L " << cor_level << " bar = " << tb << " bin = " << tbin << " pmt = " << tp
@@ -313,21 +320,18 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
   DrcHit hit;
   double dibin = -100 + ibin * 20 + 10;
 
-  // TCut cut = "(DrcEvent.fId>=4 && DrcEvent.fId<9)";
   TCut cut = "";
-  //  if (ibar > -1) cut += Form("(DrcEvent.fId == %d)", ibar);
-  if (ibar > -1) cut += Form("(fabs(DrcEvent.fId -%d) < 2)", ibar);
+  if (ibar > -1) cut += Form("(DrcEvent.fId == %d)", ibar);
+  //if (ibar > -1) cut += Form("(fabs(DrcEvent.fId -%d) < 2)", ibar);
+
   // cut += "fabs(DrcEvent.fPosition.fX-0)<5"; // 10
   if (ibin > -1) cut += Form("fabs(DrcEvent.fPosition.fX-%f)<10", dibin); // 10
-  if (ibin > -1) cut += "DrcEvent.fPosition.fX < 0";                      // 10
-  // cut += "fabs(DrcEvent.fPdg) == 321";
-  // if (cor_level < 2 && anglecorr > 0) cut += "fabs(DrcEvent.fMomentum.Mag())>2.5";
-  if (cor_level < 2 && anglecorr > 0) cut += Form("fabs(DrcEvent.fMomentum.Mag()-%2.4f)<1", moms);
-  else cut += Form("fabs(DrcEvent.fMomentum.Mag()-%2.4f)<0.1", moms);
-  // cut += "fabs(DrcEvent.fMomentum.Mag())>3.5";
-  // cut="";
 
-  cut += "DrcEvent.fPdg > 0";
+  //if (cor_level < 2 && anglecorr > 0) cut += Form("fabs(DrcEvent.fMomentum.Mag()-%2.4f)<1", moms);
+  if (cor_level < 2 && anglecorr > 0) cut += "fabs(DrcEvent.fMomentum.Mag())>3.5";  
+  else cut += Form("fabs(DrcEvent.fMomentum.Mag()-%2.4f)<0.1", moms);
+
+  //cut += "DrcEvent.fPdg > 0";
 
   // up
   // cut += "(DrcEvent.fId >= 31)";
@@ -337,16 +341,19 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
   // cut += "(DrcEvent.fId >= 7)";
   // cut += "(DrcEvent.fId <= 11)";
 
-  cut += "fabs(DrcEvent.fPosition.fX-0)<20";
+  //cut += "fabs(DrcEvent.fPosition.fX-0)<20";
+  cut.Print();
 
   if (!glx_initc(infile, cut)) return;
 
   for (int e = 0; e < glx_elist->GetN() && e < glx_ch->GetEntries(); e++) {
     glx_ch->GetEntry(glx_elist->GetEntry(e));
 
-    // if (cor_level == 2 && count[3] > 1000) break;
     if (glx_events->GetEntriesFast() > 1) continue;
     hMult->Fill(glx_events->GetEntriesFast());
+
+    if(e%10000 == 0)
+      cout<<count[2]<<" "<<count[3]<<endl;
 
     for (int t = 0; t < glx_events->GetEntriesFast(); t++) {
       glx_nextEventc(e, t, 1000);
@@ -358,11 +365,11 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
         // if (glx_event->GetTofTrackDist() > 1.5) continue;
         if (fabs(glx_event->GetPdg()) == 211) {
           if (glx_event->GetChiSq() > 10) continue;
-          if (fabs(glx_event->GetInvMass() - 0.77) > 0.01) continue;     // 0.05
-          if (fabs(glx_event->GetMissMass() + 0.0001) > 0.001) continue; // 0.001
+          if (fabs(glx_event->GetInvMass() - 0.75) > 0.05) continue;     // 0.05
+          if (fabs(glx_event->GetMissMass() + 0.0001) > 0.005) continue; // 0.001
         } else if (fabs(glx_event->GetPdg()) == 321) {
-          if (fabs(glx_event->GetInvMass() - 1.02) > 0.01) continue;     // 0.02
-          if (fabs(glx_event->GetMissMass() + 0.0001) > 0.003) continue; // 0.007
+          if (fabs(glx_event->GetInvMass() - 1.02) > 0.02) continue;     // 0.02
+          if (fabs(glx_event->GetMissMass() + 0.0001) > 0.005) continue; // 0.007
         } else continue;
       } else { // geant
         noise = 0.2;
@@ -385,13 +392,14 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
       int bin = (100 + posInBar.X()) / 200. * nbins;
 
       // selection
-      // if (bar != ibar && ibar > -1) continue;
-      if (fabs(bar - ibar) > 1 && ibar > -1) continue;
-      if (posInBar.X() > 0) continue;
+      if (bar != ibar && ibar > -1) continue;
+      //if (fabs(bar - ibar) > 1 && ibar > -1) continue;
+
       if (fabs(posInBar.X() - dibin) > 10 && ibin > -1) continue;
+
       if (cor_level < 2 && anglecorr > 0) {
-        // if (momentum < 2.5) continue;
-        if (fabs(momentum - moms) > 1) continue;
+	if (momentum < 3.5) continue;
+        //if (fabs(momentum - moms) > 1) continue;
       } else {
 
 	// select tracks close to the center of the bar
@@ -408,9 +416,9 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
         if (bar == 34 && fabs(posInBar.Y() - 45.75) > 1.25) continue;
         if (bar == 35 && fabs(posInBar.Y() - 49.25) > 1.25) continue;
 
-        if (pdgId == 2 && count[2] > 1000) continue;
-        if (pdgId == 3 && count[3] > 1000) continue;
-        // if (fabs(momentum - moms) > 0.1) continue;
+        // if (pdgId == 2 && count[2] > 1000) continue;
+        // if (pdgId == 3 && count[3] > 1000) continue;
+	if (fabs(momentum - moms) > 0.1) continue;
       }
 
       if (bar > 23) {
@@ -737,8 +745,8 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
                   if (fabs(diftime) < 2) hCorrAD[bar][bin][pmt]->Fill(adiff);
                   if (adiff < 20) hCorrTR[bar][bin][pmt]->Fill(diftime);
                 } else {
-                  hCorrAD[bar][bin][pmt]->Fill(adiff);
-                  hCorrTD[bar][bin][pmt]->Fill(diftime);
+                  if (fabs(diftime) < 1) hCorrAD[bar][bin][pmt]->Fill(adiff);
+                  if (adiff < 20) hCorrTD[bar][bin][pmt]->Fill(diftime);
                 }
               }
 
@@ -980,13 +988,15 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
           } else {
             zcorrTD = acorrTD[bar][bin][pmt];
             zcorrTR = acorrTR[bar][bin][pmt];
+	    zsigmaTD = asigmaTD[bar][bin][pmt];
+            zsigmaTR = asigmaTR[bar][bin][pmt];
           }
 
           std::cout << "L " << cor_level << " bar = " << bar << " bin = " << bin << " pmt = " << pmt
                     << Form(" ad %-8.5f ar %-8.5f", zcorrAD, zcorrAR)
                     << Form(" td %-8.5f tr %-8.5f", zcorrTD, zcorrTR) << std::endl;
 
-          if (1) {
+          if (0) {
             canv_angle = glx_canvasAddOrGet("canv_angle");
             canv_angle->cd();
             hCorrAD[bar][bin][pmt]->Fit("fgaus", "Q", "", xmax - 30, xmax + 30);
@@ -1348,17 +1358,17 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
   {
     // kinematics
 
-    // glx_canvasAdd("hKin"+nid,800,400);
-    // hrho->Draw();
-    // hphi->SetLineColor(kRed);
-    // hphi->Draw("same");
+    glx_canvasAdd("hKin"+nid,800,400);
+    hrho->Draw();
+    hphi->SetLineColor(kRed);
+    hphi->Draw("same");
 
-    // glx_canvasAdd("hCMom"+nid,800,400);
-    // hCMom[2]->SetMarkerColor(kBlue);
-    // hCMom[2]->Draw();
-    // hCMom[3]->SetMarkerColor(kRed);
-    // hCMom[3]->Draw("same");
-    // hCMom[4]->Draw("colz same");
+    glx_canvasAdd("hCMom"+nid,800,400);
+    hCMom[2]->SetMarkerColor(kBlue);
+    hCMom[2]->Draw();
+    hCMom[3]->SetMarkerColor(kRed);
+    hCMom[3]->Draw("same");
+    hCMom[4]->Draw("colz same");
   }
 
   { // wall
