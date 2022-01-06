@@ -51,7 +51,7 @@ while( ! -e "${LOCAL_FILE}.corr_${BAR_PAD}_${BIN_PAD}_level2.root" )
 
     # cor_level = 0 (no corrections)
     # cor_level = 1 (initial time correction)
-    root -l -b -q loadlib.C reco_lut_02.C\(\"${LOCAL_FILE}\",\"lut_all_avr.root\",$BAR,$BIN,4.0,0.0,0,0,2\)
+    root -l -b -q loadlib.C reco_lut_02.C\(\"${LOCAL_FILE}\",\"lut_all_avr.root\",$BAR,$BIN,3.5,0.0,0,0,2\)
 
     @ trial += 1
     if ( $trial > 4 ) then
@@ -62,9 +62,9 @@ end
 ls -l
 
 # cor_level = 2 (full correction, check performance)
-# root -l -b -q loadlib.C reco_lut_02.C\(\"${LOCAL_FILE}\",\"lut_all_avr.root\",$BAR,$BIN,3.0,0.0,0,0,2\)
+root -l -b -q loadlib.C reco_lut_02.C\(\"${LOCAL_FILE}\",\"lut_all_avr.root\",$BAR,$BIN,3.5,0.0,0,0,2\)
     
-#ls -l
+ls -l
 
 # save output histograms
 mkdir -p -m 775 ${OUT_DIR}/corr/

@@ -26,13 +26,12 @@ CLUSTER    = "vortex" #x5672
 DATA_OUTPUT_BASE_DIR    = "/sciclone/gluex10/jrstevens01/RunPeriod-2019-11/standalone/"
 
 # JOB EXECUTION
-SCRIPTFILE        = "/sciclone/home10/jrstevens01/2020-dirc/standalone/batch/script_reco.sh"
+SCRIPTFILE        = "/sciclone/home10/jrstevens01/2020-dirc/builds/hd_utilities/dirc/standalone/batch/script_reco.sh"
 ENVFILE           = "/sciclone/home10/jrstevens01/analysisGluexI/builds/setup.csh"
-CODE_DIR          = "/sciclone/home10/jrstevens01/2020-dirc/standalone/"
+CODE_DIR          = "/sciclone/home10/jrstevens01/2020-dirc/builds//hd_utilities/dirc/standalone/"
 RUNNING_DIR       = "/sciclone/scr20/jrstevens01/TMPDIR/standalone_reco/"
-#INPUT_FILE        = "/sciclone/home10/jrstevens01/2020-dirc/standalone/runs_72645_72749.txt"
 INPUT_FILE        = "/sciclone/pscr/jrstevens01/TMPDIR/RunPeriod-2019-11/recon/ver01_pass03/merged/hd_root_sum_bar"
-LUT_FILE          = "/sciclone/home10/jrstevens01/2020-dirc/standalone/lut_all_avr.root"
+LUT_FILE          = "/sciclone/home10/jrstevens01/2020-dirc/builds/hd_utilities/dirc/standalone/lut_all_avr.root"
 
 ######################################################## ADD JOB #########################################################
 
