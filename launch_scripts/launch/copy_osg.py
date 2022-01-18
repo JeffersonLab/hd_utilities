@@ -1,4 +1,10 @@
-#~/usr/bin/env python3
+#!/usr/bin/env python3
+#
+# script to copy OSG launch output that is formatted in one directory per file to a lustre disk with the same
+# format as a launch on the JLab farm
+#
+# example of how to run this script:
+#   python3 copy_osg.py /osgpool/halld/sdobbs/hd_utilities/launch_scripts/launch sdobbs@dtn1902-ib /lustre19/expphy/volatile/halld/analysis/RunPeriod-2017-01/ver88
 
 import os,sys
 import glob
@@ -45,6 +51,8 @@ print(rootfilelist)
 
 for rootfiletype in rootfilelist:
     for runno in runlist:
+        if rootfiletype == "hd_root":
+            rootfiletype = "hists"
         destdir = "%s/%s/%s"%(DESTDIR,rootfiletype,runno)
         srcglob = "%s/out_%s_*/./%s_*.root"%(SRCDIR,runno,rootfiletype)
         cmd = "rsync --progress --rsync-path=\"mkdir -p %s && rsync\" -avux %s %s:%s"%(destdir,srcglob,HOSTNAME,destdir)
