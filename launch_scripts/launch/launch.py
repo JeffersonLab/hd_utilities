@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
+# Alex Austregesilo
 # Paul Mattione
 # Built off of hdswif by Kei Moriya
 #
-# SWIF DOCUMENTATION:
-# https://scicomp.jlab.org/docs/swif
-# https://scicomp.jlab.org/docs/swif-cli
+# SWIF2 DOCUMENTATION:
+# https://scicomp.jlab.org/docs/swif2
 
 from optparse import OptionParser
 import os.path
@@ -220,9 +220,9 @@ def add_job(WORKFLOW, FILEPATH, config_dict):
 
 	# CREATE ADD-JOB COMMAND
 	# job
-	add_command = "swif add-job -workflow " + WORKFLOW + " -name " + JOBNAME
+	add_command = "swif2 add-job -workflow " + WORKFLOW + " -name " + JOBNAME
 	# accounting
-	add_command += " -project " + config_dict["PROJECT"] + " -track " + config_dict["TRACK"] + " -os " + config_dict["OS"]
+	add_command += " -account " + config_dict["PROJECT"] + " -partition " + config_dict["TRACK"] + " -os " + config_dict["OS"]
 	# resources
 	add_command += " -cores " + config_dict["NCORES"] + " -disk " + config_dict["DISK"] + " -ram " + config_dict["RAM"] + " -time " + config_dict["TIMELIMIT"]
 	# inputs
