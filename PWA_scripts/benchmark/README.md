@@ -9,5 +9,6 @@ This directory contains scripts for submitting batch jobs with MPI (and GPU).  T
 * You can change the MyCPU or MyGPU list to contain different amounts of cores for your benchmark if you want to test with more or fewer cores/GPUs
 
 # Notes:
-* Only run the GPU version of the fitter if your fit utilizes a GPU accelerated amplitude and you've compiled that amplitude with the GPU (CUDA) libraries on one of the sciml nodes (see https://halldweb.jlab.org/wiki/index.php/HOWTO_use_AmpTools_on_the_JLab_farm_GPUs) for more details
+* These fits require using the MPI compiled version of AmpTools and halld_sim, see https://halldweb.jlab.org/wiki/index.php/HOWTO_use_AmpTools_on_the_JLab_farm_with_MPI for more details
+* Only run the GPU version of the fitter if your fit utilizes a GPU accelerated amplitude and you've compiled that amplitude with the GPU (CUDA) libraries on one of the sciml nodes, see https://halldweb.jlab.org/wiki/index.php/HOWTO_use_AmpTools_on_the_JLab_farm_GPUs for more details
 * Some of these default benchmarks require many CPUs or GPUs and may take some time for those nodes to become available on the ifarm/sciml nodes, so be patient.
