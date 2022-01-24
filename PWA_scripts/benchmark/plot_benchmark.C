@@ -14,7 +14,7 @@ void plot_benchmark(TString dir = "./") {
 	int numTestCPU = numThreadsCPU.size();
 
 	// for GPU fits, only add if desired
-	vector<int> numThreadsGPUT4 = {1,2,3,4};
+	vector<int> numThreadsGPUT4 = {1,2,3,4,6,8,10,12};
 	vector<int> numThreadsGPURTX = {};
 
 	// names of directories containing benchmark results
@@ -26,6 +26,7 @@ void plot_benchmark(TString dir = "./") {
 	TH1F *hBenchmarkScan = new TH1F("hBenchmarkScan","; Number of GPUs or CPUs; Fit speed (Likelihood function call rate [Hz])", 200, 0, 200);
 	double maxRate = 0;
 	
+	// loop over different achitecture types to plot results
 	for(int itype=0; itype<types.size(); itype++) {
 		vector<int> numThreads = numThreadsCPU;
 		if(types[itype] == "gpuT4") numThreads = numThreadsGPUT4;
@@ -37,7 +38,7 @@ void plot_benchmark(TString dir = "./") {
 			
 			int nThreads = numThreads[ithread];
 			string spath = Form("%s/%s%03d/log/fit.out", dir.Data(), types[itype].Data(), nThreads);	
-			cout << spath << endl;	
+			//cout << spath << endl;	
 			
 			std::string read_line;
 			ifstream file(spath);
@@ -68,7 +69,7 @@ void plot_benchmark(TString dir = "./") {
 				parRms /= float(nValues);
 				parRms = sqrt(parRms);
 				if(parAvg > maxRate) maxRate = parAvg;
-				cout<<parAvg<<" "<<parRms<<endl;
+				//cout<<parAvg<<" "<<parRms<<endl;
 				if(parRms < 1e-9) parRms = 0.01;
 				grBenchmarkScan[itype]->SetPoint(ithread, nThreads, parAvg);
 				grBenchmarkScan[itype]->SetPointError(ithread, 0, parRms);
@@ -88,13 +89,11 @@ void plot_benchmark(TString dir = "./") {
 		grBenchmarkScan[itype]->SetMarkerColor(kBlack+itype);
 		grBenchmarkScan[itype]->Draw("same pl");
 
-		if(itype==0) {
-			fit.push_back(new TF1(types[itype],"pol1",1,200)); 
-			fit[itype]->FixParameter(0,0);
-			grBenchmarkScan[itype]->Fit(fit[itype],"N","",0.5,24);
-			fit[itype]->SetLineColor(kBlack+itype); fit[itype]->SetLineStyle(kDashed);
-			fit[itype]->Draw("same");
-		}
+		fit.push_back(new TF1(types[itype],"pol1",1,200)); 
+		fit[itype]->FixParameter(0,0);
+		grBenchmarkScan[itype]->Fit(fit[itype],"N","",0.5,2);
+		fit[itype]->SetLineColor(kBlack+itype); fit[itype]->SetLineStyle(kDashed);
+		fit[itype]->Draw("same");
 
 		if(itype==0) 
 			legend->AddEntry(grBenchmarkScan[0],"ifarm19 CPU (2 thread/core)","pl");

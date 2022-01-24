@@ -12,9 +12,9 @@ def main(argv):
 
 	# SLURM INFO (see options at https://scicomp.jlab.org/scicomp/slurmJob/slurmInfo)
 	PARTITION  = "gpu"
-        GPUTYPE    = "TitanRTX"
+        GPUTYPE    = "T4"
         TIMELIMIT  = "24:00:00"   # Max walltime
-        MyGPUs = [1,2,3,4]     # List of GPU cards to use in benchmark fits
+        MyGPUs = [1,2,3,4]        # List of GPU cards to use in benchmark fits
 
         # User provided environment, fit configuration and options
 	MyEnv = "/work/halld2/home/jrsteven/2021-amptools/builds_gpu/setup_gluex_dev.csh"
@@ -28,10 +28,9 @@ def main(argv):
                 
                 # Two types of nodes/GPUs (sciml19 and sciml21), both with 3 each  
                 nNodes = 1
-                if GPUTYPE=="T4": 
+                if GPUTYPE=="T4": # 16 allowed in a single job
                         if nGPUs > 8: nNodes=2
-                        if nGPUs > 16: nNodes=3
-                if GPUTYPE=="TitanRTX": 
+                if GPUTYPE=="TitanRTX": # 4 allowed in a single job
                         if nGPUs > 4: nNodes=2
                         if nGPUs > 8: nNodes=3
 

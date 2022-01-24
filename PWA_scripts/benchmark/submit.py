@@ -14,7 +14,7 @@ def main(argv):
 	PARTITION    = "ifarm"   
         CONSTRAINT   = "farm19"   
         TIMELIMIT  = "24:00:00"   # Max walltime
-        MyCPUs = [1, 2, 4, 8, 16, 32, 64, 96, 128] # List of CPU cores to use in benchmark fits
+        MyCPUs = [1,2,4,8,16,32,64,96,128,192] # List of CPU cores to use in benchmark fits
 
         # User provided environment, fit configuration and options
 	MyEnv = "/work/halld2/home/jrsteven/analysisGluexI/builds/setup_gluex_scanParam.csh"
