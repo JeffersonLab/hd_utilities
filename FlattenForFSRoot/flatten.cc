@@ -77,6 +77,7 @@ int main(int argc, char** argv){
   cout << "           -numUnusedNeutrals [optional cut (<= cut)]   (default: -1 (no cut))" << endl;
   cout << "           -numNeutralHypos   [optional cut (<= cut)]   (default: -1 (no cut))" << endl;
   cout << "           -usePolarization   [get polarization angle from RCDB? 0 or 1]   (default: 0)" << endl;
+  cout << "           -addPID    [include PID info in the output tree? 0 or 1]   (default: 0)" << endl;
   cout << "           -mcChecks  [check for baryon number violation, etc.," << endl; 
   cout << "                       when parsing truth information?  0 or 1] (default: 1)" << endl;
   cout << "           -safe  [check array sizes?  0 or 1]          (default: 1)" << endl;
@@ -121,6 +122,7 @@ int main(int argc, char** argv){
   int gNumNeutralHyposCut = -1;
   bool gSafe = true;
   bool gUsePolarization = false;
+  bool gAddPID = false;
   bool gMCChecks = true;
   int gPrint = 0;
   {
@@ -130,7 +132,7 @@ int main(int argc, char** argv){
     if ((argi == "-in")||(argi == "-out")||(argi == "-mc")||(argi == "-mctag")
         ||(argi == "-chi2")||(argi == "-shQuality")||(argi == "-massWindows")
         ||(argi == "-numUnusedTracks")||(argi == "-usePolarization")||(argi == "-numUnusedNeutrals")
-        ||(argi == "-mcChecks")
+        ||(argi == "-mcChecks")||(argi == "-addPID")
         ||(argi == "-numNeutralHypos")||(argi == "-safe")||(argi == "-print")){
       flag = argi;
       continue;
@@ -147,6 +149,7 @@ int main(int argc, char** argv){
     if (flag == "-numUnusedNeutrals"){ gNumUnusedNeutralsCut = atoi(argi); }
     if (flag == "-numNeutralHypos"){ gNumNeutralHyposCut = atoi(argi); }
     if (flag == "-usePolarization"){ if (argi == "1") gUsePolarization = true; }
+    if (flag == "-addPID"){ if (argi == "1") gAddPID = true; }
     if (flag == "-mcChecks"){ if (argi == "0") gMCChecks = false; }
     if (flag == "-safe"){ if (argi == "0") gSafe = false; }
     if (flag == "-print"){ gPrint = atoi(argi); }
@@ -182,6 +185,7 @@ int main(int argc, char** argv){
   cout << "  numUnusedNeutrals cut: " << gNumUnusedNeutralsCut << endl;
   cout << "  numNeutralHypos cut:   " << gNumNeutralHyposCut << endl;
   cout << "  use polarization?      " << gUsePolarization << endl;
+  cout << "  use PID?               " << gAddPID << endl;
   cout << "  MC checks?             " << gMCChecks << endl;
   cout << "  safe mode?             " << gSafe << endl;
   cout << endl;
@@ -642,6 +646,14 @@ int main(int argc, char** argv){
       if (gUseParticles) gInTree->SetBranchAddress("ChargedHypo__ChiSq_Tracking", inChargedHypo__ChiSq_Tracking);
   UInt_t  inChargedHypo__NDF_Tracking[MAXTRACKS] = {};   
       if (gUseParticles) gInTree->SetBranchAddress("ChargedHypo__NDF_Tracking", inChargedHypo__NDF_Tracking);
+  UInt_t  inChargedHypo__NDF_DCdEdx[MAXTRACKS] = {};   
+      if (gUseParticles && gAddPID) gInTree->SetBranchAddress("ChargedHypo__NDF_DCdEdx", inChargedHypo__NDF_DCdEdx);
+  Float_t inChargedHypo__ChiSq_DCdEdx[MAXTRACKS] = {}; 
+      if (gUseParticles && gAddPID) gInTree->SetBranchAddress("ChargedHypo__ChiSq_DCdEdx", inChargedHypo__ChiSq_DCdEdx);
+  Float_t inChargedHypo__dEdx_CDC[MAXTRACKS] = {}; 
+      if (gUseParticles && gAddPID) gInTree->SetBranchAddress("ChargedHypo__dEdx_CDC", inChargedHypo__dEdx_CDC);
+  Float_t inChargedHypo__dEdx_FDC[MAXTRACKS] = {}; 
+      if (gUseParticles && gAddPID) gInTree->SetBranchAddress("ChargedHypo__dEdx_FDC", inChargedHypo__dEdx_FDC);
 
 
         //   *** Neutral Particle Hypotheses (indexed using <particleName>__NeutralIndex) ***
@@ -693,6 +705,8 @@ int main(int argc, char** argv){
 
   TClonesArray *inP4_KinFit[MAXPARTICLES] = {}; 
   Int_t inChargedIndex[MAXPARTICLES][MAXCOMBOS] = {};
+  Float_t inBeta_Timing[MAXPARTICLES][MAXCOMBOS] = {};
+  Float_t inChiSq_Timing[MAXPARTICLES][MAXCOMBOS] = {};
   Int_t inNeutralIndex[MAXPARTICLES][MAXCOMBOS] = {};
   TClonesArray *inX4[MAXPARTICLES] = {};
   Float_t inPathLengthSigma[MAXPARTICLES][MAXCOMBOS] = {};
@@ -711,6 +725,14 @@ int main(int argc, char** argv){
             if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress(var_P4_KinFit,&(inP4_KinFit[pIndex]));
         TString var_ChargedIndex(name);  var_ChargedIndex += "__ChargedIndex";  
             if (gUseParticles) gInTree->SetBranchAddress(var_ChargedIndex,inChargedIndex[pIndex]);
+        TString var_Beta_Timing(name);  
+            if (gUseParticles && !gUseKinFit) var_Beta_Timing += "__Beta_Timing_Measured";
+            if (gUseParticles &&  gUseKinFit) var_Beta_Timing += "__Beta_Timing_KinFit";
+            if (gUseParticles && gAddPID) gInTree->SetBranchAddress(var_Beta_Timing,inBeta_Timing[pIndex]);
+        TString var_ChiSq_Timing(name);  
+            if (gUseParticles && !gUseKinFit) var_ChiSq_Timing += "__ChiSq_Timing_Measured";
+            if (gUseParticles &&  gUseKinFit) var_ChiSq_Timing += "__ChiSq_Timing_KinFit";
+            if (gUseParticles && gAddPID) gInTree->SetBranchAddress(var_ChiSq_Timing,inChiSq_Timing[pIndex]);
       }
 
         //   *** Combo Neutrals ***
@@ -813,6 +835,9 @@ int main(int argc, char** argv){
   double outMCPx[MAXPARTICLES]={}, outMCPy[MAXPARTICLES]={}, outMCPz[MAXPARTICLES]={}, outMCEn[MAXPARTICLES]={};
   double outVeeL[MAXPARTICLES]={}, outVeeLSigma[MAXPARTICLES]={};
   double outTkChi2[MAXPARTICLES]={}, outTkNDF[MAXPARTICLES]={};
+  double outTkDEDXChi2[MAXPARTICLES]={}, outTkDEDXNDF[MAXPARTICLES]={}; 
+  double outTkDEDXCDC[MAXPARTICLES]={}, outTkDEDXFDC[MAXPARTICLES]={}; 
+  double outTkTOFBeta[MAXPARTICLES]={}, outTkTOFChi2[MAXPARTICLES]={}; 
   double outShQuality[MAXPARTICLES]={};
   {
     for (unsigned int im = 0; im < gOrderedParticleNames.size(); im++){
@@ -834,6 +859,14 @@ int main(int argc, char** argv){
         if (GlueXParticleClass(name) == "Charged"){
           TString vTkNDF("TkNDFP");   vTkNDF  += fsIndex; gOutTree->Branch(vTkNDF, &outTkNDF [pIndex]);
           TString vTkChi2("TkChi2P"); vTkChi2 += fsIndex; gOutTree->Branch(vTkChi2,&outTkChi2[pIndex]);
+        }
+        if (gAddPID && GlueXParticleClass(name) == "Charged"){
+          TString vTkTOFBeta ("TkTOFBetaP");  vTkTOFBeta  += fsIndex; gOutTree->Branch(vTkTOFBeta, &outTkTOFBeta[pIndex]);
+          TString vTkTOFChi2 ("TkTOFChi2P");  vTkTOFChi2  += fsIndex; gOutTree->Branch(vTkTOFChi2, &outTkTOFChi2[pIndex]);
+          TString vTkDEDXChi2("TkDEDXChi2P"); vTkDEDXChi2 += fsIndex; gOutTree->Branch(vTkDEDXChi2,&outTkDEDXChi2[pIndex]);
+          TString vTkDEDXNDF("TkDEDXNDFP");   vTkDEDXNDF  += fsIndex; gOutTree->Branch(vTkDEDXNDF, &outTkDEDXNDF [pIndex]);
+          TString vTkDEDXCDC("TkDEDXCDCP");   vTkDEDXCDC  += fsIndex; gOutTree->Branch(vTkDEDXCDC, &outTkDEDXCDC [pIndex]);
+          TString vTkDEDXFDC("TkDEDXFDCP");   vTkDEDXFDC  += fsIndex; gOutTree->Branch(vTkDEDXFDC, &outTkDEDXFDC [pIndex]);
         }
         if (GlueXParticleClass(name) == "Neutral"){
           TString vQual("ShQualityP"); vQual += fsIndex; gOutTree->Branch(vQual, &outShQuality[pIndex]);
@@ -1134,6 +1167,14 @@ int main(int argc, char** argv){
               outREn[pIndex] = p4->E();
             outTkNDF [pIndex] = inChargedHypo__NDF_Tracking  [(inChargedIndex[pIndex][ic])];
             outTkChi2[pIndex] = inChargedHypo__ChiSq_Tracking[(inChargedIndex[pIndex][ic])];
+            if (gAddPID){
+              outTkTOFBeta[pIndex] = inBeta_Timing[pIndex][ic];
+              outTkTOFChi2[pIndex] = inChiSq_Timing[pIndex][ic];
+              outTkDEDXChi2[pIndex] = inChargedHypo__ChiSq_DCdEdx[(inChargedIndex[pIndex][ic])];
+              outTkDEDXNDF [pIndex] = inChargedHypo__NDF_DCdEdx  [(inChargedIndex[pIndex][ic])];
+              outTkDEDXCDC [pIndex] = inChargedHypo__dEdx_CDC    [(inChargedIndex[pIndex][ic])];
+              outTkDEDXFDC [pIndex] = inChargedHypo__dEdx_FDC    [(inChargedIndex[pIndex][ic])];
+            }
           }
           if (gUseMCParticles && outMCSignal > 0.1){
             p4 = (TLorentzVector*)inThrown__P4->At(tIndex);
@@ -1897,7 +1938,8 @@ map<TString, vector<TString> > GlueXDecayProductMap(int fsCode1, int fsCode2){
                                  tmp = "Photon"; tmp += (pNumber++); names.push_back(tmp); }
       if (name.Contains("KShort")){ tmp = "PiPlus";  tmp += (pNumber++); names.push_back(tmp);
                                     tmp = "PiMinus"; tmp += (pNumber++); names.push_back(tmp); }
-      if (name.Contains("Lambda")){ tmp = "Proton";  tmp += (pNumber++); names.push_back(tmp);
+      if (name.Contains("Lambda")&&!name.Contains("AntiLambda"))
+                                  { tmp = "Proton";  tmp += (pNumber++); names.push_back(tmp);
                                     tmp = "PiMinus"; tmp += (pNumber++); names.push_back(tmp); }
       if (name.Contains("AntiLambda")){ tmp = "AntiProton";  tmp += (pNumber++); names.push_back(tmp);
                                         tmp = "PiPlus";      tmp += (pNumber++); names.push_back(tmp); }

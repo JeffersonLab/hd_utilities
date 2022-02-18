@@ -123,68 +123,68 @@ def main():
     if options.angle:
         RCDB_POL_ANGLE = options.angle
     if options.nbins:
-	NBINS = int(options.nbins)
+        NBINS = int(options.nbins)
     if options.emin:
         EMIN = float(options.emin)
     if options.emax:
         EMAX = float(options.emax)
     if options.rcdb_query:
-	RCDB_QUERY_USER = options.rcdb_query
+        RCDB_QUERY_USER = options.rcdb_query
     if options.calib_time:
         try:
             CALIBTIME_USER = datetime.strptime(options.calib_time, "%Y-%m-%d-%H-%M-%S")
         except:
-            print "Calibration time format: Y-M-D-h-min-s"
+            print("Calibration time format: Y-M-D-h-min-s")
             sys.exit(0)
     if options.uniform:
-	UNIFORM = True
+        UNIFORM = True
     if options.rest_ver:
-	RESTVERSION = options.rest_ver
+        RESTVERSION = options.rest_ver
     if options.length:
         TARGETLENGTH = float(options.length)
 
     # Run-dependent defaults for RCDB query
     if RCDB_QUERY != RCDB_QUERY_USER:
-	RCDB_QUERY = RCDB_QUERY_USER
+        RCDB_QUERY = RCDB_QUERY_USER
     else:
-	if int(options.begin_run) >= 40000 and int(options.begin_run) < 60000: 
+        if int(options.begin_run) >= 40000 and int(options.begin_run) < 60000: 
             # 2018-01 and 2018-11 run periods 
             RCDB_QUERY = "@is_2018production and @status_approved"
         if int(options.begin_run) >= 70000: 
             # 2019-11 run period
             RCDB_QUERY = "@is_dirc_production and @status_approved"
     
-    print "RCDB quergy = " + RCDB_QUERY
+    print("RCDB quergy = " + RCDB_QUERY)
 
     # REST production dependent CCDB calibtime
     if CALIBTIME != CALIBTIME_USER:
-    	CALIBTIME = CALIBTIME_USER
-	CALIBTIME_ENERGY = CALIBTIME_USER
+        CALIBTIME = CALIBTIME_USER
+        CALIBTIME_ENERGY = CALIBTIME_USER
     else: # get run period by run number
-	runPeriod = "test"
-	begin_run = int(options.begin_run)
-	if begin_run < 20000: 
-		runPeriod = "RunPeriod-2016-02"
-	elif begin_run < 40000:
-		runPeriod = "RunPeriod-2017-01"
+        runPeriod = "test"
+        begin_run = int(options.begin_run)
+        if begin_run < 20000: 
+            runPeriod = "RunPeriod-2016-02"
+        elif begin_run < 40000:
+            runPeriod = "RunPeriod-2017-01"
         elif begin_run < 50000:
-		runPeriod = "RunPeriod-2018-01"
+            runPeriod = "RunPeriod-2018-01"
         elif begin_run < 60000: 
-		runPeriod = "RunPeriod-2018-08"
+            runPeriod = "RunPeriod-2018-08"
         elif begin_run < 70000:
-		runPeriod = "RunPeriod-2019-01"
-	elif begin_run < 80000:
-                runPeriod = "RunPeriod-2019-11"
-	contextList = loadCCDBContextList(runPeriod,RESTVERSION)
-	RESTVERSION = contextList[0][0] # get REST version number from DB
-	context = contextList[0][1] # get full JANA_CALIB_CONTEXT list from DB
-	startCalibTime = context.find("calibtime")
-	calibTimeString = context[startCalibTime+10:-1]
-	CALIBTIME_ENERGY = datetime.strptime(calibTimeString , "%Y-%m-%d-%H-%M-%S")
-	print "CCDB calibtime for energy to match REST ver%02d" % RESTVERSION + " = " + CALIBTIME_ENERGY.strftime("%Y-%m-%d-%H-%M-%S")
+            runPeriod = "RunPeriod-2019-01"
+        elif begin_run < 80000:
+            runPeriod = "RunPeriod-2019-11"
+        contextList = loadCCDBContextList(runPeriod,RESTVERSION)
+        RESTVERSION = contextList[0][0] # get REST version number from DB
+        context = contextList[0][1] # get full JANA_CALIB_CONTEXT list from DB
+        startCalibTime = context.find("calibtime")
+        calibTimeString = context[startCalibTime+10:-1]
+        CALIBTIME_ENERGY = datetime.strptime(calibTimeString , "%Y-%m-%d-%H-%M-%S")
+        print("CCDB calibtime for energy to match REST ver%02d" % RESTVERSION + " = " + CALIBTIME_ENERGY.strftime("%Y-%m-%d-%H-%M-%S"))
 
     # Load CCDB
-    print "CCDB calibtime for flux = " + CALIBTIME.strftime("%Y-%m-%d-%H-%M-%S")
+    print("CCDB calibtime for flux = " + CALIBTIME.strftime("%Y-%m-%d-%H-%M-%S"))
     ccdb_conn = LoadCCDB()
 
     # Load RCDB
@@ -193,7 +193,7 @@ def main():
         rcdb_conn = rcdb.RCDBProvider("mysql://rcdb@hallddb.jlab.org/rcdb")
     except:
         e = sys.exc_info()[0]
-        print "Could not connect to RCDB: " + str(e)
+        print("Could not connect to RCDB: " + str(e))
     
     # get run list
     runs = rcdb_conn.select_runs(RCDB_QUERY, BEGINRUN, ENDRUN)
@@ -208,7 +208,7 @@ def main():
     tagh_scaled_energy = array('d')
 
     if UNIFORM:
-	htagged_flux = TH1D("tagged_flux_uniform", "Uniform tagged flux; Photon Beam Energy (GeV); Flux (# photons on target)", NBINS, EMIN, EMAX)
+        htagged_flux = TH1D("tagged_flux_uniform", "Uniform tagged flux; Photon Beam Energy (GeV); Flux (# photons on target)", NBINS, EMIN, EMAX)
     htagged_fluxErr = TH1D("tagged_flux", "Tagged flux; Photon Beam Energy (GeV); Flux (# photons on target)", NBINS, EMIN, EMAX)
     htagm_fluxErr = TH1D("tagm_flux", "Tagged flux; TAGM Column; Flux", 102, 1, 103)
     htagh_fluxErr = TH1D("tagh_flux", "Tagged flux; TAGH Counter; Flux", 274, 1, 275)
@@ -216,8 +216,8 @@ def main():
     # Loop over runs
     for run in runs:
         if RCDB_POLARIZATION == "" and RCDB_POL_ANGLE != "":
-            print "ERROR: polarization angle (option -a or --angle) specified, but polarization flag (option -p or --pol) was not. "
-            print "Please rerun and specify a polarization flag (PARA or PERP) while running"
+            print("ERROR: polarization angle (option -a or --angle) specified, but polarization flag (option -p or --pol) was not. ")
+            print("Please rerun and specify a polarization flag (PARA or PERP) while running")
             return
 
         # select run conditions: AMO, PARA, and PERP and polarization angle
@@ -233,44 +233,44 @@ def main():
             if RCDB_POL_ANGLE != "" and run.get_condition('polarization_angle').value != float(RCDB_POL_ANGLE):
                 continue
 
-	print "==%d=="%run.number
-
+        print("==%d=="%run.number)
+        
 	# Set livetime scale factor
-	livetime_ratio = 0.0
-	try:
-		livetime_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/pair_spectrometer/lumi/trig_live", run.number, VARIATION, CALIBTIME)
-		livetime = livetime_assignment.constant_set.data_table
-	        if float(livetime[3][1]) > 0.0: # check that livetimes are non-zero
-        	       livetime_ratio = float(livetime[0][1])/float(livetime[3][1])
-        	else: # if bad livetime assume ratio is 1
-        	       livetime_ratio = 1.0
-	except:
-		livetime_ratio = 1.0 # default to unity if table doesn't exist
+        livetime_ratio = 0.0
+        try:
+            livetime_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/pair_spectrometer/lumi/trig_live", run.number, VARIATION, CALIBTIME)
+            livetime = livetime_assignment.constant_set.data_table
+            if float(livetime[3][1]) > 0.0: # check that livetimes are non-zero
+                livetime_ratio = float(livetime[0][1])/float(livetime[3][1])
+            else: # if bad livetime assume ratio is 1
+                livetime_ratio = 1.0
+        except:
+            livetime_ratio = 1.0 # default to unity if table doesn't exist
 	
 	# printout for livetimes different from unity
 	#if livetime_ratio > 1.0 or livetime_ratio < 0.9:
 	#	print livetime_ratio
 	
 	# Conversion factors for total flux
-	converterThicknessTable = run.get_condition('polarimeter_converter') # 75 or 750 micron
-	converterThickness = ""
-	if converterThicknessTable:
-		converterThickness = converterThicknessTable.value		
+        converterThicknessTable = run.get_condition('polarimeter_converter') # 75 or 750 micron
+        converterThickness = ""
+        if converterThicknessTable:
+            converterThickness = converterThicknessTable.value		
 
-	converterLength = 0 
-	if converterThickness == "Be 75um": # default is 75 um
-		converterLength = 75e-6
-	elif converterThickness == "Be 750um":
-    		converterLength = 750e-6
-	elif run.number > 10633 and run.number < 10694: # no coverter in RCDB, but 75 um from logbook
-		converterLength = 75e-6 
-	else:
-		print "Unknown converter thickness"
-		sys.exit(0)
+        converterLength = 0 
+        if converterThickness == "Be 75um": # default is 75 um
+            converterLength = 75e-6
+        elif converterThickness == "Be 750um":
+            converterLength = 750e-6
+        elif run.number > 10633 and run.number < 10694: # no coverter in RCDB, but 75 um from logbook
+            converterLength = 75e-6 
+        else:
+            print("Unknown converter thickness")
+            sys.exit(0)
 
-    	berilliumRL = 35.28e-2 # 35.28 cm
-    	radiationLength = converterLength/berilliumRL;
-    	scale = livetime_ratio * 1./((7/9.) * radiationLength);
+        berilliumRL = 35.28e-2 # 35.28 cm
+        radiationLength = converterLength/berilliumRL;
+        scale = livetime_ratio * 1./((7/9.) * radiationLength);
 
         try:
             photon_endpoint_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/endpoint_energy", run.number, VARIATION, CALIBTIME_ENERGY)
@@ -286,7 +286,7 @@ def main():
             tagh_scaled_energy_assignment = ccdb_conn.get_assignment("/PHOTON_BEAM/hodoscope/scaled_energy_range", run.number, VARIATION, CALIBTIME_ENERGY)
             tagh_scaled_energy_table = tagh_scaled_energy_assignment.constant_set.data_table
         except:
-            print "Missing flux for run number = %d, contact jrsteven@jlab.org" % run.number 
+            print("Missing flux for run number = %d, contact jrsteven@jlab.org" % run.number)
             sys.exit(0)
 
             
@@ -308,12 +308,12 @@ def main():
             calibrated_endpoint = True
         except:
             if run.number > 60000:
-                print "Missing endpoint calibration for run "+run.number
+                print("Missing endpoint calibration for run "+run.number)
                 sys.exit(0)
 
         # fill tagm histogram
-	for tagm_flux, tagm_scaled_energy in zip(tagm_tagged_flux, tagm_scaled_energy_table):
-	    tagm_energy = float(photon_endpoint[0][0])*(float(tagm_scaled_energy[1])+float(tagm_scaled_energy[2]))/2.
+        for tagm_flux, tagm_scaled_energy in zip(tagm_tagged_flux, tagm_scaled_energy_table):
+            tagm_energy = float(photon_endpoint[0][0])*(float(tagm_scaled_energy[1])+float(tagm_scaled_energy[2]))/2.
             if calibrated_endpoint:
                 tagm_energy = float(photon_endpoint_calib[0][0])*(float(tagm_scaled_energy[1])+float(tagm_scaled_energy[2]))/2. + photon_endpoint_delta_E
 
@@ -321,19 +321,19 @@ def main():
             if psAccept <= 0.0:
                 continue
 
-	    if UNIFORM:
-	            tagm_energy_low = float(photon_endpoint[0][0])*(float(tagm_scaled_energy[1]))
-		    tagm_energy_high = float(photon_endpoint[0][0])*(float(tagm_scaled_energy[2]))
-                    if calibrated_endpoint:
-                        tagm_energy_low = float(photon_endpoint_calib[0][0])*(float(tagm_scaled_energy[1])) + photon_endpoint_delta_E
-                        tagm_energy_high = float(photon_endpoint_calib[0][0])*(float(tagm_scaled_energy[2])) + photon_endpoint_delta_E
+            if UNIFORM:
+                tagm_energy_low = float(photon_endpoint[0][0])*(float(tagm_scaled_energy[1]))
+                tagm_energy_high = float(photon_endpoint[0][0])*(float(tagm_scaled_energy[2]))
+                if calibrated_endpoint:
+                    tagm_energy_low = float(photon_endpoint_calib[0][0])*(float(tagm_scaled_energy[1])) + photon_endpoint_delta_E
+                    tagm_energy_high = float(photon_endpoint_calib[0][0])*(float(tagm_scaled_energy[2])) + photon_endpoint_delta_E
 	
-                    flux = float(tagm_flux[1])
-		    i = 0
-		    while i <= flux:
-			energy = tagm_energy_low + gRandom.Uniform(tagm_energy_high-tagm_energy_low)
-		    	htagged_flux.Fill(energy,scale/fPSAcceptance.Eval(energy))
-			i += 1
+                flux = float(tagm_flux[1])
+                i = 0
+                while i <= flux:
+                    energy = tagm_energy_low + gRandom.Uniform(tagm_energy_high-tagm_energy_low)
+                    htagged_flux.Fill(energy,scale/fPSAcceptance.Eval(energy))
+                    i += 1
 
             bin_energy = htagged_fluxErr.FindBin(tagm_energy)
             previous_bincontent = htagged_fluxErr.GetBinContent(bin_energy)
@@ -343,13 +343,13 @@ def main():
             current_binerror = float(tagm_flux[2]) * scale / psAccept
             new_bincontent = previous_bincontent + current_bincontent
             new_binerror = math.sqrt(previous_binerror*previous_binerror + current_binerror*current_binerror) 
-	    htagged_fluxErr.SetBinContent(bin_energy, new_bincontent)
+            htagged_fluxErr.SetBinContent(bin_energy, new_bincontent)
             htagged_fluxErr.SetBinError(bin_energy, new_binerror)
             htagm_fluxErr.Fill(int(tagm_flux[0]), current_bincontent)
         
         # fill tagh histogram
-	previous_energy_scaled_low = 999. # keep track of low energy bin boundry to avoid overlaps
-	for tagh_flux, tagh_scaled_energy in zip(tagh_tagged_flux, tagh_scaled_energy_table):
+        previous_energy_scaled_low = 999. # keep track of low energy bin boundry to avoid overlaps
+        for tagh_flux, tagh_scaled_energy in zip(tagh_tagged_flux, tagh_scaled_energy_table):
             tagh_energy = float(photon_endpoint[0][0])*(float(tagh_scaled_energy[1])+float(tagh_scaled_energy[2]))/2.
             if calibrated_endpoint:
                 tagh_energy = float(photon_endpoint_calib[0][0])*(float(tagh_scaled_energy[1])+float(tagh_scaled_energy[2]))/2. + photon_endpoint_delta_E
@@ -358,37 +358,37 @@ def main():
             if psAccept <= 0.0:
                 continue
 
-	    if UNIFORM:
-		    tagh_energy_low = float(photon_endpoint[0][0])*(float(tagh_scaled_energy[1]))
- 	    	    tagh_energy_high = float(photon_endpoint[0][0])*(float(tagh_scaled_energy[2]))
-                    if calibrated_endpoint:
-                        tagh_energy_low = float(photon_endpoint_calib[0][0])*(float(tagh_scaled_energy[1])) + photon_endpoint_delta_E
-                        tagh_energy_high = float(photon_endpoint_calib[0][0])*(float(tagh_scaled_energy[2])) + photon_endpoint_delta_E
+            if UNIFORM:
+                tagh_energy_low = float(photon_endpoint[0][0])*(float(tagh_scaled_energy[1]))
+                tagh_energy_high = float(photon_endpoint[0][0])*(float(tagh_scaled_energy[2]))
+                if calibrated_endpoint:
+                    tagh_energy_low = float(photon_endpoint_calib[0][0])*(float(tagh_scaled_energy[1])) + photon_endpoint_delta_E
+                    tagh_energy_high = float(photon_endpoint_calib[0][0])*(float(tagh_scaled_energy[2])) + photon_endpoint_delta_E
 
-		    if previous_energy_scaled_low < tagh_energy_high:
-			tagh_energy_high = previous_energy_scaled_low
+                if previous_energy_scaled_low < tagh_energy_high:
+                    tagh_energy_high = previous_energy_scaled_low
 
-	            flux = float(tagh_flux[1])
-	            i = 0
-	            while i <= flux:
-	                energy = tagh_energy_low + gRandom.Uniform(tagh_energy_high-tagh_energy_low)
-                        ps_acceptance = fPSAcceptance.Eval(energy)
-                        if ps_acceptance > 0:
-                            htagged_flux.Fill(energy,scale/fPSAcceptance.Eval(energy))
-	                i += 1
+                flux = float(tagh_flux[1])
+                i = 0
+                while i <= flux:
+                    energy = tagh_energy_low + gRandom.Uniform(tagh_energy_high-tagh_energy_low)
+                    ps_acceptance = fPSAcceptance.Eval(energy)
+                    if ps_acceptance > 0:
+                        htagged_flux.Fill(energy,scale/fPSAcceptance.Eval(energy))
+                    i += 1
+                    
+                previous_energy_scaled_low = tagh_energy_low
 
-		    previous_energy_scaled_low = tagh_energy_low
-
-	    bin_energy = htagged_fluxErr.FindBin(tagh_energy)
-	    previous_bincontent = htagged_fluxErr.GetBinContent(bin_energy)
-	    previous_binerror = htagged_fluxErr.GetBinError(bin_energy)
+            bin_energy = htagged_fluxErr.FindBin(tagh_energy)
+            previous_bincontent = htagged_fluxErr.GetBinContent(bin_energy)
+            previous_binerror = htagged_fluxErr.GetBinError(bin_energy)
 
             current_bincontent = float(tagh_flux[1]) * scale / psAccept
             current_binerror = float(tagh_flux[2]) * scale / psAccept
-	    new_bincontent = previous_bincontent + current_bincontent
-	    new_binerror = math.sqrt(previous_binerror*previous_binerror + current_binerror*current_binerror)
-	    htagged_fluxErr.SetBinContent(bin_energy, new_bincontent)
-	    htagged_fluxErr.SetBinError(bin_energy, new_binerror)
+            new_bincontent = previous_bincontent + current_bincontent
+            new_binerror = math.sqrt(previous_binerror*previous_binerror + current_binerror*current_binerror)
+            htagged_fluxErr.SetBinContent(bin_energy, new_bincontent)
+            htagged_fluxErr.SetBinError(bin_energy, new_binerror)
             htagh_fluxErr.Fill(int(tagh_flux[0]), current_bincontent)
 
     # Get density factor from CCDB
@@ -434,7 +434,7 @@ def main():
     
     fout = TFile(OUTPUT_FILENAME, "recreate")
     if UNIFORM:
-	htagged_flux.Write()
+        htagged_flux.Write()
     htagged_fluxErr.Write()
     htagged_lumiErr.Write()
     htagm_fluxErr.Write()

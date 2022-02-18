@@ -12,7 +12,7 @@ void plotTopology() {
 	TH1F *hThrownTopologies = (TH1F*)f->Get("hThrownTopologies");
 	hThrownTopologies->GetXaxis()->LabelsOption(">"); // order by most common topology
 	hThrownTopologies->GetXaxis()->SetRangeUser(0, 10); // only plot first 20 topologies
-	hThrownTopologies->Scale(100./hThrownTopologies->GetEntries()); // turn histogram into percentage
+	hThrownTopologies->Scale(100./hThrownTopologies->Integral()); // turn histogram into percentage
 	hThrownTopologies->GetYaxis()->SetTitle("Thrown Topology %");
 	hThrownTopologies->Draw("htext");
 

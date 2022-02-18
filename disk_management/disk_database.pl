@@ -52,6 +52,7 @@ $sql = "create table $file_table (
        filename varchar(256),
        dirId int,
        atime datetime,
+       mtime datetime,
        size bigint,
        uid smallint
 );";
@@ -102,7 +103,7 @@ while ($dirname = <FINDDIR>) {
 	    $file_no_path = $token[$#token];
 	    #print "file_no_path = $file_no_path\n";
 	    $file_no_path =~ s/\\/\\\\/g; # escape backslash
-	    $sql = "insert into $file_table set filename = \"$file_no_path\", dirId = $last_id, atime = from_unixtime($stat[8]), size = $stat[7], uid = $stat[4];";
+	    $sql = "insert into $file_table set filename = \"$file_no_path\", dirId = $last_id, atime = from_unixtime($stat[8]), mtime = from_unixtime($stat[9]), size = $stat[7], uid = $stat[4];";
 	    make_query($dbh_db, \$sth);
 	} else {
 	    print "cannot stat $filename in $dirname\n";

@@ -1,0 +1,1 @@
+[marki@ifarm1901 ~]$ find /cache/halld -type f -size -1048576c -exec stat -c "%n %U %X %Y %s" {} \; > /u/scratch/marki/cache_small_files.txt
