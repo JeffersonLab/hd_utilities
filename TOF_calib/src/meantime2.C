@@ -157,6 +157,8 @@ double getmt(int p1, int p2, double *mtref,int RunNumber) {
 	gPad->Update();
 	sprintf(fnam,"plots/meantime_average_to_refpaddle%d.pdf",REFPAD[1]);
 	gPad->SaveAs(fnam);
+	sprintf(fnam,"C/meantime_average_to_refpaddle%d.C",REFPAD[1]);
+	gPad->SaveAs(fnam);
       }
     }
     //histdt->Draw();

@@ -25,6 +25,7 @@
 #include <fstream>
 #include <iostream>
 #include <TDatime.h>
+#include <TPaletteAxis.h>
 
 using namespace std;
 
@@ -94,6 +95,10 @@ void meantime1(int Run, int REF, int RefPlane){
   sprintf(inf,"calibration%d/tof_walk_parameters_run%d.dat",RunNumber,RunNumber);
   ifstream INF;
   INF.open(inf);
+  if (!INF){
+    cout<<"Error open walk correction parameter file: "<<inf<<" BAIL!"<<endl;
+    return;
+  }
   int idx;
   double FitPar[NumPMTMax][17];
   double ReferenceLoc,dummy;
@@ -427,15 +432,25 @@ void findpeak(double *MTPosition, double *MTSigma){
 	    dMT->GetYaxis()->SetTitle("Paddle Number [#]");
 	    sprintf(exnam,"MeanTime Difference MT_{i}-MT_{ref} [ns]");
 	    dMT->GetXaxis()->SetTitle(exnam);
+	    dMT->SetStats(0);
 	    dMT->Draw("colz");
 	    gPad->SetGrid();
-	    gPad->SetLogz(1);
+	    //dMT->GetZaxis()->SetRangeUser(0., 10000.);
+	    //TPaletteAxis *palette=(TPaletteAxis*)dMT->FindObject("palette");
+	    //double x1 = palette->GetX1();
+	    //double x2 = palette->GetX2();
+	    //double newx2 = x2-(x2-x1)/2.;
+	    //palette->SetX2(newx2);
+	    //gPad->SetLogz(1);
 	    gPad->Update();
 	    sprintf(exnam,"plots/mtdiff_vs_padnum_RefPad%d_RefPlane%d_run%d.pdf",REFPAD,REFPLANE,RunNumber);
 	    if (NOWALK){
 	      sprintf(exnam,"plots/mtdiff_vs_padnum_RefPad%d_run%d_nowalk.pdf",REFPAD,RunNumber);
 	    }
 	    gPad->SaveAs(exnam);
+	    sprintf(exnam,"C/mtdiff_vs_padnum_RefPad%d_RefPlane%d_run%d.C",REFPAD,REFPLANE,RunNumber);
+	    gPad->SaveAs(exnam);
+
 	  }
 	  if (DEBUG>1){
 	    if (!((k-3)%10) || (DEBUG>98)){
@@ -452,6 +467,11 @@ void findpeak(double *MTPosition, double *MTSigma){
 		sprintf(exnam,"plots/mtdiff_vs_padnum_proj_%d_ref%d_run%d_nowalk.pdf",k,REFPAD,RunNumber);
 	      }
 	      gPad->SaveAs(exnam);
+
+	      sprintf(exnam,"C/mtdiff_vs_padnum_proj_%d_ref%d_RefPlane%d_run%d.C",k,REFPAD,REFPLANE,RunNumber);
+	      gPad->SaveAs(exnam);
+
+
 	    }
 	  }
 	}

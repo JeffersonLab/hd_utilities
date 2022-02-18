@@ -446,15 +446,26 @@ double fithist(TH2F *hist, double *allp, int plane, int paddle, int side, int id
   double Chi2 = res->Chi2() / res->Ndf(); 
   cout<<"chi2 = "<<Chi2<<endl;
   if (Chi2>100){
-    f1->SetParameter(0, 1.);
+    f1->SetParameter(0, -2.7);
     f1->SetParameter(1, 1.);
     f1->SetParameter(2, 1.);
     f1->SetParameter(3, 1.);
     f1->SetParameter(4, 1.);
     res = (TFitResultPtr)graph->Fit(f1, "SQ", "R", f1limit, 3000.);
     Chi2 = res->Chi2() / res->Ndf(); 
-    cout<<"chi2 = "<<Chi2<<endl;
+    cout<<"SECOND ROUND FIT: chi2 = "<<Chi2<<endl;
   }
+  if (Chi2>1000){
+    f1->SetParameter(0, -2.7);
+    f1->SetParameter(1, 1.);
+    f1->SetParameter(2, 1.);
+    f1->SetParameter(3, 1.);
+    f1->SetParameter(4, 1.);
+    res = (TFitResultPtr)graph->Fit(f1, "SQ", "R", f1limit, 1500.);
+    Chi2 = res->Chi2() / res->Ndf(); 
+    cout<<"THIRD ROUND FIT: chi2 = "<<Chi2<<endl;
+  }
+
   TF1 *fres = (TF1*)graph->GetFunction("f1");
   for (int k=0;k<5;k++){
     F1->SetParameter(k, fres->GetParameter(k));
@@ -462,6 +473,14 @@ double fithist(TH2F *hist, double *allp, int plane, int paddle, int side, int id
     allp[2*k+1] = fres->GetParError(k);
   }
   F1->SetLineColor(4);
+
+  if (DEBUG>98){
+    graph->Draw("AP");
+    F1->Draw("same");
+    gPad->SetGrid();
+    gPad->Update();
+    getchar();
+  }
 
   f2->SetParameter(0, 1.);
   f2->SetParameter(1, -0.001);
@@ -477,12 +496,12 @@ double fithist(TH2F *hist, double *allp, int plane, int paddle, int side, int id
     }
     return Chi2;
   }
-  
+
+  return Chi2;
   cout<<"Fit f2 for PMT: "<<idx<<endl;
-  TFitResultPtr res1 = graph->Fit(f2, "SQ", "R", 2000., 3900.);
+  TFitResultPtr res1 = graph->Fit(f2, "SQ", "R", 2000, 3900.);
   Chi2 += res->Chi2() / res->Ndf(); 
   fres = (TF1*)graph->GetFunction("f2");
-
   int OFFS = 10;
   for (int k=0;k<2;k++){
     F2->SetParameter(k, fres->GetParameter(k));
@@ -490,6 +509,14 @@ double fithist(TH2F *hist, double *allp, int plane, int paddle, int side, int id
     allp[2*k+1+OFFS] = fres->GetParError(k);
   }
   F2->SetLineColor(2);
+
+  if (DEBUG>98){
+    graph->Draw("AP");
+    F2->Draw("same");
+    gPad->SetGrid();
+    gPad->Update();
+    getchar();
+  }
 
   char fitnam[128];
   sprintf(fitnam,"fit1hist%d",idx);
