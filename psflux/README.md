@@ -81,8 +81,8 @@ python3.6 plot_flux_ccdb.py ...
 
 ## The flux values in the MySQL CCDB are from:
 
-RunPeriod-2019-11: REST ver01 production
+RunPeriod-2019-11: REST ver01 production  
 RunPeriod-2018-08: REST ver02 production  
-RunPeriod-2018-01: REST ver02 production
+RunPeriod-2018-01: REST ver02 production   
 RunPeriod-2017-01: REST ver03 production  
 RunPeriod-2016-02: REST ver06 production  
