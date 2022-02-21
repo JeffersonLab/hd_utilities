@@ -62,8 +62,10 @@ CCDB_HOME
 and for simplicity you can use the standard build_scripts procedure to set these for you or one of the nightly builds with this command (with the date replaced)
 
 ```
-source /group/halld/Software/build_scripts/gluex_env_nightly.csh 2019-10-08
+source /group/halld/Software/build_scripts/gluex_env_nightly.csh 2022-02-18
 ```
+
+The location of the plot_flux_ccdb.py script will then be located at $HD_UTILITIES_HOME/psflux/plot_flux_ccdb.py in your environment.
 
 ## Python Version Notes:
 
