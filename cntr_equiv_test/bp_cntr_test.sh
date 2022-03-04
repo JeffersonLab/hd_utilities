@@ -1,4 +1,5 @@
 #!/bin/bash
+echo INFO: starting bp_cntr_test.sh
 if [ ! -z $1 ]
 then
     export BMS_OSNAME_OVERRIDE=$1
