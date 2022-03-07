@@ -54,6 +54,7 @@ double GoodMax44[44] = {   -8.19623,     -7.79666,     -7.39403,     -7.01673,  
 			   4.9624,      5.35841,      5.7274,       6.11531,      5.36404,     6.88482,    
 			   7.29651};    
 double *GoodMax;
+double ExpectedMax = -9999.;
 
 void timedifference(int Run, int REF, int REFPLANE){
   
@@ -245,6 +246,7 @@ void timedifference(int Run, int REF, int REFPLANE){
   cout<<"Center OFFSET "<<CenterOFF<<endl;
   double tpos[100];
   double dtpos[100];
+
   // NOTE THE OFFSET OF 3!!!!!!!!!
   for (int j=3; j<3+BARS_PER_PLANE; j++){
     double p = 0.;
@@ -340,10 +342,12 @@ void timedifference(int Run, int REF, int REFPLANE){
 	    MinXlocPos = pp;
 	  }
 	  if (xp>MaxXloc){
-	    MaxXloc =xp;
+	    MaxXloc = xp;
 	    MaxXlocPos = pp;
 	  }
 	}
+
+	cout<<"MinX = "<<MinXloc<<"       MaxX = "<<MaxXloc<<endl;
 	
 	int maxPOS;
 	if (j-2<BARS_PER_PLANE/2){
@@ -354,13 +358,6 @@ void timedifference(int Run, int REF, int REFPLANE){
 	  maxPOS = MaxXlocPos;
 	}
 	
-	if ( (TMath::Abs(j-25)<7) && (maxPOS != MaxPeakLoc) ){
-	  if (DEBUG){
-	    cout<<"Change peak location from "<<max << " to " << MaxPeakLoc<<endl;
-	  }
-	  max = xpeaks[MaxPeakLoc];
-	}
-
       } else {
 	cout<<"Error! No peaks found"<<endl; 
       }
@@ -371,8 +368,8 @@ void timedifference(int Run, int REF, int REFPLANE){
 	gPad->SetGrid();
 	gPad->Update();
 	cout<<"MAX is at "<<max<<"     Max Peak is at: "<<xpeaks[MaxPeakLoc]<<endl;
-	getchar();
-	//sleep(1);
+	//getchar();
+	sleep(1);
       }
       
       if (TMath::Abs(j-25)>10) {
@@ -381,35 +378,27 @@ void timedifference(int Run, int REF, int REFPLANE){
 	}
       }
 
-      if (TMath::Abs(max - GoodMax[j-2-1])>3.2){ // off by more than 1ns from expected postion TOO MUCH
+      if (ExpectedMax < -100.){
+	ExpectedMax = max;
+      } else {
+	double d = GoodMax[j-3] - GoodMax[j-4];
+	ExpectedMax += d;
+      }
+
+
+      //      if (TMath::Abs(max - GoodMax[j-2-1])>3.2){ // off by more than 1ns from expected postion TOO MUCH
+      if ( TMath::Abs(max - ExpectedMax) > 0.5){
 
 	cout<<"max out of range try to find better max for j-2="<<j-2<<endl;
+	cout<<"expected position: " << ExpectedMax << endl;
 
-	hp->GetXaxis()->SetRangeUser(GoodMax[j-2-1]-2.5, GoodMax[j-2-1]+2.5);
-	TSpectrum *speaks1 = new TSpectrum(6);
-	nfound = speaks1->Search(hp,2,"nodraw",0.10);
-	double minloc = 10000;
-	double maxloc = -10000;
-	double *xpeaks1 = speaks1->GetPositionX();
-
-	int minid = -1;
-	int maxid = -1;
 	for (int pp=0;pp<nfound;pp++) {
-	  double xp = xpeaks1[pp];
-	  if (xp<minloc){
-	    minloc = xp;
-	    minid = pp;
-	  }
-	  if (xp>maxloc){
-	    maxloc = xp;
-	    maxid = pp;
-	  }
-	}
+	  double xp = xpeaks[pp];
 
-	if (j-2<BARS_PER_PLANE/2){
-	  max = xpeaks[minid];
-	} else {
-	  max = xpeaks[maxid];
+	  if (TMath::Abs(xp - ExpectedMax)<0.5){
+	    max = xp;
+	  }
+
 	}
 
       }
@@ -438,8 +427,8 @@ void timedifference(int Run, int REF, int REFPLANE){
 	gPad->Update();
 	gPad->SetGrid();
 	cout<<"MAX is at "<<max<<endl;
-	getchar();
-	//sleep(1);
+	//getchar();
+	sleep(1);
       }
 
       double sig1 = 1.2;
@@ -489,13 +478,25 @@ void timedifference(int Run, int REF, int REFPLANE){
       p = f1->GetParameter(1);
       dp = f1->GetParError(1);
 
+      if (f1->GetParameter(2)>0.35){
+	hili = max + 2.*bw;
+	loli = max - 2.5*bw;
+	
+	hp->Fit("gaus","RQ","",loli,hili);
+	f1 = hp->GetFunction("gaus");
+	p = f1->GetParameter(1);
+	dp = f1->GetParError(1);
+      }
+
+      cout<<"SIGMA = "<<f1->GetParameter(2)<<"      POS = "<<p 
+	  <<"     d(P-E) = "<<p-ExpectedMax<<endl;
       if (DEBUG>2) {
 	hp->Draw();
 	gPad->Update();
 
 	cout<<"j ="<< j << "   BARS_PER_PLANE="<<BARS_PER_PLANE<<endl;
-	getchar();
-	//sleep(1);
+	//getchar();
+	sleep(1);
       }
 
       if (DEBUG) {
@@ -545,6 +546,7 @@ void timedifference(int Run, int REF, int REFPLANE){
       cout<<"Error histogram is empty!!!! Paddle "<<j-2<<endl;
       p = 0;
       dp = 0;
+      ExpectedMax += .3;
     }
     tpos[j-3] = p;
     dtpos[j-3] = dp;

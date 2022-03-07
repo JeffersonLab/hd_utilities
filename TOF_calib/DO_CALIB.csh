@@ -6,7 +6,7 @@ mkdir calibration$RUN
 
 # do walk correction
 echo "executing walk1.C"
-root -b -q "src/walk1.C+($RUN)" >& calibration$RUN/walkfit.log
+root -b -q "src/walk1.C++($RUN)" >& calibration$RUN/walkfit.log
 echo "cat walkfit.log:"
 cat calibration$RUN/walkfit.log
 
@@ -42,11 +42,11 @@ root -b -q "src/consolidate.C($RUN)"
 
 # option 10: get TOF TDC calibration for single ended paddles
 echo "executing dofitall.C"
-root -b -q "src/dofitall.C+($RUN,10)"
+root -b -q "src/dofitall.C++($RUN,10)"
 
 # determine adc time offsets so that T_TDC - T_ADC will be peaked at zero.
 echo "executing doadctimeoffsets.C"
-root -b -q "src/doadctimeoffsets.C+($RUN)"
+root -b -q "src/doadctimeoffsets.C++($RUN)"
 
 
 # determine attenuation length
