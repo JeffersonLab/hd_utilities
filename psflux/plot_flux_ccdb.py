@@ -162,6 +162,7 @@ def main():
         CALIBTIME_ENERGY = CALIBTIME_USER
     else: # get run period by run number
         runPeriod = "test"
+        contextOverride = "test"
         begin_run = int(options.begin_run)
         if begin_run < 20000: 
             runPeriod = "RunPeriod-2016-02"
@@ -173,11 +174,17 @@ def main():
             runPeriod = "RunPeriod-2018-08"
         elif begin_run < 70000:
             runPeriod = "RunPeriod-2019-01"
+        elif begin_run < 72436:
+            runPeriod = "RunPeriod-2019-11"
         elif begin_run < 80000:
             runPeriod = "RunPeriod-2019-11"
+            # temporary override for context until batch-dependent values are accessible
+            contextOverride = "variation=default calibtime=2021-04-23-00-00-01"
         contextList = loadCCDBContextList(runPeriod,RESTVERSION)
         RESTVERSION = contextList[0][0] # get REST version number from DB
         context = contextList[0][1] # get full JANA_CALIB_CONTEXT list from DB
+        if contextOverride != "test":
+            context = contextOverride
         startCalibTime = context.find("calibtime")
         calibTimeString = context[startCalibTime+10:-1]
         CALIBTIME_ENERGY = datetime.strptime(calibTimeString , "%Y-%m-%d-%H-%M-%S")
