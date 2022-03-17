@@ -29,20 +29,109 @@ Merge_Files()
 	if [ "$TYPE" == "log" ] ; then 
 	    local TEMP_FILE="log_${RUN}.root"
 	    continue
-	elif [ "$TYPE" == "hists" ] ; then 
+	elif [ "$TYPE" == "hists" ] || [ "$TYPE" == "hd_root" ] || [ "$TYPE" == "flat" ] || [ "$TYPE" == "survey" ] || [ "$TYPE" == "pdf" ] ; then 
 	    local TEMP_FILE="hd_root_${RUN}.root"
 	    continue
 	else
 	    local TEMP_FILE="${TYPE}_${RUN}.root"
 	fi
-	hadd $TEMP_FILE $INPUTDIR/$TYPE/$RUN/*
-	
+
+	#cp -v $INPUTDIR/$TYPE/$RUN/${TYPE}_${RUN}_*.root .
+
+	LD_PRELOAD=/home/gxproj6/monitoring/merge_trees/startup_C.so hadd $TEMP_FILE $INPUTDIR/$TYPE/$RUN/${TYPE}_${RUN}_*.root
+	#hadd $TEMP_FILE $INPUTDIR/$TYPE/$RUN/${TYPE}_${RUN}_*.root
 	# RETURN CODE
 	RETURN_CODE=$?
+
+	#rm ${TYPE}_${RUN}_*.root
+	
 	echo "Return Code = " $RETURN_CODE
 	if [ $RETURN_CODE -ne 0 ]; then
 	    exit $RETURN_CODE
 	fi
+
+	# test from here
+
+	# # setup output dirs
+	# local OUTDIR_THIS=${OUTDIR}/$TYPE/merged/
+	# mkdir -p -m 755 ${OUTDIR_THIS}
+
+	# local OUTPUT_FILE=$OUTDIR_THIS/$TEMP_FILE
+	
+	# # save it
+	# mv -v $TEMP_FILE $OUTPUT_FILE
+
+	
+    done
+}
+
+
+####################################################### FLATTEN FILES #############################################################
+
+Flatten_Files()
+{
+    # loop over trees and merge
+    for TYPE in `ls $INPUTDIR` ; do 
+	if [ "$TYPE" == "hists" ] || [ "$TYPE" == "flat" ] || [ "$TYPE" == "survey" ] || [ "$TYPE" == "pdf" ] ; then 
+	    continue
+	else
+	    local TEMP_FILE="${TYPE}_${RUN}.root"
+	fi
+
+	$FLATTEN/flatten \
+           -chi2 25 \
+           -numUnusedTracks 1 \
+           -numUnusedNeutrals 2 \
+           -shQuality 0.5 \
+           -massWindows 0.05  \
+           -in $PWD/$TEMP_FILE \
+           -out $PWD/${TYPE}_${RUN}_flat.root
+
+	RETURN_CODE=$?
+	
+	echo "Return Code = " $RETURN_CODE
+	if [ $RETURN_CODE -ne 0 ]; then
+	    exit $RETURN_CODE
+	fi
+
+	# setup flat dirs
+	local FLATDIR_THIS=$INPUTDIR/flat/$TYPE
+	mkdir -p -m 755 ${FLATDIR_THIS}
+	cp $PWD/${TYPE}_${RUN}_flat.root ${FLATDIR_THIS}/
+	
+    done
+}
+
+
+####################################################### CREATE HISTOGRAMS #############################################################
+
+Create_Hists()
+{
+    # loop over trees and merge
+    for TYPE in `ls $INPUTDIR` ; do 
+	if [ "$TYPE" == "hists" ] || [ "$TYPE" == "flat" ] || [ "$TYPE" == "survey" ] || [ "$TYPE" == "pdf" ] ; then 
+	    continue
+	else
+	    local TEMP_FILE="${TYPE}_${RUN}_flat.root"
+	fi
+
+	$GLUEX_SURVEY/surveyFSTreeToHist \
+           -in $PWD/$TEMP_FILE \
+           -out $PWD/${TYPE}_${RUN}_hist.root
+
+	RETURN_CODE=$?
+
+	echo "Return Code = " $RETURN_CODE
+	if [ $RETURN_CODE -ne 0 ]; then
+	    exit $RETURN_CODE
+	fi
+
+	# setup survey dirs
+	local SURVEYDIR_THIS=$INPUTDIR/survey/$TYPE
+	mkdir -p -m 755 ${SURVEYDIR_THIS}
+	mv $PWD/${TYPE}_${RUN}_hist.root ${SURVEYDIR_THIS}/
+
+	rm $PWD/$TEMP_FILE
 	
     done
 }
@@ -87,7 +176,7 @@ Save_Files()
 	if [ "$TYPE" == "log" ] ; then 
 	    local TEMP_FILE="log_${RUN}.root"
 	    continue
-	elif [ "$TYPE" == "hists" ] ; then 
+	elif [ "$TYPE" == "hists" ] || [ "$TYPE" == "flat" ] || [ "$TYPE" == "survey" ] || [ "$TYPE" == "pdf" ] ; then 
 	    local TEMP_FILE="hd_root_${RUN}.root"
 	    continue
 	else
@@ -154,6 +243,10 @@ Run_Script()
 
 	# RUN hadd
 	Merge_Files
+
+	#Flatten_Files
+
+	#Create_Hists
 
 	#Merge_Hists
 

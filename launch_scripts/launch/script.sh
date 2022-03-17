@@ -6,11 +6,23 @@ Setup_Script()
 {
 	# PWD, STATUS OF MOUNTED DISKS
 	echo "pwd =" $PWD
+	if [[ $PWD != /scratch/slurm/${SLURM_JOB_ID} ]] ; then
+	    echo "LOCAL DIRECTORY " $PWD " NOT SUPPORTED"
+	    exit 1
+	fi
 	echo "df -h:"
 	df -h
 
-	# ENVIRONMENT
-	source $ENVIRONMENT
+	# ENVIRONMENT (shell script of xml?)
+	ENV_EXT="${ENVIRONMENT##*.}"
+	if [[ $ENV_EXT == "sh" ]] ; then
+	    source $ENVIRONMENT
+	elif [[ $ENV_EXT == "xml" ]] ; then
+	    source /group/halld/Software/build_scripts/gluex_env_jlab.sh /group/halld/www/halldweb/html/halld_versions/$ENVIRONMENT
+	else
+	    echo "ENVIRONMENT " $ENVIRONMENT " not supported"
+	    exit 1
+	fi
 	printenv
 	echo "PERL INCLUDES: "
 	perl -e "print qq(@INC)"
@@ -26,15 +38,8 @@ Setup_Script()
             echo "JANA_CALIB_URL: " $JANA_CALIB_URL
 	fi
 
-	# COPY INPUT FILE TO WORKING DIRECTORY
-	# This step is necessary since the cache files will be created as soft links in the current directory, and we want to avoid large I/O processes.
-	# We first copy the input file to the current directory, then remove the link.
-	echo "LOCAL FILES PRIOR TO INPUT COPY"
-	ls -l
-	cp -v $INPUTFILE ./tmp_file
-	rm -f $INPUTFILE
-	mv -v tmp_file $INPUTFILE
-	echo "LOCAL FILES AFTER INPUT COPY"
+	# LIST WORKING DIRECTORY
+	echo "LOCAL FILES"
 	ls -l
 }
 
@@ -138,6 +143,11 @@ Save_Histograms()
 		    chmod 644 $OUTPUT_FILE
 		fi
 
+		# if the target file is still empty, fail job
+		if [ ! -s $OUTPUT_FILE ] ; then
+		    exit 13
+		fi
+
 		# force save to tape & pin
 		if [ "$TAPEDIR" != "" ]; then
 			echo jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
@@ -167,6 +177,11 @@ Save_REST()
 		if [ ! -s $OUTPUT_FILE ] ; then 
 		    mv -v dana_rest $OUTPUT_FILE
 		    chmod 644 $OUTPUT_FILE
+		fi
+
+		# if the target file is still empty, fail job
+		if [ ! -s $OUTPUT_FILE ] ; then
+		    exit 13
 		fi
 
 		# force save to tape & pin
@@ -295,6 +310,11 @@ Save_ROOTFiles()
 		if [ ! -s $OUTPUT_FILE ] ; then 
 		    mv -v $ROOT_FILE $OUTPUT_FILE
 		    chmod 644 $OUTPUT_FILE
+		fi
+
+		# if the target file is still empty, fail job
+		if [ ! -s $OUTPUT_FILE ] ; then
+		    exit 13
 		fi
 
 		# force save to tape & pin

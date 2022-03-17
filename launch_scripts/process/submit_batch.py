@@ -7,8 +7,8 @@ def AddJobToSWIF(workflow,run_period,version,run):
     #command = "check_recon_data.batch.csh"
 
     # config
-    project = "gluex"         
-    track = "analysis"
+    project = "halld"
+    track = "production"
     #track = "debug"    # for quick execution of merging
     basedir = "/home/gxproj1/monitoring/process"
     disk_space = 5     # GB
@@ -17,9 +17,9 @@ def AddJobToSWIF(workflow,run_period,version,run):
     cores = 6
 
     # create command
-    cmd = "swif add-job -workflow %s -project %s -track %s"%(workflow,project,track)
+    cmd = "swif2 add-job -workflow %s -account %s -partition %s"%(workflow,project,track)
     cmd += " -name %s_%06d"%(workflow,run)
-    cmd += " -os centos65 "
+    cmd += " -os general "
     cmd += " -stdout file:/volatile/halld/home/gxproj1/process/batch_log/%s/log_%06d"%(workflow,run)
     cmd += " -stderr file:/volatile/halld/home/gxproj1/process/batch_log/%s/err_%06d"%(workflow,run)
     cmd += " -disk %dGB"%int(disk_space)
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     INPUTDIR="/cache/halld/offline_monitoring/%s/ver%s/hists"%(RUNPERIOD,VERSION)
 
     # set up the workflow and some directories
-    call("swif create -workflow %s"%WORKFLOW, shell=True)
+    call("swif2 create -workflow %s"%WORKFLOW, shell=True)
     call("mkdir -p /volatile/halld/home/gxproj1/process/batch_log/%s"%(WORKFLOW), shell=True)
 
     # create one job for each run

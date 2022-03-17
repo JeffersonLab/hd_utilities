@@ -5,6 +5,7 @@
 # 2017/08/07 Alex Austregesilo
 #
 # Python script for merging analysis trees as soon as all jobs for the run are done
+# 2022/01/27: upgrade to swif2
 #
 ##########################################################################################################################
 
@@ -138,14 +139,14 @@ def validate_config(config_dict):
 ################################################### BUILD DICTIONARIES ###################################################
 
 def build_launch_dictionary(WORKFLOW):
-	command = "swif status -workflow " + WORKFLOW + " -jobs"
+	command = "swif2 status -workflow " + WORKFLOW + " -jobs"
 	if VERBOSE > 1:
 		print command
 	process = Popen(command.split(), stdout=PIPE)
 	status_output = process.communicate()[0] # is stdout. [1] is stderr
 	return_code = process.returncode
 	if return_code != 0:
-		print "swif status bad return code, exiting"
+		print "swif2 status bad return code, exiting"
 		sys.exit()
 
 	if VERBOSE > 99:
@@ -158,7 +159,7 @@ def build_launch_dictionary(WORKFLOW):
         job_results = "-1"
 	for line in status_output.splitlines():
 		if VERBOSE > 9:
-			print line
+                        print line
                 if(len(line.split()) < 3):
 			continue
 		field = line.split()[0]
@@ -176,11 +177,16 @@ def build_launch_dictionary(WORKFLOW):
                                 job_dictionary[run_string] = 1
                                 
                         
-                elif (field == "auger_exit_code"): 
+                elif (field == "slum_exitcode"): 
 			job_result = line.split()[2]
                         if (job_result == "0"):
                                 run_done = 1
                         
+                elif (field == "slurm_state"): 
+			job_state = line.split()[2]
+                        if (job_state != "COMPLETED"):
+                                run_done = 0
+
 	# Register the last job
         if(run_string != "-1"):
 	  	job_dictionary[run_string] *= run_done
@@ -190,14 +196,14 @@ def build_launch_dictionary(WORKFLOW):
 	return job_dictionary
 
 def build_merge_deque(WORKFLOW):
-	command = "swif status -workflow " + WORKFLOW + " -jobs"
+	command = "swif2 status -workflow " + WORKFLOW + " -jobs"
 	if VERBOSE > 1:
 		print command
 	process = Popen(command.split(), stdout=PIPE)
 	status_output = process.communicate()[0] # is stdout. [1] is stderr
 	return_code = process.returncode
 	if return_code != 0:
-		print "swif status bad return code, exiting"
+		print "swif2 status bad return code, exiting"
 		sys.exit()
 
 	if VERBOSE > 99:
@@ -230,11 +236,18 @@ def add_job(MERGE_WORKFLOW, RUNNO, config_dict):
 	#DATE = time.strftime("%Y-%m-%d")
         JOBNAME = MERGE_WORKFLOW + "_" + RUNNO
 
+        # SETUP LOG DIRECTORY FOR SLURM
+        LOG_DIR = config_dict["OUTDIR_SMALL"] + "/log/merged"
+        make_log_dir = "mkdir -p " + LOG_DIR
+        try_command(make_log_dir)
+        if(VERBOSE == True):
+                print "LOG DIRECTORY " + LOG_DIR + " CREATED"
+
 	# CREATE ADD-JOB COMMAND
 	# job
-	add_command = "swif add-job -workflow " + MERGE_WORKFLOW + " -name " + JOBNAME
+	add_command = "swif2 add-job -workflow " + MERGE_WORKFLOW + " -name " + JOBNAME
 	# accounting
-	add_command += " -project " + config_dict["PROJECT"] + " -track " + config_dict["TRACK"] + " -os " + config_dict["OS"]
+	add_command += " -account " + config_dict["PROJECT"] + " -partition " + config_dict["TRACK"] + " -os " + config_dict["OS"]
 	# resources
 	add_command += " -cores " + config_dict["NCORES"] + " -disk " + config_dict["DISK"] + " -ram " + config_dict["RAM"] + " -time " + config_dict["TIMELIMIT"]
 	# stdout, stderr
@@ -250,11 +263,12 @@ def add_job(MERGE_WORKFLOW, RUNNO, config_dict):
 	add_command +=  " " + config_dict["INDATA_TOPDIR"] + " " + config_dict["OUTDIR_LARGE"] + " " + RUNNO + " " + config_dict["CACHE_PIN_DAYS"]
 
 
-	if(VERBOSE == True):
-		print "job add command is \n" + str(add_command)
-
-	# ADD JOB
-	status = try_command(add_command)
+        if(VERBOSE == True):
+                print "job add command is \n" + str(add_command)
+                
+        # ADD JOB
+        #print str(add_command)
+        status = try_command(add_command)
 
 
 ########################################################## MAIN ##########################################################
@@ -281,6 +295,7 @@ def main(argv):
 	config_dict = read_config(JOB_CONFIG_FILE)
 
         LAUNCH_WORKFLOW = config_dict["WORKFLOW"]
+        print "Merging workflow " + LAUNCH_WORKFLOW
         
 	# BUILD WORKFLOW NAME
 	MERGE_WORKFLOW = LAUNCH_WORKFLOW + "_merge"
@@ -313,7 +328,7 @@ def main(argv):
                 n_submit += 1
 
 	# RUN WORKFLOW (IN CASE NOT RUNNING ALREADY)
-	command = "swif run -workflow " + MERGE_WORKFLOW
+	command = "swif2 run -workflow " + MERGE_WORKFLOW
 	if VERBOSE > 1:
 		print command
         try_command(command)
