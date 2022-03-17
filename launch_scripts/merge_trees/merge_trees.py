@@ -143,10 +143,6 @@ def validate_config(config_dict):
 	if(not os.path.isfile(config_dict["SCRIPTFILE"])): 
 		print "ERROR: SCRIPTFILE does not exist (or is inaccessible) \n SCRIPTFILE: " + config_dict["SCRIPTFILE"]
 		sys.exit(1)
-	if("JANA_CONFIG" in config_dict):
-		if(not os.path.isfile(config_dict["JANA_CONFIG"])): 
-			print "ERROR: JANA_CONFIG specified but does not exist (or is inaccessible) \n JANA_CONFIG: " + config_dict["JANA_CONFIG"]
-			sys.exit(1)
 		
 	# CHECK INPUT FOLDER EXISTENCE
 	if(not os.path.isdir(config_dict["INDATA_TOPDIR"])): 
