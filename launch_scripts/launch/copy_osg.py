@@ -9,7 +9,7 @@
 import os,sys
 import glob
 
-DONT_RENAME = True
+DONT_RENAME = False
 
 # read some of this in from configuration file?
 SRCDIR   = sys.argv[1]
@@ -18,6 +18,7 @@ DESTDIR  = sys.argv[3]
 
 # rename files first and keep some lists
 runlist = set()
+run_file_num_map = {}
 rootfilelist = set()
 
 output_directories = glob.glob(SRCDIR+'/out_??????_???')
@@ -28,26 +29,42 @@ for dirpath in output_directories:
         dirname = dirpath.split('/')[-1]
         runno = dirname[4:10]
         fileno = dirname[-3:]
-        print(runno,fileno)  # DEBUG
+        #print(runno,fileno)  # DEBUG
     except:
         print("couldn't process file: "+dirpath)
         continue
 
-    runlist.add(runno)
-
     rootfiles = glob.glob(dirpath+"/*.root")
+    if(len(rootfiles) == 0):
+        continue
+
+    runlist.add(runno)
+    if runno not in run_file_num_map.keys():
+        run_file_num_map[runno] = []
+    run_file_num_map[runno].append(fileno)
+
     for rootfile in rootfiles:
         if not DONT_RENAME:
+            # check to see if we should actually rename
+            tag = "%s_%s"%(runno,fileno)
+            #print("compare ",tag,rootfile[-15:-5])
+            #continue
+            if(tag == rootfile[-15:-5]):
+                continue
+
             destfile = rootfile[:-5] + "_%s_%s.root"%(runno,fileno)
             rootfilelist.add(rootfile.split('/')[-1][:-5])
             cmd = "mv %s %s"%(rootfile,destfile)
             os.system(cmd)
         else:
             rootfilelist.add(rootfile.split('/')[-1][:-16])
-
+            #print(rootfile.split('/')[-1])
+            #print(rootfile.split('/')[-1][:-16])
+            #exit(0)
 
 print(runlist)
 print(rootfilelist)
+#exit(0)
 
 for rootfiletype in rootfilelist:
     for runno in runlist:
@@ -55,7 +72,6 @@ for rootfiletype in rootfilelist:
             rootfiletype = "hists"
         destdir = "%s/%s/%s"%(DESTDIR,rootfiletype,runno)
         srcglob = "%s/out_%s_*/./%s_*.root"%(SRCDIR,runno,rootfiletype)
-        cmd = "rsync --progress --rsync-path=\"mkdir -p %s && rsync\" -avux %s %s:%s"%(destdir,srcglob,HOSTNAME,destdir)
+        cmd = "rsync --remove-source-files --progress --rsync-path=\"mkdir -p %s && rsync\" -avux %s %s:%s"%(destdir,srcglob,HOSTNAME,destdir)
         print(cmd)
         os.system(cmd)
-        

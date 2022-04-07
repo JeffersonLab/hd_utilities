@@ -243,7 +243,7 @@ def add_job(WORKFLOW, FILEPATH, config_dict):
 
                 # required settings
                 outf.write("+Project = \"gluex\"\n")
-                outf.write("Requirements = (HAS_SINGULARITY == TRUE) && (HAS_CVMFS_oasis_opensciencegrid_org == True)\n")
+                outf.write("Requirements = (HAS_SINGULARITY == TRUE) && (HAS_CVMFS_oasis_opensciencegrid_org == True) && (HAS_CVMFS_gluex_osgstorage_org == true)\n")
                 outf.write("+SingularityImage = \"/cvmfs/singularity.opensciencegrid.org/markito3/gluex_docker_prod:latest\"\n")
                 outf.write("+SingularityBindCVMFS = True\n")
                 outf.write("+SingularityAutoLoad = True\n\n")
@@ -365,7 +365,7 @@ def add_fullrun_job(WORKFLOW, file_list, config_dict):
                 outf.write("transfer_output_files = out_%s_$(fileno)\n\n"%(RUNNO))
 
                 outf.write("Queue fileno from filenos.txt\n")
-         
+      
         # submit job
         submit_cmd = "condor_submit -batch-name %s %s"%(WORKFLOW,outf_name)
         try_command(submit_cmd)  # check result of command?
