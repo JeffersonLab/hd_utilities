@@ -135,9 +135,11 @@ def validate_config(config_dict):
 		sys.exit(1)
 
 	# CHECK FILE EXISTENCE
-	if(not os.path.isfile(config_dict["ENVFILE"])): 
-		print "ERROR: ENVFILE does not exist (or is inaccessible) \n ENVFILE: " + config_dict["ENVFILE"]
-		sys.exit(1)
+	if(not os.path.isfile(config_dict["ENVFILE"])): #Check if ENVFILE exists
+		# Also accept ENVFILE if it is an xml file found in standard group disk location
+		if(not os.path.isfile("/group/halld/www/halldweb/html/halld_versions/"+config_dict["ENVFILE"])): # 
+			print "ERROR: ENVFILE does not exist (or is inaccessible) \n ENVFILE: " + config_dict["ENVFILE"]
+			sys.exit(1)
 	if(not os.path.isfile(config_dict["SCRIPTFILE"])): 
 		print "ERROR: SCRIPTFILE does not exist (or is inaccessible) \n SCRIPTFILE: " + config_dict["SCRIPTFILE"]
 		sys.exit(1)
