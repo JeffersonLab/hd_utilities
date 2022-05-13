@@ -13,12 +13,17 @@ Setup_Script()
 	echo "df -h:"
 	df -h
 
-	# ENVIRONMENT (shell script of xml?)
+	# ENVIRONMENT (shell script or xml?)
 	ENV_EXT="${ENVIRONMENT##*.}"
+	ENV_DIR=`dirname $ENVIRONMENT`
 	if [[ $ENV_EXT == "sh" ]] ; then
 	    source $ENVIRONMENT
 	elif [[ $ENV_EXT == "xml" ]] ; then
-	    source /group/halld/Software/build_scripts/gluex_env_jlab.sh /group/halld/www/halldweb/html/halld_versions/$ENVIRONMENT
+	    if [[ $ENV_DIR == "." ]] ; then
+		source /group/halld/Software/build_scripts/gluex_env_jlab.sh /group/halld/www/halldweb/html/halld_versions/$ENVIRONMENT
+	    else
+		source /group/halld/Software/build_scripts/gluex_env_jlab.sh $ENVIRONMENT
+	    fi
 	else
 	    echo "ENVIRONMENT " $ENVIRONMENT " not supported"
 	    exit 1
