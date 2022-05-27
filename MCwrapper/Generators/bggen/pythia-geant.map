@@ -29,9 +29,9 @@
  24       3334    ! Omega-
  25      -2112    ! antineutron
  26      -3122    ! antiLambda0
- 27      -3112    ! antiSigma-
+ 27      -3222    ! antiSigma-
  28      -3212    ! antiSigma0
- 29      -3222    ! antiSigma+
+ 29      -3112    ! antiSigma+
  30      -3322    ! antiXi0
  31      -3312    ! antiXi+
  32      -3334    ! antiOmega+
