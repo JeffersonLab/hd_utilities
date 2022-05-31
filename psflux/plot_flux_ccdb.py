@@ -421,7 +421,7 @@ def main():
     htagged_lumiErr = htagged_fluxErr.Clone("tagged_lumi")
     htagged_lumiErr.Reset()
     htagged_lumiErr.SetTitle("Tagged luminosity (pb^{-1}); Photon Beam Energy (GeV); Luminosity (pb^{-1})")
-    for i in range(1,htagged_fluxErr.GetNbinsX()):
+    for i in range(1,htagged_fluxErr.GetNbinsX()+1):
         lumi = htagged_fluxErr.GetBinContent(i) * targetScatteringCenters / 1e12
         if htagged_fluxErr.GetBinContent(i) <= 0.0:
             continue
