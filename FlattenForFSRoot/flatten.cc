@@ -77,7 +77,7 @@ int main(int argc, char** argv){
   cout << "           -numUnusedNeutrals [optional cut (<= cut)]   (default: -1 (no cut))" << endl;
   cout << "           -numNeutralHypos   [optional cut (<= cut)]   (default: -1 (no cut))" << endl;
   cout << "           -usePolarization   [get polarization angle from RCDB? 0 or 1]   (default: 0)" << endl;
-  cout << "           -addPID    [include PID info in the output tree? 0 or 1]   (default: 0)" << endl;
+  cout << "           -addPID    [include PID info in the output tree? 0 or 1]   (default: 1)" << endl;
   cout << "           -mcChecks  [check for baryon number violation, etc.," << endl; 
   cout << "                       when parsing truth information?  0 or 1] (default: 1)" << endl;
   cout << "           -safe  [check array sizes?  0 or 1]          (default: 1)" << endl;
@@ -122,7 +122,7 @@ int main(int argc, char** argv){
   int gNumNeutralHyposCut = -1;
   bool gSafe = true;
   bool gUsePolarization = false;
-  bool gAddPID = false;
+  bool gAddPID = true;
   bool gMCChecks = true;
   int gPrint = 0;
   {
@@ -149,7 +149,7 @@ int main(int argc, char** argv){
     if (flag == "-numUnusedNeutrals"){ gNumUnusedNeutralsCut = atoi(argi); }
     if (flag == "-numNeutralHypos"){ gNumNeutralHyposCut = atoi(argi); }
     if (flag == "-usePolarization"){ if (argi == "1") gUsePolarization = true; }
-    if (flag == "-addPID"){ if (argi == "1") gAddPID = true; }
+    if (flag == "-addPID"){ if (argi == "0") gAddPID = false; }
     if (flag == "-mcChecks"){ if (argi == "0") gMCChecks = false; }
     if (flag == "-safe"){ if (argi == "0") gSafe = false; }
     if (flag == "-print"){ gPrint = atoi(argi); }
