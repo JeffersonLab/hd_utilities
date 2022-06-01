@@ -355,17 +355,67 @@ int main(int argc, char** argv){
     vector<TString> eraseVector; // (to remove double-counting)
     TList* rootMothers = (TList*) userInfo->FindObject("ParticleNameList");
     TMap* rootDecayProductMap = (TMap*) userInfo->FindObject("DecayProductMap");
+      // print the contents of ParticleNameList and DecayProductMap to the screen
     for (int i = 0; i < rootMothers->GetEntries(); i++){
       TObjString* rootMother = (TObjString*) rootMothers->At(i);
-      cout << rootMother->GetString() << endl;
+      TString motherFSType = FSParticleType(rootMother->GetString());
+      cout << rootMother->GetString() << ": " << motherFSType << endl;
       TList* rootDaughters = (TList*) rootDecayProductMap->GetValue(rootMother->GetString());
-      vector<TString> daughters;
       if (rootDaughters){
         for (int j = 0; j < rootDaughters->GetEntries(); j++){
           TObjString* rootDaughter = (TObjString*) rootDaughters->At(j);
-          cout << "    " << rootDaughter->GetString() << endl;
-          daughters.push_back(rootDaughter->GetString());
-          eraseVector.push_back(rootDaughter->GetString());
+          TString daughterFSType = FSParticleType(rootDaughter->GetString());
+          cout << "    " << rootDaughter->GetString() << ": " << daughterFSType << endl;
+        }
+      }
+    }
+      // try to fill gDecayProductMap
+    for (int i = 0; i < rootMothers->GetEntries(); i++){
+      TObjString* rootMother = (TObjString*) rootMothers->At(i);
+      TString motherFSType = FSParticleType(rootMother->GetString());
+      TList* rootDaughters = (TList*) rootDecayProductMap->GetValue(rootMother->GetString());
+      vector<TString> daughters;
+      if (rootDaughters){
+        if (rootDaughters->GetEntries() == 2){
+          TObjString* rootDaughter1 = (TObjString*) rootDaughters->At(0);
+          TObjString* rootDaughter2 = (TObjString*) rootDaughters->At(1);
+          TString daughter1FSType = FSParticleType(rootDaughter1->GetString());
+          TString daughter2FSType = FSParticleType(rootDaughter2->GetString());
+          if (((motherFSType == "pi0")     && (daughter1FSType == "gamma") && (daughter2FSType == "gamma")) ||
+              ((motherFSType == "eta")     && (daughter1FSType == "gamma") && (daughter2FSType == "gamma")) ||
+              ((motherFSType == "Ks")      && (daughter1FSType == "pi+")   && (daughter2FSType == "pi-"))   ||
+              ((motherFSType == "Ks")      && (daughter1FSType == "pi-")   && (daughter2FSType == "pi+"))   ||
+              ((motherFSType == "Lambda")  && (daughter1FSType == "p+")    && (daughter2FSType == "pi-"))   ||
+              ((motherFSType == "Lambda")  && (daughter1FSType == "pi-")   && (daughter2FSType == "p+"))    ||
+              ((motherFSType == "ALambda") && (daughter1FSType == "p-")    && (daughter2FSType == "pi+"))   ||
+              ((motherFSType == "ALambda") && (daughter1FSType == "pi+")   && (daughter2FSType == "p-"))){
+            daughters.push_back(rootDaughter1->GetString());
+            daughters.push_back(rootDaughter2->GetString());
+            eraseVector.push_back(rootDaughter1->GetString());
+            eraseVector.push_back(rootDaughter2->GetString());
+          }
+        }
+      }
+      else if (rootMother->GetString().Contains("Decaying")){
+        if (i < rootMothers->GetEntries()-2){
+          TObjString* rootDaughter1 = (TObjString*) rootMothers->At(i+1);
+          TObjString* rootDaughter2 = (TObjString*) rootMothers->At(i+2);
+          TString daughter1FSType = FSParticleType(rootDaughter1->GetString());
+          TString daughter2FSType = FSParticleType(rootDaughter2->GetString());
+          if (((motherFSType == "pi0")     && (daughter1FSType == "gamma") && (daughter2FSType == "gamma")) ||
+              ((motherFSType == "eta")     && (daughter1FSType == "gamma") && (daughter2FSType == "gamma")) ||
+              ((motherFSType == "Ks")      && (daughter1FSType == "pi+")   && (daughter2FSType == "pi-"))   ||
+              ((motherFSType == "Ks")      && (daughter1FSType == "pi-")   && (daughter2FSType == "pi+"))   ||
+              ((motherFSType == "Lambda")  && (daughter1FSType == "p+")    && (daughter2FSType == "pi-"))   ||
+              ((motherFSType == "Lambda")  && (daughter1FSType == "pi-")   && (daughter2FSType == "p+"))    ||
+              ((motherFSType == "ALambda") && (daughter1FSType == "p-")    && (daughter2FSType == "pi+"))   ||
+              ((motherFSType == "ALambda") && (daughter1FSType == "pi+")   && (daughter2FSType == "p-"))){
+            daughters.push_back(rootDaughter1->GetString());
+            daughters.push_back(rootDaughter2->GetString());
+            eraseVector.push_back(rootDaughter1->GetString());
+            eraseVector.push_back(rootDaughter2->GetString());
+            i += 2;
+          }
         }
       }
       gDecayProductMap[rootMother->GetString()] = daughters;
@@ -436,7 +486,8 @@ int main(int argc, char** argv){
                                           && motherFSType != "Ks"
                                           && motherFSType != "Lambda"
                                           && motherFSType != "ALambda"){
-        cout << "  ERROR: unrecognized decaying particle: " << motherName << endl;  gCheckFSOkay = false;
+        cout << "  WARNING: unrecognized decaying particle: " << motherName << endl;
+        cout << "     DOUBLE-CHECK all the parsing and ordering below" << endl;
       }
     }
   }
