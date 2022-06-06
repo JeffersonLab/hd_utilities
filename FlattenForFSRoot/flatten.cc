@@ -78,6 +78,8 @@ int main(int argc, char** argv){
   cout << "           -numNeutralHypos   [optional cut (<= cut)]   (default: -1 (no cut))" << endl;
   cout << "           -usePolarization   [get polarization angle from RCDB? 0 or 1]   (default: 0)" << endl;
   cout << "           -addPID    [include PID info in the output tree? 0 or 1]   (default: 1)" << endl;
+  cout << "           -flattenpi0 [flatten pi0s to just gamma gamma? 0 or 1]   (default: 0)" << endl;
+  cout << "           -flatteneta [flatten etas to just gamma gamma? 0 or 1]   (default: 0)" << endl;
   cout << "           -mcChecks  [check for baryon number violation, etc.," << endl; 
   cout << "                       when parsing truth information?  0 or 1] (default: 1)" << endl;
   cout << "           -safe  [check array sizes?  0 or 1]          (default: 1)" << endl;
@@ -123,6 +125,8 @@ int main(int argc, char** argv){
   bool gSafe = true;
   bool gUsePolarization = false;
   bool gAddPID = true;
+  bool gFlattenpi0 = false;
+  bool gFlatteneta = false;
   bool gMCChecks = true;
   int gPrint = 0;
   {
@@ -132,7 +136,7 @@ int main(int argc, char** argv){
     if ((argi == "-in")||(argi == "-out")||(argi == "-mc")||(argi == "-mctag")
         ||(argi == "-chi2")||(argi == "-shQuality")||(argi == "-massWindows")
         ||(argi == "-numUnusedTracks")||(argi == "-usePolarization")||(argi == "-numUnusedNeutrals")
-        ||(argi == "-mcChecks")||(argi == "-addPID")
+        ||(argi == "-mcChecks")||(argi == "-addPID")||(argi == "-flattenpi0")||(argi == "-flatteneta")
         ||(argi == "-numNeutralHypos")||(argi == "-safe")||(argi == "-print")){
       flag = argi;
       continue;
@@ -150,6 +154,8 @@ int main(int argc, char** argv){
     if (flag == "-numNeutralHypos"){ gNumNeutralHyposCut = atoi(argi); }
     if (flag == "-usePolarization"){ if (argi == "1") gUsePolarization = true; }
     if (flag == "-addPID"){ if (argi == "0") gAddPID = false; }
+    if (flag == "-flattenpi0"){ if (argi == "1") gFlattenpi0 = true; }
+    if (flag == "-flatteneta"){ if (argi == "1") gFlatteneta = true; }
     if (flag == "-mcChecks"){ if (argi == "0") gMCChecks = false; }
     if (flag == "-safe"){ if (argi == "0") gSafe = false; }
     if (flag == "-print"){ gPrint = atoi(argi); }
@@ -186,6 +192,8 @@ int main(int argc, char** argv){
   cout << "  numNeutralHypos cut:   " << gNumNeutralHyposCut << endl;
   cout << "  use polarization?      " << gUsePolarization << endl;
   cout << "  use PID?               " << gAddPID << endl;
+  cout << "  flatten pi0s?          " << gFlattenpi0 << endl;
+  cout << "  flatten etas?          " << gFlatteneta << endl;
   cout << "  MC checks?             " << gMCChecks << endl;
   cout << "  safe mode?             " << gSafe << endl;
   cout << endl;
@@ -381,8 +389,11 @@ int main(int argc, char** argv){
           TObjString* rootDaughter2 = (TObjString*) rootDaughters->At(1);
           TString daughter1FSType = FSParticleType(rootDaughter1->GetString());
           TString daughter2FSType = FSParticleType(rootDaughter2->GetString());
-          if (((motherFSType == "pi0")     && (daughter1FSType == "gamma") && (daughter2FSType == "gamma")) ||
-              ((motherFSType == "eta")     && (daughter1FSType == "gamma") && (daughter2FSType == "gamma")) ||
+          if (((motherFSType == "pi0")     && (daughter1FSType == "gamma") && (daughter2FSType == "gamma") && gFlattenpi0) ||
+              ((motherFSType == "eta")     && (daughter1FSType == "gamma") && (daughter2FSType == "gamma") && gFlatteneta))
+            eraseVector.push_back(rootMother->GetString());
+          if (((motherFSType == "pi0")     && (daughter1FSType == "gamma") && (daughter2FSType == "gamma") && !gFlattenpi0) ||
+              ((motherFSType == "eta")     && (daughter1FSType == "gamma") && (daughter2FSType == "gamma") && !gFlatteneta) ||
               ((motherFSType == "Ks")      && (daughter1FSType == "pi+")   && (daughter2FSType == "pi-"))   ||
               ((motherFSType == "Ks")      && (daughter1FSType == "pi-")   && (daughter2FSType == "pi+"))   ||
               ((motherFSType == "Lambda")  && (daughter1FSType == "p+")    && (daughter2FSType == "pi-"))   ||
@@ -402,8 +413,11 @@ int main(int argc, char** argv){
           TObjString* rootDaughter2 = (TObjString*) rootMothers->At(i+2);
           TString daughter1FSType = FSParticleType(rootDaughter1->GetString());
           TString daughter2FSType = FSParticleType(rootDaughter2->GetString());
-          if (((motherFSType == "pi0")     && (daughter1FSType == "gamma") && (daughter2FSType == "gamma")) ||
-              ((motherFSType == "eta")     && (daughter1FSType == "gamma") && (daughter2FSType == "gamma")) ||
+          if (((motherFSType == "pi0")     && (daughter1FSType == "gamma") && (daughter2FSType == "gamma") && gFlattenpi0) ||
+              ((motherFSType == "eta")     && (daughter1FSType == "gamma") && (daughter2FSType == "gamma") && gFlatteneta))
+            eraseVector.push_back(rootMother->GetString());
+          if (((motherFSType == "pi0")     && (daughter1FSType == "gamma") && (daughter2FSType == "gamma") && !gFlattenpi0) ||
+              ((motherFSType == "eta")     && (daughter1FSType == "gamma") && (daughter2FSType == "gamma") && !gFlatteneta) ||
               ((motherFSType == "Ks")      && (daughter1FSType == "pi+")   && (daughter2FSType == "pi-"))   ||
               ((motherFSType == "Ks")      && (daughter1FSType == "pi-")   && (daughter2FSType == "pi+"))   ||
               ((motherFSType == "Lambda")  && (daughter1FSType == "p+")    && (daughter2FSType == "pi-"))   ||
@@ -542,11 +556,11 @@ int main(int argc, char** argv){
       }
     }
     for (unsigned int i = 0; i < gOrderedParticleNames.size(); i++){
-      for (unsigned int j = i + 1; j < gOrderedParticleNames.size(); j++){
-        if (FSParticleOrder(gOrderedParticleNames[j][0]) >
-            FSParticleOrder(gOrderedParticleNames[i][0])){
-          vector<TString> temp = gOrderedParticleNames[i];
-          gOrderedParticleNames[i] = gOrderedParticleNames[j];
+      for (unsigned int j = 0; j < gOrderedParticleNames.size()-1; j++){
+        if (FSParticleOrder(gOrderedParticleNames[j+1][0]) >
+            FSParticleOrder(gOrderedParticleNames[j][0])){
+          vector<TString> temp = gOrderedParticleNames[j+1];
+          gOrderedParticleNames[j+1] = gOrderedParticleNames[j];
           gOrderedParticleNames[j] = temp;
         }
       }
