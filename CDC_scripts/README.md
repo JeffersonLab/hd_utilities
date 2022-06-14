@@ -52,3 +52,23 @@ root -q Bfield_dt2.C
 ```
 
 5. Add the fit parameters obtained to the CCDB table /CDC/cdc_drift_parms.
+
+
+# Estimating time to distance parameters from EPICS data
+
+The script is located in the subdirectory calc_ttod.  It uses the functions from GlueX-doc-5394 to estimate the time to distance parameters (for CCDB /CDC/drift_parameters) for 2125V runs using EPICS data for temperature and pressure.
+
+**To find the time to distance parameters:**
+
+1. Obtain the EPICS data for the time of interest.  The names of the EPICS variables are
+RESET:i:GasPanelBarPress1
+GAS:i::CDC_Temps-CDC_D1_Temp
+GAS:i::CDC_Temps-CDC_D3_Temp
+GAS:i::CDC_Temps-CDC_D4_Temp
+GAS:i::CDC_Temps-CDC_D5_Temp
+
+2. Run the script, providing as arguments the run number (used in the output filename), uncalibrated pressure and the downstream thermocouple temps D1 and D3 to D5.  This should generate an output file in the correct format for the CCDB table.  The example below created the file ttod_d10370.txt.
+
+```
+root -q "calc_ttod_from_epics.C(10370,99.8644,25.6996,25.8,25.9009,25.3)"
+```
