@@ -1817,7 +1817,8 @@ TString FSParticleType(TString glueXParticleType){
   if (glueXParticleType.Contains("MuonMinus"))   return TString("mu-");
   if (glueXParticleType.Contains("AntiProton"))  return TString("p-");
   if (glueXParticleType.Contains("Proton"))      return TString("p+");
-  if (glueXParticleType.Contains("Eta"))         return TString("eta");
+  if (glueXParticleType.Contains("Eta") &&
+     !glueXParticleType.Contains("EtaPrime"))    return TString("eta");
   if (glueXParticleType.Contains("Photon"))      return TString("gamma");
   if (glueXParticleType.Contains("KPlus"))       return TString("K+");
   if (glueXParticleType.Contains("KMinus"))      return TString("K-");
