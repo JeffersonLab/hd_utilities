@@ -432,7 +432,8 @@ int main(int argc, char** argv){
           }
         }
       }
-      gDecayProductMap[rootMother->GetString()] = daughters;
+      if (!rootMother->GetString().Contains("Decaying") || daughters.size() > 0)
+        gDecayProductMap[rootMother->GetString()] = daughters;
     }
     for (unsigned int i = 0; i < eraseVector.size(); i++){
       gDecayProductMap.erase(eraseVector[i]);
