@@ -1,16 +1,16 @@
-This directory contains scripts useful for extracting the hit thresholds from configuration files, calculating the correction to Garfield's drift time tables due to the magnetic field and estimating the time to distance calibration parameters from EPICS data.
+This directory contains scripts useful for extracting the hit thresholds from configuration files, calculating the correction to Garfield's drift time tables due to the magnetic field, estimating the time to distance calibration parameters from EPICS data and checking the monitoring histograms.
 
 # Finding the hit thresholds 
 
 This requires the run configuration files, either in the RunLog tar file stored on tape with the evio files, or on the gluons, in /gluex/CALIB/ALL/fadc125/.  Their filenames follow the pattern roccdc1something.cnf.
 
-The scripts are in the subdirectory hit_thresholds.
+The scripts are in the subdirectory hit\_thresholds.
 
 geth.C extracts the thresholds from the configuration files and writes them into a simple table suitable for CCDB.
 CDC\_straw\_numbers\_run\_3221.txt is a reference table used by geth.C
 
 geth.C creates the following file:
-- cdc_h.txt  This is a list of the thresholds, ordered by straw number
+- cdc\_h.txt  This is a list of the thresholds, ordered by straw number
 
 
 **To extract the thresholds:**
@@ -46,7 +46,7 @@ Bfield->Scan("Bz:r:z","Bz>1.92&&z>=15&&z<=170&&r>=5&&r<=65")
 
 3. Generate Garfield time-to-distance tables to cover the range of Bz, at 0.05T intervals 
 
-4. Edit the script Bfield_dt2.C as necessary and run it.  
+4. Edit the script Bfield\_dt2.C as necessary and run it.  
 ```sh
 root -q Bfield_dt2.C
 ```
@@ -56,7 +56,7 @@ root -q Bfield_dt2.C
 
 # Estimating time to distance parameters from EPICS data
 
-The script is located in the subdirectory calc_ttod.  It uses the functions from [GlueX-doc-5394](https://halldweb.jlab.org/doc-private/DocDB/ShowDocument?docid=5394) to estimate the time to distance parameters (for CCDB /CDC/drift\_parameters) for 2125V runs using EPICS data for temperature and pressure.
+The script is located in the subdirectory calc\_ttod.  It uses the functions from [GlueX-doc-5394](https://halldweb.jlab.org/doc-private/DocDB/ShowDocument?docid=5394) to estimate the time to distance parameters (for CCDB /CDC/drift\_parameters) for 2125V runs using EPICS data for temperature and pressure.
 
 **To find the time to distance parameters:**
 
@@ -69,8 +69,24 @@ GAS:i::CDC_Temps-CDC_D4_Temp
 GAS:i::CDC_Temps-CDC_D5_Temp
 ```
 
-2. Run the script, providing as arguments the run number (used in the output filename), uncalibrated pressure and the downstream thermocouple temps D1 and D3 to D5.  This should generate an output file in the correct format for the CCDB table.  The example below created the file ttod_d10370.txt.
+2. Run the script, providing as arguments the run number (used in the output filename), uncalibrated pressure and the downstream thermocouple temps D1 and D3 to D5.  This should generate an output file in the correct format for the CCDB table.  The example below created the file ttod\_d10370.txt.
 
 ```
 root -q "calc_ttod_from_epics.C(10370,99.8644,25.6996,25.8,25.9009,25.3)"
 ```
+
+# Checking the monitoring histograms
+
+The scripts are located in the subdirectory monitoring. 
+
+- inspect\_rootfile.C is a root script that checks the histograms in the current root file. 
+- checkhistos.py loops over a directory of root files. It calls inspect\_rootfile.C for each one, and concatenates the output into a new file check.out. Look in the file for command line options. 
+```
+python ../../checkfiles.py /cache/halld/offline_monitoring/RunPeriod-2021-08/ver08/hists/hists_merged
+```
+- recalc\_gain.py looks up the gain correction factor for a given run in CCDB and uses the supplied dE/dx to calculate a new gain correction factor, which is written into newgain\_\[run\_number\].txt
+```
+python recalc_gain.py 81555 1.9708
+```
+- grabcdchistos.C extracts CDC\-specific histograms from monitoring plugin output.
+- sumcdchistos.py loops over a directory of monitoring/calibration histograms to run grabcdchistos.C for each file and sum the files for each run. It expects a file structure like hists/Run100743/hd\_calib\_final\_Run100743\_023.root 
