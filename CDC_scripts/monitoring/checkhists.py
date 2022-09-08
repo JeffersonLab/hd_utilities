@@ -10,8 +10,7 @@ import glob
 import re
 
 if not os.path.exists('inspect_rootfile.C'):
-  exit("Cannot find the root script inspect_rootfile.C")
-
+  exit("Cannot find the root script inspect_rootfile.C - copy it from hd_utilities/CDC_scripts/monitoring to the working directory.")
 
 script = sys.argv.pop(0)
 nargs = len(sys.argv)
@@ -51,6 +50,8 @@ if nargs > 1 :
     exit("The argument supplied for last_run_number is not an integer")
 
 
+scriptname = "inspect_rootfile.C"
+
 filelist = subprocess.check_output(["ls",histdir],universal_newlines=True).splitlines()
 
 outfile = open("check.out","w")
@@ -77,8 +78,6 @@ for file in filelist:
         if run > lastrun:
             break
 
-
-        scriptname = "~/mywork/monscan/inspect_rootfile.C"
         resultsfile = "_inspection.txt"       # inspect_rootfile writes into this file
         
         # root -l -q runfile inspect_rootfile.C 
