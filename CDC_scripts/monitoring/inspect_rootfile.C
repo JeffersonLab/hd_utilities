@@ -153,7 +153,7 @@ void inspect_rootfile(void) {
   int dedxcode = check_dedx(dedxmean,dedxres);
   if (dedxcode==2) dedxcode = check_dedx_lowstats(dedxmean,dedxres);
   
-  if ((dedxmean >= dedxmin) && (dedxmax <= dedxmax)) dedxgood = 1;
+  if ((dedxmean >= dedxmin) && (dedxmean <= dedxmax)) dedxgood = 1;
   if (dedxres > 0.5) dedxgood = 0;   // undocumented extra
 
 

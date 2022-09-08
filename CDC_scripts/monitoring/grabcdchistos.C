@@ -4,6 +4,7 @@
   bool amp = 0, dedx = 0, ttod = 0, eff = 0;
 
   TH1I *a;
+  TH1I *a30_100ns;
   TH2I *an30_100ns;
 
   TH2I *dedx_p;
@@ -28,6 +29,7 @@
     tdir->cd();
 
     a = (TH1I*)gDirectory->Get("a");
+    a30_100ns = (TH1I*)gDirectory->Get("a30_100ns");
     an30_100ns = (TH2I*)gDirectory->Get("an30_100ns");
 
     amp = 1;
@@ -98,6 +100,7 @@
     fnew->mkdir("CDC_amp");
     fnew->cd("CDC_amp");
     a->Write();
+    a30_100ns->Write();
     an30_100ns->Write();
     fnew->cd("/");
   } 
