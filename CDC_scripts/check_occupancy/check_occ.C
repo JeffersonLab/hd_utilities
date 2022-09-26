@@ -69,6 +69,8 @@ void check_occ(const float tolerance=2.0){
 
   bool foundnoise = 0;
 
+  int meanperring[28];
+
   // Print list of quiet straws on first pass, save rates & id of noisy straws to arrays
   cout << "Quiet straws:\n";
 
@@ -81,6 +83,8 @@ void check_occ(const float tolerance=2.0){
     }
 
     int average = (int)(total/(float)Nstraws[iring-1]);
+
+    meanperring[iring-1] = average;
 
     for (uint istraw=1; istraw<=Nstraws[iring-1]; istraw++) {
 
@@ -102,7 +106,7 @@ void check_occ(const float tolerance=2.0){
       if (nhits > tolerance*average) foundnoise=1;
       if (nhits > tolerance*average) rate[n-1] = hitrate; 
       //      if (nhits > tolerance*average) printf("Noisy straw %i ring %i  rate %.1f  %s\n",istraw,iring,hitrate,line);
-      if (nhits < average/tolerance) printf("n %4i ring %2i straw %3i  rate %.1f  %s\n",n,iring,istraw,hitrate,line);
+      if (nhits < average/tolerance) printf("n %4i ring %2i straw %3i  rate %.1f (average hits %i)  %s\n",n,iring,istraw,hitrate,average,line);
 
     }
     
@@ -116,7 +120,7 @@ void check_occ(const float tolerance=2.0){
 
 
   for (uint i=1; i<=3522; i++) {
-    if (rate[i-1] > 0) printf("n %4i ring %2i straw %3i  rate %.1f  roc %2i slot %2i channel %2i\n",i,ring[i-1],straw[i-1],rate[i-1],roc[i-1],slot[i-1],channel[i-1]);
+    if (rate[i-1] > 0) printf("n %4i ring %2i straw %3i  rate %.1f (average hits %i)  roc %2i slot %2i channel %2i\n",i,ring[i-1],straw[i-1],rate[i-1],meanperring[ring[i-1]-1],roc[i-1],slot[i-1],channel[i-1]);
   }
 
   cout << "\nNoisy straws, sorted by channel:\n";
@@ -128,7 +132,7 @@ void check_occ(const float tolerance=2.0){
         if (remapped_rate[ir-25][is-3][ic] == 0) continue;
 
         int n = remapped_n[ir-25][is-3][ic];
-        printf("roc %i slot %i channel %i  rate %.1f  n %4i ring %2i straw %2i\n",ir,is,ic, remapped_rate[ir-25][is-3][ic],n, ring[n-1],straw[n-1]);
+        printf("roc %i slot %i channel %i  rate %.1f (average hits %i)  n %4i ring %2i straw %2i\n",ir,is,ic, remapped_rate[ir-25][is-3][ic], meanperring[ring[n-1]-1],n, ring[n-1],straw[n-1]);
 
       }
     }
