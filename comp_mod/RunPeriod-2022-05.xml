@@ -1,35 +1,21 @@
 <!--
 
-Spring 2017
-
-2018-05-31 : Initial version DL
+Spring 2022: CPP
 
 =====================================================================
 triggerRate
 
-Some fraction of time was spent at 100nA (low intensity) and some at
-150nA (high intensity). The trigger rates for these was about 30kHz
-and 45kHz respectively. The value of 40kHz is a guess based on those
-two numbers, but leaning higher in order to give a total data volume
-closer to the 911TB recorded on the tape library for this run period.
+65kHz
 
 =====================================================================
 runningTimeOnFloor
 
-Total number of days (40) from Eugene's collab meeting talk:
-https://halldweb.jlab.org/DocDB/0035/003524/001/talk_coll_2018_feb.pdf
-
-Total number of days (35) from Alexandre's collab  meeting talk:
-https://halldweb.jlab.org/DocDB/0032/003299/001/Spring17_summary.pdf
-
-We use Eugene's number since it makes the total data volume
-closer to the known volume
+Total number of days: 70
 
 =====================================================================
 runningEfficiency
 
-Total running efficiency of 48% taken from Alexandre's slide here:
-https://halldweb.jlab.org/DocDB/0032/003299/001/Spring17_summary.pdf
+Total running efficiency: 50%
 
 =====================================================================
 eventsize
@@ -75,11 +61,7 @@ We use an average of 12.7kB
 =====================================================================
 eventsPerRun
 
-Number of events (in millions) in a production run. Shift workers
-took runs based on number of events, thus integrating out any
-beam trips during the run. For 2017, runs at low intensity were
-taken at 150M event and for high intensity at 250M. We use an
-average of 200M events here.
+Number of events (in millions) in a production run: average 360M
 
 =====================================================================
 RESTfraction
