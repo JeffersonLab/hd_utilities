@@ -25,7 +25,7 @@ static const int MAXNEUTRALS  =  15*2;
 static const int MAXCOMBOS    = 100*50;
 static const int MAXPARTICLES =  MAXTRACKS + MAXNEUTRALS;
 
-  // utility functions (collected at the end of this file) 
+  // utility functions (collected at the end of this file)
   //   [containing mostly conversions between conventions]
 TString PDGReadableName(int pdgID);
 TString FSParticleType(TString glueXParticleType);
@@ -79,11 +79,12 @@ int main(int argc, char** argv){
   cout << "           -usePolarization   [get polarization angle from RCDB? 0 or 1]   (default: 0)" << endl;
   cout << "           -addPID    [include PID info in the output tree? 0 or 1]   (default: 1)" << endl;
   cout << "           -flattenpi0 [flatten pi0s to just gamma gamma? 0 or 1]   (default: 0)" << endl;
+  cout << "           -dirc [include PID information from the DIRC if available? 0 or 1] (default: 0)" << endl;
   cout << "           -flatteneta [flatten etas to just gamma gamma? 0 or 1]   (default: 0)" << endl;
-  cout << "           -mcChecks  [check for baryon number violation, etc.," << endl; 
+  cout << "           -mcChecks  [check for baryon number violation, etc.," << endl;
   cout << "                       when parsing truth information?  0 or 1] (default: 1)" << endl;
   cout << "           -safe  [check array sizes?  0 or 1]          (default: 1)" << endl;
-  cout << "           -print [print to screen: " << endl; 
+  cout << "           -print [print to screen: " << endl;
   cout << "                   -1 (less); 0 (regular); 1 (more)]    (default: 0)" << endl;
   cout << endl;
   cout << "Notes:" << endl;
@@ -125,6 +126,7 @@ int main(int argc, char** argv){
   bool gSafe = true;
   bool gUsePolarization = false;
   bool gAddPID = true;
+  bool gUseDIRC = false;
   bool gFlattenpi0 = false;
   bool gFlatteneta = false;
   bool gMCChecks = true;
@@ -136,14 +138,14 @@ int main(int argc, char** argv){
     if ((argi == "-in")||(argi == "-out")||(argi == "-mc")||(argi == "-mctag")
         ||(argi == "-chi2")||(argi == "-shQuality")||(argi == "-massWindows")
         ||(argi == "-numUnusedTracks")||(argi == "-usePolarization")||(argi == "-numUnusedNeutrals")
-        ||(argi == "-mcChecks")||(argi == "-addPID")||(argi == "-flattenpi0")||(argi == "-flatteneta")
+        ||(argi == "-mcChecks")||(argi == "-addPID")||(argi == "-dirc")||(argi == "-flattenpi0")||(argi == "-flatteneta")
         ||(argi == "-numNeutralHypos")||(argi == "-safe")||(argi == "-print")){
       flag = argi;
       continue;
     }
     if (flag == "-in")  gInFileNames.push_back(argi);
     if (flag == "-out") gOutFileName = argi;
-    if (flag == "-mc"){ if (argi == "1") gInputIsMC = 1; 
+    if (flag == "-mc"){ if (argi == "1") gInputIsMC = 1;
                         if (argi == "0") gInputIsMC = 0; }
     if (flag == "-mctag"){ gMCTag = argi; }
     if (flag == "-chi2"){ gChi2DOFCut = atof(argi); }
@@ -154,6 +156,7 @@ int main(int argc, char** argv){
     if (flag == "-numNeutralHypos"){ gNumNeutralHyposCut = atoi(argi); }
     if (flag == "-usePolarization"){ if (argi == "1") gUsePolarization = true; }
     if (flag == "-addPID"){ if (argi == "0") gAddPID = false; }
+    if (flag == "-dirc"){   if( argi == "1") gUseDIRC = true; }
     if (flag == "-flattenpi0"){ if (argi == "1") gFlattenpi0 = true; }
     if (flag == "-flatteneta"){ if (argi == "1") gFlatteneta = true; }
     if (flag == "-mcChecks"){ if (argi == "0") gMCChecks = false; }
@@ -180,7 +183,7 @@ int main(int argc, char** argv){
   cout << "  output file:           " << gOutFileName << endl;
   cout << "  MC?                    " << gInputIsMC << endl;
   if (gMCTag != "")
-  cout << "  MC Tag:                " << gMCTagExtras << "_" << gMCTagDecayCode2 
+  cout << "  MC Tag:                " << gMCTagExtras << "_" << gMCTagDecayCode2
                                                       << "_" << gMCTagDecayCode1 << endl;
   if (gMCTag == "")
   cout << "  MC Tag:                " << "none" << endl;
@@ -192,6 +195,7 @@ int main(int argc, char** argv){
   cout << "  numNeutralHypos cut:   " << gNumNeutralHyposCut << endl;
   cout << "  use polarization?      " << gUsePolarization << endl;
   cout << "  use PID?               " << gAddPID << endl;
+  cout << "  use DIRC?              " << gUseDIRC << endl;
   cout << "  flatten pi0s?          " << gFlattenpi0 << endl;
   cout << "  flatten etas?          " << gFlatteneta << endl;
   cout << "  MC checks?             " << gMCChecks << endl;
@@ -201,7 +205,7 @@ int main(int argc, char** argv){
      cout << "ERROR: specify input and output files -- see usage notes above" << endl;
      exit(0);
   }
-  if ((gMCTag != "") && 
+  if ((gMCTag != "") &&
       GlueXDecayProductMap(gMCTagDecayCode1.Atoi(),gMCTagDecayCode2.Atoi()).size() == 0){
     cout << "ERROR: no particles corresponding to mctag = " << gMCTag << endl;
     exit(0);
@@ -295,9 +299,9 @@ int main(int argc, char** argv){
     isMC    = hasNumThrown;
     isMCGen = hasNumThrown && !hasNumNeutralHypos;
     isMCAna = hasNumThrown && hasNumNeutralHypos;
-    if (!isMC){ cout << "    ==> treating this as ANALYZED DATA" << endl; } 
-    if (isMCGen){ cout << "    ==> treating this as THROWN MC" << endl; } 
-    if (isMCAna){ cout << "    ==> treating this as ANALYZED MC" << endl; } 
+    if (!isMC){ cout << "    ==> treating this as ANALYZED DATA" << endl; }
+    if (isMCGen){ cout << "    ==> treating this as THROWN MC" << endl; }
+    if (isMCAna){ cout << "    ==> treating this as ANALYZED MC" << endl; }
     if (gInputIsMC == 1 && !isMC){
       cout << "  OVERRIDING ERROR: format incompatible with MC" << endl; exit(0); }
     if (gInputIsMC == 0 && isMCGen){
@@ -310,11 +314,11 @@ int main(int argc, char** argv){
     gUseMCParticles = (isMCAna || isMCGenTag);
     gUseMCInfo = (isMC);
     cout << "      info to include in output..." << endl;
-    cout << "          particle info:  "; 
+    cout << "          particle info:  ";
       if (gUseParticles){ cout << "YES"; } else{ cout << "NO"; } cout << endl;
-    cout << "          MC particle info:  "; 
+    cout << "          MC particle info:  ";
       if (gUseMCParticles){ cout << "YES"; } else{ cout << "NO"; } cout << endl;
-    cout << "          MC info:  "; 
+    cout << "          MC info:  ";
       if (gUseMCInfo){ cout << "YES"; } else{ cout << "NO"; } cout << endl;
     TList* userInfo = gInTreeFirst->GetUserInfo();
         if (userInfo){ cout << "  OK: found UserInfo" << endl; }
@@ -338,13 +342,13 @@ int main(int argc, char** argv){
           else { cout << "  ERROR:  could not find KinFitType" << endl; exit(0); }
       gUseKinFit = (kinFitType->GetString() != "0");
       TObjString* tosTCZ = (TObjString*) miscInfo->GetValue("Target__CenterZ");
-          if (tosTCZ) 
+          if (tosTCZ)
                { cout << "  OK: found Target__CenterZ = "  << tosTCZ->GetString() << endl; }
           else { cout << "  ERROR: could not find Target__CenterZ " << endl; exit(0); }
       TString tsTCZ(tosTCZ->GetString());
           if (tsTCZ.IsFloat())
                { string sTCZ(""); for (int i=0; i<tsTCZ.Length(); i++){ sTCZ += tsTCZ[i]; }
-                 inTargetCenterZ = atof(sTCZ.c_str()); 
+                 inTargetCenterZ = atof(sTCZ.c_str());
                  cout << "            inTargetCenterZ = " << inTargetCenterZ << endl; }
           else { cout << "  ERROR: Target__CenterZ is not a number" << endl; exit(0); }
     }
@@ -352,7 +356,7 @@ int main(int argc, char** argv){
 
 
      // **********************************************************************
-     // STEP 3B:  extract particle names from the root file 
+     // STEP 3B:  extract particle names from the root file
      // **********************************************************************
 
   cout << endl << endl << "READING PARTICLE NAMES FROM THE ROOT FILE:" << endl << endl;
@@ -473,26 +477,26 @@ int main(int argc, char** argv){
       for (unsigned int i = 0; i < daughterNames.size(); i++){
         cout << "    " << daughterNames[i] << ": " << daughterFSTypes[i] << endl;
       }
-      if (motherFSType == "pi0" && (daughterNames.size() != 2 || 
+      if (motherFSType == "pi0" && (daughterNames.size() != 2 ||
             !(daughterFSTypes[0] == "gamma" && daughterFSTypes[1] == "gamma"))){
         cout << "  ERROR: unrecognized pi0 decay" << endl;  gCheckFSOkay = false;
       }
-      if (motherFSType == "eta" && (daughterNames.size() != 2 || 
+      if (motherFSType == "eta" && (daughterNames.size() != 2 ||
             !(daughterFSTypes[0] == "gamma" && daughterFSTypes[1] == "gamma"))){
         cout << "  ERROR: unrecognized eta decay" << endl;  gCheckFSOkay = false;
       }
-      if (motherFSType == "Ks" && (daughterNames.size() != 2 || 
-            !((daughterFSTypes[0] == "pi+" && daughterFSTypes[1] == "pi-") || 
+      if (motherFSType == "Ks" && (daughterNames.size() != 2 ||
+            !((daughterFSTypes[0] == "pi+" && daughterFSTypes[1] == "pi-") ||
               (daughterFSTypes[1] == "pi+" && daughterFSTypes[0] == "pi-")))){
         cout << "  ERROR: unrecognized Ks decay" << endl;  gCheckFSOkay = false;
       }
-      if (motherFSType == "Lambda" && (daughterNames.size() != 2 || 
-            !((daughterFSTypes[0] == "p+" && daughterFSTypes[1] == "pi-") || 
+      if (motherFSType == "Lambda" && (daughterNames.size() != 2 ||
+            !((daughterFSTypes[0] == "p+" && daughterFSTypes[1] == "pi-") ||
               (daughterFSTypes[1] == "p+" && daughterFSTypes[0] == "pi-")))){
         cout << "  ERROR: unrecognized Lambda decay" << endl;  gCheckFSOkay = false;
       }
-      if (motherFSType == "ALambda" && (daughterNames.size() != 2 || 
-            !((daughterFSTypes[0] == "p-" && daughterFSTypes[1] == "pi+") || 
+      if (motherFSType == "ALambda" && (daughterNames.size() != 2 ||
+            !((daughterFSTypes[0] == "p-" && daughterFSTypes[1] == "pi+") ||
               (daughterFSTypes[1] == "p-" && daughterFSTypes[0] == "pi+")))){
         cout << "  ERROR: unrecognized ALambda decay" << endl;  gCheckFSOkay = false;
       }
@@ -531,7 +535,7 @@ int main(int argc, char** argv){
 
 
      // **********************************************************************
-     // STEP 3E:  put the particle names in the right order 
+     // STEP 3E:  put the particle names in the right order
      // **********************************************************************
 
   cout << endl << endl << "PUTTING PARTICLES IN THE RIGHT ORDER AND SETTING INDICES:" << endl << endl;
@@ -642,13 +646,13 @@ int main(int argc, char** argv){
 
         //   *** Thrown Products ***
 
-  Int_t  inThrown__ParentIndex[MAXTHROWN] = {};   
+  Int_t  inThrown__ParentIndex[MAXTHROWN] = {};
       if (gUseMCInfo) gInTree->SetBranchAddress("Thrown__ParentIndex", inThrown__ParentIndex);
-  Int_t  inThrown__PID[MAXTHROWN] = {};   
+  Int_t  inThrown__PID[MAXTHROWN] = {};
       if (gUseMCInfo) gInTree->SetBranchAddress("Thrown__PID", inThrown__PID);
-  Int_t  inThrown__MatchID[MAXTHROWN] = {};   
+  Int_t  inThrown__MatchID[MAXTHROWN] = {};
       if (gUseMCParticles&&gUseParticles) gInTree->SetBranchAddress("Thrown__MatchID", inThrown__MatchID);
-  Float_t  inThrown__MatchFOM[MAXTHROWN] = {};   
+  Float_t  inThrown__MatchFOM[MAXTHROWN] = {};
       if (gUseMCParticles&&gUseParticles) gInTree->SetBranchAddress("Thrown__MatchFOM", inThrown__MatchFOM);
   TClonesArray *inThrown__P4 = NULL;
       if (gUseMCParticles) inThrown__P4 = new TClonesArray("TLorentzVector", MAXTHROWN);
@@ -663,7 +667,7 @@ int main(int argc, char** argv){
 
         //   *** Non-Particle Data ***
 
-  UInt_t inRunNumber = 0;        
+  UInt_t inRunNumber = 0;
       TBranch* brRunNumber = nullptr;
       gInTree->SetBranchAddress("RunNumber", &inRunNumber,&brRunNumber);
   ULong64_t inEventNumber = 0;
@@ -677,7 +681,7 @@ int main(int argc, char** argv){
   UInt_t inNumChargedHypos = 0;
       TBranch* brNumChargedHypos = nullptr;
       if (gUseParticles) gInTree->SetBranchAddress("NumChargedHypos", &inNumChargedHypos,&brNumChargedHypos);
-  UInt_t inNumNeutralHypos = 0; 
+  UInt_t inNumNeutralHypos = 0;
       TBranch* brNumNeutralHypos = nullptr;
       if (gUseParticles) gInTree->SetBranchAddress("NumNeutralHypos", &inNumNeutralHypos,&brNumNeutralHypos);
   UInt_t inNumCombos = 0;
@@ -708,18 +712,46 @@ int main(int argc, char** argv){
       if (gUseParticles) inChargedHypo__P4_Measured = new TClonesArray("TLorentzVector",MAXTRACKS);
       if (gUseParticles) gInTree->GetBranch       ("ChargedHypo__P4_Measured")->SetAutoDelete(kFALSE);
       if (gUseParticles) gInTree->SetBranchAddress("ChargedHypo__P4_Measured",&(inChargedHypo__P4_Measured));
-  Float_t inChargedHypo__ChiSq_Tracking[MAXTRACKS] = {}; 
+  Float_t inChargedHypo__ChiSq_Tracking[MAXTRACKS] = {};
       if (gUseParticles) gInTree->SetBranchAddress("ChargedHypo__ChiSq_Tracking", inChargedHypo__ChiSq_Tracking);
-  UInt_t  inChargedHypo__NDF_Tracking[MAXTRACKS] = {};   
+  UInt_t  inChargedHypo__NDF_Tracking[MAXTRACKS] = {};
       if (gUseParticles) gInTree->SetBranchAddress("ChargedHypo__NDF_Tracking", inChargedHypo__NDF_Tracking);
-  UInt_t  inChargedHypo__NDF_DCdEdx[MAXTRACKS] = {};   
+  UInt_t  inChargedHypo__NDF_DCdEdx[MAXTRACKS] = {};
       if (gUseParticles && gAddPID) gInTree->SetBranchAddress("ChargedHypo__NDF_DCdEdx", inChargedHypo__NDF_DCdEdx);
-  Float_t inChargedHypo__ChiSq_DCdEdx[MAXTRACKS] = {}; 
+  Float_t inChargedHypo__ChiSq_DCdEdx[MAXTRACKS] = {};
       if (gUseParticles && gAddPID) gInTree->SetBranchAddress("ChargedHypo__ChiSq_DCdEdx", inChargedHypo__ChiSq_DCdEdx);
-  Float_t inChargedHypo__dEdx_CDC[MAXTRACKS] = {}; 
+  Float_t inChargedHypo__dEdx_CDC[MAXTRACKS] = {};
       if (gUseParticles && gAddPID) gInTree->SetBranchAddress("ChargedHypo__dEdx_CDC", inChargedHypo__dEdx_CDC);
-  Float_t inChargedHypo__dEdx_FDC[MAXTRACKS] = {}; 
+  Float_t inChargedHypo__dEdx_FDC[MAXTRACKS] = {};
       if (gUseParticles && gAddPID) gInTree->SetBranchAddress("ChargedHypo__dEdx_FDC", inChargedHypo__dEdx_FDC);
+
+  Float_t inChargedHypo__Lpi_DIRC[MAXTRACKS] = {};
+  Float_t inChargedHypo__Lele_DIRC[MAXTRACKS] = {};
+  Float_t inChargedHypo__Lk_DIRC[MAXTRACKS] = {};
+  Float_t inChargedHypo__Lp_DIRC[MAXTRACKS] = {};
+  Int_t   inChargedHypo__NumPhotons_DIRC[MAXTRACKS] = {};
+  Float_t inChargedHypo__x_DIRC[MAXTRACKS] = {};
+  Float_t inChargedHypo__y_DIRC[MAXTRACKS] = {};
+
+
+
+  if (gUseParticles && gUseDIRC){
+    // this one is a test case to see if the DIRC info is included in the tree
+    int flag = gInTree->SetBranchAddress("ChargedHypo__Lpi_DIRC",inChargedHypo__Lpi_DIRC);
+    if(flag!=0){
+      cout << "SetBranchAddress for DIRC returned " << flag << endl;
+      cout << "Switching DIRC output off" << endl;
+      gUseDIRC=false;
+    }
+    else{
+      gInTree->SetBranchAddress("ChargedHypo__Lele_DIRC",inChargedHypo__Lele_DIRC);
+      gInTree->SetBranchAddress("ChargedHypo__Lk_DIRC",inChargedHypo__Lk_DIRC);
+      gInTree->SetBranchAddress("ChargedHypo__Lp_DIRC",inChargedHypo__Lp_DIRC);
+      gInTree->SetBranchAddress("ChargedHypo__NumPhotons_DIRC",inChargedHypo__NumPhotons_DIRC);
+      gInTree->SetBranchAddress("ChargedHypo__ExtrapolatedX_DIRC",inChargedHypo__x_DIRC);
+      gInTree->SetBranchAddress("ChargedHypo__ExtrapolatedY_DIRC",inChargedHypo__y_DIRC);
+    }
+  }
 
 
         //   *** Neutral Particle Hypotheses (indexed using <particleName>__NeutralIndex) ***
@@ -739,9 +771,9 @@ int main(int argc, char** argv){
         //   *** Particle-Independent Data (indexed by combo) ***
 
   Float_t inRFTime_Measured[MAXCOMBOS] = {};
-      if (gUseParticles) gInTree->SetBranchAddress("RFTime_Measured", inRFTime_Measured);  
+      if (gUseParticles) gInTree->SetBranchAddress("RFTime_Measured", inRFTime_Measured);
   //Float_t inRFTime_KinFit[MAXCOMBOS] = {};
-  //    if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress("RFTime_KinFit", inRFTime_KinFit);  
+  //    if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress("RFTime_KinFit", inRFTime_KinFit);
   Float_t inChiSq_KinFit[MAXCOMBOS] = {};
       if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress("ChiSq_KinFit", inChiSq_KinFit);
   UInt_t inNDF_KinFit[MAXCOMBOS] = {};
@@ -769,7 +801,7 @@ int main(int argc, char** argv){
         //   *** Combo Decaying Particles ***
         //     (all indexed by particleIndex and combo)
 
-  TClonesArray *inP4_KinFit[MAXPARTICLES] = {}; 
+  TClonesArray *inP4_KinFit[MAXPARTICLES] = {};
   Int_t inChargedIndex[MAXPARTICLES][MAXCOMBOS] = {};
   Float_t inBeta_Timing[MAXPARTICLES][MAXCOMBOS] = {};
   Float_t inChiSq_Timing[MAXPARTICLES][MAXCOMBOS] = {};
@@ -789,13 +821,13 @@ int main(int argc, char** argv){
             if (gUseParticles && gUseKinFit) inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
             if (gUseParticles && gUseKinFit) gInTree->GetBranch       (var_P4_KinFit)->SetAutoDelete(kFALSE);
             if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress(var_P4_KinFit,&(inP4_KinFit[pIndex]));
-        TString var_ChargedIndex(name);  var_ChargedIndex += "__ChargedIndex";  
+        TString var_ChargedIndex(name);  var_ChargedIndex += "__ChargedIndex";
             if (gUseParticles) gInTree->SetBranchAddress(var_ChargedIndex,inChargedIndex[pIndex]);
-        TString var_Beta_Timing(name);  
+        TString var_Beta_Timing(name);
             if (gUseParticles && !gUseKinFit) var_Beta_Timing += "__Beta_Timing_Measured";
             if (gUseParticles &&  gUseKinFit) var_Beta_Timing += "__Beta_Timing_KinFit";
             if (gUseParticles && gAddPID) gInTree->SetBranchAddress(var_Beta_Timing,inBeta_Timing[pIndex]);
-        TString var_ChiSq_Timing(name);  
+        TString var_ChiSq_Timing(name);
             if (gUseParticles && !gUseKinFit) var_ChiSq_Timing += "__ChiSq_Timing_Measured";
             if (gUseParticles &&  gUseKinFit) var_ChiSq_Timing += "__ChiSq_Timing_KinFit";
             if (gUseParticles && gAddPID) gInTree->SetBranchAddress(var_ChiSq_Timing,inChiSq_Timing[pIndex]);
@@ -808,7 +840,7 @@ int main(int argc, char** argv){
             if (gUseParticles && gUseKinFit) inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
             if (gUseParticles && gUseKinFit) gInTree->GetBranch       (var_P4_KinFit)->SetAutoDelete(kFALSE);
             if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress(var_P4_KinFit,&(inP4_KinFit[pIndex]));
-        TString var_NeutralIndex(name);  var_NeutralIndex += "__NeutralIndex";  
+        TString var_NeutralIndex(name);  var_NeutralIndex += "__NeutralIndex";
             if (gUseParticles) gInTree->SetBranchAddress(var_NeutralIndex,inNeutralIndex[pIndex]);
       }
 
@@ -846,7 +878,7 @@ int main(int argc, char** argv){
 
   double outRunNumber;                           gOutTree->Branch("Run",             &outRunNumber);
   double outEventNumber;                         gOutTree->Branch("Event",           &outEventNumber);
-  double outChi2;             if (gUseParticles && gUseKinFit) 
+  double outChi2;             if (gUseParticles && gUseKinFit)
                                                  gOutTree->Branch("Chi2",            &outChi2);
   double outChi2DOF;          if (gUseParticles && gUseKinFit)
                                                  gOutTree->Branch("Chi2DOF",         &outChi2DOF);
@@ -901,10 +933,17 @@ int main(int argc, char** argv){
   double outMCPx[MAXPARTICLES]={}, outMCPy[MAXPARTICLES]={}, outMCPz[MAXPARTICLES]={}, outMCEn[MAXPARTICLES]={};
   double outVeeL[MAXPARTICLES]={}, outVeeLSigma[MAXPARTICLES]={};
   double outTkChi2[MAXPARTICLES]={}, outTkNDF[MAXPARTICLES]={};
-  double outTkDEDXChi2[MAXPARTICLES]={}, outTkDEDXNDF[MAXPARTICLES]={}; 
-  double outTkDEDXCDC[MAXPARTICLES]={}, outTkDEDXFDC[MAXPARTICLES]={}; 
-  double outTkTOFBeta[MAXPARTICLES]={}, outTkTOFChi2[MAXPARTICLES]={}; 
+  double outTkDEDXChi2[MAXPARTICLES]={}, outTkDEDXNDF[MAXPARTICLES]={};
+  double outTkDEDXCDC[MAXPARTICLES]={}, outTkDEDXFDC[MAXPARTICLES]={};
+  double outTkTOFBeta[MAXPARTICLES]={}, outTkTOFChi2[MAXPARTICLES]={};
   double outShQuality[MAXPARTICLES]={};
+  double outLpiDIRC[MAXPARTICLES]={};
+  double outLpDIRC[MAXPARTICLES]={};
+  double outLkDIRC[MAXPARTICLES]={};
+  double outLeleDIRC[MAXPARTICLES]={};
+  Int_t outNumPhotonsDIRC[MAXPARTICLES]={};
+  double outXDIRC[MAXPARTICLES]={};
+  double outYDIRC[MAXPARTICLES]={};
   {
     for (unsigned int im = 0; im < gOrderedParticleNames.size(); im++){
     for (unsigned int id = 0; id < gOrderedParticleNames[im].size(); id++){
@@ -933,7 +972,21 @@ int main(int argc, char** argv){
           TString vTkDEDXNDF("TkDEDXNDFP");   vTkDEDXNDF  += fsIndex; gOutTree->Branch(vTkDEDXNDF, &outTkDEDXNDF [pIndex]);
           TString vTkDEDXCDC("TkDEDXCDCP");   vTkDEDXCDC  += fsIndex; gOutTree->Branch(vTkDEDXCDC, &outTkDEDXCDC [pIndex]);
           TString vTkDEDXFDC("TkDEDXFDCP");   vTkDEDXFDC  += fsIndex; gOutTree->Branch(vTkDEDXFDC, &outTkDEDXFDC [pIndex]);
+
         }
+
+        if(gUseDIRC && GlueXParticleClass(name)=="Charged"){
+          TString vLpiDIRC("TkLpiDIRCP");        vLpiDIRC    += fsIndex; gOutTree->Branch(vLpiDIRC,   &outLpiDIRC[pIndex]);
+          TString vLpDIRC("TkLpDIRCP");          vLpDIRC     += fsIndex; gOutTree->Branch(vLpDIRC,    &outLpDIRC[pIndex]);
+          TString vLkDIRC("TkLkDIRCP");         vLkDIRC     += fsIndex; gOutTree->Branch(vLkDIRC,    &outLkDIRC[pIndex]);
+          TString vLeleDIRC("TkLeleDIRCP");        vLeleDIRC   += fsIndex; gOutTree->Branch(vLeleDIRC,  &outLeleDIRC[pIndex]);
+          TString vNumPhotonsDIRC("TkNumPhotonsDIRCP"); vNumPhotonsDIRC += fsIndex; gOutTree->Branch(vNumPhotonsDIRC,   &outNumPhotonsDIRC[pIndex]);
+          TString vXDIRC("TkXDIRCP"); vXDIRC+=fsIndex; gOutTree->Branch(vXDIRC, &outXDIRC[pIndex]);
+          TString vYDIRC("TkYDIRCP"); vYDIRC+=fsIndex; gOutTree->Branch(vYDIRC, &outYDIRC[pIndex]);
+      }
+
+
+
         if (GlueXParticleClass(name) == "Neutral"){
           TString vQual("ShQualityP"); vQual += fsIndex; gOutTree->Branch(vQual, &outShQuality[pIndex]);
         }
@@ -993,7 +1046,7 @@ int main(int argc, char** argv){
       if (fileName != gInFileName){
         gInFileName = fileName;
         cout << "Starting file: " << gInFileName << endl;
-      } 
+      }
       if (localEntry < 0){
         cout << "WARNING: Problem reading this event!  Skipping!" << endl;
         continue;
@@ -1014,7 +1067,7 @@ int main(int argc, char** argv){
       }
       if ((inNumThrown > MAXTHROWN) ||
           (inNumBeam > MAXBEAM) ||
-          (inNumChargedHypos > MAXTRACKS) || 
+          (inNumChargedHypos > MAXTRACKS) ||
           (inNumNeutralHypos > MAXNEUTRALS) ||
           (inNumCombos > MAXCOMBOS)){
         cout << "WARNING:  Array sizes will be exceeded!  Skipping event! (for details, use -print 1)" << endl;
@@ -1041,7 +1094,7 @@ int main(int argc, char** argv){
 
      // print some information (for debugging only)
 
-    if ((iEntry+1 == 1) && (gPrint == 1)){ 
+    if ((iEntry+1 == 1) && (gPrint == 1)){
       cout << endl << "PRINTING TEST INFORMATION FOR FIVE EVENTS..." << endl << endl;
     }
     if ((iEntry < 5) && (gPrint == 1)){
@@ -1085,7 +1138,7 @@ int main(int argc, char** argv){
         if (gMCTagDecayCode1.Atoi() != (int) outMCDecayCode1) continue;
         if (gMCTagDecayCode2.Atoi() != (int) outMCDecayCode2) continue;
       }
-        // check that the generated final state matches the reconstructed final state 
+        // check that the generated final state matches the reconstructed final state
       if (gUseMCParticles){
         outMCSignal = 0;
         if ((gReconstructedFSCode.first == fsCode.first) &&
@@ -1171,7 +1224,7 @@ int main(int argc, char** argv){
         }
         outRFTime      = inRFTime_Measured[ic];
                 //   line from jon z. for timing info:
-                //  Double_t rf_timing = locBeamX4_Measured.T() - (dComboWrapper->Get_RFTime_Measured() 
+                //  Double_t rf_timing = locBeamX4_Measured.T() - (dComboWrapper->Get_RFTime_Measured()
                 //     + (locBeamX4_Measured.Z()- dComboWrapper->Get_TargetCenter().Z())/29.9792458 );
             x4 = (TLorentzVector*)inBeam__X4_Measured->At(inBeamIndex[ic]);
             double tB  = x4->T();
@@ -1217,7 +1270,7 @@ int main(int argc, char** argv){
 
           // charged tracks
 
-        if (GlueXParticleClass(name) == "Charged"){ 
+        if (GlueXParticleClass(name) == "Charged"){
           if (gUseParticles && gUseKinFit){
             p4 = (TLorentzVector*)inP4_KinFit[pIndex]->At(ic);
               outPx[pIndex] = p4->Px();
@@ -1227,12 +1280,12 @@ int main(int argc, char** argv){
           }
           if (gUseParticles){
             p4 = (TLorentzVector*)inChargedHypo__P4_Measured->At(inChargedIndex[pIndex][ic]);
-              outRPx[pIndex] = p4->Px();
+            outRPx[pIndex] = p4->Px();
               outRPy[pIndex] = p4->Py();
               outRPz[pIndex] = p4->Pz();
               outREn[pIndex] = p4->E();
-            outTkNDF [pIndex] = inChargedHypo__NDF_Tracking  [(inChargedIndex[pIndex][ic])];
-            outTkChi2[pIndex] = inChargedHypo__ChiSq_Tracking[(inChargedIndex[pIndex][ic])];
+              outTkNDF [pIndex] = inChargedHypo__NDF_Tracking  [(inChargedIndex[pIndex][ic])];
+              outTkChi2[pIndex] = inChargedHypo__ChiSq_Tracking[(inChargedIndex[pIndex][ic])];
             if (gAddPID){
               outTkTOFBeta[pIndex] = inBeta_Timing[pIndex][ic];
               outTkTOFChi2[pIndex] = inChiSq_Timing[pIndex][ic];
@@ -1241,19 +1294,28 @@ int main(int argc, char** argv){
               outTkDEDXCDC [pIndex] = inChargedHypo__dEdx_CDC    [(inChargedIndex[pIndex][ic])];
               outTkDEDXFDC [pIndex] = inChargedHypo__dEdx_FDC    [(inChargedIndex[pIndex][ic])];
             }
+            if(gUseDIRC){
+              outLkDIRC[pIndex]     = inChargedHypo__Lk_DIRC     [(inChargedIndex[pIndex][ic])];
+              outLpiDIRC[pIndex]    = inChargedHypo__Lpi_DIRC    [(inChargedIndex[pIndex][ic])];
+              outLpDIRC[pIndex]     = inChargedHypo__Lp_DIRC     [(inChargedIndex[pIndex][ic])];
+              outLeleDIRC[pIndex]   = inChargedHypo__Lele_DIRC   [(inChargedIndex[pIndex][ic])];
+              outNumPhotonsDIRC[pIndex]     = inChargedHypo__NumPhotons_DIRC[(inChargedIndex[pIndex][ic])];
+              outXDIRC[pIndex]      = inChargedHypo__x_DIRC[(inChargedIndex[pIndex][ic])];
+              outYDIRC[pIndex]      = inChargedHypo__y_DIRC[(inChargedIndex[pIndex][ic])];
+            }
           }
           if (gUseMCParticles && outMCSignal > 0.1){
             p4 = (TLorentzVector*)inThrown__P4->At(tIndex);
               outMCPx[pIndex] = p4->Px();
               outMCPy[pIndex] = p4->Py();
               outMCPz[pIndex] = p4->Pz();
-              outMCEn[pIndex] = p4->E(); 
+              outMCEn[pIndex] = p4->E();
           }
         }
 
           // neutral particles
 
-        if (GlueXParticleClass(name) == "Neutral"){ 
+        if (GlueXParticleClass(name) == "Neutral"){
           if (gUseParticles && gUseKinFit){
             p4 = (TLorentzVector*)inP4_KinFit[pIndex]->At(ic);
               outPx[pIndex] = p4->Px();
@@ -1275,7 +1337,7 @@ int main(int argc, char** argv){
               outMCPx[pIndex] = p4->Px();
               outMCPy[pIndex] = p4->Py();
               outMCPz[pIndex] = p4->Pz();
-              outMCEn[pIndex] = p4->E(); 
+              outMCEn[pIndex] = p4->E();
           }
         }
 
@@ -1287,7 +1349,7 @@ int main(int argc, char** argv){
 
           // decaying to charged tracks
 
-        if (GlueXParticleClass(name) == "DecayingToCharged"){ 
+        if (GlueXParticleClass(name) == "DecayingToCharged"){
           int pIndex1 = gMapGlueXNameToParticleIndex[gOrderedParticleNames[im][1]];
           int pIndex2 = gMapGlueXNameToParticleIndex[gOrderedParticleNames[im][2]];
           int tIndex1;  if (gUseMCParticles && outMCSignal > 0.1) tIndex1 = orderedThrownIndices[im][1];
@@ -1342,7 +1404,7 @@ int main(int argc, char** argv){
 
           // decaying to neutral particles
 
-        if (GlueXParticleClass(name) == "DecayingToNeutral"){ 
+        if (GlueXParticleClass(name) == "DecayingToNeutral"){
           int pIndex1 = gMapGlueXNameToParticleIndex[gOrderedParticleNames[im][1]];
           int pIndex2 = gMapGlueXNameToParticleIndex[gOrderedParticleNames[im][2]];
           int tIndex1;  if (gUseMCParticles && outMCSignal > 0.1) tIndex1 = orderedThrownIndices[im][1];
@@ -1398,10 +1460,10 @@ int main(int argc, char** argv){
         cout << "  NumNeutralHypos = " << inNumNeutralHypos << endl;
         cout << "  NumBeam   = " << inNumBeam << endl;
         cout << "  NumCombos = " << inNumCombos << endl;
-        cout << "  ProdVertex = " << inX4_Production->X() << " " 
-                                  << inX4_Production->Y() << " " 
-                                  << inX4_Production->Z() << " " 
-                                  << inX4_Production->T() << endl; 
+        cout << "  ProdVertex = " << inX4_Production->X() << " "
+                                  << inX4_Production->Y() << " "
+                                  << inX4_Production->Z() << " "
+                                  << inX4_Production->T() << endl;
         for (unsigned int im = 0; im < gOrderedParticleNames.size(); im++){
         for (unsigned int id = 0; id < gOrderedParticleNames[im].size(); id++){
           TString name = gOrderedParticleNames[im][id];
@@ -1417,11 +1479,11 @@ int main(int argc, char** argv){
           double rpz = outRPz[pIndex];
           double ren = outREn[pIndex];
           double rmass = sqrt(fabs(ren*ren - rpx*rpx - rpy*rpy - rpz*rpz));
-          cout << "    " << fsIndex << ".  " << name << " (" << pIndex << ")  " 
+          cout << "    " << fsIndex << ".  " << name << " (" << pIndex << ")  "
                << mass << "  " << rmass << endl;
         }}
       }
-      if (iEntry+1 == 5 && ic+1 == inNumCombos && (gPrint == 1) && gUseParticles){ 
+      if (iEntry+1 == 5 && ic+1 == inNumCombos && (gPrint == 1) && gUseParticles){
         cout << endl << endl << "DONE PRINTING TEST INFORMATION FOR FIVE EVENTS" << endl << endl;
         cout << "CONTINUING THE CONVERSION... " << endl << endl;
       }
@@ -1498,54 +1560,54 @@ int main(int argc, char** argv){
 
 
 
-static const int kpdgPsi2S      = 100443;     
-static const int kpdgGamma      = 22;         
-static const int kpdgFSRGamma   = -22;        
-static const int kpdgHc         = 10443;      
-static const int kpdgChic0      = 10441;      
-static const int kpdgChic1      = 20443;      
-static const int kpdgChic2      = 445;        
-static const int kpdgJpsi       = 443;        
-static const int kpdgEtac       = 441;        
-static const int kpdgPhi        = 333;        
-static const int kpdgOmega      = 223;        
-static const int kpdgPi0        = 111;        
-static const int kpdgPip        = 211;        
-static const int kpdgPim        = -211;       
-static const int kpdgRho0       = 113;        
-static const int kpdgRhop       = 213;        
-static const int kpdgRhom       = -213;       
-static const int kpdgEtaprime   = 331;        
-static const int kpdgEta        = 221;        
-static const int kpdgKs         = 310;        
-static const int kpdgKl         = 130;        
-static const int kpdgKp         = 321;        
-static const int kpdgKm         = -321;       
-static const int kpdgPp         = 2212;       
-static const int kpdgPm         = -2212;      
-static const int kpdgN          = 2112;       
+static const int kpdgPsi2S      = 100443;
+static const int kpdgGamma      = 22;
+static const int kpdgFSRGamma   = -22;
+static const int kpdgHc         = 10443;
+static const int kpdgChic0      = 10441;
+static const int kpdgChic1      = 20443;
+static const int kpdgChic2      = 445;
+static const int kpdgJpsi       = 443;
+static const int kpdgEtac       = 441;
+static const int kpdgPhi        = 333;
+static const int kpdgOmega      = 223;
+static const int kpdgPi0        = 111;
+static const int kpdgPip        = 211;
+static const int kpdgPim        = -211;
+static const int kpdgRho0       = 113;
+static const int kpdgRhop       = 213;
+static const int kpdgRhom       = -213;
+static const int kpdgEtaprime   = 331;
+static const int kpdgEta        = 221;
+static const int kpdgKs         = 310;
+static const int kpdgKl         = 130;
+static const int kpdgKp         = 321;
+static const int kpdgKm         = -321;
+static const int kpdgPp         = 2212;
+static const int kpdgPm         = -2212;
+static const int kpdgN          = 2112;
 static const int kpdgAntiN      = -2112;
 static const int kpdgDelta0     = 2114;
 static const int kpdgDeltap     = 2214;
 static const int kpdgDeltapp    = 2224;
-static const int kpdgEp         = -11;         
-static const int kpdgEm         = 11;        
-static const int kpdgMup        = -13;         
-static const int kpdgMum        = 13;        
-static const int kpdgTaup       = -15;        
-static const int kpdgTaum       = 15;         
-static const int kpdgNuE        = 12;         
-static const int kpdgNuMu       = 14;         
-static const int kpdgNuTau      = 16;         
-static const int kpdgAntiNuE    = -12;        
-static const int kpdgAntiNuMu   = -14;        
-static const int kpdgAntiNuTau  = -16;        
-static const int kpdgF0600      = 9000221;    
-static const int kpdgK0         = 311;        
-static const int kpdgAntiK0     = -311;       
-static const int kpdgKstarp     = 323;        
-static const int kpdgKstarm     = -323;       
-static const int kpdgKstar0     = 313;        
+static const int kpdgEp         = -11;
+static const int kpdgEm         = 11;
+static const int kpdgMup        = -13;
+static const int kpdgMum        = 13;
+static const int kpdgTaup       = -15;
+static const int kpdgTaum       = 15;
+static const int kpdgNuE        = 12;
+static const int kpdgNuMu       = 14;
+static const int kpdgNuTau      = 16;
+static const int kpdgAntiNuE    = -12;
+static const int kpdgAntiNuMu   = -14;
+static const int kpdgAntiNuTau  = -16;
+static const int kpdgF0600      = 9000221;
+static const int kpdgK0         = 311;
+static const int kpdgAntiK0     = -311;
+static const int kpdgKstarp     = 323;
+static const int kpdgKstarm     = -323;
+static const int kpdgKstar0     = 313;
 static const int kpdgAntiKstar0 = -313;
 static const int kpdgLambda     = 3122;
 static const int kpdgALambda    = -3122;
@@ -1640,7 +1702,7 @@ TString PDGReadableName(int id){
 
 void DisplayMCThrown(int numThrown, int pids[], int parentIndices[]){
   cout << "  LIST OF THROWN PARTICLES: " << endl;
-  for (int i = 0; i < numThrown; i++){      
+  for (int i = 0; i < numThrown; i++){
     cout << "    THROWN INDEX = " << i << endl;
     cout << "      PID = " << pids[i] << endl;
     cout << "      PDG Name = " << PDGReadableName(pids[i]) << endl;
@@ -1686,7 +1748,7 @@ vector< vector<int> > OrderedThrownIndices(int numThrown, int pids[], int parent
     for (int i = 0; i < numThrown; i++){
       mapUsedIndices[i] = false;
     }
-    for (int i = 0; i < numThrown; i++){ 
+    for (int i = 0; i < numThrown; i++){
       if (mapUsedIndices[i] == true) continue;
       if (mapThrownIndexToDaughters.find(i) == mapThrownIndexToDaughters.end()) continue;
       vector<int> daughterIndices = mapThrownIndexToDaughters[i];
@@ -1697,7 +1759,7 @@ vector< vector<int> > OrderedThrownIndices(int numThrown, int pids[], int parent
       int daughterIndex2 = daughterIndices[1];
       int daughterID1 = pids[daughterIndex1];
       int daughterID2 = pids[daughterIndex2];
-      if ((parentID == kpdgKs      && daughterID1 == kpdgPip   && daughterID2 == kpdgPim)   || 
+      if ((parentID == kpdgKs      && daughterID1 == kpdgPip   && daughterID2 == kpdgPim)   ||
           (parentID == kpdgLambda  && daughterID1 == kpdgPp    && daughterID2 == kpdgPim)   ||
           (parentID == kpdgALambda && daughterID1 == kpdgPm    && daughterID2 == kpdgPip)   ||
           (parentID == kpdgPi0     && daughterID1 == kpdgGamma && daughterID2 == kpdgGamma) ||
@@ -1708,7 +1770,7 @@ vector< vector<int> > OrderedThrownIndices(int numThrown, int pids[], int parent
         addIndices.push_back(daughterIndex2);  mapUsedIndices[daughterIndex2] = true;
         orderedThrownIndices.push_back(addIndices);
       }
-      if ((parentID == kpdgKs      && daughterID1 == kpdgPim && daughterID2 == kpdgPip) || 
+      if ((parentID == kpdgKs      && daughterID1 == kpdgPim && daughterID2 == kpdgPip) ||
           (parentID == kpdgLambda  && daughterID1 == kpdgPim && daughterID2 == kpdgPp) ||
           (parentID == kpdgALambda && daughterID1 == kpdgPip && daughterID2 == kpdgPm)){
         vector<int> addIndices;
@@ -1718,13 +1780,13 @@ vector< vector<int> > OrderedThrownIndices(int numThrown, int pids[], int parent
         orderedThrownIndices.push_back(addIndices);
       }
     }
-    for (int i = 0; i < numThrown; i++){ 
+    for (int i = 0; i < numThrown; i++){
       if (mapUsedIndices[i] == true) continue;
       if (mapThrownIndexToDaughters.find(i) != mapThrownIndexToDaughters.end()) continue;
       int index = i;
       int pdgID = pids[index];
       if ((pdgID == kpdgEp) || (pdgID == kpdgEm) || (pdgID == kpdgMup) || (pdgID == kpdgMum) ||
-          (pdgID == kpdgPp) || (pdgID == kpdgPm) || (pdgID == kpdgGamma) || 
+          (pdgID == kpdgPp) || (pdgID == kpdgPm) || (pdgID == kpdgGamma) ||
           (pdgID == kpdgKp) || (pdgID == kpdgKm) || (pdgID == kpdgPip) || (pdgID == kpdgPim)){
         vector<int> addIndex;
         addIndex.push_back(index);    mapUsedIndices[index] = true;
@@ -2019,28 +2081,28 @@ map<TString, vector<TString> > GlueXDecayProductMap(int fsCode1, int fsCode2){
 bool GetPolarizationAngle(int runNumber, int& polarizationAngle)
 {
   //RCDB environment must be setup!!
-    
+
   //Pipe the current constant into this function
   ostringstream locCommandStream;
   locCommandStream << "rcnd " << runNumber << " polarization_angle";
   FILE* locInputFile = gSystem->OpenPipe(locCommandStream.str().c_str(), "r");
   if(locInputFile == NULL)
     return false;
-    
+
   //get the first line
   char buff[1024];
   if(fgets(buff, sizeof(buff), locInputFile) == NULL)
     return 0;
   istringstream locStringStream(buff);
-    
+
   //Close the pipe
   gSystem->ClosePipe(locInputFile);
-    
+
   //extract it
   string locPolarizationAngleString;
   if(!(locStringStream >> locPolarizationAngleString))
     return false;
-    
+
   // convert string to integer
   polarizationAngle = atoi(locPolarizationAngleString.c_str());
   // amorphous runs have the value -1
