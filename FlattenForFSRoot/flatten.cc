@@ -1280,11 +1280,10 @@ int main(int argc, char** argv){
           }
           if (gUseParticles){
             p4 = (TLorentzVector*)inChargedHypo__P4_Measured->At(inChargedIndex[pIndex][ic]);
-              outRPx[pIndex] = p4->Px();
+            outRPx[pIndex] = p4->Px();
               outRPy[pIndex] = p4->Py();
               outRPz[pIndex] = p4->Pz();
               outREn[pIndex] = p4->E();
-
               outTkNDF [pIndex] = inChargedHypo__NDF_Tracking  [(inChargedIndex[pIndex][ic])];
               outTkChi2[pIndex] = inChargedHypo__ChiSq_Tracking[(inChargedIndex[pIndex][ic])];
             if (gAddPID){
@@ -1539,33 +1538,6 @@ int main(int argc, char** argv){
   //for (unsigned int i = 0; i < MAXPARTICLES; i++){ if (inP4_KinFit[i]) inP4_KinFit[i]->Clear(); }
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
