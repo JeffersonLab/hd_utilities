@@ -78,7 +78,6 @@ int main(int argc, char** argv){
   cout << "           -numNeutralHypos   [optional cut (<= cut)]   (default: -1 (no cut))" << endl;
   cout << "           -usePolarization   [get polarization angle from RCDB? 0 or 1]   (default: 0)" << endl;
   cout << "           -addPID    [include PID info in the output tree? 0 or 1]   (default: 1)" << endl;
-  cout << "           -flattenpi0 [flatten pi0s to just gamma gamma? 0 or 1]   (default: 0)" << endl;
   cout << "           -dirc [include PID information from the DIRC if available? 0 or 1] (default: 0)" << endl;
   cout << "           -flatteneta [flatten etas to just gamma gamma? 0 or 1]   (default: 0)" << endl;
   cout << "           -mcChecks  [check for baryon number violation, etc.," << endl;
@@ -141,6 +140,7 @@ int main(int argc, char** argv){
         ||(argi == "-mcChecks")||(argi == "-addPID")||(argi == "-dirc")||(argi == "-flattenpi0")||(argi == "-flatteneta")
         ||(argi == "-numNeutralHypos")||(argi == "-safe")||(argi == "-print")){
       flag = argi;
+      // this essentially just increments i
       continue;
     }
     if (flag == "-in")  gInFileNames.push_back(argi);
@@ -156,7 +156,7 @@ int main(int argc, char** argv){
     if (flag == "-numNeutralHypos"){ gNumNeutralHyposCut = atoi(argi); }
     if (flag == "-usePolarization"){ if (argi == "1") gUsePolarization = true; }
     if (flag == "-addPID"){ if (argi == "0") gAddPID = false; }
-    if (flag == "-dirc"){   if( argi == "1") gUseDIRC = true; }
+    if (flag == "-dirc"){   if( argi == "1") gUseDIRC = true; }// still check if variables are there
     if (flag == "-flattenpi0"){ if (argi == "1") gFlattenpi0 = true; }
     if (flag == "-flatteneta"){ if (argi == "1") gFlatteneta = true; }
     if (flag == "-mcChecks"){ if (argi == "0") gMCChecks = false; }
@@ -230,7 +230,6 @@ int main(int argc, char** argv){
 
   TChain* gInTree = NULL;
   TTree* gInTreeFirst = NULL;
-
   {
     TString inTreeName = "";
     int nTrees = 0;
@@ -240,7 +239,7 @@ int main(int argc, char** argv){
       TString treeName(fileList->At(i)->GetName());
       if (treeName.Contains("_Tree")){
         nTrees++;
-        if (nTrees == 1) inTreeName = treeName;
+        if (nTrees == 1) inTreeName = treeName;// inTreeName only set for first tree name found
         if (nTrees >= 2){
           cout << "WARNING: found more than one tree -- only converting the first" << endl;
           cout << "           extra tree = " << treeName << endl;
@@ -254,7 +253,7 @@ int main(int argc, char** argv){
     gInTreeFirst = (TTree*) inputFile->Get(inTreeName);
     gInTree = new TChain(inTreeName);
     for (unsigned int i = 0; i < gInFileNames.size(); i++){
-      gInTree->Add(gInFileNames[i]);
+      gInTree->Add(gInFileNames[i]);// create TChain of trees from all files
     }
   }
 
@@ -297,22 +296,22 @@ int main(int argc, char** argv){
     else { cout << "  OK: no NumThrown" << endl; }
     if (!hasNumNeutralHypos && !hasNumThrown){
       cout << "  ERROR: no NumNeutralHypos and no NumThrown" << endl; exit(0); }
-    isMC    = hasNumThrown;
-    isMCGen = hasNumThrown && !hasNumNeutralHypos;
-    isMCAna = hasNumThrown && hasNumNeutralHypos;
+    isMC    = hasNumThrown;// know it is mc if thrown info included
+    isMCGen = hasNumThrown && !hasNumNeutralHypos; // know generated if thrown but no rec
+    isMCAna = hasNumThrown && hasNumNeutralHypos; // no analyzed if thrown and reco
     if (!isMC){ cout << "    ==> treating this as ANALYZED DATA" << endl; }
     if (isMCGen){ cout << "    ==> treating this as THROWN MC" << endl; }
     if (isMCAna){ cout << "    ==> treating this as ANALYZED MC" << endl; }
     if (gInputIsMC == 1 && !isMC){
-      cout << "  OVERRIDING ERROR: format incompatible with MC" << endl; exit(0); }
+      cout << "  OVERRIDING ERROR: format incompatible with MC" << endl; exit(0); }//force failure if user says mc but tree doesnt match
     if (gInputIsMC == 0 && isMCGen){
       cout << "  OVERRIDING ERROR: format incompatible with ANALYZED DATA" << endl; exit(0); }
     if (gInputIsMC == 0 && isMCAna){
       isMC = false; isMCGen = false; isMCAna = false;
       cout << "    OVERRIDING: treating this as ANALYZED DATA instead" << endl; }
     if (isMCGen && gMCTag != "") isMCGenTag = true;
-    gUseParticles = (isMCAna || !isMC);
-    gUseMCParticles = (isMCAna || isMCGenTag);
+    gUseParticles = (isMCAna || !isMC);// for results of reco
+    gUseMCParticles = (isMCAna || isMCGenTag); //for all mc (not quite)
     gUseMCInfo = (isMC);
     cout << "      info to include in output..." << endl;
     cout << "          particle info:  ";
@@ -321,7 +320,7 @@ int main(int argc, char** argv){
       if (gUseMCParticles){ cout << "YES"; } else{ cout << "NO"; } cout << endl;
     cout << "          MC info:  ";
       if (gUseMCInfo){ cout << "YES"; } else{ cout << "NO"; } cout << endl;
-    TList* userInfo = gInTreeFirst->GetUserInfo();
+    TList* userInfo = gInTreeFirst->GetUserInfo();// pointer to list of user objects
         if (userInfo){ cout << "  OK: found UserInfo" << endl; }
         else { cout << "  ERROR:  could not find UserInfo" << endl; exit(0); }
     if (gUseParticles){
@@ -338,7 +337,7 @@ int main(int argc, char** argv){
           if (miscInfo){ cout << "  OK: found MiscInfoMap" << endl; }
           else { cout << "  ERROR:  could not find MiscInfoMap" << endl; exit(0); }
       TObjString* kinFitType = (TObjString*) miscInfo->GetValue("KinFitType");
-          if (kinFitType && kinFitType->GetString() != "")
+          if (kinFitType && kinFitType->GetString() != "")// does this work?
                { cout << "  OK: found KinFitType = " << kinFitType->GetString() << endl; }
           else { cout << "  ERROR:  could not find KinFitType" << endl; exit(0); }
       gUseKinFit = (kinFitType->GetString() != "0");
@@ -389,11 +388,12 @@ int main(int argc, char** argv){
       TList* rootDaughters = (TList*) rootDecayProductMap->GetValue(rootMother->GetString());
       vector<TString> daughters;
       if (rootDaughters){
-        if (rootDaughters->GetEntries() == 2){
+        if (rootDaughters->GetEntries() == 2){// are there always only 2?
           TObjString* rootDaughter1 = (TObjString*) rootDaughters->At(0);
           TObjString* rootDaughter2 = (TObjString*) rootDaughters->At(1);
           TString daughter1FSType = FSParticleType(rootDaughter1->GetString());
           TString daughter2FSType = FSParticleType(rootDaughter2->GetString());
+          // replaces the pi0 or eta with the two photon info
           if (((motherFSType == "pi0")     && (daughter1FSType == "gamma") && (daughter2FSType == "gamma") && gFlattenpi0) ||
               ((motherFSType == "eta")     && (daughter1FSType == "gamma") && (daughter2FSType == "gamma") && gFlatteneta))
             eraseVector.push_back(rootMother->GetString());
@@ -478,11 +478,11 @@ int main(int argc, char** argv){
       for (unsigned int i = 0; i < daughterNames.size(); i++){
         cout << "    " << daughterNames[i] << ": " << daughterFSTypes[i] << endl;
       }
-      if (motherFSType == "pi0" && (daughterNames.size() != 2 ||
+      if (motherFSType == "pi0" && (daughterNames.size() != 2 ||// only allows pi0 to gamma gamma?
             !(daughterFSTypes[0] == "gamma" && daughterFSTypes[1] == "gamma"))){
         cout << "  ERROR: unrecognized pi0 decay" << endl;  gCheckFSOkay = false;
       }
-      if (motherFSType == "eta" && (daughterNames.size() != 2 ||
+      if (motherFSType == "eta" && (daughterNames.size() != 2 ||// only allows eta to gamma gamma? (probably for flattening pi0/eta)
             !(daughterFSTypes[0] == "gamma" && daughterFSTypes[1] == "gamma"))){
         cout << "  ERROR: unrecognized eta decay" << endl;  gCheckFSOkay = false;
       }
@@ -733,15 +733,11 @@ int main(int argc, char** argv){
   Int_t   inChargedHypo__NumPhotons_DIRC[MAXTRACKS] = {};
   Float_t inChargedHypo__x_DIRC[MAXTRACKS] = {};
   Float_t inChargedHypo__y_DIRC[MAXTRACKS] = {};
-  Float_t inChargedHypo__thetac_DIRC[MAXTRACKS] = {};
 
-  Float_t inChargedHypo__E_BCAL[MAXTRACKS] = {};
-  Float_t inChargedHypo__E_FCAL[MAXTRACKS] = {};
-  Float_t inChargedHypo__Epre_BCAL[MAXTRACKS] = {};
 
 
   if (gUseParticles && gUseDIRC){
-    // check DIRC info exists, otherwise set flag to false
+    // this one is a test case to see if the DIRC info is included in the tree
     int flag = gInTree->SetBranchAddress("ChargedHypo__Lpi_DIRC",inChargedHypo__Lpi_DIRC);
     if(flag!=0){
       cout << "SetBranchAddress for DIRC returned " << flag << endl;
@@ -755,14 +751,7 @@ int main(int argc, char** argv){
       gInTree->SetBranchAddress("ChargedHypo__NumPhotons_DIRC",inChargedHypo__NumPhotons_DIRC);
       gInTree->SetBranchAddress("ChargedHypo__ExtrapolatedX_DIRC",inChargedHypo__x_DIRC);
       gInTree->SetBranchAddress("ChargedHypo__ExtrapolatedY_DIRC",inChargedHypo__y_DIRC);
-      gInTree->SetBranchAddress("ChargedHypo__ThetaC_DIRC",inChargedHypo__thetac_DIRC);
     }
-  }
-  if(gUseParticles){
-    // need to use the deposited energies and measured momentum
-    gInTree->SetBranchAddress("ChargedHypo__Energy_BCAL",inChargedHypo__E_BCAL);
-    gInTree->SetBranchAddress("ChargedHypo__Energy_BCALPreshower",inChargedHypo__Epre_BCAL);
-    gInTree->SetBranchAddress("ChargedHypo__Energy_FCAL",inChargedHypo__E_FCAL);
   }
 
 
@@ -957,9 +946,6 @@ int main(int argc, char** argv){
   Int_t outNumPhotonsDIRC[MAXPARTICLES]={};
   double outXDIRC[MAXPARTICLES]={};
   double outYDIRC[MAXPARTICLES]={};
-  double outThetaCDIRC[MAXPARTICLES]={};
-  double outTkEP[MAXPARTICLES]={};
-  double outEpre_BCAL[MAXPARTICLES];
   {
     for (unsigned int im = 0; im < gOrderedParticleNames.size(); im++){
     for (unsigned int id = 0; id < gOrderedParticleNames[im].size(); id++){
@@ -980,10 +966,9 @@ int main(int argc, char** argv){
         if (GlueXParticleClass(name) == "Charged"){
           TString vTkNDF("TkNDFP");   vTkNDF  += fsIndex; gOutTree->Branch(vTkNDF, &outTkNDF [pIndex]);
           TString vTkChi2("TkChi2P"); vTkChi2 += fsIndex; gOutTree->Branch(vTkChi2,&outTkChi2[pIndex]);
-          TString vTkEP("TkEPP"); vTkEP+=fsIndex; gOutTree->Branch(vTkEP, &outTkEP[pIndex]);
-          TString vTkpre("TkEpreP"); vTkpre+=fsIndex; gOutTree->Branch(vTkpre, &outEpre_BCAL[pIndex]);
-        }
+    }
         if (gAddPID && GlueXParticleClass(name) == "Charged"){
+          // fsIndex is appended to the variable name
           TString vTkTOFBeta ("TkTOFBetaP");  vTkTOFBeta  += fsIndex; gOutTree->Branch(vTkTOFBeta, &outTkTOFBeta[pIndex]);
           TString vTkTOFChi2 ("TkTOFChi2P");  vTkTOFChi2  += fsIndex; gOutTree->Branch(vTkTOFChi2, &outTkTOFChi2[pIndex]);
           TString vTkDEDXChi2("TkDEDXChi2P"); vTkDEDXChi2 += fsIndex; gOutTree->Branch(vTkDEDXChi2,&outTkDEDXChi2[pIndex]);
@@ -993,6 +978,8 @@ int main(int argc, char** argv){
 
         }
 
+        // check if variables exist in input first?
+        // only create the branches if they will be filled
         if(gUseDIRC && GlueXParticleClass(name)=="Charged"){
           TString vLpiDIRC("TkLpiDIRCP");        vLpiDIRC    += fsIndex; gOutTree->Branch(vLpiDIRC,   &outLpiDIRC[pIndex]);
           TString vLpDIRC("TkLpDIRCP");          vLpDIRC     += fsIndex; gOutTree->Branch(vLpDIRC,    &outLpDIRC[pIndex]);
@@ -1001,13 +988,13 @@ int main(int argc, char** argv){
           TString vNumPhotonsDIRC("TkNumPhotonsDIRCP"); vNumPhotonsDIRC += fsIndex; gOutTree->Branch(vNumPhotonsDIRC,   &outNumPhotonsDIRC[pIndex]);
           TString vXDIRC("TkXDIRCP"); vXDIRC+=fsIndex; gOutTree->Branch(vXDIRC, &outXDIRC[pIndex]);
           TString vYDIRC("TkYDIRCP"); vYDIRC+=fsIndex; gOutTree->Branch(vYDIRC, &outYDIRC[pIndex]);
-          TString vThetaDIRC("TkThetaCDIRCP"); vThetaDIRC+=fsIndex; gOutTree->Branch(vThetaDIRC,&outThetaCDIRC[pIndex]);
-        }
+      }
 
 
 
         if (GlueXParticleClass(name) == "Neutral"){
           TString vQual("ShQualityP"); vQual += fsIndex; gOutTree->Branch(vQual, &outShQuality[pIndex]);
+          //TString vE9E25("ShE9E25_FCAL"); vE9E25+=fsIndex; gOutTree->Branch(vE9E25, &outShE9E25[pIndex]);
         }
       }
       if (gUseMCParticles){
@@ -1296,9 +1283,6 @@ int main(int argc, char** argv){
               outPy[pIndex] = p4->Py();
               outPz[pIndex] = p4->Pz();
               outEn[pIndex] = p4->E();
-              // J/psi paper uses momentum from kinFit
-              outTkEP[pIndex] = (inChargedHypo__E_BCAL[(inChargedIndex[pIndex][ic])]+inChargedHypo__E_FCAL[(inChargedIndex[pIndex][ic])]+inChargedHypo__Epre_BCAL[(inChargedIndex[pIndex][ic])])/sqrt(pow(p4->Px(),2)+pow(p4->Py(),2)+pow(p4->Pz(),2));
-              outEpre_BCAL[pIndex] = inChargedHypo__Epre_BCAL[(inChargedIndex[pIndex][ic])];
           }
           if (gUseParticles){
             p4 = (TLorentzVector*)inChargedHypo__P4_Measured->At(inChargedIndex[pIndex][ic]);
@@ -1325,7 +1309,6 @@ int main(int argc, char** argv){
               outNumPhotonsDIRC[pIndex]     = inChargedHypo__NumPhotons_DIRC[(inChargedIndex[pIndex][ic])];
               outXDIRC[pIndex]      = inChargedHypo__x_DIRC[(inChargedIndex[pIndex][ic])];
               outYDIRC[pIndex]      = inChargedHypo__y_DIRC[(inChargedIndex[pIndex][ic])];
-              outThetaCDIRC[pIndex] = inChargedHypo__thetac_DIRC[(inChargedIndex[pIndex][ic])];
             }
           }
           if (gUseMCParticles && outMCSignal > 0.1){
@@ -1355,6 +1338,7 @@ int main(int argc, char** argv){
               outREn[pIndex] = p4->E();
             outShQuality[pIndex] = inNeutralHypo__ShowerQuality[(inNeutralIndex[pIndex][ic])];
             if (outShQuality[pIndex] < gShQualityCut) cutDueToParticleInfo = true;
+            //outShE9E25[pIndex] = inNeutralHypo__ShE9E25[(inNeutralIndex[pIndex][ic])];
           }
           if (gUseMCParticles && outMCSignal > 0.1){
             p4 = (TLorentzVector*)inThrown__P4->At(tIndex);
@@ -1562,6 +1546,33 @@ int main(int argc, char** argv){
   //for (unsigned int i = 0; i < MAXPARTICLES; i++){ if (inP4_KinFit[i]) inP4_KinFit[i]->Clear(); }
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
