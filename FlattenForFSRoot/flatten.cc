@@ -907,7 +907,6 @@ int main(int argc, char** argv){
   double outRPzPB;            if (gUseParticles) gOutTree->Branch("RPzPB",           &outRPzPB);
   double outREnPB;            if (gUseParticles) gOutTree->Branch("REnPB",           &outREnPB);
 
-
     // MC information
 
   double outMCPxPB;        if (gUseMCParticles) gOutTree->Branch("MCPxPB", &outMCPxPB);
@@ -965,7 +964,7 @@ int main(int argc, char** argv){
         if (GlueXParticleClass(name) == "Charged"){
           TString vTkNDF("TkNDFP");   vTkNDF  += fsIndex; gOutTree->Branch(vTkNDF, &outTkNDF [pIndex]);
           TString vTkChi2("TkChi2P"); vTkChi2 += fsIndex; gOutTree->Branch(vTkChi2,&outTkChi2[pIndex]);
-    }
+        }
         if (gAddPID && GlueXParticleClass(name) == "Charged"){
           TString vTkTOFBeta ("TkTOFBetaP");  vTkTOFBeta  += fsIndex; gOutTree->Branch(vTkTOFBeta, &outTkTOFBeta[pIndex]);
           TString vTkTOFChi2 ("TkTOFChi2P");  vTkTOFChi2  += fsIndex; gOutTree->Branch(vTkTOFChi2, &outTkTOFChi2[pIndex]);
