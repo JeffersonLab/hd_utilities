@@ -9,8 +9,21 @@ Setup_Script()
 	echo "df -h:"
 	df -h
 
-	# ENVIRONMENT
-	source $ENVIRONMENT
+	# ENVIRONMENT (shell script or xml?)
+	ENV_EXT="${ENVIRONMENT##*.}"
+	ENV_DIR=`dirname $ENVIRONMENT`
+	if [[ $ENV_EXT == "sh" ]] ; then
+	    source $ENVIRONMENT
+	elif [[ $ENV_EXT == "xml" ]] ; then
+	    if [[ $ENV_DIR == "." ]] ; then
+		source /group/halld/Software/build_scripts/gluex_env_jlab.sh /group/halld/www/halldweb/html/halld_versions/$ENVIRONMENT
+	    else
+		source /group/halld/Software/build_scripts/gluex_env_jlab.sh $ENVIRONMENT
+	    fi
+	else
+	    echo "ENVIRONMENT " $ENVIRONMENT " not supported"
+	    exit 1
+	fi
 	printenv
 	echo "PERL INCLUDES: "
 	perl -e "print qq(@INC)"
@@ -72,7 +85,7 @@ Flatten_Files()
 {
     # loop over trees and merge
     for TYPE in `ls $INPUTDIR` ; do 
-	if [ "$TYPE" == "hists" ] || [ "$TYPE" == "flat" ] || [ "$TYPE" == "survey" ] || [ "$TYPE" == "pdf" ] ; then 
+	if [ "$TYPE" == "hists" ] || [ "$TYPE" == "hd_root" ] || [ "$TYPE" == "flat" ] || [ "$TYPE" == "survey" ] || [ "$TYPE" == "pdf" ] ; then 
 	    continue
 	else
 	    local TEMP_FILE="${TYPE}_${RUN}.root"
@@ -109,7 +122,7 @@ Create_Hists()
 {
     # loop over trees and merge
     for TYPE in `ls $INPUTDIR` ; do 
-	if [ "$TYPE" == "hists" ] || [ "$TYPE" == "flat" ] || [ "$TYPE" == "survey" ] || [ "$TYPE" == "pdf" ] ; then 
+	if [ "$TYPE" == "hists" ] || [ "$TYPE" == "hd_root" ] || [ "$TYPE" == "flat" ] || [ "$TYPE" == "survey" ] || [ "$TYPE" == "pdf" ] ; then 
 	    continue
 	else
 	    local TEMP_FILE="${TYPE}_${RUN}_flat.root"
@@ -176,7 +189,7 @@ Save_Files()
 	if [ "$TYPE" == "log" ] ; then 
 	    local TEMP_FILE="log_${RUN}.root"
 	    continue
-	elif [ "$TYPE" == "hists" ] || [ "$TYPE" == "flat" ] || [ "$TYPE" == "survey" ] || [ "$TYPE" == "pdf" ] ; then 
+	elif [ "$TYPE" == "hists" ] || [ "$TYPE" == "hd_root" ] || [ "$TYPE" == "flat" ] || [ "$TYPE" == "survey" ] || [ "$TYPE" == "pdf" ] ; then 
 	    local TEMP_FILE="hd_root_${RUN}.root"
 	    continue
 	else
