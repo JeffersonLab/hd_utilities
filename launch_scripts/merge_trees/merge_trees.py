@@ -218,7 +218,7 @@ def build_launch_dictionary(WORKFLOW):
                                 job_dictionary[run_string] = 1
                                 
                         
-                elif (field == "slum_exitcode"): 
+                elif (field == "slurm_exitcode"):
 			job_result = line.split()[2]
                         if (job_result == "0"):
                                 run_done = 1
@@ -375,6 +375,13 @@ def main(argv):
         try_command(command)
 
         print "New runs complete and submitted:" + str(n_submit)
+
+        # RETRY FAILED JOBS
+        command = "swif2 retry-jobs -workflow " + LAUNCH_WORKFLOW + " -problems SLURM_FAILED SLURM_CANCELLED SLURM_TIMEOUT SLURM_NODE_FAIL"
+        if VERBOSE > 1:
+                print command
+        try_command(command)
+
 
 if __name__ == "__main__":
 	main(sys.argv[1:])
