@@ -64,7 +64,7 @@ int main(int argc, char** argv){
   cout << "Usage:" << endl;
   cout << "  flatten  -in    <input file name>                     (required)" << endl;
   cout << "           -out   [output file name or none]            (default: none)" << endl;
-  cout << "                   (if none, just print info and quit)"   << endl;
+  cout << "                   (if no output specified, just print info and quit)"   << endl;
   cout << "           -mc    [is this mc? -1, 0, or 1]             (default: -1)" << endl;
   cout << "                   (-1: determine automatically; 0: no; 1: yes)"   << endl;
   cout << "           -mctag [MCExtras_MCDecayCode2_MCDecayCode1]  (default: none)" << endl;
@@ -78,9 +78,13 @@ int main(int argc, char** argv){
   cout << "           -numNeutralHypos   [optional cut (<= cut)]   (default: -1 (no cut))" << endl;
   cout << "           -usePolarization   [get polarization angle from RCDB? 0 or 1]   (default: 0)" << endl;
   cout << "           -addPID    [include PID info in the output tree? 0 or 1]   (default: 1)" << endl;
-  cout << "           -flattenpi0 [flatten pi0s to just gamma gamma? 0 or 1]   (default: 0)" << endl;
   cout << "           -dirc [include PID information from the DIRC if available? 0 or 1] (default: 0)" << endl;
+  cout << "           -flattenpi0 [flatten pi0s to just gamma gamma? 0 or 1]   (default: 0)" << endl;
   cout << "           -flatteneta [flatten etas to just gamma gamma? 0 or 1]   (default: 0)" << endl;
+  cout << "           -combos [ if there are multiple combos in an event with the same chi2, then " << endl;
+  cout << "                      0: keep all combos and print warnings (default) " << endl;  
+  cout << "                      1: keep only one combo in the output tree" << endl;
+  cout << "                      2: keep all combos and suppress warnings ]" << endl;
   cout << "           -mcChecks  [check for baryon number violation, etc.," << endl;
   cout << "                       when parsing truth information?  0 or 1] (default: 1)" << endl;
   cout << "           -safe  [check array sizes?  0 or 1]          (default: 1)" << endl;
@@ -129,6 +133,7 @@ int main(int argc, char** argv){
   bool gUseDIRC = false;
   bool gFlattenpi0 = false;
   bool gFlatteneta = false;
+  int gCombos = 0;
   bool gMCChecks = true;
   int gPrint = 0;
   {
@@ -139,7 +144,7 @@ int main(int argc, char** argv){
         ||(argi == "-chi2")||(argi == "-shQuality")||(argi == "-massWindows")
         ||(argi == "-numUnusedTracks")||(argi == "-usePolarization")||(argi == "-numUnusedNeutrals")
         ||(argi == "-mcChecks")||(argi == "-addPID")||(argi == "-dirc")||(argi == "-flattenpi0")||(argi == "-flatteneta")
-        ||(argi == "-numNeutralHypos")||(argi == "-safe")||(argi == "-print")){
+        ||(argi == "-combos")||(argi == "-numNeutralHypos")||(argi == "-safe")||(argi == "-print")){
       flag = argi;
       continue;
     }
@@ -159,6 +164,7 @@ int main(int argc, char** argv){
     if (flag == "-dirc"){   if( argi == "1") gUseDIRC = true; }
     if (flag == "-flattenpi0"){ if (argi == "1") gFlattenpi0 = true; }
     if (flag == "-flatteneta"){ if (argi == "1") gFlatteneta = true; }
+    if (flag == "-combos"){ gCombos = atoi(argi); }
     if (flag == "-mcChecks"){ if (argi == "0") gMCChecks = false; }
     if (flag == "-safe"){ if (argi == "0") gSafe = false; }
     if (flag == "-print"){ gPrint = atoi(argi); }
@@ -198,6 +204,7 @@ int main(int argc, char** argv){
   cout << "  use DIRC?              " << gUseDIRC << endl;
   cout << "  flatten pi0s?          " << gFlattenpi0 << endl;
   cout << "  flatten etas?          " << gFlatteneta << endl;
+  cout << "  combos option:         " << gCombos << endl;
   cout << "  MC checks?             " << gMCChecks << endl;
   cout << "  safe mode?             " << gSafe << endl;
   cout << endl;
@@ -1193,6 +1200,7 @@ int main(int argc, char** argv){
 
       // loop over combos
 
+    vector<double> vChi2Check;
     if (gUseMCInfo && !gUseParticles) inNumCombos = 1;
     for (UInt_t ic = 0; ic < inNumCombos; ic++){
 
@@ -1486,6 +1494,19 @@ int main(int argc, char** argv){
       if (iEntry+1 == 5 && ic+1 == inNumCombos && (gPrint == 1) && gUseParticles){
         cout << endl << endl << "DONE PRINTING TEST INFORMATION FOR FIVE EVENTS" << endl << endl;
         cout << "CONTINUING THE CONVERSION... " << endl << endl;
+      }
+
+        // check for combos with the same chi2
+
+      if (gUseParticles && gUseKinFit && gCombos != 2){
+        bool foundChi2 = false;
+        for (unsigned int icheck = 0; icheck < vChi2Check.size(); icheck++){
+          if (vChi2Check[icheck] == outChi2) { foundChi2 = true; break; } }
+        if (!foundChi2) vChi2Check.push_back(outChi2);
+        if (foundChi2 && gCombos == 0)
+          cout << "WARNING:  multiple combos in (run,event) = (" << outRunNumber << "," << outEventNumber
+               << ") with the same chi2 = " << outChi2 << endl;
+        if (foundChi2 && gCombos == 1) continue;
       }
 
         // make cuts
