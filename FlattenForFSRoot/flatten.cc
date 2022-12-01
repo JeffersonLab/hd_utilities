@@ -1498,10 +1498,10 @@ int main(int argc, char** argv){
 
         // check for combos with the same chi2
 
-      if (gUseParticles && gUseKinFit && gCombos != 2){
+      if (gUseParticles && gUseKinFit && gCombos != 2 && outChi2DOF <= gChi2DOFCut){
         bool foundChi2 = false;
         for (unsigned int icheck = 0; icheck < vChi2Check.size(); icheck++){
-          if (vChi2Check[icheck] == outChi2) { foundChi2 = true; break; } }
+          if (fabs(vChi2Check[icheck] - outChi2) < 1.0e-8) { foundChi2 = true; break; } }
         if (!foundChi2) vChi2Check.push_back(outChi2);
         if (foundChi2 && gCombos == 0)
           cout << "WARNING:  multiple combos in (run,event) = (" << outRunNumber << "," << outEventNumber
