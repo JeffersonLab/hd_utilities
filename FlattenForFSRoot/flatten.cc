@@ -279,6 +279,7 @@ int main(int argc, char** argv){
   bool gUseMCParticles;
   bool gUseMCInfo;
   bool gUseKinFit;
+  bool gUseKinFitVtx;
   {
     bool isMC = false;
     bool isMCAna = false;
@@ -347,7 +348,8 @@ int main(int argc, char** argv){
           if (kinFitType && kinFitType->GetString() != "")
                { cout << "  OK: found KinFitType = " << kinFitType->GetString() << endl; }
           else { cout << "  ERROR:  could not find KinFitType" << endl; exit(0); }
-      gUseKinFit = (kinFitType->GetString() != "0");
+      gUseKinFit = (kinFitType->GetString() == "1") || (kinFitType->GetString() == "4");
+      gUseKinFitVtx = (kinFitType->GetString() == "4");
       TObjString* tosTCZ = (TObjString*) miscInfo->GetValue("Target__CenterZ");
           if (tosTCZ)
                { cout << "  OK: found Target__CenterZ = "  << tosTCZ->GetString() << endl; }
@@ -798,9 +800,9 @@ int main(int argc, char** argv){
       if (gUseParticles && gUseKinFit) gInTree->GetBranch       ("ComboBeam__P4_KinFit")->SetAutoDelete(kFALSE);
       if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress("ComboBeam__P4_KinFit", &(inBeam__P4_KinFit));
   TClonesArray *inBeam__X4_KinFit;
-      if (gUseParticles && gUseKinFit) inBeam__X4_KinFit = new TClonesArray("TLorentzVector",MAXCOMBOS);
-      if (gUseParticles && gUseKinFit) gInTree->GetBranch       ("ComboBeam__X4_KinFit")->SetAutoDelete(kFALSE);
-      if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress("ComboBeam__X4_KinFit", &(inBeam__X4_KinFit));
+      if (gUseParticles && gUseKinFitVtx) inBeam__X4_KinFit = new TClonesArray("TLorentzVector",MAXCOMBOS);
+      if (gUseParticles && gUseKinFitVtx) gInTree->GetBranch       ("ComboBeam__X4_KinFit")->SetAutoDelete(kFALSE);
+      if (gUseParticles && gUseKinFitVtx) gInTree->SetBranchAddress("ComboBeam__X4_KinFit", &(inBeam__X4_KinFit));
 
 
         //   *** Combo Tracks ***
@@ -858,11 +860,11 @@ int main(int argc, char** argv){
 
       if (GlueXParticleClass(name) == "DecayingToCharged"){
         TString var_X4(name); var_X4 += "__X4";
-            if (gUseParticles && gUseKinFit) inX4[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
-            if (gUseParticles && gUseKinFit) gInTree->GetBranch       (var_X4)->SetAutoDelete(kFALSE);
-            if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress(var_X4,&(inX4[pIndex]));
+            if (gUseParticles && gUseKinFitVtx) inX4[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
+            if (gUseParticles && gUseKinFitVtx) gInTree->GetBranch       (var_X4)->SetAutoDelete(kFALSE);
+            if (gUseParticles && gUseKinFitVtx) gInTree->SetBranchAddress(var_X4,&(inX4[pIndex]));
         TString var_PathLengthSigma(name);  var_PathLengthSigma += "__PathLengthSigma";
-            if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress(var_PathLengthSigma,inPathLengthSigma[pIndex]);
+            if (gUseParticles && gUseKinFitVtx) gInTree->SetBranchAddress(var_PathLengthSigma,inPathLengthSigma[pIndex]);
       }
 
     }
@@ -1005,7 +1007,7 @@ int main(int argc, char** argv){
         TString vMCEn("MCEnP"); vMCEn += fsIndex; gOutTree->Branch(vMCEn,&outMCEn[pIndex]);
       }
       if (GlueXParticleClass(name) == "DecayingToCharged"){
-        if (gUseParticles && gUseKinFit){
+        if (gUseParticles && gUseKinFitVtx){
           TString vVeeL      ("VeeLP");       vVeeL       += fsIndex; gOutTree->Branch(vVeeL,      &outVeeL      [pIndex]);
           TString vVeeLSigma ("VeeLSigmaP");  vVeeLSigma  += fsIndex; gOutTree->Branch(vVeeLSigma, &outVeeLSigma [pIndex]);
         }
@@ -1040,7 +1042,7 @@ int main(int argc, char** argv){
     if (gUseParticles) inChargedHypo__P4_Measured->Clear();
     if (gUseParticles) inNeutralHypo__P4_Measured->Clear();
     if (gUseParticles && gUseKinFit) inBeam__P4_KinFit->Clear();
-    if (gUseParticles && gUseKinFit) inBeam__X4_KinFit->Clear();
+    if (gUseParticles && gUseKinFitVtx) inBeam__X4_KinFit->Clear();
     for (unsigned int i = 0; i < MAXPARTICLES; i++){ if (inP4_KinFit[i]) inP4_KinFit[i]->Clear(); }
     for (unsigned int i = 0; i < MAXPARTICLES; i++){ if (inX4[i]) inX4[i]->Clear(); }
 
@@ -1351,7 +1353,7 @@ int main(int argc, char** argv){
 
         // vertex information
 
-        if (gUseKinFit){
+        if (gUseKinFitVtx){
         }
 
 
@@ -1362,7 +1364,7 @@ int main(int argc, char** argv){
           int pIndex2 = gMapGlueXNameToParticleIndex[gOrderedParticleNames[im][2]];
           int tIndex1;  if (gUseMCParticles && outMCSignal > 0.1) tIndex1 = orderedThrownIndices[im][1];
           int tIndex2;  if (gUseMCParticles && outMCSignal > 0.1) tIndex2 = orderedThrownIndices[im][2];
-          if (gUseParticles && gUseKinFit){
+          if (gUseParticles && gUseKinFitVtx){
             p4a = (TLorentzVector*)inP4_KinFit[pIndex1]->At(ic);
             p4b = (TLorentzVector*)inP4_KinFit[pIndex2]->At(ic);
             *p4 = *p4a + *p4b;
@@ -1496,6 +1498,19 @@ int main(int argc, char** argv){
         cout << "CONTINUING THE CONVERSION... " << endl << endl;
       }
 
+
+        // make cuts
+
+      if (gUseParticles){
+        if (cutDueToParticleInfo) continue;
+        if (gUseKinFit && outChi2DOF > gChi2DOFCut) continue;
+        int numUnusedNeutrals = inNumNeutralHypos - gNumFSNeutrals;
+        if ((gNumUnusedTracksCut   >= 0) && (outNumUnusedTracks   > gNumUnusedTracksCut)) continue;
+        if ((gNumUnusedNeutralsCut >= 0) && (   numUnusedNeutrals > gNumUnusedNeutralsCut)) continue;
+        if ((gNumNeutralHyposCut   >= 0) && (outNumNeutralHypos   > gNumNeutralHyposCut)) continue;
+      }
+
+
         // check for combos with the same chi2
 
       if (gUseParticles && gUseKinFit && gCombos != 2 && outChi2DOF <= gChi2DOFCut){
@@ -1509,16 +1524,7 @@ int main(int argc, char** argv){
         if (foundChi2 && gCombos == 1) continue;
       }
 
-        // make cuts
 
-      if (gUseParticles){
-        if (cutDueToParticleInfo) continue;
-        if (gUseKinFit && outChi2DOF > gChi2DOFCut) continue;
-        int numUnusedNeutrals = inNumNeutralHypos - gNumFSNeutrals;
-        if ((gNumUnusedTracksCut   >= 0) && (outNumUnusedTracks   > gNumUnusedTracksCut)) continue;
-        if ((gNumUnusedNeutralsCut >= 0) && (   numUnusedNeutrals > gNumUnusedNeutralsCut)) continue;
-        if ((gNumNeutralHyposCut   >= 0) && (outNumNeutralHypos   > gNumNeutralHyposCut)) continue;
-      }
 
         // fill the tree
 
