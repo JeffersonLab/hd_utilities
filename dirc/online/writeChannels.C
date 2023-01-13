@@ -353,7 +353,7 @@ void writeChannels(int run = 71311, int DAC = 100, bool unityGain = false, bool 
         efficfile<<effic[i+6912]<<endl;
     efficfile.close();
     
-    cout<<"fill MAROC calib file (will take a few minutes...)"<<endl; 
+    cout<<"fill MAROC calib file (will take a couple minutes...)"<<endl; 
         
     // loop to fill MAROC calibration file
     ofstream configfile;
