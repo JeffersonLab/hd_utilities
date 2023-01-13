@@ -1,0 +1,7 @@
+# Create histogram file from threshold scan TTree
+
+root -l dirc_scan_NNNNN.root
+[0] T->Process("thresholdScan.C")
+[1] .q
+
+mv scanHist.root scanHist_NNNNN.root
