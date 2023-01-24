@@ -81,6 +81,8 @@ int main(int argc, char** argv){
   cout << "           -dirc [include PID information from the DIRC if available? 0 or 1] (default: 0)" << endl;
   cout << "           -flattenpi0 [flatten pi0s to just gamma gamma? 0 or 1]   (default: 0)" << endl;
   cout << "           -flatteneta [flatten etas to just gamma gamma? 0 or 1]   (default: 0)" << endl;
+  cout << "           -addUnusedNeutrals  [include 4-vectors for unused neutrals? " << endl;
+  cout << "                                0 or number to include] (default: 0)" << endl;  
   cout << "           -combos [ if there are multiple combos in an event with the same chi2, then " << endl;
   cout << "                      0: keep all combos and print warnings (default) " << endl;  
   cout << "                      1: keep only one combo in the output tree" << endl;
@@ -133,6 +135,7 @@ int main(int argc, char** argv){
   bool gUseDIRC = false;
   bool gFlattenpi0 = false;
   bool gFlatteneta = false;
+  int gAddUnusedNeutrals = 0;
   int gCombos = 0;
   bool gMCChecks = true;
   int gPrint = 0;
@@ -144,7 +147,8 @@ int main(int argc, char** argv){
         ||(argi == "-chi2")||(argi == "-shQuality")||(argi == "-massWindows")
         ||(argi == "-numUnusedTracks")||(argi == "-usePolarization")||(argi == "-numUnusedNeutrals")
         ||(argi == "-mcChecks")||(argi == "-addPID")||(argi == "-dirc")||(argi == "-flattenpi0")||(argi == "-flatteneta")
-        ||(argi == "-combos")||(argi == "-numNeutralHypos")||(argi == "-safe")||(argi == "-print")){
+        ||(argi=="-addUnusedNeutrals")||(argi == "-combos")
+        ||(argi == "-numNeutralHypos")||(argi == "-safe")||(argi == "-print")){
       flag = argi;
       continue;
     }
@@ -164,6 +168,7 @@ int main(int argc, char** argv){
     if (flag == "-dirc"){   if( argi == "1") gUseDIRC = true; }
     if (flag == "-flattenpi0"){ if (argi == "1") gFlattenpi0 = true; }
     if (flag == "-flatteneta"){ if (argi == "1") gFlatteneta = true; }
+    if (flag == "-addUnusedNeutrals"){ gAddUnusedNeutrals = atoi(argi); }
     if (flag == "-combos"){ gCombos = atoi(argi); }
     if (flag == "-mcChecks"){ if (argi == "0") gMCChecks = false; }
     if (flag == "-safe"){ if (argi == "0") gSafe = false; }
@@ -204,6 +209,7 @@ int main(int argc, char** argv){
   cout << "  use DIRC?              " << gUseDIRC << endl;
   cout << "  flatten pi0s?          " << gFlattenpi0 << endl;
   cout << "  flatten etas?          " << gFlatteneta << endl;
+  cout << "  add unused neutrals?   " << gAddUnusedNeutrals << endl;
   cout << "  combos option:         " << gCombos << endl;
   cout << "  MC checks?             " << gMCChecks << endl;
   cout << "  safe mode?             " << gSafe << endl;
@@ -940,6 +946,7 @@ int main(int argc, char** argv){
   double   outPx[MAXPARTICLES]={},   outPy[MAXPARTICLES]={},   outPz[MAXPARTICLES]={},   outEn[MAXPARTICLES]={};
   double  outRPx[MAXPARTICLES]={},  outRPy[MAXPARTICLES]={},  outRPz[MAXPARTICLES]={},  outREn[MAXPARTICLES]={};
   double outMCPx[MAXPARTICLES]={}, outMCPy[MAXPARTICLES]={}, outMCPz[MAXPARTICLES]={}, outMCEn[MAXPARTICLES]={};
+  double outPxUN[MAXPARTICLES]={}, outPyUN[MAXPARTICLES]={}, outPzUN[MAXPARTICLES]={}, outEnUN[MAXPARTICLES]={};
   double outVeeL[MAXPARTICLES]={}, outVeeLSigma[MAXPARTICLES]={};
   double outTkChi2[MAXPARTICLES]={}, outTkNDF[MAXPARTICLES]={};
   double outTkDEDXChi2[MAXPARTICLES]={}, outTkDEDXNDF[MAXPARTICLES]={};
@@ -981,9 +988,7 @@ int main(int argc, char** argv){
           TString vTkDEDXNDF("TkDEDXNDFP");   vTkDEDXNDF  += fsIndex; gOutTree->Branch(vTkDEDXNDF, &outTkDEDXNDF [pIndex]);
           TString vTkDEDXCDC("TkDEDXCDCP");   vTkDEDXCDC  += fsIndex; gOutTree->Branch(vTkDEDXCDC, &outTkDEDXCDC [pIndex]);
           TString vTkDEDXFDC("TkDEDXFDCP");   vTkDEDXFDC  += fsIndex; gOutTree->Branch(vTkDEDXFDC, &outTkDEDXFDC [pIndex]);
-
         }
-
         if(gUseDIRC && GlueXParticleClass(name)=="Charged"){
           TString vLpiDIRC("TkLpiDIRCP");        vLpiDIRC    += fsIndex; gOutTree->Branch(vLpiDIRC,   &outLpiDIRC[pIndex]);
           TString vLpDIRC("TkLpDIRCP");          vLpDIRC     += fsIndex; gOutTree->Branch(vLpDIRC,    &outLpDIRC[pIndex]);
@@ -992,12 +997,16 @@ int main(int argc, char** argv){
           TString vNumPhotonsDIRC("TkNumPhotonsDIRCP"); vNumPhotonsDIRC += fsIndex; gOutTree->Branch(vNumPhotonsDIRC,   &outNumPhotonsDIRC[pIndex]);
           TString vXDIRC("TkXDIRCP"); vXDIRC+=fsIndex; gOutTree->Branch(vXDIRC, &outXDIRC[pIndex]);
           TString vYDIRC("TkYDIRCP"); vYDIRC+=fsIndex; gOutTree->Branch(vYDIRC, &outYDIRC[pIndex]);
-      }
-
-
-
+        }
         if (GlueXParticleClass(name) == "Neutral"){
           TString vQual("ShQualityP"); vQual += fsIndex; gOutTree->Branch(vQual, &outShQuality[pIndex]);
+        }
+        for (unsigned int iun = 0; iun < gAddUnusedNeutrals; iun++){
+          TString siun(""); siun += iun; 
+          TString vPx("PxPUN");   vPx += (siun+1);  gOutTree->Branch(vPx, &outPxUN [iun]);
+          TString vPy("PyPUN");   vPy += (siun+1);  gOutTree->Branch(vPy, &outPyUN [iun]);
+          TString vPz("PzPUN");   vPz += (siun+1);  gOutTree->Branch(vPz, &outPzUN [iun]);
+          TString vEn("EnPUN");   vEn += (siun+1);  gOutTree->Branch(vEn, &outEnUN [iun]);
         }
       }
       if (gUseMCParticles){
@@ -1272,6 +1281,7 @@ int main(int argc, char** argv){
         // particle information
 
       bool cutDueToParticleInfo = false;
+      vector<int> vUsedNeutralIndices;
       for (unsigned int im = 0; im < gOrderedParticleNames.size(); im++){
       for (unsigned int id = 0; id < gOrderedParticleNames[im].size(); id++){
         TString name = gOrderedParticleNames[im][id];
@@ -1341,6 +1351,7 @@ int main(int argc, char** argv){
               outREn[pIndex] = p4->E();
             outShQuality[pIndex] = inNeutralHypo__ShowerQuality[(inNeutralIndex[pIndex][ic])];
             if (outShQuality[pIndex] < gShQualityCut) cutDueToParticleInfo = true;
+            vUsedNeutralIndices.push_back(inNeutralIndex[pIndex][ic]);
           }
           if (gUseMCParticles && outMCSignal > 0.1){
             p4 = (TLorentzVector*)inThrown__P4->At(tIndex);
@@ -1430,6 +1441,8 @@ int main(int argc, char** argv){
           if (gUseParticles){
             p4a = (TLorentzVector*)inNeutralHypo__P4_Measured->At(inNeutralIndex[pIndex1][ic]);
             p4b = (TLorentzVector*)inNeutralHypo__P4_Measured->At(inNeutralIndex[pIndex2][ic]);
+            vUsedNeutralIndices.push_back(inNeutralIndex[pIndex1][ic]);
+            vUsedNeutralIndices.push_back(inNeutralIndex[pIndex2][ic]);
               outRPx[pIndex] = p4a->Px() + p4b->Px();
               outRPy[pIndex] = p4a->Py() + p4b->Py();
               outRPz[pIndex] = p4a->Pz() + p4b->Pz();
@@ -1524,6 +1537,24 @@ int main(int argc, char** argv){
         if (foundChi2 && gCombos == 1) continue;
       }
 
+        // add four-momentum for unused neutrals
+      {
+        int numWritten = 0;
+        for (unsigned int iun = 0; iun < inNumNeutralHypos && numWritten < gAddUnusedNeutrals; iun++){
+          bool used = false;
+          for (unsigned int iused = 0; iused < vUsedNeutralIndices.size(); iused++){
+            if (vUsedNeutralIndices[iused] == iun){ used = true; break; }
+          }
+          if (!used){
+            p4 = (TLorentzVector*)inNeutralHypo__P4_Measured->At(iun);
+              outPxUN[numWritten] = p4->Px();
+              outPyUN[numWritten] = p4->Py();
+              outPzUN[numWritten] = p4->Pz();
+              outEnUN[numWritten] = p4->E();
+            numWritten++;
+          }
+        }
+      }
 
 
         // fill the tree
