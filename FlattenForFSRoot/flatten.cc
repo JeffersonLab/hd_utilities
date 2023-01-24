@@ -1002,11 +1002,11 @@ int main(int argc, char** argv){
           TString vQual("ShQualityP"); vQual += fsIndex; gOutTree->Branch(vQual, &outShQuality[pIndex]);
         }
         for (unsigned int iun = 0; iun < gAddUnusedNeutrals; iun++){
-          TString siun(""); siun += iun; 
-          TString vPx("PxPUN");   vPx += (siun+1);  gOutTree->Branch(vPx, &outPxUN [iun]);
-          TString vPy("PyPUN");   vPy += (siun+1);  gOutTree->Branch(vPy, &outPyUN [iun]);
-          TString vPz("PzPUN");   vPz += (siun+1);  gOutTree->Branch(vPz, &outPzUN [iun]);
-          TString vEn("EnPUN");   vEn += (siun+1);  gOutTree->Branch(vEn, &outEnUN [iun]);
+          TString siun(""); siun += (iun+1); 
+          TString vPx("PxPUN");   vPx += siun;  gOutTree->Branch(vPx, &outPxUN [iun]);
+          TString vPy("PyPUN");   vPy += siun;  gOutTree->Branch(vPy, &outPyUN [iun]);
+          TString vPz("PzPUN");   vPz += siun;  gOutTree->Branch(vPz, &outPzUN [iun]);
+          TString vEn("EnPUN");   vEn += siun;  gOutTree->Branch(vEn, &outEnUN [iun]);
         }
       }
       if (gUseMCParticles){
