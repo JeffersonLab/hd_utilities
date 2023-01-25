@@ -70,6 +70,7 @@ int main(int argc, char** argv){
   cout << "           -mctag [MCExtras_MCDecayCode2_MCDecayCode1]  (default: none)" << endl;
   cout << "                   (pick out a single final state from MC)"  << endl;
   cout << "           -chi2  [optional Chi2/DOF cut value]         (default: 1000)" << endl;
+  cout << "           -RFDeltaT  [optional cut on abs(RFDeltaT)]         (default: no cut)" << endl;
   cout << "           -shQuality  [optional shower quality cut value] (default: -1 (no cut))" << endl;
   cout << "           -massWindows  [pi0, eta, (A)Lambda, Ks windows (GeV)] (default: -1 (no cut))" << endl;
   cout << "                        (uses the most constrained four-momenta)" << endl;
@@ -124,6 +125,7 @@ int main(int argc, char** argv){
   TString gMCTagDecayCode2 = "0";
   TString gMCTagDecayCode1 = "0";
   double gChi2DOFCut = 1000.0;
+  double gRFDeltaTCut = -1.0;
   double gShQualityCut = -1;
   double gMassWindows = -1;
   int gNumUnusedTracksCut = -1;
@@ -144,7 +146,7 @@ int main(int argc, char** argv){
   for (int i = 0; i < argc; i++){
     TString argi(argv[i]);
     if ((argi == "-in")||(argi == "-out")||(argi == "-mc")||(argi == "-mctag")
-        ||(argi == "-chi2")||(argi == "-shQuality")||(argi == "-massWindows")
+        ||(argi == "-chi2")||(argi == "-RFDeltaT")||(argi == "-shQuality")||(argi == "-massWindows")
         ||(argi == "-numUnusedTracks")||(argi == "-usePolarization")||(argi == "-numUnusedNeutrals")
         ||(argi == "-mcChecks")||(argi == "-addPID")||(argi == "-dirc")||(argi == "-flattenpi0")||(argi == "-flatteneta")
         ||(argi=="-addUnusedNeutrals")||(argi == "-combos")
@@ -158,6 +160,7 @@ int main(int argc, char** argv){
                         if (argi == "0") gInputIsMC = 0; }
     if (flag == "-mctag"){ gMCTag = argi; }
     if (flag == "-chi2"){ gChi2DOFCut = atof(argi); }
+    if (flag == "-RFDeltaT"){ gRFDeltaTCut = atof(argi); }
     if (flag == "-shQuality"){ gShQualityCut = atof(argi); }
     if (flag == "-massWindows"){ gMassWindows = atof(argi); }
     if (flag == "-numUnusedTracks"){ gNumUnusedTracksCut = atoi(argi); }
@@ -199,6 +202,7 @@ int main(int argc, char** argv){
   if (gMCTag == "")
   cout << "  MC Tag:                " << "none" << endl;
   cout << "  chi2/dof cut:          " << gChi2DOFCut << endl;
+  cout << "  RFDeltaT cut:          " << gRFDeltaTCut << endl;
   cout << "  shower quality cut:    " << gShQualityCut << endl;
   cout << "  mass windows:          " << gMassWindows << endl;
   cout << "  numUnusedTracks cut:   " << gNumUnusedTracksCut << endl;
@@ -1517,6 +1521,7 @@ int main(int argc, char** argv){
       if (gUseParticles){
         if (cutDueToParticleInfo) continue;
         if (gUseKinFit && outChi2DOF > gChi2DOFCut) continue;
+        if (outRFDeltaT > gRFDeltaTCut) continue;
         int numUnusedNeutrals = inNumNeutralHypos - gNumFSNeutrals;
         if ((gNumUnusedTracksCut   >= 0) && (outNumUnusedTracks   > gNumUnusedTracksCut)) continue;
         if ((gNumUnusedNeutralsCut >= 0) && (   numUnusedNeutrals > gNumUnusedNeutralsCut)) continue;
