@@ -1521,7 +1521,7 @@ int main(int argc, char** argv){
       if (gUseParticles){
         if (cutDueToParticleInfo) continue;
         if (gUseKinFit && outChi2DOF > gChi2DOFCut) continue;
-        if (outRFDeltaT > gRFDeltaTCut) continue;
+        if (gRFDeltaTCut > 0.0 && abs(outRFDeltaT) > gRFDeltaTCut) continue;
         int numUnusedNeutrals = inNumNeutralHypos - gNumFSNeutrals;
         if ((gNumUnusedTracksCut   >= 0) && (outNumUnusedTracks   > gNumUnusedTracksCut)) continue;
         if ((gNumUnusedNeutralsCut >= 0) && (   numUnusedNeutrals > gNumUnusedNeutralsCut)) continue;
