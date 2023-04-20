@@ -1,7 +1,6 @@
 <!--
 
 NOTE: For the RunPeriod2019-11 data set, see  RunPeriod-2020-02.xml
---------------------------------------------------------------------
 
 RunPeriod-2019-11  (Estimates
 
@@ -60,7 +59,7 @@ storage. Here are some compression factors for different algorithms
 used on a file from run 51505:
 
 compression type  file size  fraction  factor
-- - - - - - - -   - - - - -  - - - -   - - - -
+
     none           19.5GB     100.0%     1.00
     lz4-1          15.9GB      81.5%     1.23
     lz4-9          14.3GB      73.3%     1.36
