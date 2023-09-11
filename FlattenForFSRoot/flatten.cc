@@ -64,12 +64,13 @@ int main(int argc, char** argv){
   cout << "Usage:" << endl;
   cout << "  flatten  -in    <input file name>                     (required)" << endl;
   cout << "           -out   [output file name or none]            (default: none)" << endl;
-  cout << "                   (if none, just print info and quit)"   << endl;
+  cout << "                   (if no output specified, just print info and quit)"   << endl;
   cout << "           -mc    [is this mc? -1, 0, or 1]             (default: -1)" << endl;
   cout << "                   (-1: determine automatically; 0: no; 1: yes)"   << endl;
   cout << "           -mctag [MCExtras_MCDecayCode2_MCDecayCode1]  (default: none)" << endl;
   cout << "                   (pick out a single final state from MC)"  << endl;
   cout << "           -chi2  [optional Chi2/DOF cut value]         (default: 1000)" << endl;
+  cout << "           -RFDeltaT  [optional cut on abs(RFDeltaT)]         (default: no cut)" << endl;
   cout << "           -shQuality  [optional shower quality cut value] (default: -1 (no cut))" << endl;
   cout << "           -massWindows  [pi0, eta, (A)Lambda, Ks windows (GeV)] (default: -1 (no cut))" << endl;
   cout << "                        (uses the most constrained four-momenta)" << endl;
@@ -78,9 +79,15 @@ int main(int argc, char** argv){
   cout << "           -numNeutralHypos   [optional cut (<= cut)]   (default: -1 (no cut))" << endl;
   cout << "           -usePolarization   [get polarization angle from RCDB? 0 or 1]   (default: 0)" << endl;
   cout << "           -addPID    [include PID info in the output tree? 0 or 1]   (default: 1)" << endl;
-  cout << "           -flattenpi0 [flatten pi0s to just gamma gamma? 0 or 1]   (default: 0)" << endl;
   cout << "           -dirc [include PID information from the DIRC if available? 0 or 1] (default: 0)" << endl;
+  cout << "           -flattenpi0 [flatten pi0s to just gamma gamma? 0 or 1]   (default: 0)" << endl;
   cout << "           -flatteneta [flatten etas to just gamma gamma? 0 or 1]   (default: 0)" << endl;
+  cout << "           -addUnusedNeutrals  [include 4-vectors for unused neutrals? " << endl;
+  cout << "                                0 or number to include] (default: 0)" << endl;  
+  cout << "           -combos [ if there are multiple combos in an event with the same chi2, then " << endl;
+  cout << "                      0: keep all combos and print warnings (default) " << endl;  
+  cout << "                      1: keep only one combo in the output tree" << endl;
+  cout << "                      2: keep all combos and suppress warnings ]" << endl;
   cout << "           -mcChecks  [check for baryon number violation, etc.," << endl;
   cout << "                       when parsing truth information?  0 or 1] (default: 1)" << endl;
   cout << "           -safe  [check array sizes?  0 or 1]          (default: 1)" << endl;
@@ -118,6 +125,7 @@ int main(int argc, char** argv){
   TString gMCTagDecayCode2 = "0";
   TString gMCTagDecayCode1 = "0";
   double gChi2DOFCut = 1000.0;
+  double gRFDeltaTCut = -1.0;
   double gShQualityCut = -1;
   double gMassWindows = -1;
   int gNumUnusedTracksCut = -1;
@@ -129,6 +137,8 @@ int main(int argc, char** argv){
   bool gUseDIRC = false;
   bool gFlattenpi0 = false;
   bool gFlatteneta = false;
+  int gAddUnusedNeutrals = 0;
+  int gCombos = 0;
   bool gMCChecks = true;
   int gPrint = 0;
   {
@@ -136,9 +146,10 @@ int main(int argc, char** argv){
   for (int i = 0; i < argc; i++){
     TString argi(argv[i]);
     if ((argi == "-in")||(argi == "-out")||(argi == "-mc")||(argi == "-mctag")
-        ||(argi == "-chi2")||(argi == "-shQuality")||(argi == "-massWindows")
+        ||(argi == "-chi2")||(argi == "-RFDeltaT")||(argi == "-shQuality")||(argi == "-massWindows")
         ||(argi == "-numUnusedTracks")||(argi == "-usePolarization")||(argi == "-numUnusedNeutrals")
         ||(argi == "-mcChecks")||(argi == "-addPID")||(argi == "-dirc")||(argi == "-flattenpi0")||(argi == "-flatteneta")
+        ||(argi=="-addUnusedNeutrals")||(argi == "-combos")
         ||(argi == "-numNeutralHypos")||(argi == "-safe")||(argi == "-print")){
       flag = argi;
       continue;
@@ -149,6 +160,7 @@ int main(int argc, char** argv){
                         if (argi == "0") gInputIsMC = 0; }
     if (flag == "-mctag"){ gMCTag = argi; }
     if (flag == "-chi2"){ gChi2DOFCut = atof(argi); }
+    if (flag == "-RFDeltaT"){ gRFDeltaTCut = atof(argi); }
     if (flag == "-shQuality"){ gShQualityCut = atof(argi); }
     if (flag == "-massWindows"){ gMassWindows = atof(argi); }
     if (flag == "-numUnusedTracks"){ gNumUnusedTracksCut = atoi(argi); }
@@ -159,6 +171,8 @@ int main(int argc, char** argv){
     if (flag == "-dirc"){   if( argi == "1") gUseDIRC = true; }
     if (flag == "-flattenpi0"){ if (argi == "1") gFlattenpi0 = true; }
     if (flag == "-flatteneta"){ if (argi == "1") gFlatteneta = true; }
+    if (flag == "-addUnusedNeutrals"){ gAddUnusedNeutrals = atoi(argi); }
+    if (flag == "-combos"){ gCombos = atoi(argi); }
     if (flag == "-mcChecks"){ if (argi == "0") gMCChecks = false; }
     if (flag == "-safe"){ if (argi == "0") gSafe = false; }
     if (flag == "-print"){ gPrint = atoi(argi); }
@@ -188,6 +202,7 @@ int main(int argc, char** argv){
   if (gMCTag == "")
   cout << "  MC Tag:                " << "none" << endl;
   cout << "  chi2/dof cut:          " << gChi2DOFCut << endl;
+  cout << "  RFDeltaT cut:          " << gRFDeltaTCut << endl;
   cout << "  shower quality cut:    " << gShQualityCut << endl;
   cout << "  mass windows:          " << gMassWindows << endl;
   cout << "  numUnusedTracks cut:   " << gNumUnusedTracksCut << endl;
@@ -198,6 +213,8 @@ int main(int argc, char** argv){
   cout << "  use DIRC?              " << gUseDIRC << endl;
   cout << "  flatten pi0s?          " << gFlattenpi0 << endl;
   cout << "  flatten etas?          " << gFlatteneta << endl;
+  cout << "  add unused neutrals?   " << gAddUnusedNeutrals << endl;
+  cout << "  combos option:         " << gCombos << endl;
   cout << "  MC checks?             " << gMCChecks << endl;
   cout << "  safe mode?             " << gSafe << endl;
   cout << endl;
@@ -272,6 +289,7 @@ int main(int argc, char** argv){
   bool gUseMCParticles;
   bool gUseMCInfo;
   bool gUseKinFit;
+  bool gUseKinFitVtx;
   {
     bool isMC = false;
     bool isMCAna = false;
@@ -340,7 +358,8 @@ int main(int argc, char** argv){
           if (kinFitType && kinFitType->GetString() != "")
                { cout << "  OK: found KinFitType = " << kinFitType->GetString() << endl; }
           else { cout << "  ERROR:  could not find KinFitType" << endl; exit(0); }
-      gUseKinFit = (kinFitType->GetString() != "0");
+      gUseKinFit = (kinFitType->GetString() == "1") || (kinFitType->GetString() == "4");
+      gUseKinFitVtx = (kinFitType->GetString() == "4");
       TObjString* tosTCZ = (TObjString*) miscInfo->GetValue("Target__CenterZ");
           if (tosTCZ)
                { cout << "  OK: found Target__CenterZ = "  << tosTCZ->GetString() << endl; }
@@ -791,9 +810,9 @@ int main(int argc, char** argv){
       if (gUseParticles && gUseKinFit) gInTree->GetBranch       ("ComboBeam__P4_KinFit")->SetAutoDelete(kFALSE);
       if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress("ComboBeam__P4_KinFit", &(inBeam__P4_KinFit));
   TClonesArray *inBeam__X4_KinFit;
-      if (gUseParticles && gUseKinFit) inBeam__X4_KinFit = new TClonesArray("TLorentzVector",MAXCOMBOS);
-      if (gUseParticles && gUseKinFit) gInTree->GetBranch       ("ComboBeam__X4_KinFit")->SetAutoDelete(kFALSE);
-      if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress("ComboBeam__X4_KinFit", &(inBeam__X4_KinFit));
+      if (gUseParticles && gUseKinFitVtx) inBeam__X4_KinFit = new TClonesArray("TLorentzVector",MAXCOMBOS);
+      if (gUseParticles && gUseKinFitVtx) gInTree->GetBranch       ("ComboBeam__X4_KinFit")->SetAutoDelete(kFALSE);
+      if (gUseParticles && gUseKinFitVtx) gInTree->SetBranchAddress("ComboBeam__X4_KinFit", &(inBeam__X4_KinFit));
 
 
         //   *** Combo Tracks ***
@@ -851,11 +870,11 @@ int main(int argc, char** argv){
 
       if (GlueXParticleClass(name) == "DecayingToCharged"){
         TString var_X4(name); var_X4 += "__X4";
-            if (gUseParticles && gUseKinFit) inX4[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
-            if (gUseParticles && gUseKinFit) gInTree->GetBranch       (var_X4)->SetAutoDelete(kFALSE);
-            if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress(var_X4,&(inX4[pIndex]));
+            if (gUseParticles && gUseKinFitVtx) inX4[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
+            if (gUseParticles && gUseKinFitVtx) gInTree->GetBranch       (var_X4)->SetAutoDelete(kFALSE);
+            if (gUseParticles && gUseKinFitVtx) gInTree->SetBranchAddress(var_X4,&(inX4[pIndex]));
         TString var_PathLengthSigma(name);  var_PathLengthSigma += "__PathLengthSigma";
-            if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress(var_PathLengthSigma,inPathLengthSigma[pIndex]);
+            if (gUseParticles && gUseKinFitVtx) gInTree->SetBranchAddress(var_PathLengthSigma,inPathLengthSigma[pIndex]);
       }
 
     }
@@ -931,6 +950,7 @@ int main(int argc, char** argv){
   double   outPx[MAXPARTICLES]={},   outPy[MAXPARTICLES]={},   outPz[MAXPARTICLES]={},   outEn[MAXPARTICLES]={};
   double  outRPx[MAXPARTICLES]={},  outRPy[MAXPARTICLES]={},  outRPz[MAXPARTICLES]={},  outREn[MAXPARTICLES]={};
   double outMCPx[MAXPARTICLES]={}, outMCPy[MAXPARTICLES]={}, outMCPz[MAXPARTICLES]={}, outMCEn[MAXPARTICLES]={};
+  double outPxUN[MAXPARTICLES]={}, outPyUN[MAXPARTICLES]={}, outPzUN[MAXPARTICLES]={}, outEnUN[MAXPARTICLES]={};
   double outVeeL[MAXPARTICLES]={}, outVeeLSigma[MAXPARTICLES]={};
   double outTkChi2[MAXPARTICLES]={}, outTkNDF[MAXPARTICLES]={};
   double outTkDEDXChi2[MAXPARTICLES]={}, outTkDEDXNDF[MAXPARTICLES]={};
@@ -972,9 +992,7 @@ int main(int argc, char** argv){
           TString vTkDEDXNDF("TkDEDXNDFP");   vTkDEDXNDF  += fsIndex; gOutTree->Branch(vTkDEDXNDF, &outTkDEDXNDF [pIndex]);
           TString vTkDEDXCDC("TkDEDXCDCP");   vTkDEDXCDC  += fsIndex; gOutTree->Branch(vTkDEDXCDC, &outTkDEDXCDC [pIndex]);
           TString vTkDEDXFDC("TkDEDXFDCP");   vTkDEDXFDC  += fsIndex; gOutTree->Branch(vTkDEDXFDC, &outTkDEDXFDC [pIndex]);
-
         }
-
         if(gUseDIRC && GlueXParticleClass(name)=="Charged"){
           TString vLpiDIRC("TkLpiDIRCP");        vLpiDIRC    += fsIndex; gOutTree->Branch(vLpiDIRC,   &outLpiDIRC[pIndex]);
           TString vLpDIRC("TkLpDIRCP");          vLpDIRC     += fsIndex; gOutTree->Branch(vLpDIRC,    &outLpDIRC[pIndex]);
@@ -983,12 +1001,16 @@ int main(int argc, char** argv){
           TString vNumPhotonsDIRC("TkNumPhotonsDIRCP"); vNumPhotonsDIRC += fsIndex; gOutTree->Branch(vNumPhotonsDIRC,   &outNumPhotonsDIRC[pIndex]);
           TString vXDIRC("TkXDIRCP"); vXDIRC+=fsIndex; gOutTree->Branch(vXDIRC, &outXDIRC[pIndex]);
           TString vYDIRC("TkYDIRCP"); vYDIRC+=fsIndex; gOutTree->Branch(vYDIRC, &outYDIRC[pIndex]);
-      }
-
-
-
+        }
         if (GlueXParticleClass(name) == "Neutral"){
           TString vQual("ShQualityP"); vQual += fsIndex; gOutTree->Branch(vQual, &outShQuality[pIndex]);
+        }
+        for (unsigned int iun = 0; iun < gAddUnusedNeutrals; iun++){
+          TString siun(""); siun += (iun+1); 
+          TString vPx("PxPUN");   vPx += siun;  gOutTree->Branch(vPx, &outPxUN [iun]);
+          TString vPy("PyPUN");   vPy += siun;  gOutTree->Branch(vPy, &outPyUN [iun]);
+          TString vPz("PzPUN");   vPz += siun;  gOutTree->Branch(vPz, &outPzUN [iun]);
+          TString vEn("EnPUN");   vEn += siun;  gOutTree->Branch(vEn, &outEnUN [iun]);
         }
       }
       if (gUseMCParticles){
@@ -998,7 +1020,7 @@ int main(int argc, char** argv){
         TString vMCEn("MCEnP"); vMCEn += fsIndex; gOutTree->Branch(vMCEn,&outMCEn[pIndex]);
       }
       if (GlueXParticleClass(name) == "DecayingToCharged"){
-        if (gUseParticles && gUseKinFit){
+        if (gUseParticles && gUseKinFitVtx){
           TString vVeeL      ("VeeLP");       vVeeL       += fsIndex; gOutTree->Branch(vVeeL,      &outVeeL      [pIndex]);
           TString vVeeLSigma ("VeeLSigmaP");  vVeeLSigma  += fsIndex; gOutTree->Branch(vVeeLSigma, &outVeeLSigma [pIndex]);
         }
@@ -1033,7 +1055,7 @@ int main(int argc, char** argv){
     if (gUseParticles) inChargedHypo__P4_Measured->Clear();
     if (gUseParticles) inNeutralHypo__P4_Measured->Clear();
     if (gUseParticles && gUseKinFit) inBeam__P4_KinFit->Clear();
-    if (gUseParticles && gUseKinFit) inBeam__X4_KinFit->Clear();
+    if (gUseParticles && gUseKinFitVtx) inBeam__X4_KinFit->Clear();
     for (unsigned int i = 0; i < MAXPARTICLES; i++){ if (inP4_KinFit[i]) inP4_KinFit[i]->Clear(); }
     for (unsigned int i = 0; i < MAXPARTICLES; i++){ if (inX4[i]) inX4[i]->Clear(); }
 
@@ -1193,6 +1215,7 @@ int main(int argc, char** argv){
 
       // loop over combos
 
+    vector<double> vChi2Check;
     if (gUseMCInfo && !gUseParticles) inNumCombos = 1;
     for (UInt_t ic = 0; ic < inNumCombos; ic++){
 
@@ -1262,6 +1285,7 @@ int main(int argc, char** argv){
         // particle information
 
       bool cutDueToParticleInfo = false;
+      vector<int> vUsedNeutralIndices;
       for (unsigned int im = 0; im < gOrderedParticleNames.size(); im++){
       for (unsigned int id = 0; id < gOrderedParticleNames[im].size(); id++){
         TString name = gOrderedParticleNames[im][id];
@@ -1331,6 +1355,7 @@ int main(int argc, char** argv){
               outREn[pIndex] = p4->E();
             outShQuality[pIndex] = inNeutralHypo__ShowerQuality[(inNeutralIndex[pIndex][ic])];
             if (outShQuality[pIndex] < gShQualityCut) cutDueToParticleInfo = true;
+            vUsedNeutralIndices.push_back(inNeutralIndex[pIndex][ic]);
           }
           if (gUseMCParticles && outMCSignal > 0.1){
             p4 = (TLorentzVector*)inThrown__P4->At(tIndex);
@@ -1343,7 +1368,7 @@ int main(int argc, char** argv){
 
         // vertex information
 
-        if (gUseKinFit){
+        if (gUseKinFitVtx){
         }
 
 
@@ -1354,7 +1379,7 @@ int main(int argc, char** argv){
           int pIndex2 = gMapGlueXNameToParticleIndex[gOrderedParticleNames[im][2]];
           int tIndex1;  if (gUseMCParticles && outMCSignal > 0.1) tIndex1 = orderedThrownIndices[im][1];
           int tIndex2;  if (gUseMCParticles && outMCSignal > 0.1) tIndex2 = orderedThrownIndices[im][2];
-          if (gUseParticles && gUseKinFit){
+          if (gUseParticles && gUseKinFitVtx){
             p4a = (TLorentzVector*)inP4_KinFit[pIndex1]->At(ic);
             p4b = (TLorentzVector*)inP4_KinFit[pIndex2]->At(ic);
             *p4 = *p4a + *p4b;
@@ -1420,6 +1445,8 @@ int main(int argc, char** argv){
           if (gUseParticles){
             p4a = (TLorentzVector*)inNeutralHypo__P4_Measured->At(inNeutralIndex[pIndex1][ic]);
             p4b = (TLorentzVector*)inNeutralHypo__P4_Measured->At(inNeutralIndex[pIndex2][ic]);
+            vUsedNeutralIndices.push_back(inNeutralIndex[pIndex1][ic]);
+            vUsedNeutralIndices.push_back(inNeutralIndex[pIndex2][ic]);
               outRPx[pIndex] = p4a->Px() + p4b->Px();
               outRPy[pIndex] = p4a->Py() + p4b->Py();
               outRPz[pIndex] = p4a->Pz() + p4b->Pz();
@@ -1488,16 +1515,52 @@ int main(int argc, char** argv){
         cout << "CONTINUING THE CONVERSION... " << endl << endl;
       }
 
+
         // make cuts
 
       if (gUseParticles){
         if (cutDueToParticleInfo) continue;
         if (gUseKinFit && outChi2DOF > gChi2DOFCut) continue;
+        if (gRFDeltaTCut > 0.0 && abs(outRFDeltaT) > gRFDeltaTCut) continue;
         int numUnusedNeutrals = inNumNeutralHypos - gNumFSNeutrals;
         if ((gNumUnusedTracksCut   >= 0) && (outNumUnusedTracks   > gNumUnusedTracksCut)) continue;
         if ((gNumUnusedNeutralsCut >= 0) && (   numUnusedNeutrals > gNumUnusedNeutralsCut)) continue;
         if ((gNumNeutralHyposCut   >= 0) && (outNumNeutralHypos   > gNumNeutralHyposCut)) continue;
       }
+
+
+        // check for combos with the same chi2
+
+      if (gUseParticles && gUseKinFit && gCombos != 2 && outChi2DOF <= gChi2DOFCut){
+        bool foundChi2 = false;
+        for (unsigned int icheck = 0; icheck < vChi2Check.size(); icheck++){
+          if (fabs(vChi2Check[icheck] - outChi2) < 1.0e-8) { foundChi2 = true; break; } }
+        if (!foundChi2) vChi2Check.push_back(outChi2);
+        if (foundChi2 && gCombos == 0)
+          cout << "WARNING:  multiple combos in (run,event) = (" << outRunNumber << "," << outEventNumber
+               << ") with the same chi2 = " << outChi2 << endl;
+        if (foundChi2 && gCombos == 1) continue;
+      }
+
+        // add four-momentum for unused neutrals
+      {
+        int numWritten = 0;
+        for (unsigned int iun = 0; iun < inNumNeutralHypos && numWritten < gAddUnusedNeutrals; iun++){
+          bool used = false;
+          for (unsigned int iused = 0; iused < vUsedNeutralIndices.size(); iused++){
+            if (vUsedNeutralIndices[iused] == iun){ used = true; break; }
+          }
+          if (!used){
+            p4 = (TLorentzVector*)inNeutralHypo__P4_Measured->At(iun);
+              outPxUN[numWritten] = p4->Px();
+              outPyUN[numWritten] = p4->Py();
+              outPzUN[numWritten] = p4->Pz();
+              outEnUN[numWritten] = p4->E();
+            numWritten++;
+          }
+        }
+      }
+
 
         // fill the tree
 
