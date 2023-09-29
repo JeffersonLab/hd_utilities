@@ -278,9 +278,10 @@ here:  https://halldweb.jlab.org/wiki/index.php/GlueX-II_and_DIRC_ERR )
 <parameter name="compressionFactor" value="1.0"/>
 <parameter name="RESTfraction" value="0.15"/>
 
+<parameter name="NERSC_unitsPerFile" value="3.0"/>
 <parameter name="reconstructionRate" value="10.0" units="Hz"/>
-<parameter name="reconPasses" value="2.0"/>
-<parameter name="goodRunFraction" value="0.85"/>
+<parameter name="reconPasses" value="1.0"/>
+<parameter name="goodRunFraction" value="0.95"/>
 <parameter name="analysisRate" value="75.0" units="Hz"/>
 <parameter name="analysisPasses" value="2.82"/>
 <parameter name="cores" value="4500"/>
