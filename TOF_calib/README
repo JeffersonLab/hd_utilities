@@ -20,6 +20,9 @@ The latest CCDB data base tables that are now used to write the calibration resu
 Note: the "TOF2/" directory is to indicate that the calibration code is up to date to handle
       the new TOF geometry. The code is backwards compatible to use the old geometry "TOF/".
 
+Note: 2023/09/30 it was realized that the pedestals were not properly determined and written
+      to ccdb during calibration. This is now corrected by adding code and update the scripts
+      
 
 FIRST GENERATE THE ROOT FILES FROM RAW DATA REQUIRED FOR CALIBRATION:
 ------------------------------------------------------------------------
@@ -44,6 +47,9 @@ THE ACTUAL CALIBRATION IS DONE IN STEPS CONTROLLED BY THE MASTER SCRIPT "DO_CALI
 The Following is a descrption of all the root scripts and shell scripts used:
 
 1) DO_CALIB.csh : main shell scripts that does it all
+
+1b) prior to the walk correction the first easy step is to determine the mean position of the pedestal
+    for each PMT. This is easily done by the script src/dopedestals.C
 
 2)  calculate walk correction parameters with src/walk1.C 
     output: tof_walk_parameters_run#####dat
