@@ -1,0 +1,13 @@
+Steps for preparing rocdirc_ssp* configuration files for DAQ:
+
+# 1: take calibration run as described on the wiki https://halldweb.jlab.org/hdops/wiki/index.php/Threshold_Scan_Procedure
+
+# 2: copy scan data from gluon machine /gluex/CALIB/ALL/DIRC/dirc_scan_RUNNUMBER.root to hd_utilities/dirc/online/ThresholdScan/ directory
+
+# 3: execute scripts with ./write_rocdirc_ssp.sh RUNNUMBER
+
+# 4: copy configuration files rocdirc_ssp*.cnf to /gluex/CALIB/ALL/ssp/default/
+
+# 5: on gluon machine edit DAQ configuration files to use new thresholds at $CDAQ_HOME/daq/config/hd_all/DIRC_LED.conf and FCAL_BCAL_PS_m9.conf
+
+# 6: make logbook entry noting the run number for the threshold scan and what run number the new thresholds take effect

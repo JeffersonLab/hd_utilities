@@ -1,0 +1,12 @@
+ccdb add DIRC/South/timing_offsets -r 60000- /work/halld2/home/jrsteven/2018-dirc/builds/hd_utilities/dirc/tables/time_offsets/led_time_offsets_60540.txt
+ccdb add DIRC/base_time_offset -r 60000- /work/halld2/home/jrsteven/2018-dirc/builds/hd_utilities/dirc/tables/time_offsets/led_base_time_offset_60540.txt
+
+# first beam data time offset
+ccdb add DIRC/base_time_offset -r 60000- /work/halld2/home/jrsteven/2018-dirc/builds/hd_utilities/dirc/tables/time_offsets/beamData_base_time_offset_60581.txt
+ccdb add DIRC/base_time_offset -r 60585- /work/halld2/home/jrsteven/2018-dirc/builds/hd_utilities/dirc/tables/time_offsets/beamData_base_time_offset_60581.txt
+
+# first North OB LED runs
+ccdb add DIRC/base_time_offset -r 70000- /work/halld2/home/jrsteven/2018-dirc/builds/hd_utilities/dirc/tables/time_offsets/led_base_time_offset_70080.txt
+ccdb add DIRC/North/timing_offsets -r 70000- /work/halld2/home/jrsteven/2018-dirc/builds/hd_utilities/dirc/tables/time_offsets/led_time_offsets_North_70080.txt
+ccdb add DIRC/South/timing_offsets -r 70000- /work/halld2/home/jrsteven/2018-dirc/builds/hd_utilities/dirc/tables/time_offsets/led_time_offsets_South_70080.txt
+

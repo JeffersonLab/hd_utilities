@@ -76,10 +76,10 @@ Bool_t thresholdScan::Process(Long64_t entry)
    fReader.SetEntry(entry);
     
     int locFiber = (*slot)*24 + *fiber;
-    //cout<<*thr<<" "<<*fiber<<" "<<*slot<<" "<<locFiber<<" "<<*asic<<endl;
+    cout<<"threshold = "<<*thr<<" fiber = "<<*fiber<<" slot = "<<*slot<<" global fiber = "<<locFiber<<" ASIC = "<<*asic<<endl;
     
     for(int i=0; i<64; i++) {
-	cout<<locFiber<<" "<<i<<endl;
+	//cout<<locFiber<<" "<<i<<endl;
         hScan[locFiber][*asic]->Fill(i,*thr,CHAN[i]);
     }
 
