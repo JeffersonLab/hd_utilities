@@ -1,0 +1,3 @@
+ccdb add DIRC/base_time_offset -r 60738- /work/halld2/home/jrsteven/2018-dirc/builds/hd_utilities/dirc/tables/base_time_offsets/base_time_offset_60738.txt
+ccdb add DIRC/base_time_offset -r 60765- /work/halld2/home/jrsteven/2018-dirc/builds/hd_utilities/dirc/tables/base_time_offsets/base_time_offset_60765.txt
+ccdb add DIRC/base_time_offset -r 60806- /work/halld2/home/jrsteven/2018-dirc/builds/hd_utilities/dirc/tables/base_time_offsets/base_time_offset_60806.txt

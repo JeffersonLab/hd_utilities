@@ -39,15 +39,8 @@ Setup_Script()
             echo "JANA_CALIB_URL: " $JANA_CALIB_URL
 	fi
 
-	# COPY INPUT FILE TO WORKING DIRECTORY
-	# This step is necessary since the cache files will be created as soft links in the current directory, and we want to avoid large I/O processes.
-	# We first copy the input file to the current directory, then remove the link.
-	echo "LOCAL FILES PRIOR TO INPUT COPY"
-	ls -l
-	cp $INPUTFILE ./tmp_file
-	rm -f $INPUTFILE
-	mv tmp_file $INPUTFILE
-	echo "LOCAL FILES AFTER INPUT COPY"
+	# LIST WORKING DIRECTORY
+	echo "LOCAL FILES"
 	ls -l
 }
 

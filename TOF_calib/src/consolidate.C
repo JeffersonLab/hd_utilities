@@ -173,6 +173,11 @@ void consolidate(int RunNumber){
       Scnt++;
     }
   }
+  double Mspeed0 = SSum/(double)Scnt;
+  cout<<"Mean propagation speed plane 0 is: "<<Mspeed0<<endl;
+  SSum = 0.;
+  Scnt = 0;
+
   INF.close();
   sprintf(fnam,"calibration%d/tof_speeds_plane1_run%d.dat",RunNumber,RunNumber);
   cout<<"open file: "<<fnam<<endl;
@@ -185,13 +190,13 @@ void consolidate(int RunNumber){
   for (int k=0;k<BARS_PER_PLANE;k++){
     INF>>dum1>>Speeds[k+BARS_PER_PLANE]>>dum2;
     if (TMath::Abs(Speeds[k+BARS_PER_PLANE]-15.5)<2.){
-      SSum += Speeds[k];
+      SSum += Speeds[k+BARS_PER_PLANE];
       Scnt++;
     }
   }
   INF.close();
-  double Mspeed = SSum/(double)Scnt;
-  cout<<"Mean propagation speed is: "<<Mspeed<<endl;
+  double Mspeed1 = SSum/(double)Scnt;
+  cout<<"Mean propagation speed plane 1 is: "<<Mspeed1<<endl;
 
   sprintf(outf,"calibration%d/tofpaddles_propagation_speed_run%d.DB",RunNumber,RunNumber);
   OUTF.open(outf);
@@ -202,7 +207,10 @@ void consolidate(int RunNumber){
 	(TMath::Abs(k+1 - BARS_PER_PLANE - BARS_PER_PLANE/2 - 0.5)<(double)NSHORTS/4.)) {
       // for the single ended paddles use the mean propagation speed of 
       // all the other paddles.
-      Speeds[k] = Mspeed;
+      Speeds[k] = Mspeed0;
+      if (k>44){
+	Speeds[k] = Mspeed1;
+      }
     }
     OUTF<<Speeds[k]<<endl;
   }

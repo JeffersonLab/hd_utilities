@@ -75,11 +75,11 @@ root-config --python-version
 
 For older ROOT installations (6.08 or earlier) you will probably use python ver2.7, but for newer builds python ver3.6 is the default.  Now use the correct python version to execute the script
 
-python2.7 plot_flux_ccdb.py ...
+python2.7 $HD_UTILITIES_HOME/psflux/plot_flux_ccdb.py ...
 
 or 
 
-python3.6 plot_flux_ccdb.py ...
+python3.6 $HD_UTILITIES_HOME/psflux/plot_flux_ccdb.py ...
 
 ## The flux values in the MySQL CCDB are from:
 
