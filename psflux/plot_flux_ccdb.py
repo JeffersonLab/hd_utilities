@@ -53,7 +53,10 @@ def loadCCDBContextListAnalysis(runPeriod, anaVer):
     return rows
 
 def getCCDBContext(run, RESTVERSION, ANALYSISVERSION):
-    
+
+    correctTAGM = True
+    correctTAGH = True
+
     # special cases override the context: 
     # - new energy calibration for later analysis launches
     # - separate calibration timestamps for Spring and Summer 2020 (RunPeriod-2019-11)
@@ -93,6 +96,8 @@ def getCCDBContext(run, RESTVERSION, ANALYSISVERSION):
     if len(contextListAnalysis) > 0:
         #print("Overriding calibration timestamp for Analysis Launch %d" % ANALYSISVERSION)
         context = contextListAnalysis[0][1]
+        correctTAGM = True
+        correctTAGH = False
 
     # properly format timestamp
     startCalibTime = context.find("calibtime")
@@ -101,7 +106,7 @@ def getCCDBContext(run, RESTVERSION, ANALYSISVERSION):
     # energy calibration time from REST production context
     CALIBTIME_ENERGY = datetime.strptime(calibTimeString , "%Y-%m-%d-%H-%M-%S")
 
-    return CALIBTIME_ENERGY
+    return CALIBTIME_ENERGY, correctTAGM, correctTAGH
 
 def PSAcceptance(x, par):
 
@@ -129,6 +134,8 @@ def main():
     RCDB_QUERY_USER = RCDB_QUERY
     CALIBTIME_USER = CALIBTIME
     CALIBTIME_ENERGY = CALIBTIME
+    correctTAGM = True
+    correctTAGH = True
 
     BEGINRUN = 1
     ENDRUN = 100000000
@@ -241,7 +248,7 @@ def main():
         CALIBTIME = CALIBTIME_USER
         CALIBTIME_ENERGY = CALIBTIME_USER
     else:
-        CALIBTIME_ENERGY = getCCDBContext(int(options.begin_run), RESTVERSION, ANALYSISVERSION)
+        CALIBTIME_ENERGY, correctTAGM, correctTAGH = getCCDBContext(int(options.begin_run), RESTVERSION, ANALYSISVERSION)
 
     # energy calibration time
     print("CCDB calibtime for energy to match REST ver%02d and Analysis Launch ver%02d" % (RESTVERSION,ANALYSISVERSION) + " = " + CALIBTIME_ENERGY.strftime("%Y-%m-%d-%H-%M-%S"))
@@ -301,7 +308,7 @@ def main():
                 continue
 
         # update CCDB context if required
-        CALIBTIME_ENERGY_NEW = getCCDBContext(run.number, RESTVERSION, ANALYSISVERSION)
+        CALIBTIME_ENERGY_NEW, correctTAGM, correctTAGH = getCCDBContext(run.number, RESTVERSION, ANALYSISVERSION)
         if CALIBTIME_ENERGY_NEW != CALIBTIME_ENERGY:
             CALIBTIME_ENERGY = CALIBTIME_ENERGY_NEW
             print("Updating CCDB calibtime for energy to match REST ver%02d" % RESTVERSION + " = " + CALIBTIME_ENERGY.strftime("%Y-%m-%d-%H-%M-%S"))
@@ -385,7 +392,7 @@ def main():
         # fill tagm histogram
         for tagm_flux, tagm_scaled_energy in zip(tagm_tagged_flux, tagm_scaled_energy_table):
             tagm_energy = float(photon_endpoint[0][0])*(float(tagm_scaled_energy[1])+float(tagm_scaled_energy[2]))/2.
-            if calibrated_endpoint:
+            if calibrated_endpoint and correctTAGM:
                 tagm_energy = float(photon_endpoint_calib[0][0])*(float(tagm_scaled_energy[1])+float(tagm_scaled_energy[2]))/2. + photon_endpoint_delta_E
 
             psAccept = fPSAcceptance.Eval(tagm_energy)
@@ -395,7 +402,7 @@ def main():
             if UNIFORM:
                 tagm_energy_low = float(photon_endpoint[0][0])*(float(tagm_scaled_energy[1]))
                 tagm_energy_high = float(photon_endpoint[0][0])*(float(tagm_scaled_energy[2]))
-                if calibrated_endpoint:
+                if calibrated_endpoint and correctTAGM:
                     tagm_energy_low = float(photon_endpoint_calib[0][0])*(float(tagm_scaled_energy[1])) + photon_endpoint_delta_E
                     tagm_energy_high = float(photon_endpoint_calib[0][0])*(float(tagm_scaled_energy[2])) + photon_endpoint_delta_E
 	
@@ -422,7 +429,7 @@ def main():
         previous_energy_scaled_low = 999. # keep track of low energy bin boundry to avoid overlaps
         for tagh_flux, tagh_scaled_energy in zip(tagh_tagged_flux, tagh_scaled_energy_table):
             tagh_energy = float(photon_endpoint[0][0])*(float(tagh_scaled_energy[1])+float(tagh_scaled_energy[2]))/2.
-            if calibrated_endpoint:
+            if calibrated_endpoint and correctTAGH:
                 tagh_energy = float(photon_endpoint_calib[0][0])*(float(tagh_scaled_energy[1])+float(tagh_scaled_energy[2]))/2. + photon_endpoint_delta_E
 
             psAccept = fPSAcceptance.Eval(tagh_energy)
@@ -432,7 +439,7 @@ def main():
             if UNIFORM:
                 tagh_energy_low = float(photon_endpoint[0][0])*(float(tagh_scaled_energy[1]))
                 tagh_energy_high = float(photon_endpoint[0][0])*(float(tagh_scaled_energy[2]))
-                if calibrated_endpoint:
+                if calibrated_endpoint and correctTAGH:
                     tagh_energy_low = float(photon_endpoint_calib[0][0])*(float(tagh_scaled_energy[1])) + photon_endpoint_delta_E
                     tagh_energy_high = float(photon_endpoint_calib[0][0])*(float(tagh_scaled_energy[2])) + photon_endpoint_delta_E
 
