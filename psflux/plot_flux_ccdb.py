@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Tool for creating flux histograms from CCDB (ver 0.2)
+# Tool for creating flux histograms from CCDB (ver 1.0)
 # Author: Justin Stevens (jrsteven@jlab.org)
 
 import os,sys
@@ -17,7 +17,7 @@ import ccdb
 from ccdb import Directory, TypeTable, Assignment, ConstantSet
 
 def LoadCCDB():
-    sqlite_connect_str = "mysql://ccdb_user@hallddb.jlab.org/ccdb"
+    sqlite_connect_str = "mysql://ccdb_user@hallddb-farm.jlab.org/ccdb"
     provider = ccdb.AlchemyProvider()                           # this class has all CCDB manipulation functions
     provider.connect(sqlite_connect_str)                        # use usual connection string to connect to database
     provider.authentication.current_user_name = "psflux_user"   # to have a name in logs
@@ -33,10 +33,75 @@ def loadCCDBContextList(runPeriod, restVer):
     conn=MySQLdb.connect(host=dbhost, user=dbuser, db=dbname)
     curs=conn.cursor()    
 
-    cmd = "SELECT revision,ccdb_context FROM version_info WHERE run_period=%s AND data_type='recon' AND revision<=%s ORDER BY revision DESC"
+    cmd = "SELECT revision,ccdb_context FROM version_info WHERE run_period=%s AND data_type='recon' AND revision=%s ORDER BY revision DESC"
     curs.execute(cmd, [runPeriod, restVer])
     rows=curs.fetchall()
     return rows
+
+def loadCCDBContextListAnalysis(runPeriod, anaVer):
+    dbhost = "hallddb.jlab.org"
+    dbuser = 'datmon'
+    dbpass = ''
+    dbname = 'data_monitoring'
+
+    conn=MySQLdb.connect(host=dbhost, user=dbuser, db=dbname)
+    curs=conn.cursor()    
+
+    cmd = "SELECT revision,ccdb_context FROM version_info WHERE run_period=%s AND data_type='ana' AND revision=%s ORDER BY revision DESC"
+    curs.execute(cmd, [runPeriod, anaVer])
+    rows=curs.fetchall()
+    return rows
+
+def getCCDBContext(run, RESTVERSION, ANALYSISVERSION):
+    
+    # special cases override the context: 
+    # - new energy calibration for later analysis launches
+    # - separate calibration timestamps for Spring and Summer 2020 (RunPeriod-2019-11)
+    contextOverride = ""
+
+    # get run period by run number
+    runPeriod = ""
+    if run < 20000: 
+        runPeriod = "RunPeriod-2016-02"
+    elif run < 40000:
+        runPeriod = "RunPeriod-2017-01"
+    elif run < 50000:
+        runPeriod = "RunPeriod-2018-01"
+    elif run < 60000: 
+        runPeriod = "RunPeriod-2018-08"
+    elif run < 70000:
+        runPeriod = "RunPeriod-2019-01"
+    elif run < 72436:
+        runPeriod = "RunPeriod-2019-11"
+    elif run < 80000:
+        runPeriod = "RunPeriod-2019-11"
+        # temporary override for context until batch-dependent values are accessible
+        contextOverride = "variation=default calibtime=2021-04-23-00-00-01"
+    
+    # retrieve context for REST production and Analysis launch from datmon DB
+    contextList = loadCCDBContextList(runPeriod,RESTVERSION)
+    contextListAnalysis = loadCCDBContextListAnalysis(runPeriod,ANALYSISVERSION)
+    
+    # get default JANA_CALIB_CONTEXT list for REST production from DB
+    context = contextList[0][1] 
+
+    # override JANA_CALIB_CONTEXT manually when DB is not correct
+    if contextOverride != "":
+        context = contextOverride
+
+    # override JANA_CALIB_CONTEXT list for Analysis launch from DB
+    if len(contextListAnalysis) > 0:
+        #print("Overriding calibration timestamp for Analysis Launch %d" % ANALYSISVERSION)
+        context = contextListAnalysis[0][1]
+
+    # properly format timestamp
+    startCalibTime = context.find("calibtime")
+    calibTimeString = context[startCalibTime+10:-1]
+    
+    # energy calibration time from REST production context
+    CALIBTIME_ENERGY = datetime.strptime(calibTimeString , "%Y-%m-%d-%H-%M-%S")
+
+    return CALIBTIME_ENERGY
 
 def PSAcceptance(x, par):
 
@@ -59,6 +124,7 @@ def main():
     VARIATION = "default"
     CALIBTIME = datetime.now()
     RESTVERSION = 999
+    ANALYSISVERSION = 999
 
     RCDB_QUERY_USER = RCDB_QUERY
     CALIBTIME_USER = CALIBTIME
@@ -82,7 +148,7 @@ def main():
     pp = pprint.PrettyPrinter(indent=4)
 
     # Define command line options
-    parser = OptionParser(usage = "plot_flux_ccdb.py --begin-run beginRun --end-run endRun")
+    parser = OptionParser(usage = "plot_flux_ccdb.py --begin-run beginRun --end-run endRun --rest restVersion --ana analysisLaunchVersion ")
     parser.add_option("-b","--begin-run", dest="begin_run",
                      help="Starting run for output")
     parser.add_option("-e","--end-run", dest="end_run",
@@ -105,6 +171,8 @@ def main():
 		     help="Uniform option")
     parser.add_option("-r","--rest-ver", dest="rest_ver",
                      help="REST version option")
+    parser.add_option("-v","--ana-ver", dest="ana_ver",
+                     help="Analysis Launch version option")
     parser.add_option("-l","--target-length", dest="length",
                      help="Target length (in cm)")
 
@@ -139,9 +207,17 @@ def main():
     if options.uniform:
         UNIFORM = True
     if options.rest_ver:
-        RESTVERSION = options.rest_ver
+        RESTVERSION = int(options.rest_ver)
+    if options.rest_ver:
+        ANALYSISVERSION = int(options.ana_ver)
     if options.length:
         TARGETLENGTH = float(options.length)
+
+    # require both REST and Analysis Launch version to be provided by user
+    if RESTVERSION == 999 or ANALYSISVERSION == 999:
+        print("ERROR: REST production version (-r, --rest-ver) or Analysis Launch version (-v, --ana-ver) not provided.  Try again after determining versions from Analysis Launch wiki pages:")
+        print("   https://halldweb.jlab.org/wiki-private/index.php/Spring_2017_Analysis_Launch")
+        quit()
 
     # Run-dependent defaults for RCDB query
     if RCDB_QUERY != RCDB_QUERY_USER:
@@ -156,42 +232,24 @@ def main():
     
     print("RCDB quergy = " + RCDB_QUERY)
 
-    # REST production dependent CCDB calibtime
-    if CALIBTIME != CALIBTIME_USER:
+    # REST productions which aren't the most recent require a fixed timestamp to retrieve their fluxes
+    if RESTVERSION == 3 and (int(options.begin_run)>30000 and int(options.begin_run)<40000):
+        CALIBTIME = datetime.strptime("2023-11-10-0-0-0" , "%Y-%m-%d-%H-%M-%S")
+
+    # Get REST production and Analysis launch dependent CCDB calibtime
+    if CALIBTIME_ENERGY != CALIBTIME_USER:
         CALIBTIME = CALIBTIME_USER
         CALIBTIME_ENERGY = CALIBTIME_USER
-    else: # get run period by run number
-        runPeriod = "test"
-        contextOverride = "test"
-        begin_run = int(options.begin_run)
-        if begin_run < 20000: 
-            runPeriod = "RunPeriod-2016-02"
-        elif begin_run < 40000:
-            runPeriod = "RunPeriod-2017-01"
-        elif begin_run < 50000:
-            runPeriod = "RunPeriod-2018-01"
-        elif begin_run < 60000: 
-            runPeriod = "RunPeriod-2018-08"
-        elif begin_run < 70000:
-            runPeriod = "RunPeriod-2019-01"
-        elif begin_run < 72436:
-            runPeriod = "RunPeriod-2019-11"
-        elif begin_run < 80000:
-            runPeriod = "RunPeriod-2019-11"
-            # temporary override for context until batch-dependent values are accessible
-            contextOverride = "variation=default calibtime=2021-04-23-00-00-01"
-        contextList = loadCCDBContextList(runPeriod,RESTVERSION)
-        RESTVERSION = contextList[0][0] # get REST version number from DB
-        context = contextList[0][1] # get full JANA_CALIB_CONTEXT list from DB
-        if contextOverride != "test":
-            context = contextOverride
-        startCalibTime = context.find("calibtime")
-        calibTimeString = context[startCalibTime+10:-1]
-        CALIBTIME_ENERGY = datetime.strptime(calibTimeString , "%Y-%m-%d-%H-%M-%S")
-        print("CCDB calibtime for energy to match REST ver%02d" % RESTVERSION + " = " + CALIBTIME_ENERGY.strftime("%Y-%m-%d-%H-%M-%S"))
+    else:
+        CALIBTIME_ENERGY = getCCDBContext(int(options.begin_run), RESTVERSION, ANALYSISVERSION)
+
+    # energy calibration time
+    print("CCDB calibtime for energy to match REST ver%02d and Analysis Launch ver%02d" % (RESTVERSION,ANALYSISVERSION) + " = " + CALIBTIME_ENERGY.strftime("%Y-%m-%d-%H-%M-%S"))
+
+    # flux calibration time
+    print("CCDB calibtime for flux = " + CALIBTIME.strftime("%Y-%m-%d-%H-%M-%S"))
 
     # Load CCDB
-    print("CCDB calibtime for flux = " + CALIBTIME.strftime("%Y-%m-%d-%H-%M-%S"))
     ccdb_conn = LoadCCDB()
 
     # Load RCDB
@@ -222,6 +280,8 @@ def main():
 
     # Loop over runs
     for run in runs:
+        print("==%d=="%run.number)
+
         if RCDB_POLARIZATION == "" and RCDB_POL_ANGLE != "":
             print("ERROR: polarization angle (option -a or --angle) specified, but polarization flag (option -p or --pol) was not. ")
             print("Please rerun and specify a polarization flag (PARA or PERP) while running")
@@ -240,7 +300,11 @@ def main():
             if RCDB_POL_ANGLE != "" and run.get_condition('polarization_angle').value != float(RCDB_POL_ANGLE):
                 continue
 
-        print("==%d=="%run.number)
+        # update CCDB context if required
+        CALIBTIME_ENERGY_NEW = getCCDBContext(run.number, RESTVERSION, ANALYSISVERSION)
+        if CALIBTIME_ENERGY_NEW != CALIBTIME_ENERGY:
+            CALIBTIME_ENERGY = CALIBTIME_ENERGY_NEW
+            print("Updating CCDB calibtime for energy to match REST ver%02d" % RESTVERSION + " = " + CALIBTIME_ENERGY.strftime("%Y-%m-%d-%H-%M-%S"))
         
 	# Set livetime scale factor
         livetime_ratio = 0.0
