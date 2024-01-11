@@ -44,15 +44,15 @@ void doadctimeoffsets(int Run){
   BARS_PER_PLANE = NPMTS/4;
   PMTS_PER_PLANE = NPMTS/2;
  
-  double LOLIM = -10.;
-  double HILIM = 10.;
+  double LOLIM = -20.;
+  double HILIM = 20.;
   
   TDiff  = new TH2D("TDiff",  "TDC_T - ADC_T", 
 		    NumPMTMax, 0., (double)NumPMTMax, 
-		    200, LOLIM, HILIM);
+		    400, LOLIM, HILIM);
   TDiffF = new TH2D("TDiffF","TDC_T - ADC_T", 
 		    NumPMTMax, 0., (double)NumPMTMax, 
-		    200, LOLIM*10., HILIM*10.);
+		    400, LOLIM*5., HILIM*5.);
   
   char fnam[128];
   char ROOTFILE[128];
