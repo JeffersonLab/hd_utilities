@@ -79,13 +79,14 @@ int main(int argc, char** argv){
   cout << "           -numNeutralHypos   [optional cut (<= cut)]   (default: -1 (no cut))" << endl;
   cout << "           -usePolarization   [get polarization angle from RCDB? 0 or 1]   (default: 0)" << endl;
   cout << "           -addPID    [include PID info in the output tree? 0 or 1]   (default: 1)" << endl;
+  cout << "           -addL1Trigger [include BCAL/FCAL energy for L1 Trigger? 0 or 1] (default: 0)" << endl;
   cout << "           -dirc [include PID information from the DIRC if available? 0 or 1] (default: 0)" << endl;
   cout << "           -flattenpi0 [flatten pi0s to just gamma gamma? 0 or 1]   (default: 0)" << endl;
   cout << "           -flatteneta [flatten etas to just gamma gamma? 0 or 1]   (default: 0)" << endl;
   cout << "           -addUnusedNeutrals  [include 4-vectors for unused neutrals? " << endl;
-  cout << "                                0 or number to include] (default: 0)" << endl;  
+  cout << "                                0 or number to include] (default: 0)" << endl;
   cout << "           -combos [ if there are multiple combos in an event with the same chi2, then " << endl;
-  cout << "                      0: keep all combos and print warnings (default) " << endl;  
+  cout << "                      0: keep all combos and print warnings (default) " << endl;
   cout << "                      1: keep only one combo in the output tree" << endl;
   cout << "                      2: keep all combos and suppress warnings ]" << endl;
   cout << "           -mcChecks  [check for baryon number violation, etc.," << endl;
@@ -134,6 +135,7 @@ int main(int argc, char** argv){
   bool gSafe = true;
   bool gUsePolarization = false;
   bool gAddPID = true;
+  bool gAddL1Trigger = false;
   bool gUseDIRC = false;
   bool gFlattenpi0 = false;
   bool gFlatteneta = false;
@@ -148,7 +150,7 @@ int main(int argc, char** argv){
     if ((argi == "-in")||(argi == "-out")||(argi == "-mc")||(argi == "-mctag")
         ||(argi == "-chi2")||(argi == "-RFDeltaT")||(argi == "-shQuality")||(argi == "-massWindows")
         ||(argi == "-numUnusedTracks")||(argi == "-usePolarization")||(argi == "-numUnusedNeutrals")
-        ||(argi == "-mcChecks")||(argi == "-addPID")||(argi == "-dirc")||(argi == "-flattenpi0")||(argi == "-flatteneta")
+        ||(argi == "-mcChecks")||(argi == "-addPID")||(argi == "-addL1Trigger")||(argi == "-dirc")||(argi == "-flattenpi0")||(argi == "-flatteneta")
         ||(argi=="-addUnusedNeutrals")||(argi == "-combos")
         ||(argi == "-numNeutralHypos")||(argi == "-safe")||(argi == "-print")){
       flag = argi;
@@ -168,6 +170,7 @@ int main(int argc, char** argv){
     if (flag == "-numNeutralHypos"){ gNumNeutralHyposCut = atoi(argi); }
     if (flag == "-usePolarization"){ if (argi == "1") gUsePolarization = true; }
     if (flag == "-addPID"){ if (argi == "0") gAddPID = false; }
+    if (flag == "-addL1Trigger"){if (argi == "1") gAddL1Trigger = true;}
     if (flag == "-dirc"){   if( argi == "1") gUseDIRC = true; }
     if (flag == "-flattenpi0"){ if (argi == "1") gFlattenpi0 = true; }
     if (flag == "-flatteneta"){ if (argi == "1") gFlatteneta = true; }
@@ -210,6 +213,7 @@ int main(int argc, char** argv){
   cout << "  numNeutralHypos cut:   " << gNumNeutralHyposCut << endl;
   cout << "  use polarization?      " << gUsePolarization << endl;
   cout << "  use PID?               " << gAddPID << endl;
+  cout << "  L1Trigger info?        " << gAddL1Trigger << endl;
   cout << "  use DIRC?              " << gUseDIRC << endl;
   cout << "  flatten pi0s?          " << gFlattenpi0 << endl;
   cout << "  flatten etas?          " << gFlatteneta << endl;
@@ -711,6 +715,13 @@ int main(int argc, char** argv){
       if (gUseParticles) gInTree->SetBranchAddress("NumUnusedTracks", &inNumUnusedTracks,&brNumUnusedTracks);
   Bool_t inIsThrownTopology = false;
       if (gUseParticles&&gUseMCParticles) gInTree->SetBranchAddress("IsThrownTopology", &inIsThrownTopology);
+      UInt_t inL1TriggerBits = 0;
+      if (gUseParticles) gInTree->SetBranchAddress("L1TriggerBits",&inL1TriggerBits);
+      Double_t inL1BCALEnergy = 0;
+      if (gUseParticles&&gAddL1Trigger) gInTree->SetBranchAddress("L1BCALEnergy",&inL1BCALEnergy);
+      Double_t inL1FCALEnergy = 0;
+      if (gUseParticles&&gAddL1Trigger) gInTree->SetBranchAddress("L1FCALEnergy",&inL1FCALEnergy);
+
 
 
         //   *** Beam Particles (indexed using ComboBeam__BeamIndex) ***
@@ -906,6 +917,9 @@ int main(int argc, char** argv){
   double outEnUnusedSh;       if (gUseParticles) gOutTree->Branch("EnUnusedSh",      &outEnUnusedSh);
   double outNumUnusedTracks;  if (gUseParticles) gOutTree->Branch("NumUnusedTracks", &outNumUnusedTracks);
   double outNumNeutralHypos;  if (gUseParticles) gOutTree->Branch("NumNeutralHypos", &outNumNeutralHypos);
+  double outL1TriggerBits;    if (gUseParticles) gOutTree->Branch("L1TriggerBits",   &outL1TriggerBits);
+  double outL1FCALEnergy;     if (gUseParticles && gAddL1Trigger) gOutTree->Branch("L1FCALEnergy",   &outL1FCALEnergy);
+  double outL1BCALEnergy;     if (gUseParticles && gAddL1Trigger) gOutTree->Branch("L1BCALEnergy",   &outL1BCALEnergy);
   double outPolarization;     if (gUsePolarization) gOutTree->Branch("PolarizationAngle", &outPolarization);
   double outNumBeam;          if (gUseParticles) gOutTree->Branch("NumBeam",         &outNumBeam);
   double outNumCombos;        if (gUseParticles) gOutTree->Branch("NumCombos",       &outNumCombos);
@@ -1006,7 +1020,7 @@ int main(int argc, char** argv){
           TString vQual("ShQualityP"); vQual += fsIndex; gOutTree->Branch(vQual, &outShQuality[pIndex]);
         }
         for (unsigned int iun = 0; iun < gAddUnusedNeutrals; iun++){
-          TString siun(""); siun += (iun+1); 
+          TString siun(""); siun += (iun+1);
           TString vPx("PxPUN");   vPx += siun;  gOutTree->Branch(vPx, &outPxUN [iun]);
           TString vPy("PyPUN");   vPy += siun;  gOutTree->Branch(vPy, &outPyUN [iun]);
           TString vPz("PzPUN");   vPz += siun;  gOutTree->Branch(vPz, &outPzUN [iun]);
@@ -1256,6 +1270,9 @@ int main(int argc, char** argv){
             double zT  = inTargetCenterZ;
         outRFDeltaT    = tB - (tRF + (zB - zT)/29.9792458);
         outEnUnusedSh  = inEnergy_Unused[ic];
+        outL1TriggerBits = inL1TriggerBits;
+        outL1BCALEnergy = inL1BCALEnergy;
+        outL1FCALEnergy = inL1FCALEnergy;
         outProdVx      = inX4_Production->X();
         outProdVy      = inX4_Production->Y();
         outProdVz      = inX4_Production->Z();
