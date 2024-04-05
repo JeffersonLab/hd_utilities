@@ -161,6 +161,6 @@ echo $command
 $command
 
 echo "Save test data"
-command="python update_db.py"
+command="python3 update_db.py"
 echo $command
 $command

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import MySQLdb
 import os
 import datetime
@@ -7,7 +7,7 @@ import datetime
 try:
     run = os.environ['RUN']
 except:
-    print "Could not find run number!  Exiting..."
+    print("Could not find run number!  Exiting...")
     #os.exit(0)
     run = 30480
 
