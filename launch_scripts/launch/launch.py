@@ -27,7 +27,7 @@ def try_command(command, sleeptime = 5):
 	while return_code != 0:
 		process = Popen(command.split(), stdout=PIPE)
 		output = process.communicate()[0] # is stdout. [1] is stderr
-		print(output)
+		print(output.decode())
 		return_code = process.returncode
 
 		if return_code == 0:
