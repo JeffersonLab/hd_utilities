@@ -173,28 +173,28 @@ class datamon_db:
     def InsertData(self, table_name, values):
         if(len(values) == 0):
             logging.warn('Trying to add data to DB without any data')
-        db_cmd = 'INSERT INTO ' + table_name + ' VALUES (' + " ".join(['%s,' for i in xrange(len(values)-1)]) +  ' %s)'
+        db_cmd = 'INSERT INTO ' + table_name + ' VALUES (' + " ".join(['%s,' for i in range(len(values)-1)]) +  ' %s)'
         if(self.verbose):
             logging.info(db_cmd + '  <--  ' + str(values))
         #print "Insert cmd = " + str(db_cmd)
         try:
             self.db.execute(db_cmd, values)
             self.db_conn.commit()
-        except(MySQLdb.Error, e):
+        except MySQLdb.Error as e:
             # right now, just print out errors
             self.print_mysql_error(e)
 
     def ReplaceData(self, table_name, values):
         if(len(values) == 0):
             logging.warn('Trying to add data to DB without any data')
-        db_cmd = 'REPLACE INTO ' + table_name + ' VALUES (' + " ".join(['%s,' for i in xrange(len(values)-1)]) +  ' %s)'
+        db_cmd = 'REPLACE INTO ' + table_name + ' VALUES (' + " ".join(['%s,' for i in range(len(values)-1)]) +  ' %s)'
         if(self.verbose):
             logging.info(db_cmd + '  <--  ' + str(values))
         #print "Insert cmd = " + str(db_cmd)
         try:
             self.db.execute(db_cmd, values)
             self.db_conn.commit()
-        except(MySQLdb.Error, e):
+        except MySQLdb.Error as e:
             # right now, just print out errors
             self.print_mysql_error(e)
 

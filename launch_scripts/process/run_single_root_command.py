@@ -21,8 +21,8 @@ if __name__ == "__main__":
     image_suffix = "png"   # which file format the image should be
     
     if len(args)<2:
-        print "Need to specify ROOT command !"
-        print ""
+        print("Need to specify ROOT command !")
+        print("")
         #parser.print_help()
         sys.exit(1)
 
@@ -39,7 +39,7 @@ if __name__ == "__main__":
         # try to open file if specified
         input_file = TFile(options.input_file)
         if input_file is None or input_file.IsZombie():
-            print "Could not open file: %s"%(options.input_file)
+            print("Could not open file: %s"%(options.input_file))
             sys.exit(1)
 
     # load library functions
@@ -47,9 +47,9 @@ if __name__ == "__main__":
 
     # run the actual command
     if "HALLD_RECON_HOME" not in os.environ:
-        print "HALLD_RECON_HOME not set!"
+        print("HALLD_RECON_HOME not set!")
     else:
-        print "Running commmand = " + root_command
+        print("Running commmand = " + root_command)
         hdmon_root_utils.run_root_commands([ root_command ])
 
     # save canvas

@@ -83,7 +83,7 @@ class summarize_monitoring_data:
         #    return   
 
         # calculate average number of hits in each superlayer
-        for superlayer in range(len(nstraws)/4):
+        for superlayer in range(int(len(nstraws)/4)):
             nhits = 0
             nstraw = 0
             for sublayer in range(4):
