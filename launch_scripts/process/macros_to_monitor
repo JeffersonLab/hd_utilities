@@ -4,6 +4,7 @@
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/BCAL_online/bcal_occupancy.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/BCAL_online/bcal_times.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/BCAL_online/bcal_shower.C
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/BCAL_online/bcal_hit_occupancy.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/BCAL_Eff/bcal_hist_eff.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/BCAL_inv_mass/bcal_inv_mass.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/BCAL_inv_mass/bcal_fcal_inv_mass.C
@@ -14,6 +15,9 @@
 # /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/BCAL_LED/ROOT_macros/Plot_BCAL_LED_Ratio_stack.C
 # CDC
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/CDC_online/CDC_occupancy.C
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/CDC_Efficiency/CDC_eff.C
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/CDC_dedx/CDC_dedx.C
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/fa125_itrig/HistMacro_fa125_itrig.C
 # FDC
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/FDC_online/FDC_P1_pseudo_occupancy.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/FDC_online/FDC_P2_pseudo_occupancy.C
@@ -24,6 +28,8 @@
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/FCAL_online/fcal_cluster_space.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/FCAL_online/fcal_hit_energy.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/FCAL_online/fcal_hit_timing.C
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/FCAL_invmass/fcal_invmass.C
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/FCAL_cpp/HistMacro_FCAL_cpp.C
 # SC
 #/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/ST_online_lowlevel/ST_Monitoring_Waveform_ch4.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/ST_online_lowlevel/ST_Monitoring_Multi.C 
@@ -45,10 +51,14 @@
 #/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/PSPair_online/TAG_2D_eff.C
 #/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/PSPair_online/TAG_eff.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/PSPair_online/HistMacro_PSTimingAlignment.C
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/Calibration/PS_timing/HistMacro_PSTiming.C
 # DIRC
-/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/DIRC_online/DIRC_hit.C
-/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/DIRC_online/DIRC_digihit.C
+# /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/occupancy_online/DIRC_occupancy.C
+# /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/occupancy_online/DIRC_North_occupancy.C
+# /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/DIRC_online/DIRC_hit.C
+# /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/DIRC_online/DIRC_digihit.C
 # CompCal
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/occupancy_online/CCAL_occupancy.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/CCAL_online/ccal_cluster_et.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/CCAL_online/ccal_cluster_space.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/CCAL_online/ccal_comp2.C
@@ -56,10 +66,14 @@
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/CCAL_online/ccal_dig_pedestal.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/CCAL_online/ccal_dig_pulse.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/CCAL_online/ccal_hit_energy.C
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/CCAL_online/ccal_monitor.C
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/primex-online/primex_elasticity.C
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/primex-online/primex_invmasses.C
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/primex-online/primex_millecious.C
 # TRD
-/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/TRD_online/TRD_hit.C
-/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/TRD_online/GEM_hit.C
-/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/Analysis/TRD_hists/TRD_extrap.C
+# /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/TRD_online/TRD_hit.C
+# /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/TRD_online/GEM_hit.C
+# /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/Analysis/TRD_hists/TRD_extrap.C
 # Trigger
 #/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/TRIG_online/trig_fcalbcal.C
 # RF
@@ -105,7 +119,7 @@
 # high-level monitoring plots
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/highlevel_online/HistMacro_Beam.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/highlevel_online/HistMacro_Kinematics.C
-/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/highlevel_online/HistMacro_NumHighLevelObjects.C
+# /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/highlevel_online/HistMacro_NumHighLevelObjects.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/highlevel_online/HistMacro_PID.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/highlevel_online/HistMacro_Trigger.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/highlevel_online/HistMacro_Vertex.C
@@ -124,9 +138,6 @@
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/occupancy_online/TAGGER_occupancy.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/occupancy_online/TOF_occupancy.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/occupancy_online/DigiHits_occupancy.C
-/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/occupancy_online/DIRC_occupancy.C
-/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/occupancy_online/DIRC_North_occupancy.C
-/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/occupancy_online/CCAL_occupancy.C
 # TRIGGER
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/L1_online/l1_ancilary.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/L1_online/l1_fcal_bcal.C
@@ -137,7 +148,17 @@
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/TrackingPulls/PlotCDCStrawResiduals.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/TrackingPulls/PlotCathodeResidualsLocal.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/TrackingPulls/PlotWireResidualsLocal.C
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/TrackingPulls/FDC_resi.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/Calibration/CDC_TimeToDistance/HistMacro_CDCTimeToDistance.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/Analysis/p2pi_hists/HistMacro_p2pi_KinFitPullsVsPhi_Proton.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/Analysis/p2pi_hists/HistMacro_p2pi_KinFitPullsVsPhi_PiPlus.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/Analysis/p2pi_hists/HistMacro_p2pi_KinFitPullsVsPhi_PiMinus.C
+# CPP
+# /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/FMWPC_online/FMWPC_occupancy.C
+# /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/FMWPC_online/FMWPC_energy.C
+# /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/FMWPC_online/CTOF_occupancy.C
+# /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/FMWPC_online/CTOF_energy.C
+# /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/cpp_itrig/HistMacro_cpp_itrig.C
+# /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/Analysis/cpp_hists/HistMacro_cpp.C
+# /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/Analysis/npp_hists/HistMacro_npp.C
+# /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/Calibration/HLDetectorTiming/HistMacro_TrackingTiming_CPP.C
