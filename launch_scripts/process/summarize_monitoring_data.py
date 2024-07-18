@@ -843,9 +843,9 @@ class summarize_monitoring_data:
             return   
 
         # calculate occupancy
-        for x in xrange(1,9):
+        for x in range(1,9):
             avg_hits_per_sector += [ psc_leftarm_occupancy.GetBinContent(x) ]
-        for x in xrange(1,9):
+        for x in range(1,9):
             avg_hits_per_sector += [ psc_rightarm_occupancy.GetBinContent(x) ]
 
         ## insert into DB
@@ -1147,7 +1147,7 @@ if __name__ == "__main__":
         if(os.path.isdir(options.output_dir)):
             summarizer.OUTPUT_DIRECTORY = options.output_dir
         else:
-            print "WARNING: Output directory '"+options.output_dir+"' does not exist, defaulting to current directory..."
+            print("WARNING: Output directory '"+options.output_dir+"' does not exist, defaulting to current directory...")
     if(options.root_dir):
         summarizer.ROOTDIR_PREFIX = options.root_dir
 

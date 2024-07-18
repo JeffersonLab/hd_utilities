@@ -305,11 +305,11 @@ if __name__ == "__main__":
         if(os.path.isdir(options.output_dir)):
             plotter.output_directory = options.output_dir
         else:
-            print "WARNING: Output directory '"+options.output_dir+"' does not exist, defaulting to current directory..."
+            print("WARNING: Output directory '"+options.output_dir+"' does not exist, defaulting to current directory...")
     if(options.canvas_size):
         (new_width,new_height) = options.canvas_size.split("x")
         if( not new_width or not new_height ):
-            print "Invalid canvas sizes specified, using defaults..."
+            print("Invalid canvas sizes specified, using defaults...")
         else:
             plotter.CANVAS_WIDTH  = int(new_width)
             plotter.CANVAS_HEIGHT = int(new_height)
