@@ -35,6 +35,7 @@ void doadctimeoffsets(int Run){
   TH2D *TDiff;
   TH2D *TDiffF;
 
+
   RunNumber = Run;
 
   NPMTS = 176;            // TOF 1 geometry
@@ -46,6 +47,8 @@ void doadctimeoffsets(int Run){
  
   double LOLIM = -20.;
   double HILIM = 20.;
+
+  TH1D *TDiffSingles[NPMTS];
   
   TDiff  = new TH2D("TDiff",  "TDC_T - ADC_T", 
 		    NumPMTMax, 0., (double)NumPMTMax, 
@@ -64,7 +67,7 @@ void doadctimeoffsets(int Run){
 
   // get TDC timing offsets
   sprintf(fnam,"calibration%d/tofpmt_tdc_offsets_all_FULL_run%d.DB",RunNumber,RunNumber);
-  cout<<"offsetfile: "<<fnam<<endl;
+  //cout<<"read TDC timing offsetfile: "<<fnam<<endl;
   ifstream INF;
   INF.open(fnam);
   double PMTOffsets[NumPMTMax];
@@ -354,7 +357,11 @@ void doadctimeoffsets(int Run){
 
     ADC_T_offsets[k] = 0.;
     //cout<<"bin "<<k+1<<endl;
-    TH1D *h = TDiffF->ProjectionY("h",k+1,k+1);
+    string hnamek = "histDt"+to_string(k);
+      TDiffSingles[k] = (TH1D*)TDiffF->ProjectionY(hnamek.c_str(),k+1,k+1)->Clone();
+    //    TH1D *h = TDiffF->ProjectionY("h",k+1,k+1);
+    TH1D *h = TDiffSingles[k];
+
     if (h->GetEntries()>100){
 
       char hnam1[128];
@@ -393,8 +400,8 @@ void doadctimeoffsets(int Run){
       pos = func->GetParameter(1);
       sig = func->GetParameter(2);
 
-      lowlim = pos - 1.2*sig;
-      higlim = pos + 1.2*sig;
+      lowlim = pos - 1.7*sig;
+      higlim = pos + 1.7*sig;
       if (lowlim < LOLIM){
 	lowlim = LOLIM;
       }
@@ -420,6 +427,7 @@ void doadctimeoffsets(int Run){
   }
 
   sprintf(fnam,"calibration%d/tdc_adc_time_offsets_run%d.DB",RunNumber,RunNumber);
+  cout<<"write ADC timing offsetfile: "<<fnam<<endl;
   ofstream OUTF;
   OUTF.open(fnam);
   for (int k=0;k<NPMTS;k++) {
@@ -429,10 +437,15 @@ void doadctimeoffsets(int Run){
   OUTF.close();
 
   sprintf(fnam,"calibration%d/tdc_adc_times_run%d.root",RunNumber,RunNumber);
+  cout<<"write root file with histograms and fit for ADC timing offsets: "<<fnam<<endl;
   TFile *RootF = new TFile(fnam, "RECREATE");
   RootF->cd();
   TDiff->Write();
   TDiffF->Write();
+  for (int k=0; k<NPMTS; k++){
+    TDiffSingles[k]->Write();
+  }
+
   RootF->Close();
 
 }
