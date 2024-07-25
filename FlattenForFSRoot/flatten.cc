@@ -731,6 +731,10 @@ int main(int argc, char** argv){
       if (gUseParticles) inChargedHypo__P4_Measured = new TClonesArray("TLorentzVector",MAXTRACKS);
       if (gUseParticles) gInTree->GetBranch       ("ChargedHypo__P4_Measured")->SetAutoDelete(kFALSE);
       if (gUseParticles) gInTree->SetBranchAddress("ChargedHypo__P4_Measured",&(inChargedHypo__P4_Measured));
+  TClonesArray *inChargedHypo__X4_Measured;
+      if (gUseParticles) inChargedHypo__X4_Measured = new TClonesArray("TLorentzVector",MAXTRACKS);
+      if (gUseParticles) gInTree->GetBranch       ("ChargedHypo__X4_Measured")->SetAutoDelete(kFALSE);
+      if (gUseParticles) gInTree->SetBranchAddress("ChargedHypo__X4_Measured",&(inChargedHypo__X4_Measured));
   Float_t inChargedHypo__ChiSq_Tracking[MAXTRACKS] = {};
       if (gUseParticles) gInTree->SetBranchAddress("ChargedHypo__ChiSq_Tracking", inChargedHypo__ChiSq_Tracking);
   UInt_t  inChargedHypo__NDF_Tracking[MAXTRACKS] = {};
@@ -953,6 +957,7 @@ int main(int argc, char** argv){
   double outPxUN[MAXPARTICLES]={}, outPyUN[MAXPARTICLES]={}, outPzUN[MAXPARTICLES]={}, outEnUN[MAXPARTICLES]={};
   double outVeeL[MAXPARTICLES]={}, outVeeLSigma[MAXPARTICLES]={};
   double outTkChi2[MAXPARTICLES]={}, outTkNDF[MAXPARTICLES]={};
+  double outTkVx[MAXPARTICLES]={}, outTkVy[MAXPARTICLES]={}, outTkVz[MAXPARTICLES]={};
   double outTkDEDXChi2[MAXPARTICLES]={}, outTkDEDXNDF[MAXPARTICLES]={};
   double outTkDEDXCDC[MAXPARTICLES]={}, outTkDEDXFDC[MAXPARTICLES]={};
   double outTkTOFBeta[MAXPARTICLES]={}, outTkTOFChi2[MAXPARTICLES]={};
@@ -984,6 +989,9 @@ int main(int argc, char** argv){
         if (GlueXParticleClass(name) == "Charged"){
           TString vTkNDF("TkNDFP");   vTkNDF  += fsIndex; gOutTree->Branch(vTkNDF, &outTkNDF [pIndex]);
           TString vTkChi2("TkChi2P"); vTkChi2 += fsIndex; gOutTree->Branch(vTkChi2,&outTkChi2[pIndex]);
+          TString vTkVx("TkVxP");     vTkVx   += fsIndex; gOutTree->Branch(vTkVx,&outTkVx[pIndex]);
+          TString vTkVy("TkVyP");     vTkVy   += fsIndex; gOutTree->Branch(vTkVy,&outTkVy[pIndex]);
+          TString vTkVz("TkVzP");     vTkVz   += fsIndex; gOutTree->Branch(vTkVz,&outTkVz[pIndex]);
         }
         if (gAddPID && GlueXParticleClass(name) == "Charged"){
           TString vTkTOFBeta ("TkTOFBetaP");  vTkTOFBeta  += fsIndex; gOutTree->Branch(vTkTOFBeta, &outTkTOFBeta[pIndex]);
@@ -1053,6 +1061,7 @@ int main(int argc, char** argv){
     if (gUseParticles) inBeam__P4_Measured->Clear();
     if (gUseParticles) inBeam__X4_Measured->Clear();
     if (gUseParticles) inChargedHypo__P4_Measured->Clear();
+    if (gUseParticles) inChargedHypo__X4_Measured->Clear();
     if (gUseParticles) inNeutralHypo__P4_Measured->Clear();
     if (gUseParticles && gUseKinFit) inBeam__P4_KinFit->Clear();
     if (gUseParticles && gUseKinFitVtx) inBeam__X4_KinFit->Clear();
@@ -1304,12 +1313,16 @@ int main(int argc, char** argv){
           }
           if (gUseParticles){
             p4 = (TLorentzVector*)inChargedHypo__P4_Measured->At(inChargedIndex[pIndex][ic]);
-            outRPx[pIndex] = p4->Px();
+              outRPx[pIndex] = p4->Px();
               outRPy[pIndex] = p4->Py();
               outRPz[pIndex] = p4->Pz();
               outREn[pIndex] = p4->E();
               outTkNDF [pIndex] = inChargedHypo__NDF_Tracking  [(inChargedIndex[pIndex][ic])];
               outTkChi2[pIndex] = inChargedHypo__ChiSq_Tracking[(inChargedIndex[pIndex][ic])];
+            x4 = (TLorentzVector*)inChargedHypo__X4_Measured->At(inChargedIndex[pIndex][ic]);
+              outTkVx[pIndex] = x4->X();
+              outTkVy[pIndex] = x4->Y();
+              outTkVz[pIndex] = x4->Z();
             if (gAddPID){
               outTkTOFBeta[pIndex] = inBeta_Timing[pIndex][ic];
               outTkTOFChi2[pIndex] = inChiSq_Timing[pIndex][ic];
