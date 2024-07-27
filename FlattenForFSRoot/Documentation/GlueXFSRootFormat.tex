@@ -78,19 +78,29 @@ The ``Event Information'' variables contain information about the event as a who
   PyPB:           "
   PzPB:           "
   EnPB:           "
+  VxPB:           "
+  VyPB:           "
+  VzPB:           "
   RPxPB:        measured beam parameters
   RPyPB:          "
   RPzPB:          "
   REnPB:          "
+  RVxPB:          "
+  RVyPB:          "
+  RVzPB:          "
   MCPxPB:       thrown beam parameters (MC only)
   MCPyPB:         "
   MCPzPB:         "
   MCEnPB:         "
+  MCEnergy:       "
+  MCVxPB:         "
+  MCVyPB:         "
+  MCVzPB:         "
 \end{verbatim}
 
 
 
-\section{Particle Four-Momenta}
+\section{Particle Four-Momenta and Vertices}
 \label{sec:nt:momentum}
 
 The ``Particle Four-Momenta'' variables contain the four-momentum for each particle in the final state:
@@ -102,9 +112,17 @@ The ``Particle Four-Momenta'' variables contain the four-momentum for each parti
   (prefix)EnP(n):  energy of particle (n)
 \end{verbatim}
 
-Different types of four-momenta are distinguished using prefixes.  Raw four-momenta have a prefix~{\tt R}; the final four-momenta (the fully-constrained four-momenta resulting from the kinematic fit) have no prefix; MC truth information have a prefix~{\tt MC}.
+The vertices for all non-decaying final state particles (including $\pi^\pm$, $\gamma$, etc., but not including decaying particles like $K_S$ or $\pi^0$) are also kept:
 
-Different particles are differentiated using the postfix {\tt P(n)}, where {\tt (n)} is the number of the particle in the ordered list.  Four-momenta for secondaries originating from particle~{\tt (n)}, such as the two $\gamma$'s from a $\pi^0$, are recorded using {\tt P(n)a} and {\tt P(n)b}, where the ordering follows the same conventions as above, or, in the case of identical daughter particles, no ordering is assumed.  As two examples: in the process $\gamma p \to\pi^+\pi^-J/\psi p; J/\psi\to\mu^+\mu^-$, the raw energy of the $\pi^+$ is given by {\tt REnP4}; and in the process $\gamma p \to \pi^+\pi^-J/\psi p; J/\psi\to\pi^+\pi^-\pi^0$, the y-momentum of a photon from the $\pi^0$ decay, after the kinematic fit, is given by {\tt PyP6b}.
+\begin{verbatim}
+  (prefix)VxP(n):  x vertex of particle (n)
+  (prefix)VyP(n):  y vertex of particle (n)
+  (prefix)VzP(n):  z vertex of particle (n)
+\end{verbatim}
+
+Different types of four-momenta and vertices are distinguished using prefixes.  Raw (i.e. measured) values have a prefix~{\tt R}; final (i.e. kinematically fit) values have no prefix; MC truth information have a prefix~{\tt MC}.
+
+Different particles are differentiated using the postfix {\tt P(n)}, where {\tt (n)} is the number of the particle in the ordered list.  Four-momenta and vertices for secondaries originating from particle~{\tt (n)}, such as the two $\gamma$'s from a $\pi^0$, are recorded using {\tt P(n)a} and {\tt P(n)b}, where the ordering follows the same conventions as above, or, in the case of identical daughter particles, no ordering is assumed.  As two examples: in the process $\gamma p \to\pi^+\pi^-J/\psi p; J/\psi\to\mu^+\mu^-$, the raw energy of the $\pi^+$ is given by {\tt REnP4}; and in the process $\gamma p \to \pi^+\pi^-J/\psi p; J/\psi\to\pi^+\pi^-\pi^0$, the y-momentum of a photon from the $\pi^0$ decay, after the kinematic fit, is given by {\tt PyP6b}.
 
 
 
@@ -116,9 +134,6 @@ Track information is written out for every reconstructed track that is part of a
 \begin{verbatim}
   TkChi2P(n):   chi2 of the track fit
   TkNDFP(n):    number of degrees of freedom for the track fit
-  TkVxP(n):     x position of the measured track vertex
-  TkVyP(n):     y position of the measured track vertex
-  TkVzP(n):     z position of the measured track vertex
 \end{verbatim}
 
 If PID information is requested, the following variables are added to the tree:
