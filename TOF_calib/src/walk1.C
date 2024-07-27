@@ -42,7 +42,9 @@ int PMTS_PER_PLANE = 0;
 
 
 float CenterTime = 69.;
-
+//
+// main start function walk1()
+//
 void walk1(int Run){
   RunNumber = Run;
   NPMTS = 176;            // TOF 1 geometry
@@ -294,6 +296,10 @@ void walk1(int Run){
   double FitPar[NumPMTMax][17];
   double allp[17];
   double CHI2[NumPMTMax];
+
+  //
+  // loop over PMTs and apply fit to data with fit function defined in fithist()
+  //
   for (int n=0; n<NPMTS; n++){
     TH1F *hpjy = (TH1F*)Twalk[n]->ProjectionY("hpjy", 195, 195);
     if (((Twalk[n]->GetEntries()>100) || hpjy->GetEntries()>10) ){
@@ -418,8 +424,10 @@ void walk1(int Run){
 }
 
 double fithist(TH2F *hist, double *allp, int plane, int paddle, int side, int idx){
-
-  // make profile plot from hist
+  
+  //
+  // make profile plot from histogram "hist"
+  //
   TGraphErrors *graph = mkprof(hist, idx);
   onedplots[idx] = graph;
   
@@ -429,39 +437,60 @@ double fithist(TH2F *hist, double *allp, int plane, int paddle, int side, int id
   TF1 *f2 = new TF1("f2", "[0] +  [1]*x", 1500., 4000.);
   TF1 *F2 = new TF1("F2", "[0] +  [1]*x", 1500., 4000.);
   
-  f1->SetParameter(0, 1.);
-  f1->SetParameter(1, 1.);
-  f1->SetParameter(2, 1.);
-  f1->SetParameter(3, 1.);
-  f1->SetParameter(4, 1.);
-  
+  f1->SetParameter(0, 0.);
+  f1->SetParameter(1, -100.);
+  f1->SetParameter(2, 1000.);
+  f1->SetParameter(3, -1.e8);
+  f1->SetParameter(4, 10.);
+
   cout<<"Fit f1 for PMT: "<<idx<<endl;
   // get 3rd bin in X of the graph
   double ax, ay;
   graph->GetPoint(2, ax, ay);
   f1->SetParLimits(0,-100, ay+(TMath::Abs(ay)*0.5));
+
+  // set range limits for fit parameters [1] to [4]
+  f1->SetParLimits(1, -10000000., 0.);
+  f1->SetParLimits(2, 0., 10000000.);
+  f1->SetParLimits(3, -10e10, 0.);
+  f1->SetParLimits(4, 0., 10000. );
+  
   float f1limit = ax-1.;
   cout<<"start fit at "<<ax<<endl;
   TFitResultPtr res = (TFitResultPtr)graph->Fit(f1, "SQ", "R", f1limit, 3900.);
   double Chi2 = res->Chi2() / res->Ndf(); 
   cout<<"chi2 = "<<Chi2<<endl;
-  if (Chi2>100){
+  if (Chi2>500){
     f1->SetParameter(0, -2.7);
-    f1->SetParameter(1, 1.);
-    f1->SetParameter(2, 1.);
-    f1->SetParameter(3, 1.);
-    f1->SetParameter(4, 1.);
-    res = (TFitResultPtr)graph->Fit(f1, "SQ", "R", f1limit, 3000.);
+    f1->SetParameter(1, -100.);
+    f1->SetParameter(2, 1000.);
+    f1->SetParameter(3, -1.e8);
+    f1->SetParameter(4, 10.);
+    f1->SetParLimits(1, -10000000., 0.);
+    f1->SetParLimits(2, 0., 10000000.);
+    f1->SetParLimits(3, -10e10, 0.);
+    f1->SetParLimits(4, 0., 10000. );
+
+    //res = (TFitResultPtr)graph->Fit(f1, "SQ", "R", f1limit*.95, 3000.);
+    res = (TFitResultPtr)hist->Fit(f1,"SQ", "R", f1limit, 3000);
+    hist->Draw();
+    gPad->Update();
+    //getchar();
     Chi2 = res->Chi2() / res->Ndf(); 
     cout<<"SECOND ROUND FIT: chi2 = "<<Chi2<<endl;
   }
   if (Chi2>1000){
     f1->SetParameter(0, -2.7);
-    f1->SetParameter(1, 1.);
-    f1->SetParameter(2, 1.);
-    f1->SetParameter(3, 1.);
-    f1->SetParameter(4, 1.);
-    res = (TFitResultPtr)graph->Fit(f1, "SQ", "R", f1limit, 1500.);
+    f1->SetParLimits(1, -10000000., 0.);
+    f1->SetParLimits(2, 0., 10000000.);
+    f1->SetParLimits(3, -10e10, 0.);
+    f1->SetParLimits(4, 0., 10000. );
+
+    //res = (TFitResultPtr)graph->Fit(f1, "SQ", "R", f1limit*0.95, 2000.);
+    res = (TFitResultPtr)hist->Fit(f1, "SQ", "R", f1limit, 2000.);
+    hist->Draw();
+    gPad->Update();
+    //getchar();
     Chi2 = res->Chi2() / res->Ndf(); 
     cout<<"THIRD ROUND FIT: chi2 = "<<Chi2<<endl;
   }
@@ -482,22 +511,26 @@ double fithist(TH2F *hist, double *allp, int plane, int paddle, int side, int id
     getchar();
   }
 
-  f2->SetParameter(0, 1.);
-  f2->SetParameter(1, -0.001);
-  int nbins = graph->GetN();
-  graph->GetPoint(nbins-1, ax, ay);
-  if (ax<2000.){
-    for (int k=0;k<2;k++){
-      allp[2*k+10] = 0.;
-      allp[2*k+1+10] = 0.;
-      AllFits[1][idx] = (TF1*)f2->Clone();
-      allp[15] = f1limit;
-      allp[14] = Chi2;
+
+  if (0) {
+    f2->SetParameter(0, 1.);
+    f2->SetParameter(1, -0.001);
+    int nbins = graph->GetN();
+    graph->GetPoint(nbins-1, ax, ay);
+    if (ax<2000.){
+      for (int k=0;k<2;k++){
+	allp[2*k+10] = 0.;
+	allp[2*k+1+10] = 0.;
+	AllFits[1][idx] = (TF1*)f2->Clone();
+	allp[15] = f1limit;
+	allp[14] = Chi2;
+      }
+      return Chi2;
     }
-    return Chi2;
   }
 
-  return Chi2;
+  return Chi2; // never go passt here anymore
+
   cout<<"Fit f2 for PMT: "<<idx<<endl;
   TFitResultPtr res1 = graph->Fit(f2, "SQ", "R", 2000, 3900.);
   Chi2 += res->Chi2() / res->Ndf(); 

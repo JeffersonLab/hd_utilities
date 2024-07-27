@@ -1,25 +1,25 @@
 #!/bin/sh
-hosts="jlabl4 ifarm1901"
+hosts="ifarm1901 sandd1 ifarm9"
 date_token=`date +%F`
-date_file=/u/scratch/$USER/b1pi_date.txt
+date_file=/volatile/halld/$USER/b1pi_date.txt
 rm -fv $date_file
 echo $date_token > $date_file
-RUN_DIR=/u/scratch/$USER/b1pi/$date_token
+RUN_DIR=/volatile/halld/$USER/b1pi/$date_token
 mkdir -pv $RUN_DIR
 webdir=/group/halld/www/halldweb/html/b1pi/$date_token
-mkdir -pv $webdir
+mkdir -pv -m755 $webdir
 for host in $hosts
 do
     echo host = $host
-    logfile=/u/scratch/$USER/b1pi_$host.log
+    logfile=/volatile/halld/$USER/b1pi_$host.log
     echo logfile = $logfile \(https://halldweb.jlab.org/b1pi/$date_token/b1pi_${host}.log\)
     rm -fv $logfile
     # the following ssh executes the command associated with the
-    # /home/gluex/.ssh/b1pi_cron.pub key in
+    # /home/gluex/.ssh/b1pi_cron_rsa.pub key in
     # /home/gluex/.ssh/authorized_keys. That command should be
     # /group/halld/Software/scripts/b1pi_test/b1pi_cron_one.sh
     ( \
-    env -u SSH_AUTH_SOCK ssh -i ~/.ssh/b1pi_cron $host > $logfile 2>&1 \
+    env -u SSH_AUTH_SOCK ssh -i ~/.ssh/b1pi_cron_alma9 $host > $logfile 2>&1 \
     ; \
     mv -v $logfile $webdir \
     ) &

@@ -4,6 +4,11 @@ set RUN = $1
 
 mkdir calibration$RUN
 
+# first determine PEDESTALS
+echo "executing dopedestals.C"
+root -b -q "src/dopedestals.C($RUN)"
+echo 
+
 # do walk correction
 echo "executing walk1.C"
 root -b -q "src/walk1.C++($RUN)" >& calibration$RUN/walkfit.log
@@ -17,7 +22,7 @@ echo "executing domeantime.csh in bg"
 set PID = $!
 
 # calculate time differences
-echo "executing domeantime.csh in fg"
+echo "executing dotimediff.csh in fg"
 ./dotimediff.csh $RUN >& deltat.log
 
 while ( `ps -p "$PID" | wc -l` > 1 )

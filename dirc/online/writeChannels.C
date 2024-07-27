@@ -22,7 +22,7 @@ pixel::pixel(int locMod, int locChan, int locSlot, int locFiber, int locRow, int
 }
 
 void writeChannels(int run = 71311, int DAC = 100, bool unityGain = false, bool minGain = false, bool equalizeTOT = false) {
-    
+   
     gStyle->SetOptStat(11111111);
     gSystem->Exec("mkdir -p maps");
     gSystem->Exec("mkdir -p config");
@@ -91,7 +91,7 @@ void writeChannels(int run = 71311, int DAC = 100, bool unityGain = false, bool 
         int channel, pedestalMean, integral5sigma;
         double pedestalWidth, scale, mu, chi2ndf;
         while (inFile >> channel >> pedestalMean >> pedestalWidth >> integral5sigma >> scale >> mu >> chi2ndf) {
-            //cout << channel << " " << scale << endl;
+	    // cout << channel << " " << scale << endl;
             
             if(scale < 1 && mu != 0) { // hard code channels where fits didn't converge for low scales
                 scale = 60;
@@ -223,7 +223,7 @@ void writeChannels(int run = 71311, int DAC = 100, bool unityGain = false, bool 
     hPedestalMean->Draw();
     cc->cd(4);
     hPedestalWidth->Draw();
-    cc->Print("diagnostic1D.png");
+    //cc->Print("diagnostic1D.png");
 
     // check size of pixel vector
     //cout<<pixels.size()<<endl;
@@ -353,7 +353,7 @@ void writeChannels(int run = 71311, int DAC = 100, bool unityGain = false, bool 
         efficfile<<effic[i+6912]<<endl;
     efficfile.close();
     
-    
+    cout<<"fill MAROC calib file (will take a couple minutes...)"<<endl; 
         
     // loop to fill MAROC calibration file
     ofstream configfile;

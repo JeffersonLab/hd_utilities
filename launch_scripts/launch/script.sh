@@ -43,6 +43,15 @@ Setup_Script()
             echo "JANA_CALIB_URL: " $JANA_CALIB_URL
 	fi
 
+	if [[ $INPUTFILE  == *"tar" ]] ; then
+	    # extract and flatten directories
+	    tar xvf $INPUTFILE --transform='s/.*\///'
+	    rm $INPUTFILE
+	    # update input files
+	    export INPUTFILE=${INPUTFILE/.hddm.tar/_*.hddm}
+	    echo INPUTFILE = $INPUTFILE
+	fi
+
 	# LIST WORKING DIRECTORY
 	echo "LOCAL FILES"
 	ls -l
