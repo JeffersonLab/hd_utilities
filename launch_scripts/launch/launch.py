@@ -15,6 +15,7 @@ import time
 import glob
 import re
 import time
+import math
 from subprocess import Popen, PIPE
 
 VERBOSE = False
@@ -318,11 +319,13 @@ def main(argv):
 	parser_usage = "launch.py job_configfile minrun maxrun\n\n"
 	parser_usage += "optional: -f file_num: file_num must be 3 digits, with leading 0's if necessary)\n"
 	parser_usage += "          but, it can be a search string for glob (e.g. first 5 files: -f '00[0-4]' (MUST include quotes!))\n\n"
+	parser_usage += "optional: -s N: process N evenly-spaced files for each run\n\n"
 	parser_usage += "optional: -v True: verbose output\n\n"
 	parser = OptionParser(usage = parser_usage)
 
 	# PARSER OPTIONS
 	parser.add_option("-f", "--file", dest="file", help="specify file(s) to run over")
+	parser.add_option("-s", "--space", dest="space", help="process N evenly-spaced files")
 	parser.add_option("-v", "--verbose", dest="verbose", help="verbose output")
 
 	# GET ARGUMENTS
@@ -337,6 +340,7 @@ def main(argv):
 	MAXRUN = int(args[2])
 	VERBOSE = True if(options.verbose) else False
 	INPUT_FILE_NUM = options.file if(options.file) else "*" #must be three digits, with leading 0's if necessary
+	EVENLY_SPACED_FILES = int(options.space) if(options.space) else 0
 
 	# READ CONFIG
 	config_dict = read_config(JOB_CONFIG_FILE)
@@ -377,6 +381,17 @@ def main(argv):
 
 		if(VERBOSE == True):
 			print(str(len(file_list)) + " files found for run " + str(RUN))
+
+		file_list.sort()
+
+                # Remove elements ending with ".tar"
+		file_list = [item for item in file_list if not item.endswith(".tar")]
+
+		if(options.space):
+                        # Select N evenly spaced entries
+		        step_size = max(1,int(math.ceil(len(file_list)/EVENLY_SPACED_FILES)))  # Ensure the step size is at least 1
+                        #print(len(file_list),step_size)
+		        file_list = file_list[:step_size*EVENLY_SPACED_FILES:step_size]
 
 		# Add jobs to workflow
 		for FILEPATH in file_list:
