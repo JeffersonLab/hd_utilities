@@ -29,14 +29,14 @@ def try_command(command, sleeptime = 5):
 	while return_code != 0:
 		process = Popen(command.split(), stdout=PIPE)
 		output = process.communicate()[0].decode('ASCII') # is stdout. [1] is stderr
-		print output
+		print(output)
 		return_code = process.returncode
 
 		if return_code == 0:
 			break #successful: leave
 
 		# sleep for a few seconds between tries
-		print 'sleeping for ' + str(sleeptime) + ' sec...'
+		print('sleeping for ' + str(sleeptime) + ' sec...')
 		time.sleep(sleeptime)
 
 ####################################################### READ CONFIG ######################################################
@@ -65,7 +65,7 @@ def read_config(CONFIG_FILENAME):
 			value = value[1:-1]
 		config_dict[key] = value
 		if(VERBOSE > 0):
-			print "Job Config key, value = " + key + " " + value
+			print("Job Config key, value = " + key + " " + value)
 
 	# Some of the keys may depend on other configuration parameters, so update the values
 	# containing [key] within the values corresponding to those keys.
@@ -113,42 +113,42 @@ def validate_config(config_dict):
 
 	# JOB ACCOUNTING
 	if("PROJECT" not in config_dict) or ("TRACK" not in config_dict) or ("OS" not in config_dict):
-		print "ERROR: JOB ACCOUNTING NOT FULLY SPECIFIED IN CONFIG FILE. ABORTING"
+		print("ERROR: JOB ACCOUNTING NOT FULLY SPECIFIED IN CONFIG FILE. ABORTING")
 		sys.exit(1)
 
 	# JOB RESOURCES
 	if("NCORES" not in config_dict) or ("DISK" not in config_dict) or ("RAM" not in config_dict) or ("TIMELIMIT" not in config_dict):
-		print "ERROR: JOB RESOURCES NOT FULLY SPECIFIED IN CONFIG FILE. ABORTING"
+		print("ERROR: JOB RESOURCES NOT FULLY SPECIFIED IN CONFIG FILE. ABORTING")
 		sys.exit(1)
 
 	# WORKFLOW DEFINITION
 	if("WORKFLOW" not in config_dict):
-		print "ERROR: WORKFLOW DEFINITION NOT FULLY SPECIFIED IN CONFIG FILE. ABORTING"
+		print("ERROR: WORKFLOW DEFINITION NOT FULLY SPECIFIED IN CONFIG FILE. ABORTING")
 		sys.exit(1)
 
 	# JOB, SCRIPT CONTROL
 	if("ENVFILE" not in config_dict) or ("SCRIPTFILE" not in config_dict):
-		print "ERROR: JOB, SCRIPT CONTROL NOT FULLY SPECIFIED IN CONFIG FILE. ABORTING"
+		print("ERROR: JOB, SCRIPT CONTROL NOT FULLY SPECIFIED IN CONFIG FILE. ABORTING")
 		sys.exit(1)
 
 	# FILE INPUT, OUTPUT BASE DIRECTORIES
 	if("INDATA_TOPDIR" not in config_dict) or ("OUTDIR_LARGE" not in config_dict) or ("OUTDIR_SMALL" not in config_dict):
-		print "ERROR: FILE INPUT, OUTPUT BASE DIRECTORIES NOT FULLY SPECIFIED IN CONFIG FILE. ABORTING"
+		print("ERROR: FILE INPUT, OUTPUT BASE DIRECTORIES NOT FULLY SPECIFIED IN CONFIG FILE. ABORTING")
 		sys.exit(1)
 
 	# CHECK FILE EXISTENCE
 	if(not os.path.isfile(config_dict["ENVFILE"])): #Check if ENVFILE exists
 		# Also accept ENVFILE if it is an xml file found in standard group disk location
 		if(not os.path.isfile("/group/halld/www/halldweb/html/halld_versions/"+config_dict["ENVFILE"])): #
-			print "ERROR: ENVFILE does not exist (or is inaccessible) \n ENVFILE: " + config_dict["ENVFILE"]
+			print("ERROR: ENVFILE does not exist (or is inaccessible) \n ENVFILE: " + config_dict["ENVFILE"])
 			sys.exit(1)
 	if(not os.path.isfile(config_dict["SCRIPTFILE"])):
-		print "ERROR: SCRIPTFILE does not exist (or is inaccessible) \n SCRIPTFILE: " + config_dict["SCRIPTFILE"]
+		print("ERROR: SCRIPTFILE does not exist (or is inaccessible) \n SCRIPTFILE: " + config_dict["SCRIPTFILE"])
 		sys.exit(1)
 
 	# CHECK INPUT FOLDER EXISTENCE
 	if(not os.path.isdir(config_dict["INDATA_TOPDIR"])):
-		print "ERROR: INDATA_TOPDIR does not exist! \n INDATA_TOPDIR: " + config_dict["INDATA_TOPDIR"]
+		print("ERROR: INDATA_TOPDIR does not exist! \n INDATA_TOPDIR: " + config_dict["INDATA_TOPDIR"])
 		sys.exit(1)
 
 	# CHECK OUTPUT (LARGE) FOLDER EXISTENCE
@@ -158,10 +158,10 @@ def validate_config(config_dict):
 		make_large_dir = "mkdir -p " + NEW_DIR
 		try_command(make_large_dir)
 		if(VERBOSE == True):
-			print "OUTDIR_LARGE " + make_large_dir + " CREATED"
+			print("OUTDIR_LARGE " + make_large_dir + " CREATED")
 	# If creating OUTDIR_LARGE unsuccessful, we should exit
 	if(not os.path.isdir(config_dict["OUTDIR_LARGE"])):
-		print "ERROR: OUTDIR_LARGE does not exist and could not be created \n OUTDIR_LARGE: " + config_dict["OUTDIR_LARGE"]
+		print("ERROR: OUTDIR_LARGE does not exist and could not be created \n OUTDIR_LARGE: " + config_dict["OUTDIR_LARGE"])
 		sys.exit(1)
 
 	# CHECK OUTPUT (SMALL) FOLDER EXISTENCE
@@ -171,10 +171,10 @@ def validate_config(config_dict):
 		make_log_dir = "mkdir -p " + LOG_DIR
 		try_command(make_log_dir)
 		if(VERBOSE == True):
-			print "LOG DIRECTORY " + LOG_DIR + " CREATED"
+			print("LOG DIRECTORY " + LOG_DIR + " CREATED")
 	# If creating OUTDIR_SMALL unsuccessful, we should exit
 	if(not os.path.isdir(config_dict["OUTDIR_SMALL"])):
-		print "ERROR: OUTDIR_SMALL does not exist and could not be created \n OUTDIR_SMALL: " + config_dict["OUTDIR_SMALL"]
+		print("ERROR: OUTDIR_SMALL does not exist and could not be created \n OUTDIR_SMALL: " + config_dict["OUTDIR_SMALL"])
 		sys.exit(1)
 
 ################################################### BUILD DICTIONARIES ###################################################
@@ -182,30 +182,30 @@ def validate_config(config_dict):
 def build_launch_dictionary(WORKFLOW):
 	command = "/usr/local/bin/swif2 status -workflow " + WORKFLOW + " -jobs"
 	if VERBOSE > 1:
-		print command
+		print(command)
 	process = Popen(command.split(), stdout=PIPE)
 	status_output = process.communicate()[0].decode('ASCII') # is stdout. [1] is stderr
 	return_code = process.returncode
 	if return_code != 0:
-		print "swif2 status bad return code, exiting"
+		print("swif2 status bad return code, exiting")
 		sys.exit()
 
 	if VERBOSE > 99:
-		print status_output
+		print(status_output)
 
 	# Build a dictionary of all the jobs in the workflow:
 	job_dictionary = defaultdict(int) # Run string, list of file strings
 	run_string = "-1"
-        run_done = 1
-        job_results = "-1"
+	run_done = 1
+	job_results = "-1"
 	for line in status_output.splitlines():
 		if VERBOSE > 9:
-                        print line
-                if(len(line.split()) < 3):
+                        print(line)
+		if(len(line.split()) < 3):
 			continue
 		field = line.split()[0]
 
-                if (field == "run_number"):
+		if (field == "run_number"):
                         # ... but if job was not successful, set back to 0
                         if run_string != "-1":
                                 job_dictionary[run_string] *= run_done
@@ -218,37 +218,37 @@ def build_launch_dictionary(WORKFLOW):
                                 job_dictionary[run_string] = 1
 
 
-                elif (field == "slurm_exitcode"):
+		elif (field == "slurm_exitcode"):
 			job_result = line.split()[2]
-                        if (job_result == "0"):
+			if (job_result == "0"):
                                 run_done = 1
 
-                elif (field == "slurm_state"):
+		elif (field == "slurm_state"):
 			job_state = line.split()[2]
-                        if (job_state != "COMPLETED"):
+			if (job_state != "COMPLETED"):
                                 run_done = 0
 
 	# Register the last job
-        if(run_string != "-1"):
+	if(run_string != "-1"):
 	  	job_dictionary[run_string] *= run_done
 
 	# if VERBOSE > 0:
-	# 	print "Num jobs = " + str(num_jobs)
+	# 	print("Num jobs = " + str(num_jobs))
 	return job_dictionary
 
 def build_merge_deque(WORKFLOW):
 	command = "/usr/local/bin/swif2 status -workflow " + WORKFLOW + " -jobs"
 	if VERBOSE > 1:
-		print command
+		print(command)
 	process = Popen(command.split(), stdout=PIPE)
-	status_output = process.communicate()[0] # is stdout. [1] is stderr
+	status_output = process.communicate()[0].decode('ASCII') # is stdout. [1] is stderr
 	return_code = process.returncode
 	if return_code != 0:
-		print "swif2 status bad return code, exiting"
+		print("swif2 status bad return code, exiting")
 		sys.exit()
 
 	if VERBOSE > 99:
-		print status_output
+		print(status_output)
 
 	# Build a dictionary of all the jobs in the workflow:
 	start_loop_flag = True
@@ -256,13 +256,13 @@ def build_merge_deque(WORKFLOW):
 	run_string = "-1"
 	for line in status_output.splitlines():
 		if VERBOSE > 9:
-			print line
+			print(line)
 		if(len(line.split()) < 3):
 			continue
 		field = line.split()[0]
-                if (field == "run_number"):
+		if (field == "run_number"):
 			run_string = line.split()[2]
-                        job_deque.append(run_string)
+			job_deque.append(run_string)
 
 	return job_deque
 
@@ -271,18 +271,18 @@ def build_merge_deque(WORKFLOW):
 def add_job(MERGE_WORKFLOW, RUNNO, config_dict):
 
 	if(VERBOSE == True):
-		print "WORKFLOW, RUN: " + MERGE_WORKFLOW + " " + RUNNO
+		print("WORKFLOW, RUN: " + MERGE_WORKFLOW + " " + RUNNO)
 
 	# PREPARE NAMES
 	#DATE = time.strftime("%Y-%m-%d")
-        JOBNAME = MERGE_WORKFLOW + "_" + RUNNO
+	JOBNAME = MERGE_WORKFLOW + "_" + RUNNO
 
         # SETUP LOG DIRECTORY FOR SLURM
-        LOG_DIR = config_dict["OUTDIR_SMALL"] + "/log/merged"
-        make_log_dir = "mkdir -p " + LOG_DIR
-        try_command(make_log_dir)
-        if(VERBOSE == True):
-                print "LOG DIRECTORY " + LOG_DIR + " CREATED"
+	LOG_DIR = config_dict["OUTDIR_SMALL"] + "/log/merged"
+	make_log_dir = "mkdir -p " + LOG_DIR
+	try_command(make_log_dir)
+	if(VERBOSE == True):
+		print("LOG DIRECTORY " + LOG_DIR + " CREATED")
 
 	# CREATE ADD-JOB COMMAND
 	# job
@@ -292,8 +292,8 @@ def add_job(MERGE_WORKFLOW, RUNNO, config_dict):
 	# resources
 	add_command += " -cores " + config_dict["NCORES"] + " -disk " + config_dict["DISK"] + " -ram " + config_dict["RAM"] + " -time " + config_dict["TIMELIMIT"]
 	# stdout, stderr
-        add_command += " -stdout " + config_dict["OUTDIR_SMALL"] + "/log/merged/stdout." + RUNNO + ".out"
-        add_command += " -stderr " + config_dict["OUTDIR_SMALL"] + "/log/merged/stderr." + RUNNO + ".err"
+	add_command += " -stdout " + config_dict["OUTDIR_SMALL"] + "/log/merged/stdout." + RUNNO + ".out"
+	add_command += " -stderr " + config_dict["OUTDIR_SMALL"] + "/log/merged/stderr." + RUNNO + ".err"
 
 	# tags
 	add_command += " -tag run_number " + RUNNO + " -tag num_threads " + config_dict["NCORES"]
@@ -304,12 +304,12 @@ def add_job(MERGE_WORKFLOW, RUNNO, config_dict):
 	add_command +=  " " + config_dict["INDATA_TOPDIR"] + " " + config_dict["OUTDIR_LARGE"] + " " + RUNNO + " " + config_dict["CACHE_PIN_DAYS"]
 
 
-        if(VERBOSE == True):
-                print "job add command is \n" + str(add_command)
+	if(VERBOSE == True):
+                print("job add command is \n" + str(add_command))
 
         # ADD JOB
-        #print str(add_command)
-        status = try_command(add_command)
+        #print(str(add_command))
+	status = try_command(add_command)
 
 
 ########################################################## MAIN ##########################################################
@@ -326,17 +326,17 @@ def main(argv):
         # SET INPUT VARIABLES
 	JOB_CONFIG_FILE = args[0]
 
-        if (len(args) == 2) and not args[1] == "0":
-                print "Incomplete Runs will be merged!"
+	if (len(args) == 2) and not args[1] == "0":
+                print("Incomplete Runs will be merged!")
                 MERGE_INCOMPLETE_RUNS = args[1]
-        else:
+	else:
                 MERGE_INCOMPLETE_RUNS = 0
 
         # READ CONFIG
 	config_dict = read_config(JOB_CONFIG_FILE)
 
-        LAUNCH_WORKFLOW = config_dict["WORKFLOW"]
-        print "Merging workflow " + LAUNCH_WORKFLOW
+	LAUNCH_WORKFLOW = config_dict["WORKFLOW"]
+	print("Merging workflow " + LAUNCH_WORKFLOW)
 
 	# BUILD WORKFLOW NAME
 	MERGE_WORKFLOW = LAUNCH_WORKFLOW + "_merge"
@@ -345,17 +345,17 @@ def main(argv):
 	# For the launch workflow, get the full status output from SWIF about what jobs are in the workflow
 	# Loop through all of these jobs, and for every run, record if all jobs are complete
 	launch_dictionary = build_launch_dictionary(LAUNCH_WORKFLOW)
-        print "Runs in the launch: " + str(len(launch_dictionary))
+	print("Runs in the launch: " + str(len(launch_dictionary)))
 
         # SEARCH FOR JOBS
-        merge_deque = build_merge_deque(MERGE_WORKFLOW)
-        print "Runs previously submitted to merge: " + str(len(merge_deque))
+	merge_deque = build_merge_deque(MERGE_WORKFLOW)
+	print("Runs previously submitted to merge: " + str(len(merge_deque)))
 
 	# ADD JOBS
         # For every completed run # in the launch, check if there is already a merge job
         # if not, create one
-        n_submit = 0
-        for run_string in launch_dictionary:
+	n_submit = 0
+	for run_string in launch_dictionary:
 
                 if launch_dictionary[run_string] == 0 and not MERGE_INCOMPLETE_RUNS:
                         continue # This run is not entirely processed yet
@@ -364,17 +364,17 @@ def main(argv):
                         continue # This run is already in the queue or done
 
                 # else sumbit job
-                print run_string
+                print(run_string)
                 add_job(MERGE_WORKFLOW, run_string, config_dict)
                 n_submit += 1
 
 	# RUN WORKFLOW (IN CASE NOT RUNNING ALREADY)
 	command = "/usr/local/bin/swif2 run -workflow " + MERGE_WORKFLOW
 	if VERBOSE > 1:
-		print command
-        try_command(command)
+		print(command)
+	try_command(command)
 
-        print "New runs complete and submitted:" + str(n_submit)
+	print("New runs complete and submitted:" + str(n_submit))
 
         # RETRY FAILED JOBS
 	command = "/usr/local/bin/swif2 retry-jobs -workflow " + LAUNCH_WORKFLOW + " -problems SLURM_FAILED SLURM_CANCELLED SLURM_TIMEOUT SLURM_NODE_FAIL SITE_LAUNCH_FAIL SITE_PREP_FAIL SWIF_INPUT_FAIL SWIF_SYSTEM_ERROR"
