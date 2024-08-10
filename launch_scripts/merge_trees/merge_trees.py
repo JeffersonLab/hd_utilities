@@ -28,7 +28,7 @@ def try_command(command, sleeptime = 5):
 	return_code = -999
 	while return_code != 0:
 		process = Popen(command.split(), stdout=PIPE)
-		output = process.communicate()[0] # is stdout. [1] is stderr
+		output = process.communicate()[0].decode('ASCII') # is stdout. [1] is stderr
 		print output
 		return_code = process.returncode
 
@@ -184,7 +184,7 @@ def build_launch_dictionary(WORKFLOW):
 	if VERBOSE > 1:
 		print command
 	process = Popen(command.split(), stdout=PIPE)
-	status_output = process.communicate()[0] # is stdout. [1] is stderr
+	status_output = process.communicate()[0].decode('ASCII') # is stdout. [1] is stderr
 	return_code = process.returncode
 	if return_code != 0:
 		print "swif2 status bad return code, exiting"
