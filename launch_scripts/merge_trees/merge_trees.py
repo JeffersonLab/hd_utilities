@@ -73,9 +73,9 @@ def read_config(CONFIG_FILENAME):
 	# Example:
 	# OUTPUT_TOPDIR /volatile/halld/test/RunPeriod-[RUNPERIOD]/ver[VERSION]
 	# depends on other config parameters RUNPERIOD and VERSION
-	# 
+	#
 	# NOTE: The method assumes there are no circular dependencies
-	  
+
 	# Iterate over key/value pairs in dictionary. If we find a replacement, we need to start over.
 	# The parameter found keeps track of whether we found a replacement or not.
 	found = 1
@@ -139,18 +139,18 @@ def validate_config(config_dict):
 	# CHECK FILE EXISTENCE
 	if(not os.path.isfile(config_dict["ENVFILE"])): #Check if ENVFILE exists
 		# Also accept ENVFILE if it is an xml file found in standard group disk location
-		if(not os.path.isfile("/group/halld/www/halldweb/html/halld_versions/"+config_dict["ENVFILE"])): # 
+		if(not os.path.isfile("/group/halld/www/halldweb/html/halld_versions/"+config_dict["ENVFILE"])): #
 			print "ERROR: ENVFILE does not exist (or is inaccessible) \n ENVFILE: " + config_dict["ENVFILE"]
 			sys.exit(1)
-	if(not os.path.isfile(config_dict["SCRIPTFILE"])): 
+	if(not os.path.isfile(config_dict["SCRIPTFILE"])):
 		print "ERROR: SCRIPTFILE does not exist (or is inaccessible) \n SCRIPTFILE: " + config_dict["SCRIPTFILE"]
 		sys.exit(1)
-		
+
 	# CHECK INPUT FOLDER EXISTENCE
-	if(not os.path.isdir(config_dict["INDATA_TOPDIR"])): 
+	if(not os.path.isdir(config_dict["INDATA_TOPDIR"])):
 		print "ERROR: INDATA_TOPDIR does not exist! \n INDATA_TOPDIR: " + config_dict["INDATA_TOPDIR"]
 		sys.exit(1)
-		
+
 	# CHECK OUTPUT (LARGE) FOLDER EXISTENCE
 	if(not os.path.isdir(config_dict["OUTDIR_LARGE"])):
 		# First try to create folder if it does not exist
@@ -160,12 +160,12 @@ def validate_config(config_dict):
 		if(VERBOSE == True):
 			print "OUTDIR_LARGE " + make_large_dir + " CREATED"
 	# If creating OUTDIR_LARGE unsuccessful, we should exit
-	if(not os.path.isdir(config_dict["OUTDIR_LARGE"])): 
+	if(not os.path.isdir(config_dict["OUTDIR_LARGE"])):
 		print "ERROR: OUTDIR_LARGE does not exist and could not be created \n OUTDIR_LARGE: " + config_dict["OUTDIR_LARGE"]
 		sys.exit(1)
 
 	# CHECK OUTPUT (SMALL) FOLDER EXISTENCE
-	if(not os.path.isdir(config_dict["OUTDIR_SMALL"])): 
+	if(not os.path.isdir(config_dict["OUTDIR_SMALL"])):
 		# First try to create folder if it does not exist
 		LOG_DIR = config_dict["OUTDIR_SMALL"] + "/log"
 		make_log_dir = "mkdir -p " + LOG_DIR
@@ -173,10 +173,10 @@ def validate_config(config_dict):
 		if(VERBOSE == True):
 			print "LOG DIRECTORY " + LOG_DIR + " CREATED"
 	# If creating OUTDIR_SMALL unsuccessful, we should exit
-	if(not os.path.isdir(config_dict["OUTDIR_SMALL"])): 
+	if(not os.path.isdir(config_dict["OUTDIR_SMALL"])):
 		print "ERROR: OUTDIR_SMALL does not exist and could not be created \n OUTDIR_SMALL: " + config_dict["OUTDIR_SMALL"]
 		sys.exit(1)
-	
+
 ################################################### BUILD DICTIONARIES ###################################################
 
 def build_launch_dictionary(WORKFLOW):
@@ -204,26 +204,26 @@ def build_launch_dictionary(WORKFLOW):
                 if(len(line.split()) < 3):
 			continue
 		field = line.split()[0]
-                
-                if (field == "run_number"): 
+
+                if (field == "run_number"):
                         # ... but if job was not successful, set back to 0
                         if run_string != "-1":
                                 job_dictionary[run_string] *= run_done
-                                                                
+
                         run_string = line.split()[2]
                         run_done = 0
 
                         # new run is first set to done ...
                         if run_string not in job_dictionary:
                                 job_dictionary[run_string] = 1
-                                
-                        
+
+
                 elif (field == "slurm_exitcode"):
 			job_result = line.split()[2]
                         if (job_result == "0"):
                                 run_done = 1
-                        
-                elif (field == "slurm_state"): 
+
+                elif (field == "slurm_state"):
 			job_state = line.split()[2]
                         if (job_state != "COMPLETED"):
                                 run_done = 0
@@ -260,7 +260,7 @@ def build_merge_deque(WORKFLOW):
 		if(len(line.split()) < 3):
 			continue
 		field = line.split()[0]
-                if (field == "run_number"): 
+                if (field == "run_number"):
 			run_string = line.split()[2]
                         job_deque.append(run_string)
 
@@ -272,7 +272,7 @@ def add_job(MERGE_WORKFLOW, RUNNO, config_dict):
 
 	if(VERBOSE == True):
 		print "WORKFLOW, RUN: " + MERGE_WORKFLOW + " " + RUNNO
-                
+
 	# PREPARE NAMES
 	#DATE = time.strftime("%Y-%m-%d")
         JOBNAME = MERGE_WORKFLOW + "_" + RUNNO
@@ -294,7 +294,7 @@ def add_job(MERGE_WORKFLOW, RUNNO, config_dict):
 	# stdout, stderr
         add_command += " -stdout " + config_dict["OUTDIR_SMALL"] + "/log/merged/stdout." + RUNNO + ".out"
         add_command += " -stderr " + config_dict["OUTDIR_SMALL"] + "/log/merged/stderr." + RUNNO + ".err"
-	
+
 	# tags
 	add_command += " -tag run_number " + RUNNO + " -tag num_threads " + config_dict["NCORES"]
 
@@ -306,7 +306,7 @@ def add_job(MERGE_WORKFLOW, RUNNO, config_dict):
 
         if(VERBOSE == True):
                 print "job add command is \n" + str(add_command)
-                
+
         # ADD JOB
         #print str(add_command)
         status = try_command(add_command)
@@ -337,7 +337,7 @@ def main(argv):
 
         LAUNCH_WORKFLOW = config_dict["WORKFLOW"]
         print "Merging workflow " + LAUNCH_WORKFLOW
-        
+
 	# BUILD WORKFLOW NAME
 	MERGE_WORKFLOW = LAUNCH_WORKFLOW + "_merge"
 
@@ -346,7 +346,7 @@ def main(argv):
 	# Loop through all of these jobs, and for every run, record if all jobs are complete
 	launch_dictionary = build_launch_dictionary(LAUNCH_WORKFLOW)
         print "Runs in the launch: " + str(len(launch_dictionary))
-                
+
         # SEARCH FOR JOBS
         merge_deque = build_merge_deque(MERGE_WORKFLOW)
         print "Runs previously submitted to merge: " + str(len(merge_deque))
