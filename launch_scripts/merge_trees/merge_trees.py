@@ -180,7 +180,7 @@ def validate_config(config_dict):
 ################################################### BUILD DICTIONARIES ###################################################
 
 def build_launch_dictionary(WORKFLOW):
-	command = "swif2 status -workflow " + WORKFLOW + " -jobs"
+	command = "/usr/local/bin/swif2 status -workflow " + WORKFLOW + " -jobs"
 	if VERBOSE > 1:
 		print command
 	process = Popen(command.split(), stdout=PIPE)
@@ -237,7 +237,7 @@ def build_launch_dictionary(WORKFLOW):
 	return job_dictionary
 
 def build_merge_deque(WORKFLOW):
-	command = "swif2 status -workflow " + WORKFLOW + " -jobs"
+	command = "/usr/local/bin/swif2 status -workflow " + WORKFLOW + " -jobs"
 	if VERBOSE > 1:
 		print command
 	process = Popen(command.split(), stdout=PIPE)
@@ -286,7 +286,7 @@ def add_job(MERGE_WORKFLOW, RUNNO, config_dict):
 
 	# CREATE ADD-JOB COMMAND
 	# job
-	add_command = "swif2 add-job -workflow " + MERGE_WORKFLOW + " -name " + JOBNAME
+	add_command = "/usr/local/bin/swif2 add-job -workflow " + MERGE_WORKFLOW + " -name " + JOBNAME
 	# accounting
 	add_command += " -account " + config_dict["PROJECT"] + " -partition " + config_dict["TRACK"] + " -os " + config_dict["OS"]
 	# resources
@@ -369,7 +369,7 @@ def main(argv):
                 n_submit += 1
 
 	# RUN WORKFLOW (IN CASE NOT RUNNING ALREADY)
-	command = "swif2 run -workflow " + MERGE_WORKFLOW
+	command = "/usr/local/bin/swif2 run -workflow " + MERGE_WORKFLOW
 	if VERBOSE > 1:
 		print command
         try_command(command)
@@ -377,7 +377,7 @@ def main(argv):
         print "New runs complete and submitted:" + str(n_submit)
 
         # RETRY FAILED JOBS
-        command = "swif2 retry-jobs -workflow " + LAUNCH_WORKFLOW + " -problems SLURM_FAILED SLURM_CANCELLED SLURM_TIMEOUT SLURM_NODE_FAIL"
+	command = "/usr/local/bin/swif2 retry-jobs -workflow " + LAUNCH_WORKFLOW + " -problems SLURM_FAILED SLURM_CANCELLED SLURM_TIMEOUT SLURM_NODE_FAIL SITE_LAUNCH_FAIL SITE_PREP_FAIL SWIF_INPUT_FAIL SWIF_SYSTEM_ERROR"
         if VERBOSE > 1:
                 print command
         try_command(command)
