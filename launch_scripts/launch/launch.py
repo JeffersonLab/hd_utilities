@@ -226,7 +226,7 @@ def add_job(WORKFLOW, FILEPATH, config_dict):
 		FILENO = match.group(4)
 		EXTENSION = match.group(5)
 	else: # Try with no file #
-		match = re.search(r"(.*)/(.*)_(\d\d\d\d\d\d).(.*)", FILEPATH)
+		match = re.search(r"(.*)/(.*)_(\d\d\d\d\d\d)\.(.*)", FILEPATH)
 		if(match is None):
 			print("WARNING: FILE " + FILEPATH + " DOESN'T MATCH EXPECTED NAME FORMAT. SKIPPING.")
 			return
