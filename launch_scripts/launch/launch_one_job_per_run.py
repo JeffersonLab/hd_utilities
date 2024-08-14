@@ -246,8 +246,8 @@ def add_job(WORKFLOW, FILEPATH, config_dict, file_numbers_in_run = None):
 
 	# PREPARE NAMES
 	DATE = time.strftime("%Y-%m-%d")
-	STUBNAME = RUNNO + "_" + FILENO if (FILENO != "-1" and file_numbers_in_run is None) else RUNNO
-	FILENAME = PREFIX + "_" + RUNNO + "_" + FILENO + "." + EXTENSION if (FILENO != "-1" and file_numbers_in_run is None) else PREFIX + "_" + RUNNO + "." + EXTENSION
+	STUBNAME = RUNNO if(FILENO == "-1" or file_numbers_in_run is not None) else RUNNO + "_" + FILENO
+	FILENAME = PREFIX + "_" + RUNNO + "." + EXTENSION if(FILENO == "-1" or file_numbers_in_run is not None) else PREFIX + "_" + RUNNO + "_" + FILENO + "." + EXTENSION
 	if(WORKFLOW.find("ver") == -1):
 		JOBNAME = WORKFLOW + "_" + STUBNAME + "_" + DATE
 	else:
