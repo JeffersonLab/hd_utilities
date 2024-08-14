@@ -187,11 +187,11 @@ def find_files(INDATA_DIR, FORMATTED_RUN, FORMATTED_FILE):
 	# If need specific file #
 	if(FORMATTED_FILE != "*"):
 		pathstring = INDATA_DIR + '/*' + FORMATTED_RUN + '*_*' + FORMATTED_FILE + '*.*'
-		return glob.glob(pathstring)
+		return sorted(glob.glob(pathstring))
 
 	# Else just require run # in name
 	pathstring = INDATA_DIR + '/*' + FORMATTED_RUN + '*.*'
-	return glob.glob(pathstring)
+	return sorted(glob.glob(pathstring))
 
 ######################################################## ADD JOB #########################################################
 
