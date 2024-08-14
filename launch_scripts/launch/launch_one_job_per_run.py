@@ -224,7 +224,7 @@ def find_num_threads(JANA_CONFIG_FILENAME):
 def add_job(WORKFLOW, FILEPATH, config_dict, file_numbers_in_run = None):
 
 	# EXTRACT PATH, RUNNO, & FILE #: ASSUME THE FORM IS EITHER */*_RUNNO_FILENO.* OR */*_RUNNO.*
-	match = re.search(r"(.*)/(.*)_(\d\d\d\d\d\d)_(\d\d\d).(.*)", FILEPATH)
+	match = re.search(r"(.*)/(.*)_(\d\d\d\d\d\d)_(\d\d\d)\.(.*)", FILEPATH)
 	if(match is not None):
 		INDATA_DIR = match.group(1)
 		PREFIX = match.group(2)
@@ -232,7 +232,7 @@ def add_job(WORKFLOW, FILEPATH, config_dict, file_numbers_in_run = None):
 		FILENO = match.group(4)
 		EXTENSION = match.group(5)
 	else: # Try with no file #
-		match = re.search(r"(.*)/(.*)_(\d\d\d\d\d\d).(.*)", FILEPATH)
+		match = re.search(r"(.*)/(.*)_(\d\d\d\d\d\d)\.(.*)", FILEPATH)
 		if(match is None):
 			print("WARNING: FILE " + FILEPATH + " DOESN'T MATCH EXPECTED NAME FORMAT. SKIPPING.")
 			return
@@ -395,7 +395,7 @@ def main(argv):
 		if ONE_JOB_FOR_ALL_FILES_IN_RUN and file_list:
 			file_numbers_in_run = []
 			for FILEPATH in file_list:
-				match = re.search(r"(.*)/(.*)_(\d\d\d\d\d\d)_(\d\d\d).(.*)", FILEPATH)
+				match = re.search(r"(.*)/(.*)_(\d\d\d\d\d\d)_(\d\d\d)\.(.*)", FILEPATH)
 				if(match is not None):
 					file_numbers_in_run.append(match.group(4))
 			add_job(WORKFLOW, FILEPATH, config_dict, file_numbers_in_run)
