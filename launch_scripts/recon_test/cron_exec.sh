@@ -3,7 +3,7 @@
 Setup_Environment()
 {
 	#if you change the below, you must also change them in the jobs_recon_test.config
-	export WORK_AREA=/u/scratch/gluex/recon_test/
+	export WORK_AREA=/volatile/halld/gluex/recon_test/
 
 	# USE THE ENVIRONMENT FOR THE LATEST NIGHTLY BUILD
 	source /group/halld/Software/scripts/monitoring/recon_test/env_recon_test.sh
@@ -25,7 +25,7 @@ Submit_Job()
 	FILE_NUMBER=$3
 
 	Setup_Config $RUN_PERIOD
-	python $MONITORING_HOME/launch/launch.py ${WORK_AREA}/jobs_recon_test.config ${RUN_NUMBER} ${RUN_NUMBER} -f ${FILE_NUMBER}
+	python $MONITORING_HOME/launch/launch.py ${WORK_AREA}/jobs_recon_test.config ${RUN_NUMBER} ${RUN_NUMBER} -f ${FILE_NUMBER} -v VERBOSE
 
 	# pin the file to make sure it stays there for next time
 	jcache pin /cache/halld/RunPeriod-${RUN_PERIOD}/rawdata/Run${RUN_NUMBER}/hd_rawdata_${RUN_NUMBER}_${FILE_NUMBER}.evio -D 14
@@ -38,9 +38,9 @@ Check_Workflow()
 {
 	local WORKFLOW_NAME=$1
 
-	local STATUS_OUTPUT="$(swif status -workflow $WORKFLOW_NAME)"
+	local STATUS_OUTPUT="$(swif2 status -workflow $WORKFLOW_NAME)"
 	local RETURN_CODE=$?
-	echo "SWIF Return Code = " $RETURN_CODE
+	echo "SWIF2 Return Code = " $RETURN_CODE
 	if [ $RETURN_CODE -ne 0 ]; then
 		return 1
 	fi
@@ -113,9 +113,9 @@ Check_Workflow_Loop()
 
 		# CHECK FOR FAILED JOBS
 		if [ "$RETURN_CODE" -eq "2" ]; then
-			swif modify-jobs -workflow $WORKFLOW_NAME -ram add 2gb -problems AUGER-OVER_RLIMIT 
-			swif modify-jobs -workflow $WORKFLOW_NAME -time add 4h -problems AUGER-TIMEOUT 
-			swif retry-jobs -workflow $WORKFLOW_NAME -problems SWIF-SYSTEM-ERROR SWIF-USER-NON-ZERO AUGER-INPUT-FAIL AUGER-OUTPUT-FAIL AUGER-FAILED AUGER-SUBMIT
+			swif2 modify-jobs -workflow $WORKFLOW_NAME -ram add 2gb -problems AUGER-OVER_RLIMIT
+			swif2 modify-jobs -workflow $WORKFLOW_NAME -time add 4h -problems SLURM_TIMEOUT
+			swif2 retry-jobs -workflow $WORKFLOW_NAME -problems SWIF-SYSTEM-ERROR SWIF-USER-NON-ZERO SITE_PREP_FAIL SLURM_FAILED SITE_LAUNCH_FAIL SWIF_INPUT_FAIL SWIF_OUTPUT_FAIL SLURM_NODE_FAIL
 		fi
 		sleep $sleep_length  
 	done

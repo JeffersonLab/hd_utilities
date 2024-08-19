@@ -25,7 +25,7 @@ export BMS_OSNAME=`${BUILD_SCRIPTS}/osrelease.pl`
 # SET SOFTWARE VERSIONS/PATHS (e.g. $ROOTSYS, $CCDB_HOME, etc.)
 export GLUEX_TOP=/group/halld/Software/builds/$BMS_OSNAME/
 export DATE=`date +%Y-%m-%d`
-export GLUEX_VERSION_XML=/u/scratch/gluex/nightly/${DATE}/${BMS_OSNAME}/version_${DATE}.xml
+export GLUEX_VERSION_XML=/volatile/halld/gluex/nightly/${DATE}/${BMS_OSNAME}/version_${DATE}.xml
 
 # SET FULL ENVIRONMENT
 source $BUILD_SCRIPTS/gluex_env_jlab.sh $GLUEX_VERSION_XML

@@ -11,20 +11,14 @@ Setup_Script()
 
 	# ENVIRONMENT
 	source $ENVIRONMENT
+	export PATH=/site/bin:${PATH} #because .login isn't executed, and need this path for SWIF
 	printenv
 	echo "PERL INCLUDES: "
 	perl -e "print qq(@INC)"
 	echo ""
 
-	# COPY INPUT FILE TO WORKING DIRECTORY
-	# This step is necessary since the cache files will be created as soft links in the current directory, and we want to avoid large I/O processes.
-	# We first copy the input file to the current directory, then remove the link.
-	echo "LOCAL FILES PRIOR TO INPUT COPY"
-	ls -l
-	cp $INPUTFILE ./tmp_file
-	rm -f $INPUTFILE
-	mv tmp_file $INPUTFILE
-	echo "LOCAL FILES AFTER INPUT COPY"
+	# LIST WORKING DIRECTORY
+	echo "LOCAL FILES"
 	ls -l
 }
 
@@ -160,7 +154,12 @@ Make_Plots()
 
 Create_SQLite()
 {
-	$CCDB_HOME/scripts/mysql2sqlite/mysql2sqlite.sh -hhallddb.jlab.org -uccdb_user ccdb | sqlite3 ccdb.sqlite
+	mysqldump -u ccdb_user -h hallddb.jlab.org ccdb > dump.mysql.sql
+	$CCDB_HOME/scripts/mysql2sqlite/mysql2sqlite dump.mysql.sql | sqlite3 ccdb.sqlite
+	ls -l
+	export CCDB_CONNECTION=sqlite:///$PWD/ccdb.sqlite
+        export JANA_CALIB_URL=sqlite:///$PWD/ccdb.sqlite
+        echo "JANA_CALIB_URL: " $JANA_CALIB_URL
 }
 
 ########################################################## MAIN FUNCTION ########################################################
