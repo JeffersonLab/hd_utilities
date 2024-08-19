@@ -72,9 +72,9 @@ def read_config(CONFIG_FILENAME):
 	# Example:
 	# OUTPUT_TOPDIR /volatile/halld/test/RunPeriod-[RUNPERIOD]/ver[VERSION]
 	# depends on other config parameters RUNPERIOD and VERSION
-	# 
+	#
 	# NOTE: The method assumes there are no circular dependencies
-	  
+
 	# Iterate over key/value pairs in dictionary. If we find a replacement, we need to start over.
 	# The parameter found keeps track of whether we found a replacement or not.
 	found = 1
@@ -138,22 +138,22 @@ def validate_config(config_dict):
 	# CHECK FILE EXISTENCE
 	if(not os.path.isfile(config_dict["ENVFILE"])): #Check if ENVFILE exists
 		# Also accept ENVFILE if it is an xml file found in standard group disk location
-		if(not os.path.isfile("/group/halld/www/halldweb/html/halld_versions/"+config_dict["ENVFILE"])): # 
+		if(not os.path.isfile("/group/halld/www/halldweb/html/halld_versions/"+config_dict["ENVFILE"])): #
 			print("ERROR: ENVFILE does not exist (or is inaccessible) \n ENVFILE: " + config_dict["ENVFILE"])
 			sys.exit(1)
-	if(not os.path.isfile(config_dict["SCRIPTFILE"])): 
+	if(not os.path.isfile(config_dict["SCRIPTFILE"])):
 		print("ERROR: SCRIPTFILE does not exist (or is inaccessible) \n SCRIPTFILE: " + config_dict["SCRIPTFILE"])
 		sys.exit(1)
 	if("JANA_CONFIG" in config_dict):
-		if(not os.path.isfile(config_dict["JANA_CONFIG"])): 
+		if(not os.path.isfile(config_dict["JANA_CONFIG"])):
 			print("ERROR: JANA_CONFIG specified but does not exist (or is inaccessible) \n JANA_CONFIG: " + config_dict["JANA_CONFIG"])
 			sys.exit(1)
-		
+
 	# CHECK INPUT FOLDER EXISTENCE
-	if(not os.path.isdir(config_dict["INDATA_TOPDIR"])): 
+	if(not os.path.isdir(config_dict["INDATA_TOPDIR"])):
 		print("ERROR: INDATA_TOPDIR does not exist! \n INDATA_TOPDIR: " + config_dict["INDATA_TOPDIR"])
 		sys.exit(1)
-		
+
 	# CHECK OUTPUT (LARGE) FOLDER EXISTENCE
 	if(not os.path.isdir(config_dict["OUTDIR_LARGE"])):
 		# First try to create folder if it does not exist
@@ -163,12 +163,12 @@ def validate_config(config_dict):
 		if(VERBOSE == True):
 			print("OUTDIR_LARGE " + make_large_dir + " CREATED")
 	# If creating OUTDIR_LARGE unsuccessful, we should exit
-	if(not os.path.isdir(config_dict["OUTDIR_LARGE"])): 
+	if(not os.path.isdir(config_dict["OUTDIR_LARGE"])):
 		print("ERROR: OUTDIR_LARGE does not exist and could not be created \n OUTDIR_LARGE: " + config_dict["OUTDIR_LARGE"])
 		sys.exit(1)
 
 	# CHECK OUTPUT (SMALL) FOLDER EXISTENCE
-	if(not os.path.isdir(config_dict["OUTDIR_SMALL"])): 
+	if(not os.path.isdir(config_dict["OUTDIR_SMALL"])):
 		# First try to create folder if it does not exist
 		LOG_DIR = config_dict["OUTDIR_SMALL"] + "/log"
 		make_log_dir = "mkdir -p " + LOG_DIR
@@ -176,7 +176,7 @@ def validate_config(config_dict):
 		if(VERBOSE == True):
 			print("LOG DIRECTORY " + LOG_DIR + " CREATED")
 	# If creating OUTDIR_SMALL unsuccessful, we should exit
-	if(not os.path.isdir(config_dict["OUTDIR_SMALL"])): 
+	if(not os.path.isdir(config_dict["OUTDIR_SMALL"])):
 		print("ERROR: OUTDIR_SMALL does not exist and could not be created \n OUTDIR_SMALL: " + config_dict["OUTDIR_SMALL"])
 		sys.exit(1)
 
@@ -188,11 +188,11 @@ def find_files(INDATA_DIR, FORMATTED_RUN, FORMATTED_FILE):
 	# If need specific file #
 	if(FORMATTED_FILE != "*"):
 		pathstring = INDATA_DIR + '/*' + FORMATTED_RUN + '*_*' + FORMATTED_FILE + '*.*'
-		return glob.glob(pathstring)
+		return sorted(glob.glob(pathstring))
 
 	# Else just require run # in name
 	pathstring = INDATA_DIR + '/*' + FORMATTED_RUN + '*.*'
-	return glob.glob(pathstring)
+	return sorted(glob.glob(pathstring))
 
 ######################################################## ADD JOB #########################################################
 
@@ -212,7 +212,7 @@ def find_num_threads(JANA_CONFIG_FILENAME):
 		if (key != "NTHREADS"):
 			continue
 		num_threads = line.split()[1]
-		break;
+		break
 
 	return num_threads
 
@@ -227,7 +227,7 @@ def add_job(WORKFLOW, FILEPATH, config_dict):
 		FILENO = match.group(4)
 		EXTENSION = match.group(5)
 	else: # Try with no file #
-		match = re.search(r"(.*)/(.*)_(\d\d\d\d\d\d).(.*)", FILEPATH)
+		match = re.search(r"(.*)/(.*)_(\d\d\d\d\d\d)\.(.*)", FILEPATH)
 		if(match is None):
 			print("WARNING: FILE " + FILEPATH + " DOESN'T MATCH EXPECTED NAME FORMAT. SKIPPING.")
 			return
@@ -254,15 +254,15 @@ def add_job(WORKFLOW, FILEPATH, config_dict):
 	JANA_CONFIG = config_dict["JANA_CONFIG"] if ("JANA_CONFIG" in config_dict) else "NA"
 	NUM_THREADS = find_num_threads(JANA_CONFIG) if ("JANA_CONFIG" in config_dict) else "1"
 
-        # SETUP LOG DIRECTORY FOR SLURM
+	# SETUP LOG DIRECTORY FOR SLURM
 	if(FILENO != "-1"):
-                LOG_DIR = config_dict["OUTDIR_SMALL"] + "/log/" + RUNNO
+		LOG_DIR = config_dict["OUTDIR_SMALL"] + "/log/" + RUNNO
 	else:
-                LOG_DIR = config_dict["OUTDIR_SMALL"] + "/log"
+		LOG_DIR = config_dict["OUTDIR_SMALL"] + "/log"
 	make_log_dir = "mkdir -p " + LOG_DIR
 	try_command(make_log_dir)
 	if(VERBOSE == True):
-                print("LOG DIRECTORY " + LOG_DIR + " CREATED")
+		print("LOG DIRECTORY " + LOG_DIR + " CREATED")
 
 	# CREATE ADD-JOB COMMAND
 	# job
@@ -395,8 +395,7 @@ def main(argv):
 
 		# Add jobs to workflow
 		for FILEPATH in file_list:
-                        add_job(WORKFLOW, FILEPATH, config_dict)
+			add_job(WORKFLOW, FILEPATH, config_dict)
 
 if __name__ == "__main__":
-   main(sys.argv[1:])
-
+	main(sys.argv[1:])

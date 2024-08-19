@@ -2,4 +2,4 @@
 #-----------------------------------------------------------------------------
 # Min    Hour    Day    Month    Weekday    Command
 #-----------------------------------------------------------------------------
-   0      8      */3      *         *       /bin/bash -c /group/halld/Software/scripts/monitoring/recon_test/cron_exec.sh
+   0      8      */3      *         *       /bin/bash -c /group/halld/Software/hd_utilities/launch_scripts/recon_test/cron_exec.sh

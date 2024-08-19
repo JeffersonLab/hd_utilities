@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-# patched version of launch.py based on version 3341ff8
 # submits one job per run, where each job runs over all files of a run
 # !NOTE! The script submits a job by constructing a `swif2 add-job ...` command
 #        line that contains the full list of input files. For many files and/or
@@ -34,14 +33,14 @@ def try_command(command, sleeptime = 5):
 	while return_code != 0:
 		process = Popen(command.split(), stdout=PIPE)
 		output = process.communicate()[0] # is stdout. [1] is stderr
-		print output
+		print(output.decode())
 		return_code = process.returncode
 
 		if return_code == 0:
 			break #successful: leave
 
 		# sleep for a few seconds between tries
-		print 'sleeping for ' + str(sleeptime) + ' sec...'
+		print('sleeping for ' + str(sleeptime) + ' sec...')
 		time.sleep(sleeptime)
 
 ####################################################### READ CONFIG ######################################################
@@ -70,7 +69,7 @@ def read_config(CONFIG_FILENAME):
 			value = value[1:-1]
 		config_dict[key] = value
 		if(VERBOSE == True):
-			print "Job Config key, value = " + key + " " + value
+			print("Job Config key, value = " + key + " " + value)
 
 	# Some of the keys may depend on other configuration parameters, so update the values
 	# containing [key] within the values corresponding to those keys.
@@ -78,9 +77,9 @@ def read_config(CONFIG_FILENAME):
 	# Example:
 	# OUTPUT_TOPDIR /volatile/halld/test/RunPeriod-[RUNPERIOD]/ver[VERSION]
 	# depends on other config parameters RUNPERIOD and VERSION
-	# 
+	#
 	# NOTE: The method assumes there are no circular dependencies
-	  
+
 	# Iterate over key/value pairs in dictionary. If we find a replacement, we need to start over.
 	# The parameter found keeps track of whether we found a replacement or not.
 	found = 1
@@ -118,48 +117,48 @@ def validate_config(config_dict):
 
 	# JOB ACCOUNTING
 	if("PROJECT" not in config_dict) or ("TRACK" not in config_dict) or ("OS" not in config_dict):
-		print "ERROR: JOB ACCOUNTING NOT FULLY SPECIFIED IN CONFIG FILE. ABORTING"
+		print("ERROR: JOB ACCOUNTING NOT FULLY SPECIFIED IN CONFIG FILE. ABORTING")
 		sys.exit(1)
 
 	# JOB RESOURCES
 	if("NCORES" not in config_dict) or ("DISK" not in config_dict) or ("RAM" not in config_dict) or ("TIMELIMIT" not in config_dict):
-		print "ERROR: JOB RESOURCES NOT FULLY SPECIFIED IN CONFIG FILE. ABORTING"
+		print("ERROR: JOB RESOURCES NOT FULLY SPECIFIED IN CONFIG FILE. ABORTING")
 		sys.exit(1)
 
 	# WORKFLOW DEFINITION
 	if("WORKFLOW" not in config_dict):
-		print "ERROR: WORKFLOW DEFINITION NOT FULLY SPECIFIED IN CONFIG FILE. ABORTING"
+		print("ERROR: WORKFLOW DEFINITION NOT FULLY SPECIFIED IN CONFIG FILE. ABORTING")
 		sys.exit(1)
 
 	# JOB, SCRIPT CONTROL
 	if("ENVFILE" not in config_dict) or ("SCRIPTFILE" not in config_dict):
-		print "ERROR: JOB, SCRIPT CONTROL NOT FULLY SPECIFIED IN CONFIG FILE. ABORTING"
+		print("ERROR: JOB, SCRIPT CONTROL NOT FULLY SPECIFIED IN CONFIG FILE. ABORTING")
 		sys.exit(1)
 
 	# FILE INPUT, OUTPUT BASE DIRECTORIES
 	if("INDATA_TOPDIR" not in config_dict) or ("OUTDIR_LARGE" not in config_dict) or ("OUTDIR_SMALL" not in config_dict):
-		print "ERROR: FILE INPUT, OUTPUT BASE DIRECTORIES NOT FULLY SPECIFIED IN CONFIG FILE. ABORTING"
+		print("ERROR: FILE INPUT, OUTPUT BASE DIRECTORIES NOT FULLY SPECIFIED IN CONFIG FILE. ABORTING")
 		sys.exit(1)
 
 	# CHECK FILE EXISTENCE
 	if(not os.path.isfile(config_dict["ENVFILE"])): #Check if ENVFILE exists
 		# Also accept ENVFILE if it is an xml file found in standard group disk location
-		if(not os.path.isfile("/group/halld/www/halldweb/html/halld_versions/"+config_dict["ENVFILE"])): # 
-			print "ERROR: ENVFILE does not exist (or is inaccessible) \n ENVFILE: " + config_dict["ENVFILE"]
+		if(not os.path.isfile("/group/halld/www/halldweb/html/halld_versions/"+config_dict["ENVFILE"])): #
+			print("ERROR: ENVFILE does not exist (or is inaccessible) \n ENVFILE: " + config_dict["ENVFILE"])
 			sys.exit(1)
-	if(not os.path.isfile(config_dict["SCRIPTFILE"])): 
-		print "ERROR: SCRIPTFILE does not exist (or is inaccessible) \n SCRIPTFILE: " + config_dict["SCRIPTFILE"]
+	if(not os.path.isfile(config_dict["SCRIPTFILE"])):
+		print("ERROR: SCRIPTFILE does not exist (or is inaccessible) \n SCRIPTFILE: " + config_dict["SCRIPTFILE"])
 		sys.exit(1)
 	if("JANA_CONFIG" in config_dict):
-		if(not os.path.isfile(config_dict["JANA_CONFIG"])): 
-			print "ERROR: JANA_CONFIG specified but does not exist (or is inaccessible) \n JANA_CONFIG: " + config_dict["JANA_CONFIG"]
+		if(not os.path.isfile(config_dict["JANA_CONFIG"])):
+			print("ERROR: JANA_CONFIG specified but does not exist (or is inaccessible) \n JANA_CONFIG: " + config_dict["JANA_CONFIG"])
 			sys.exit(1)
-		
+
 	# CHECK INPUT FOLDER EXISTENCE
-	if(not os.path.isdir(config_dict["INDATA_TOPDIR"])): 
-		print "ERROR: INDATA_TOPDIR does not exist! \n INDATA_TOPDIR: " + config_dict["INDATA_TOPDIR"]
+	if(not os.path.isdir(config_dict["INDATA_TOPDIR"])):
+		print("ERROR: INDATA_TOPDIR does not exist! \n INDATA_TOPDIR: " + config_dict["INDATA_TOPDIR"])
 		sys.exit(1)
-		
+
 	# CHECK OUTPUT (LARGE) FOLDER EXISTENCE
 	if(not os.path.isdir(config_dict["OUTDIR_LARGE"])):
 		# First try to create folder if it does not exist
@@ -167,23 +166,23 @@ def validate_config(config_dict):
 		make_large_dir = "mkdir -p " + NEW_DIR
 		try_command(make_large_dir)
 		if(VERBOSE == True):
-			print "OUTDIR_LARGE " + make_large_dir + " CREATED"
+			print("OUTDIR_LARGE " + make_large_dir + " CREATED")
 	# If creating OUTDIR_LARGE unsuccessful, we should exit
-	if(not os.path.isdir(config_dict["OUTDIR_LARGE"])): 
-		print "ERROR: OUTDIR_LARGE does not exist and could not be created \n OUTDIR_LARGE: " + config_dict["OUTDIR_LARGE"]
+	if(not os.path.isdir(config_dict["OUTDIR_LARGE"])):
+		print("ERROR: OUTDIR_LARGE does not exist and could not be created \n OUTDIR_LARGE: " + config_dict["OUTDIR_LARGE"])
 		sys.exit(1)
 
 	# CHECK OUTPUT (SMALL) FOLDER EXISTENCE
-	if(not os.path.isdir(config_dict["OUTDIR_SMALL"])): 
+	if(not os.path.isdir(config_dict["OUTDIR_SMALL"])):
 		# First try to create folder if it does not exist
 		LOG_DIR = config_dict["OUTDIR_SMALL"] + "/log"
 		make_log_dir = "mkdir -p " + LOG_DIR
 		try_command(make_log_dir)
 		if(VERBOSE == True):
-			print "LOG DIRECTORY " + LOG_DIR + " CREATED"
+			print("LOG DIRECTORY " + LOG_DIR + " CREATED")
 	# If creating OUTDIR_SMALL unsuccessful, we should exit
-	if(not os.path.isdir(config_dict["OUTDIR_SMALL"])): 
-		print "ERROR: OUTDIR_SMALL does not exist and could not be created \n OUTDIR_SMALL: " + config_dict["OUTDIR_SMALL"]
+	if(not os.path.isdir(config_dict["OUTDIR_SMALL"])):
+		print("ERROR: OUTDIR_SMALL does not exist and could not be created \n OUTDIR_SMALL: " + config_dict["OUTDIR_SMALL"])
 		sys.exit(1)
 
 ####################################################### FIND FILES #######################################################
@@ -218,14 +217,14 @@ def find_num_threads(JANA_CONFIG_FILENAME):
 		if (key != "NTHREADS"):
 			continue
 		num_threads = line.split()[1]
-		break;
+		break
 
 	return num_threads
 
 def add_job(WORKFLOW, FILEPATH, config_dict, file_numbers_in_run = None):
 
 	# EXTRACT PATH, RUNNO, & FILE #: ASSUME THE FORM IS EITHER */*_RUNNO_FILENO.* OR */*_RUNNO.*
-	match = re.search(r"(.*)/(.*)_(\d\d\d\d\d\d)_(\d\d\d).(.*)", FILEPATH)
+	match = re.search(r"(.*)/(.*)_(\d\d\d\d\d\d)_(\d\d\d)\.(.*)", FILEPATH)
 	if(match is not None):
 		INDATA_DIR = match.group(1)
 		PREFIX = match.group(2)
@@ -233,9 +232,9 @@ def add_job(WORKFLOW, FILEPATH, config_dict, file_numbers_in_run = None):
 		FILENO = match.group(4)
 		EXTENSION = match.group(5)
 	else: # Try with no file #
-		match = re.search(r"(.*)/(.*)_(\d\d\d\d\d\d).(.*)", FILEPATH)
+		match = re.search(r"(.*)/(.*)_(\d\d\d\d\d\d)\.(.*)", FILEPATH)
 		if(match is None):
-			print "WARNING: FILE " + FILEPATH + " DOESN'T MATCH EXPECTED NAME FORMAT. SKIPPING."
+			print("WARNING: FILE " + FILEPATH + " DOESN'T MATCH EXPECTED NAME FORMAT. SKIPPING.")
 			return
 		INDATA_DIR = match.group(1)
 		PREFIX = match.group(2)
@@ -243,12 +242,12 @@ def add_job(WORKFLOW, FILEPATH, config_dict, file_numbers_in_run = None):
 		FILENO = "-1"
 		EXTENSION = match.group(4)
 	if(VERBOSE == True):
-		print "FILEPATH, COMPONENTS: " + FILEPATH + " " + INDATA_DIR + " " + PREFIX + " " + RUNNO + " " + FILENO + " " + EXTENSION
+		print("FILEPATH, COMPONENTS: " + FILEPATH + " " + INDATA_DIR + " " + PREFIX + " " + RUNNO + " " + FILENO + " " + EXTENSION)
 
 	# PREPARE NAMES
 	DATE = time.strftime("%Y-%m-%d")
-	STUBNAME = RUNNO + "_" + FILENO if (FILENO != "-1" and file_numbers_in_run is None) else RUNNO
-	FILENAME = PREFIX + "_" + RUNNO + "_" + FILENO + "." + EXTENSION if (FILENO != "-1" and file_numbers_in_run is None) else PREFIX + "_" + RUNNO + "." + EXTENSION
+	STUBNAME = RUNNO if(FILENO == "-1" or file_numbers_in_run is not None) else RUNNO + "_" + FILENO
+	FILENAME = PREFIX + "_" + RUNNO + "." + EXTENSION if(FILENO == "-1" or file_numbers_in_run is not None) else PREFIX + "_" + RUNNO + "_" + FILENO + "." + EXTENSION
 	if(WORKFLOW.find("ver") == -1):
 		JOBNAME = WORKFLOW + "_" + STUBNAME + "_" + DATE
 	else:
@@ -268,7 +267,7 @@ def add_job(WORKFLOW, FILEPATH, config_dict, file_numbers_in_run = None):
 	make_log_dir = "mkdir -p " + LOG_DIR
 	try_command(make_log_dir)
 	if(VERBOSE == True):
-		print "LOG DIRECTORY " + LOG_DIR + " CREATED"
+		print("LOG DIRECTORY " + LOG_DIR + " CREATED")
 
 	# CREATE ADD-JOB COMMAND
 	# job
@@ -317,10 +316,10 @@ def add_job(WORKFLOW, FILEPATH, config_dict, file_numbers_in_run = None):
 		add_command += " " + config_dict["WEBDIR_LARGE"]
 
 	if(VERBOSE == True):
-		print "job add command is \n" + str(add_command)
+		print("job add command is \n" + str(add_command))
 
 	# ADD JOB
-	try_command(add_command)
+	status = try_command(add_command)
 
 ########################################################## MAIN ##########################################################
 
@@ -350,7 +349,7 @@ def main(argv):
 	MAXRUN = int(args[2])
 	VERBOSE = True if(options.verbose) else False
 	INPUT_FILE_NUM = options.file if(options.file) else "*" #must be three digits, with leading 0's if necessary
-	RUN_ALL_FILES_IN_RUN = True
+	ONE_JOB_FOR_ALL_FILES_IN_RUN = True
 
 	# READ CONFIG
 	config_dict = read_config(JOB_CONFIG_FILE)
@@ -365,11 +364,11 @@ def main(argv):
 	db = rcdb.RCDBProvider("mysql://rcdb@hallddb/rcdb")
 	good_runs = []
 	if(VERBOSE == True):
-		print "RCDB_QUERY = " + RCDB_QUERY
+		print("RCDB_QUERY = " + RCDB_QUERY)
 	if(RCDB_QUERY != ""):
 		good_runs = db.select_runs(RCDB_QUERY, MINRUN, MAXRUN)
 	if(VERBOSE == True):
-		print str(len(good_runs)) + " good runs in range: " + str(MINRUN) + " - " + str(MAXRUN)
+		print(str(len(good_runs)) + " good runs in range: " + str(MINRUN) + " - " + str(MAXRUN))
 
 	# FIND & ADD JOBS
 	for RUN in range(MINRUN, MAXRUN + 1):
@@ -390,13 +389,13 @@ def main(argv):
 			file_list = find_files(INDATA_DIR, FORMATTED_RUN, INPUT_FILE_NUM)
 
 		if(VERBOSE == True):
-			print str(len(file_list)) + " files found for run " + str(RUN)
+			print(str(len(file_list)) + " files found for run " + str(RUN))
 
 		# Add jobs to workflow
-		if RUN_ALL_FILES_IN_RUN and file_list:
+		if ONE_JOB_FOR_ALL_FILES_IN_RUN and file_list:
 			file_numbers_in_run = []
 			for FILEPATH in file_list:
-				match = re.search(r"(.*)/(.*)_(\d\d\d\d\d\d)_(\d\d\d).(.*)", FILEPATH)
+				match = re.search(r"(.*)/(.*)_(\d\d\d\d\d\d)_(\d\d\d)\.(.*)", FILEPATH)
 				if(match is not None):
 					file_numbers_in_run.append(match.group(4))
 			add_job(WORKFLOW, FILEPATH, config_dict, file_numbers_in_run)
@@ -406,4 +405,3 @@ def main(argv):
 
 if __name__ == "__main__":
 	main(sys.argv[1:])
-
