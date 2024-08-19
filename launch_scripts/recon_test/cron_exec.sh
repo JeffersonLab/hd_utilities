@@ -6,7 +6,7 @@ Setup_Environment()
 	export WORK_AREA=/volatile/halld/gluex/recon_test/
 
 	# USE THE ENVIRONMENT FOR THE LATEST NIGHTLY BUILD
-	source /group/halld/Software/scripts/monitoring/recon_test/env_recon_test.sh
+	source /group/halld/Software/hd_utilities/launch_scripts/recon_test/env_recon_test.sh
 	export PATH=/site/bin:${PATH} #because .login isn't executed, and need this path for SWIF
 }
 

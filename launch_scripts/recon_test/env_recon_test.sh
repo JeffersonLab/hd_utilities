@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export MONITORING_HOME=/group/halld/Software/scripts/monitoring/
+export MONITORING_HOME=/group/halld/Software/hd_utilities/launch_scripts/
 
 # SET PATH FOR PERL MODULES (Does not seem to be automatically present when running jobs from cron)
 #export PERL5LIB=/usr/local/lib64/perl5:/usr/local/share/perl5:/usr/lib64/perl5/vendor_perl:/usr/share/perl5/vendor_perl:/usr/lib64/perl5:/usr/share/perl5
