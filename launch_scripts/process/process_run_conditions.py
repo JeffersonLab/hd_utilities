@@ -178,7 +178,7 @@ def ParseEVIOFiles(filelist):
                 in_words = filesize/4
             data_in = f.read(4*in_words)
             data = struct.unpack(str(in_words)+"I", data_in)
-            for i in xrange(len(data)):
+            for i in range(len(data)):
                 w = data[i]
                 # Look for a "Go" event that we can use for the beginning of the run
                 if( (w & 0x0001D2FF) == 0x0001D2FF ): 
@@ -216,7 +216,7 @@ def ParseEVIOFiles(filelist):
                 data_in = f.read(4*in_words)
                 Nwords = len(data_in)/4
                 data = struct.unpack(str(in_words)+"I", data_in)                
-                #for i in xrange(len(data)):
+                #for i in range(len(data)):
                 i = Nwords - 7
                 while True:
                     i -= 1

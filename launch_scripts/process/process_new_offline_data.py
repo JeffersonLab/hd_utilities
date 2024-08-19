@@ -72,6 +72,7 @@ class ProcessMonDataConfig:
         self.INPUT_SMALLFILE_DIRECTORY = None    # base directory where small output files (e.g. log files) are stored
         #self.ROOTFILE_DIR = "ROOT" # OLD     # monitoring ROOT files are stored in INPUT_DIRECTORY/REVISION/ROOTFILE_DIR
         self.ROOTFILE_DIR = "hists"     # monitoring ROOT files are stored in INPUT_DIRECTORY/REVISION/ROOTFILE_DIR
+        #self.ROOTFILE_DIR = "monitoring_hists"     # for bggen
         self.OUTPUT_DIRECTORY = None   # base directory to store output files
         self.MERGED_ROOTFILE_OUTPUT_DIRECTORY = None  # optional directory to save merged files in
 
@@ -100,7 +101,8 @@ class ProcessMonDataConfig:
 
         # fix directories used in MC production
         if self.REVISION == "mc":
-            self.ROOTFILE_DIR = "hd_root"
+            #self.ROOTFILE_DIR = "hd_root"
+            self.ROOTFILE_DIR = "monitoring_hists" # for bggen
             self.COPY_REST_FILES = False    # sanity check
 
         # set up output logging
@@ -239,11 +241,11 @@ class ProcessMonDataConfig:
                 if len(tokens) < 3:
                     continue
                 try:
-                    runnum = int(tokens[2])
+                    runnum = int(tokens[3])
                 except ValueError:
                     logging.error("skipping file " + fname + " ...")
-                if tokens[2] not in rundirs_on_disk:
-                    rundirs_on_disk.append(tokens[2])
+                if tokens[3] not in rundirs_on_disk:
+                    rundirs_on_disk.append(tokens[3])
                 
         else:
             # The monitoring ROOT files are stored in one directory per run
@@ -287,7 +289,8 @@ class ProcessMonDataConfig:
             #root_files = [ f for f in root_files if rundir==f[8:14] ]
             #print "checking rundir %s"%(rundir)
             root_files = [ join(rootfilespath,f) for f in listdir(rootfilespath) 
-                           if (isfile(join(rootfilespath,f))and(f[-5:]=='.root')and(rundir==f[8:14])) ]
+                           #if (isfile(join(rootfilespath,f))and(f[-5:]=='.root')and(rundir==f[8:14])) ]
+                           if (isfile(join(rootfilespath,f))and(f[-5:]=='.root')and(rundir==f[14:20])) ] 
             #for  f in listdir(rootfilespath):
             #    print "%s  %s  %s"%(join(rootfilespath,f),f[-5:],f[8:14])
         else:
@@ -296,8 +299,8 @@ class ProcessMonDataConfig:
                            if (isfile(join(rootfilespath,rundir,f))and(f[-5:]=='.root')) ]
 
         if self.VERBOSE>2:
-            print "Looking for ROOT files in "+join(rootfilespath,rundir)
-            print "  found = "+str(root_files)
+            print("Looking for ROOT files in "+join(rootfilespath,rundir))
+            print("  found = "+str(root_files))
 
         for filepath in sorted(root_files):
             fname = filepath.split('/')[-1]   # for a full path separated by '/'s, the file name should be the last element
@@ -315,8 +318,8 @@ class ProcessMonDataConfig:
                 #logging.error("invalid filename = " + fname + ", skipping ...")  # should be summed files, 
                 continue
             try:
-                file_runnum = int(fname_fields[2])
-                filenum = int(fname_fields[3])
+                file_runnum = int(fname_fields[2]) #for bggen +1
+                filenum = int(fname_fields[3]) # for bggen +1
                 # HACK - only save 100 files for now (MC)
                 #if filenum > 100:
                 #    continue
@@ -348,7 +351,7 @@ def ProcessOfflineData(args):
     monitoring_files = args[2]
 
     if config.VERBOSE>0:
-        print "Processing run %d ..."%run
+        print("Processing run %d ..."%run)
 
     # STEP 1
     # Generate the summary information for each file
@@ -366,7 +369,7 @@ def ProcessOfflineData(args):
         #summarizer.VERSION_NUMBER = config.VERSION_NUMBER
         for (fname,filenum) in sorted(monitoring_files.items()):
             if config.VERBOSE>1:
-                print "  summarizing run %d file %d ..."%(run,filenum)
+                print("  summarizing run %d file %d ..."%(run,filenum))
             summarizer.FILE_NUMBER = filenum
             summarizer.FILE_NAME = fname
             summarizer.ProcessFile()
@@ -384,7 +387,7 @@ def ProcessOfflineData(args):
     summed_rootfile = join(summed_root_dir,summed_rootfile_name)  # figure out the output filename
     if config.MAKE_SUMMED_ROOTFILE and ( len(monitoring_files.keys()) > 0 ):   # only merge if there are files to process
         if config.VERBOSE>1:
-            print "  summing ROOT files..."
+            print("  summing ROOT files...")
         # make sure the output cirectory exists
         if not isdir(summed_root_dir):
             os.system("mkdir -m"+config.NEWDIR_MODE+" -p " + summed_root_dir)
@@ -415,7 +418,7 @@ def ProcessOfflineData(args):
             os.system("mkdir -m"+config.NEWDIR_MODE+" -p " + cache_summed_root_dir)
 
         ##
-        print "copying %s to %s"%(summed_rootfile, cache_summed_root_dir)
+        print("copying %s to %s"%(summed_rootfile, cache_summed_root_dir))
         ##
         os.system("cp -v %s %s"%(summed_rootfile, cache_summed_root_dir))
 
@@ -440,7 +443,7 @@ def ProcessOfflineData(args):
     # summarize the full run
     if config.MAKE_DB_SUMMARY:
         if config.VERBOSE>1:
-            print "  summarizing run %d ..."%(run)
+            print("  summarizing run %d ..."%(run))
         summarizer.FILE_NUMBER = -1
         summarizer.FILE_NAME = summed_rootfile
         summarizer.ProcessRun()
@@ -449,12 +452,12 @@ def ProcessOfflineData(args):
     # generate monitoring plots
     if config.MAKE_PLOTS:
         if config.VERBOSE>1:
-            print "  creating plots..."
+            print("  creating plots...")
         monitoring_data_dir = join(config.OUTPUT_DIRECTORY,("Run%06d" % run))
         if not isdir(monitoring_data_dir):
             retval = os.system("mkdir -m"+config.NEWDIR_MODE+" -p " + monitoring_data_dir)  ## need error checks
             if retval != 0:
-                print "ERROR MAKING DIRECTORY (#"+str(retval)+") = "+"mkdir -m"+config.NEWDIR_MODE+" -p " + monitoring_data_dir
+                print("ERROR MAKING DIRECTORY (#"+str(retval)+") = "+"mkdir -m"+config.NEWDIR_MODE+" -p " + monitoring_data_dir)
                 sys.exit(0)
 
         plotter = make_monitoring_plots.make_monitoring_plots()
@@ -480,7 +483,7 @@ def ProcessOfflineData(args):
     if len(config.ROOT_TREES_TO_MERGE) > 0:
         for tree in config.ROOT_TREES_TO_MERGE:
             if config.VERBOSE>2:
-                print "  merging %s ..."%tree
+                print("  merging %s ..."%tree)
             tree_dir = join(config.INPUT_DIRECTORY,config.REVISION,tree,"%06d"%run)
             merged_tree_dir = join(config.INPUT_DIRECTORY,config.REVISION,tree,"merged")
             if not isdir(merged_tree_dir):
@@ -489,7 +492,7 @@ def ProcessOfflineData(args):
             merged_tree_file = "%s_%06d.root"%(tree,run)
             os.system("rm -f %s/%s"%(merged_tree_dir,merged_tree_file))
             if config.VERBOSE>0:
-                print "merging into %s/%s ..."%(merged_tree_dir,merged_tree_file)
+                print("merging into %s/%s ..."%(merged_tree_dir,merged_tree_file))
             os.system("hadd -k %s/%s %s/*.root"%(merged_tree_dir,merged_tree_file,tree_dir))
             os.system("jcache put %s/%s"%(merged_tree_dir,merged_tree_file))
             os.system("jcache unpin %s/*.root"%(tree_dir))
@@ -510,7 +513,7 @@ def ProcessOfflineData(args):
     if len(config.HDDM_FILES_TO_MERGE) > 0:
         for file in config.HDDM_FILES_TO_MERGE:
             #if config.VERBOSE>2:
-            print "  merging %s ..."%file
+            print("  merging %s ..."%file)
             hddm_dir = join(config.INPUT_DIRECTORY,config.REVISION,file,"%06d"%run)
             if not isdir(hddm_dir):
                 continue # folder does not exist
@@ -523,7 +526,7 @@ def ProcessOfflineData(args):
             merged_hddm_file = "%s_%06d.hddm"%(file,run)
             os.system("rm -f %s/%s"%(merged_hddm_dir,merged_hddm_file))
             if config.VERBOSE>0:
-                print "merging into %s/%s ..."%(merged_hddm_dir,merged_hddm_file)
+                print("merging into %s/%s ..."%(merged_hddm_dir,merged_hddm_file))
             fout=hddm_s.ostream(os.path.join(merged_hddm_dir,merged_hddm_file))
             fout.compression = hddm_s.k_z_compression
             for fin in os.listdir(hddm_dir):
@@ -545,7 +548,7 @@ def ProcessOfflineData(args):
     #        print>>outf,fname
     try:
         pickle.dump( sorted(monitoring_files.keys()), open(join(log_dir,"processed_files.dat"),"w") )
-    except Exception, e:
+    except Exception as e:
         logging.error("Couldn't save list of processed files: %s"%str(e))
 
     # cleanup memory
@@ -556,7 +559,7 @@ def ProcessOfflineData(args):
     del monitoring_files
 
     if config.VERBOSE>0:
-        print "Done with run %d !"%run
+        print("Done with run %d !"%run)
 
 
 
@@ -624,7 +627,7 @@ def main():
         rcdb_conn = rcdb.RCDBProvider("mysql://rcdb@hallddb/rcdb")
     except:
         e = sys.exc_info()[0]
-        print "Could not connect to RCDB: " + str(e)
+        print("Could not connect to RCDB: " + str(e))
 
     # Set up directories and any other prep work that needs to be done
     config.BuildEnvironment()
