@@ -51,7 +51,7 @@ root -b -q "src/dofitall.C++($RUN,10)"
 
 # determine adc time offsets so that T_TDC - T_ADC will be peaked at zero.
 echo "executing doadctimeoffsets.C"
-root -b -q "src/doadctimeoffsets.C++($RUN)"
+root -b -q "src/doadctimeoffsets.C++($RUN)" >& calibration$RUN/adctoffsets.log
 
 
 # determine attenuation length
