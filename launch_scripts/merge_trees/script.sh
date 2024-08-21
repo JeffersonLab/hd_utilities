@@ -51,7 +51,7 @@ Merge_Files()
 
 	#cp -v $INPUTDIR/$TYPE/$RUN/${TYPE}_${RUN}_*.root .
 
-	LD_PRELOAD=/home/gxproj6/monitoring/merge_trees/startup_C.so hadd $TEMP_FILE $INPUTDIR/$TYPE/$RUN/${TYPE}_${RUN}_*.root
+	LD_PRELOAD=/home/gxproj6/hd_utilities/launch_scripts/merge_trees/startup_C.so hadd $TEMP_FILE $INPUTDIR/$TYPE/$RUN/${TYPE}_${RUN}_*.root
 	#hadd $TEMP_FILE $INPUTDIR/$TYPE/$RUN/${TYPE}_${RUN}_*.root
 	# RETURN CODE
 	RETURN_CODE=$?
