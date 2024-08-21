@@ -385,12 +385,12 @@ def main(argv):
 	try_command(command)
 
         # MODIFY FAILED JOBS
-	command = "swif2 modify-jobs -ram add 4gb -workflow " + LAUNCH_WORKFLOW + " -problems SLURM_OUT_OF_MEMORY"
+	command = "/usr/local/bin/swif2 modify-jobs -ram add 4gb -workflow " + LAUNCH_WORKFLOW + " -problems SLURM_OUT_OF_MEMORY"
 	if VERBOSE > 1:
 	        print(command)
 	try_command(command)
 
-	command = "swif2 modify-jobs -time add 4h -workflow " + LAUNCH_WORKFLOW + " -problems SLURM_TIMEOUT"
+	command = "/usr/local/bin/swif2 modify-jobs -time add 4h -workflow " + LAUNCH_WORKFLOW + " -problems SLURM_TIMEOUT"
 	if VERBOSE > 1:
 	        print(command)
 	try_command(command)
