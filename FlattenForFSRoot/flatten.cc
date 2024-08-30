@@ -966,7 +966,6 @@ int main(int argc, char** argv){
   double outMCPyPB;        if (gUseMCParticles) gOutTree->Branch("MCPyPB", &outMCPyPB);
   double outMCPzPB;        if (gUseMCParticles) gOutTree->Branch("MCPzPB", &outMCPzPB);
   double outMCEnPB;        if (gUseMCInfo) gOutTree->Branch("MCEnPB",      &outMCEnPB);
-  double outMCEnergy;      if (gUseMCInfo) gOutTree->Branch("MCEnergy",    &outMCEnergy);
   double outMCVxPB;        if (gUseMCParticles) gOutTree->Branch("MCVxPB", &outMCVxPB);
   double outMCVyPB;        if (gUseMCParticles) gOutTree->Branch("MCVyPB", &outMCVyPB);
   double outMCVzPB;        if (gUseMCParticles) gOutTree->Branch("MCVzPB", &outMCVzPB);
@@ -1346,7 +1345,6 @@ int main(int argc, char** argv){
       }
       if (gUseMCInfo){
         outMCEnPB = inThrownBeam__GeneratedEnergy;
-        outMCEnergy = inThrownBeam__GeneratedEnergy;
       }
       if (gUseMCParticles){
         outMCPxPB = inThrownBeam__P4->Px();
