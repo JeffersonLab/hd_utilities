@@ -352,7 +352,7 @@ def main(argv):
 	INDATA_TOPDIR = config_dict["INDATA_TOPDIR"] if ("INDATA_TOPDIR" in config_dict) else ""
 
 	# GET THE LIST OF GOOD RUNS
-	db = rcdb.RCDBProvider("mysql://rcdb@hallddb/rcdb")
+	db = rcdb.RCDBProvider(os.environ.get('RCDB_CONNECTION'))
 	good_runs = []
 	if(VERBOSE == True):
 		print("RCDB_QUERY = " + RCDB_QUERY)
