@@ -624,7 +624,7 @@ def main():
     # try to connect to RCDB
     rcdb_conn = None
     try:
-        rcdb_conn = rcdb.RCDBProvider("mysql://rcdb@hallddb/rcdb")
+        rcdb_conn = rcdb.RCDBProvider(os.environ.get('RCDB_CONNECTION'))
     except:
         e = sys.exc_info()[0]
         print("Could not connect to RCDB: " + str(e))
