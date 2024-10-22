@@ -1429,7 +1429,7 @@ int main(int argc, char** argv){
 
         if (GlueXParticleClass(name) == "Neutral"){
           if (gUseParticles && gUseKinFit){
-            TLorentzVector* p4 = (TLorentzVector*)inP4_KinFit[pIndex]->At(ic);
+            p4 = (TLorentzVector*)inP4_KinFit[pIndex]->At(ic);
               outPx[pIndex] = p4->Px();
               outPy[pIndex] = p4->Py();
               outPz[pIndex] = p4->Pz();
