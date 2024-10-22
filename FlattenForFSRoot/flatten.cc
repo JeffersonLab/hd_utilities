@@ -40,7 +40,7 @@ pair<int,int> FSCode(vector< vector<int> > pdgIDs);
   // utility functions for MC truth parsing
 vector< vector<int> > OrderedThrownIndices(int numThrown, int pids[], int parentIndices[]);
 vector<int> MCDecayParticles(int numThrown, int pids[], int parentIndices[]);
-void DisplayMCThrown(int numThrown, int pids[], int parentIndices[]);
+void DisplayMCThrown(int numThrown, int pids[], int parentIndices[], TClonesArray* p4s);
 int FSMCExtras(int numThrown, int pids[]);
 int BaryonNumber(int fsCode1, int fsCode2, int mcExtras = 0);
 int Charge(int fsCode1, int fsCode2, int mcExtras = 0);
@@ -92,7 +92,7 @@ int main(int argc, char** argv){
   cout << "                       when parsing truth information?  0 or 1] (default: 1)" << endl;
   cout << "           -safe  [check array sizes?  0 or 1]          (default: 1)" << endl;
   cout << "           -print [print to screen: " << endl;
-  cout << "                   -1 (less); 0 (regular); 1 (more)]    (default: 0)" << endl;
+  cout << "                   -1 (less); 0 (regular); 1 (more); 2 (even more)]    (default: 0)" << endl;
   cout << endl;
   cout << "Notes:" << endl;
   cout << "  * multiple input files can be specified using wildcards, but they"  << endl;
@@ -1179,7 +1179,7 @@ int main(int argc, char** argv){
     if ((iEntry+1 == 1) && (gPrint == 1)){
       cout << endl << "PRINTING TEST INFORMATION FOR FIVE EVENTS..." << endl << endl;
     }
-    if ((iEntry < 5) && (gPrint == 1)){
+    if (((iEntry < 5) && (gPrint == 1)) || (gPrint == 2)){
       cout << endl << endl;
       cout << "  ***************************" << endl;
       cout << "  ******* NEW EVENT " << iEntry+1 << " *******" << endl;
@@ -1252,7 +1252,7 @@ int main(int argc, char** argv){
       //  mcWarning = true;
       //}
         // print a few events to make sure MC makes sense
-      if (((iEntry < 5) && gPrint == 1) || (mcError) || (mcWarning && gPrint > 0)){
+      if (((iEntry < 5) && gPrint == 1) || (mcError) || (mcWarning && gPrint > 0) || (gPrint == 2)){
       //if (isMC && (iEntry < 5||inIsThrownTopology)){
         cout << endl << endl;
         if (mcError||mcWarning) cout << "WARNING: problems with the truth parsing (see below)..." << endl;
@@ -1262,7 +1262,7 @@ int main(int argc, char** argv){
         cout << "  FSCode = " << (int)outMCDecayCode2 << "_" << (int)outMCDecayCode1 << endl;
         cout << "  MCExtras = " << outMCExtras << endl;
         cout << "  IsThrownTopology = " << inIsThrownTopology << endl;
-        DisplayMCThrown(inNumThrown,inThrown__PID,inThrown__ParentIndex);
+        DisplayMCThrown(inNumThrown,inThrown__PID,inThrown__ParentIndex,inThrown__P4);
         cout << endl << endl;
       }
       if (mcError){
@@ -1479,6 +1479,7 @@ int main(int argc, char** argv){
         if (GlueXParticleClass(name) == "DecayingToCharged"){
           int pIndex1 = gMapGlueXNameToParticleIndex[gOrderedParticleNames[im][1]];
           int pIndex2 = gMapGlueXNameToParticleIndex[gOrderedParticleNames[im][2]];
+          //int tIndex0;  if (gUseMCParticles && outMCSignal > 0.1) tIndex0 = orderedThrownIndices[im][0];
           int tIndex1;  if (gUseMCParticles && outMCSignal > 0.1) tIndex1 = orderedThrownIndices[im][1];
           int tIndex2;  if (gUseMCParticles && outMCSignal > 0.1) tIndex2 = orderedThrownIndices[im][2];
           if (gUseParticles && gUseKinFitVtx){
@@ -1520,8 +1521,13 @@ int main(int argc, char** argv){
             }
           }
           if (gUseMCParticles && outMCSignal > 0.1){
+            //p4  = (TLorentzVector*)inThrown__P4->At(tIndex0);
             p4a = (TLorentzVector*)inThrown__P4->At(tIndex1);
             p4b = (TLorentzVector*)inThrown__P4->At(tIndex2);
+              //outMCPx[pIndex] = p4->Px();
+              //outMCPy[pIndex] = p4->Py();
+              //outMCPz[pIndex] = p4->Pz();
+              //outMCEn[pIndex] = p4->E();
               outMCPx[pIndex] = p4a->Px() + p4b->Px();
               outMCPy[pIndex] = p4a->Py() + p4b->Py();
               outMCPz[pIndex] = p4a->Pz() + p4b->Pz();
@@ -1579,7 +1585,7 @@ int main(int argc, char** argv){
 
       // print some information (for debugging only)
 
-      if ((iEntry < 5) && (gPrint == 1) && (gUseParticles)){
+      if (((iEntry < 5) && (gPrint == 1) && (gUseParticles)) || ((gPrint == 2) && (gUseParticles))){
         cout << "  *******************************" << endl;
         cout << "  **** INFO FOR EVENT " << iEntry+1 << " ****" << endl;
         cout << "  *******************************" << endl;
@@ -1865,13 +1871,17 @@ TString PDGReadableName(int id){
   return name;
 }
 
-void DisplayMCThrown(int numThrown, int pids[], int parentIndices[]){
-  cout << "  LIST OF THROWN PARTICLES: " << endl;
+void DisplayMCThrown(int numThrown, int pids[], int parentIndices[], TClonesArray* p4s){
+  cout << "  LIST OF THROWN PARTICLES (STRAIGHT FROM ANALYSIS TREE): " << endl;
+  TLorentzVector *p4;
   for (int i = 0; i < numThrown; i++){
+    p4 = (TLorentzVector*)p4s->At(i);
     cout << "    THROWN INDEX = " << i << endl;
     cout << "      PID = " << pids[i] << endl;
     cout << "      PDG Name = " << PDGReadableName(pids[i]) << endl;
     cout << "      Parent Index = " << parentIndices[i] << endl;
+    cout << "      Mass = " << p4->M() << endl;
+    cout << "      Energy = " << p4->E() << endl;
   }
   vector< pair<int,int> > firstList;
   for (int index = 0; index < numThrown; index++){
