@@ -1429,7 +1429,7 @@ int main(int argc, char** argv){
 
         if (GlueXParticleClass(name) == "Neutral"){
           if (gUseParticles && gUseKinFit){
-            p4 = (TLorentzVector*)inP4_KinFit[pIndex]->At(ic);
+            TLorentzVector* p4 = (TLorentzVector*)inP4_KinFit[pIndex]->At(ic);
               outPx[pIndex] = p4->Px();
               outPy[pIndex] = p4->Py();
               outPz[pIndex] = p4->Pz();
@@ -1485,6 +1485,7 @@ int main(int argc, char** argv){
           if (gUseParticles && gUseKinFitVtx){
             p4a = (TLorentzVector*)inP4_KinFit[pIndex1]->At(ic);
             p4b = (TLorentzVector*)inP4_KinFit[pIndex2]->At(ic);
+            TLorentzVector* p4 = new TLorentzVector(0,0,0,0);
             *p4 = *p4a + *p4b;
               outPx[pIndex] = p4a->Px() + p4b->Px();
               outPy[pIndex] = p4a->Py() + p4b->Py();
@@ -1492,6 +1493,7 @@ int main(int argc, char** argv){
               outEn[pIndex] = p4a->E()  + p4b->E();
             x4a = (TLorentzVector*)inBeam__X4_KinFit->At(ic);
             x4b = (TLorentzVector*)inX4[pIndex]->At(ic);
+            TLorentzVector* x4 = new TLorentzVector(0,0,0,0);
             *x4 = *x4b - *x4a;
             outVeeL[pIndex] = (x4->Vect()).Mag();
             if ( (x4->Angle(p4->Vect()))/TMath::Pi() > 0.5 )
@@ -1500,6 +1502,8 @@ int main(int argc, char** argv){
               outVeeLSigma[pIndex] = -10000.;
             else
               outVeeLSigma[pIndex] = outVeeL[pIndex]/inPathLengthSigma[pIndex][ic];
+            delete p4;
+            delete x4;
           }
           if (gUseParticles){
             p4a = (TLorentzVector*)inChargedHypo__P4_Measured->At(inChargedIndex[pIndex1][ic]);
