@@ -237,7 +237,6 @@ def add_job(WORKFLOW, FILEPATH, config_dict):
 
 	# SETUP OTHER VARIABLES:
 	INPUTDATA_TYPE = "mss" if(INDATA_DIR[:5] == "/mss/") else "file"
-	CACHE_PIN_DAYS = config_dict["CACHE_PIN_DAYS"] if ("CACHE_PIN_DAYS" in config_dict) else "0"
 	JANA_CONFIG = config_dict["JANA_CONFIG"] if ("JANA_CONFIG" in config_dict) else "NA"
 	NUM_THREADS = find_num_threads(JANA_CONFIG) if ("JANA_CONFIG" in config_dict) else "1"
 
@@ -276,7 +275,7 @@ def add_job(WORKFLOW, FILEPATH, config_dict):
 	# command + arguments
 	add_command += " " + config_dict["SCRIPTFILE"] + " " + config_dict["ENVFILE"] + " " + FILENAME + " " + JANA_CONFIG
 	# command arguments continued
-	add_command += " " + config_dict["OUTDIR_LARGE"] + " " + config_dict["OUTDIR_SMALL"] + " " + RUNNO + " " + FILENO + " " + CACHE_PIN_DAYS
+	add_command += " " + config_dict["OUTDIR_LARGE"] + " " + config_dict["OUTDIR_SMALL"] + " " + RUNNO + " " + FILENO
 
 	# optional command arguments
 	if('ROOT_SCRIPT' in config_dict):

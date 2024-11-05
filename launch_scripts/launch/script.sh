@@ -106,17 +106,6 @@ Save_OutputFiles()
 	# REMOVE INPUT FILE: so that it's easier to determine which remaining files are skims
 	rm -f $INPUTFILE
 
-	# BUILD TAPEDIR, IF $OUTDIR_LARGE STARTS WITH "/cache/"
-	# AND CACHE_PIN_DAYS WAS GIVEN AND GREATER THAN 0
-	# If so, output files are pinned & jcache put.  If not, then they aren't. 
-	local TAPEDIR=""
-	local OUTDIR_LARGE_BASE=`echo $OUTDIR_LARGE | awk '{print substr($0,1,7)}'`
-	# first strip /cache/, then insert /mss/
-	if [ "$OUTDIR_LARGE_BASE" == "/cache/" ] && [ $CACHE_PIN_DAYS -gt 0 ] ; then
-		local OUTPATH=`echo $OUTDIR_LARGE | awk '{print substr($0,8)}'`
-		TAPEDIR=/mss/${OUTPATH}/
-	fi
-
 	# CALL SAVE FUNCTIONS
 	Save_Histograms
 	Save_REST
@@ -140,13 +129,6 @@ Save_Histograms()
 		echo "Adding hd_root.root to swif2 output: $OUTPUT_FILE"
 		swif2 output hd_root.root $OUTPUT_FILE
 
-		# # force save to tape & pin
-		# if [ "$TAPEDIR" != "" ]; then
-		# 	echo jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-		# 	jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-		# 	echo jcache put $OUTPUT_FILE
-		# 	jcache put $OUTPUT_FILE
-		# fi
 	fi
 }
 
@@ -164,13 +146,6 @@ Save_REST()
 		echo "Adding dana_rest.hddm to swif2 output: $OUTPUT_FILE"
 		swif2 output dana_rest.hddm $OUTPUT_FILE
 
-		# # force save to tape & pin
-		# if [ "$TAPEDIR" != "" ]; then
-		#         echo jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-		# 	jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-		# 	echo jcache put $OUTPUT_FILE
-		# 	jcache put $OUTPUT_FILE
-		# fi
 	fi
 }
 
@@ -213,11 +188,6 @@ Save_EVIOSkims()
 		echo "Adding $EVIO_FILE to swif2 output: $OUTPUT_FILE"
 		swif2 output $EVIO_FILE $OUTPUT_FILE
 
-		# # force save to tape & pin
-		# if [ "$TAPEDIR" != "" ]; then
-		# 	jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-		# 	jcache put $OUTPUT_FILE
-		# fi
 	done
 }
 
@@ -242,11 +212,6 @@ Save_HDDMSkims()
 		echo "Adding $HDDM_FILE to output: $OUTPUT_FILE"
 		swif2 output $HDDM_FILE $OUTPUT_FILE
 
-		# # force save to tape & pin
-		# if [ "$TAPEDIR" != "" ]; then
-		# 	jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-		# 	jcache put $OUTPUT_FILE
-		# fi
 	done
 }
 
@@ -271,11 +236,6 @@ Save_ROOTFiles()
 		echo "Adding $ROOT_FILE to swif2 output: $OUTPUT_FILE"
 		swif2 output $ROOT_FILE $OUTPUT_FILE
 
-		# # force save to tape & pin
-		# if [ "$TAPEDIR" != "" ]; then
-		# 	jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-		# 	jcache put $OUTPUT_FILE
-		# fi
 	done
 }
 
@@ -310,7 +270,6 @@ OUTDIR_LARGE=$4
 OUTDIR_SMALL=$5
 RUN_NUMBER=$6
 FILE_NUMBER=$7
-CACHE_PIN_DAYS=$8
 
 # PRINT INPUTS
 echo "HOSTNAME          = $HOSTNAME"
@@ -321,7 +280,6 @@ echo "OUTDIR_LARGE      = $OUTDIR_LARGE"
 echo "OUTDIR_SMALL      = $OUTDIR_SMALL"
 echo "RUN_NUMBER        = $RUN_NUMBER"
 echo "FILE_NUMBER       = $FILE_NUMBER"
-echo "CACHE_PIN_DAYS    = $CACHE_PIN_DAYS"
 
 # RUN
 Run_Script
