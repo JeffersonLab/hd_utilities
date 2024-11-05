@@ -154,19 +154,6 @@ def validate_config(config_dict):
 		print("ERROR: INDATA_TOPDIR does not exist! \n INDATA_TOPDIR: " + config_dict["INDATA_TOPDIR"])
 		sys.exit(1)
 
-	# CHECK OUTPUT (LARGE) FOLDER EXISTENCE
-	if(not os.path.isdir(config_dict["OUTDIR_LARGE"])):
-		# First try to create folder if it does not exist
-		NEW_DIR = str(config_dict["OUTDIR_LARGE"])
-		make_large_dir = "mkdir -p " + NEW_DIR
-		try_command(make_large_dir)
-		if(VERBOSE == True):
-			print("OUTDIR_LARGE " + make_large_dir + " CREATED")
-	# If creating OUTDIR_LARGE unsuccessful, we should exit
-	if(not os.path.isdir(config_dict["OUTDIR_LARGE"])):
-		print("ERROR: OUTDIR_LARGE does not exist and could not be created \n OUTDIR_LARGE: " + config_dict["OUTDIR_LARGE"])
-		sys.exit(1)
-
 	# CHECK OUTPUT (SMALL) FOLDER EXISTENCE
 	if(not os.path.isdir(config_dict["OUTDIR_SMALL"])):
 		# First try to create folder if it does not exist
