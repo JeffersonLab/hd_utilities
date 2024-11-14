@@ -6,6 +6,10 @@ Setup_Script()
 {
 	# PWD, STATUS OF MOUNTED DISKS
 	echo "pwd =" $PWD
+	if [[ $PWD != /scratch/slurm/${SLURM_JOB_ID} ]] ; then
+	    echo "LOCAL DIRECTORY " $PWD " NOT SUPPORTED"
+	    exit 1
+	fi
 	echo "df -h:"
 	df -h
 
@@ -85,23 +89,8 @@ Save_OutputFiles()
 	# REMOVE INPUT FILE: so that it's easier to determine which remaining files are skims
 	rm -f $INPUTFILE
 
-	# BUILD TAPEDIR, IF $OUTDIR_LARGE STARTS WITH "/cache/"
-	# AND CACHE_PIN_DAYS WAS GIVEN AND GREATER THAN 0  && [ "$CACHE_PIN_DAYS" -gt "0" ]
-	# If so, output files are pinned & jcache put.  If not, then they aren't. 
-	local TAPEDIR=""
-	local OUTDIR_LARGE_BASE=`echo $OUTDIR_LARGE | awk '{print substr($0,1,7)}'`
-	# first strip /cache/, then insert /mss/
-	if [ "$OUTDIR_LARGE_BASE" == "/cache/" ]; then
-		local OUTPATH=`echo $OUTDIR_LARGE | awk '{print substr($0,8)}'`
-		TAPEDIR=/mss/${OUTPATH}/
-	fi
-
 	# CALL SAVE FUNCTIONS
 	Save_ROOTFiles
-
-	# SEE WHAT FILES ARE LEFT
-	echo "FILES REMAINING AFTER SAVING:"
-	ls -l
 }
 
 Save_ROOTFiles()
@@ -127,15 +116,8 @@ Save_ROOTFiles()
 		fi
 
 		# save it
-		mkdir -p -m 755 $OUTDIR_THIS
-		mv -v $ROOT_FILE $OUTPUT_FILE
-		chmod 644 $OUTPUT_FILE
-
-		# force save to tape & pin
-		if [ "$TAPEDIR" != "" ]; then
-			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			jcache put $OUTPUT_FILE
-		fi
+		echo "Adding $ROOT_FILE to swif2 output: $OUTPUT_FILE"
+		swif2 output $ROOT_FILE $OUTPUT_FILE
 	done
 }
 
@@ -171,11 +153,10 @@ OUTDIR_LARGE=$4
 OUTDIR_SMALL=$5
 RUN_NUMBER=$6
 FILE_NUMBER=$7
-CACHE_PIN_DAYS=$8
-ROOT_SCRIPT=$9
-TREE_NAME=${10}
-SELECTOR_NAME=${11}
-NUM_THREADS=${12}
+ROOT_SCRIPT=$8
+TREE_NAME=$9
+SELECTOR_NAME=${10}
+NUM_THREADS=${11}
 
 # PRINT INPUTS
 echo "HOSTNAME          = $HOSTNAME"
@@ -186,7 +167,6 @@ echo "OUTDIR_LARGE      = $OUTDIR_LARGE"
 echo "OUTDIR_SMALL      = $OUTDIR_SMALL"
 echo "RUN_NUMBER        = $RUN_NUMBER"
 echo "FILE_NUMBER       = $FILE_NUMBER"
-echo "CACHE_PIN_DAYS    = $CACHE_PIN_DAYS"
 echo "ROOT_SCRIPT       = $ROOT_SCRIPT"
 echo "TREE_NAME         = $TREE_NAME"
 echo "SELECTOR_NAME     = $SELECTOR_NAME"

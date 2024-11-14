@@ -106,34 +106,13 @@ Save_OutputFiles()
 	# REMOVE INPUT FILE: so that it's easier to determine which remaining files are skims
 	rm -f $INPUTFILE
 
-	# BUILD TAPEDIR, IF $OUTDIR_LARGE STARTS WITH "/cache/"
-	# AND CACHE_PIN_DAYS WAS GIVEN AND GREATER THAN 0
-	# If so, output files are pinned & jcache put.  If not, then they aren't. 
-	local TAPEDIR=""
-	local OUTDIR_LARGE_BASE=`echo $OUTDIR_LARGE | awk '{print substr($0,1,7)}'`
-	# first strip /cache/, then insert /mss/
-	if [ "$OUTDIR_LARGE_BASE" == "/cache/" ] && [ $CACHE_PIN_DAYS -gt 0 ] ; then
-		local OUTPATH=`echo $OUTDIR_LARGE | awk '{print substr($0,8)}'`
-		TAPEDIR=/mss/${OUTPATH}/
-	fi
-
 	# CALL SAVE FUNCTIONS
 	Save_Histograms
-	Save_Histograms
-	Save_REST
 	Save_REST
 	Save_JANADot
 	Save_EVIOSkims
-	Save_EVIOSkims
-	Save_HDDMSkims
 	Save_HDDMSkims
 	Save_ROOTFiles
-	Save_ROOTFiles
-	Save_IDXA
-
-	# SEE WHAT FILES ARE LEFT
-	echo "FILES REMAINING AFTER SAVING:"
-	ls -l
 }
 
 Save_Histograms()
@@ -143,32 +122,13 @@ Save_Histograms()
 		echo "Saving histogram file"
 
 		# setup output dirs
-		local OUTDIR_THIS=${OUTDIR_LARGE}/hists/${RUN_NUMBER}/
-		mkdir -p -m 755 ${OUTDIR_THIS}
+		local OUTDIR_THIS=${OUTDIR_LARGE}/hists/${RUN_NUMBER}
 
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/hd_root_${RUN_NUMBER}_${FILE_NUMBER}.root
-		mv -v hd_root.root $OUTPUT_FILE
-		chmod 644 $OUTPUT_FILE
-		
-		# check if the target file is empty, if yes try again
-		if [ ! -s $OUTPUT_FILE ] ; then 
-		    mv -v hd_root.root $OUTPUT_FILE
-		    chmod 644 $OUTPUT_FILE
-		fi
+		echo "Adding hd_root.root to swif2 output: $OUTPUT_FILE"
+		swif2 output hd_root.root $OUTPUT_FILE
 
-		# if the target file is still empty, fail job
-		if [ ! -s $OUTPUT_FILE ] ; then
-		    exit 13
-		fi
-
-		# force save to tape & pin
-		if [ "$TAPEDIR" != "" ]; then
-			echo jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			echo jcache put $OUTPUT_FILE
-			jcache put $OUTPUT_FILE
-		fi
 	fi
 }
 
@@ -179,32 +139,13 @@ Save_REST()
 		echo "Saving REST file"
 
 		# setup output dirs
-		local OUTDIR_THIS=${OUTDIR_LARGE}/REST/${RUN_NUMBER}/
-		mkdir -p -m 755 $OUTDIR_THIS
+		local OUTDIR_THIS=${OUTDIR_LARGE}/REST/${RUN_NUMBER}
 
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/dana_rest_${RUN_NUMBER}_${FILE_NUMBER}.hddm
-		mv -v dana_rest.hddm $OUTPUT_FILE
-		chmod 644 $OUTPUT_FILE
+		echo "Adding dana_rest.hddm to swif2 output: $OUTPUT_FILE"
+		swif2 output dana_rest.hddm $OUTPUT_FILE
 
-		# check if the target file is empty, if yes try again
-		if [ ! -s $OUTPUT_FILE ] ; then 
-		    mv -v dana_rest $OUTPUT_FILE
-		    chmod 644 $OUTPUT_FILE
-		fi
-
-		# if the target file is still empty, fail job
-		if [ ! -s $OUTPUT_FILE ] ; then
-		    exit 13
-		fi
-
-		# force save to tape & pin
-		if [ "$TAPEDIR" != "" ]; then
-		        echo jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			echo jcache put $OUTPUT_FILE
-			jcache put $OUTPUT_FILE
-		fi
 	fi
 }
 
@@ -217,13 +158,12 @@ Save_JANADot()
 		ps2pdf jana.ps
 
 		# setup output dir
-		local OUTDIR_THIS=${OUTDIR_SMALL}/log/${RUN_NUMBER}/
-		mkdir -p -m 755 $OUTDIR_THIS
+		local OUTDIR_THIS=${OUTDIR_LARGE}/janadot/${RUN_NUMBER}
 
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/janadot_${RUN_NUMBER}_${FILE_NUMBER}.pdf
-		mv -v jana.pdf $OUTPUT_FILE
-		chmod 644 $OUTPUT_FILE
+		echo "Adding jana.pdf to swif2 output: $OUTPUT_FILE"
+		swif2 output jana.pdf $OUTPUT_FILE
 	fi
 }
 
@@ -241,25 +181,13 @@ Save_EVIOSkims()
 		Extract_SkimName $EVIO_FILE SKIM_NAME
 
 		# setup output dir
-		local OUTDIR_THIS=${OUTDIR_LARGE}/${SKIM_NAME}/${RUN_NUMBER}/
-		mkdir -p -m 755 $OUTDIR_THIS
+		local OUTDIR_THIS=${OUTDIR_LARGE}/${SKIM_NAME}/${RUN_NUMBER}
 
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/${SKIM_NAME}_${RUN_NUMBER}_${FILE_NUMBER}.evio
-		mv -v $EVIO_FILE $OUTPUT_FILE
-		chmod 644 $OUTPUT_FILE
-		
-		# check if the target file is empty, if yes try again
-		if [ ! -s $OUTPUT_FILE ] ; then 
-		    mv -v $EVIO_FILE $OUTPUT_FILE
-		    chmod 644 $OUTPUT_FILE
-		fi
+		echo "Adding $EVIO_FILE to swif2 output: $OUTPUT_FILE"
+		swif2 output $EVIO_FILE $OUTPUT_FILE
 
-		# force save to tape & pin
-		if [ "$TAPEDIR" != "" ]; then
-			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			jcache put $OUTPUT_FILE
-		fi
 	done
 }
 
@@ -273,95 +201,44 @@ Save_HDDMSkims()
 
 	# SAVE HDDM SKIMS #assumes REST file already backed up and removed!
 	echo "Saving HDDM skim files"
-	for HDDM_FILE in `ls *.hddm`; do
+	for HDDM_FILE in `ls *.hddm | grep -v dana_rest.hddm`; do
 		Extract_BaseName $HDDM_FILE SKIM_NAME
 
 		# setup output dir
-		local OUTDIR_THIS=${OUTDIR_LARGE}/${SKIM_NAME}/${RUN_NUMBER}/
-		mkdir -p -m 755 $OUTDIR_THIS
+		local OUTDIR_THIS=${OUTDIR_LARGE}/${SKIM_NAME}/${RUN_NUMBER}
 
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/${SKIM_NAME}_${RUN_NUMBER}_${FILE_NUMBER}.hddm
-		mv -v $HDDM_FILE $OUTPUT_FILE
-		chmod 644 $OUTPUT_FILE
+		echo "Adding $HDDM_FILE to output: $OUTPUT_FILE"
+		swif2 output $HDDM_FILE $OUTPUT_FILE
 
-		# check if the target file is empty, if yes try again
-		if [ ! -s $OUTPUT_FILE ] ; then 
-		    mv -v $HDDM_FILE $OUTPUT_FILE
-		    chmod 644 $OUTPUT_FILE
-		fi
-		# force save to tape & pin
-		if [ "$TAPEDIR" != "" ]; then
-			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			jcache put $OUTPUT_FILE
-		fi
 	done
 }
 
 Save_ROOTFiles()
 {
 	# SAVE OTHER ROOT FILES
-        local NUM_FILES=`ls *.root 2>/dev/null | wc -l`
+        local NUM_FILES=`ls *.root | grep -v hd_root.root 2>/dev/null | wc -l`
         if [ $NUM_FILES -eq 0 ] ; then
                 echo "No additional ROOT files produced"
                 return
         fi
 
 	echo "Saving other ROOT files"
-	for ROOT_FILE in `ls *.root`; do
+	for ROOT_FILE in `ls *.root | grep -v hd_root.root`; do
 		Extract_BaseName $ROOT_FILE BASE_NAME
 
 		# setup output dir
-		local OUTDIR_THIS=${OUTDIR_LARGE}/${BASE_NAME}/${RUN_NUMBER}/
-		mkdir -p -m 755 $OUTDIR_THIS
+		local OUTDIR_THIS=${OUTDIR_LARGE}/${BASE_NAME}/${RUN_NUMBER}
 
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/${BASE_NAME}_${RUN_NUMBER}_${FILE_NUMBER}.root
-		mv -v $ROOT_FILE $OUTPUT_FILE
-		chmod 644 $OUTPUT_FILE
+		echo "Adding $ROOT_FILE to swif2 output: $OUTPUT_FILE"
+		swif2 output $ROOT_FILE $OUTPUT_FILE
 
-		# check if the target file is empty, if yes try again
-		if [ ! -s $OUTPUT_FILE ] ; then 
-		    mv -v $ROOT_FILE $OUTPUT_FILE
-		    chmod 644 $OUTPUT_FILE
-		fi
-
-		# if the target file is still empty, fail job
-		if [ ! -s $OUTPUT_FILE ] ; then
-		    exit 13
-		fi
-
-		# force save to tape & pin
-		if [ "$TAPEDIR" != "" ]; then
-			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			jcache put $OUTPUT_FILE
-		fi
 	done
 }
 
-Save_IDXA()
-{
-	# SAVE IDXA FILES
-        local NUM_FILES=`ls *.idxa 2>/dev/null | wc -l`
-        if [ $NUM_FILES -eq 0 ] ; then
-                echo "No IDXA files produced"
-                return
-        fi
-
-	echo "Saving IDXA files"
-	for IDXA_FILE in `ls *.idxa`; do
-		Extract_BaseName $IDXA_FILE BASE_NAME
-
-		# setup output dir
-		local OUTDIR_THIS=${OUTDIR_SMALL}/IDXA/${RUN_NUMBER}/
-		mkdir -p -m 755 $OUTDIR_THIS
-
-		# save it
-		local OUTPUT_FILE=${OUTDIR_THIS}/${BASE_NAME}_${RUN_NUMBER}_${FILE_NUMBER}.idxa
-		mv -v $IDXA_FILE $OUTPUT_FILE
-		chmod 644 $OUTPUT_FILE
-	done
-}
 
 ########################################################## MAIN FUNCTION ########################################################
 
@@ -393,7 +270,6 @@ OUTDIR_LARGE=$4
 OUTDIR_SMALL=$5
 RUN_NUMBER=$6
 FILE_NUMBER=$7
-CACHE_PIN_DAYS=$8
 
 # PRINT INPUTS
 echo "HOSTNAME          = $HOSTNAME"
@@ -404,7 +280,6 @@ echo "OUTDIR_LARGE      = $OUTDIR_LARGE"
 echo "OUTDIR_SMALL      = $OUTDIR_SMALL"
 echo "RUN_NUMBER        = $RUN_NUMBER"
 echo "FILE_NUMBER       = $FILE_NUMBER"
-echo "CACHE_PIN_DAYS    = $CACHE_PIN_DAYS"
 
 # RUN
 Run_Script
