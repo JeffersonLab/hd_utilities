@@ -418,9 +418,9 @@ def ProcessOfflineData(args):
             os.system("mkdir -m"+config.NEWDIR_MODE+" -p " + cache_summed_root_dir)
 
         ##
-        print("copying %s to %s"%(summed_rootfile, cache_summed_root_dir))
+        print("Adding %s to swif2 output: %s/%s"%(summed_rootfile, cache_summed_root_dir, summed_rootfile_name))
         ##
-        os.system("cp -v %s %s"%(summed_rootfile, cache_summed_root_dir))
+        os.system("swif2 output %s %s/%s"%(summed_rootfile, cache_summed_root_dir, summed_rootfile_name))
 
         # this option motivated by new plans for file management when working off of the write-through cache
         # instead of keeping individual ROOT files semi-permanently, for some jobs we merge ROOT files as they
@@ -477,6 +477,11 @@ def ProcessOfflineData(args):
     ##    print "  saving conditions..."
     #    process_run_conditions.main(cmdargs.split())
 
+    if config.BATCH_TEMP_DIR:
+        temp_dir = os.environ['BATCH_TMPDIR']
+    else:
+        temp_dir = "."
+
     # STEP 5
     # MERGE OTHER FILES
     # merge trees
@@ -485,17 +490,18 @@ def ProcessOfflineData(args):
             if config.VERBOSE>2:
                 print("  merging %s ..."%tree)
             tree_dir = join(config.INPUT_DIRECTORY,config.REVISION,tree,"%06d"%run)
+            if not isdir(tree_dir):
+                continue # folder does not exist
+            if not os.listdir(tree_dir):
+                continue # or folder is empty
             merged_tree_dir = join(config.INPUT_DIRECTORY,config.REVISION,tree,"merged")
-            if not isdir(merged_tree_dir):
-                os.system("mkdir -m"+config.NEWDIR_MODE+" -p " + merged_tree_dir)
             
             merged_tree_file = "%s_%06d.root"%(tree,run)
-            os.system("rm -f %s/%s"%(merged_tree_dir,merged_tree_file))
             if config.VERBOSE>0:
-                print("merging into %s/%s ..."%(merged_tree_dir,merged_tree_file))
-            os.system("hadd -k %s/%s %s/*.root"%(merged_tree_dir,merged_tree_file,tree_dir))
-            os.system("jcache put %s/%s"%(merged_tree_dir,merged_tree_file))
-            os.system("jcache unpin %s/*.root"%(tree_dir))
+                print("merging into %s/%s ..."%(temp_dir,merged_tree_file))
+            os.system("hadd -k %s/%s %s/*.root"%(temp_dir,merged_tree_file,tree_dir))
+            print("Adding %s to swif2 output: %s/%s"%(merged_tree_file, merged_tree_dir, merged_tree_file))
+            os.system("swif2 output %s %s/%s"%(merged_tree_file, merged_tree_dir, merged_tree_file))
     # merge evio files
     """
     if len(config.EVIO_SKIMS_TO_MERGE) > 0:
@@ -520,20 +526,17 @@ def ProcessOfflineData(args):
             if not os.listdir(hddm_dir):
                 continue # or folder is empty
             merged_hddm_dir = join(config.INPUT_DIRECTORY,config.REVISION,file,"merged")
-            if not isdir(merged_hddm_dir):
-                os.system("mkdir -m"+config.NEWDIR_MODE+" -p " + merged_hddm_dir)
 
             merged_hddm_file = "%s_%06d.hddm"%(file,run)
-            os.system("rm -f %s/%s"%(merged_hddm_dir,merged_hddm_file))
             if config.VERBOSE>0:
-                print("merging into %s/%s ..."%(merged_hddm_dir,merged_hddm_file))
-            fout=hddm_s.ostream(os.path.join(merged_hddm_dir,merged_hddm_file))
+                print("merging into %s/%s ..."%(temp_dir,merged_hddm_file))
+            fout=hddm_s.ostream(os.path.join(temp_dir,merged_hddm_file))
             fout.compression = hddm_s.k_z_compression
             for fin in os.listdir(hddm_dir):
                 for rec in hddm_s.istream(os.path.join(hddm_dir,fin)):
                     fout.write(rec)
-            os.system("jcache put %s/%s"%(merged_hddm_dir,merged_hddm_file))
-            os.system("jcache unpin %s/*.root"%(hddm_dir))
+            print("Adding %s to swif2 output: %s/%s"%(merged_hddm_file, merged_hddm_dir, merged_hddm_file))
+            os.system("swif2 output %s %s/%s"%(merged_hddm_file, merged_hddm_dir, merged_hddm_file))
 
     # CLEANUP
     ## save some information about what has been processed so far

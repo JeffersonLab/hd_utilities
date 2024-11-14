@@ -25,7 +25,8 @@ export INPUTDIR=/cache/halld/offline_monitoring/$RUNPERIOD
 export INPUT_SMALLFILE_DIR=/cache/halld/offline_monitoring/$RUNPERIOD
 export OUTPUTDIR=/work/halld2/data_monitoring/${RUNPERIOD}/${DATATYPE}_ver${VERSION}
 export ROOTOUTPUTDIR=/work/halld/data_monitoring/${RUNPERIOD}/${DATATYPE}_ver${VERSION}/rootfiles
-export ARGS=" --force -B -R $RUN -E -T $ROOTOUTPUTDIR -v $RUNPERIOD,$VERSION  "
+export ARGS=" --force -B -R $RUN -E -d -T $ROOTOUTPUTDIR -v $RUNPERIOD,$VERSION --merge-trees=hd_root_tofcalib,tree_bcal_hadronic_eff,tree_fcal_hadronic_eff,tree_PSFlux,tree_trackeff,syncskim,tree_TPOL --merge-hddms=converted_random"
+# tree_scaler_primex,
 
 # Load standard environment for ROOT
 source /home/gxproj5/env_monitoring_launch.sh
