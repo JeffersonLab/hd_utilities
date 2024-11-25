@@ -198,27 +198,18 @@ Save_Files()
 	
 	# setup output dirs
 	local OUTDIR_THIS=${OUTDIR}/$TYPE/merged/
-	mkdir -p -m 755 ${OUTDIR_THIS}
 
 	local OUTPUT_FILE=$OUTDIR_THIS/$TEMP_FILE
 	
 	# save it
-	mv -v $TEMP_FILE $OUTPUT_FILE
+	echo "Adding $TEMP_FILE to swif2 output: $OUTPUT_FILE"
+	swif2 output $TEMP_FILE $OUTPUT_FILE
+
 	# if save failed, do not go on and delete anything
 	RETURN_CODE=$?
 	echo "Return Code = " $RETURN_CODE
 	if [ $RETURN_CODE -ne 0 ]; then
 	    exit $RETURN_CODE
-	fi
-	
-	chmod 644 $OUTPUT_FILE
-
-	# force save to tape & pin
-	if [ "$TAPEDIR" != "" ]; then
-	    echo jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-	    jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-	    echo jcache put $OUTPUT_FILE
-	    jcache put $OUTPUT_FILE
 	fi
 	
     done

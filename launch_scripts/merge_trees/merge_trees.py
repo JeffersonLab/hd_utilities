@@ -180,7 +180,7 @@ def validate_config(config_dict):
 ################################################### BUILD DICTIONARIES ###################################################
 
 def build_launch_dictionary(WORKFLOW):
-	command = "/usr/local/bin/swif2 status -workflow " + WORKFLOW + " -jobs"
+	command = "swif2 status -workflow " + WORKFLOW + " -jobs"
 	if VERBOSE > 1:
 		print(command)
 	process = Popen(command.split(), stdout=PIPE)
@@ -237,7 +237,7 @@ def build_launch_dictionary(WORKFLOW):
 	return job_dictionary
 
 def build_merge_deque(WORKFLOW):
-	command = "/usr/local/bin/swif2 status -workflow " + WORKFLOW + " -jobs"
+	command = "swif2 status -workflow " + WORKFLOW + " -jobs"
 	if VERBOSE > 1:
 		print(command)
 	process = Popen(command.split(), stdout=PIPE)
@@ -286,7 +286,7 @@ def add_job(MERGE_WORKFLOW, RUNNO, config_dict):
 
 	# CREATE ADD-JOB COMMAND
 	# job
-	add_command = "/usr/local/bin/swif2 add-job -workflow " + MERGE_WORKFLOW + " -name " + JOBNAME
+	add_command = "swif2 add-job -workflow " + MERGE_WORKFLOW + " -name " + JOBNAME
 	# accounting
 	add_command += " -account " + config_dict["PROJECT"] + " -partition " + config_dict["TRACK"] + " -os " + config_dict["OS"]
 	# resources
@@ -301,7 +301,7 @@ def add_job(MERGE_WORKFLOW, RUNNO, config_dict):
 	# command + arguments
 	add_command += " " + config_dict["SCRIPTFILE"] + " " + config_dict["ENVFILE"]
 	# command arguments continued
-	add_command +=  " " + config_dict["INDATA_TOPDIR"] + " " + config_dict["OUTDIR_LARGE"] + " " + RUNNO + " " + config_dict["CACHE_PIN_DAYS"]
+	add_command +=  " " + config_dict["INDATA_TOPDIR"] + " " + config_dict["OUTDIR_LARGE"] + " " + RUNNO
 
 
 	if(VERBOSE == True):
@@ -369,7 +369,7 @@ def main(argv):
                 n_submit += 1
 
 	# RUN WORKFLOW (IN CASE NOT RUNNING ALREADY)
-	command = "/usr/local/bin/swif2 run -workflow " + MERGE_WORKFLOW
+	command = "swif2 run -workflow " + MERGE_WORKFLOW
 	if VERBOSE > 1:
 		print(command)
 	try_command(command)
@@ -379,25 +379,25 @@ def main(argv):
 	# RETRY FAILED JOBS
 	print("\n")
 	print("Retry failed jobs in the launch workflow: ")
-	command = "/usr/local/bin/swif2 retry-jobs -workflow " + LAUNCH_WORKFLOW + " -problems SLURM_FAILED SLURM_CANCELLED SLURM_NODE_FAIL SITE_LAUNCH_FAIL SITE_PREP_FAIL SWIF_INPUT_FAIL SWIF_SYSTEM_ERROR"
+	command = "swif2 retry-jobs -workflow " + LAUNCH_WORKFLOW + " -problems SLURM_FAILED SLURM_CANCELLED SLURM_NODE_FAIL SITE_LAUNCH_FAIL SITE_PREP_FAIL SWIF_INPUT_FAIL SWIF_SYSTEM_ERROR"
 	if VERBOSE > 1:
                 print(command)
 	try_command(command)
 
         # MODIFY FAILED JOBS
-	command = "/usr/local/bin/swif2 modify-jobs -ram add 4gb -workflow " + LAUNCH_WORKFLOW + " -problems SLURM_OUT_OF_MEMORY"
+	command = "swif2 modify-jobs -ram add 4gb -workflow " + LAUNCH_WORKFLOW + " -problems SLURM_OUT_OF_MEMORY"
 	if VERBOSE > 1:
 	        print(command)
 	try_command(command)
 
-	command = "/usr/local/bin/swif2 modify-jobs -time add 4h -workflow " + LAUNCH_WORKFLOW + " -problems SLURM_TIMEOUT"
+	command = "swif2 modify-jobs -time add 4h -workflow " + LAUNCH_WORKFLOW + " -problems SLURM_TIMEOUT"
 	if VERBOSE > 1:
 	        print(command)
 	try_command(command)
 
 
 	print("Retry failed jobs in the merge workflow: ")
-	command = "/usr/local/bin/swif2 retry-jobs -workflow " + MERGE_WORKFLOW + " -problems SLURM_CANCELLED SLURM_TIMEOUT SLURM_NODE_FAIL SITE_LAUNCH_FAIL SITE_PREP_FAIL SWIF_INPUT_FAIL SWIF_SYSTEM_ERROR"
+	command = "swif2 retry-jobs -workflow " + MERGE_WORKFLOW + " -problems SLURM_CANCELLED SLURM_TIMEOUT SLURM_NODE_FAIL SITE_LAUNCH_FAIL SITE_PREP_FAIL SWIF_INPUT_FAIL SWIF_SYSTEM_ERROR"
 	if VERBOSE > 1:
                 print (command)
 	try_command(command)
