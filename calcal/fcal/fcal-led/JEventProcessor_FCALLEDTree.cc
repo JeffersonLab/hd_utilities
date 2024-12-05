@@ -177,9 +177,9 @@ jerror_t JEventProcessor_FCALLEDTree::evnt(JEventLoop *loop, uint64_t eventnumbe
       
       vector< const DFCALDigiHit* > digiHits;
       (**hit).Get( digiHits );
-      if( digiHits.size() != 1 ) std::cout << "ERROR:  wrong size!! " << std::endl;
+      //if( digiHits.size() != 1 ) std::cout << "ERROR:  wrong size!! The size is: " << digiHits.size() << std::endl;
+      //if( digiHits.size() == 0) continue;
       
-      const DFCALDigiHit& dHit = *(digiHits[0]);
       
       m_chan[m_nHits] = fcalGeom.channel( (**hit).row, (**hit).column );
       m_x[m_nHits] = (**hit).x;
@@ -188,12 +188,15 @@ jerror_t JEventProcessor_FCALLEDTree::evnt(JEventLoop *loop, uint64_t eventnumbe
       m_t[m_nHits] = (**hit).t;
       
       m_eTot += (**hit).E;
+
+      if (digiHits.size() > 0) {
+	const DFCALDigiHit& dHit = *(digiHits[0]);
+	m_ped[m_nHits] = (float)dHit.pedestal/dHit.nsamples_pedestal;
+	m_peak[m_nHits] = dHit.pulse_peak - m_ped[m_nHits];
+	m_integ[m_nHits] = dHit.pulse_integral - (m_ped[m_nHits]*dHit.nsamples_integral);
       
-      m_ped[m_nHits] = (float)dHit.pedestal/dHit.nsamples_pedestal;
-      m_peak[m_nHits] = dHit.pulse_peak - m_ped[m_nHits];
-      m_integ[m_nHits] = dHit.pulse_integral - (m_ped[m_nHits]*dHit.nsamples_integral);
-      
-      m_integOpeak[m_nHits] = m_integ[m_nHits] / m_peak[m_nHits];
+	m_integOpeak[m_nHits] = m_integ[m_nHits] / m_peak[m_nHits];
+      }
       
       int row = fcalGeom.row((**hit).x);
       int col = fcalGeom.column((**hit).y);
@@ -208,8 +211,8 @@ jerror_t JEventProcessor_FCALLEDTree::evnt(JEventLoop *loop, uint64_t eventnumbe
       Fill2DHistogram("hv_scan","","m_integ", m_chan[m_nHits], m_integOpeak[m_nHits], ";channel;integ;Counts", 2800, 0, 2800, 2000, 0., 200000.);
       
       ++m_nHits;
-    }
     
+    }    
     Fill1DHistogram("hv_scan","", "m_integTot", m_integTot, ";Integral total;Counts", 2000, 0., 50e6);
     
     

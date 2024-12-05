@@ -233,6 +233,7 @@ jerror_t JEventProcessor_FCAL_Pi0TOF::evnt(JEventLoop *loop, uint64_t eventnumbe
     if(shower1->dDetectorSystem != SYS_FCAL) continue;
     Esum += photon1->lorentzMomentum().E();
   }
+    
   for (unsigned int i = 0; i < neutralParticleVector.size(); i++){
     const DNeutralParticleHypothesis *photon1 = neutralParticleVector[i]->Get_Hypothesis(Gamma);
     //bool bo_pho1 = true;
@@ -1198,7 +1199,7 @@ jerror_t JEventProcessor_FCAL_Pi0TOF::evnt(JEventLoop *loop, uint64_t eventnumbe
 		Fill2DWeightedHistogram("FCAL_Pi0log","","Pi0MassVsChNum",
 					ch1, pi0Masslog, weight,
 					"#pi^{0} Mass Vs. Channel Number; CCDB Index; #pi^{0} Mass",
-					2800, -0.5, 2799.5, 500, 0.05, 0.7);
+					4800, -0.5, 4799.5, 500, 0.05, 0.7);
 		Fill2DWeightedHistogram("FCAL_Pi0log","","Pi0MassVsChNum",
 					ch2, pi0Masslog, weight,
 					"#pi^{0} Mass Vs. Channel Number; CCDB Index; #pi^{0} Mass",
