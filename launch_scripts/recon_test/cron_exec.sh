@@ -7,7 +7,7 @@ Setup_Environment()
 
 	# USE THE ENVIRONMENT FOR THE LATEST NIGHTLY BUILD
 	source /group/halld/Software/hd_utilities/launch_scripts/recon_test/env_recon_test.sh
-	export PATH=/site/bin:${PATH} #because .login isn't executed, and need this path for SWIF
+	export PATH=/usr/local/bin:${PATH} #because .login isn't executed, and need this path for SWIF
 }
 
 Setup_Config()
@@ -153,6 +153,7 @@ Submit_Job 2017-01 030300 000
 Submit_Job 2018-01 041510 000
 Submit_Job 2018-08 051030 000
 Submit_Job 2019-11 071724 000
+Submit_Job 2023-01 120400 000
 
 # CHECK FOR JOB SUCCESS. IF SUCCESS, SEND EMAIL
 Check_Workflow_Loop recon_tests
