@@ -62,7 +62,6 @@ Save_Histograms()
 
 		# setup output dirs
 		local OUTDIR_THIS=${OUTDIR_LARGE}/hists/${RUN_NUMBER}/
-		mkdir -p -m 755 ${OUTDIR_THIS}
 
 		# save it to web dir
 		mkdir -p -m 755 ${WEBDIR_LARGE}
@@ -70,16 +69,8 @@ Save_Histograms()
 
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/hd_root_${RUN_NUMBER}_${FILE_NUMBER}.root
-		mv -v hd_root.root $OUTPUT_FILE
-		chmod 644 $OUTPUT_FILE
-
-		# force save to tape & pin
-		if [ "$TAPEDIR" != "" ]; then
-			echo jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			echo jcache put $OUTPUT_FILE
-			jcache put $OUTPUT_FILE
-		fi
+		echo "Adding hd_root.root to swif2 output: $OUTPUT_FILE"
+		swif2 output hd_root.root $OUTPUT_FILE
 	fi
 }
 
@@ -91,20 +82,11 @@ Save_REST()
 
 		# setup output dirs
 		local OUTDIR_THIS=${OUTDIR_LARGE}/REST/${RUN_NUMBER}/
-		mkdir -p -m 755 $OUTDIR_THIS
 
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/dana_rest_${RUN_NUMBER}_${FILE_NUMBER}.hddm
-		mv -v dana_rest.hddm $OUTPUT_FILE
-		chmod 644 $OUTPUT_FILE
-
-		# force save to tape & pin
-		if [ "$TAPEDIR" != "" ]; then
-		        echo jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			echo jcache put $OUTPUT_FILE
-			jcache put $OUTPUT_FILE
-		fi
+		echo "Adding dana_rest.hddm to swif2 output: $OUTPUT_FILE"
+		swif2 output dana_rest.hddm $OUTPUT_FILE
 	fi
 }
 
@@ -194,9 +176,8 @@ OUTDIR_LARGE=$4
 OUTDIR_SMALL=$5
 RUN_NUMBER=$6
 FILE_NUMBER=$7
-CACHE_PIN_DAYS=$8
-WEBDIR_SMALL=$9
-WEBDIR_LARGE=${10}
+WEBDIR_SMALL=$8
+WEBDIR_LARGE=$9
 
 # PRINT INPUTS
 echo "HOSTNAME          = $HOSTNAME"
@@ -207,7 +188,6 @@ echo "OUTDIR_LARGE      = $OUTDIR_LARGE"
 echo "OUTDIR_SMALL      = $OUTDIR_SMALL"
 echo "RUN_NUMBER        = $RUN_NUMBER"
 echo "FILE_NUMBER       = $FILE_NUMBER"
-echo "CACHE_PIN_DAYS    = $CACHE_PIN_DAYS"
 echo "WEBDIR_SMALL      = $WEBDIR_SMALL"
 echo "WEBDIR_LARGE      = $WEBDIR_LARGE"
 
