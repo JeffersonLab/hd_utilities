@@ -246,8 +246,13 @@ Run_Script()
 {
 	Setup_Script
 
-	# RUN JANA
-	hd_root $INPUTFILE --config=$CONFIG_FILE
+	# RUN JANA(2)
+	local JANA_MAJOR_VERSION=`jana -v | head -n 1 | awk '{print $3}' | cut -d'.' -f1`
+	if [ $JANA_MAJOR_VERSION -ge 2 ]; then
+	    hd_root $INPUTFILE --loadconfigs $CONFIG_FILE
+	else
+	    hd_root $INPUTFILE --config=$CONFIG_FILE
+	fi
 
 	# RETURN CODE
 	RETURN_CODE=$?
