@@ -150,9 +150,12 @@ def main():
         if int(options.begin_run) >= 40000 and int(options.begin_run) < 60000: 
             # 2018-01 and 2018-11 run periods 
             RCDB_QUERY = "@is_2018production and @status_approved"
-        if int(options.begin_run) >= 70000: 
+        if int(options.begin_run) >= 70000 and int(options.begin_run) < 79999: 
             # 2019-11 run period
             RCDB_QUERY = "@is_dirc_production and @status_approved"
+        if int(options.begin_run) >= 100000 and int(options.begin_run) < 109999:
+            RCDB_QUERY = "@is_cpp_production and @status_approved"
+            TARGETLENGTH = 0.03059 # 305.9 um Pb target
     
     print("RCDB quergy = " + RCDB_QUERY)
 
@@ -180,6 +183,11 @@ def main():
             runPeriod = "RunPeriod-2019-11"
             # temporary override for context until batch-dependent values are accessible
             contextOverride = "variation=default calibtime=2021-04-23-00-00-01"
+        elif begin_run < 109999:
+            runPeriod = "RunPeriod-2022-05"
+        elif begin_run < 119999:
+            runPeriod = "RunPeriod-2022-08"
+
         contextList = loadCCDBContextList(runPeriod,RESTVERSION)
         RESTVERSION = contextList[0][0] # get REST version number from DB
         context = contextList[0][1] # get full JANA_CALIB_CONTEXT list from DB
@@ -216,10 +224,13 @@ def main():
 
     if UNIFORM:
         htagged_flux = TH1D("tagged_flux_uniform", "Uniform tagged flux; Photon Beam Energy (GeV); Flux (# photons on target)", NBINS, EMIN, EMAX)
+        
     htagged_fluxErr = TH1D("tagged_flux", "Tagged flux; Photon Beam Energy (GeV); Flux (# photons on target)", NBINS, EMIN, EMAX)
     htagm_fluxErr = TH1D("tagm_flux", "Tagged flux; TAGM Column; Flux", 102, 1, 103)
     htagh_fluxErr = TH1D("tagh_flux", "Tagged flux; TAGH Counter; Flux", 274, 1, 275)
-
+    htagmE_fluxErr = TH1D("tagmE_flux", "Microscope tagged flux; Photon Beam Energy (GeV); TAGM Flux (# photons on target)", NBINS, EMIN, EMAX)
+    htaghE_fluxErr = TH1D("taghE_flux", "Hodoscope tagged flux; Photon Beam Energy (GeV); TAGM Flux (# photons on target)", NBINS, EMIN, EMAX)
+    
     # Loop over runs
     for run in runs:
         if RCDB_POLARIZATION == "" and RCDB_POL_ANGLE != "":
@@ -352,6 +363,8 @@ def main():
             new_binerror = math.sqrt(previous_binerror*previous_binerror + current_binerror*current_binerror) 
             htagged_fluxErr.SetBinContent(bin_energy, new_bincontent)
             htagged_fluxErr.SetBinError(bin_energy, new_binerror)
+            htagmE_fluxErr.SetBinContent(bin_energy, new_bincontent)
+            htagmE_fluxErr.SetBinError(bin_energy, new_binerror)
             htagm_fluxErr.Fill(int(tagm_flux[0]), current_bincontent)
         
         # fill tagh histogram
@@ -396,6 +409,8 @@ def main():
             new_binerror = math.sqrt(previous_binerror*previous_binerror + current_binerror*current_binerror)
             htagged_fluxErr.SetBinContent(bin_energy, new_bincontent)
             htagged_fluxErr.SetBinError(bin_energy, new_binerror)
+            htaghE_fluxErr.SetBinContent(bin_energy, new_bincontent)
+            htaghE_fluxErr.SetBinError(bin_energy, new_binerror)
             htagh_fluxErr.Fill(int(tagh_flux[0]), current_bincontent)
 
     # Get density factor from CCDB
@@ -421,6 +436,7 @@ def main():
     htagged_lumiErr = htagged_fluxErr.Clone("tagged_lumi")
     htagged_lumiErr.Reset()
     htagged_lumiErr.SetTitle("Tagged luminosity (pb^{-1}); Photon Beam Energy (GeV); Luminosity (pb^{-1})")
+   
     for i in range(1,htagged_fluxErr.GetNbinsX()+1):
         lumi = htagged_fluxErr.GetBinContent(i) * targetScatteringCenters / 1e12
         if htagged_fluxErr.GetBinContent(i) <= 0.0:
@@ -446,6 +462,8 @@ def main():
     htagged_lumiErr.Write()
     htagm_fluxErr.Write()
     htagh_fluxErr.Write()
+    htagmE_fluxErr.Write()
+    htaghE_fluxErr.Write()
     fout.Close()
     
 
