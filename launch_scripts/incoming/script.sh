@@ -289,7 +289,9 @@ Save_IDXA()
 Create_SQLite()
 {
 	echo "Creating ccdb.sqlite"
-	$CCDB_HOME/scripts/mysql2sqlite/mysql2sqlite.sh -hhallddb.jlab.org -uccdb_user ccdb | sqlite3 ccdb.sqlite
+	#$CCDB_HOME/scripts/mysql2sqlite/mysql2sqlite.sh -hhallddb.jlab.org -uccdb_user ccdb | sqlite3 ccdb.sqlite
+	mysqldump --skip-tz-utc -u ccdb_user -h hallddb.jlab.org ccdb > dump.mysql.sql
+	$CCDB_HOME/scripts/mysql2sqlite/mysql2sqlite dump.mysql.sql | sqlite3 ccdb.sqlite
 }
 
 ########################################################## MAIN FUNCTION ########################################################
@@ -299,8 +301,13 @@ Run_Script()
 	Setup_Script
 	Create_SQLite
 
-	# RUN JANA
-	hd_root $INPUTFILE --config=$CONFIG_FILE
+	# RUN JANA(2)
+	local JANA_MAJOR_VERSION=`jana -v | head -n 1 | awk '{print $3}' | cut -d'.' -f1`
+	if [ $JANA_MAJOR_VERSION -ge 2 ]; then
+	    hd_root $INPUTFILE --loadconfigs $CONFIG_FILE
+	else
+	    hd_root $INPUTFILE --config=$CONFIG_FILE
+	fi
 
 	# RETURN CODE
 	RETURN_CODE=$?
