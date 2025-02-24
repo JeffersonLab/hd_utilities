@@ -27,14 +27,14 @@ VERBOSE = True
 #USE_CCDB = True
 
 def EVIO_SWAP64(x):
-    return ( (((x) >> 56) & 0x00000000000000FFL) | \
-                 (((x) >> 40) & 0x000000000000FF00L) | \
-                 (((x) >> 24) & 0x0000000000FF0000L) | \
-                 (((x) >> 8)  & 0x00000000FF000000L) | \
-                 (((x) << 8)  & 0x000000FF00000000L) | \
-                 (((x) << 24) & 0x0000FF0000000000L) | \
-                 (((x) << 40) & 0x00FF000000000000L) | \
-                 (((x) << 56) & 0xFF00000000000000L) )
+    return ( (((x) >> 56) & 0x00000000000000FF) | \
+                 (((x) >> 40) & 0x000000000000FF00) | \
+                 (((x) >> 24) & 0x0000000000FF0000) | \
+                 (((x) >> 8)  & 0x00000000FF000000) | \
+                 (((x) << 8)  & 0x000000FF00000000) | \
+                 (((x) << 24) & 0x0000FF0000000000) | \
+                 (((x) << 40) & 0x00FF000000000000) | \
+                 (((x) << 56) & 0xFF00000000000000) )
 
 
 def EVIO_SWAP32(x):
@@ -61,7 +61,7 @@ def InitCCDB():
         sqlite_connection_str = os.environ['CCDB_CONNECTION']
     else:
         sqlite_connection_str = "test"
-    #print "using CCDB connection = " + sqlite_connection_str
+    #print("using CCDB connection = " + sqlite_connection_str)
 
      #create console context
     context = ConsoleContext()                          # this is the main class
@@ -111,7 +111,7 @@ def parse_condition_file(fname):
     run_conditions = {}
     try:
         if VERBOSE:
-            print "opening condition file = "  + fname
+            print("opening condition file = "  + fname)
         infile = open(fname)
         for line in infile:
             tokens = line.strip().split()
@@ -134,11 +134,11 @@ def parse_condition_file(fname):
                     run_conditions[ tokens[0] ] = tokens[2]
         infile.close()
     except IOError as e:
-        print "I/O error({0}): {1}".format(e.errno, e.strerror)
+        print("I/O error({0}): {1}".format(e.errno, e.strerror))
         return None
         #sys.exit(0)
     except:
-        print "Unexpected error:", sys.exc_info()[0]
+        print("Unexpected error:", sys.exc_info()[0])
         return None
         #sys.exit(0)
     return run_conditions
@@ -150,21 +150,21 @@ def ParseEVIOFiles(filelist):
     all_properties = []
     # should double check file names
     for fnamepath in filelist:
-        print "processing " + fnamepath + "..."
+        print("processing " + fnamepath + "...")
         try:
             # extract file number & check 
             fname = fnamepath.split('/')[-1]
             if len(fname) < 6 or fname[-5:] != ".evio":
-                print "bad file " + fname + " , skipping..."
+                print("bad file " + fname + " , skipping...")
                 continue
             fparts = fname[:-5].split('_')
             if len(fparts) < 4:
-                print "bad file " + fname + " , skipping..."
+                print("bad file " + fname + " , skipping...")
                 continue
             try:
                 file_num = int(fparts[3])
             except ValueError:
-                print "bad file " + fname + " , skipping..."
+                print("bad file " + fname + " , skipping...")
                 continue                
 
             filesize = os.path.getsize(fnamepath)
@@ -184,7 +184,7 @@ def ParseEVIOFiles(filelist):
                 if( (w & 0x0001D2FF) == 0x0001D2FF ): 
                     properties["start_time"] = EVIO_SWAP32(data[i+1]);
                     if VERBOSE:
-                        print "Found start time = " + format_date(properties["start_time"])
+                        print("Found start time = " + format_date(properties["start_time"]))
                 # Physics Event Header bits that should be set
                 if( (w & 0x001050FF) != 0x001050FF ):
                     continue
@@ -260,7 +260,7 @@ def ParseEVIOFiles(filelist):
             all_properties.append(properties)
 
         except IOError as e:
-            print "I/O error({0}): {1}".format(e.errno, e.strerror)
+            print("I/O error({0}): {1}".format(e.errno, e.strerror))
             return {}
 
         
@@ -268,8 +268,8 @@ def ParseEVIOFiles(filelist):
     file_properties = {}
 
     if VERBOSE:
-        print "results from EVIO parsing = " + str(all_properties)
-        print "processing: "
+        print("results from EVIO parsing = " + str(all_properties))
+        print("processing: ")
 
     file_properties["num_files"] = len(all_properties)
     file_properties["num_events"] = -1
@@ -277,7 +277,7 @@ def ParseEVIOFiles(filelist):
     file_properties["end_time"] = -1
     for props in sorted(all_properties, key=lambda prop: int(prop["file_num"])):
         if VERBOSE:
-            print str(props)
+            print(str(props))
         if file_properties["start_time"] < 0 :
             # if there are DAQ problems, the GO event might not be properly written out
             if "start_time" in props:
@@ -305,7 +305,7 @@ def load_target_types(ccdb_context, run_number):
     lines = f.readlines()
 
     if len(lines) < 2:
-        print "Problem writing out CCDB table: /TARGET/target_type_list"
+        print("Problem writing out CCDB table: /TARGET/target_type_list")
     else:
         # skip the first line, which is junk
         for x in range(1,len(lines)):
@@ -327,7 +327,7 @@ def main(argv):
     try:
         run_number = int(argv[0])
     except:
-        print "Need to pass the run number to process as a command line argument!"
+        print("Need to pass the run number to process as a command line argument!")
         return
 
     run_properties = init_property_mapping()
@@ -389,7 +389,7 @@ def main(argv):
     const_lines = fconst.readlines()
 
     if len(const_lines) < 2:
-        print "Problem writing out CCDB constants to file!"
+        print("Problem writing out CCDB constants to file!")
     else:
         # the first line of the output file from CCDB is junk, and our numbers are on the second line
         vals = const_lines[1].split()
@@ -397,7 +397,7 @@ def main(argv):
         if target_index in target_types:
             run_properties['target_type'] = target_types[target_index]
         else:
-            print "Invalid target index from CCDB = " + str(target_index)
+            print("Invalid target index from CCDB = " + str(target_index))
         fconst.close()
     """
 
@@ -407,8 +407,8 @@ def main(argv):
         run_properties['start_time'] = rcdb_conn.get_run(run_number).start_time
 
     if VERBOSE:
-        print "RUN PROPERTIES FOR RUN " + str(run_number)
-        print str(run_properties)
+        print("RUN PROPERTIES FOR RUN " + str(run_number))
+        print(str(run_properties))
 
     # Add information to DB
     ## initialize DB
