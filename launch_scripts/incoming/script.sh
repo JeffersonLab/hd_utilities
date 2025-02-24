@@ -109,20 +109,12 @@ Save_Histograms()
 
 		# setup output dirs
 		local OUTDIR_THIS=${OUTDIR_LARGE}/hists/${RUN_NUMBER}/
-		mkdir -p -m 755 ${OUTDIR_THIS}
 
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/hd_root_${RUN_NUMBER}_${FILE_NUMBER}.root
-		mv -v hd_root.root $OUTPUT_FILE
-		chmod 644 $OUTPUT_FILE
+		echo "Adding hd_root.root to swif2 output: $OUTPUT_FILE"
+		swif2 output hd_root.root $OUTPUT_FILE
 
-		# force save to tape & pin
-		if [ "$TAPEDIR" != "" ]; then
-			echo jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			echo jcache put $OUTPUT_FILE
-			jcache put $OUTPUT_FILE
-		fi
 	fi
 }
 
@@ -134,20 +126,12 @@ Save_REST()
 
 		# setup output dirs
 		local OUTDIR_THIS=${OUTDIR_LARGE}/REST/${RUN_NUMBER}/
-		mkdir -p -m 755 $OUTDIR_THIS
 
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/dana_rest_${RUN_NUMBER}_${FILE_NUMBER}.hddm
-		mv -v dana_rest.hddm $OUTPUT_FILE
-		chmod 644 $OUTPUT_FILE
+		echo "Adding dana_rest.hddm to swif2 output: $OUTPUT_FILE"
+		swif2 output dana_rest.hddm $OUTPUT_FILE
 
-		# force save to tape & pin
-		if [ "$TAPEDIR" != "" ]; then
-		        echo jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			echo jcache put $OUTPUT_FILE
-			jcache put $OUTPUT_FILE
-		fi
 	fi
 }
 
@@ -185,18 +169,12 @@ Save_EVIOSkims()
 
 		# setup output dir
 		local OUTDIR_THIS=${OUTDIR_LARGE}/${SKIM_NAME}/${RUN_NUMBER}/
-		mkdir -p -m 755 $OUTDIR_THIS
 
 		# save it
-		local OUTPUT_FILE=${OUTDIR_THIS}/${SKIM_NAME}_${RUN_NUMBER}_${FILE_NUMBER}.hddm
-		mv -v $EVIO_FILE $OUTPUT_FILE
-		chmod 644 $OUTPUT_FILE
+		local OUTPUT_FILE=${OUTDIR_THIS}/${SKIM_NAME}_${RUN_NUMBER}_${FILE_NUMBER}.evio
+		echo "Adding $EVIO_FILE to swif2 output: $OUTPUT_FILE"
+		swif2 output $EVIO_FILE $OUTPUT_FILE
 
-		# force save to tape & pin
-		if [ "$TAPEDIR" != "" ]; then
-			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			jcache put $OUTPUT_FILE
-		fi
 	done
 }
 
@@ -215,18 +193,12 @@ Save_HDDMSkims()
 
 		# setup output dir
 		local OUTDIR_THIS=${OUTDIR_LARGE}/${SKIM_NAME}/${RUN_NUMBER}/
-		mkdir -p -m 755 $OUTDIR_THIS
 
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/${SKIM_NAME}_${RUN_NUMBER}_${FILE_NUMBER}.hddm
-		mv -v $HDDM_FILE $OUTPUT_FILE
-		chmod 644 $OUTPUT_FILE
+		echo "Adding $HDDM_FILE to output: $OUTPUT_FILE"
+		swif2 output $HDDM_FILE $OUTPUT_FILE
 
-		# force save to tape & pin
-		if [ "$TAPEDIR" != "" ]; then
-			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			jcache put $OUTPUT_FILE
-		fi
 	done
 }
 
@@ -245,42 +217,12 @@ Save_ROOTFiles()
 
 		# setup output dir
 		local OUTDIR_THIS=${OUTDIR_LARGE}/${BASE_NAME}/${RUN_NUMBER}/
-		mkdir -p -m 755 $OUTDIR_THIS
 
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/${BASE_NAME}_${RUN_NUMBER}_${FILE_NUMBER}.root
-		mv -v $ROOT_FILE $OUTPUT_FILE
-		chmod 644 $OUTPUT_FILE
+		echo "Adding $ROOT_FILE to swif2 output: $OUTPUT_FILE"
+		swif2 output $ROOT_FILE $OUTPUT_FILE
 
-		# force save to tape & pin
-		if [ "$TAPEDIR" != "" ]; then
-			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			jcache put $OUTPUT_FILE
-		fi
-	done
-}
-
-Save_IDXA()
-{
-	# SAVE IDXA FILES
-        local NUM_FILES=`ls *.idxa 2>/dev/null | wc -l`
-        if [ $NUM_FILES -eq 0 ] ; then
-                echo "No IDXA files produced"
-                return
-        fi
-
-	echo "Saving IDXA files"
-	for IDXA_FILE in `ls *.idxa`; do
-		Extract_BaseName $IDXA_FILE BASE_NAME
-
-		# setup output dir
-		local OUTDIR_THIS=${OUTDIR_SMALL}/IDXA/${RUN_NUMBER}/
-		mkdir -p -m 755 $OUTDIR_THIS
-
-		# save it
-		local OUTPUT_FILE=${OUTDIR_THIS}/${BASE_NAME}_${RUN_NUMBER}_${FILE_NUMBER}.idxa
-		mv -v $IDXA_FILE $OUTPUT_FILE
-		chmod 644 $OUTPUT_FILE
 	done
 }
 
