@@ -179,7 +179,7 @@ Save_EVIOSkims()
 
 Save_HDDMSkims()
 {
-	local NUM_FILES=`ls *.hddm 2>/dev/null | wc -l`
+	local NUM_FILES=`ls *.hddm | grep -v dana_rest.hddm 2>/dev/null | wc -l`
 	if [ $NUM_FILES -eq 0 ] ; then
 		echo "No HDDM skim files produced"
 		return
@@ -187,7 +187,7 @@ Save_HDDMSkims()
 
 	# SAVE HDDM SKIMS #assumes REST file already backed up and removed!
 	echo "Saving HDDM skim files"
-	for HDDM_FILE in `ls *.hddm`; do
+	for HDDM_FILE in `ls *.hddm | grep -v dana_rest.hddm`; do
 		Extract_SkimName $HDDM_FILE SKIM_NAME
 
 		# setup output dir
@@ -204,14 +204,14 @@ Save_HDDMSkims()
 Save_ROOTFiles()
 {
 	# SAVE OTHER ROOT FILES
-        local NUM_FILES=`ls *.root 2>/dev/null | wc -l`
+        local NUM_FILES=`ls *.root | grep -v hd_root.root 2>/dev/null | wc -l`
         if [ $NUM_FILES -eq 0 ] ; then
                 echo "No additional ROOT files produced"
                 return
         fi
 
 	echo "Saving other ROOT files"
-	for ROOT_FILE in `ls *.root`; do
+	for ROOT_FILE in `ls *.root | grep -v hd_root.root`; do
 		Extract_BaseName $ROOT_FILE BASE_NAME
 
 		# setup output dir
