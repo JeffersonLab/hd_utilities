@@ -94,7 +94,6 @@ Save_OutputFiles()
 	Save_EVIOSkims
 	Save_HDDMSkims
 	Save_ROOTFiles
-	Save_IDXA
 
 	# SEE WHAT FILES ARE LEFT
 	echo "FILES REMAINING AFTER SAVING:"

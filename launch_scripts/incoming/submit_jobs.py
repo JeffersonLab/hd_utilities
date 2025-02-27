@@ -28,8 +28,8 @@ def try_command(command, sleeptime = 5):
 	return_code = -999
 	while return_code != 0:
 		process = Popen(command.split(), stdout=PIPE)
-		output = process.communicate()[0] # is stdout. [1] is stderr
-		print(output.decode())
+		output = process.communicate()[0].decode('ASCII') # is stdout. [1] is stderr
+		print(output)
 		return_code = process.returncode
 
 		if return_code == 0:
@@ -70,7 +70,7 @@ def build_job_dictionary(WORKFLOW):
 	if VERBOSE > 1:
 		print(command)
 	process = Popen(command.split(), stdout=PIPE)
-	status_output = process.communicate()[0] # is stdout. [1] is stderr
+	status_output = process.communicate()[0].decode('ASCII') # is stdout. [1] is stderr
 	return_code = process.returncode
 	if return_code != 0:
 		print("swif2 status bad return code, exiting")
@@ -87,11 +87,11 @@ def build_job_dictionary(WORKFLOW):
 	num_jobs = 0
 	for line in status_output.splitlines():
 		if VERBOSE > 9:
-			print(line)
+		        print(line)
 		if(len(line.split()) < 3):
 			continue
 		field = line.split()[0]
-		if (field == "id"): 
+		if (field == "job_id"):
 			if start_loop_flag:
 				start_loop_flag = False # Don't register yet: Just started
 				continue
@@ -118,9 +118,9 @@ def add_job(WORKFLOW, CONFIG_PATH, RUN_STRING, FILE_STRING):
 	if VERBOSE > 0:
 		print(command)
 	process = Popen(command.split(), stdout=PIPE)
-	output = process.communicate()[0] # is stdout. [1] is stderr
+	output = process.communicate()[0].decode('ASCII') # is stdout. [1] is stderr
 	if VERBOSE > 0:
-		print(output.decode())
+		print(output)
 
 ########################################################## MAIN ##########################################################
 

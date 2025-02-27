@@ -4,7 +4,7 @@ set LOCKFILE=lock.offline
 
 set DATATYPE=mon
 set VERSION=01
-set RUNPERIOD=RunPeriod-2019-01
+set RUNPERIOD=RunPeriod-2025-01
 set INPUTDIR=/cache/halld/offline_monitoring/$RUNPERIOD
 set INPUT_SMALLFILE_DIR=/cache/halld/offline_monitoring/$RUNPERIOD
 #set OUTPUTDIR=/work/halld/data_monitoring/$RUNPERIOD/ver$VERSION
@@ -22,7 +22,7 @@ set ARGS="  -T $ROOTOUTPUTDIR -v $RUNPERIOD,$VERSION  "
 #source /home/gxproj5/halld/hdswif/setup_jlab-2015-03.csh
 source /home/gxproj1/env_monitoring_incoming.csh
 
-set MONITORING_HOME=/home/gxproj1/monitoring/process
+set MONITORING_HOME=/home/gxproj1/hd_utilities/launch_scripts/process
 source $MONITORING_HOME/monitoring_env.csh
 set MONITORING_LIBDIR=$MONITORING_HOME/lib
 set MONITORING_LOGDIR=$MONITORING_HOME/log
