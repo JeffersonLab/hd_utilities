@@ -19,7 +19,7 @@ from os.path import isfile, join, isdir
 from optparse import OptionParser
 import multiprocessing
 import logging
-import pickle
+import json
 import rcdb
 import hddm_s
 
@@ -541,16 +541,8 @@ def ProcessOfflineData(args):
     # CLEANUP
     ## save some information about what has been processed so far
     #rootfiles = []
-    if config.REVISION == "mc":
-        log_dir = join(config.OUTPUT_DIRECTORY,"log",rundir)
-    else:
-        log_dir = join(config.OUTPUT_DIRECTORY,"log",rundir)
-    #with open(join(log_dir,"rootfiles.txt"),"w") as outf:
-    #    for (fname,filenum) in monitoring_files.items():
-    #        rootfiles.append(fname)
-    #        print>>outf,fname
     try:
-        pickle.dump( sorted(monitoring_files.keys()), open(join(log_dir,"processed_files.dat"),"w") )
+        json.dump( sorted(monitoring_files.keys()), open(join(monitoring_data_dir,"processed_files.dat"),"w") )
     except Exception as e:
         logging.error("Couldn't save list of processed files: %s"%str(e))
 
@@ -675,12 +667,9 @@ def main():
 
         ## make sure we have a directory to store some meta-information
         rootfiles_already_processed = []  # let's not do this anymore
-        if config.REVISION == "mc":
-            log_dir = join(config.OUTPUT_DIRECTORY,"log",rundir)
-        else:
-            log_dir = join(config.OUTPUT_DIRECTORY,"log",rundir)
-        if isfile(join(log_dir,"processed_files.dat")):
-            rootfiles_already_processed = pickle.load( open(join(log_dir,"processed_files.dat"),"r") )
+        monitoring_data_dir = join(config.OUTPUT_DIRECTORY,("Run%06d" % runnum))
+        if isfile(join(monitoring_data_dir,"processed_files.dat")):
+            rootfiles_already_processed = json.load( open(join(monitoring_data_dir,"processed_files.dat"),"r") )
 
         #if config.REVISION == "mc":
         #    misc_dir = join(config.INPUT_DIRECTORY,"misc","%06d"%(int(rundir)))
