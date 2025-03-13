@@ -233,6 +233,10 @@ Create_SQLite()
 	#$CCDB_HOME/scripts/mysql2sqlite/mysql2sqlite.sh -hhallddb.jlab.org -uccdb_user ccdb | sqlite3 ccdb.sqlite
 	mysqldump --skip-tz-utc -u ccdb_user -h hallddb.jlab.org ccdb > dump.mysql.sql
 	$CCDB_HOME/scripts/mysql2sqlite/mysql2sqlite dump.mysql.sql | sqlite3 ccdb.sqlite
+	rm dump.mysql.sql
+	ls -lrt
+	export JANA_CALIB_URL="sqlite:///${PWD}/ccdb.sqlite"
+	echo "JANA_CALIB_URL = " $JANA_CALIB_URL
 }
 
 ########################################################## MAIN FUNCTION ########################################################
