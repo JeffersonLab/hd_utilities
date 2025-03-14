@@ -21,9 +21,12 @@ printenv
 
 ls -l
 cp $CONFIG_FILE control.in
+ls -l
 
 # HDGEANT4
-hdgeant4 $MAC_FILE
+which hdgeant4
+echo $HDGEANT4_HOME
+$HDGEANT4_HOME/bin/Linux-g++/hdgeant4 $MAC_FILE
 
 # RUN JANA
 #hd_root out.hddm -o lut.root -PPLUGINS=lut_dirc

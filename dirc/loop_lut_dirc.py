@@ -14,10 +14,10 @@ import glob
 def main(argv):
 
 	#subprocess.call(["sleep", "1800"])
-	subprocess.call(["mkdir", "-p", "tree/"])
+	subprocess.call(["mkdir", "-p", "root/"])
 	for lut in range(0, 48):
 		fileInName = "hddm/lut_%d.hddm" % lut
-		fileOutName = "tree/lut_%d.root" % lut
+		fileOutName = "root/lut_%d.root" % lut
 		subprocess.call(["hd_root", "-PNTHREADS=8",  "-o", fileOutName, "-PPLUGINS=lut_dirc", fileInName])
 
 	

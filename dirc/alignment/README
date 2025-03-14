@@ -17,11 +17,11 @@ in order to run tweaks on it (by definition). The "OUTPUT" file should be fed to
 The other sections specify the tweaks/perturbations one wants to introduce to the nominal. All numbers correspond 
 to the perturbations w.r.t. the nominal. Currently, the implemented tweaks are as follows:
 
-- OBCS(N)_rot: the overall rotation angles of optical box south (north). The 3 numbers correspond to rotations along 
+- MRAS(N)_rot: the overall rotation angles of mirror box south (north). The 3 numbers correspond to rotations along 
 X, Y and Z axes respectively, following the hdds convention. For instance, Z-axis angle rotation should be positive 
 when rotation is made in the direction from X to Y in the short way.
 
-- OBCS(N)_offset: the overll offsets of the optical box south (north)
+- MRAS(N)_offset: the overll offsets of the mirror box south (north)
 
 - TSM(#)_rot: the rotation of three-segment mirror (#)
  
