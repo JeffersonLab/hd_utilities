@@ -141,8 +141,8 @@ class CheckNewRuns:
                     os.system("mkdir -m"+self.NEWDIR_MODE+" -p " + monitoring_data_dir)  ## need error checks
 
                     plotter = make_monitoring_plots.make_monitoring_plots()
-                    plotter.histlist_filename = "/home/gluex/halld/monitoring/process/histograms_to_monitor"
-                    plotter.macrolist_filename = "/home/gluex/halld/monitoring/process/macros_to_monitor"
+                    plotter.histlist_filename = "/home/gluex/hd_utilities/launch_scripts/process/histograms_to_monitor"
+                    plotter.macrolist_filename = "/home/gluex/hd_utilities/launch_scripts/process/macros_to_monitor"
                     plotter.base_root_dir = "rootspy/"
                     plotter.output_directory = monitoring_data_dir
                     plotter.rootfile_name = rootfile_name

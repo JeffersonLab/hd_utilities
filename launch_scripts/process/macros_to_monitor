@@ -72,6 +72,7 @@
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/primex-online/primex_millecious.C
 # TRD
 # /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/TRD_online/TRD_hit.C
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/TRD_online/TRD_hit_2025.C
 # /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/TRD_online/GEM_hit.C
 # /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/Analysis/TRD_hists/TRD_extrap.C
 # Trigger
@@ -130,6 +131,7 @@
 # OCCUPANCIES
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/occupancy_online/BCAL_occupancy.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/occupancy_online/FCAL_occupancy.C
+/work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/occupancy_online/ECAL_occupancy.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/occupancy_online/CDC_occupancy.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/occupancy_online/FDC_occupancy.C
 /work/halld2/home/gxproj5/builds/halld_recon/monitoring_launch/src/plugins/monitoring/occupancy_online/PS_occupancy.C
