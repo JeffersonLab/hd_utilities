@@ -26,7 +26,10 @@ for R in runs:
     conditions_by_name = R.get_conditions_by_name()
     conditions = conditions_by_name.keys()
 
-    print( f"{'Run_number':22s}",R.number)    
+    print( f"{'run_number':22s}",R.number)
+    print( f"{'start_time':22s}",R.start_time)
+    print( f"{'end_time':22s}",R.end_time)    
+    
     for cond in conditions:
         cond_object = R.get_condition(cond)
         print( f"{cond:22s}" , cond_object.value)
