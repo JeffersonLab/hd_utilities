@@ -54,7 +54,7 @@ def getrunnumber(filename):
     dumpf=open(filename,'r')
 
     line='start                           '
-    while line[:4] != 'Run:' and len(line)>0:
+    while not 'Run: ' in line:
         line=dumpf.readline()
         if not line:
           break
@@ -63,7 +63,7 @@ def getrunnumber(filename):
        print('Run number was not found in the file.')
        return 0
 
-    return line[4:len(line)-1]     # exclude the newline
+    return line.split()[-1]
 
     dumpf.close()
 
@@ -73,7 +73,7 @@ def getprestarttime(filename):
     dumpf=open(filename,'r')
 
     line='start                           '
-    while line[:18] != 'DCODAControlEvent:' and len(line)>0:
+    while not 'DCODAControlEvent:' in line:
         line=dumpf.readline()
         if not line:
           break
@@ -85,9 +85,9 @@ def getprestarttime(filename):
     dumpf.readline()  #  event_type:  unix_time: Nwords:
     dumpf.readline() #---------------------------------------------------------------
     line=dumpf.readline() #        ffd2  1630144027       5 
-
-    event_type=line.split()[0]
-    unixtime=line.split()[1]
+    items=line.split()   # sort from the end in case the text (timestamp [info]) before the event-type changes
+    event_type=items[-3]
+    unixtime=items[-2]
 
 #    if event_type != 'ffd2' :
 #      print event_type
@@ -105,7 +105,7 @@ def geteventtime(filename):
     dumpf=open(filename,'r')
 
     line='start                        '
-    while line[:13] != 'DCODAROCInfo:':
+    while not 'DCODAROCInfo:' in line:
         line=dumpf.readline()
         if not line:
             break
@@ -118,7 +118,7 @@ def geteventtime(filename):
     dumpf.readline()      #-----------------------------
     line=dumpf.readline() #    34  620160547174      0 
 
-    timestamp=line.split()[1]
+    timestamp=line.split()[-2]
 
     return timestamp
 
@@ -230,8 +230,9 @@ dt_thisfile = datetime.fromtimestamp(thisfile_timestamp)
 print('prestart      '+dt_runstart.strftime("%Y-%m-%d %H:%M:%S"))
 print('start of file '+dt_thisfile.strftime("%Y-%m-%d %H:%M:%S"))
 
+
 if outf:
-    outf.write(dt_thisfile.strftime("%Y-%m-%d %H:%M:%S")+'\n')
+    outf.write(run+",'"+dt_thisfile.strftime("%Y-%m-%d %H:%M:%S")+"'\n")
     if usedrcdb:
         outf.write('RCDB\n')
     outf.close()
