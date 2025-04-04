@@ -141,17 +141,17 @@ echo $command
 $command
 
 echo "Running mcsmear ..."
-command="mcsmear -PJANA:BATCH_MODE=1 -PTHREAD_TIMEOUT=500 hdgeant.hddm"
+command="mcsmear -PTHREAD_TIMEOUT=500 hdgeant.hddm"
 echo $command
 $command
 
 echo "Running hd_root with danarest ..."
-command="hd_root -PJANA:BATCH_MODE=1 --nthreads=$NTHREADS -PTHREAD_TIMEOUT=500 -PPLUGINS=danarest hdgeant_smeared.hddm"
+command="hd_root -PNTHREADS=$NTHREADS -PTHREAD_TIMEOUT=500 -PPLUGINS=danarest hdgeant_smeared.hddm"
 echo $command
 $command
 
 echo "Running hd_root with b1pi_hists & monitoring_hists ..."
-command="hd_root -PJANA:BATCH_MODE=1 --nthreads=$NTHREADS -PTHREAD_TIMEOUT=500 -PPLUGINS=b1pi_hists,monitoring_hists dana_rest.hddm"
+command="hd_root -PNTHREADS=$NTHREADS -PTHREAD_TIMEOUT=500 -PPLUGINS=b1pi_hists,monitoring_hists dana_rest.hddm"
 echo $command
 $command
 

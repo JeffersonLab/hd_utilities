@@ -11,10 +11,12 @@ export BMS_OSNAME=`/group/halld/Software/build_scripts/osrelease.pl`
 export BUILD_DIR=/volatile/halld/gluex/nightly/$TODAYS_DATE/$BMS_OSNAME
 export B1PI_TEST_DIR=/group/halld/Software/hd_utilities/b1pi_test
 export BUILD_SCRIPTS=/group/halld/Software/build_scripts
+export SEED=123
 
 # Setup environment based on sim-recon build we're using 
 source $BUILD_SCRIPTS/gluex_env_boot_jlab.sh
 gxenv $BUILD_DIR/version_${TODAYS_DATE}.xml
+#gxenv $HALLD_VERSIONS/version_5.21.1.xml
 export JANA_CALIB_CONTEXT="variation=mc"
 
 # do the test
@@ -23,7 +25,7 @@ export RUN_DIR=/volatile/halld/$USER/b1pi/$TODAYS_DATE/$BMS_OSNAME/$RUN
 rm -rfv $RUN_DIR
 mkdir -pv $RUN_DIR
 cd $RUN_DIR
-$B1PI_TEST_DIR/b1pi_test.sh -4 -n $nevents -r $RUN
+$B1PI_TEST_DIR/b1pi_test.sh -4 -n $nevents -r $RUN -t 8
 echo \#count events
 echo \#count b1_pi.hddm `./hddm_counter.pl b1_pi.hddm physicsEvent`
 echo \#count hdgeant.hddm `./hddm_counter.pl hdgeant.hddm physicsEvent`
@@ -41,7 +43,7 @@ export RUN_DIR=/volatile/halld/$USER/b1pi/$TODAYS_DATE/$BMS_OSNAME/$RUN
 rm -rfv $RUN_DIR
 mkdir -pv $RUN_DIR
 cd $RUN_DIR
-$B1PI_TEST_DIR/b1pi_test.sh -n $nevents -r $RUN -4
+$B1PI_TEST_DIR/b1pi_test.sh -n $nevents -r $RUN -4 -t 8
 echo \#count events
 echo \#count b1_pi.hddm `./hddm_counter.pl b1_pi.hddm physicsEvent`
 echo \#count hdgeant.hddm `./hddm_counter.pl hdgeant.hddm physicsEvent`
