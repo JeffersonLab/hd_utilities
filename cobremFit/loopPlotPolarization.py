@@ -16,8 +16,7 @@ import math
 os.environ["RCDB_HOME"] = "/group/halld/www/halldweb/html/rcdb_home"
 sys.path.append("/group/halld/www/halldweb/html/rcdb_home/python")
 import rcdb
-db = rcdb.RCDBProvider("mysql://rcdb@hallddb.jlab.org/rcdb")    
-#db = rcdb.RCDBProvider("sqlite:////group/halld/www/halldweb/html/dist/rcdb.sqlite")
+db = rcdb.RCDBProvider("mysql://rcdb@hallddb.jlab.org/rcdb2")    
 
 ##################### main function ####################
 def main(argv):
@@ -119,32 +118,31 @@ def main(argv):
     RCDB_RUN_NUMBERS = [ run.number for run in RCDB_RUNS ]
 
     # define paths for input
-    #MyInDataDir="polarization/fall2018/"
-    MyInDataDir="polarization/spring2020/"
+    MyInDataDir="polarization/spring2025/"
 
     a = ROOT.TCanvas("aa","aa",600,400)
 
     for RCDB_RUN in RCDB_RUNS:
         RUN = RCDB_RUN.number
-        print RUN
-	polAngle = RCDB_RUN.get_condition('polarization_angle').value
+        print(RUN)
+        polAngle = RCDB_RUN.get_condition('polarization_angle').value
 
-        # link new amorphous run
+        filename = "%s/enhancementFit_%d.root" % (MyInDataDir, RUN)
         if 'RL' in str(RCDB_RUN.get_condition('radiator_type')):
             continue
-        else:
-            f = ROOT.TFile("%s/enhancementFit_%d.root" % (MyInDataDir, RUN))
+        elif os.path.exists(filename):
+            f = ROOT.TFile(filename)
             g = f.Get("Graph")
             h = f.Get("EnhancementData")
- 	    if not g:
+            if not g:
                 continue
 
-	    h.SetMarkerStyle(20)
-	    if polAngle == 0.:
-		h.SetMarkerColor(1);
-	    elif polAngle == 90.:
-		h.SetMarkerColor(2);
-	    elif polAngle == 45.:
+            h.SetMarkerStyle(20)
+            if polAngle == 0.:
+                h.SetMarkerColor(1);
+            elif polAngle == 90.:
+                h.SetMarkerColor(2);
+            elif polAngle == 45.:
                 h.SetMarkerColor(4);
             elif polAngle == 135.:
                 h.SetMarkerColor(6);
@@ -154,47 +152,43 @@ def main(argv):
             maxPol = ROOT.TMath.MaxElement(g.GetN(),y)
             maxPolPoint = ROOT.TMath.LocMax(g.GetN(),y)
             maxPolEgamma = x[maxPolPoint]
-            maxEnhance = h.GetBinContent(h.GetMaximumBin());
-            maxEnhanceErr = h.GetBinError(h.GetMaximumBin());
-	    print maxEnhance
+            maxEnhance = h.GetBinContent(h.GetMaximumBin())
+            maxEnhanceErr = h.GetBinError(h.GetMaximumBin())
+            print(maxEnhance)
             #if maxPol < 0.01:
             #    continue
             binID = hPol_0.FindBin(RUN)
 
             # fit slope
             maxEnhanceEgamma = maxPolEgamma*1000 #h.GetXaxis().GetBinCenter(h.GetMaximumBin())
-	    if maxEnhanceEgamma < 8525:
-		maxEnhanceEgamma = 8525
+            if maxEnhanceEgamma < 8825:
+                maxEnhanceEgamma = 8825
             fitslope = ROOT.TF1("slopefit","pol1", maxEnhanceEgamma, maxEnhanceEgamma+250.)
             #print "%f %f" % (maxEnhanceEgamma, maxEnhanceEgamma+150.)
             h.Draw()
             h.Fit(fitslope,"Q","Q",maxEnhanceEgamma+40., maxEnhanceEgamma+220.)
-	    if RUN > 51037:
-		h.Fit(fitslope,"Q","Q",maxEnhanceEgamma+50., maxEnhanceEgamma+110.)
-		if fitslope.GetParameter(1) > -0.05:
-			print "%f %f" % (maxEnhanceEgamma, fitslope.GetParameter(1))
+            h.Fit(fitslope,"Q","Q",maxEnhanceEgamma+50., maxEnhanceEgamma+110.)
+            if fitslope.GetParameter(1) > -0.05:
+                print("%f %f" % (maxEnhanceEgamma, fitslope.GetParameter(1)))
 		#g.Fit(fitslope,"","",maxEnhanceEgamma+50.,maxEnhanceEgamma+90.)
 
-	    slopePointMin = 999
-	    for i in range(0, h.GetXaxis().GetNbins()):
-		if h.GetXaxis().GetBinCenter(i) < maxEnhanceEgamma+40. or h.GetXaxis().GetBinCenter(i) > maxEnhanceEgamma+200.:
-			continue
-		slopeTemp = (h.GetBinContent(i+1) - h.GetBinContent(i-1))/(2*h.GetBinWidth(i));
-		slopeTempErr = math.sqrt(h.GetBinError(i+1)*h.GetBinError(i+1) + h.GetBinError(i-1)*h.GetBinError(i-1))/(2*h.GetBinWidth(i));
-		if slopeTemp < slopePointMin and slopeTemp < -0.01:
-			slopePointMin = slopeTemp
-			slopePointMinErr = slopeTempErr
+            slopePointMin = 999
+            for i in range(0, h.GetXaxis().GetNbins()):
+                if h.GetXaxis().GetBinCenter(i) < maxEnhanceEgamma+40. or h.GetXaxis().GetBinCenter(i) > maxEnhanceEgamma+200.:
+                    continue
+                slopeTemp = (h.GetBinContent(i+1) - h.GetBinContent(i-1))/(2*h.GetBinWidth(i));
+                slopeTempErr = math.sqrt(h.GetBinError(i+1)*h.GetBinError(i+1) + h.GetBinError(i-1)*h.GetBinError(i-1))/(2*h.GetBinWidth(i));
+                if slopeTemp < slopePointMin and slopeTemp < -0.01:
+                    slopePointMin = slopeTemp
+                    slopePointMinErr = slopeTempErr
             #slope = fitslope.GetParameter(1)
             #slopeErr = fitslope.GetParError(1)
-	    slope = slopePointMin
-	    slopeErr = slopePointMinErr
+            slope = slopePointMin
+            slopeErr = slopePointMinErr
 
             t = ROOT.TText(10000, h.GetMaximum()*0.8,"Run %d" % RUN)
             t.Draw("same")
             a.Print("slopeFit/slopeFit_%d.ps" % RUN)
-
-	    if RUN == 50721:
-		polAngle = 90.
 
             if polAngle == 0.: 
                 hPol_0.SetBinContent(binID, maxPol) 
@@ -242,8 +236,8 @@ def main(argv):
     ymin = 0.0
     ymax = 0.5
     if(label == "zoomIn"):
-        ymin = 0.33
-        ymax = 0.43
+        ymin = 0.3
+        ymax = 0.4
     hPol_0.SetMinimum(ymin)
     hPol_0.SetMaximum(ymax)
     hPol_0.Draw("p");
@@ -276,7 +270,7 @@ def main(argv):
     ymin_enh = 0.0;
     ymax_enh = 8.0;
     if(label == "zoomIn"):
-        ymin_enh = 1.0;
+        ymin_enh = 3.0;
         ymax_enh = 7.0;
     hEnhancement_0.SetMinimum(ymin_enh)
     hEnhancement_0.SetMaximum(ymax_enh)
@@ -321,10 +315,10 @@ def main(argv):
     d.Print("enhVsRunNumber_%s.png" % label)
 
     e = ROOT.TCanvas("ee","ee",1000,400)
-    ymin_slope = -0.075;
+    ymin_slope = -0.1;
     ymax_slope = -0.; #0.005;
     if(label == "zoomIn"):
-        ymin_slope = -0.05;
+        ymin_slope = -0.08;
         ymax_slope = -0.005;
     hSlope_0.SetMinimum(ymin_slope)
     hSlope_0.SetMaximum(ymax_slope)
@@ -368,8 +362,8 @@ def main(argv):
     ymin_epeak = 0.0;
     ymax_epeak = 12.0;
     if(label == "zoomIn"):
-        ymin_epeak = 8.4;
-        ymax_epeak = 9.0;
+        ymin_epeak = 8.5;
+        ymax_epeak = 9.1;
     hEpeak_0.SetMinimum(ymin_epeak)
     hEpeak_0.SetMaximum(ymax_epeak)
     hEpeak_0.Draw("p")
