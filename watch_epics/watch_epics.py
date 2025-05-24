@@ -84,38 +84,37 @@ def read_mystats(epicsfile) :
     f.close()
 
     dictlist = {}    
+    # Name     Min   Mean   Max   Sigma
     
     for line in lines:
-            
+ 
         things = line.strip().split(" ")
         pvname = things[0]
-
-        for thing in things:
             
-            if things[1] == 'N/A' :
-                min = -1
-            elif things[1] == '<undefined>' :
-                min = -1
-            else :
-                min = float(things[1])        
+        if things[1] == 'N/A' :
+            min = -1
+        elif things[1] == '<undefined>' :
+            min = -1
+        else :
+            min = float(things[1])        
         
-            if things[2] == 'N/A' :
-                mean = -1
-            elif things[2] == '<undefined>' :
-                mean = -1
-            else :
-                mean = float(things[2])
+        if things[2] == 'N/A' :
+            mean = -1
+        elif things[2] == '<undefined>' :
+            mean = -1
+        else :
+            mean = float(things[2])
 
-            if things[4] == 'N/A' :
-                sigma = -1
-            elif things[4] == '<undefined>' :
-                sigma = -1
-            else :
-                sigma = float(things[4])        
+        if things[4] == 'N/A' :
+            sigma = -1
+        elif things[4] == '<undefined>' :
+            sigma = -1
+        else :
+            sigma = float(things[4])        
 
-            dict = {pvname : { "min":min, "mean":mean, "sigma":sigma}}
-            dictlist.update(dict)
-
+        dict = {pvname : { "min":min, "mean":mean, "sigma":sigma}}
+        dictlist.update(dict)
+        
     return dictlist
 
 #-----------------------------------------------------------------------------------
