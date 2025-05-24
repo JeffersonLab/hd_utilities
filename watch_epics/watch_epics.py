@@ -16,11 +16,27 @@
 import os
 from datetime import datetime,timedelta
 
+testing = 0
+
 beam_on_current = 10               # minimum nA to consider as beam on
-trig_warning_suppression_time = timedelta(minutes=60)   # time between repeated warnings
-ps_warning_suppression_time = timedelta(minutes=60)
-psc_warning_suppression_time = timedelta(minutes=60)
-err_warning_suppression_time = timedelta(minutes=60)
+trig_warning_suppression_time = timedelta(minutes=30)   # time between repeated warnings
+ps_warning_suppression_time = timedelta(minutes=30)
+psc_warning_suppression_time = timedelta(minutes=30)
+err_warning_suppression_time = timedelta(minutes=30)
+
+# filenames
+epicsfile = '_watch_epics.txt'             # mystats printout
+
+radfile = '_watch_epics_radname.txt'       # myget output for radiator name
+
+psfile = '_watch_epics_ps_warning.txt'     # time of last frozen PS scaler warning
+pscfile = '_watch_epics_psc_warning.txt'   # time of last frozen PSC scaler warning
+trigfile = '_watch_epics_trig_warning.txt' # time of last frozen trig-rate warning
+errfile = '_watch_epics_err_warning.txt'           # time of last mystats error warning
+
+
+timeformat = "%Y-%m-%d %H:%M:%S"
+timenow = datetime.now()
 
 
 #-----------------------------------------------------------------------------------
@@ -42,6 +58,25 @@ def run_mystats(epicsfile) :
 
 #-----------------------------------------------------------------------------------
 
+def check_output_exists(thisfile):
+    
+    if os.path.exists(thisfile):
+        return True
+    
+    time_since_warning = find_time_since_warning(errfile,timeformat)
+    
+    if time_since_warning > err_warning_suppression_time :
+        issue_warning('err')
+        record_time(timenow,errfile,timeformat)
+    else :
+        if testing:
+            print('EPICS archive access error warning issued recently')
+
+    return False
+
+
+#-----------------------------------------------------------------------------------
+
 def read_mystats(epicsfile) :
 
     f = open(epicsfile,'r')
@@ -49,60 +84,62 @@ def read_mystats(epicsfile) :
     f.close()
 
     dictlist = {}    
-
-    # Name     Min   Mean   Max   Sigma 
-
+    
     for line in lines:
+            
         things = line.strip().split(" ")
         pvname = things[0]
 
-        if things[1] == 'N/A' :
-            min = -1
-        elif things[1] == '<undefined>' :
-            min = -1
-        else :
-            min = float(things[1])        
+        for thing in things:
+            
+            if things[1] == 'N/A' :
+                min = -1
+            elif things[1] == '<undefined>' :
+                min = -1
+            else :
+                min = float(things[1])        
         
-        if things[2] == 'N/A' :
-            mean = -1
-        elif things[2] == '<undefined>' :
-            mean = -1
-        else :
-            mean = float(things[2])
+            if things[2] == 'N/A' :
+                mean = -1
+            elif things[2] == '<undefined>' :
+                mean = -1
+            else :
+                mean = float(things[2])
 
-        if things[4] == 'N/A' :
-            sigma = -1
-        elif things[4] == '<undefined>' :
-            sigma = -1
-        else :
-            sigma = float(things[4])        
+            if things[4] == 'N/A' :
+                sigma = -1
+            elif things[4] == '<undefined>' :
+                sigma = -1
+            else :
+                sigma = float(things[4])        
 
-        dict = {pvname : { "min":min, "mean":mean, "sigma":sigma}}
-
-        dictlist.update(dict)
+            dict = {pvname : { "min":min, "mean":mean, "sigma":sigma}}
+            dictlist.update(dict)
 
     return dictlist
 
 #-----------------------------------------------------------------------------------
 
-def check_goni(epicsfile) :
+def check_goni(radfile) :
     
     # we have to check the radiator name to distinguish between goni-blank and goni-amo as both have radiator-id 0
     # mystats returns N/A for the name, so use myget to see the most recent change
 
-    if os.path.exists(epicsfile):
-        os.remove(epicsfile)
+    if os.path.exists(radfile):
+        os.remove(radfile)
     
-    cmd = '/usr/csite/certified/bin/myget -c HD:GONI:RADIATOR_NAME -t0 > ' + epicsfile
+    cmd = '/usr/csite/certified/bin/myget -c HD:GONI:RADIATOR_NAME -t0 > ' + radfile
 
     os.system(cmd)
-#    print('reading old epics file in check_goni')
+    #    print('reading old epics file in check_goni')
 
-    if not os.path.exists(epicsfile):     # create error logentry and assume goni is blank to avoid false alarms
+    allok = check_output_exists(radfile)
+
+    if not allok:              # create error logentry and assume goni is blank to avoid false alarms
         issue_warning('err')
         return False
     
-    f = open(epicsfile,'r')
+    f = open(radfile,'r')
     line = f.readline()
     f.close()
 
@@ -139,16 +176,57 @@ def issue_warning(pv) :
         f = open('msg_outage.txt','w')
         f.write("EPICS is not available for the following, please check the IOCs:\n")
         f.write(pv)
-        f.write("\n")
+        f.write("\n\n")
         f.close()
         body = 'msg_outage.txt'
         
+    f = open(body,'r')
+    lines = f.readlines()
+    f.close()
+    
+    f2 = open('logmsg.txt','w')
+    for line in lines:
+        f2.write(line)
         
-    cmd = '/site/ace/certified/apps/bin/logentry -l HDLOG -g Autolog -t "' + title + '" -b ' + body + ' -n njarvis@jlab.org'
+    f = open(epicsfile,'r')
+    lines = f.readlines()
+    f.close()
 
-#    print(cmd)
-#    print('logbook entry deactivated')
-    os.system(cmd)
+    f2.write("\nEPICS output for the last minute:\n\n")
+    f2.write("Name                   Min       Mean      Max       Sigma\n")
+
+    for line in lines:
+        things = line.strip().split(" ")
+        #newline = f'{things[0]:22}' + ' '
+        newline = '{:<23}'.format(things[0])
+        for i in range(1,len(things)):
+            #newline = newline + f'{ things[i]:10}'
+            newline = newline + '{:10}'.format(things[i])
+        f2.write(newline + "\n")
+
+    f2.write("\n")        
+
+    f = open(radfile,'r')
+    lines = f.readlines()
+    f.close()
+
+    for line in lines:
+        f2.write(line)
+
+    f2.write("\n\n\n\n\n")        
+    
+    import platform
+
+    f2.write("This message was generated by Naomi's watch_epics script, running as a cron job on " + platform.node() + "\n")
+    f2.close()
+
+    cmd = '/site/ace/certified/apps/bin/logentry -l HDLOG -g Autolog -t "' + title + '" -b logmsg.txt -n njarvis@jlab.org'
+
+    if testing == 1:
+        print(cmd)
+        print('logbook entry deactivated')
+    else :
+        os.system(cmd)
     return
 
 #-----------------------------------------------------------------------------------
@@ -184,37 +262,13 @@ def record_time(timenow,filename,timeformat) :
 #-----------------------------------------------------------------------------------
 
 
-testing = 0   #prints diagnostics
-
-# filenames
-epicsfile = '_watch_epics.txt'             # mystats printout
-epicsfile2 = '_watch_epics_radname.txt'       # myget output for radiator name
-psfile = '_watch_epics_ps_warning.txt'     # time of last frozen PS scaler warning
-pscfile = '_watch_epics_psc_warning.txt'   # time of last frozen PSC scaler warning
-trigfile = '_watch_epics_trig_warning.txt' # time of last frozen trig-rate warning
-errfile = '_watch_epics_err.txt'           # time of last mystats error warning
-
-timeformat = "%Y-%m-%d %H:%M:%S"
-timenow = datetime.now()
-
-
-
 run_mystats(epicsfile)
-#print('reading old epics file')
 
-if not os.path.exists(epicsfile):
+allok = check_output_exists(epicsfile)   # this issues a warning if the file is not there
 
-    time_since_warning = find_time_since_warning(errfile,timeformat)
-    
-    if time_since_warning > err_warning_suppression_time :
-        issue_warning('err')
-        record_time(timenow,errfile,timeformat)
-    else :
-        if testing:
-            print('Mystats error warning issued recently')
+if not allok:
     exit()
 
-    
 dictlist = read_mystats(epicsfile)   
 
 # the dictlist is a list of dicts like 
@@ -273,7 +327,7 @@ radiator_in_place = False
 if dictlist['hd:radiator_at_home']['min'] == 0 :    # using amo ladder at least part of the time
     radiator_in_place = True
 else : 
-    radiator_in_place = check_goni(epicsfile2)       # set false if blank or retracted, otherwise true
+    radiator_in_place = check_goni(radfile)       # set false if blank or retracted, otherwise true
 
 
 if not radiator_in_place :
