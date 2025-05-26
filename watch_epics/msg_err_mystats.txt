@@ -1,0 +1,2 @@
+watch_epics.py was not able to run myStats or myget to inspect the EPICS PVs.
+

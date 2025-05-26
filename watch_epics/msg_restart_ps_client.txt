@@ -1,0 +1,1 @@
+The PS or PSC scalers look frozen in EPICS.  See https://halldweb.jlab.org/hdops/wiki/index.php/Pair_Spectrometer_Shift#Run_PS_Scalers for restart instructions.

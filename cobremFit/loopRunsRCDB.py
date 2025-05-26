@@ -12,14 +12,13 @@ import glob
 os.environ["RCDB_HOME"] = "/group/halld/www/halldweb/html/rcdb_home"
 sys.path.append("/group/halld/www/halldweb/html/rcdb_home/python")
 import rcdb
-db = rcdb.RCDBProvider("mysql://rcdb@hallddb.jlab.org/rcdb")
-#db = rcdb.RCDBProvider("sqlite:////group/halld/www/halldweb/html/dist/rcdb.sqlite")
+db = rcdb.RCDBProvider("mysql://rcdb@hallddb.jlab.org/rcdb2")
 
 ##################### Launch pair of runs ####################
 def launch_run(MyRunNum, MyInDataDir, MyOutDataDir):
 
-    fileNameDiamond = '%shd_root_0%s.root' % (MyInDataDir, MyRunNum)
-    #fileNameDiamond = '%shdmon_online0%s.root' % (MyInDataDir, MyRunNum)
+    fileNameDiamond = '%shd_root_%s.root' % (MyInDataDir, MyRunNum)
+    #fileNameDiamond = '%shdmon_online%s.root' % (MyInDataDir, MyRunNum)
     subprocess.call(["rm", "hist_diamond.root"])
     subprocess.call(["ln", "-s", fileNameDiamond, "hist_diamond.root"])
 
@@ -48,22 +47,22 @@ def main(argv):
     # GET LISTS OF GOOD RUNS TO CHOOSE FROM
     RCDB_RUNS = db.select_runs("@is_dirc_production", run_min=MINRUN, run_max=MAXRUN+1)
     RCDB_RUN_NUMBERS = [ run.number for run in RCDB_RUNS ]
-    print RCDB_RUN_NUMBERS
+    print(RCDB_RUN_NUMBERS)
 
     # define paths for input and output
-    MyInDataDir="/work/halld/data_monitoring/RunPeriod-2019-11/mon_ver01/rootfiles/"
-    MyOutDataDir="polarization/spring2020/"
+    MyInDataDir="/work/halld/data_monitoring/RunPeriod-2025-01/mon_ver01/rootfiles/"
+    MyOutDataDir="polarization/spring2025/"
 
     for RCDB_RUN in RCDB_RUNS:
         RUN = RCDB_RUN.number
-        print RUN
+        print(RUN)
 
         # link new amorphous run
         if 'Al' in str(RCDB_RUN.get_condition('radiator_type')):
-	    print "new amorphous %d" % RUN
+	    #print("new amorphous %d" % RUN)
             subprocess.call(["rm", "hist_amorph.root"])
-            subprocess.call(["ln", "-s", "%s/hd_root_0%d.root" % (MyInDataDir,RUN), "hist_amorph.root"])
-	    #subprocess.call(["ln", "-s", "%s/hdmon_online0%d.root" % (MyInDataDir,RUN), "hist_amorph.root"])
+            subprocess.call(["ln", "-s", "%s/hd_root_%d.root" % (MyInDataDir,RUN), "hist_amorph.root"])
+	    #subprocess.call(["ln", "-s", "%s/hdmon_online%d.root" % (MyInDataDir,RUN), "hist_amorph.root"])
         else:
             launch_run(RUN, MyInDataDir, MyOutDataDir)
 

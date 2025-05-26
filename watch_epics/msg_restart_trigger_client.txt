@@ -1,0 +1,2 @@
+The main trigger rate EPICS PV looks dead.  See https://halldweb.jlab.org/hdops/wiki/index.php/Level-1_Trigger_Shift_PrimEx#Trigger_Monitor for restart instructions.
+

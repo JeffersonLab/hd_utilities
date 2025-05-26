@@ -3,5 +3,5 @@
 # Min    Hour    Day    Month    Weekday    Command
 #-----------------------------------------------------------------------------
 MAILTO=aaustreg@jlab.org
-*/15      *      *       *         *       /bin/bash -c ~/monitoring/incoming/cron_exec.sh > /home/gxproj1/incoming.log 2>&1
-*/30      *      *       *         *       /bin/tcsh -c ~/monitoring/process/check_monitoring_data.csh > /home/gxproj1/check.log 2>&1
+*/15      *      *       *         *       /bin/bash -c ~/hd_utilities/launch_scripts/incoming/cron_exec.sh > /home/gxproj1/incoming.log 2>&1
+*/30      *      *       *         *       /bin/tcsh -c ~/hd_utilities/launch_scripts/process/check_monitoring_data.csh > /home/gxproj1/check.log 2>&1
