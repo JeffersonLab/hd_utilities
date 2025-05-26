@@ -1,13 +1,18 @@
 #!/bin/csh
 
+setenv PATH /bin/
+setenv HOME /home/gxproj7/
+echo $PATH
+echo $HOME
+
 # SET INPUTS
-#setenv ENV_FILE $1
-#setenv INPUT_FILE $2
-#setenv LUT_FILE $3
-#setenv CODE_DIR $4
-#setenv OUT_DIR $5
-#setenv BAR $6
-#setenv BIN $7
+setenv ENV_FILE $1
+setenv INPUT_FILE $2
+setenv LUT_FILE $3
+setenv CODE_DIR $4
+setenv OUT_DIR $5
+setenv BAR $6
+setenv BIN $7
 
 # PRINT INPUTS
 echo "ENV_FILE          = $ENV_FILE"
@@ -51,7 +56,7 @@ while( ! -e "${LOCAL_FILE}.corr_${BAR_PAD}_${BIN_PAD}_level2.root" )
 
     # cor_level = 0 (no corrections)
     # cor_level = 1 (initial time correction)
-    root -l -b -q loadlib.C reco_lut_02.C\(\"${LOCAL_FILE}\",\"lut_all_avr.root\",$BAR,$BIN,3.5,0.0,0,0,2\)
+    root -l -b -q loadlib.C reco_lut_02.C\(\"${LOCAL_FILE}\",\"lut_all_avr.root\",$BAR,$BIN,4.0,0.0,0,0,2\)
 
     @ trial += 1
     if ( $trial > 4 ) then
@@ -61,20 +66,10 @@ end
 
 ls -l
 
-ls ${INPUT_FILE}*.root
-
-# cor_level = 0 (no corrections)
-root -l -b -q loadlib.C reco_lut_02.C\(\"${INPUT_FILE}\",\"lut_all_avr.root\",$BAR,$BIN,4.0,0.0,0,0,2\)
-cp hd_root.corr_${BAR}_${BIN}.root hd_root.corr_${BAR}_${BIN}_level1.root
-    
-# cor_level = 1 (initial time correction)
-root -l -b -q loadlib.C reco_lut_02.C\(\"${INPUT_FILE}\",\"lut_all_avr.root\",$BAR,$BIN,4.0,0.0,0,0,2\)
-cp hd_root.corr_${BAR}_${BIN}.root hd_root.corr_${BAR}_${BIN}_level2.root
-    
 # cor_level = 2 (full correction, check performance)
-root -l -b -q loadlib.C reco_lut_02.C\(\"${INPUT_FILE}\",\"lut_all_avr.root\",$BAR,$BIN,3.5,0.0,0,0,2\)
+# root -l -b -q loadlib.C reco_lut_02.C\(\"${LOCAL_FILE}\",\"lut_all_avr.root\",$BAR,$BIN,3.0,0.0,0,0,2\)
     
-ls -l
+#ls -l
 
 # save output histograms
 mkdir -p -m 775 ${OUT_DIR}/corr/
