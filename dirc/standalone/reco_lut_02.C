@@ -92,7 +92,10 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
   
   DrcLutNode *lutNode[luts][nodes];
   for (int l = 0; l < luts; l++) {
-    for (int i = 0; i < nodes; i++) lutNode[l][i] = (DrcLutNode *)cLut[l]->At(i);
+	  for (int i = 0; i < nodes; i++) {
+		  if(l<24) lutNode[l][i] = (DrcLutNode *)cLut[l]->At(i);
+		  else lutNode[l][i] = (DrcLutNode *)cLut[l]->At(i+nodes);
+	  }
   }
   TGaxis::SetMaxDigits(4);
   //*/
@@ -145,6 +148,7 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
   double cut_cangle = 3.5 * 0.008; // 3.5
   double cut_tdiff = 0.5;
 
+  // Roman's per-bar corrections (not sure of source)
   double bar_corr_x[] = {
     0.000,  -0.002, -0.004, -0.004, -0.004, -0.003, -0.003, -0.003, -0.004, -0.004, -0.003, -0.004,
     -0.004, -0.005, -0.005, -0.004, -0.003, -0.004, -0.003, -0.004, -0.005, -0.005, -0.005, -0.005,
@@ -163,13 +167,17 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
   double acorrAR[48][nbins][glx_npmt] = {{{0}}};
   double acorrTD[48][nbins][glx_npmt] = {{{0}}};
   double acorrTR[48][nbins][glx_npmt] = {{{0}}};
+  double asigmaAD[48][nbins][glx_npmt] = {{{0}}};
+  double asigmaAR[48][nbins][glx_npmt] = {{{0}}};
+  double asigmaTD[48][nbins][glx_npmt] = {{{0}}};
+  double asigmaTR[48][nbins][glx_npmt] = {{{0}}};
   double acorr3AD[48][nphi][ntheta] = {{{0}}};
   double acorr3AR[48][nphi][ntheta] = {{{0}}};
-  double corrAD, corrAR, sigmaAD, corrTD, corrTR;
+  double corrAD, corrAR, sigmaAD, corrTD, corrTR, sigmaTD, sigmaTR, fracAR, fracAD;
   int cor_level = 0, tb, tp, tt, tbin, level;
 
   TString corrfile = infile + ".corr.root";
-  if (ibar > -1 && ibin > -1) corrfile = infile + Form(".corr_%d_%d.root", ibar, ibin);
+  if (ibar > -1 && ibin > -1) corrfile = infile + Form(".corr_%02d_%02d.root", ibar, ibin);
 
   if (anglecorr == 2) {
     // read per pmt corrections
@@ -186,17 +194,27 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
       ch.SetBranchAddress("zcorrAR", &corrAR);
       ch.SetBranchAddress("zcorrTD", &corrTD);
       ch.SetBranchAddress("zcorrTR", &corrTR);
+      ch.SetBranchAddress("zsigmaTD", &sigmaTD);
+      ch.SetBranchAddress("zsigmaTR", &sigmaTR);
       ch.SetBranchAddress("zsigmaAD", &sigmaAD);
+      ch.SetBranchAddress("zfracAD", &fracAD);
+      ch.SetBranchAddress("zfracAR", &fracAR);
 
       for (int i = 0; i < ch.GetEntries(); i++) {
         ch.GetEvent(i);
         cor_level = level;
-        if (fabs(corrAD) < 10) {
-          acorrAD[tb][tbin][tp] = 0.001 * corrAD;
-          acorrAR[tb][tbin][tp] = 0.001 * corrAR;
-          acorrTD[tb][tbin][tp] = corrTD;
-          acorrTR[tb][tbin][tp] = corrTR;
-        }
+	asigmaTD[tb][tbin][tp] = sigmaTD;
+	asigmaTR[tb][tbin][tp] = sigmaTR;
+	if (sigmaTD < 2.0 && sigmaTD > 0.25) {
+		acorrTD[tb][tbin][tp] = corrTD;
+		if (fabs(corrAD) < 9.0 && fracAD > 0.2 && fracAD < 2.0)
+			acorrAD[tb][tbin][tp] = 0.001 * corrAD;
+	}
+	if (sigmaTR < 3.0 && sigmaTR > 0.3) {
+		acorrTR[tb][tbin][tp] = corrTR;
+		if (fabs(corrAR) < 9.0 && fracAR > 0.2 && fracAR < 2.0) 
+			acorrAR[tb][tbin][tp] = 0.001 * corrAR;
+	}
 
         std::cout << "L " << cor_level << " bar = " << tb << " bin = " << tbin << " pmt = " << tp
                   << Form(" ad %-8.5f ar %-8.5f", acorrAD[tb][tbin][tp], acorrAR[tb][tbin][tp])
@@ -210,6 +228,33 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
 
     if (cor_level == 0) cut_tdiff = 2.0;
     if (cor_level == 1) cut_tdiff = 0.5;
+  }
+
+  // bar box survey rotations in degrees (used in halld_recon reconstruction)
+  double bar_corr_z[48] = {0};
+  if (true) { //cor_level < 2) {  
+	  for(int ibar=0; ibar<48; ibar++) {
+		  if(ibar<12) {
+			  bar_corr_x[ibar] = -0.2134 * TMath::Pi()/180.;
+			  bar_corr_y[ibar] = 0.0963 * TMath::Pi()/180.;
+			  bar_corr_z[ibar] = -0.0355 * TMath::Pi()/180.;
+		  }
+		  else if(ibar<24) {
+			  bar_corr_x[ibar] = -0.0791 * TMath::Pi()/180.;
+			  bar_corr_y[ibar] = 0.1003 * TMath::Pi()/180.;
+			  bar_corr_z[ibar] = -0.0381 * TMath::Pi()/180.;	
+		  }
+		  else if(ibar<36) {
+			  bar_corr_x[ibar] = -0.15384 * TMath::Pi()/180.;
+			  bar_corr_y[ibar] = 0.08365 * TMath::Pi()/180.;
+			  bar_corr_z[ibar] = 0.00773 * TMath::Pi()/180.;		
+		  }
+		  else {
+			  bar_corr_x[ibar] = -0.18363 * TMath::Pi()/180.;
+			  bar_corr_y[ibar] = 0.09568 * TMath::Pi()/180.;
+			  bar_corr_z[ibar] = 0.01461 * TMath::Pi()/180.;		
+		  }
+	  }
   }
 
   if (anglecorr == 3) {
@@ -242,10 +287,10 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
   TVector3 posInBar, posInBar_true, momInBar, dir, dird, ldir;
   double cherenkovreco[5], cherenkovreco_err[5], spr[5];
 
-  TF1 *fit =
-    new TF1("fgaus", "[0]*exp(-0.5*((x-[1])/[2])*(x-[1])/[2]) +x*[3]+[4]", minChangle, maxChangle);
+  TF1 *fit = new TF1("fgaus", "[0]*exp(-0.5*((x-[1])/[2])*(x-[1])/[2]) +x*[3]+[4]", minChangle, maxChangle);
+  TF1 *gaus = new TF1("gaus_for_integral", "[0]*exp(-0.5*((x-[1])/[2])*(x-[1])/[2])");
   TSpectrum *spect = new TSpectrum(10);
-  TH1F *hAngle[5], *hLnDiff[5], *hNph[5];
+  TH1F *hAngle[5], *hAngleDiff[5], *hLnDiff[5], *hNph[5];
   TH1F *hAngleU[5];
   TF1 *fAngle[5];
   double mAngle[5];
@@ -280,6 +325,8 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
     double momentum = 4;
     hAngle[i] =
       new TH1F(Form("hAngle_%d", i), ";#theta_{C} [rad];entries/N_{max} [#]", 150, 0.6, 0.9);
+    hAngleDiff[i] =
+      new TH1F(Form("hAngleDiff_%d", i), ";#Delta#theta_{C} [rad];entries/N_{max} [#]", 150, -0.15, 0.15);
     hAngleU[i] =
       new TH1F(Form("hAngleu_%d", i), ";#theta_{C} [rad];entries/N_{max} [#]", 150, 0.6, 0.9);
     hCMom[i] = new TH2F(Form("cmom_%d", i), "hcmom", 1000, 0, 10, 500, 0.6, 0.9);
@@ -290,8 +337,8 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
     fAngle[i]->SetParameter(0, 1);         // const
     fAngle[i]->SetParameter(1, mAngle[i]); // mean
     fAngle[i]->SetParameter(2, sigma[i]);  // sigma
-    hAngle[i]->SetMarkerStyle(20);
-    hAngle[i]->SetMarkerSize(0.8);
+    hAngle[i]->SetMarkerStyle(20); hAngleDiff[i]->SetMarkerStyle(20);
+    hAngle[i]->SetMarkerSize(0.8); hAngleDiff[i]->SetMarkerSize(0.8);
     if (moms < 4)
       hLnDiff[i] =
         new TH1F(Form("hLnDiff_%d", i), ";ln L(#pi) - ln L(K);entries [#]", 80, -160, 160);
@@ -300,10 +347,10 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
         new TH1F(Form("hLnDiff_%d", i), ";ln L(#pi) - ln L(K);entries [#]", 80, -100, 100);
   }
 
-  hAngle[2]->SetLineColor(4);
-  hAngle[3]->SetLineColor(2);
-  hAngle[2]->SetMarkerColor(kBlue + 1);
-  hAngle[3]->SetMarkerColor(kRed + 1);
+  hAngle[2]->SetLineColor(4); hAngleDiff[2]->SetLineColor(4);
+  hAngle[3]->SetLineColor(2); hAngleDiff[2]->SetLineColor(2);
+  hAngle[2]->SetMarkerColor(kBlue + 1); hAngleDiff[2]->SetMarkerColor(kBlue + 1);
+  hAngle[3]->SetMarkerColor(kRed + 1); hAngleDiff[3]->SetMarkerColor(kRed + 1);
   fAngle[2]->SetLineColor(4);
   fAngle[3]->SetLineColor(2);
 
@@ -322,21 +369,18 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
   //DrcHit hit;
   double dibin = -100 + ibin * 20 + 10;
 
-  // TCut cut = "(DrcEvent.fId>=4 && DrcEvent.fId<9)";
   TCut cut = "";
-  //  if (ibar > -1) cut += Form("(DrcEvent.fId == %d)", ibar);
-  if (ibar > -1) cut += Form("(fabs(DrcEvent.fId -%d) < 2)", ibar);
+  if (ibar > -1) cut += Form("(DrcEvent.fId == %d)", ibar);
+  //if (ibar > -1) cut += Form("(fabs(DrcEvent.fId -%d) < 2)", ibar);
+
   // cut += "fabs(DrcEvent.fPosition.fX-0)<5"; // 10
   if (ibin > -1) cut += Form("fabs(DrcEvent.fPosition.fX-%f)<10", dibin); // 10
-  if (ibin > -1) cut += "DrcEvent.fPosition.fX < 0";                      // 10
-  // cut += "fabs(DrcEvent.fPdg) == 321";
-  // if (cor_level < 2 && anglecorr > 0) cut += "fabs(DrcEvent.fMomentum.Mag())>2.5";
-  if (cor_level < 2 && anglecorr > 0) cut += Form("fabs(DrcEvent.fMomentum.Mag()-%2.4f)<1", moms);
-  else cut += Form("fabs(DrcEvent.fMomentum.Mag()-%2.4f)<0.1", moms);
-  // cut += "fabs(DrcEvent.fMomentum.Mag())>3.5";
-  // cut="";
 
-  cut += "DrcEvent.fPdg > 0";
+  if (cor_level < 2 && anglecorr > 0) cut += Form("fabs(DrcEvent.fMomentum.Mag()-%2.4f)<1", moms);
+  //if (cor_level < 2 && anglecorr > 0) cut += "fabs(DrcEvent.fMomentum.Mag())>2.5";  
+  else cut += Form("fabs(DrcEvent.fMomentum.Mag()-%2.4f)<0.2", moms);
+
+  //cut += "DrcEvent.fPdg > 0";
 
   // up
   // cut += "(DrcEvent.fId >= 31)";
@@ -346,7 +390,8 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
   // cut += "(DrcEvent.fId >= 7)";
   // cut += "(DrcEvent.fId <= 11)";
 
-  cut += "fabs(DrcEvent.fPosition.fX-0)<20";
+  //cut += "fabs(DrcEvent.fPosition.fX-0)<20";
+  cut.Print();
 
   //if (!glx_initc(infile, cut)) return;
   if(!glx_initc(infile,1,"data/reco_lut")) return;
@@ -355,7 +400,6 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
   for (int e = 0; e < glx_elist->GetN() && e < glx_ch->GetEntries(); e++) {
     glx_ch->GetEntry(glx_elist->GetEntry(e));
 
-    // if (cor_level == 2 && count[3] > 1000) break;
     if (glx_events->GetEntriesFast() > 1) continue;
     hMult->Fill(glx_events->GetEntriesFast());
 
@@ -370,6 +414,9 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
       glx_nextEventc(e,t,1000);
       cout<<"track: "<<t<<endl;
 
+      if(e%1000 == 0)
+	      cout<<"Particle count "<<count[2]<<" "<<count[3]<<endl;
+
       // if (glx_event->GetPdg() > 0) continue;
       if (glx_event->GetType() > 0 && !sim) { // beam
         // if(glx_event->GetType()!=2) continue; // 1-LED 2-beam 0-rest
@@ -377,11 +424,11 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
         // if (glx_event->GetTofTrackDist() > 1.5) continue;
         if (fabs(glx_event->GetPdg()) == 211) {
           if (glx_event->GetChiSq() > 10) continue;
-          if (fabs(glx_event->GetInvMass() - 0.77) > 0.01) continue;     // 0.05
-          if (fabs(glx_event->GetMissMass() + 0.0001) > 0.001) continue; // 0.001
+          if (fabs(glx_event->GetInvMass() - 0.75) > 0.15) continue;     // 0.05
+          if (fabs(glx_event->GetMissMass()) > 0.05) continue; // 0.001
         } else if (fabs(glx_event->GetPdg()) == 321) {
-          if (fabs(glx_event->GetInvMass() - 1.02) > 0.01) continue;     // 0.02
-          if (fabs(glx_event->GetMissMass() + 0.0001) > 0.003) continue; // 0.007
+          if (fabs(glx_event->GetInvMass() - 1.02) > 0.02) continue;     // 0.02
+          if (fabs(glx_event->GetMissMass()) > 0.05) continue; // 0.007
         } else continue;
       } else { // geant
         noise = 0.2;
@@ -404,12 +451,13 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
       int bin = (100 + posInBar.X()) / 200. * nbins;
 
       // selection
-      // if (bar != ibar && ibar > -1) continue;
-      if (fabs(bar - ibar) > 1 && ibar > -1) continue;
-      if (posInBar.X() > 0) continue;
+      if (bar != ibar && ibar > -1) continue;
+      //if (fabs(bar - ibar) > 1 && ibar > -1) continue;
+
       if (fabs(posInBar.X() - dibin) > 10 && ibin > -1) continue;
+
       if (cor_level < 2 && anglecorr > 0) {
-        // if (momentum < 2.5) continue;
+	//if (momentum < 2.5) continue;
         if (fabs(momentum - moms) > 1) continue;
       } else {
 
@@ -427,13 +475,12 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
         if (bar == 34 && fabs(posInBar.Y() - 45.75) > 1.25) continue;
         if (bar == 35 && fabs(posInBar.Y() - 49.25) > 1.25) continue;
 
-        if (pdgId == 2 && count[2] > 1000) continue;
-        if (pdgId == 3 && count[3] > 1000) continue;
-        // if (fabs(momentum - moms) > 0.1) continue;
+        // if (pdgId == 2 && count[2] > 1000) continue;
+        // if (pdgId == 3 && count[3] > 1000) continue;
+	if (fabs(momentum - moms) > 0.2) continue;
       }
 
       if (bar > 23) {
-        lid = bar - 24;
         opbox = 1;
         barend = 294.022;
       }
@@ -453,6 +500,7 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
       if (glx_event->GetType() > 0 && !sim) { // data
         momInBar.RotateX(bar_corr_x[bar]);
         momInBar.RotateY(bar_corr_y[bar]);
+	momInBar.RotateZ(bar_corr_z[bar]);
       } else { // sim
         cz = momInBar;
         momInBar.RotateX(gRandom->Gaus(0, 0.002));
@@ -488,7 +536,7 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
             ch -= 108 * 64;
           }
 
-          double hitTime = hit.GetLeadTime() - time0 + 0.1;
+          double hitTime = hit.GetLeadTime() - time0;
           if (pmt <= 10 || (pmt >= 90 && pmt <= 96)) continue; // dummy pmts
           if (ch > glx_nch) continue;
 
@@ -538,7 +586,7 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
                 luttime = bartime + evtime;
                 diftime = hitTime - luttime;
 
-                if (r) tangle += acorrAD[bar][bin][pmt]; // per PMT corr
+                if (r) tangle += acorrAR[bar][bin][pmt]; // per PMT corr
                 else tangle += acorrAD[bar][bin][pmt];
 
                 if (fabs(diftime) < 2.0 && cor_level > 0) tangle -= 0.0025 * diftime; // chrom corr
@@ -631,7 +679,7 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
 
         if (pmt <= 10 || (pmt >= 90 && pmt <= 96)) continue; // dummy pmts
 
-        double hitTime = hit.GetLeadTime() - time0 + 0.1;
+        double hitTime = hit.GetLeadTime() - time0;
         if (sim) {
           if (gRandom->Uniform(0, 1) < 0.36) continue;
         }
@@ -678,7 +726,6 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
           // if(!samepath) continue;
 
           if (opbox == 1) {
-            dird.RotateZ(TMath::Pi());
             ldir = dird;
             ldir.RotateY(-TMath::PiOver2());
           } else {
@@ -712,9 +759,12 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
               if (dir.Angle(fnY1) < criticalAngle || dir.Angle(fnZ1) < criticalAngle) continue;
               dir = dir.Unit();
 
-              if (opbox == 0) luttheta = dir.Angle(TVector3(-1, 0, 0));
-              else luttheta = dir.Angle(TVector3(1, 0, 0));
-              if (r) luttheta = TMath::Pi() - luttheta;
+              //if (opbox == 0) luttheta = dir.Angle(TVector3(-1, 0, 0));
+              //else luttheta = dir.Angle(TVector3(1, 0, 0));
+              //if (r) luttheta = TMath::Pi() - luttheta;
+	      
+	      luttheta = dir.Angle(TVector3(-1,0,0));
+	      if(luttheta > TMath::PiOver2()) luttheta = TMath::Pi()-luttheta;
 
               len = fabs(lenx / cos(luttheta));
               lenz = fabs(len * dir.Z());
@@ -729,7 +779,7 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
               // if (spath.BeginsWith("31")) tangle += 0.0005;
               // if (spath.BeginsWith("41")) tangle += 0.0005;
 
-              if (r) tangle += acorrAD[bar][bin][pmt]; //  per PMT corr
+              if (r) tangle += acorrAR[bar][bin][pmt]; //  per PMT corr
               else tangle += acorrAD[bar][bin][pmt];
 
               if (fabs(diftime) < 2.0 && cor_level > 0) tangle -= 0.0025 * diftime; // chrom corr
@@ -756,11 +806,11 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
                 hCorrLut[iphi][itheta]->Fill(adiff);
 
                 if (r) {
-                  if (fabs(diftime) < 2) hCorrAD[bar][bin][pmt]->Fill(adiff);
+                  if (fabs(diftime) < 2) hCorrAR[bar][bin][pmt]->Fill(adiff);
                   if (adiff < 20) hCorrTR[bar][bin][pmt]->Fill(diftime);
                 } else {
-                  hCorrAD[bar][bin][pmt]->Fill(adiff);
-                  hCorrTD[bar][bin][pmt]->Fill(diftime);
+                  if (fabs(diftime) < 1) hCorrAD[bar][bin][pmt]->Fill(adiff);
+                  if (adiff < 20) hCorrTD[bar][bin][pmt]->Fill(diftime);
                 }
               }
 
@@ -768,6 +818,7 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
 
               if (pdgId == 2) hAngleU[u]->Fill(tangle, weight);
               hAngle[pdgId]->Fill(tangle, weight);
+	      hAngleDiff[pdgId]->Fill(adiff/1000., weight);
 
               if (fabs(tangle - mAngle[2]) > 1 * cut_cangle &&
                   fabs(tangle - mAngle[3]) > 1 * cut_cangle)
@@ -919,7 +970,7 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
   }
 
   //  TString nid = Form("_%d_%d_%2.1f_%2.4f_%2.3f_%2.3f", ibar, ibin, moms, scan, dx, d);
-  TString nid = Form("_%d_%d_%2.1f_%2.1f_PL", ibar, ibin, moms, scan);
+  TString nid = Form("_%d_%d_%2.1f_%d", ibar, ibin, moms, cor_level);
   if (sim) nid = "_simM" + nid;
   nid.ReplaceAll("-", "m");
   nid.ReplaceAll(".", "d");
@@ -929,7 +980,9 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
   if (anglecorr == 2 && cor_level < 2) { // per pmt correction
 
     TCanvas *canv_angle, *canv_time;
-    double zcorrAD, zsigmaAD, zcorrAR, zsigmaAR, zcorrTD, zsigmaTD, zcorrTR, zsigmaTR;
+    canv_angle = new TCanvas("canv_angle","canv_angle");
+    canv_time = new TCanvas("canv_time","canv_time");
+    double zcorrAD, zsigmaAD, zcorrAR, zsigmaAR, zcorrTD, zsigmaTD, zcorrTR, zsigmaTR, zfracAD, zfracAR;
     int bar, bin, pmt, level;
     TFile fc(corrfile, "recreate");
     TTree *tc = new TTree("corr", "corr");
@@ -941,6 +994,8 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
     tc->Branch("zsigmaAR", &zsigmaAR, "zsigmaAR/D");
     tc->Branch("zsigmaTD", &zsigmaTD, "zsigmaTD/D");
     tc->Branch("zsigmaTR", &zsigmaTR, "zsigmaTR/D");
+    tc->Branch("zfracAD", &zfracAD, "zfracAD/D");
+    tc->Branch("zfracAR", &zfracAR, "zfracAR/D");
     tc->Branch("bar", &bar, "bar/I");
     tc->Branch("bin", &bin, "bin/I");
     tc->Branch("pmt", &pmt, "pmt/I");
@@ -948,6 +1003,11 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
 
     for (bar = 0; bar < 48; bar++) {
       for (bin = 0; bin < nbins; bin++) {
+	if(bin == ibin && bar == ibar) {
+	  if(cor_level==1) canv_angle->Print("data/anglepmt"+nid+".pdf[");
+	  if(cor_level==0) canv_time->Print("data/timepmt"+nid+".pdf[");
+	}
+
         for (pmt = 0; pmt < glx_npmt; pmt++) {
           zcorrAD = 0;
           zcorrTD = 0;
@@ -957,60 +1017,95 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
           zcorrTR = 0;
           zsigmaAR = 0;
           zsigmaTR = 0;
+	  zfracAD = 0;
+	  zfracAR = 0;
           double xmax = 0;
 
-          if (hCorrAD[bar][bin][pmt]->GetEntries() < 200) continue;
+          if (hCorrAD[bar][bin][pmt]->GetEntries() < 200 && hCorrAR[bar][bin][pmt]->GetEntries() < 200) continue;
 
           glx_normalize(hCorrAD[bar][bin][pmt], hCorrAR[bar][bin][pmt]);
           glx_normalize(hCorrTD[bar][bin][pmt], hCorrTR[bar][bin][pmt]);
 
           if (cor_level == 1) {
-            fit->SetParLimits(0, 0, 1000000);
+	    if(bin == ibin && bar == ibar) {
+	      canv_angle->cd();
+	      hCorrAD[bar][bin][pmt]->Draw();
+	      hCorrAR[bar][bin][pmt]->SetLineColor(kRed);
+	      hCorrAR[bar][bin][pmt]->Draw("same");
+	    }
+
+            fit->SetParLimits(0, 0, 1000000000);
             fit->SetParameter(1, xmax);
             fit->SetParLimits(1, xmax - 10, xmax + 10);
             fit->SetParLimits(2, 5, 8);
 
             if (hCorrAD[bar][bin][pmt]->GetEntries() > 200) {
-              hCorrAD[bar][bin][pmt]->Fit("fgaus", "NQ", "", xmax - 30, xmax + 30);
+	      fit->SetLineColor(kBlack);
+              hCorrAD[bar][bin][pmt]->Fit("fgaus", "Q", "", xmax - 25, xmax + 25);
               zcorrAD = -fit->GetParameter(1);
               zsigmaAD = fit->GetParameter(2);
+
+	      for(int p=0;p<3;p++) gaus->SetParameter(p, fit->GetParameter(p)); 
+	      zfracAD = gaus->Integral(xmax-25, xmax+25)/fit->Integral(xmax-25, xmax+25);
             }
             if (hCorrAR[bar][bin][pmt]->GetEntries() > 200) {
-              hCorrAR[bar][bin][pmt]->Fit("fgaus", "NQ", "", xmax - 30, xmax + 30);
+	      fit->SetLineColor(kRed);
+              hCorrAR[bar][bin][pmt]->Fit("fgaus", "Q", "", xmax - 25, xmax + 25);
               zcorrAR = -fit->GetParameter(1);
               zsigmaAR = fit->GetParameter(2);
+
+	      for(int p=0;p<3;p++) gaus->SetParameter(p, fit->GetParameter(p)); 
+	      zfracAR = gaus->Integral(xmax-25, xmax+25)/fit->Integral(xmax-25, xmax+25);
             }
             level = 2;
+	    if(bin==ibin && bar==ibar) 
+	      canv_angle->Print("data/anglepmt"+nid+".pdf");
           }
 
           if (cor_level == 0) {
+	    if(bin == ibin && bar == ibar) {
+	      canv_time->cd();
+	      hCorrTD[bar][bin][pmt]->Draw();
+	      hCorrTR[bar][bin][pmt]->SetLineColor(kRed);
+	      hCorrTR[bar][bin][pmt]->Draw("same");
+	    }
+
+	    fit->SetParLimits(0, 0, 1000000000);
             fit->SetParameter(1, xmax);
             fit->SetParLimits(1, xmax - 4, xmax + 4);
             fit->SetParameter(2, 0.5);
-            fit->SetParLimits(2, 0.2, 1.0); // width
-            fit->FixParameter(3, 0);
-            fit->FixParameter(4, 0);
+            fit->SetParLimits(2, 0.2, 10.0); // width
+            //fit->FixParameter(3, 0);
+            //fit->FixParameter(4, 0);
             if (hCorrTD[bar][bin][pmt]->GetEntries() > 200) {
-              auto ff = hCorrTD[bar][bin][pmt]->Fit("gaus", "SNQ", "", -1.5, 1.5);
+	      fit->SetParLimits(1, xmax - 2, xmax + 2);
+	      fit->SetLineColor(kBlack);
+              auto ff = hCorrTD[bar][bin][pmt]->Fit("fgaus", "SQ", "", -2, 2);
               zcorrTD = -ff->Parameter(1);
               zsigmaTD = ff->Parameter(2);
             }
             if (hCorrTR[bar][bin][pmt]->GetEntries() > 200) {
-              auto ff = hCorrTR[bar][bin][pmt]->Fit("gaus", "SNQ", "", -2, 2);
+	      fit->SetParLimits(1, xmax - 3, xmax + 3);
+	      fit->SetLineColor(kRed);
+              auto ff = hCorrTR[bar][bin][pmt]->Fit("fgaus", "SQ", "", -3, 3);
               zcorrTR = -ff->Parameter(1);
               zsigmaTR = ff->Parameter(2);
             }
             level = 1;
+	    if(bin==ibin && bar==ibar) 
+	      canv_time->Print("data/timepmt"+nid+".pdf");
           } else {
             zcorrTD = acorrTD[bar][bin][pmt];
             zcorrTR = acorrTR[bar][bin][pmt];
+	    zsigmaTD = asigmaTD[bar][bin][pmt];
+            zsigmaTR = asigmaTR[bar][bin][pmt];
           }
 
           std::cout << "L " << cor_level << " bar = " << bar << " bin = " << bin << " pmt = " << pmt
                     << Form(" ad %-8.5f ar %-8.5f", zcorrAD, zcorrAR)
                     << Form(" td %-8.5f tr %-8.5f", zcorrTD, zcorrTR) << std::endl;
 
-          if (1) {
+          if (0) {
             canv_angle = glx_canvasAddOrGet("canv_angle");
             canv_angle->cd();
             hCorrAD[bar][bin][pmt]->Fit("fgaus", "Q", "", xmax - 30, xmax + 30);
@@ -1026,8 +1121,8 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
 
             canv_time = glx_canvasAddOrGet("canv_time");
             canv_time->cd();
-            hCorrTD[bar][bin][pmt]->Fit("gaus", "Q", "", -1.5, 1.5);
-            hCorrTR[bar][bin][pmt]->Fit("gaus", "Q", "", -2, 2);
+            hCorrTD[bar][bin][pmt]->Fit("gaus", "Q", "", -2, 2);
+            hCorrTR[bar][bin][pmt]->Fit("gaus", "Q", "", -3, 3);
             hCorrTD[bar][bin][pmt]->Draw();
             hCorrTR[bar][bin][pmt]->SetLineColor(kRed);
             hCorrTR[bar][bin][pmt]->Draw("same");
@@ -1037,6 +1132,11 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
           }
           tc->Fill();
         }
+
+        if(bin == ibin && bar == ibar) {
+	  if(cor_level==1) canv_angle->Print("data/anglepmt"+nid+".pdf]");
+	  if(cor_level==0) canv_time->Print("data/timepmt"+nid+".pdf]");
+	}
       }
     }
 
@@ -1044,6 +1144,12 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
     tc->Write();
     fc.Write();
     fc.Close();
+
+    // copy individual level correction file
+    TString corrfilelevel = corrfile; 
+    corrfilelevel.Remove(corrfilelevel.Length() - 5);
+    corrfilelevel += Form("_level%d.root", cor_level+1);
+    gSystem->CopyFile(corrfile.Data(), corrfilelevel.Data(), true); 
   }
 
   {
@@ -1230,6 +1336,78 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
     // fAngle[3]->Draw("same");
   }
 
+  { // angle diff
+    glx_canvasAdd("angle_diff" + nid, 800, 400);
+
+    if (hAngleDiff[2]->GetMaximum() > 0) hAngleDiff[2]->Scale(1 / hAngleDiff[2]->GetMaximum());
+    if (hAngleDiff[3]->GetMaximum() > 0) hAngleDiff[3]->Scale(1 / hAngleDiff[3]->GetMaximum());
+
+    for (int i = 0; i < 5; i++) {
+      if (hAngleDiff[i]->GetEntries() < 20) continue;
+
+      int nfound = spect->Search(hAngleDiff[i], 1, "goff", 0.9);
+      if (nfound > 0) cherenkovreco[i] = spect->GetPositionX()[0];
+      else cherenkovreco[i] = hAngleDiff[i]->GetXaxis()->GetBinCenter(hAngleDiff[i]->GetMaximumBin());
+
+      if (i == 2) fit->SetLineColor(kBlue);
+      if (i == 3) fit->SetLineColor(kRed);
+      fit->SetParameters(100, cherenkovreco[i], 0.008, 10);
+      fit->SetParNames("p0", "#theta_{c}", "#sigma_{c}", "p3", "p4");
+      fit->SetParLimits(0, 0.1, 1E6);
+      double frange = 3.5 * 0.008;
+      fit->SetParLimits(1, cherenkovreco[i] - frange, cherenkovreco[i] + frange);
+      fit->SetParLimits(2, 0.004, 0.030); // width
+      hAngleDiff[i]->Fit("fgaus", "I", "", cherenkovreco[i] - frange, cherenkovreco[i] + frange);
+      hAngleDiff[i]->Fit("fgaus", "M", "", cherenkovreco[i] - frange, cherenkovreco[i] + frange);
+
+      cherenkovreco[i] = fit->GetParameter(1);
+      cherenkovreco_err[i] = fit->GetParError(1);
+      spr[i] = fit->GetParameter(2);
+    }
+
+    gStyle->SetOptTitle(0);
+    gStyle->SetOptStat(0);
+    gStyle->SetOptFit(0);
+
+    hAngleDiff[2]->GetXaxis()->SetRangeUser(-0.1, 0.1);
+    hAngleDiff[2]->GetYaxis()->SetRangeUser(0, 1.2);
+    hAngleDiff[2]->Draw("");
+    hAngleDiff[3]->Draw("same");
+
+    double mm = moms;
+    int c[5] = {0, 0, kBlue, kRed, 0};
+    for (int i : {2, 3}) {
+      mAngle[i] = mangle(i, mm);
+      auto l = new TLine(0, 0, 0, 1000);
+      l->SetX1(mAngle[i]);
+      l->SetX2(mAngle[i]);
+      l->SetY1(0);
+      l->SetY2(1.2);
+      l->SetLineColor(c[i]);
+      l->Draw();
+    }
+ 
+    TLegend *leg = new TLegend(0.1, 0.5, 0.4, 0.85);
+    leg->SetFillColor(0);
+    leg->SetFillStyle(0);
+    leg->SetBorderSize(0);
+    leg->SetFillStyle(0);
+    leg->AddEntry(hAngleDiff[2], Form("#theta_{c}^{#pi} = %2.4f rad", cherenkovreco[2]), "");
+    leg->AddEntry(hAngleDiff[3], Form("#theta_{c}^{K} = %2.4f rad", cherenkovreco[3]), "");
+    leg->AddEntry(hAngleDiff[2], Form("#sigma_{c}^{#pi} = %2.1f mrad", spr[2] * 1000), "");
+    leg->AddEntry(hAngleDiff[3], Form("#sigma_{c}^{K} = %2.1f mrad", spr[3] * 1000), "");
+    leg->Draw();
+
+    TLegend *lnpa = new TLegend(0.7, 0.67, 0.9, 0.85);
+    lnpa->SetFillColor(0);
+    lnpa->SetFillStyle(0);
+    lnpa->SetBorderSize(0);
+    lnpa->SetFillStyle(0);
+    lnpa->AddEntry(hAngleDiff[2], "pions", "lp");
+    lnpa->AddEntry(hAngleDiff[3], "kaons", "lp");
+    lnpa->Draw();
+  }
+
   { // time
     glx_canvasAdd("time_2d" + nid, 800, 400);
     h2Time->Draw("colz");
@@ -1372,17 +1550,17 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
   {
     // kinematics
 
-    // glx_canvasAdd("hKin"+nid,800,400);
-    // hrho->Draw();
-    // hphi->SetLineColor(kRed);
-    // hphi->Draw("same");
+    glx_canvasAdd("hKin"+nid,800,400);
+    hrho->Draw();
+    hphi->SetLineColor(kRed);
+    hphi->Draw("same");
 
-    // glx_canvasAdd("hCMom"+nid,800,400);
-    // hCMom[2]->SetMarkerColor(kBlue);
-    // hCMom[2]->Draw();
-    // hCMom[3]->SetMarkerColor(kRed);
-    // hCMom[3]->Draw("same");
-    // hCMom[4]->Draw("colz same");
+    //glx_canvasAdd("hCMom"+nid,800,400);
+    //hCMom[2]->SetMarkerColor(kBlue);
+    //hCMom[2]->Draw();
+    //hCMom[3]->SetMarkerColor(kRed);
+    //hCMom[3]->Draw("same");
+    //hCMom[4]->Draw("colz same");
   }
 
   { // wall
