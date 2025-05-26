@@ -1,14 +1,18 @@
 #define glx__sim
-//#include "../../../../halld_recon/master/src/plugins/Analysis/pid_dirc/DrcEvent.h"
+
+#include <iostream>
+#include <fstream>
+using namespace std;
+
+#include "DrcHit.h"
 #include "DrcEvent.h"
 #include "DrcLutNode.h"
-#include "glxtools.C"
+#include "../glxtools.C"
 #include <TVirtualFitter.h>
 #include <TArc.h>
 #include <TRotation.h>
 #include <TFitResult.h>
-
-using namespace std;
+#include <TCut.h>
 
 TGraph gg_gr;
 void circleFcn(int &, double *, double &f, double *par, int) {
@@ -61,13 +65,18 @@ void FitRing(double &x0, double &y0, double &theta, TGraph gr) {
   theta = fitter->GetParameter(2);
 }
 
-void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_05_avr.root",
+void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass03/hd_root.root", TString inlut = "/work/halld/home/gxproj7/RunPeriod-2019-11/dircsim-2019_11-ver03/lut/lut_all_avr.root",
                  int ibar = 32, int ibin = 3, double moms = 3.5, double scan = 0, double dx = 0.0,
-                 double dy = 0, int vcorr = 2) {
+                 double dy = 0, int vcorr = 0) {
 
   int indd = -1;
-  const int nodes = glx_maxch;
+  const int nodes = 5184; //glx_maxch;
+  int glx_nch = 5184;
   const int luts = 24;
+
+  gSystem->Load("DrcEvent_cc.so");
+  gSystem->Load("DrcHit_cc.so");
+  gSystem->Load("DrcLutNode_cc.so");
 
   bool sim = false;
   if (infile.Contains("hd_root_gen")) sim = true;
@@ -80,13 +89,13 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
     tLut->SetBranchAddress(Form("LUT_%d", l), &cLut[l]);
   }
   tLut->GetEntry(0);
-
+  
   DrcLutNode *lutNode[luts][nodes];
   for (int l = 0; l < luts; l++) {
     for (int i = 0; i < nodes; i++) lutNode[l][i] = (DrcLutNode *)cLut[l]->At(i);
   }
   TGaxis::SetMaxDigits(4);
-
+  //*/
   TVector3 fnX1 = TVector3(1, 0, 0);
   TVector3 fnY1 = TVector3(0, 1, 0);
   TVector3 fnZ1 = TVector3(0, 0, 1);
@@ -310,7 +319,7 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
 
   TGraph cagr;
   double bartime, luttime, diftime, adiff, len, leny, lenz;
-  DrcHit hit;
+  //DrcHit hit;
   double dibin = -100 + ibin * 20 + 10;
 
   // TCut cut = "(DrcEvent.fId>=4 && DrcEvent.fId<9)";
@@ -339,8 +348,10 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
 
   cut += "fabs(DrcEvent.fPosition.fX-0)<20";
 
-  if (!glx_initc(infile, cut)) return;
+  //if (!glx_initc(infile, cut)) return;
+  if(!glx_initc(infile,1,"data/reco_lut")) return;
 
+/*
   for (int e = 0; e < glx_elist->GetN() && e < glx_ch->GetEntries(); e++) {
     glx_ch->GetEntry(glx_elist->GetEntry(e));
 
@@ -350,6 +361,14 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
 
     for (int t = 0; t < glx_events->GetEntriesFast(); t++) {
       glx_nextEventc(e, t, 1000);
+*/
+  for (int e = 0; e < glx_ch->GetEntries(); e++){
+    glx_ch->GetEntry(e);
+    cout<<"event: "<<e<<endl;
+
+    for (int t = 0; t < glx_events->GetEntriesFast(); t++){
+      glx_nextEventc(e,t,1000);
+      cout<<"track: "<<t<<endl;
 
       // if (glx_event->GetPdg() > 0) continue;
       if (glx_event->GetType() > 0 && !sim) { // beam
@@ -459,7 +478,7 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
         sum1 = 0;
         sum2 = 0;
         for (int h = 0; h < glx_event->GetHitSize(); h++) {
-          hit = glx_event->GetHit(h);
+          DrcHit hit = glx_event->GetHit(h);
           int ch = hit.GetChannel();
           int pmt = hit.GetPmtId();
           int pix = hit.GetPixelId();
@@ -484,6 +503,7 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
           if (reflected) lenx = 2 * radiatorL - lenx;
           double p1, p2;
 
+#if 0
           for (int i = 0; i < lutNode[lid][ch]->Entries(); i++) {
             dird = lutNode[lid][ch]->GetEntry(i);
             evtime = lutNode[lid][ch]->GetTime(i);
@@ -540,6 +560,7 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
               }
             }
           }
+#endif
         }
         double theta = mAngle[3];
         if (sum1 > sum2) theta = mAngle[2];
@@ -595,7 +616,7 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
       bool goodevt = 0;
 
       for (int h = 0; h < glx_event->GetHitSize(); h++) {
-        hit = glx_event->GetHit(h);
+        DrcHit hit = glx_event->GetHit(h);
         int ch = hit.GetChannel();
         int pmt = hit.GetPmtId();
         int pix = hit.GetPixelId();
@@ -630,6 +651,7 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
         bool isGood(false);
         double p1, p2;
 
+#if 0
         for (int i = 0; i < lutNode[lid][ch]->Entries(); i++) {
           dird = lutNode[lid][ch]->GetEntry(i);
           evtime = lutNode[lid][ch]->GetTime(i);
@@ -815,6 +837,7 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
             goodevt = 1;
           }
         }
+#endif
       }
 
       if (goodevt) evtcount++;
@@ -829,7 +852,7 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
         // hCMom[pdgId]->Fill(momentum,xangle);
         // hAngle[pdgId]->Reset();
 
-        double sigmat = glx_fit(hAngle[pdgId], 0.02, 10, 0.008, 1, "Q0").Y();
+        //double sigmat = glx_fit(hAngle[pdgId], 0.02, 10, 0.008, 1, "Q0").Y();
         // hSpr->Fill(x,y,sigmat);
         hAngle[pdgId]->Reset();
       }
@@ -885,6 +908,7 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
     }
   }
 
+#if 0
   if (evtcount > 0) {
     for (int i = 0; i < glx_nch; i++) {
       int pmt = i / 64;
@@ -1437,8 +1461,9 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
 
     std::cout << "tree saved in " << out << std::endl;
   }
+#endif
 }
 
-int main() {
-  reco_lut_02();
+int main(int nargs, char* argv[]) {
+  reco_lut_02("/volatile/halld/home/jrsteven/RunPeriod-2019-11/recon/ver01_pass03/merged/hd_root/hd_root_072646.root","/work/halld/home/gxproj7/RunPeriod-2019-11/dircsim-2019_11-ver03/lut/hd_root.root", 32, 3, 3.5, 0, 0.0, 0, 0);
 }

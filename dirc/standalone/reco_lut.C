@@ -1,9 +1,9 @@
 #define glx__sim
 #include "/work/halld2/home/jrsteven/2018-dirc/builds/sim-recon/src/plugins/Analysis/pid_dirc/DrcEvent.h"
 #include "/work/halld2/home/jrsteven/2018-dirc/builds/sim-recon/src/plugins/Analysis/lut_dirc/DrcLutNode.h"
-#include "glxtools.C"
+#include "../glxtools.C"
 
-void reco_lut(TString infile="out.root",TString inlut="lut_all_avr.root",double theta=0, double phi=-90, double mom=4){
+void reco_lut(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass03/hd_root.root", TString inlut = "/work/halld/home/gxproj7/RunPeriod-2019-11/dircsim-2019_11-ver03/lut/lut_all_avr.root",double theta=0, double phi=-90, double mom=4){
 
   if(!glx_initc(infile,1,"data/reco_lut")) return;
   const int nodes = 15000;

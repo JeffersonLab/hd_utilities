@@ -49,10 +49,14 @@ class DrcHit;
 DrcEvent* glx_event(0);
 #endif
 
+Int_t glx_geometry=0;
+
 const Int_t  glx_nrow(6),glx_ncol(18);
 const Int_t  glx_npmt(glx_nrow*glx_ncol);
 const Int_t  glx_npix(64);
-const Int_t  glx_npixtot(glx_npmt*glx_npix);
+const Int_t  glx_maxch(glx_npmt*glx_npix);
+const Int_t  glx_nch(glx_npmt*glx_npix);
+const Int_t  glx_npixtot(glx_npmt*glx_npix*2); // 2 optical box
 
 TChain*  glx_ch(0);
 Int_t    glx_entries(0), glx_momentum(0),glx_pdg(0),glx_test1(0),glx_test2(0);
@@ -67,22 +71,70 @@ int glx_apdg[]={11,13,211,321,2212};
 double glx_mass[] = {0.000511,0.1056584,0.139570,0.49368,0.9382723};
 TString glx_names[] = {"electron","muon","pion","kaon","proton"};
 
+Int_t map_mpc[glx_maxch/64][glx_npix];
+Int_t map_pmt[glx_maxch];
+Int_t map_pix[glx_maxch];
+Int_t map_row[glx_maxch];
+Int_t map_col[glx_maxch];
+Int_t map_ssp_slot[glx_maxch];
+Int_t map_ssp_fiber[glx_maxch];
+Double_t glx_particleArray[3000];
+
+void glx_createMap(){
+  for(Int_t ch=0; ch<glx_maxch; ch++){
+    Int_t pmt = ch/64;
+    Int_t pix = ch%64;	
+    Int_t col = pix/2 - 8*(pix/16);
+    Int_t row = pix%2 + 2*(pix/16);
+    pix = col+8*row;
+    int slot = 4;
+    int br= pmt%18;
+    if(pmt>53) br+=18;
+
+    if((br>8 && br<18) || br>21) slot=5;
+    
+    if(br<4) br=12+br%4;
+    else if(br<8) br=20+br%4;
+    else if(br<12) br=4+br%4;
+    else if(br<16) br=12+br%4;
+    else if(br<18) br=20+br%4;
+    else if(br<22) br=16+(br-2)%4;
+    else if(br<26) br=(br-2)%4;
+    else if(br<30) br=8+(br-2)%4;
+    else if(br<34) br=16+(br-2)%4;
+    else if(br<36) br=22+(br-2)%4;
+      
+    map_mpc[pmt][pix]=ch;
+    map_pmt[ch] = pmt;
+    map_pix[ch] = pix;
+    map_row[ch] = row;
+    map_col[ch] = col;
+    map_ssp_slot[ch] = slot;
+    map_ssp_fiber[ch] = br;
+  } 
+
+  for(Int_t i=0; i<5; i++){
+    glx_particleArray[glx_apdg[i]]=i;
+  }
+}
+
 Int_t glx_getChNum(Int_t npmt, Int_t npix){
   Int_t ch = -1;
   ch = 64*npmt+npix;
   return ch;
 }
 
+TPaletteAxis * glx_palette;
+
 TString glx_drawDigi(TString digidata="", Int_t layoutId = 0, Double_t maxz = 0, Double_t minz = 0){
-  if(!glx_cdigi) glx_cdigi = new TCanvas("glx_cdigi","glx_cdigi",800,350);
+  if(!glx_cdigi) glx_cdigi = new TCanvas("glx_cdigi","glx_cdigi",800,350); //1200,480);
   glx_cdigi->cd();
   if(!glx_hpglobal){
-    glx_hpglobal = new TPad("P","T",0.005,0.04,0.95,0.96);
+    glx_hpglobal = new TPad("P","T",0.005,0.06,0.95,0.94);
     glx_hpglobal->SetFillStyle(0);
     glx_hpglobal->Draw();
   }
   glx_hpglobal->cd();
-  
   Int_t nrow(glx_nrow), ncol(glx_ncol);
  
   if(layoutId > 0){
@@ -91,19 +143,21 @@ TString glx_drawDigi(TString digidata="", Int_t layoutId = 0, Double_t maxz = 0,
     Int_t padi = 0;
     if(!glx_hpads[0]){
       for(int i=0; i<ncol; i++){
-	for(int j=0; j<nrow; j++){
-	  glx_hpads[padi] =  new TPad(Form("P%d",i*10+j),"T", i/(Double_t)ncol+bw, j/(Double_t)nrow+bh, (i+1)/(Double_t)ncol-bw, (1+j)/(Double_t)nrow-bh, 21);
-	  glx_hpads[padi]->SetFillColor(kCyan-8);
+	for(int j=0; j<nrow;j++){
+	  glx_hpads[padi] =  new TPad(Form("P%d",padi),"T", i/(Double_t)ncol+bw, 1-(j/(Double_t)nrow+bh), (i+1)/(Double_t)ncol-bw, 1-((j+1)/(Double_t)nrow-bh), 21);
+	  // glx_hpads[padi]->SetFillColor(kCyan-8);
+	  glx_hpads[padi]->SetFillColor(kCyan-10);
 	  glx_hpads[padi]->SetMargin(0.04,0.04,0.04,0.04);
-	  glx_hpads[padi]->Draw(); 
-	  padi++;
+	  // if((j+1)%6 != 0)
+	  glx_hpads[padi]->Draw();
+	  padi++;	   
 	}
       }
     }
 
   }
     
-  Int_t tmax;
+  Double_t tmax;
   Double_t max=0;
   if(maxz==0){
     for(Int_t p=0; p<nrow*ncol;p++){
@@ -145,13 +199,14 @@ TString glx_drawDigi(TString digidata="", Int_t layoutId = 0, Double_t maxz = 0,
       } 
     }
   }
-  
-  Int_t nnmax(0);
-  glx_hdigi[nnmax]->GetZaxis()->SetLabelSize(0.06);
 
+  Int_t nnmax(0);  
+  glx_hdigi[nnmax]->GetZaxis()->SetLabelSize(0.06);
+  
   for(Int_t m=0; m<nrow*ncol;m++){
     Int_t nm=(5-m%6)*glx_ncol + m/6;
     glx_hpads[m]->cd();
+    glx_hpads[m]->SetName(Form("p_%d",nm));
     glx_hdigi[nm]->Draw("col");
     if(maxz==-1)  max = glx_hdigi[nm]->GetBinContent(glx_hdigi[nm]->GetMaximumBin());
     if(nnmax<glx_hdigi[nm]->GetEntries()) nnmax=nm;
@@ -168,16 +223,22 @@ TString glx_drawDigi(TString digidata="", Int_t layoutId = 0, Double_t maxz = 0,
   glx_cdigi->Modified();
   glx_cdigi->Update();
 
+  // nnmax++; //!
+  
   glx_cdigi->cd();
+  cout<<"+++nnmax = "<<nnmax<<endl;
   glx_hdigi[nnmax]->GetZaxis()->SetLabelSize(0.04);
   glx_hdigi[nnmax]->GetZaxis()->SetTickLength(0.01);
-  //(new TPaletteAxis(0.955,0.1,0.97,0.90,((TH1 *)(glx_hdigi[nnmax])->Clone())))->Draw();
+  if(glx_palette) delete glx_palette;
+  glx_palette = new TPaletteAxis(0.955,0.1,0.965,0.90,((TH1 *)(glx_hdigi[nnmax])->Clone()));
+  glx_palette->Draw();
   
   glx_cdigi->Modified();
   glx_cdigi->Update();
   return digidata;
 }
 void glx_initDigi(Int_t type=0){
+  TGaxis::SetMaxDigits(3);
   if(type == 0){
     for(Int_t m=0; m<glx_npmt;m++){	
       glx_hdigi[m] = new TH2F( Form("pmt%d", m),Form("pmt%d", m),8,0.,8.,8,0.,8.);
@@ -201,7 +262,7 @@ void glx_resetDigi(){
     }
 }
 
-void axisHits800x500(TH2 * hist){
+void glx_axisHits800x500(TH2 * hist){
   hist->SetStats(0);
   hist->SetTitle(Form("%d hits",(Int_t)hist->GetEntries()));
   hist->GetXaxis()->SetTitle("z, [cm]");
@@ -212,7 +273,7 @@ void axisHits800x500(TH2 * hist){
   hist->GetYaxis()->SetTitleOffset(0.7);
 }
 
-void axisAngle800x500(TH2 * hist){
+void glx_axisAngle800x500(TH2 * hist){
   hist->SetStats(0);
   hist->SetTitle(Form("%d hits",(Int_t)hist->GetEntries()));
   hist->GetXaxis()->SetTitle("#theta, [degree]");
@@ -223,10 +284,10 @@ void axisAngle800x500(TH2 * hist){
   hist->GetYaxis()->SetTitleOffset(0.7);
 }
 
-void axisAngle800x500(TH1 * hist){
+void glx_axisAngle800x500(TH1 * hist){
   hist->SetStats(0);
   hist->SetTitle(Form("%d hits",(Int_t)hist->GetEntries()));
-  hist->GetXaxis()->SetTitle("#theta, [degree]");
+  hist->GetXaxis()->SetTitle("#theta [degree]");
   hist->GetXaxis()->SetTitleSize(0.05);
   hist->GetXaxis()->SetTitleOffset(0.8);
   hist->GetYaxis()->SetTitle("photons per track, [#]");
@@ -234,22 +295,22 @@ void axisAngle800x500(TH1 * hist){
   hist->GetYaxis()->SetTitleOffset(0.7);
 }
 
-void axisTime800x500(TH2 * hist){
-  hist->GetXaxis()->SetTitle("time, [ns]");
+void glx_axisTime800x500(TH2 * hist){
+  hist->GetXaxis()->SetTitle("time [ns]");
   hist->GetXaxis()->SetTitleSize(0.05);
   hist->GetXaxis()->SetTitleOffset(0.8);
-  hist->GetYaxis()->SetTitle("entries, #");
+  hist->GetYaxis()->SetTitle("entries #");
   hist->GetYaxis()->SetTitleSize(0.05);
   hist->GetYaxis()->SetTitleOffset(0.7);
   hist->SetLineColor(1);
 }
 
-void axisTime800x500(TH1 * hist, TString xtitle = "time, [ns]"){
+void glx_axisTime800x500(TH1 * hist, TString xtitle = "time [ns]"){
   TGaxis::SetMaxDigits(3);
   hist->GetXaxis()->SetTitle(xtitle);
   hist->GetXaxis()->SetTitleSize(0.05);
   hist->GetXaxis()->SetTitleOffset(0.8);
-  hist->GetYaxis()->SetTitle("entries, [#]");
+  hist->GetYaxis()->SetTitle("entries [#]");
   hist->GetYaxis()->SetTitleSize(0.05);
   hist->GetYaxis()->SetTitleOffset(0.7);
   hist->SetLineColor(1);
@@ -366,7 +427,10 @@ void glx_setRootPalette(Int_t pal = 0){
 
 #ifdef glx__sim
 bool glx_init(TString inFile="../build/hits.root", Int_t bdigi=0, TString savepath=""){
-  if(inFile=="") return false;
+  if(inFile==""){
+    std::cout<<"glxtools: no input file "<<std::endl;    
+    return false;
+  }
   if(savepath!="") glx_savepath=savepath;
   glx_setRootPalette(1);
   delete glx_ch;
@@ -440,9 +504,9 @@ void glx_nextEventc(Int_t ievent,Int_t itrack, Int_t printstep){
 
 #endif
 
-TSpectrum *glx_spect = new TSpectrum();
+TSpectrum *glx_spect = new TSpectrum(2);
 TF1 *glx_gaust;
-TVector3 glx_fit(TH1F *h, Double_t range = 3, Double_t threshold=20, Double_t limit=2, Int_t peakSearch=1){
+TVector3 glx_fit(TH1F *h, Double_t range = 3, Double_t threshold=20, Double_t limit=2, Int_t peakSearch=1,TString opt=""){
   Int_t binmax = h->GetMaximumBin();
   Double_t xmax = h->GetXaxis()->GetBinCenter(binmax);
   glx_gaust = new TF1("glx_gaust","[0]*exp(-0.5*((x-[1])/[2])^2)",xmax-range,xmax+range);
@@ -460,7 +524,7 @@ TVector3 glx_fit(TH1F *h, Double_t range = 3, Double_t threshold=20, Double_t li
       glx_gaust->SetParameter(1,xmax);
       glx_gaust->SetParameter(2,0.2);
       glx_gaust->SetParLimits(2,0.005,limit);
-      h->Fit("glx_gaust","","MQN",xxmin-range, xxmax+range);
+      h->Fit("glx_gaust",opt,"MQN",xxmin-range, xxmax+range);
     }
 
     if(peakSearch == 2){
@@ -498,7 +562,7 @@ TVector3 glx_fit(TH1F *h, Double_t range = 3, Double_t threshold=20, Double_t li
       glx_gaust->SetParameter(5,0.2);
     }
 
-    h->Fit("glx_gaust","","MQN",xxmin-range, xxmax+range);
+    h->Fit("glx_gaust",opt,"MQN",xxmin-range, xxmax+range);
     mean1 = glx_gaust->GetParameter(1);
     sigma1 = glx_gaust->GetParameter(2);
     if(sigma1>10) sigma1=10;
@@ -603,8 +667,13 @@ TString glx_createDir(){
   return finalpath;
 }
 
+void glx_addInfo(TString str){
+  glx_info += str+"\n";
+}
+
 void glx_save(TPad *c= NULL,TString path="", TString name="", Int_t what=0, Int_t style=0){
   if(c && path != "") {
+    bool bstate = gROOT->IsBatch();
     gROOT->SetBatch(1);
     Int_t w = 800, h = 400;
     if(style != -1){
@@ -666,14 +735,14 @@ void glx_save(TPad *c= NULL,TString path="", TString name="", Int_t what=0, Int_
       cc->Print(path+"/"+name+".png");
       if(what==0) cc->Print(path+"/"+name+".pdf");
       if(what==0) cc->Print(path+"/"+name+".eps");
-      if(what==0) cc->Print(path+"/"+name+".root");
+      if(what==0) cc->Print(path+"/"+name+".C");
     }else{
       c->Print(path+"/"+name+".png");
       if(what==0) c->Print(path+"/"+name+".pdf");
       if(what==0) c->Print(path+"/"+name+".eps");
-      if(what==0) c->Print(path+"/"+name+".root");
+      if(what==0) c->Print(path+"/"+name+".C");
     }
-    gROOT->SetBatch(0);
+    gROOT->SetBatch(bstate);
   }
 }
 
@@ -710,6 +779,16 @@ void glx_waitPrimitive(TCanvas *c){
   c->Modified(); 
   c->Update(); 
   c->WaitPrimitive();
+}
+
+// Ahmed
+TCanvas *glx_canvasGet(TString name="c"){
+  TIter next(glx_canvasList);
+  TCanvas *c=0;
+  while((c = (TCanvas*) next())){
+    if(c->GetName()==name || name=="*") break;
+  }
+  return c;
 }
 
 void glx_waitPrimitive(TString name, TString prim=""){
@@ -755,10 +834,10 @@ void glx_normalize(TH1F* hists[],Int_t size){
 
 int glx_findPdgId(int pdg){
   int pdgId=0; // electron by default 
-  if(abs(pdg) == 13) pdgId=1;
-  if(abs(pdg) == 211) pdgId=2;
-  if(abs(pdg) == 321) pdgId=3;
-  if(abs(pdg) == 2212) pdgId=4;
+  if(fabs(pdg) == 13) pdgId=1;
+  if(fabs(pdg) == 211) pdgId=2;
+  if(fabs(pdg) == 321) pdgId=3;
+  if(fabs(pdg) == 2212) pdgId=4;
   return pdgId;
 }
 

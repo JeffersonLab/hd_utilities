@@ -1,0 +1,1 @@
+g++ -Wall reco_lut_02.C ./DrcHit_cc.so ./DrcEvent_cc.so ./DrcLutNode_cc.so -O3 -mtune=native -Wno-comment `root-config --cflags` `root-config --glibs` -lMinuit -lSpectrum -g -I./ -o fastdirc_exe
