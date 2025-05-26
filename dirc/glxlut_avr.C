@@ -7,7 +7,7 @@
 #include <TH1F.h>
 
 
-#include "/work/halld2/home/jrsteven/2018-dirc/builds/halld_recon/src/plugins/Analysis/lut_dirc/DrcLutNode.h"
+#include "DrcLutNode.h"
 
 
 void glxlut_avr(TString baseFile = "lut.root"){
