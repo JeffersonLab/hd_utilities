@@ -516,7 +516,7 @@ bool glx_initc(TString inFile="../build/hits.root", TCut cut=""){
   glx_elist = (TEntryList*)gDirectory->Get("glx_cutlist");
     
   glx_entries = glx_ch->GetEntries();
-  std::cout<<"Entries in chain:  "<<glx_entries << " after cut: "<< glx_elist->GetN()<<std::endl;
+  std::cout<<" after cut: "<< glx_elist->GetN()<<std::endl;
   glx_initDigi();
   
   return true;

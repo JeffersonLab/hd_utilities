@@ -79,7 +79,15 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
   gSystem->Load("DrcLutNode_cc.so");
 
   bool sim = false;
+  TString outfile = infile;
+  TSystemDirectory directory(infile, infile);
+  TList *files=directory.GetListOfFiles();
   if (infile.Contains("hd_root_gen")) sim = true;
+  if (files) {
+    infile = infile+"*.root";
+    outfile = "hd_root";
+  }
+  cout<<infile.Data()<<" "<<outfile.Data()<<endl;
 
   TFile *fLut = new TFile(inlut);
   TTree *tLut = (TTree *)fLut->Get("lut_dirc");
@@ -161,6 +169,12 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
 
     0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002,
     0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002};
+  */
+
+  // bar box rotations from CCDB table DIRC/bar_rotation 
+  double bar_corr_x[4] = {-0.2134, -0.0791, -0.15384, -0.18363};
+  double bar_corr_y[4] = {0.0963, 0.1003, 0.08365, 0.09568};
+  double bar_corr_z[4] = {-0.0355, -0.0381, 0.00773, 0.01461};
   double sigma[] = {0.01, 0.01, 0.0073, 0.0073, 0.01};
 
   double acorrAD[48][nbins][glx_npmt] = {{{0}}};
@@ -258,7 +272,7 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
   }
 
   if (anglecorr == 3) {
-    corrfile = infile + ".corr3.root";
+    corrfile = outfile + ".corr3.root";
     std::cout << "======= reading corrections from " << corrfile << std::endl;
     TChain ch;
     ch.SetName("corr");
@@ -427,6 +441,7 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
           if (fabs(glx_event->GetInvMass() - 0.75) > 0.15) continue;     // 0.05
           if (fabs(glx_event->GetMissMass()) > 0.05) continue; // 0.001
         } else if (fabs(glx_event->GetPdg()) == 321) {
+	  if (glx_event->GetChiSq() > 10) continue;
           if (fabs(glx_event->GetInvMass() - 1.02) > 0.02) continue;     // 0.02
           if (fabs(glx_event->GetMissMass()) > 0.05) continue; // 0.007
         } else continue;
@@ -505,6 +520,7 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
         cz = momInBar;
         momInBar.RotateX(gRandom->Gaus(0, 0.002));
         momInBar.RotateY(gRandom->Gaus(0, 0.002));
+	momInBar.RotateZ(gRandom->Gaus(0, 0.002));
         // momInBar.RotateX(gRandom->Gaus(0, 0.0025));
         // momInBar.Rotate(gRandom->Uniform(0, TMath::PiOver2()), cz);
         // time0 += gRandom->Gaus(0, 0.25);
@@ -541,9 +557,6 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
           if (ch > glx_nch) continue;
 
           bool reflected = hitTime > 44;
-
-          if (reflected) hitTime += acorrTR[bar][bin][pmt];
-          else hitTime += acorrTD[bar][bin][pmt];
 
           lenx = fabs(barend - posInBar.X());
           double rlenx = 2 * radiatorL - lenx;
@@ -584,7 +597,11 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
 
                 bartime = lenx / cos(luttheta) / 19.65;
                 luttime = bartime + evtime;
-                diftime = hitTime - luttime;
+
+		if (reflected) luttime -= acorrTR[bar][bin][pmt];
+		else luttime -= acorrTD[bar][bin][pmt];
+
+                diftime = luttime - hitTime;
 
                 if (r) tangle += acorrAR[bar][bin][pmt]; // per PMT corr
                 else tangle += acorrAD[bar][bin][pmt];
@@ -687,9 +704,6 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
         nphc++;
         bool reflected = hitTime > 44;
 
-        if (reflected) hitTime += acorrTR[bar][bin][pmt];
-        else hitTime += acorrTD[bar][bin][pmt];
-
         // if(!reflected) continue;
         lenx = fabs(barend - posInBar.X());
         double rlenx = 2 * radiatorL - lenx;
@@ -771,7 +785,11 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
               leny = fabs(len * dir.Y());
               bartime = lenx / cos(luttheta) / 19.65; // 19.7 203.767 for 1.47125
               luttime = bartime + evtime;
-              diftime = hitTime - luttime;
+
+	      if (reflected) luttime -= acorrTR[bar][bin][pmt];
+	      else luttime -= acorrTD[bar][bin][pmt];
+
+              diftime = luttime - hitTime;
 
               tangle = momInBar.Angle(dir);
               // if (spath.BeginsWith("32")) tangle += -0.0015;
