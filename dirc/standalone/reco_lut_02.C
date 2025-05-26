@@ -7,7 +7,7 @@ using namespace std;
 #include "DrcHit.h"
 #include "DrcEvent.h"
 #include "DrcLutNode.h"
-#include "../glxtools.C"
+#include "glxtools.C"
 #include <TVirtualFitter.h>
 #include <TArc.h>
 #include <TRotation.h>
@@ -65,8 +65,9 @@ void FitRing(double &x0, double &y0, double &theta, TGraph gr) {
   theta = fitter->GetParameter(2);
 }
 
-void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass03/hd_root.root", TString inlut = "/work/halld/home/gxproj7/RunPeriod-2019-11/dircsim-2019_11-ver03/lut/lut_all_avr.root",
-                 int ibar = 32, int ibin = 3, double moms = 3.5, double scan = 0, double dx = 0.0,
+// 
+void reco_lut_02(TString infile = "pip_p3_theta4.root", TString inlut = "/work/halld/home/gxproj7/RunPeriod-2019-11/dircsim-2019_11-ver03/lut/lut_all_avr.root",
+                 int ibar = 7, int ibin = -1, double moms = 3.0, double scan = 0, double dx = 0.0,
                  double dy = 0, int vcorr = 0) {
 
   int indd = -1;
@@ -78,7 +79,7 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
   gSystem->Load("DrcHit_cc.so");
   gSystem->Load("DrcLutNode_cc.so");
 
-  bool sim = false;
+  bool sim = true; //false;
   TString outfile = infile;
   TSystemDirectory directory(infile, infile);
   TList *files=directory.GetListOfFiles();
@@ -156,6 +157,7 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
   double cut_cangle = 3.5 * 0.008; // 3.5
   double cut_tdiff = 0.5;
 
+  /*
   // Roman's per-bar corrections (not sure of source)
   double bar_corr_x[] = {
     0.000,  -0.002, -0.004, -0.004, -0.004, -0.003, -0.003, -0.003, -0.004, -0.004, -0.003, -0.004,
@@ -244,6 +246,7 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
     if (cor_level == 1) cut_tdiff = 0.5;
   }
 
+  /*
   // bar box survey rotations in degrees (used in halld_recon reconstruction)
   double bar_corr_z[48] = {0};
   if (true) { //cor_level < 2) {  
@@ -270,6 +273,7 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
 		  }
 	  }
   }
+  */
 
   if (anglecorr == 3) {
     corrfile = outfile + ".corr3.root";
@@ -464,7 +468,7 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
       momInBar = glx_event->GetMomentum();
       double momentum = momInBar.Mag();
       int bin = (100 + posInBar.X()) / 200. * nbins;
-
+      
       // selection
       if (bar != ibar && ibar > -1) continue;
       //if (fabs(bar - ibar) > 1 && ibar > -1) continue;
@@ -472,8 +476,8 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
       if (fabs(posInBar.X() - dibin) > 10 && ibin > -1) continue;
 
       if (cor_level < 2 && anglecorr > 0) {
-	//if (momentum < 2.5) continue;
-        if (fabs(momentum - moms) > 1) continue;
+	if (momentum < 2.5) continue;
+        //if (fabs(momentum - moms) > 1) continue;
       } else {
 
 	// select tracks close to the center of the bar
@@ -513,9 +517,9 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
       // wallb[wx]++;
 
       if (glx_event->GetType() > 0 && !sim) { // data
-        momInBar.RotateX(bar_corr_x[bar]);
-        momInBar.RotateY(bar_corr_y[bar]);
-	momInBar.RotateZ(bar_corr_z[bar]);
+        momInBar.RotateX(bar_corr_x[bar/12]);
+        momInBar.RotateY(bar_corr_y[bar/12]);
+	momInBar.RotateZ(bar_corr_z[bar/12]);
       } else { // sim
         cz = momInBar;
         momInBar.RotateX(gRandom->Gaus(0, 0.002));
@@ -527,7 +531,7 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
       }
 
       cz = momInBar.Unit();
-
+      
       for (int p = 0; p < 5; p++) {
         mAngle[p] = mangle(p, momentum);
         fAngle[p]->SetParameter(1, mAngle[p]); // mean
@@ -674,6 +678,8 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
         }
       }
 
+      cout<<"test 1"<<endl;
+      
       sum1 = 0;
       sum2 = 0;
       int nph = 0, nphc = 0;
@@ -713,7 +719,7 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
         bool isGood(false);
         double p1, p2;
 
-#if 0
+#if 1
         for (int i = 0; i < lutNode[lid][ch]->Entries(); i++) {
           dird = lutNode[lid][ch]->GetEntry(i);
           evtime = lutNode[lid][ch]->GetTime(i);
@@ -977,7 +983,9 @@ void reco_lut_02(TString infile = "~/volatile/RunPeriod-2019-11/recon/ver01_pass
     }
   }
 
-#if 0
+  cout<<evtcount<<" events"<<endl;
+  
+#if 1
   if (evtcount > 0) {
     for (int i = 0; i < glx_nch; i++) {
       int pmt = i / 64;

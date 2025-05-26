@@ -491,32 +491,23 @@ bool glx_initc(TString inFile="../build/hits.root", TCut cut=""){
   glx_setRootPalette(1);
   delete glx_ch;
 
-  glx_ch = new TChain("dirc"); 
-  if(inFile.Contains(".root")) glx_ch->Add(inFile);
-  else if (inFile.Contains(".txt")){
-	  ifstream ifs;
-	  ifs.open(inFile);
+  // TFile *f = TFile::Open(inFile);
+  // glx_ch = f->Get<TTree>("dirc"); 
 
-	  TString s;
-	  while (1) {
-		  ifs >> s;
-		  cout<<s.Data()<<endl;
-		  if (!ifs.good()) break;    
-		  glx_ch->Add(s.Data());
-	  }
-	  ifs.close();
-  }
+  glx_ch = new TChain("dirc"); 
+  glx_ch->Add(inFile);
   glx_events = new TClonesArray("DrcEvent");
   glx_ch->SetBranchAddress("DrcEvent", &glx_events);
   //  glx_ch->SetMaxVirtualSize(20e+9);
   // int res = glx_ch->LoadBaskets(5E+9);
   // std::cout<<"res "<<res<<std::endl;
   
+  
   glx_ch->Draw(">>glx_cutlist",TCut(cut),"entrylist");
   glx_elist = (TEntryList*)gDirectory->Get("glx_cutlist");
     
   glx_entries = glx_ch->GetEntries();
-  std::cout<<" after cut: "<< glx_elist->GetN()<<std::endl;
+  std::cout<<"Entries in chain:  "<<glx_entries << " after cut: "<< glx_elist->GetN()<<std::endl;
   glx_initDigi();
   
   return true;
