@@ -31,7 +31,7 @@ printenv
 ls -l
 
 # INPUT FILES
-ln -sf $INPUT_FILE ./hd_root.root
+#ln -sf $INPUT_FILE ./hd_root.root
 ln -sf $LUT_FILE ./lut_all_avr.root
 
 # LINK SCRIPTS
@@ -44,17 +44,18 @@ source makeEnv.sh
 
 ls -l
 
+ls ${INPUT_FILE}*.root
 
 # cor_level = 0 (no corrections)
-root -l -b -q loadlib.C reco_lut_02.C\(\"hd_root.root\",\"lut_all_avr.root\",$BAR,$BIN,4.0,0.0,0,0,2\)
-cp hd_root.root.corr_${BAR}_${BIN}.root hd_root.root.corr_${BAR}_${BIN}_level1.root
+root -l -b -q loadlib.C reco_lut_02.C\(\"${INPUT_FILE}\",\"lut_all_avr.root\",$BAR,$BIN,4.0,0.0,0,0,2\)
+cp hd_root.corr_${BAR}_${BIN}.root hd_root.corr_${BAR}_${BIN}_level1.root
     
 # cor_level = 1 (initial time correction)
-root -l -b -q loadlib.C reco_lut_02.C\(\"hd_root.root\",\"lut_all_avr.root\",$BAR,$BIN,4.0,0.0,0,0,2\)
-cp hd_root.root.corr_${BAR}_${BIN}.root hd_root.root.corr_${BAR}_${BIN}_level2.root
+root -l -b -q loadlib.C reco_lut_02.C\(\"${INPUT_FILE}\",\"lut_all_avr.root\",$BAR,$BIN,4.0,0.0,0,0,2\)
+cp hd_root.corr_${BAR}_${BIN}.root hd_root.corr_${BAR}_${BIN}_level2.root
     
 # cor_level = 2 (full correction, check performance)
-root -l -b -q loadlib.C reco_lut_02.C\(\"hd_root.root\",\"lut_all_avr.root\",$BAR,$BIN,3.5,0.0,0,0,2\)
+root -l -b -q loadlib.C reco_lut_02.C\(\"${INPUT_FILE}\",\"lut_all_avr.root\",$BAR,$BIN,3.5,0.0,0,0,2\)
     
 # RETURN CODE
 set RETURN_CODE = $?

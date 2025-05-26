@@ -69,7 +69,15 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
   const int luts = 24;
 
   bool sim = false;
+  TString outfile = infile;
+  TSystemDirectory directory(infile, infile);
+  TList *files=directory.GetListOfFiles();
   if (infile.Contains("hd_root_gen")) sim = true;
+  if (files) {
+    infile = infile+"*.root";
+    outfile = "hd_root";
+  }
+  cout<<infile.Data()<<" "<<outfile.Data()<<endl;
 
   TFile *fLut = new TFile(inlut);
   TTree *tLut = (TTree *)fLut->Get("lut_dirc");
@@ -135,6 +143,7 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
   double cut_cangle = 3.5 * 0.008; // 3.5
   double cut_tdiff = 0.5;
 
+  /*
   double bar_corr_x[] = {
     0.000,  -0.002, -0.004, -0.004, -0.004, -0.003, -0.003, -0.003, -0.004, -0.004, -0.003, -0.004,
     -0.004, -0.005, -0.005, -0.004, -0.003, -0.004, -0.003, -0.004, -0.005, -0.005, -0.005, -0.005,
@@ -147,6 +156,12 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
 
     0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002,
     0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002};
+  */
+
+  // bar box rotations from CCDB table DIRC/bar_rotation 
+  double bar_corr_x[4] = {-0.2134, -0.0791, -0.15384, -0.18363};
+  double bar_corr_y[4] = {0.0963, 0.1003, 0.08365, 0.09568};
+  double bar_corr_z[4] = {-0.0355, -0.0381, 0.00773, 0.01461};
   double sigma[] = {0.01, 0.01, 0.0073, 0.0073, 0.01};
 
   double acorrAD[48][nbins][glx_npmt] = {{{0}}};
@@ -162,8 +177,8 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
   double corrAD, corrAR, sigmaAD, corrTD, corrTR, sigmaTD, sigmaTR;
   int cor_level = 0, tb, tp, tt, tbin, level;
 
-  TString corrfile = infile + ".corr.root";
-  if (ibar > -1 && ibin > -1) corrfile = infile + Form(".corr_%d_%d.root", ibar, ibin);
+  TString corrfile = outfile + ".corr.root";
+  if (ibar > -1 && ibin > -1) corrfile = outfile + Form(".corr_%d_%d.root", ibar, ibin);
 
   if (anglecorr == 2) {
     // read per pmt corrections
@@ -211,7 +226,7 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
   }
 
   if (anglecorr == 3) {
-    corrfile = infile + ".corr3.root";
+    corrfile = outfile + ".corr3.root";
     std::cout << "======= reading corrections from " << corrfile << std::endl;
     TChain ch;
     ch.SetName("corr");
@@ -368,6 +383,7 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
           if (fabs(glx_event->GetInvMass() - 0.75) > 0.05) continue;     // 0.05
           if (fabs(glx_event->GetMissMass() + 0.0001) > 0.005) continue; // 0.001
         } else if (fabs(glx_event->GetPdg()) == 321) {
+	  if (glx_event->GetChiSq() > 10) continue;
           if (fabs(glx_event->GetInvMass() - 1.02) > 0.02) continue;     // 0.02
           if (fabs(glx_event->GetMissMass() + 0.0001) > 0.005) continue; // 0.007
         } else continue;
@@ -418,7 +434,7 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
 
         // if (pdgId == 2 && count[2] > 1000) continue;
         // if (pdgId == 3 && count[3] > 1000) continue;
-	if (fabs(momentum - moms) > 0.1) continue;
+	if (fabs(momentum - moms) > 0.25) continue;
       }
 
       if (bar > 23) {
@@ -440,12 +456,14 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
       // wallb[wx]++;
 
       if (glx_event->GetType() > 0 && !sim) { // data
-        momInBar.RotateX(bar_corr_x[bar]);
-        momInBar.RotateY(bar_corr_y[bar]);
+        momInBar.RotateX(bar_corr_x[bar/12]);
+        momInBar.RotateY(bar_corr_y[bar/12]);
+	momInBar.RotateY(bar_corr_z[bar/12]);
       } else { // sim
         cz = momInBar;
         momInBar.RotateX(gRandom->Gaus(0, 0.002));
         momInBar.RotateY(gRandom->Gaus(0, 0.002));
+	momInBar.RotateZ(gRandom->Gaus(0, 0.002));
         // momInBar.RotateX(gRandom->Gaus(0, 0.0025));
         // momInBar.Rotate(gRandom->Uniform(0, TMath::PiOver2()), cz);
         // time0 += gRandom->Gaus(0, 0.25);
@@ -477,14 +495,11 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
             ch -= 108 * 64;
           }
 
-          double hitTime = hit.GetLeadTime() - time0 + 0.1;
+          double hitTime = hit.GetLeadTime() - time0;
           if (pmt <= 10 || (pmt >= 90 && pmt <= 96)) continue; // dummy pmts
           if (ch > glx_nch) continue;
 
           bool reflected = hitTime > 44;
-
-          if (reflected) hitTime += acorrTR[bar][bin][pmt];
-          else hitTime += acorrTD[bar][bin][pmt];
 
           lenx = fabs(barend - posInBar.X());
           double rlenx = 2 * radiatorL - lenx;
@@ -524,7 +539,11 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
 
                 bartime = lenx / cos(luttheta) / 19.65;
                 luttime = bartime + evtime;
-                diftime = hitTime - luttime;
+
+		if (reflected) luttime -= acorrTR[bar][bin][pmt];
+		else luttime -= acorrTD[bar][bin][pmt];
+
+                diftime = luttime - hitTime;
 
                 if (r) tangle += acorrAD[bar][bin][pmt]; // per PMT corr
                 else tangle += acorrAD[bar][bin][pmt];
@@ -626,9 +645,6 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
         nphc++;
         bool reflected = hitTime > 44;
 
-        if (reflected) hitTime += acorrTR[bar][bin][pmt];
-        else hitTime += acorrTD[bar][bin][pmt];
-
         // if(!reflected) continue;
         lenx = fabs(barend - posInBar.X());
         double rlenx = 2 * radiatorL - lenx;
@@ -707,7 +723,11 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
               leny = fabs(len * dir.Y());
               bartime = lenx / cos(luttheta) / 19.65; // 19.7 203.767 for 1.47125
               luttime = bartime + evtime;
-              diftime = hitTime - luttime;
+
+	      if (reflected) luttime -= acorrTR[bar][bin][pmt];
+	      else luttime -= acorrTD[bar][bin][pmt];
+
+              diftime = luttime - hitTime;
 
               tangle = momInBar.Angle(dir);
               // if (spath.BeginsWith("32")) tangle += -0.0015;
@@ -976,12 +996,12 @@ void reco_lut_02(TString infile = "hd_root_gen_pik.root", TString inlut = "lut_0
             fit->FixParameter(4, 0);
             if (hCorrTD[bar][bin][pmt]->GetEntries() > 200) {
               auto ff = hCorrTD[bar][bin][pmt]->Fit("gaus", "SNQ", "", -1.5, 1.5);
-              zcorrTD = -ff->Parameter(1);
+              zcorrTD = ff->Parameter(1);
               zsigmaTD = ff->Parameter(2);
             }
             if (hCorrTR[bar][bin][pmt]->GetEntries() > 200) {
               auto ff = hCorrTR[bar][bin][pmt]->Fit("gaus", "SNQ", "", -2, 2);
-              zcorrTR = -ff->Parameter(1);
+              zcorrTR = ff->Parameter(1);
               zsigmaTR = ff->Parameter(2);
             }
             level = 1;

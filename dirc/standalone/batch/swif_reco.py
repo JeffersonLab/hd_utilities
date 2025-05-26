@@ -27,15 +27,15 @@ import glob
 VERBOSE    = True
 
 # PROJECT INFO
-PROJECT    = "halld"          # http://scicomp.jlab.org/scicomp/#/projects
-TRACK      = "ifarm"          # https://scicomp.jlab.org/docs/batch_job_tracks
+PROJECT    = "halld-pro"          # http://scicomp.jlab.org/scicomp/#/projects
+TRACK      = "production"          # https://scicomp.jlab.org/docs/batch_job_tracks
 
 # RESOURCES
 NCORES     = "1"              # Number of CPU cores
 DISK       = "10GB"           # Max Disk usage
 RAM        = "4GB"            # Max RAM usage
 TIMELIMIT  = "720minutes"     # Max walltime
-OS         = "centos79"       # Specify CentOS79 machines
+OS         = "general"       # Specify CentOS79 machines
 
 # OUTPUT DATA LOCATION
 DATA_OUTPUT_BASE_DIR    = "/work/halld/home/%s/RunPeriod-2019-11/standalone/"%(os.environ['USER']) 
@@ -44,7 +44,8 @@ DATA_OUTPUT_BASE_DIR    = "/work/halld/home/%s/RunPeriod-2019-11/standalone/"%(o
 SCRIPTFILE        = "/work/halld2/home/gxproj7/monitoring/builds/hd_utilities/dirc/standalone/batch/script_reco.sh"
 ENVFILE           = "/work/halld2/home/gxproj7/monitoring/builds/setup_gluex.csh"
 CODE_DIR          = "/work/halld2/home/gxproj7/monitoring/builds/hd_utilities/dirc/standalone/"
-INPUT_FILE        = "/volatile/halld/home/jrsteven/RunPeriod-2019-11/recon/ver01_pass03/merged/hd_root_72645_72679.root"
+#INPUT_FILE        = "/volatile/halld/home/jrsteven/RunPeriod-2019-11/recon/ver01_pass04/merged/hd_root_713NN.root" #72645_72679.root"
+INPUT_FILE        = "/cache/halld/home/jrsteven/RunPeriod-2019-11/recon/ver01_pass04/merged/hd_root/"
 LUT_FILE          = "/work/halld/home/gxproj7/RunPeriod-2019-11/dircsim-2019_11-ver03/lut/lut_all_avr.root"
 
 ######################################################## ADD JOB #########################################################
@@ -99,7 +100,7 @@ def main(argv):
 	    status = subprocess.call(["swif2", "create", "-workflow", WORKFLOW])
 
 	# ADD JOBS
-	for BAR in range(0, 48):
+	for BAR in range(0, 1):
                 for BIN in range(0, 10):
 		
                         print BAR, BIN

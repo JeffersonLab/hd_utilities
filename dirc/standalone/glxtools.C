@@ -494,20 +494,22 @@ bool glx_initc(TString inFile="../build/hits.root", TCut cut=""){
   // TFile *f = TFile::Open(inFile);
   // glx_ch = f->Get<TTree>("dirc"); 
 
-  glx_ch = new TChain("dirc"); 
+  glx_ch = new TChain("dirc");
   glx_ch->Add(inFile);
+  glx_entries = glx_ch->GetEntries();
+  std::cout<<"Entries in chain:  "<<glx_entries;
+
   glx_events = new TClonesArray("DrcEvent");
   glx_ch->SetBranchAddress("DrcEvent", &glx_events);
   //  glx_ch->SetMaxVirtualSize(20e+9);
   // int res = glx_ch->LoadBaskets(5E+9);
-  // std::cout<<"res "<<res<<std::endl;
-  
+  // std::cout<<"res "<<res<<std::endl;  
   
   glx_ch->Draw(">>glx_cutlist",TCut(cut),"entrylist");
   glx_elist = (TEntryList*)gDirectory->Get("glx_cutlist");
     
   glx_entries = glx_ch->GetEntries();
-  std::cout<<"Entries in chain:  "<<glx_entries << " after cut: "<< glx_elist->GetN()<<std::endl;
+  std::cout<<" after cut: "<< glx_elist->GetN()<<std::endl;
   glx_initDigi();
   
   return true;
