@@ -50,7 +50,7 @@ def run_mystats(epicsfile) :
     if os.path.exists(epicsfile):
         os.remove(epicsfile)
 
-    cmd = "myStats -b -1m -e 0 -u -f " + epicsfile + " -l " + pvlist
+    cmd = "myStats -b -10m -e 0 -u -f " + epicsfile + " -l " + pvlist
 
     os.system(cmd)
     
@@ -191,7 +191,7 @@ def issue_warning(pv) :
     lines = f.readlines()
     f.close()
 
-    f2.write("\nEPICS output for the last minute:\n\n")
+    f2.write("\nEPICS output for the last 10 minutes:\n\n")
     f2.write("Name                   Min       Mean      Max       Sigma\n")
 
     for line in lines:
@@ -200,7 +200,7 @@ def issue_warning(pv) :
         newline = '{:<23}'.format(things[0])
         for i in range(1,len(things)):
             #newline = newline + f'{ things[i]:10}'
-            newline = newline + '{:10}'.format(things[i])
+            newline = newline + '{:14}'.format(things[i])
         f2.write(newline + "\n")
 
     f2.write("\n")        
@@ -337,7 +337,7 @@ if not radiator_in_place :
 # now we have beam on and daq on and radiator in place
     
 trig_zero = False
-if dictlist['HD:trig:rate:main']['mean'] == 0 :
+if dictlist['HD:trig:rate:main']['sigma'] == 0 :
     trig_zero = True
 
 ps_frozen = False    
@@ -369,28 +369,23 @@ if trig_zero:
         if testing:
             print('Trig PV warning issued recently')
 
+            
+if no_converter:
+    exit()
 
-if ps_frozen and not no_converter:
-
+            
+if ps_frozen or psc_frozen:
+            
     time_since_warning = find_time_since_warning(psfile,timeformat)
     
     if time_since_warning > ps_warning_suppression_time :
-        issue_warning('ps')
+        if ps_frozen :
+            issue_warning('ps')
+        else :
+            issue_warning('psc')
         record_time(timenow,psfile,timeformat)
     else :
         if testing:
             print('PS PV warning issued recently')
 
-
-if psc_frozen and not no_converter:
-
-    time_since_warning = find_time_since_warning(pscfile,timeformat)
-    
-    if time_since_warning > psc_warning_suppression_time :
-        issue_warning('psc')
-        record_time(timenow,pscfile,timeformat)
-    else :
-        if testing:
-            print('PSC PV warning issued recently')
-        
 
