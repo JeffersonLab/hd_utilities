@@ -1,1 +1,2 @@
-The PS or PSC scalers look frozen in EPICS.  See https://halldweb.jlab.org/hdops/wiki/index.php/Pair_Spectrometer_Shift#Run_PS_Scalers for restart instructions.
+The PS or PSC scalers look frozen in EPICS.  This could be because the DAQ is in a crashed state.  If the DAQ is running normally and you need to restart the scalers, see https://halldweb.jlab.org/hdops/wiki/index.php/Pair_Spectrometer_Shift#Run_PS_Scalers for instructions.
+
