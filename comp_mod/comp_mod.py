@@ -133,53 +133,53 @@ BD = ''
 if HIGHLIGHT : BD = bcolors.BOLD + bcolors.FAIL
 
 # Print report
-print    ''
-print    '               GlueX Computing Model'
-print    ' '*(25 - len(INPUTFILE)/2) + INPUTFILE
-print    '=============================================='
-print    '                 PAC Time: ' + '%3.1f' % runningTimePac_weeks + ' weeks'
-print    '             Running Time: ' + '%3.1f' % (runningTimeOnFloor/7.0) + ' weeks'
-print    '       Running Efficiency: ' + str(int(runningEfficiency*100.0)) + '%'
-print    '  --------------------------------------'
-print    '             Trigger Rate: ' + str(triggerRate/1000.0) + ' kHz'
-print    '     Raw Data Num. Events: ' + '%3.1f' % numberProductionEvents_billions + ' billion (good production runs only)'
-print    '     Raw Data compression: ' + '%3.2f' % compressionFactor
-print    '      Raw Data Event Size: ' + str(eventsize) + ' kB ' + uncompressed_str
-print    '  Front End Raw Data Rate: ' + '%3.2f' % rawDataRateUncompressed_GBps + ' GB/s ' + uncompressed_str
-print    '       Disk Raw Data Rate: ' + '%3.2f' % rawDataRateCompressed_GBps + ' GB/s ' + compressed_str
-print    '          Raw Data Volume: ' + '%3.3f' % rawDataVolume_PB + ' PB ' + compressed_str
-print    '     Bandwidth to offsite: ' + '%3.0f' % rawDataOffsite1month_MBps + ' MB/s (all raw data in 1 month)'
-print    '      REST/Raw size frac.: ' + '%3.2f' % (RESTfractionCompressed*100.0) + '%'
-print    '         REST Data Volume: ' + '%3.3f' % RESTDataVolume_PB + ' PB (for ' + str(reconPasses) + ' passes)'
-print    '     Analysis Data Volume: ' + '%3.3f' % AnalysisDataVolume_PB + ' PB (ROOT Trees for ' + str(analysisPasses) + ' passes)'
-print BD+'   Total Real Data Volume: ' + '%3.1f' % (rawDataVolume_PB + RESTDataVolume_PB + AnalysisDataVolume_PB) + ' PB' + bcolors.ENDC
-print    '  --------------------------------------'
-print    '        Recon. time/event: ' + '%3.0f' % reconstructionTimePerEvent_ms + ' ms (' + str(reconstructionRate) + ' Hz/core)'
-print    '           Available CPUs: ' + str(cores) + ' cores (full)'
-print    '          Time to process: ' + '%3.1f' % reconstructionTimeAllCores_weeks + ' weeks (all passes)'
-print    '        Good run fraction: ' + str(goodRunFraction)
-print    '   Number of recon passes: ' + str(reconPasses)
-print    'Number of analysis passes: ' + str(analysisPasses)
-print    '       Reconstruction CPU: ' + '%3.1f' % reconstructionTimeAllCores_Mhr + ' Mhr' + ' (=%2.0fk NERSC units or %2.0fM PSC units)' %(NERSC_units_total, PSC_units_total)
-print    '             Analysis CPU: ' + '%3.3f' % analysisCPU_Mhr + ' Mhr'
-print    '          Calibration CPU: ' + '%3.1f' % calibCPU_Mhr + ' Mhr'
-print    '   Offline Monitoring CPU: ' + '%3.1f' % offlineMonitoring_Mhr + ' Mhr'
-print    '            Misc User CPU: ' + '%3.1f' % miscUserStudies_Mhr + ' Mhr'
-print    '        Incoming Data CPU: ' + '%3.3f' % incomingData_Mhr + ' Mhr'
-print BD+'      Total Real Data CPU: ' + '%3.1f' % TOTAL_CPU_REAL_DATA + ' Mhr' + bcolors.ENDC
-print    '  --------------------------------------'
-print    '       MC generation Rate: ' + '%3.1f' % simulationRate + ' Hz/core'
-print    '      MC Number of passes: ' + '%3.1f' % simulationpasses
-print    '      MC events/raw event: ' + '%3.2f' % simulatedPerRawEvent
-print BD+'           MC data volume: ' + '%3.3f' % simulationDataVolume_PB + ' PB  (REST only)' + bcolors.ENDC
-print    '        MC Generation CPU: ' + '%3.1f' % simulationTimeGeneration_Mhr + ' Mhr'
-print    '    MC Reconstruction CPU: ' + '%3.1f' % simulationTimeReconstruction_Mhr + ' Mhr'
-print BD+'             Total MC CPU: ' + '%3.1f' % simulationTimeTotal_Mhr + ' Mhr' + bcolors.ENDC
-print    '  ---------------------------------------'
-print    '                   TOTALS:'
-print BD+'                      CPU: ' + '%3.1f' % TOTAL_CPU_Mhr + ' Mhr' + bcolors.ENDC
-print BD+'                     TAPE: ' + '%3.1f' % TOTAL_TAPE_PB + ' PB' + bcolors.ENDC
-print    ''
+print(   '')
+print(   '               GlueX Computing Model')
+print(   ' '*(25 - int(len(INPUTFILE)/2)) + INPUTFILE)
+print(   '==============================================')
+print(   '                 PAC Time: ' + '%3.1f' % runningTimePac_weeks + ' weeks')
+print(   '             Running Time: ' + '%3.1f' % (runningTimeOnFloor/7.0) + ' weeks')
+print(   '       Running Efficiency: ' + str(int(runningEfficiency*100.0)) + '%')
+print(   '  --------------------------------------')
+print(   '             Trigger Rate: ' + str(triggerRate/1000.0) + ' kHz')
+print(   '     Raw Data Num. Events: ' + '%3.1f' % numberProductionEvents_billions + ' billion (good production runs only)')
+print(   '     Raw Data compression: ' + '%3.2f' % compressionFactor)
+print(   '      Raw Data Event Size: ' + str(eventsize) + ' kB ' + uncompressed_str)
+print(   '  Front End Raw Data Rate: ' + '%3.2f' % rawDataRateUncompressed_GBps + ' GB/s ' + uncompressed_str)
+print(   '       Disk Raw Data Rate: ' + '%3.2f' % rawDataRateCompressed_GBps + ' GB/s ' + compressed_str)
+print(   '          Raw Data Volume: ' + '%3.3f' % rawDataVolume_PB + ' PB ' + compressed_str)
+print(   '     Bandwidth to offsite: ' + '%3.0f' % rawDataOffsite1month_MBps + ' MB/s (all raw data in 1 month)')
+print(   '      REST/Raw size frac.: ' + '%3.2f' % (RESTfractionCompressed*100.0) + '%')
+print(   '         REST Data Volume: ' + '%3.3f' % RESTDataVolume_PB + ' PB (for ' + str(reconPasses) + ' passes)')
+print(   '     Analysis Data Volume: ' + '%3.3f' % AnalysisDataVolume_PB + ' PB (ROOT Trees for ' + str(analysisPasses) + ' passes)')
+print(BD+'   Total Real Data Volume: ' + '%3.1f' % (rawDataVolume_PB + RESTDataVolume_PB + AnalysisDataVolume_PB) + ' PB' + bcolors.ENDC)
+print(   '  --------------------------------------')
+print(   '        Recon. time/event: ' + '%3.0f' % reconstructionTimePerEvent_ms + ' ms (' + str(reconstructionRate) + ' Hz/core)')
+print(   '           Available CPUs: ' + str(cores) + ' cores (full)')
+print(   '          Time to process: ' + '%3.1f' % reconstructionTimeAllCores_weeks + ' weeks (all passes)')
+print(   '        Good run fraction: ' + str(goodRunFraction))
+print(   '   Number of recon passes: ' + str(reconPasses))
+print(   'Number of analysis passes: ' + str(analysisPasses))
+print(   '       Reconstruction CPU: ' + '%3.1f' % reconstructionTimeAllCores_Mhr + ' Mhr' + ' (=%2.0fk NERSC units or %2.0fM PSC units)' %(NERSC_units_total, PSC_units_total))
+print(   '             Analysis CPU: ' + '%3.3f' % analysisCPU_Mhr + ' Mhr')
+print(   '          Calibration CPU: ' + '%3.1f' % calibCPU_Mhr + ' Mhr')
+print(   '   Offline Monitoring CPU: ' + '%3.1f' % offlineMonitoring_Mhr + ' Mhr')
+print(   '            Misc User CPU: ' + '%3.1f' % miscUserStudies_Mhr + ' Mhr')
+print(   '        Incoming Data CPU: ' + '%3.3f' % incomingData_Mhr + ' Mhr')
+print(BD+'      Total Real Data CPU: ' + '%3.1f' % TOTAL_CPU_REAL_DATA + ' Mhr' + bcolors.ENDC)
+print(   '  --------------------------------------')
+print(   '       MC generation Rate: ' + '%3.1f' % simulationRate + ' Hz/core')
+print(   '      MC Number of passes: ' + '%3.1f' % simulationpasses)
+print(   '      MC events/raw event: ' + '%3.2f' % simulatedPerRawEvent)
+print(BD+'           MC data volume: ' + '%3.3f' % simulationDataVolume_PB + ' PB  (REST only)' + bcolors.ENDC)
+print(   '        MC Generation CPU: ' + '%3.1f' % simulationTimeGeneration_Mhr + ' Mhr')
+print(   '    MC Reconstruction CPU: ' + '%3.1f' % simulationTimeReconstruction_Mhr + ' Mhr')
+print(BD+'             Total MC CPU: ' + '%3.1f' % simulationTimeTotal_Mhr + ' Mhr' + bcolors.ENDC)
+print(   '  ---------------------------------------')
+print(   '                   TOTALS:')
+print(BD+'                      CPU: ' + '%3.1f' % TOTAL_CPU_Mhr + ' Mhr' + bcolors.ENDC)
+print(BD+'                     TAPE: ' + '%3.1f' % TOTAL_TAPE_PB + ' PB' + bcolors.ENDC)
+print(   '')
 
 
 
