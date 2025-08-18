@@ -42,7 +42,7 @@ UnitsExpected['simulationRate']     = 'Hz'
 
 # defaults values for variable that may not be present in all files
 #NERSC_unitsPerFile = 880
-NERSC_unitsPerFile = 3. # Average node hours per file determined by Igal for GlueX data in 2022
+NERSC_unitsPerFile = 0.33 # Average node hours per file determined by Igal for 2023 GlueX data in 2025
 PSC_unitsPerFile   = 156.8
 
 # input values (with unit checks
@@ -160,7 +160,8 @@ print(   '          Time to process: ' + '%3.1f' % reconstructionTimeAllCores_we
 print(   '        Good run fraction: ' + str(goodRunFraction))
 print(   '   Number of recon passes: ' + str(reconPasses))
 print(   'Number of analysis passes: ' + str(analysisPasses))
-print(   '       Reconstruction CPU: ' + '%3.1f' % reconstructionTimeAllCores_Mhr + ' Mhr' + ' (=%2.0fk NERSC units or %2.0fM PSC units)' %(NERSC_units_total, PSC_units_total))
+#print(   '       Reconstruction CPU: ' + '%3.1f' % reconstructionTimeAllCores_Mhr + ' Mhr' + ' (=%2.0fk NERSC units or %2.0fM PSC units)' %(NERSC_units_total, PSC_units_total))
+print(   '       Reconstruction CPU: ' + '%3.1f' % reconstructionTimeAllCores_Mhr + ' Mhr' + ' (=%2.0fk NERSC units)' %(NERSC_units_total))
 print(   '             Analysis CPU: ' + '%3.3f' % analysisCPU_Mhr + ' Mhr')
 print(   '          Calibration CPU: ' + '%3.1f' % calibCPU_Mhr + ' Mhr')
 print(   '   Offline Monitoring CPU: ' + '%3.1f' % offlineMonitoring_Mhr + ' Mhr')
