@@ -156,6 +156,9 @@ def main():
         if int(options.begin_run) >= 100000 and int(options.begin_run) < 109999:
             RCDB_QUERY = "@is_cpp_production and @status_approved"
             TARGETLENGTH = 0.03059 # 305.9 um Pb target
+        if int(options.begin_run) >= 120000 and int(options.begin_run) < 139999:
+            # 2023-01 and 2025-01 run periods
+            RCDB_QUERY = "@is_dirc_production and @status_approved"
     
     print("RCDB quergy = " + RCDB_QUERY)
 
@@ -187,6 +190,10 @@ def main():
             runPeriod = "RunPeriod-2022-05"
         elif begin_run < 119999:
             runPeriod = "RunPeriod-2022-08"
+        elif begin_run < 129999:
+            runPeriod = "RunPeriod-2023-01"
+        elif begin_run < 139999:
+            runPeriod = "RunPeriod-2025-01"
 
         contextList = loadCCDBContextList(runPeriod,RESTVERSION)
         RESTVERSION = contextList[0][0] # get REST version number from DB
