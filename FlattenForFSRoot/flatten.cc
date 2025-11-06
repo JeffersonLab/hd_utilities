@@ -731,7 +731,8 @@ int main(int argc, char** argv){
       if (gUseParticles) inBeam__X4_Measured = new TClonesArray("TLorentzVector",MAXBEAM);
       if (gUseParticles) gInTree->GetBranch       ("Beam__X4_Measured")->SetAutoDelete(kFALSE);
       if (gUseParticles) gInTree->SetBranchAddress("Beam__X4_Measured", &(inBeam__X4_Measured));
-
+  Bool_t inBeam__IsGenerator = false;
+      if (gUseParticles&&gUseMCParticles) gInTree->SetBranchAddress("Beam__IsGenerator", &inBeam__IsGenerator);
 
         //   *** Charged Track Hypotheses (indexed using <particleName>__ChargedIndex) ***
 
@@ -973,6 +974,7 @@ int main(int argc, char** argv){
   double outMCDecayCode2;  if (gUseMCInfo) gOutTree->Branch("MCDecayCode2",&outMCDecayCode2);
   double outMCExtras;      if (gUseMCInfo) gOutTree->Branch("MCExtras",    &outMCExtras);
   double outMCSignal;      if (gUseMCParticles&&gUseParticles) gOutTree->Branch("MCSignal", &outMCSignal);
+  double outMCIsGenBeam;      if (gUseMCParticles&&gUseParticles) gOutTree->Branch("MCIsGenBeam", &outMCIsGenBeam);
   double outMCDecayParticle1;   double outMCDecayParticle2;   double outMCDecayParticle3;
   double outMCDecayParticle4;   double outMCDecayParticle5;   double outMCDecayParticle6;
   if (gUseMCInfo) gOutTree->Branch("MCDecayParticle1",&outMCDecayParticle1);
@@ -1347,6 +1349,7 @@ int main(int argc, char** argv){
         outMCEnPB = inThrownBeam__GeneratedEnergy;
       }
       if (gUseMCParticles){
+	outMCIsGenBeam = inBeam__IsGenerator;
         outMCPxPB = inThrownBeam__P4->Px();
         outMCPyPB = inThrownBeam__P4->Py();
         outMCPzPB = inThrownBeam__P4->Pz();
