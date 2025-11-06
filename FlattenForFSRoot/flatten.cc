@@ -732,8 +732,6 @@ int main(int argc, char** argv){
       if (gUseParticles) gInTree->GetBranch       ("Beam__X4_Measured")->SetAutoDelete(kFALSE);
       if (gUseParticles) gInTree->SetBranchAddress("Beam__X4_Measured", &(inBeam__X4_Measured));
   Bool_t inBeam__IsGenerator[MAXBEAM] {};
-      //if (gUseParticles&&gUseMCParticles) inBeam__IsGenerator = new TClonesArray("Bool_t",MAXBEAM);
-      //if (gUseParticles&&gUseMCParticles) gInTree->GetBranch       ("Beam__IsGenerator")->SetAutoDelete(kFALSE);
       if (gUseParticles&&gUseMCParticles) gInTree->SetBranchAddress("Beam__IsGenerator", &inBeam__IsGenerator);
 
         //   *** Charged Track Hypotheses (indexed using <particleName>__ChargedIndex) ***
