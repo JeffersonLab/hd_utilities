@@ -1,0 +1,59 @@
+The main purpose of this code is to fit the TPOL waveforms and create a 
+tree to be analyzed in the next stage.
+
+An example fit of a TPOL waveform can be found in Fig. 9 of the TPOL
+analysis note ( http://meson.hldsite.com/tpol/analysisNoteV2.pdf )
+
+The input trees from the collaboration are typically in a directory that 
+looks like tree_TPOL/merged/
+
+Example on how to run: For run 90063 with input file tree_TPOL_090063.root
+and output file stage1Out_090063.root you issue the command
+
+   ./stage1 tree_TPOL_090063.root -o./stage1Out_090063.root -r90063
+
+Some histograms that might be of interest:
+
+root -l stage1Out_090063.root
+   hLT->Draw()
+
+The hLT histogram is a signal derived from a spice model (LT spice) of the 
+electronics. 
+
+   hADC1->Draw()
+   hADC2->Draw()
+      .
+      .
+      .
+   hADC100->Draw()
+
+The hADC1, hADC2, ... hADC100 histograms show the waveform fitting for the 
+first 100 events. These histograms are saved to serve as a check on the 
+fitting routine. The important information taken from these fits is energy 
+deposition and timing. See line 315 of stage1.h to see how the fit function 
+is defined. Essentially, par0 is a multiplicative factor for the hLT 
+histogram, par1 is the timing shift of the hLT histogram, par2 is a constant 
+additive factor and par 3,4,5 are used to represent a small sinusoidal 
+ripple of noise.  
+
+ h2Hit->Draw("colz")
+
+The h2Hit histogram is occupied when there are two hits on the TPOL. The plot 
+shows sector of first hit versus the sector of the second hit. Often the 
+occurrence of a 2-hit event on TPOL is actually a single hit that shows up on 
+neighboring sectors. 
+
+   hEDep->Draw()
+
+The hEDep histogram represents the energy deposition in the detector.
+
+   hTDiff->Draw()
+
+The hTDiff histogram gives the timing difference between the PS and the tagger
+
+   hEDiffVsESum->Draw("colz")
+
+The hEDiffVsESum histogram is for the PS and shows the energy difference between 
+electron-positron and the energy sum. See Fig. 5 of the analysis note for an
+example plot
+
