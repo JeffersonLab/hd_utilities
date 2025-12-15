@@ -86,6 +86,8 @@ int main(int argc, char **argv){
   setBranchesHitToGo(&outTree,&tpolHitToGo);
   tpolHitToGo.nHits    = 0;
   tpolHitToGo.nHitsTot = 0;
+  tpolHitToGo.nHitsTest    = 0;
+  tpolHitToGo.nHitsTotTest = 0;
   tpolHitToGo.ePair    = 0;
   tpolHitToGo.E_lhit   = 0;
   tpolHitToGo.E_rhit   = 0;

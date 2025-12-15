@@ -2,6 +2,8 @@
 struct tpolHit_t {
   Double_t eDep;
   Double_t time;
+  Double_t eDepTest;
+  Double_t timeTest;
   UInt_t sector;
   UInt_t w_samp1;
   UInt_t w_min;
@@ -29,6 +31,10 @@ struct tpolHitToGo_t {
   UInt_t   inTime[32];
   Double_t eDep[32];
   Double_t time[32];
+  UInt_t   nHitsTest;
+  UInt_t   nHitsTotTest;
+  Double_t eDepTest[32];
+  Double_t timeTest[32];
   UInt_t   sector[32];
   UInt_t w_integral[32];
   UInt_t w_min[32];
@@ -49,9 +55,13 @@ struct tpolHitToGo_t {
 void setBranchesHitToGo(TTree *outTree, tpolHitToGo_t *tpol1){
   outTree->Branch("nHits",&tpol1->nHits,"nHits/i");
   outTree->Branch("nHitsTot",&tpol1->nHitsTot,"nHitsTot/i");
+  outTree->Branch("nHitsTest",&tpol1->nHitsTest,"nHitsTest/i");
+  outTree->Branch("nHitsTotTest",&tpol1->nHitsTotTest,"nHitsTotTest/i");
   outTree->Branch("inTime",&tpol1->inTime,"inTime[nHits]/i");
   outTree->Branch("eDep",&tpol1->eDep,"eDep[nHits]/D");
   outTree->Branch("time",&tpol1->time,"time[nHits]/D");
+  outTree->Branch("eDepTest",&tpol1->eDepTest,"eDepTest[nHits]/D");
+  outTree->Branch("timeTest",&tpol1->timeTest,"timeTest[nHits]/D");
   outTree->Branch("sector",&tpol1->sector,"sector[nHits]/i");
   outTree->Branch("w_integral",&tpol1->w_integral,"w_integral[nHits]/i");
   outTree->Branch("w_min",&tpol1->w_min,"w_min[nHits]/i");
