@@ -140,6 +140,8 @@ int main(int argc, char **argv){
   tpolHit_t tpolHit;
   tpolHit.eDep       = 0;
   tpolHit.time       = 0;
+  tpolHit.eDepTest   = 0;
+  tpolHit.timeTest   = 0;
   tpolHit.sector     = 0;
   tpolHit.phi        = 0;
   tpolHit.E_lhit     = 0;
@@ -150,7 +152,7 @@ int main(int argc, char **argv){
   tpolHit.w_integral = 0;
   tpolHit.w_min      = 0;
   tpolHit.w_max      = 0;
- 
+  
   int count100 = 0;  
   int tmpCount = 0;
   if (nToGo <= 0) nToGo = inTree->GetEntries();
@@ -309,6 +311,8 @@ int main(int argc, char **argv){
 	  fitHigh = 600.0;
 	}
 
+	double tValSignalTest = tValSignal + tCorrect(sector);
+
         //FIT THE SIGNAL
 	hADC[count100]->Fit("spiceFun2","BRQ","",fitLow,fitHigh);
 	double tSigTest = tValSpice - spiceFun2->GetParameter(1)*100;
@@ -324,6 +328,8 @@ int main(int argc, char **argv){
 	//  eDepFit = (1/2.0)*1125*(spiceFun2->GetParameter(0))*(2000.0/4096)*eCorrect(sector);
 	//}
 	//}
+	double eDepTest = 1125*(fVal)*(2000.0/4096)*eCorrect(sector);
+
 
 	//**********************************************
 
@@ -332,6 +338,8 @@ int main(int argc, char **argv){
 	//FILL THE tpolHit STRUCTURE
 	tpolHit.eDep       = eDepFit;
 	tpolHit.time       = tValFit;
+	tpolHit.eDepTest   = eDepTest;
+	tpolHit.timeTest   = tValSignalTest;
 	tpolHit.sector     = sector;
 	tpolHit.phi        = phiVal;
 	tpolHit.ePair      = ePair;
@@ -358,6 +366,8 @@ int main(int argc, char **argv){
     for (int j=0; j<nTotAll; j++) {
       tpolHitToGo.eDep[togoIndex]       = tpolHitAll[j].eDep;
       tpolHitToGo.time[togoIndex]       = tpolHitAll[j].time;
+      tpolHitToGo.eDepTest[togoIndex]   = tpolHitAll[j].eDepTest;
+      tpolHitToGo.timeTest[togoIndex]   = tpolHitAll[j].timeTest;
       tpolHitToGo.sector[togoIndex]     = tpolHitAll[j].sector;
       tpolHitToGo.w_samp1[togoIndex]    = wSamp1;
       tpolHitToGo.w_integral[togoIndex] = tpolHitAll[j].w_integral;
