@@ -21,10 +21,14 @@
 
 **Database tables**
 
+
+*online_info*
 <pre>
  mysql> describe online_info;                                                                                                                                                                           # +---------------+------------+------+-----+---------+-------+                                                                                                                                          # | Field         | Type       | Null | Key | Default | Extra |                                                                                                                                          # +---------------+------------+------+-----+---------+-------+                                                                                                                                          # | run           | int(11)    | YES  |     | NULL    |       |                                                                                                                                          # | done          | tinyint(1) | YES  |     | NULL    |       |                                                                                                                                          # | rcdb_update   | tinyint(1) | YES  |     | NULL    |       |                                                                                                                                          # | launched_skim | tinyint(1) | YES  |     | NULL    |       |                                                                                                                                            +---------------+------------+------+-----+---------+-------+                                                                                                                                           
-<pre>
 </pre>
+
+*skim_files*
+<pre>
  MariaDB [calibInfo]> describe skim_files;
  +----------+---------------+------+-----+---------+-------+
  | Field    | Type          | Null | Key | Default | Extra |
