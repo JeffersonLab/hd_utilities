@@ -1,0 +1,11 @@
+/CDC/base_time_offset 1.
+/FDC/base_time_offset 2.
+/FCAL/base_time_offset 0.050
+/TOF2/base_time_offset 0.010
+/START_COUNTER/base_time_offset 0.040 
+/PHOTON_BEAM/hodoscope/base_time_offset 0.030
+/PHOTON_BEAM/microscope/base_time_offset 0.030
+/FDC/package1/wire_timing_offsets 2.
+/FDC/package2/wire_timing_offsets 2.
+/FDC/package3/wire_timing_offsets 2.
+/FDC/package4/wire_timing_offsets 2.
