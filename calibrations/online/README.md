@@ -24,7 +24,15 @@
 
 *online_info*
 <pre>
- mysql> describe online_info;                                                                                                                                                                           # +---------------+------------+------+-----+---------+-------+                                                                                                                                          # | Field         | Type       | Null | Key | Default | Extra |                                                                                                                                          # +---------------+------------+------+-----+---------+-------+                                                                                                                                          # | run           | int(11)    | YES  |     | NULL    |       |                                                                                                                                          # | done          | tinyint(1) | YES  |     | NULL    |       |                                                                                                                                          # | rcdb_update   | tinyint(1) | YES  |     | NULL    |       |                                                                                                                                          # | launched_skim | tinyint(1) | YES  |     | NULL    |       |                                                                                                                                            +---------------+------------+------+-----+---------+-------+                                                                                                                                           
+ mysql> describe online_info; 
+ +---------------+------------+------+-----+---------+-------+
+ | Field         | Type       | Null | Key | Default | Extra |
+ +---------------+------------+------+-----+---------+-------+
+ | run           | int(11)    | YES  |     | NULL    |       |
+ | done          | tinyint(1) | YES  |     | NULL    |       |
+ | rcdb_update   | tinyint(1) | YES  |     | NULL    |       |
+ | launched_skim | tinyint(1) | YES  |     | NULL    |       |
+ +---------------+------------+------+-----+---------+-------+
 </pre>
 
 *skim_files*
