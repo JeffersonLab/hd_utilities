@@ -1,0 +1,55 @@
+# This was used for the 2025-01 ver01 recon launch.
+
+#PLUGINS danarest,monitoring_hists,occupancy_online,EPICS_dump,TS_scaler,L1_online,PSPair_online,BCAL_inv_mass,FCAL_invmass,BCAL_Hadronic_Eff,BCAL_Eff,CDC_Efficiency,CDC_TimeToDistance,TrackingPulls,FCAL_Hadronic_Eff,FDC_Efficiency,SC_Eff,TOF_Eff,trackeff_missing,evio_writer,p2pi_hists,p3pi_hists,ppi0gamma_hists,PS_flux,omega_skim,randomtrigger_skim,TPOL_tree,trigger_skims,ps_skim,dirc_hists,HELI_online
+
+#PLUGINS danarest,monitoring_hists,occupancy_online,EPICS_dump,TS_scaler,L1_online,PSPair_online,BCAL_inv_mass,FCAL_invmass,BCAL_Hadronic_Eff,BCAL_Eff,CDC_Efficiency,CDC_TimeToDistance,TrackingPulls,FCAL_Hadronic_Eff,FDC_Efficiency,SC_Eff,TOF_Eff,trackeff_missing,evio_writer,p2pi_hists,p3pi_hists,ppi0gamma_hists,PS_flux,omega_skim,randomtrigger_skim,TPOL_tree,trigger_skims,ps_skim,dirc_hists
+
+#PLUGINS danarest,monitoring_hists,occupancy_online,EPICS_dump,TS_scaler,L1_online,PSPair_online,BCAL_inv_mass,FCAL_invmass,BCAL_Hadronic_Eff,BCAL_Eff,CDC_Efficiency,CDC_TimeToDistance,TrackingPulls,FCAL_Hadronic_Eff,FDC_Efficiency,SC_Eff,TOF_Eff,trackeff_missing,evio_writer,p2pi_hists,p3pi_hists,ppi0gamma_hists,PS_flux,omega_skim,randomtrigger_skim,TPOL_tree,trigger_skims,ps_skim,dirc_hists,npp_skim,cpp_skim
+
+#PLUGINS danarest,monitoring_hists,occupancy_online,EPICS_dump,TS_scaler,L1_online,PSPair_online,BCAL_inv_mass,FCAL_invmass,BCAL_Hadronic_Eff,BCAL_Eff,CDC_Efficiency,CDC_TimeToDistance,TrackingPulls,FCAL_Hadronic_Eff,FDC_Efficiency,SC_Eff,TOF_Eff,trackeff_missing,evio_writer,p2pi_hists,p3pi_hists,ppi0gamma_hists,PS_flux,omega_skim,randomtrigger_skim,TPOL_tree,trigger_skims,ps_skim,dirc_hists,npp_skim
+
+#PLUGINS danarest,monitoring_hists,occupancy_online,EPICS_dump,TS_scaler,L1_online,PSPair_online,BCAL_inv_mass,FCAL_invmass,BCAL_Hadronic_Eff,BCAL_Eff,CDC_Efficiency,CDC_TimeToDistance,TrackingPulls,FCAL_Hadronic_Eff,FDC_Efficiency,SC_Eff,TOF_Eff,trackeff_missing,evio_writer,p2pi_hists,p3pi_hists,ppi0gamma_hists,PS_flux,omega_skim,randomtrigger_skim,TPOL_tree,trigger_skims,ps_skim,dirc_hists,HELI_online
+
+#PLUGINS danarest,monitoring_hists,occupancy_online,EPICS_dump,TS_scaler,L1_online,PSPair_online,BCAL_inv_mass,FCAL_invmass,BCAL_Hadronic_Eff,BCAL_Eff,CDC_Efficiency,CDC_TimeToDistance,TrackingPulls,FCAL_Hadronic_Eff,FDC_Efficiency,SC_Eff,TOF_Eff,trackeff_missing,evio_writer,p2pi_hists,p3pi_hists,ppi0gamma_hists,PS_flux,omega_skim,randomtrigger_skim,TPOL_tree,trigger_skims,ps_skim,epem_ml_skim,eta2g_primexd_skim,eta6g_primexd_skim
+
+# This was used for the 2025-01 ver03 recon launch.
+PLUGINS danarest,monitoring_hists,occupancy_online,highlevel_online,EPICS_dump,TS_scaler,L1_online,PSPair_online,BCAL_inv_mass,FCAL_invmass,BCAL_Hadronic_Eff,BCAL_Eff,CDC_Efficiency,CDC_TimeToDistance,TrackingPulls,FCAL_Hadronic_Eff,FDC_Efficiency,SC_Eff,TOF_Eff,trackeff_missing,evio_writer,p2pi_hists,p3pi_hists,ppi0gamma_hists,PS_flux,omega_skim,randomtrigger_skim,TPOL_tree,trigger_skims,ps_skim,dirc_hists,npp_skim,epem_ml_skim
+
+# too big: cpp_skim,
+
+#Ncores if you want to use all of the hyperthreads available (only use if you have the whole node!)
+NTHREADS THREADNB
+
+THREAD_TIMEOUT 600
+
+REST:DATAVERSIONSTRING recon_RunPeriod-2025-01_ver03-perl
+
+jana:warmup_timeout 1000
+jana:timeout 1000
+jana:calib_context calibtime=2025-12-24-00-00-01     #calibtime=YYYY-MM-DD-hh-mm-ss (hr is 24-hr format)
+
+TRKFIT:HYPOTHESES 2,3,8,9,11,12,14,15   #GEANT PIDs for tracking: Add e+/- & pbar
+NeutralShower:TOF_RF_CUT 0.5
+FCAL:USE_NONLINEAR_CORRECTION_TYPE 0
+FCAL:LOAD_NONLIN_CCDB 0
+FCAL:expfit_param1 2
+FCAL:expfit_param2 0
+FCAL:expfit_param3 0
+
+#Fail job if input file is truncated (default 0)
+EVIO:TREAT_TRUNCATED_AS_ERROR 1
+
+#DIRC ERROR
+EVIO:SKIP_SSP_FORMAT_ERROR 1
+
+# Turn off production of random trigger files since beam fiducial map is not set correctly
+RANDSKIM:USEBEAM 0
+USE_EPICS_FOR_BEAM_ON 1
+
+#jana:global_loglevel FATAL
+
+epemML:PIPIM_EVIO_FILE 1
+epemML:MIN_EOVERP_CUT 0.4 
+CPPAnalysis:PIMU_MODEL_FILE /group/halld/www/halldweb/html/resources/AI/CPP/2022_05_07_MLP_Base_matched_background.tflite
+CPPAnalysis:TARGET_OPTION Proton
+
