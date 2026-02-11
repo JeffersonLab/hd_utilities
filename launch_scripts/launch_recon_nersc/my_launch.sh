@@ -16,15 +16,16 @@ sed 's,THREADNB,'$threadnb',g' jana_recon_nersc.temp > jana_recon_nersc.config
 #sed 's,DIVIDENB,'$dividenb',g' script_nersc_multi_test.temp > script_nersc_multi_test.py
 #sed 's,DIVIDENB,'$dividenb',g' script_nersc_multi_test_temp.py > script_nersc_multi_test.py
 chmod +x script_nersc_test.sh
-chmod +x script_nersc_multi_test.py
+# chmod +x script_nersc_multi_test.py
 #scp -r ../launch-$batch perlmutter-p1.nersc.gov:/global/cfs/cdirs/m3120/
 nersc_launch_dir=/global/cfs/cdirs/m3120/launch-$batch
 #nersc_launch_dir=$PWD
 workflow=recon_${run_period}_${version}_batchNERSC-multi
+#TODO the workflow should only be created and run for the first run number
 swif2 create $workflow -site nersc/perlmutter --maxconcurrent 100
 swif2 run $workflow
 idir=/mss/halld/RunPeriod-$run_period/rawdata/Run$run_number
-files_full_path=($idir/*.evio)
+files_full_path=($idir/*.evio)  #TODO this is not empty if there are no evio files, but contains the pattern itself
 files_basename=($(basename -a $idir/*.evio))
 ##files_basename=()
 # Populate files_basename array
@@ -44,7 +45,7 @@ number_of_evios=${#files_full_path[@]}
 echo "Run period: $run_period - run number: $run_number - number of evio files: $number_of_evios - divided by: $dividenb"
 #number_of_nodes=$(echo "$number_of_evios / $dividenb" | bc)
 number_of_nodes=$(echo "($number_of_evios + $dividenb - 1) / $dividenb" | bc)
-echo "Number of nodes asked: $number_of_nodes" 
+echo "Number of nodes asked: $number_of_nodes"
 i=0
 name=GLUEX_recon_$run_number
 command1="swif2 add-job -workflow $workflow -name $name "
