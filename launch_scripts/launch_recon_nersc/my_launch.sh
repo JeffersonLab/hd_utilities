@@ -48,7 +48,7 @@ echo "Number of nodes asked: $number_of_nodes"
 i=0
 name=GLUEX_recon_$run_number
 command1="swif2 add-job -workflow $workflow -name $name "
-while [ $i -le $number_of_nodes ]; do
+while [ $i -lt $number_of_nodes ]; do
     ##echo "i = $i"
     start=$((i * $dividenb))   # Calculate the starting index
     end=$((start + $dividenb)) # Calculate the ending index
