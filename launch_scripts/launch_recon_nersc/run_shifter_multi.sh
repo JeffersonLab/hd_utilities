@@ -8,7 +8,7 @@
 # of SLURM_NODEID which should be a number between
 # 0 and Ntasks-1.
 #
-# The first argument passed to this script is the 
+# The first argument passed to this script is the
 # top-level working directory for the job. This should
 # be the same as the directory we wake up in. This
 # is used to cd to the working directory for the
@@ -30,7 +30,7 @@ cd $1/$subjobdir
 
 
 # The run/file numbers should be passed as the last 2 arguments
-# to the shifter command so the script it runs can use them 
+# to the shifter command so the script it runs can use them
 # to name the files. Here we extract them from the evio file
 # name. This assumes there is a file with a name like:
 # hd_rawdata_XXXXXX_YYY.evio.
@@ -48,9 +48,8 @@ done
 
 # The following removes the first argument passed to
 # this script which is the top-level working directory
-# for the job. 
+# for the job.
 shift
 
 # Pass all remaining arguments to shifter, including run/file numbers
 shifter "$@" $RUNNO $FILENO
-

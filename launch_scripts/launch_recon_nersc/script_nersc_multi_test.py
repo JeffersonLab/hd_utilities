@@ -5,7 +5,7 @@
 # up in the top-level working directory for the job.
 # It sets up the directories for each of the sub-jobs
 # and then calls srun to launch those jobs on all of
-# the remote nodes. 
+# the remote nodes.
 
 import os
 import sys
@@ -16,7 +16,7 @@ import math
 # This is the directory where the job scripts will be held.
 # For the actual jobs, it will be the "launch" directory
 # which has been checked out from the halld subversion
-# repository. Here, we just point to the testing directory. 
+# repository. Here, we just point to the testing directory.
 LAUNCHDIR    = sys.argv[1]
 SCRIPTFILE   = sys.argv[2]
 CONFIG       = sys.argv[3]
@@ -52,27 +52,27 @@ if int(expected_nodes) != int(SLURM_JOB_NUM_NODES):
     #if len(expected_nodes) != int(SLURM_JOB_NUM_NODES):
     #   print('MISMATCH IN NUMBER OF EVIO FILES AND SLURM NODES! #EVIO=%d  SLURM_JOB_NUM_NODES=%d' % (len(eviofiles), int(SLURM_JOB_NUM_NODES)))
     #   sys.exit(101)
-    
-    # Loop over raw data files
+
+# Loop over raw data files
 for i,eviofile in enumerate(eviofiles):
     # Get RUN/FILE numbers from file names
     run = int(eviofile[11:17])
     fil = int(eviofile[18:21])
-    
+
     # Make subjob directory
     RUNDIR = 'RUN%06d/FILE%03d' % (int(run), int(float(fil) / SLURM_JOBS_PER_NODE))
     os.makedirs( RUNDIR , exist_ok=True )
-    
+
     # Make symlink pointing to subjobdir so the subjob
     # can cd into it via SLURM_NODEID
     subjobdir = 'subjob%04d' % int( float(fil) / SLURM_JOBS_PER_NODE)
     if not os.path.exists ( subjobdir ) :
         os.symlink(RUNDIR, subjobdir)
-    
+
     # Make symlink in subjobdir to evio file
     os.symlink( '../../' + eviofile, RUNDIR + '/' + eviofile )
-        
-         
+
+
 # run all jobs
 CMD = ['srun', '-n', SLURM_JOB_NUM_NODES, LAUNCHDIR+'/run_shifter_multi.sh']
 CMD += [workdir]          # arg 1:  top-level directory for job
@@ -83,7 +83,7 @@ CMD += [RECONVERSION]     # arg 4:  sim-recon version
 print(f"Nb of nodes asked: {CMD}")
 print(' '.join(CMD))
 with subprocess.Popen(CMD, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as proc:
-    outs,errs = proc.communicate()      
+    outs,errs = proc.communicate()
     with open('std.out', 'wb') as f:
         f.write(outs)
         f.close()
@@ -93,4 +93,3 @@ with subprocess.Popen(CMD, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as pr
     with open('exitcode', 'w') as f:
         f.write('%d' % proc.returncode)
         f.close()
-                
