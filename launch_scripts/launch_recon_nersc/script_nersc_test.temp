@@ -58,7 +58,7 @@ trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
 # echo error message before exiting if error occurs
 trap 'echo "\"${last_command}\" command failed with exit code $?."' EXIT
 
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # Mode 1 and mode 2
 JANA_CONFIG=$1
@@ -86,8 +86,8 @@ source $setenv_file
 # they can be placed in a directory on $SCRATCH and we'll use
 # the HALLD_MY mechanism to superceed them. This was needed
 # for offmon 2019-11 ver 13 when certain plugins had to be
-# recompiled with a patch. 
-export HALLD_MY=${CSCRATCH}/HALLD_MY/${HALLD_RECON_VERSION}
+# recompiled with a patch.
+export HALLD_MY=${CSCRATCH}/HALLD_MY/${HALLD_RECON_VERSION}  #TODO this seems to be dysfunctional; ${CSCRATCH} does not exist anymore on NERSC
 export PATH=${HALLD_MY}/${BMS_OSNAME}/bin:${PATH}
 
 workdir=$PWD
@@ -150,18 +150,18 @@ echo "I am here 0"
 rawdata_tab=(hd_rawdata_??????_???.evio)
 i=0
 for rawdata in "${rawdata_tab[@]}"; do
-    run_number="${rawdata:11:6}"   
-    file_number="${rawdata:18:3}" 
+    run_number="${rawdata:11:6}"
+    file_number="${rawdata:18:3}"
     echo $run_number $file_number $i
     mkdir -p $workdir/run-$run_number-$file_number
     cd $workdir/run-$run_number-$file_number
     CMD="hd_root --loadconfigs ${JANA_CONFIG} ${EXTRA_ARGS} ../$rawdata"
     echo ${CMD} >> ../myverif.out
     ${CMD} 2> "std_${run_number}_${file_number}.err" 1> "std_${run_number}_${file_number}.out" &
-    
+
     # Capture the background process ID (PID)
     pid=$!
-    
+
     # Store the PID for later use in capturing the exit code
     pids[$i]=$pid
     ((i++))
