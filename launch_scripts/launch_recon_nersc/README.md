@@ -7,25 +7,25 @@
 ```bash
 > do_my_launch.sh
   |
-  |-> my_launch.sh
+ 1|-> my_launch.sh
       * generates script_nersc_test.sh and jana_recon_nersc.config from templates
       * creates and runs swif2 workflow at ifarm
       * copies job scripts to NERSC
       * creates and executes exec_<run number>.sh scripts for each run number
       |
-      |-> exec_<run number>.sh
+     2|-> exec_<run number>.sh
           |
-          |-> swif2 add-job (submits job at ifarm queue) + sbatch (submits job at NERSC queue)
+         3|-> swif2 add-job (submits job at ifarm queue) + sbatch (submits job at NERSC queue)
               |
-              |-> @NERSC: script_nersc_multi_test.sh
+             4|-> @NERSC: script_nersc_multi_test.sh
                   |
-                  |-> @NERSC: script_nersc_multi_test.py
+                 5|-> @NERSC: script_nersc_multi_test.py
                       |
-                      |-> @NERSC: srun run_shifter_multi.sh
+                     6|-> @NERSC: srun run_shifter_multi.sh
                           |
-                          |-> @NERSC: shifter script_nersc_test.sh (run from inside a shifter container)
+                         7|-> @NERSC: shifter script_nersc_test.sh (run from inside a shifter container)
                               |
-                              |-> @NERSC: hd_root
+                             8|-> @NERSC: hd_root
 ```
 
 ## Used resources
@@ -45,10 +45,16 @@
 
 #### NERSC
 
-* `/global/cfs/cdirs/m3120/launch-<batch>` root directory for jobs at NERSC. Contains job scripts and JANA config file(s). Is mapped to `/launch-<batch>` inside the job containers.
-* `/pscratch/sd/j/jlab/swif` output directory for jobs (= swif2 site path).
-* `${CSRATCH}`??? <!--TODO-->
+* `/global/cfs/cdirs/m3120/launch-<batch>` root directory for jobs at NERSC (NERSC Community File System). Contains job scripts and JANA config file(s). Is mapped to `/launch-<batch>` inside the job containers.
+* `/pscratch/sd/j/jlab/swif` output directory for jobs at NERSC (= swif2 site path; NERSC Scratch Space). This has a quota of 500 TB.
+* `${CSCRATCH}}/HALLD_MY`??? <!--TODO-->
 
 ### Container image
 
 * `docker:jeffersonlab/gluex_almalinux_9:latest` contains everything to setup GlueX software environment from CVMFS.
+
+### Globus collections
+
+* `2f299200-6b58-4f81-bacd-b947873986db` `NERSC DTN jlab Collab`, for data inbound to and outbound from NERSC.
+* `086540a1-9598-445e-8637-ac2f3997874f` `JLAB#SWIF`, for data outbound from JLab.
+* `B0fca1ad-f485-4a00-8fcd-bca0b93a2a1c` `jlab#gw1`,  for data inbound to JLab.
