@@ -6,26 +6,24 @@
 
 ```bash
 > do_my_launch.sh
+  * Generates script_nersc_test.sh and jana_recon_nersc.config from templates
+  * Creates and runs swif2 workflow at ifarm
+  * Copies job scripts and JANA config to NERSC
+  * For each run number: creates and executes exec_<run number>.sh script
   |
- 1|-> my_launch.sh
-      * generates script_nersc_test.sh and jana_recon_nersc.config from templates
-      * creates and runs swif2 workflow at ifarm
-      * copies job scripts to NERSC
-      * creates and executes exec_<run number>.sh scripts for each run number
+ 1|-> exec_<run number>.sh
       |
-     2|-> exec_<run number>.sh
+     2|-> swif2 add-job (submits job at ifarm queue) + sbatch (submits job at NERSC queue)
           |
-         3|-> swif2 add-job (submits job at ifarm queue) + sbatch (submits job at NERSC queue)
+         3|-> @NERSC: script_nersc_multi_test.sh
               |
-             4|-> @NERSC: script_nersc_multi_test.sh
+             4|-> @NERSC: script_nersc_multi_test.py
                   |
-                 5|-> @NERSC: script_nersc_multi_test.py
+                 5|-> @NERSC: srun run_shifter_multi.sh
                       |
-                     6|-> @NERSC: srun run_shifter_multi.sh
+                     6|-> @NERSC: shifter script_nersc_test.sh (run from inside a shifter container)
                           |
-                         7|-> @NERSC: shifter script_nersc_test.sh (run from inside a shifter container)
-                              |
-                             8|-> @NERSC: hd_root
+                         7|-> @NERSC: hd_root
 ```
 
 ## Used resources
