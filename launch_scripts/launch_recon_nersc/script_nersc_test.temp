@@ -32,7 +32,7 @@
 # -------
 # 7 arguments are passed and a portion of the file is processed. Output
 # files are copied to a specified output directory. Is this mode, a
-# secondary swif2 job will be launched after all the split jobs are 
+# secondary swif2 job will be launched after all the split jobs are
 # done that merges the output files.
 #
 # Arguments:
@@ -45,9 +45,9 @@
 # arg 6:  physics event blocks to keep
 # arg 7:  directory to copy output files to  <-- should be on scratch and specific for this job. may not exist yet
 
-mount /var/udiMount/
-mount /var/udiMount/launch-BATCH
-docker inspect jeffersonlab/gluex_almalinux_9:latest
+mount /var/udiMount/  #TODO is this really needed?
+mount /var/udiMount/launch-BATCH  #TODO is this really needed?
+docker inspect jeffersonlab/gluex_almalinux_9:latest  #TODO shouldn't the image be a parameter passed to the script?
 
 # exit when any command fails
 set -e

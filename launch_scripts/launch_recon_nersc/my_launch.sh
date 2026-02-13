@@ -10,8 +10,8 @@ first_run_number=$5
 
 dividenb=$(echo "256 / $threadnb" | bc)
 halld_version_set="halld_recon-5.9.0"
-sed 's,BATCH,'$batch',g' script_nersc_test.temp > script_nersc_test.sh
-sed 's,THREADNB,'$threadnb',g' jana_recon_nersc.temp > jana_recon_nersc.config
+sed 's,BATCH,'$batch',g' script_nersc_test.temp > script_nersc_test.sh  # set the name of the mount point in the container  #TODO it would be better to pass this down as an argument
+sed 's,THREADNB,'$threadnb',g' jana_recon_nersc.temp > jana_recon_nersc.config  # set number of threads in JANA config file  #TODO it would be better to pass this down as an argument to `hd_root`
 chmod +x script_nersc_test.sh
 nersc_launch_dir=/global/cfs/cdirs/m3120/launch-$batch
 #nersc_launch_dir=$PWD

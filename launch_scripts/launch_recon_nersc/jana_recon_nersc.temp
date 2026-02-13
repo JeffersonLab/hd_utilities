@@ -49,7 +49,6 @@ USE_EPICS_FOR_BEAM_ON 1
 #jana:global_loglevel FATAL
 
 epemML:PIPIM_EVIO_FILE 1
-epemML:MIN_EOVERP_CUT 0.4 
+epemML:MIN_EOVERP_CUT 0.4
 CPPAnalysis:PIMU_MODEL_FILE /group/halld/www/halldweb/html/resources/AI/CPP/2022_05_07_MLP_Base_matched_background.tflite
 CPPAnalysis:TARGET_OPTION Proton
-
