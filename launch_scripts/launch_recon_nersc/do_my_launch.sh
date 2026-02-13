@@ -22,7 +22,7 @@ NERSC_LAUNCH_DIR="${NERSC_PROJECT_DIR}/launch-${BATCH}"  # NERSC directory that 
 NERSC_QOS="regular"  # NERSC queue to use; usually `regular` or `debug`. See NERSC documentation for details on charging and restrictions.
 NERSC_NMB_TREADS_PER_JOB=32  # Number of threads to use per job; must be <= ${NERSC_NMB_TREADS_PER_NODE}.
 NERSC_NMB_TREADS_PER_NODE=256  # Maximum number of threads on a NERSC Perlmutter CPU node.
-NERSC_NMB_JOBS_PER_NODE=$(echo "${NERSC_NMB_TREADS_PER_NODE} / ${NERSC_NMB_TREADS_PER_JOB}" | bc)  # Number of jobs to run concurrently on a single NERSC Perlmutter CPU node.  #TODO works only if division is exact; need to round up if not exact.
+NERSC_NMB_JOBS_PER_NODE=$(echo "${NERSC_NMB_TREADS_PER_NODE} / ${NERSC_NMB_TREADS_PER_JOB}" | bc)  # Number of jobs to run concurrently on a single NERSC Perlmutter CPU node.  #TODO works only if division is exact; need to round up if not exact. Fix naming "jobs" is incorrect, since these are not swif2 jobs but rather processes in the same job
 NERSC_HOST="perlmutter-p1.nersc.gov"  # NERSC hostname to use for ssh.
 NERSC_IMAGE="docker:jeffersonlab/gluex_almalinux_9:latest"  # Shifter image that was converted from Docker image. Is not pulled in automatically and needs to exist in Shifter registry.
 
@@ -67,28 +67,26 @@ do
   #NERSC_NMB_NODES=$(echo "${NMB_EVIO_FILES} / ${NERSC_NMB_JOBS_PER_NODE}" | bc)
   NERSC_NMB_NODES=$(echo "(${NMB_EVIO_FILES} + ${NERSC_NMB_JOBS_PER_NODE} - 1) / ${NERSC_NMB_JOBS_PER_NODE}" | bc)
   echo "Number of nodes asked: ${NERSC_NMB_NODES}"
-  i=0
   SWIF_JOB_NAME="GLUEX_recon_${RUN_NUMBER}"
   command1="swif2 add-job -workflow ${SWIF_WORKFLOW} -name ${SWIF_JOB_NAME} "
   command2=""
-  while [ ${i} -lt ${NERSC_NMB_NODES} ]
+  for (( NERSC_NODE_INDEX=0; NERSC_NODE_INDEX < NERSC_NMB_NODES; NERSC_NODE_INDEX++ ))
   do
-    start=$((i * NERSC_NMB_JOBS_PER_NODE))  # Calculate the starting index
-    end=$((start + NERSC_NMB_JOBS_PER_NODE))  # Calculate the ending index
+    EVIO_FILE_START_INDEX=$((NERSC_NODE_INDEX * NERSC_NMB_JOBS_PER_NODE))
+    EVIO_FILE_END_INDEX=$((EVIO_FILE_START_INDEX + NERSC_NMB_JOBS_PER_NODE))
     # Print 5 values from the array
-    ##echo "i = ${i} -> Values: ${EVIO_FILE_PATHS[@]:start:5}"
-    ##node_mss=${EVIO_FILE_PATHS[@]:start:5}
-    node_mss=${files[@]:start:${NERSC_NMB_JOBS_PER_NODE}}
+    ##echo "NERSC_NODE_INDEX = ${NERSC_NODE_INDEX} -> Values: ${EVIO_FILE_PATHS[@]:EVIO_FILE_START_INDEX:5}"
+    ##node_mss=${EVIO_FILE_PATHS[@]:EVIO_FILE_START_INDEX:5}
+    node_mss=${files[@]:EVIO_FILE_START_INDEX:${NERSC_NMB_JOBS_PER_NODE}}
     #node_cache="${node_mss/'/mss'/'mss:/mss'}"
     node_cache="${node_mss}"
-    RUNDIR=$(printf "RUN%06d/FILE%03d" "${RUN_NUMBER}" "${i}")
+    RUNDIR=$(printf "RUN%06d/FILE%03d" "${RUN_NUMBER}" "${NERSC_NODE_INDEX}")
     node_volatile="${SWIF_OUTPUT_ROOT}/${RUNDIR}"
     echo "mkdir -p ${node_volatile}"
     mkdir -p ${node_volatile}
     #####command2+=" -name ${SWIF_JOB_NAME} -input ${node_cache} -output match:${RUNDIR}/* ${node_volatile}"
     command2+=" ${node_cache} -output match:${RUNDIR}/* ${node_volatile}"
     #echo "swif2 add-job -workflow ${SWIF_WORKFLOW} -name ${SWIF_JOB_NAME} -input ${node_cache} -output match:RUN${RUN_NUMBER}/FILE${i}/* ${node_volatile}"
-    ((i++))  # Increment i
   done
   command3=" -sbatch -A ${NERSC_PROJECT} --volume=\"${NERSC_LAUNCH_DIR}:/launch-${BATCH}\" --image=${NERSC_IMAGE} --module=cvmfs --time=5:00:00 -N ${NERSC_NMB_NODES} --tasks-per-node=1 --cpus-per-task=256 --qos=${NERSC_QOS} -C cpu :: ${NERSC_LAUNCH_DIR}/script_nersc_multi_test.sh ${NERSC_LAUNCH_DIR} /launch-${BATCH}/script_nersc_test.sh /launch-${BATCH}/${JANA_CONFIG} ${RECON_VERSION} ${NERSC_NMB_JOBS_PER_NODE}"
   command4=$command1$command2$command3
