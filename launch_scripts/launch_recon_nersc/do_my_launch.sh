@@ -20,24 +20,17 @@ NERSC_PROJECT="m3120"  # NERSC project to charge to.
 NERSC_PROJECT_DIR="/global/cfs/cdirs/${NERSC_PROJECT}"  # Project directory in the NERSC Common File System (CFS) where config files and scripts will be copied to and run from.
 NERSC_LAUNCH_DIR="${NERSC_PROJECT_DIR}/launch-${BATCH}"  # NERSC directory that will get mapped to /launch_${BATCH} inside the job container. Contains scripts and JANA config file to run the job.
 NERSC_QOS="regular"  # NERSC queue to use; usually `regular` or `debug`. See NERSC documentation for details on charging and restrictions.
-NERSC_NMB_TREADS_PER_JOB=32  # Number of threads to use per job; must be <= ${NERSC_NMB_TREADS_PER_NODE}.
-NERSC_NMB_TREADS_PER_NODE=256  # Maximum number of threads on a NERSC Perlmutter CPU node.
-NERSC_NMB_JOBS_PER_NODE=$(echo "${NERSC_NMB_TREADS_PER_NODE} / ${NERSC_NMB_TREADS_PER_JOB}" | bc)  # Number of jobs to run concurrently on a single NERSC Perlmutter CPU node.  #TODO works only if division is exact; need to round up if not exact. Fix naming "jobs" is incorrect, since these are not swif2 jobs but rather processes in the same job
+NERSC_CONSTRAINT="cpu"  # Constraint to use for NERSC job; usually `cpu` or `gpu`.
+NERSC_MAX_WALL_TIME="5:00:00"  # Maximum wall time for NERSC job.
+NERSC_MAX_TREADS_PER_NODE=256  # Maximum number of threads on a NERSC Perlmutter CPU node.
+NERSC_NMB_TREADS_PER_JOB=32  # Number of threads to use per job; must be <= ${NERSC_MAX_TREADS_PER_NODE}.
+NERSC_NMB_JOBS_PER_NODE=$(echo "${NERSC_MAX_TREADS_PER_NODE} / ${NERSC_NMB_TREADS_PER_JOB}" | bc)  # Number of jobs to run concurrently on a single NERSC Perlmutter CPU node.  #TODO works only if division is exact; need to round up if not exact
 NERSC_HOST="perlmutter-p1.nersc.gov"  # NERSC hostname to use for ssh.
 NERSC_IMAGE="docker:jeffersonlab/gluex_almalinux_9:latest"  # Shifter image that was converted from Docker image. Is not pulled in automatically and needs to exist in Shifter registry.
 
 # load run list into array
 #TODO improve code
 RUN_NUMBERS=( $( cat list-2025-01-ver03-perl.txt ) )
-
-
-# TESTMODE
-# VERBOSE
-# LAUNCHTYPE
-# NAME
-# TIMELIMIT
-# NODETYPE
-# SCRIPTFILE
 
 
 # prepare scripts and config files to be copied to NERSC
@@ -55,20 +48,6 @@ swif2 run "${SWIF_WORKFLOW}"
 # loop over run numbers and submit one swif2 job for each
 for RUN_NUMBER in "${RUN_NUMBERS[@]}"
 do
-  EVIO_DIR="${SWIF_RAW_DATA_ROOT}/Run${RUN_NUMBER}"
-  EVIO_FILE_PATHS=("${EVIO_DIR}"/*.evio)  #TODO this is not empty if there are no evio files, but contains the pattern itself
-  EVIO_FILE_NAMES=($(basename --multiple "${EVIO_DIR}"/*.evio))
-  # create a input lines for `swif2 add-job` command, e.g. `-input file1.evion mss:/mss/halld/RunPeriod-2025-01/rawdata/Run12345/file1.evion -input file2.evion mss:/mss/halld/RunPeriod-2025-01/rawdata/Run12345/file2.evion ...`
-  files=()
-  for i in "${!EVIO_FILE_PATHS[@]}"
-  do
-    files+=("-input ${EVIO_FILE_NAMES[i]} mss:${EVIO_FILE_PATHS[i]}")
-  done
-  NMB_EVIO_FILES=${#EVIO_FILE_PATHS[@]}
-  echo "Run period: ${RUN_PERIOD} - run number: ${RUN_NUMBER} - number of evio files: ${NMB_EVIO_FILES} - divided by: ${NERSC_NMB_JOBS_PER_NODE}"
-  #NERSC_NMB_NODES=$(echo "${NMB_EVIO_FILES} / ${NERSC_NMB_JOBS_PER_NODE}" | bc)
-  NERSC_NMB_NODES=$(echo "(${NMB_EVIO_FILES} + ${NERSC_NMB_JOBS_PER_NODE} - 1) / ${NERSC_NMB_JOBS_PER_NODE}" | bc)
-  echo "Number of nodes asked: ${NERSC_NMB_NODES}"
   # construct command to submit swif2 job
   # one swif2 job per NERSC node, each processing ${NERSC_NMB_JOBS_PER_NODE} evio files
   SWIF_JOB_NAME="GLUEX_recon_${RUN_NUMBER}"
@@ -77,38 +56,50 @@ do
     -workflow "${SWIF_WORKFLOW}"
     -name "${SWIF_JOB_NAME}"
   )
+  # construct input lines for `swif2 add-job` command, e.g. `-input file1.evio mss:/mss/halld/RunPeriod-2025-01/rawdata/Run12345/file1.evio -input file2.evio mss:/mss/halld/RunPeriod-2025-01/rawdata/Run12345/file2.evio ...`
+  EVIO_DIR="${SWIF_RAW_DATA_ROOT}/Run${RUN_NUMBER}"
+  EVIO_FILE_PATHS=("${EVIO_DIR}"/*.evio)  #TODO this is not empty if there are no evio files, but contains the pattern itself
+  EVIO_FILE_NAMES=($(basename --multiple "${EVIO_DIR}"/*.evio))
+  files=()
+  for i in "${!EVIO_FILE_PATHS[@]}"
+  do
+    files+=("-input ${EVIO_FILE_NAMES[i]} mss:${EVIO_FILE_PATHS[i]}")
+  done
+  # calculate number of nodes to request based on number of evio files and number of jobs to run per node
+  NMB_EVIO_FILES=${#EVIO_FILE_PATHS[@]}
+  echo "Run period: ${RUN_PERIOD} - run number: ${RUN_NUMBER} - number of evio files: ${NMB_EVIO_FILES} - divided by: ${NERSC_NMB_JOBS_PER_NODE}"
+  NERSC_NMB_NODES=$(echo "(${NMB_EVIO_FILES} + ${NERSC_NMB_JOBS_PER_NODE} - 1) / ${NERSC_NMB_JOBS_PER_NODE}" | bc)  #TODO check whether this is generally correct
+  echo "Number of nodes asked: ${NERSC_NMB_NODES}"
   for (( NERSC_NODE_INDEX=0; NERSC_NODE_INDEX < NERSC_NMB_NODES; NERSC_NODE_INDEX++ ))
   do
     EVIO_FILE_START_INDEX=$((NERSC_NODE_INDEX * NERSC_NMB_JOBS_PER_NODE))
     EVIO_FILE_END_INDEX=$((EVIO_FILE_START_INDEX + NERSC_NMB_JOBS_PER_NODE))
     # Print 5 values from the array
     ##echo "NERSC_NODE_INDEX = ${NERSC_NODE_INDEX} -> Values: ${EVIO_FILE_PATHS[@]:EVIO_FILE_START_INDEX:5}"
-    ##node_mss=${EVIO_FILE_PATHS[@]:EVIO_FILE_START_INDEX:5}
-    node_mss=${files[@]:EVIO_FILE_START_INDEX:${NERSC_NMB_JOBS_PER_NODE}}
-    #node_cache="${node_mss/'/mss'/'mss:/mss'}"
-    node_cache="${node_mss}"
+    SWIF_INPUT_LINES=${files[@]:EVIO_FILE_START_INDEX:${NERSC_NMB_JOBS_PER_NODE}}
     RUNDIR=$(printf "RUN%06d/FILE%03d" "${RUN_NUMBER}" "${NERSC_NODE_INDEX}")
-    node_volatile="${SWIF_OUTPUT_ROOT}/${RUNDIR}"
-    echo "mkdir -p ${node_volatile}"
-    mkdir -p ${node_volatile}
+    SWIF_OUTPUT_DIR="${SWIF_OUTPUT_ROOT}/${RUNDIR}"
+    echo "mkdir -p ${SWIF_OUTPUT_DIR}"
+    mkdir -p ${SWIF_OUTPUT_DIR}
     CMD+=(
-      ${node_cache}
-      -output match:${RUNDIR}/* "${node_volatile}"
+      ${SWIF_INPUT_LINES}
+      -output match:${RUNDIR}/* "${SWIF_OUTPUT_DIR}"
     )
   done
+  # define NERSC job
   CMD+=(
     -sbatch
       # these options are passed to `sbatch` when swif2 submits job at NERSC
-      -A "${NERSC_PROJECT}"
+      -A "${NERSC_PROJECT}"  #TODO use long option name
       --volume=\""${NERSC_LAUNCH_DIR}:/launch-${BATCH}"\"
       --image="${NERSC_IMAGE}"
       --module=cvmfs
-      --time=5:00:00  #TODO replace with variable
-      -N ${NERSC_NMB_NODES}
+      --time="${NERSC_MAX_WALL_TIME}"
+      -N ${NERSC_NMB_NODES}  #TODO use long option name
       --tasks-per-node=1
-      --cpus-per-task=256  #TODO replace with variable
+      --cpus-per-task=${NERSC_MAX_TREADS_PER_NODE}
       --qos="${NERSC_QOS}"
-      -C cpu  #TODO replace with variable
+      -C "${NERSC_CONSTRAINT}"  #TODO use long option name
       ::
       # job script to run at NERSC
       "${NERSC_LAUNCH_DIR}/script_nersc_multi_test.sh"  # wrapper script for script_nersc_multi_test.py
@@ -117,14 +108,15 @@ do
       "/launch-${BATCH}/script_nersc_test.sh"  # SCRIPTFILE argument
       "/launch-${BATCH}/${JANA_CONFIG}"        # CONFIG argument
       "${RECON_VERSION}"                       # RECONVERSION argument
-      "${NERSC_NMB_JOBS_PER_NODE}"             # SLURM_JOBS_PER_NODE
+      "${NERSC_NMB_JOBS_PER_NODE}"             # SLURM_JOBS_PER_NODE argument
   )
-  # generate shell-escaped version of command array and write it to file so it becomes a script that can be run directly
   echo "${CMD[@]}" >| "./exec_${RUN_NUMBER}.sh"
+  # # generate shell-escaped version of command array and write it to file so it becomes a script that can be run directly
   # {
-  #   printf '%q ' "${CMD[@]}"  #TODO this would be the safer approach, but in `-output match:RUN132194/FILE024/*` this would escape the `*`; not sure if this would cause problems with swif2
+  #   printf '%q ' "${CMD[@]}"
   #   printf '\n'
   # } >| "exec_${RUN_NUMBER}.sh"
+  #TODO this would be the safer approach, but in `-output match:RUN132194/FILE024/*` this would escape the `*`; not sure if this would cause problems with swif2
   chmod +x "./exec_${RUN_NUMBER}.sh"
   "./exec_${RUN_NUMBER}.sh"
 done
