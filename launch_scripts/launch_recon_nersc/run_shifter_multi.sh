@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+set -o nounset  # exit if trying to use an uninitialized variable
+set -o xtrace  # turn on command tracing
 
 # This script will be run on the individual nodes
 # to process a single file for multi-file jobs.

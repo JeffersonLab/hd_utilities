@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-#
+set -o nounset  # exit if trying to use an uninitialized variable
+set -o xtrace  # turn on command tracing
+
 # This script is the entrypoint for a large multi-file
 # job. SLURM will run it and SWIF2 will make sure it
 # starts in a working directory that has links to all

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-#
+set -o nounset  # exit if trying to use an uninitialized variable
+set -o xtrace  # turn on command tracing
+
 # This should be placed in the "launch" directory in the NERSC
 # project directory used for the job. e.g.
 #
