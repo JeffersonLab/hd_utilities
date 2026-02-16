@@ -15,7 +15,7 @@
       |
      2|-> swif2 add-job (submits job at ifarm queue) + sbatch (submits job at NERSC queue)
           |
-         3|-> @NERSC: script_nersc_multi_test.sh
+         3|-> @NERSC: script_nersc_multi_test.sh  <--  main job script run at NERSC
               |
              4|-> @NERSC: script_nersc_multi_test.py
                   |
@@ -43,8 +43,11 @@
 
 #### NERSC
 
-* `/global/cfs/cdirs/m3120/launch-<batch>` root directory for jobs at NERSC (NERSC Community File System). Contains job scripts and JANA config file(s). Is mapped to `/launch-<batch>` inside the job containers.
-* `/pscratch/sd/j/jlab/swif` output directory for jobs at NERSC (= swif2 site path; NERSC Scratch Space). This has a quota of 500 TB.
+* `/global/cfs/cdirs/m3120/launch-<batch>` directory on NERSC Community File System that contains job scripts and JANA config file(s). Is mapped to `/launch-<batch>` inside the job container.
+* `/pscratch/sd/j/jlab/swif` directory on NERSC Scratch Space that serves as root directory for job output (= swif2 site path). Has a quota of 500 TB.
+  * `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}` top-level working directory the job wakes up in (identical to `${SWIF_JOB_STAGE_DIR}` and `${SWIF_JOB_WORK_DIR}`)
+    * `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}/subjob????` top-level working directory the container task wakes up in, where `????` is the 4-digit `${SLURM_NODEID}`
+    * `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}/RUN??????/FILE???` directory linked to task directory above, where `???` is the 3-digit `${SLURM_NODEID}`; `RUN??????/FILE???` is copied back to JLab by swif2
 * `${CSCRATCH}}/HALLD_MY`??? <!--TODO-->
 
 ### Container image
