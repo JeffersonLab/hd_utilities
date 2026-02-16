@@ -47,8 +47,8 @@ set -o xtrace  # turn on command tracing
 # arg 6:  physics event blocks to keep
 # arg 7:  directory to copy output files to  <-- should be on scratch and specific for this job. may not exist yet
 
-mount /var/udiMount/  #TODO is this really needed?
-mount /var/udiMount/launch-BATCH  #TODO is this really needed?
+# mount /var/udiMount/  #TODO is this really needed?
+# mount /var/udiMount/launch-BATCH  #TODO is this really needed?
 docker inspect jeffersonlab/gluex_almalinux_9:latest  #TODO shouldn't the image be a parameter passed to the script?
 
 # exit when any command fails
