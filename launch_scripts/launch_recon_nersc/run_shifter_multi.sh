@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script will be run on the individual nodes
 # to process a single file for multi-file jobs.

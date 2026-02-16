@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # This script is called from the script-multi.sh script
 # which just serves as a wrapper for this one. It wakes

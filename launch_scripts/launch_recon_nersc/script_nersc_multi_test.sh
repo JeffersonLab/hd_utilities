@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # This script is the entrypoint for a large multi-file
 # job. SLURM will run it and SWIF2 will make sure it

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # This should be placed in the "launch" directory in the NERSC
 # project directory used for the job. e.g.
