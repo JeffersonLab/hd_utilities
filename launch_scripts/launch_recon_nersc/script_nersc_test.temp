@@ -25,7 +25,7 @@ set -o xtrace  # turn on command tracing
 # Arguments:
 #
 # arg 1:  JANA config file
-# arg 2:  sim-recon version
+# arg 2:  Hall-D version set XML file
 # arg 3:  run     <--+ run and file number used to name job_info
 # arg 4:  file    <--+ directory only.
 #
@@ -40,7 +40,7 @@ set -o xtrace  # turn on command tracing
 # Arguments:
 #
 # arg 1:  JANA config file
-# arg 2:  sim-recon version
+# arg 2:  Hall-D version set XML file
 # arg 3:  run     <--+ run and file number used to name job_info
 # arg 4:  file    <--+ directory only.
 # arg 5:  physics event blocks to skip
@@ -64,9 +64,9 @@ trap 'echo "\"${last_command}\" command failed with exit code $?."' EXIT
 
 # Mode 1 and mode 2
 JANA_CONFIG="${1}"
-HALLD_RECON_VERSION="${2}"
-RUN="${3}"
-FILE="${4}"
+HALLD_VERSION_SET_XML="${2}"
+RUN="${3}"  #TODO unused
+FILE="${4}"  #TODO unused
 
 # Mode 2 only
 if [ "$#" -lt 7 ]
@@ -81,9 +81,9 @@ fi
 
 ulimit -c unlimited
 
-# Setup environment for the specified sim-recon version
-setenv_file="/group/halld/Software/builds/Linux_Alma9-x86_64-gcc11.5.0-cntr/${HALLD_RECON_VERSION}/Linux_Alma9-x86_64-gcc11.5.0-cntr/setenv.sh"
-source $setenv_file
+# Setup software environment according to Hall-D version set XML file
+source "/group/halld/Software/build_scripts/gluex_env_boot_jlab.sh"
+gxenv "${HALLD_VERSIONS}/${HALLD_VERSION_SET_XML}"
 
 # If the binaries in the group disk need to be replaced, then
 # they can be placed in a directory on $SCRATCH and we'll use

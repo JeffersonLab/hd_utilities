@@ -17,11 +17,11 @@ import math
 # For the actual jobs, it will be the "launch" directory
 # which has been checked out from the halld subversion
 # repository. Here, we just point to the testing directory.
-LAUNCHDIR    = sys.argv[1]
-SCRIPTFILE   = sys.argv[2]
-CONFIG       = sys.argv[3]
-RECONVERSION = sys.argv[4]
-SLURM_JOBS_PER_NODE = float(sys.argv[5])
+LAUNCH_DIR            = sys.argv[1]
+SCRIPT_FILE           = sys.argv[2]
+JANA_CONFIG           = sys.argv[3]
+HALLD_VERSION_SET_XML = sys.argv[4]
+SLURM_JOBS_PER_NODE   = float(sys.argv[5])
 
 workdir = os.getcwd()
 
@@ -34,10 +34,10 @@ eviofiles = sorted(glob.glob('hd_rawdata_*.evio'))
 # Calculate the expected number of nodes
 expected_nodes = math.ceil(float(len(eviofiles)) / SLURM_JOBS_PER_NODE) #Integer division
 
-print(f"LAUNCHDIR: {LAUNCHDIR}")
-print(f"SCRIPTFILE: {SCRIPTFILE}")
-print(f"CONFIG: {CONFIG}")
-print(f"RECONVERSION: {RECONVERSION}")
+print(f"LAUNCH_DIR: {LAUNCH_DIR}")
+print(f"SCRIPT_FILE: {SCRIPT_FILE}")
+print(f"JANA_CONFIG: {JANA_CONFIG}")
+print(f"HALLD_VERSION_SET_XML: {HALLD_VERSION_SET_XML}")
 print(f"Nb of evio files: {len(eviofiles)}")
 print(f"Nb of nodes: {expected_nodes}")
 print(f"Nb of nodes asked: {SLURM_JOB_NUM_NODES}")
@@ -76,11 +76,11 @@ for i,eviofile in enumerate(eviofiles):
 
 
 # run all jobs
-CMD = ['srun', '-n', SLURM_JOB_NUM_NODES, LAUNCHDIR+'/run_shifter_multi.sh']
-CMD += [workdir]          # arg 1:  top-level directory for job
-CMD += [SCRIPTFILE]       # arg 2:  script to run inside shifter (all subsequent args are eventually passed to this script)
-CMD += [CONFIG]           # arg 3:  JANA config file
-CMD += [RECONVERSION]     # arg 4:  sim-recon version
+CMD = ['srun', '-n', SLURM_JOB_NUM_NODES, LAUNCH_DIR+'/run_shifter_multi.sh']
+CMD += [workdir]                # arg 1:  top-level directory for job
+CMD += [SCRIPT_FILE]            # arg 2:  script to run inside shifter (all subsequent args are eventually passed to this script)
+CMD += [JANA_CONFIG]            # arg 3:  JANA config file
+CMD += [HALLD_VERSION_SET_XML]  # arg 4:  Hall-D version set XML file
 #         n.b. run/file are derived from evio file names. (see run_shifter_multi.sh)
 print(f"Nb of nodes asked: {CMD}")
 print(' '.join(CMD))

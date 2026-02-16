@@ -6,7 +6,7 @@
 
 RUN_PERIOD="2025-01"  # Run period to process.
 VER="03"  # Version of this reconstruction launch.
-HALLD_RECON_VERSION="halld_recon/halld_recon-5.9.0"  # Version of reconstruction code to be used. The software environment is constructed from a CVMFS directory that mirrors the directory /group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5-cntr. The given value should be a directory relative to that.  #TODO define path to setenv file instead
+HALLD_VERSION_SET_XML="version_7.4.0.xml"  # XML file that defines the Hall-D version set to be used.
 JANA_CONFIG="jana_recon_nersc.config"  # JANA config file to use; must be located in ${NERSC_LAUNCH_DIR}
 BATCH="${VER}-perl"  # Batch label used to hold details of the launch; is appended to workflow name and directory names; should make it clear where/how the campaign was being run.
 #
@@ -101,10 +101,10 @@ do
       # job script to run at NERSC
       "${NERSC_LAUNCH_DIR}/script_nersc_multi_test.sh"  # wrapper script for script_nersc_multi_test.py
       # arguments passed to script_nersc_multi_test.py
-      "${NERSC_LAUNCH_DIR}"                    # LAUNCHDIR argument
-      "/launch-${BATCH}/script_nersc_test.sh"  # SCRIPTFILE argument
-      "/launch-${BATCH}/${JANA_CONFIG}"        # CONFIG argument
-      "${HALLD_RECON_VERSION}"                 # RECONVERSION argument
+      "${NERSC_LAUNCH_DIR}"                    # LAUNCH_DIR argument
+      "/launch-${BATCH}/script_nersc_test.sh"  # SCRIPT_FILE argument
+      "/launch-${BATCH}/${JANA_CONFIG}"        # JANA_CONFIG argument
+      "${HALLD_VERSION_SET_XML}"               # HALLD_VERSION_SET_XML argument
       "${NERSC_NMB_JOBS_PER_NODE}"             # SLURM_JOBS_PER_NODE argument
   )
   echo "${SWIF2_CMD[@]}" >| "./exec_${RUN_NUMBER}.sh"
