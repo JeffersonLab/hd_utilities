@@ -90,8 +90,8 @@ source $setenv_file
 # the HALLD_MY mechanism to superceed them. This was needed
 # for offmon 2019-11 ver 13 when certain plugins had to be
 # recompiled with a patch.
-export HALLD_MY="${CSCRATCH}/HALLD_MY/${HALLD_RECON_VERSION}"  #TODO this seems to be dysfunctional; ${CSCRATCH} does not exist anymore on NERSC
-export PATH="${HALLD_MY}/${BMS_OSNAME}/bin:${PATH}"
+# export HALLD_MY="${CSCRATCH}/HALLD_MY/${HALLD_RECON_VERSION}"  #TODO this seems to be dysfunctional; ${CSCRATCH} does not exist anymore on NERSC
+# export PATH="${HALLD_MY}/${BMS_OSNAME}/bin:${PATH}"
 
 workdir="${PWD}"
 # Use CCDB and RCDB from CVMFS. Make a temporary local
@@ -160,14 +160,14 @@ do
     mkdir -p "${workdir}/run-${run_number}-${file_number}"
     cd "${workdir}/run-${run_number}-${file_number}"
     CMD="hd_root --loadconfigs ${JANA_CONFIG} ${EXTRA_ARGS} ../${rawdata}"
-    echo ${CMD} >> ../myverif.out
+    echo "${CMD}" >> ../myverif.out
     ${CMD} 2> "std_${run_number}_${file_number}.err" 1> "std_${run_number}_${file_number}.out" &
 
     # Capture the background process ID (PID)
     pid=${!}
 
     # Store the PID for later use in capturing the exit code
-    pids[$i]=${pid}
+    pids[${i}]=${pid}
     ((i++))
 done
 echo "I am here 1"
@@ -175,7 +175,7 @@ cd ${workdir}
 # Wait for all background jobs to complete and capture their exit codes
 for i in "${!pids[@]}"
 do
-    wait ${pids[$i]}   # Wait for the process to finish
+    wait ${pids[${i}]}   # Wait for the process to finish
     exitcode=${?}
     # Turn back on exit on error
 
@@ -221,7 +221,7 @@ do
     files_tab=(*.*)
     for file in "${files_tab[@]}"
     do
-        echo ${file}
+        echo "${file}"
         if [[ ! "${file}" =~ *_([0-9]{6})_([0-9]{3}).* ]]
         then
             # Extract the base filename without extension
