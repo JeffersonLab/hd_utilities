@@ -6,7 +6,7 @@
 
 RUN_PERIOD="2025-01"  # Run period to process.
 VER="03"  # Version of this reconstruction launch.
-RECON_VERSION="halld_recon/halld_recon-5.9.0"  # Version of reconstruction code to be used. The software environment is constructed from a CVMFS directory that mirrors the directory /group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5-cntr. The given value should be a directory relative to that.  #TODO fix dir
+HALLD_RECON_VERSION="halld_recon/halld_recon-5.9.0"  # Version of reconstruction code to be used. The software environment is constructed from a CVMFS directory that mirrors the directory /group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5-cntr. The given value should be a directory relative to that.  #TODO define path to setenv file instead
 JANA_CONFIG="jana_recon_nersc.config"  # JANA config file to use; must be located in ${NERSC_LAUNCH_DIR}
 BATCH="${VER}-perl"  # Batch label used to hold details of the launch; is appended to workflow name and directory names; should make it clear where/how the campaign was being run.
 #
@@ -20,13 +20,13 @@ NERSC_PROJECT="m3120"  # NERSC project to charge to.
 NERSC_PROJECT_DIR="/global/cfs/cdirs/${NERSC_PROJECT}"  # Project directory in the NERSC Common File System (CFS) where config files and scripts will be copied to and run from.
 NERSC_LAUNCH_DIR="${NERSC_PROJECT_DIR}/launch-${BATCH}"  # NERSC directory that will get mapped to /launch_${BATCH} inside the job container. Contains scripts and JANA config file to run the job.
 NERSC_QOS="regular"  # NERSC queue to use; usually `regular` or `debug`. See NERSC documentation for details on charging and restrictions.
-NERSC_CONSTRAINT="cpu"  # Constraint to use for NERSC job; usually `cpu` or `gpu`.
+NERSC_NODE_TYPE="cpu"  # Constraint to use for NERSC job; usually `cpu` or `gpu`.
 NERSC_MAX_WALL_TIME="5:00:00"  # Maximum wall time for NERSC job.
 NERSC_MAX_TREADS_PER_NODE=256  # Maximum number of threads on a NERSC Perlmutter CPU node.
 NERSC_NMB_TREADS_PER_JOB=32  # Number of threads to use per job; must be <= ${NERSC_MAX_TREADS_PER_NODE}.
 NERSC_NMB_JOBS_PER_NODE=$(echo "${NERSC_MAX_TREADS_PER_NODE} / ${NERSC_NMB_TREADS_PER_JOB}" | bc)  # Number of jobs to run concurrently on a single NERSC Perlmutter CPU node.  #TODO works only if division is exact; need to round up if not exact
 NERSC_HOST="perlmutter-p1.nersc.gov"  # NERSC hostname to use for ssh.
-NERSC_IMAGE="docker:jeffersonlab/gluex_almalinux_9:latest"  # Shifter image that was converted from Docker image. Is not pulled in automatically and needs to exist in Shifter registry.
+NERSC_CONTAINER_IMAGE="docker:jeffersonlab/gluex_almalinux_9:latest"  # Shifter image that was converted from Docker image. Is not pulled in automatically and needs to exist in Shifter registry.
 
 # load run list into array
 #TODO improve code
@@ -87,16 +87,16 @@ do
   SWIF2_CMD+=(
     -sbatch
       # these options are passed to `sbatch` when swif2 submits job at NERSC
-      -A "${NERSC_PROJECT}"  #TODO use long option name
+      -A "${NERSC_PROJECT}"  #TODO use --account=
       --volume=\""${NERSC_LAUNCH_DIR}:/launch-${BATCH}"\"
-      --image="${NERSC_IMAGE}"
+      --image="${NERSC_CONTAINER_IMAGE}"
       --module=cvmfs
       --time="${NERSC_MAX_WALL_TIME}"
-      -N ${NERSC_NMB_NODES}  #TODO use long option name
+      -N ${NERSC_NMB_NODES}  #TODO use --nodes=
       --tasks-per-node=1
       --cpus-per-task=${NERSC_MAX_TREADS_PER_NODE}
       --qos="${NERSC_QOS}"
-      -C "${NERSC_CONSTRAINT}"  #TODO use long option name
+      -C "${NERSC_NODE_TYPE}"  #TODO use --constraint=
       ::
       # job script to run at NERSC
       "${NERSC_LAUNCH_DIR}/script_nersc_multi_test.sh"  # wrapper script for script_nersc_multi_test.py
@@ -104,7 +104,7 @@ do
       "${NERSC_LAUNCH_DIR}"                    # LAUNCHDIR argument
       "/launch-${BATCH}/script_nersc_test.sh"  # SCRIPTFILE argument
       "/launch-${BATCH}/${JANA_CONFIG}"        # CONFIG argument
-      "${RECON_VERSION}"                       # RECONVERSION argument
+      "${HALLD_RECON_VERSION}"                 # RECONVERSION argument
       "${NERSC_NMB_JOBS_PER_NODE}"             # SLURM_JOBS_PER_NODE argument
   )
   echo "${SWIF2_CMD[@]}" >| "./exec_${RUN_NUMBER}.sh"
