@@ -12,9 +12,9 @@ set -o xtrace  # turn on command tracing
 # level directory for the job and then defers everything
 # else to python.
 
-LAUNCHDIR=$1
+
+LAUNCHDIR="${1}"
 
 printenv > env.out
 hostname > hostname.out
-#python3 ${LAUNCHDIR}/script_nersc_multi.py $@
-python3 ${LAUNCHDIR}/script_nersc_multi_test.py $@
+python3 "${LAUNCHDIR}/script_nersc_multi_test.py" "${@}"

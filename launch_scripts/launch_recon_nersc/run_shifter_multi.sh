@@ -27,8 +27,8 @@ set -o xtrace  # turn on command tracing
 # created a symbolic link named subjobZZZZ (where the
 # ZZZZ is the SLURM_NODEID) that points to the directory
 # we should use.
-subjobdir=$(printf "subjob%04d" $SLURM_NODEID)
-cd $1/$subjobdir
+subjobdir=$(printf "subjob%04d" ${SLURM_NODEID})
+cd "${1}/${subjobdir}"
 
 
 # The run/file numbers should be passed as the last 2 arguments
@@ -38,7 +38,8 @@ cd $1/$subjobdir
 # hd_rawdata_XXXXXX_YYY.evio.
 RUNNO=999999  # fallback that can be used for debugging
 FILENO=999    # fallback that can be used for debugging
-for file in *.evio; do
+for file in *.evio
+do
 	# First 2 lines extract strings from filename. Second
 	# two lines strip leading 0's so script_nersc.sh does
 	# not interpret them as octal numbers.
@@ -54,4 +55,4 @@ done
 shift
 
 # Pass all remaining arguments to shifter, including run/file numbers
-shifter "$@" $RUNNO $FILENO
+shifter "${@}" ${RUNNO} ${FILENO}
