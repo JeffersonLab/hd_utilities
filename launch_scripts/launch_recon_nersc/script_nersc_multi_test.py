@@ -60,11 +60,13 @@ for i,eviofile in enumerate(eviofiles):
     fil = int(eviofile[18:21])
 
     # Make subjob directory
+    #TODO why is this called for every file? we know how many files each job processes
     RUNDIR = 'RUN%06d/FILE%03d' % (int(run), int(float(fil) / SLURM_JOBS_PER_NODE))
     os.makedirs( RUNDIR , exist_ok=True )
 
     # Make symlink pointing to subjobdir so the subjob
     # can cd into it via SLURM_NODEID
+    #TODO why is this extra step needed? why not use FILE%03d directly in the subjob script? The only difference is the number of digits used
     subjobdir = 'subjob%04d' % int( float(fil) / SLURM_JOBS_PER_NODE)
     if not os.path.exists ( subjobdir ) :
         os.symlink(RUNDIR, subjobdir)
