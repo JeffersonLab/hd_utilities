@@ -48,23 +48,18 @@ swif2 run "${SWIF_WORKFLOW}"
 # loop over run numbers and submit one swif2 job for each
 for RUN_NUMBER in "${RUN_NUMBERS[@]}"
 do
-  # construct command to submit swif2 job
-  # one swif2 job per NERSC node, each processing ${NERSC_NMB_JOBS_PER_NODE} evio files
-  SWIF_JOB_NAME="GLUEX_recon_${RUN_NUMBER}"
-  CMD=(
+  # construct command to submit a swif2 job for the given run number
+  SWIF2_CMD=(
     swif2 add-job
     -workflow "${SWIF_WORKFLOW}"
-    -name "${SWIF_JOB_NAME}"
+    -name "GLUEX_recon_${RUN_NUMBER}"  # swif2 job name
   )
-  # construct input lines for `swif2 add-job` command, e.g. `-input file1.evio mss:/mss/halld/RunPeriod-2025-01/rawdata/Run12345/file1.evio -input file2.evio mss:/mss/halld/RunPeriod-2025-01/rawdata/Run12345/file2.evio ...`
+  # loop over all evio files of the run and subdivide file list into
+  # chunks of size ${NERSC_NMB_JOBS_PER_NODE} that will be processed
+  # by individual NERSC nodes, defining the input and output files for
+  # each node.
   EVIO_DIR="${SWIF_RAW_DATA_ROOT}/Run${RUN_NUMBER}"
   EVIO_FILE_PATHS=("${EVIO_DIR}"/*.evio)  #TODO this is not empty if there are no evio files, but contains the pattern itself
-  EVIO_FILE_NAMES=($(basename --multiple "${EVIO_DIR}"/*.evio))
-  files=()
-  for i in "${!EVIO_FILE_PATHS[@]}"
-  do
-    files+=("-input ${EVIO_FILE_NAMES[i]} mss:${EVIO_FILE_PATHS[i]}")
-  done
   # calculate number of nodes to request based on number of evio files and number of jobs to run per node
   NMB_EVIO_FILES=${#EVIO_FILE_PATHS[@]}
   echo "Run period: ${RUN_PERIOD} - run number: ${RUN_NUMBER} - number of evio files: ${NMB_EVIO_FILES} - divided by: ${NERSC_NMB_JOBS_PER_NODE}"
@@ -72,22 +67,24 @@ do
   echo "Number of nodes asked: ${NERSC_NMB_NODES}"
   for (( NERSC_NODE_INDEX=0; NERSC_NODE_INDEX < NERSC_NMB_NODES; NERSC_NODE_INDEX++ ))
   do
+    # construct input lines for the given node, e.g. `-input file1.evio mss:/mss/some_path/file1.evio -input file2.evio mss:/mss/some_path/file2.evio ...`
     EVIO_FILE_START_INDEX=$((NERSC_NODE_INDEX * NERSC_NMB_JOBS_PER_NODE))
     EVIO_FILE_END_INDEX=$((EVIO_FILE_START_INDEX + NERSC_NMB_JOBS_PER_NODE))
-    # Print 5 values from the array
-    ##echo "NERSC_NODE_INDEX = ${NERSC_NODE_INDEX} -> Values: ${EVIO_FILE_PATHS[@]:EVIO_FILE_START_INDEX:5}"
-    SWIF_INPUT_LINES=${files[@]:EVIO_FILE_START_INDEX:${NERSC_NMB_JOBS_PER_NODE}}
-    RUNDIR=$(printf "RUN%06d/FILE%03d" "${RUN_NUMBER}" "${NERSC_NODE_INDEX}")
+    for (( EVIO_FILE_INDEX=EVIO_FILE_START_INDEX; EVIO_FILE_INDEX < EVIO_FILE_END_INDEX && EVIO_FILE_INDEX < NMB_EVIO_FILES; EVIO_FILE_INDEX++ ))
+    do
+      EVIO_FILE_PATH="${EVIO_FILE_PATHS[${EVIO_FILE_INDEX}]}"
+      EVIO_FILE_NAME="$(basename "${EVIO_FILE_PATH}")"
+      SWIF2_CMD+=(-input "${EVIO_FILE_NAME}" "mss:${EVIO_FILE_PATH}")
+    done
+    # construct output line for the given node, e.g. `-output match:RUN132194/FILE024/* /lustre/expphy/volatile/halld/offsite_prod/RunPeriod-2025-01/recon/ver03/RUN132194/FILE024/`
+    RUNDIR=$(printf "RUN%06d/FILE%03d" "${RUN_NUMBER}" "${NERSC_NODE_INDEX}")  #TODO `FILE` is a misnomer; it should be something like `NODE` or `CHUNK`
     SWIF_OUTPUT_DIR="${SWIF_OUTPUT_ROOT}/${RUNDIR}"
     echo "mkdir -p ${SWIF_OUTPUT_DIR}"
-    mkdir -p ${SWIF_OUTPUT_DIR}
-    CMD+=(
-      ${SWIF_INPUT_LINES}
-      -output match:${RUNDIR}/* "${SWIF_OUTPUT_DIR}"
-    )
+    # mkdir -p ${SWIF_OUTPUT_DIR}
+    SWIF2_CMD+=(-output "match:${RUNDIR}/*" "${SWIF_OUTPUT_DIR}")
   done
   # define NERSC job
-  CMD+=(
+  SWIF2_CMD+=(
     -sbatch
       # these options are passed to `sbatch` when swif2 submits job at NERSC
       -A "${NERSC_PROJECT}"  #TODO use long option name
@@ -110,13 +107,13 @@ do
       "${RECON_VERSION}"                       # RECONVERSION argument
       "${NERSC_NMB_JOBS_PER_NODE}"             # SLURM_JOBS_PER_NODE argument
   )
-  echo "${CMD[@]}" >| "./exec_${RUN_NUMBER}.sh"
+  echo "${SWIF2_CMD[@]}" >| "./exec_${RUN_NUMBER}.sh"
   # # generate shell-escaped version of command array and write it to file so it becomes a script that can be run directly
+  #TODO this would be the safer approach, but in `-output match:RUN132194/FILE024/*` this would escape the `*`; not sure if this would cause problems with swif2
   # {
   #   printf '%q ' "${CMD[@]}"
   #   printf '\n'
   # } >| "exec_${RUN_NUMBER}.sh"
-  #TODO this would be the safer approach, but in `-output match:RUN132194/FILE024/*` this would escape the `*`; not sure if this would cause problems with swif2
   chmod +x "./exec_${RUN_NUMBER}.sh"
   "./exec_${RUN_NUMBER}.sh"
 done
