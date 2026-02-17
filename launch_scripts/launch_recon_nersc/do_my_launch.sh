@@ -117,12 +117,12 @@ do
       #TODO could we directly submit the python script?
       "${NERSC_LAUNCH_DIR}/script_nersc_multi_test.sh"  # wrapper script for script_nersc_multi_test.py
       # arguments passed to script_nersc_multi_test.py
-      "${NERSC_LAUNCH_DIR}"                    # LAUNCH_DIR argument
-      "/launch-${BATCH}/script_nersc_test.sh"  # SCRIPT_FILE argument
-      "/launch-${BATCH}/${JANA_CONFIG}"        # JANA_CONFIG argument
-      "${HALLD_VERSION_SET_XML}"               # HALLD_VERSION_SET_XML argument
-      "${NERSC_NMB_PROCESSES_PER_NODE}"        # NMB_PROCESSES_PER_NODE argument
-      ${NERSC_NMB_TREADS_PER_PROCESS}          # NMB_TREADS_PER_PROCESS argument
+      "${NERSC_LAUNCH_DIR}"                    # launch_dir argument
+      "/launch-${BATCH}/script_nersc_test.sh"  # task_script_file argument
+      "/launch-${BATCH}/${JANA_CONFIG}"        # jana_config argument
+      "${HALLD_VERSION_SET_XML}"               # halld_version_set_xml argument
+      "${NERSC_NMB_PROCESSES_PER_NODE}"        # nmb_processes_per_node argument
+      ${NERSC_NMB_TREADS_PER_PROCESS}          # nmb_threads_per_process argument
   )
   echo "${SWIF2_CMD[@]}" >| "./exec_${RUN_NUMBER}.sh"
   # # generate shell-escaped version of command array and write it to file so it becomes a script that can be run directly
