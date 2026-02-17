@@ -4,6 +4,15 @@
 # using swif2. One job is submitted for each run number in the given
 # list file.
 
+# The computation is subdivided into the following levels:
+# 1) `hd_root` with 32 threads processing one evio file = 1 NERSC process
+# 2) 256/32 = 8 NERSC processes running concurrently on a NERSC node = 1 NERSC task -> 1 task per node
+# 3) 1 run number with N evio files, processed by ceil(N/8) NERSC tasks (=nodes) running concurrently = 1 NERSC job -> ceil(N/8) tasks/nodes per job
+# sbatch: submits one job per run number
+# srun: starts one task per node
+# job script: runs 8 `hd_root` processes in parallel, each processing one evio file
+
+
 RUN_PERIOD="2025-01"  # Run period to process.
 VER="03"  # Version of this reconstruction launch.
 HALLD_VERSION_SET_XML="version_7.4.0.xml"  # XML file that defines the Hall-D version set to be used.
@@ -23,8 +32,8 @@ NERSC_QOS="regular"  # NERSC queue to use; usually `regular` or `debug`. See NER
 NERSC_NODE_TYPE="cpu"  # Constraint to use for NERSC job; usually `cpu` or `gpu`.
 NERSC_MAX_WALL_TIME="5:00:00"  # Maximum wall time for NERSC job.
 NERSC_MAX_TREADS_PER_NODE=256  # Maximum number of threads on a NERSC Perlmutter CPU node.
-NERSC_NMB_TREADS_PER_JOB=32  # Number of threads to use per job; must be <= ${NERSC_MAX_TREADS_PER_NODE}.
-NERSC_NMB_JOBS_PER_NODE=$(echo "${NERSC_MAX_TREADS_PER_NODE} / ${NERSC_NMB_TREADS_PER_JOB}" | bc)  # Number of jobs to run concurrently on a single NERSC Perlmutter CPU node.  #TODO works only if division is exact; need to round up if not exact
+NERSC_NMB_TREADS_PER_PROCESS=32  # Number of threads of each `hd_root` process; must be <= ${NERSC_MAX_TREADS_PER_NODE}.
+NERSC_NMB_PROCESSES_PER_NODE=$(echo "${NERSC_MAX_TREADS_PER_NODE} / ${NERSC_NMB_TREADS_PER_PROCESS}" | bc)  # Number of hd_root processes to run concurrently on a single NERSC Perlmutter CPU node.  #TODO works only if division is exact; need to round up if not exact
 NERSC_HOST="perlmutter-p1.nersc.gov"  # NERSC hostname to use for ssh.
 NERSC_CONTAINER_IMAGE="docker:jeffersonlab/gluex_almalinux_9:latest"  # Shifter image that was converted from Docker image. Is not pulled in automatically and needs to exist in Shifter registry.
 
@@ -35,7 +44,7 @@ RUN_NUMBERS=( $( cat list-2025-01-ver03-perl.txt ) )
 
 # prepare scripts and config files to be copied to NERSC
 # sed 's,BATCH,'${BATCH}',g' script_nersc_test.temp > script_nersc_test.sh  # set the name of the mount point in the container  #TODO it would be better to pass this down as an argument
-# sed 's,THREADNB,'${NERSC_NMB_TREADS_PER_JOB}',g' "./${JANA_CONFIG/.config/.temp}" > "./${JANA_CONFIG}"  # set number of threads in JANA config file  #TODO it would be better to pass this down as an argument to `hd_root`
+# sed 's,THREADNB,'${NERSC_NMB_TREADS_PER_PROCESS}',g' "./${JANA_CONFIG/.config/.temp}" > "./${JANA_CONFIG}"  # set number of threads in JANA config file  #TODO it would be better to pass this down as an argument to `hd_root`
 # chmod +x script_nersc_test.sh
 echo "Copying launch scripts and config files from '../launch-${BATCH}' to '${NERSC_HOST}:${NERSC_PROJECT_DIR}'"
 rsync --archive --ignore-times --delete --verbose ../launch-${BATCH} ${NERSC_HOST}:${NERSC_PROJECT_DIR}  # ensure pristine copy
@@ -60,21 +69,21 @@ do
     -name "GLUEX_recon_${RUN_NUMBER}"  # swif2 job name
   )
   # loop over all evio files of the run and subdivide file list into
-  # chunks of size ${NERSC_NMB_JOBS_PER_NODE} that will be processed
-  # by individual NERSC nodes, defining the input and output files for
-  # each node.
+  # chunks of size ${NERSC_NMB_PROCESSES_PER_NODE} that will be
+  # processed by individual NERSC nodes, defining the input and output
+  # files for each node.
   EVIO_DIR="${SWIF_RAW_DATA_ROOT}/Run${RUN_NUMBER}"
   EVIO_FILE_PATHS=("${EVIO_DIR}"/*.evio)  #TODO this is not empty if there are no evio files, but contains the pattern itself
   # calculate number of nodes to request based on number of evio files and number of jobs to run per node
   NMB_EVIO_FILES=${#EVIO_FILE_PATHS[@]}
-  echo "Run period: ${RUN_PERIOD} - run number: ${RUN_NUMBER} - number of evio files: ${NMB_EVIO_FILES} - divided by: ${NERSC_NMB_JOBS_PER_NODE}"
-  NERSC_NMB_NODES=$(echo "(${NMB_EVIO_FILES} + ${NERSC_NMB_JOBS_PER_NODE} - 1) / ${NERSC_NMB_JOBS_PER_NODE}" | bc)  #TODO check whether this is generally correct
+  echo "Run period: ${RUN_PERIOD} - run number: ${RUN_NUMBER} - number of evio files: ${NMB_EVIO_FILES} - divided by: ${NERSC_NMB_PROCESSES_PER_NODE}"
+  NERSC_NMB_NODES=$(echo "(${NMB_EVIO_FILES} + ${NERSC_NMB_PROCESSES_PER_NODE} - 1) / ${NERSC_NMB_PROCESSES_PER_NODE}" | bc)  #TODO check whether this is generally correct
   echo "Number of nodes asked: ${NERSC_NMB_NODES}"
   for (( NERSC_NODE_INDEX=0; NERSC_NODE_INDEX < NERSC_NMB_NODES; NERSC_NODE_INDEX++ ))
   do
     # construct input lines for the given node, e.g. `-input file1.evio mss:/mss/some_path/file1.evio -input file2.evio mss:/mss/some_path/file2.evio ...`
-    EVIO_FILE_START_INDEX=$((NERSC_NODE_INDEX * NERSC_NMB_JOBS_PER_NODE))
-    EVIO_FILE_END_INDEX=$((EVIO_FILE_START_INDEX + NERSC_NMB_JOBS_PER_NODE))
+    EVIO_FILE_START_INDEX=$((NERSC_NODE_INDEX * NERSC_NMB_PROCESSES_PER_NODE))
+    EVIO_FILE_END_INDEX=$((EVIO_FILE_START_INDEX + NERSC_NMB_PROCESSES_PER_NODE))
     for (( EVIO_FILE_INDEX=EVIO_FILE_START_INDEX; EVIO_FILE_INDEX < EVIO_FILE_END_INDEX && EVIO_FILE_INDEX < NMB_EVIO_FILES; EVIO_FILE_INDEX++ ))
     do
       EVIO_FILE_PATH="${EVIO_FILE_PATHS[${EVIO_FILE_INDEX}]}"
@@ -111,8 +120,8 @@ do
       "/launch-${BATCH}/script_nersc_test.sh"  # SCRIPT_FILE argument
       "/launch-${BATCH}/${JANA_CONFIG}"        # JANA_CONFIG argument
       "${HALLD_VERSION_SET_XML}"               # HALLD_VERSION_SET_XML argument
-      "${NERSC_NMB_JOBS_PER_NODE}"             # SLURM_JOBS_PER_NODE argument
-      ${NERSC_NMB_TREADS_PER_JOB}              # NMB_TREADS_PER_JOB argument
+      "${NERSC_NMB_PROCESSES_PER_NODE}"        # NMB_PROCESSES_PER_NODE argument
+      ${NERSC_NMB_TREADS_PER_PROCESS}          # NMB_TREADS_PER_PROCESS argument
   )
   echo "${SWIF2_CMD[@]}" >| "./exec_${RUN_NUMBER}.sh"
   # # generate shell-escaped version of command array and write it to file so it becomes a script that can be run directly

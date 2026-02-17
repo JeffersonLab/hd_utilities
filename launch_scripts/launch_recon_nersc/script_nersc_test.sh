@@ -35,7 +35,7 @@ trap 'echo "\"${last_command}\" command failed with exit code ${?}."' EXIT  #TOD
 
 JANA_CONFIG="${1}"
 HALLD_VERSION_SET_XML="${2}"
-NMB_TREADS_PER_JOB="${3}"
+NMB_TREADS_PER_PROCESS="${3}"
 EXTRA_ARGS=""
 
 ulimit -c unlimited
@@ -118,7 +118,7 @@ do
     echo "${run_number} ${file_number} ${i}"
     mkdir -p "${workdir}/run-${run_number}-${file_number}"
     cd "${workdir}/run-${run_number}-${file_number}"
-    CMD="hd_root -PNTHREADS=${NMB_TREADS_PER_JOB} --loadconfigs ${JANA_CONFIG} ${EXTRA_ARGS} ../${rawdata}"  # -PNTHREADS=N overwrites any NTHREADS value set in the JANA config file
+    CMD="hd_root -PNTHREADS=${NMB_TREADS_PER_PROCESS} --loadconfigs ${JANA_CONFIG} ${EXTRA_ARGS} ../${rawdata}"  # -PNTHREADS=N overwrites any NTHREADS value set in the JANA config file
     echo "${CMD}" >> ../myverif.out
     ${CMD} 2> "std_${run_number}_${file_number}.err" 1> "std_${run_number}_${file_number}.out" &
 
@@ -154,8 +154,8 @@ rawdata_tab=(hd_rawdata_??????_???.evio)
 ###j=0
 for rawdata in "${rawdata_tab[@]}"
 do
-    run_number="${rawdata:11:6}"   # Extracts 6 digits starting from index 9
-    file_number="${rawdata:18:3}" # Extracts 3 digits starting from index 16
+    run_number="${rawdata:11:6}"  # Extracts 6 digits starting from index 9
+    file_number="${rawdata:18:3}"  # Extracts 3 digits starting from index 16
     cd "${workdir}/run-${run_number}-${file_number}"
     echo "${run_number} ${file_number} ${j}"
     echo "${PWD}"

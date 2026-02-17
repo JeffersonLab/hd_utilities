@@ -17,12 +17,12 @@ import math
 # For the actual jobs, it will be the "launch" directory
 # which has been checked out from the halld subversion
 # repository. Here, we just point to the testing directory.
-LAUNCH_DIR            = sys.argv[1]
-SCRIPT_FILE           = sys.argv[2]
-JANA_CONFIG           = sys.argv[3]
-HALLD_VERSION_SET_XML = sys.argv[4]
-SLURM_JOBS_PER_NODE   = float(sys.argv[5])
-NMB_TREADS_PER_JOB    = float(sys.argv[6])
+LAUNCH_DIR             = sys.argv[1]
+SCRIPT_FILE            = sys.argv[2]
+JANA_CONFIG            = sys.argv[3]
+HALLD_VERSION_SET_XML  = sys.argv[4]
+NMB_PROCESSES_PER_NODE = float(sys.argv[5])
+NMB_TREADS_PER_PROCESS = float(sys.argv[6])
 
 workdir = os.getcwd()
 
@@ -33,7 +33,7 @@ SLURM_JOB_CPUS_PER_NODE = os.getenv('SLURM_JOB_CPUS_PER_NODE')  # number of CPUs
 eviofiles = sorted(glob.glob('hd_rawdata_*.evio'))
 
 # Calculate the expected number of nodes
-expected_nodes = math.ceil(float(len(eviofiles)) / SLURM_JOBS_PER_NODE) #Integer division
+expected_nodes = math.ceil(float(len(eviofiles)) / NMB_PROCESSES_PER_NODE) #Integer division
 
 print(f"LAUNCH_DIR: {LAUNCH_DIR}")
 print(f"SCRIPT_FILE: {SCRIPT_FILE}")
@@ -62,13 +62,13 @@ for i,eviofile in enumerate(eviofiles):
 
     # Make subjob directory
     #TODO why is this called for every file? we know how many files each job processes
-    RUNDIR = 'RUN%06d/FILE%03d' % (int(run), int(float(fil) / SLURM_JOBS_PER_NODE))
+    RUNDIR = f"RUN{int(run):06d}/FILE{int(float(fil) / NMB_PROCESSES_PER_NODE):03d}"
     os.makedirs( RUNDIR , exist_ok=True )
 
     # Make symlink pointing to subjobdir so the subjob
     # can cd into it via SLURM_NODEID
     #TODO why is this extra step needed? why not use FILE%03d directly in the subjob script? The only difference is the number of digits used
-    subjobdir = 'subjob%04d' % int( float(fil) / SLURM_JOBS_PER_NODE)
+    subjobdir = f"subjob{int(float(fil) / NMB_PROCESSES_PER_NODE):04d}"
     if not os.path.exists ( subjobdir ) :
         os.symlink(RUNDIR, subjobdir)
 
@@ -78,11 +78,11 @@ for i,eviofile in enumerate(eviofiles):
 
 # run all jobs
 CMD = ['srun', '-n', SLURM_JOB_NUM_NODES, LAUNCH_DIR+'/run_shifter_multi.sh']
-CMD += [workdir]                # arg 1:  top-level directory for job
-CMD += [SCRIPT_FILE]            # arg 2:  script to run inside shifter (all subsequent args are eventually passed to this script)
-CMD += [JANA_CONFIG]            # arg 3:  JANA config file
-CMD += [HALLD_VERSION_SET_XML]  # arg 4:  Hall-D version set XML file
-CMD += [NMB_TREADS_PER_JOB]     # arg 5:  Number of threads per job
+CMD += [workdir]                 # arg 1:  top-level directory for job
+CMD += [SCRIPT_FILE]             # arg 2:  script to run inside shifter (all subsequent args are eventually passed to this script)
+CMD += [JANA_CONFIG]             # arg 3:  JANA config file
+CMD += [HALLD_VERSION_SET_XML]   # arg 4:  Hall-D version set XML file
+CMD += [NMB_TREADS_PER_PROCESS]  # arg 5:  Number of threads of `hd_root` process
 #         n.b. run/file are derived from evio file names. (see run_shifter_multi.sh)
 print(f"Nb of nodes asked: {CMD}")
 print(' '.join(CMD))
