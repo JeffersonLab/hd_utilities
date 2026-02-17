@@ -36,9 +36,9 @@ RUN_NUMBERS=( $( cat list-2025-01-ver03-perl.txt ) )
 # prepare scripts and config files to be copied to NERSC
 # sed 's,BATCH,'${BATCH}',g' script_nersc_test.temp > script_nersc_test.sh  # set the name of the mount point in the container  #TODO it would be better to pass this down as an argument
 sed 's,THREADNB,'${NERSC_NMB_TREADS_PER_JOB}',g' "./${JANA_CONFIG/.config/.temp}" > "./${JANA_CONFIG}"  # set number of threads in JANA config file  #TODO it would be better to pass this down as an argument to `hd_root`
-chmod +x script_nersc_test.sh
-echo "in if"  #TODO fix
-scp -r ../launch-${BATCH} ${NERSC_HOST}:${NERSC_PROJECT_DIR}
+# chmod +x script_nersc_test.sh
+echo "Copying launch scripts and config files from '../launch-${BATCH}' to '${NERSC_HOST}:${NERSC_PROJECT_DIR}'"
+echo rsync --archive --ignore-times --delete --verbose ../launch-${BATCH} ${NERSC_HOST}:${NERSC_PROJECT_DIR}  # ensure pristine copy
 
 # create and run swif2 workflow
 #TODO check if workflow already exists and if so skip creation and just add jobs to it
