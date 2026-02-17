@@ -86,16 +86,18 @@ do
   SWIF2_CMD+=(
     -sbatch
       # these options are passed to `sbatch` when swif2 submits job at NERSC
-      -A "${NERSC_PROJECT}"  #TODO use --account=
+      --account="${NERSC_PROJECT}"
       --volume=\""${NERSC_LAUNCH_DIR}:/launch-${BATCH}"\"
       --image="${NERSC_CONTAINER_IMAGE}"
       --module=cvmfs
       --time="${NERSC_MAX_WALL_TIME}"
-      -N ${NERSC_NMB_NODES}  #TODO use --nodes=
+      --nodes=${NERSC_NMB_NODES}
       --tasks-per-node=1
       --cpus-per-task=${NERSC_MAX_TREADS_PER_NODE}
+      #--exclusive  # allocated nodes cannot be shared with other jobs/users
       --qos="${NERSC_QOS}"
-      -C "${NERSC_NODE_TYPE}"  #TODO use --constraint=
+      --constraint="${NERSC_NODE_TYPE}"
+      --output="slurm-%x-%j.out"  # write stdout and stderr of job to file named slurm-JOBNAME-JOBID.out in job working directory
       ::
       # job script to run at NERSC
       "${NERSC_LAUNCH_DIR}/script_nersc_multi_test.sh"  # wrapper script for script_nersc_multi_test.py
