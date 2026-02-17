@@ -11,7 +11,7 @@ JANA_CONFIG="jana_recon_nersc.config"  # JANA config file to use; must be locate
 BATCH="${VER}-perl"  # Batch label used to hold details of the launch; is appended to workflow name and directory names; should make it clear where/how the campaign was being run.
 #
 SWIF_MAX_CONCURRENT_JOBS=100  # Maximum number of swif2 jobs that can be in-flight at once. This can be set only once when the workflow is created. If jobs are submitted piecemeal by running this script multiple times specifying different run lists, only the first invocation that creates the workflow will set this parameter.
-SWIF_RAW_DATA_ROOT="/mss/halld/RunPeriod-${RUN_PERIOD}/rawdata"  # Root of JLab directory tree, where raw data files are located.
+SWIF_RAW_DATA_ROOT="/mss/halld/RunPeriod-${RUN_PERIOD}/rawdata"  # Root of JLab directory tree, where raw data files are located. Must be an `/mss` path.
 SWIF_OUTPUT_ROOT="/lustre/expphy/volatile/halld/offsite_prod/RunPeriod-${RUN_PERIOD}/recon/ver${BATCH}"  # Root of JLab directory tree, where output files are copied to.
 SWIF_WORKFLOW="recon_${RUN_PERIOD}_ver${BATCH}_batchNERSC-multi"  # only change this if default name is not appropriate  #TODO fix name?
 SWIF_SITE="nersc/perlmutter"  # swif2 site to use
@@ -78,10 +78,9 @@ do
     done
     # construct output line for the given node, e.g. `-output match:RUN132194/FILE024/* /lustre/expphy/volatile/halld/offsite_prod/RunPeriod-2025-01/recon/ver03/RUN132194/FILE024/`
     RUNDIR=$(printf "RUN%06d/FILE%03d" "${RUN_NUMBER}" "${NERSC_NODE_INDEX}")  #TODO `FILE` is a misnomer; it should be something like `NODE` or `CHUNK`
-    SWIF_OUTPUT_DIR="${SWIF_OUTPUT_ROOT}/${RUNDIR}"
-    echo "mkdir -p ${SWIF_OUTPUT_DIR}"
-    # mkdir -p ${SWIF_OUTPUT_DIR}
-    SWIF2_CMD+=(-output "match:${RUNDIR}/*" "${SWIF_OUTPUT_DIR}")
+    echo "mkdir -p ${SWIF_OUTPUT_ROOT}"
+    # mkdir -p "${SWIF_OUTPUT_ROOT}""
+    SWIF2_CMD+=(-output "match:${RUNDIR}/*" "${SWIF_OUTPUT_ROOT}")  # copy `${RUNDIR}/*` into `${SWIF_OUTPUT_ROOT}` after the job is done
   done
   # define NERSC job
   SWIF2_CMD+=(
