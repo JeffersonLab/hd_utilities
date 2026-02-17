@@ -10,42 +10,14 @@ set -o xtrace  # turn on command tracing
 # This script will wake up in the shifter container in the job
 # directory created by swif2. GlueX software is available via CVMFS.
 #
-# This may be run in either of two modes:
-#
-# 1. Process entire input file
-# 2. Process part of input file
-#
-# Which mode depends on the number of arguments passed.
-#
-# Mode 1:
-# -------
-# 4 arguments are passed and the entire file will be processed. Output
+# 3 arguments are passed and the entire directory will be processed. Output
 # files are left in the working directory for swif2 to manage.
 #
 # Arguments:
 #
 # arg 1:  JANA config file
 # arg 2:  Hall-D version set XML file
-# arg 3:  run     <--+ run and file number used to name job_info
-# arg 4:  file    <--+ directory only.
-#
-#
-# Mode 2:
-# -------
-# 7 arguments are passed and a portion of the file is processed. Output
-# files are copied to a specified output directory. Is this mode, a
-# secondary swif2 job will be launched after all the split jobs are
-# done that merges the output files.
-#
-# Arguments:
-#
-# arg 1:  JANA config file
-# arg 2:  Hall-D version set XML file
-# arg 3:  run     <--+ run and file number used to name job_info
-# arg 4:  file    <--+ directory only.
-# arg 5:  physics event blocks to skip
-# arg 6:  physics event blocks to keep
-# arg 7:  directory to copy output files to  <-- should be on scratch and specific for this job. may not exist yet
+# arg 3:  Number of threads to use for this job
 
 # mount /var/udiMount/  #TODO is this really needed?
 # mount /var/udiMount/launch-BATCH  #TODO is this really needed?
@@ -55,29 +27,16 @@ docker inspect jeffersonlab/gluex_almalinux_9:latest  #TODO shouldn't the image 
 set -o errexit
 
 # keep track of last executed command
-trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
-
+trap 'last_command=${current_command}; current_command=${BASH_COMMAND}' DEBUG
 # echo error message before exiting if error occurs
-trap 'echo "\"${last_command}\" command failed with exit code $?."' EXIT
+trap 'echo "\"${last_command}\" command failed with exit code ${?}."' EXIT  #TODO is this is executed also for non-error exit? If so, it should be modified to only print the message if the exit code is non-zero.
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-# Mode 1 and mode 2
 JANA_CONFIG="${1}"
 HALLD_VERSION_SET_XML="${2}"
-RUN="${3}"  #TODO unused
-FILE="${4}"  #TODO unused
-
-# Mode 2 only
-if [ "$#" -lt 7 ]
-then
-    EXTRA_ARGS=""
-else
-    PHYSICS_BLOCKS_TO_SKIP="${5}"
-    PHYSICS_BLOCKS_TO_KEEP="${6}"
-    OUTPUT_DIR="${7}"
-    EXTRA_ARGS="-PEVIO:PHYSICS_BLOCKS_TO_SKIP=${PHYSICS_BLOCKS_TO_SKIP} -PEVIO:PHYSICS_BLOCKS_TO_KEEP=${PHYSICS_BLOCKS_TO_KEEP}"
-fi
+NMB_TREADS_PER_JOB="${3}"
+EXTRA_ARGS=""
 
 ulimit -c unlimited
 
@@ -159,7 +118,7 @@ do
     echo "${run_number} ${file_number} ${i}"
     mkdir -p "${workdir}/run-${run_number}-${file_number}"
     cd "${workdir}/run-${run_number}-${file_number}"
-    CMD="hd_root --loadconfigs ${JANA_CONFIG} ${EXTRA_ARGS} ../${rawdata}"
+    CMD="hd_root -PNTHREADS=${NMB_TREADS_PER_JOB} --loadconfigs ${JANA_CONFIG} ${EXTRA_ARGS} ../${rawdata}"  # -PNTHREADS=N overwrites any NTHREADS value set in the JANA config file
     echo "${CMD}" >> ../myverif.out
     ${CMD} 2> "std_${run_number}_${file_number}.err" 1> "std_${run_number}_${file_number}.out" &
 

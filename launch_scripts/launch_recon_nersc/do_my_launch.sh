@@ -35,7 +35,7 @@ RUN_NUMBERS=( $( cat list-2025-01-ver03-perl.txt ) )
 
 # prepare scripts and config files to be copied to NERSC
 # sed 's,BATCH,'${BATCH}',g' script_nersc_test.temp > script_nersc_test.sh  # set the name of the mount point in the container  #TODO it would be better to pass this down as an argument
-sed 's,THREADNB,'${NERSC_NMB_TREADS_PER_JOB}',g' "./${JANA_CONFIG/.config/.temp}" > "./${JANA_CONFIG}"  # set number of threads in JANA config file  #TODO it would be better to pass this down as an argument to `hd_root`
+# sed 's,THREADNB,'${NERSC_NMB_TREADS_PER_JOB}',g' "./${JANA_CONFIG/.config/.temp}" > "./${JANA_CONFIG}"  # set number of threads in JANA config file  #TODO it would be better to pass this down as an argument to `hd_root`
 # chmod +x script_nersc_test.sh
 echo "Copying launch scripts and config files from '../launch-${BATCH}' to '${NERSC_HOST}:${NERSC_PROJECT_DIR}'"
 rsync --archive --ignore-times --delete --verbose ../launch-${BATCH} ${NERSC_HOST}:${NERSC_PROJECT_DIR}  # ensure pristine copy
@@ -112,6 +112,7 @@ do
       "/launch-${BATCH}/${JANA_CONFIG}"        # JANA_CONFIG argument
       "${HALLD_VERSION_SET_XML}"               # HALLD_VERSION_SET_XML argument
       "${NERSC_NMB_JOBS_PER_NODE}"             # SLURM_JOBS_PER_NODE argument
+      ${NERSC_NMB_TREADS_PER_JOB}              # NMB_TREADS_PER_JOB argument
   )
   echo "${SWIF2_CMD[@]}" >| "./exec_${RUN_NUMBER}.sh"
   # # generate shell-escaped version of command array and write it to file so it becomes a script that can be run directly

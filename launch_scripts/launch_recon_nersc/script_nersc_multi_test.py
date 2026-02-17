@@ -22,11 +22,12 @@ SCRIPT_FILE           = sys.argv[2]
 JANA_CONFIG           = sys.argv[3]
 HALLD_VERSION_SET_XML = sys.argv[4]
 SLURM_JOBS_PER_NODE   = float(sys.argv[5])
+NMB_TREADS_PER_JOB    = float(sys.argv[6])
 
 workdir = os.getcwd()
 
-SLURM_JOB_NUM_NODES     = os.getenv('SLURM_JOB_NUM_NODES')
-SLURM_JOB_CPUS_PER_NODE = os.getenv('SLURM_JOB_CPUS_PER_NODE')
+SLURM_JOB_NUM_NODES     = os.getenv('SLURM_JOB_NUM_NODES')  # number of nodes allocated for this job
+SLURM_JOB_CPUS_PER_NODE = os.getenv('SLURM_JOB_CPUS_PER_NODE')  # number of CPUs available to the job on the allocated nodes
 
 # Get list of raw data files
 eviofiles = sorted(glob.glob('hd_rawdata_*.evio'))
@@ -81,6 +82,7 @@ CMD += [workdir]                # arg 1:  top-level directory for job
 CMD += [SCRIPT_FILE]            # arg 2:  script to run inside shifter (all subsequent args are eventually passed to this script)
 CMD += [JANA_CONFIG]            # arg 3:  JANA config file
 CMD += [HALLD_VERSION_SET_XML]  # arg 4:  Hall-D version set XML file
+CMD += [NMB_TREADS_PER_JOB]     # arg 5:  Number of threads per job
 #         n.b. run/file are derived from evio file names. (see run_shifter_multi.sh)
 print(f"Nb of nodes asked: {CMD}")
 print(' '.join(CMD))

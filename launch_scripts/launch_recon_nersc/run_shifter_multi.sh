@@ -55,4 +55,4 @@ done
 shift
 
 # Pass all remaining arguments to shifter, including run/file numbers
-shifter "${@}" ${RUNNO} ${FILENO}
+shifter "${@}"
