@@ -76,14 +76,20 @@ for i,eviofile in enumerate(eviofiles):
     os.symlink( '../../' + eviofile, RUNDIR + '/' + eviofile )
 
 
-# run all jobs
-CMD = ['srun', '-n', SLURM_JOB_NUM_NODES, LAUNCH_DIR+'/run_shifter_multi.sh']
-CMD += [workdir]                 # arg 1:  top-level directory for job
-CMD += [SCRIPT_FILE]             # arg 2:  script to run inside shifter (all subsequent args are eventually passed to this script)
-CMD += [JANA_CONFIG]             # arg 3:  JANA config file
-CMD += [HALLD_VERSION_SET_XML]   # arg 4:  Hall-D version set XML file
-CMD += [NMB_TREADS_PER_PROCESS]  # arg 5:  Number of threads of `hd_root` process
-#         n.b. run/file are derived from evio file names. (see run_shifter_multi.sh)
+# run one task per node
+# each task will run ${NMB_PROCESSES_PER_NODE} hd_root processes in parallel, each processing a different evio file)
+CMD = [
+  "srun",
+  f"--ntasks={SLURM_JOB_NUM_NODES}",  # 1 task per node
+  "--output=task-%x-%j-%t.out",  # write stdout and stderr of task to file named task-<job name>-<job id>-<task id>.out in working directory of task
+  f"{LAUNCH_DIR}/run_shifter_multi.sh",  # script to run as task
+  workdir,                 # arg 1:  top-level directory for job
+  SCRIPT_FILE,             # arg 2:  script to run inside shifter (all subsequent args are eventually passed to this script)
+  JANA_CONFIG,             # arg 3:  JANA config file
+  HALLD_VERSION_SET_XML,   # arg 4:  Hall-D version set XML file
+  NMB_TREADS_PER_PROCESS,  # arg 5:  Number of threads of `hd_root` process
+]
+# n.b. run/file are derived from evio file names. (see run_shifter_multi.sh)
 print(f"Nb of nodes asked: {CMD}")
 print(' '.join(CMD))
 with subprocess.Popen(CMD, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as proc:

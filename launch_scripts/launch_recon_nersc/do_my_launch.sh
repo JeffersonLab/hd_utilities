@@ -111,9 +111,10 @@ do
       #--exclusive  # allocated nodes cannot be shared with other jobs/users
       --qos="${NERSC_QOS}"
       --constraint="${NERSC_NODE_TYPE}"
-      --output="slurm-%x-%j.out"  # write stdout and stderr of job to file named slurm-JOBNAME-JOBID.out in job working directory
+      --output="job-%x-%j.out"  # write stdout and stderr of job to file named job-<job name>-<job id>.out in working directory of job
       ::
       # job script to run at NERSC
+      #TODO could we directly submit the python script?
       "${NERSC_LAUNCH_DIR}/script_nersc_multi_test.sh"  # wrapper script for script_nersc_multi_test.py
       # arguments passed to script_nersc_multi_test.py
       "${NERSC_LAUNCH_DIR}"                    # LAUNCH_DIR argument
