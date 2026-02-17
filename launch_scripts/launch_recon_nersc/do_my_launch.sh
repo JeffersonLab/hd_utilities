@@ -38,7 +38,7 @@ RUN_NUMBERS=( $( cat list-2025-01-ver03-perl.txt ) )
 sed 's,THREADNB,'${NERSC_NMB_TREADS_PER_JOB}',g' "./${JANA_CONFIG/.config/.temp}" > "./${JANA_CONFIG}"  # set number of threads in JANA config file  #TODO it would be better to pass this down as an argument to `hd_root`
 # chmod +x script_nersc_test.sh
 echo "Copying launch scripts and config files from '../launch-${BATCH}' to '${NERSC_HOST}:${NERSC_PROJECT_DIR}'"
-echo rsync --archive --ignore-times --delete --verbose ../launch-${BATCH} ${NERSC_HOST}:${NERSC_PROJECT_DIR}  # ensure pristine copy
+rsync --archive --ignore-times --delete --verbose ../launch-${BATCH} ${NERSC_HOST}:${NERSC_PROJECT_DIR}  # ensure pristine copy
 
 # create and run swif2 workflow
 if swif2 status test_swif_workflow2 &> /dev/null
@@ -84,7 +84,7 @@ do
     # construct output line for the given node, e.g. `-output match:RUN132194/FILE024/* /lustre/expphy/volatile/halld/offsite_prod/RunPeriod-2025-01/recon/ver03/RUN132194/FILE024/`
     RUNDIR=$(printf "RUN%06d/FILE%03d" "${RUN_NUMBER}" "${NERSC_NODE_INDEX}")  #TODO `FILE` is a misnomer; it should be something like `NODE` or `CHUNK`
     echo "mkdir -p ${SWIF_OUTPUT_ROOT}"
-    # mkdir -p "${SWIF_OUTPUT_ROOT}""
+    mkdir -p "${SWIF_OUTPUT_ROOT}"
     SWIF2_CMD+=(-output "match:${RUNDIR}/*" "${SWIF_OUTPUT_ROOT}")  # copy `${RUNDIR}/*` into `${SWIF_OUTPUT_ROOT}` after the job is done
   done
   # define NERSC job
