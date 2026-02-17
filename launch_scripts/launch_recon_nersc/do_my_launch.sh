@@ -46,9 +46,9 @@ then
   echo "Workflow '${SWIF_WORKFLOW}' already exists; skipping creation"
 else
   echo "Creating swif2 workflow '${SWIF_WORKFLOW}' at site '${SWIF_SITE}' with max concurrent jobs ${SWIF_MAX_CONCURRENT_JOBS}"
-  echo swif2 create "${SWIF_WORKFLOW}" -site "${SWIF_SITE}" -maxconcurrent ${SWIF_MAX_CONCURRENT_JOBS}
+  swif2 create "${SWIF_WORKFLOW}" -site "${SWIF_SITE}" -maxconcurrent ${SWIF_MAX_CONCURRENT_JOBS}
 fi
-echo swif2 run "${SWIF_WORKFLOW}"  #TODO is it really a good idea to run the workflow immediately?
+swif2 run "${SWIF_WORKFLOW}"  #TODO is it really a good idea to run the workflow immediately?
 
 # loop over run numbers and submit one swif2 job for each
 for RUN_NUMBER in "${RUN_NUMBERS[@]}"
