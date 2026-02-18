@@ -31,23 +31,23 @@ subjobdir=$(printf "subjob%04d" ${SLURM_NODEID})
 cd "${1}/${subjobdir}"
 
 
-# The run/file numbers should be passed as the last 2 arguments
-# to the shifter command so the script it runs can use them
-# to name the files. Here we extract them from the evio file
-# name. This assumes there is a file with a name like:
-# hd_rawdata_XXXXXX_YYY.evio.
-RUNNO=999999  # fallback that can be used for debugging
-FILENO=999    # fallback that can be used for debugging
-for file in *.evio
-do
-	# First 2 lines extract strings from filename. Second
-	# two lines strip leading 0's so script_nersc.sh does
-	# not interpret them as octal numbers.
-	runstr="${file:11:6}"
-	filestr="${file:18:3}"
-	RUNNO=$((10#$runstr))
-	FILENO=$((10#$filestr))
-done
+# # The run/file numbers should be passed as the last 2 arguments
+# # to the shifter command so the script it runs can use them
+# # to name the files. Here we extract them from the evio file
+# # name. This assumes there is a file with a name like:
+# # hd_rawdata_XXXXXX_YYY.evio.
+# RUNNO=999999  # fallback that can be used for debugging
+# FILENO=999    # fallback that can be used for debugging
+# for file in *.evio
+# do
+# 	# First 2 lines extract strings from filename. Second
+# 	# two lines strip leading 0's so script_nersc.sh does
+# 	# not interpret them as octal numbers.
+# 	runstr="${file:11:6}"
+# 	filestr="${file:18:3}"
+# 	RUNNO=$((10#$runstr))
+# 	FILENO=$((10#$filestr))
+# done
 
 # The following removes the first argument passed to
 # this script which is the top-level working directory
