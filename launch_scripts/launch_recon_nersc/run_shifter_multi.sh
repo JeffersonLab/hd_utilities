@@ -20,7 +20,7 @@ set -o xtrace  # turn on command tracing
 #
 
 # The actual working directory for this job will be
-# named something like RUNXXXXXX/FILEYYY. However, we
+# named something like RUNXXXXXX/NODEYYY. However, we
 # do not know the run/file numbers at this point, only
 # the SLURM_NODEID can be used to distinguish us from
 # other tasks. The script_nersc_multi.py script though

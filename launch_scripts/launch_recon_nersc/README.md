@@ -36,7 +36,7 @@
 
 * `.` the name of the current directory is expected to have the form `launch-<batch>`, where `batch=<recon version>-<site>`, e.g. `launch-03-perl`.
 * `/mss/halld/RunPeriod-<run period>/rawdata/Run<run number>` directory with input `.evio` files for given run number, e.g. `/mss/halld/RunPeriod-2025-01/rawdata/Run132313`.
-* `/lustre/expphy/volatile/halld/offsite_prod/RunPeriod-<run period>/recon/<version>/RUN<6-digit run number>/FILE<3-digit file number>` output directory for given run and `.evio` file number.
+* `/lustre/expphy/volatile/halld/offsite_prod/RunPeriod-<run period>/recon/<version>/RUN<6-digit run number>/NODE<3-digit file number>` output directory for given run and NERSC node index.
 * `/group/halld/Software/builds/Linux_Alma9-x86_64-gcc11.5.0-cntr/${HALLD_RECON_VERSION}/Linux_Alma9-x86_64-gcc11.5.0-cntr/setenv.sh` mounted inside the container from CVMFS.<!--TODO-->
 * `/group/halld/www/halldweb/html/dist/{ccdb,rcdb}.sqlite` mounted inside the container from ???.<!--TODO-->
 * `/group/halld/www/halldweb/html/resources` JANA resource directory.<!--TODO-->
@@ -47,7 +47,7 @@
 * `/pscratch/sd/j/jlab/swif` directory on NERSC Scratch Space that serves as root directory for job output (= swif2 site path). Has a quota of 500 TB.
   * `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}` top-level working directory the job wakes up in (identical to `${SWIF_JOB_STAGE_DIR}` and `${SWIF_JOB_WORK_DIR}`)
     * `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}/subjob????` top-level working directory the container task wakes up in, where `????` is the 4-digit `${SLURM_NODEID}`
-    * `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}/RUN??????/FILE???` directory linked to task directory above, where `???` is the 3-digit `${SLURM_NODEID}`; `RUN??????/FILE???` is copied back to JLab by swif2
+    * `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}/RUN??????/NODE???` directory linked to task directory above, where `???` is the 3-digit `${SLURM_NODEID}`; `RUN??????/NODE???` is copied back to JLab by swif2
 * `${CSCRATCH}}/HALLD_MY`??? <!--TODO-->
 
 ### Container image

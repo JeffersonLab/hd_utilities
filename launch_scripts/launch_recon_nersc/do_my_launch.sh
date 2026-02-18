@@ -90,8 +90,8 @@ do
       EVIO_FILE_NAME="$(basename "${EVIO_FILE_PATH}")"
       SWIF2_CMD+=(-input "${EVIO_FILE_NAME}" "mss:${EVIO_FILE_PATH}")
     done
-    # construct output line for the given node, e.g. `-output match:RUN132194/FILE024/* /lustre/expphy/volatile/halld/offsite_prod/RunPeriod-2025-01/recon/ver03/RUN132194/FILE024/`
-    RUNDIR=$(printf "RUN%06d/FILE%03d" "${RUN_NUMBER}" "${NERSC_NODE_INDEX}")  #TODO `FILE` is a misnomer; it should be something like `NODE` or `CHUNK`
+    # construct output line for the given node, e.g. `-output match:RUN132194/NODE024/* /lustre/expphy/volatile/halld/offsite_prod/RunPeriod-2025-01/recon/ver03/RUN132194/NODE024/`
+    RUNDIR=$(printf "RUN%06d/NODE%03d" "${RUN_NUMBER}" "${NERSC_NODE_INDEX}")  #TODO `FILE` is a misnomer; it should be something like `NODE` or `CHUNK`
     echo "mkdir -p ${SWIF_OUTPUT_ROOT}"
     mkdir -p "${SWIF_OUTPUT_ROOT}"
     SWIF2_CMD+=(-output "match:${RUNDIR}/*" "${SWIF_OUTPUT_ROOT}")  # copy `${RUNDIR}/*` into `${SWIF_OUTPUT_ROOT}` after the job is done
@@ -126,7 +126,7 @@ do
   )
   echo "${SWIF2_CMD[@]}" >| "./exec_${RUN_NUMBER}.sh"
   # # generate shell-escaped version of command array and write it to file so it becomes a script that can be run directly
-  #TODO this would be the safer approach, but in `-output match:RUN132194/FILE024/*` this would escape the `*`; not sure if this would cause problems with swif2
+  #TODO this would be the safer approach, but in `-output match:RUN132194/NODE024/*` this would escape the `*`; not sure if this would cause problems with swif2
   # {
   #   printf '%q ' "${CMD[@]}"
   #   printf '\n'

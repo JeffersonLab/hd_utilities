@@ -17,7 +17,7 @@ import sys
 
 def main(args: argparse.Namespace) -> None:
 
-  work_dir_job = os.getcwd()  # directory where the job scripts are held; for the actual jobs, it is the "launch" directory  #TODO is this really true? doesn't swif2 define the working directory for the job?
+  work_dir_job = os.getcwd()  # working directory of job as created by swif2, i.e. `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}; (identical to `${SWIF_JOB_STAGE_DIR}` and `${SWIF_JOB_WORK_DIR}`)
 
   SLURM_JOB_NUM_NODES = os.getenv("SLURM_JOB_NUM_NODES")  # number of nodes allocated for this job
   evio_file_names = sorted(glob.glob("hd_rawdata_*.evio"))  # list of raw data file names
@@ -43,24 +43,24 @@ def main(args: argparse.Namespace) -> None:
 
   # Loop over raw data files
   for evio_file_name in evio_file_names:
-    # get RUN/FILE numbers from file names
-    run  = int(evio_file_name[11:17])
-    file = int(evio_file_name[18:21])
+    # get run and file numbers from EVIO file names; assumes file names are of the form `hd_rawdata_XXXXXX_YYY.evio`
+    run_number = int(evio_file_name[11:17])
+    file_index = int(evio_file_name[18:21])
+    node_index = int(float(file_index) / args.nmb_processes_per_node)
 
-    # make subjob directory
+    # make work directory for task
     #TODO why is this called for every file? we know how many files each job processes
-    run_dir_name = f"RUN{int(run):06d}/FILE{int(float(file) / args.nmb_processes_per_node):03d}"
-    os.makedirs(run_dir_name, exist_ok = True)
+    work_dir_task = f"RUN{int(run_number):06d}/NODE{node_index:03d}"
+    os.makedirs(work_dir_task, exist_ok = True)
 
-    # make symlink pointing to subjobdir so the subjob
-    # can cd into it via SLURM_NODEID
-    #TODO why is this extra step needed? why not use FILE%03d directly in the subjob script? The only difference is the number of digits used
-    subjob_dir_name = f"subjob{int(float(file) / args.nmb_processes_per_node):04d}"
+    # make symlink pointing to work_dir_task so each task can cd into it via SLURM_NODEID
+    #TODO why is this extra step needed? why not use work_dir_task directly in the task script? The only difference is the number of digits used
+    subjob_dir_name = f"subjob{node_index:04d}"
     if not os.path.exists(subjob_dir_name):
-      os.symlink(run_dir_name, subjob_dir_name)
+      os.symlink(work_dir_task, subjob_dir_name)
 
-    # make symlink in subjob directory to evio file
-    os.symlink(f"../../{evio_file_name}", f"{run_dir_name}/{evio_file_name}")
+    # create symlink to evio file in task directory
+    os.symlink(f"../../{evio_file_name}", f"{work_dir_task}/{evio_file_name}")
 
 
   # run one task per node
