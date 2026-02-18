@@ -42,10 +42,7 @@ NERSC_CONTAINER_IMAGE="docker:jeffersonlab/gluex_almalinux_9:latest"  # Shifter 
 RUN_NUMBERS=( $( cat list-2025-01-ver03-perl.txt ) )
 
 
-# prepare scripts and config files to be copied to NERSC
-# sed 's,BATCH,'${BATCH}',g' script_nersc_test.temp > script_nersc_test.sh  # set the name of the mount point in the container  #TODO it would be better to pass this down as an argument
-# sed 's,THREADNB,'${NERSC_NMB_TREADS_PER_PROCESS}',g' "./${JANA_CONFIG/.config/.temp}" > "./${JANA_CONFIG}"  # set number of threads in JANA config file  #TODO it would be better to pass this down as an argument to `hd_root`
-# chmod +x script_nersc_test.sh
+# copy scripts and config files to NERSC
 echo "Copying launch scripts and config files from '../launch-${BATCH}' to '${NERSC_HOST}:${NERSC_PROJECT_DIR}'"
 rsync --archive --ignore-times --delete --verbose ../launch-${BATCH} ${NERSC_HOST}:${NERSC_PROJECT_DIR}  # ensure pristine copy
 
@@ -91,10 +88,10 @@ do
       SWIF2_CMD+=(-input "${EVIO_FILE_NAME}" "mss:${EVIO_FILE_PATH}")
     done
     # construct output line for the given node, e.g. `-output match:RUN132194/NODE024/* /lustre/expphy/volatile/halld/offsite_prod/RunPeriod-2025-01/recon/ver03/RUN132194/NODE024/`
-    RUNDIR=$(printf "RUN%06d/NODE%03d" "${RUN_NUMBER}" "${NERSC_NODE_INDEX}")  #TODO `FILE` is a misnomer; it should be something like `NODE` or `CHUNK`
+    SUBDIR_TASK=$(printf "RUN%06d/NODE%03d" "${RUN_NUMBER}" "${NERSC_NODE_INDEX}")  # subdirectory for NERSC task
     echo "mkdir -p ${SWIF_OUTPUT_ROOT}"
     mkdir -p "${SWIF_OUTPUT_ROOT}"
-    SWIF2_CMD+=(-output "match:${RUNDIR}/*" "${SWIF_OUTPUT_ROOT}")  # copy `${RUNDIR}/*` into `${SWIF_OUTPUT_ROOT}` after the job is done
+    SWIF2_CMD+=(-output "match:${SUBDIR_TASK}/*" "${SWIF_OUTPUT_ROOT}")  # copy `${SUBDIR_TASK}/*` into `${SWIF_OUTPUT_ROOT}` after the job is done
   done
   # define NERSC job
   SWIF2_CMD+=(

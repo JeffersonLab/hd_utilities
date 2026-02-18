@@ -52,10 +52,10 @@
 
 ### Container image
 
-* `docker:jeffersonlab/gluex_almalinux_9:latest` contains everything to setup GlueX software environment from CVMFS.
+* `docker:jeffersonlab/gluex_almalinux_9:latest` contains everything to set up GlueX software environment from CVMFS.
 
 ### Globus collections
 
 * `2f299200-6b58-4f81-bacd-b947873986db` `NERSC DTN jlab Collab`, for data inbound to and outbound from NERSC.
 * `086540a1-9598-445e-8637-ac2f3997874f` `JLAB#SWIF`, for data outbound from JLab.
-* `B0fca1ad-f485-4a00-8fcd-bca0b93a2a1c` `jlab#gw1`,  for data inbound to JLab.
+* `B0fca1ad-f485-4a00-8fcd-bca0b93a2a1c` `jlab#gw1`, for data inbound to JLab.
