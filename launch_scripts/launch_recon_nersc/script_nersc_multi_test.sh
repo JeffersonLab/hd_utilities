@@ -13,8 +13,8 @@ set -o xtrace  # turn on command tracing
 # else to python.
 
 
-LAUNCHDIR="${1}"
+LAUNCH_DIR="${1}"
 
 printenv > job.env.out
 hostname > job.hostname.out
-python3 "${LAUNCHDIR}/script_nersc_multi_test.py" "${@}"
+python3 "${LAUNCH_DIR}/script_nersc_multi_test.py" "${@}"

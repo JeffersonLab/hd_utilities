@@ -27,8 +27,9 @@ set -o xtrace  # turn on command tracing
 # created a symbolic link named subjobZZZZ (where the
 # ZZZZ is the SLURM_NODEID) that points to the directory
 # we should use.
-subjobdir=$(printf "subjob%04d" "${SLURM_NODEID}")
-cd "${1}/${subjobdir}"
+work_dir_job="${1}"
+work_dir_task=$(printf "subjob%04d" "${SLURM_NODEID}")
+cd "${work_dir_job}/${work_dir_task}"
 
 
 # # The run/file numbers should be passed as the last 2 arguments

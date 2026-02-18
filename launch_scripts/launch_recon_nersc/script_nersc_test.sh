@@ -64,29 +64,16 @@ export JANA_CALIB_URL="sqlite:////dev/shm/ccdb.sqlite"
 export CCDB_CONNECTION="${JANA_CALIB_URL}"
 export RCDB_CONNECTION="sqlite:////dev/shm/rcdb.sqlite"
 export JANA_GEOMETRY_URL="ccdb:///GEOMETRY/main_HDDS.xml"
-
-# Use JANA_RESOURCE_DIR from CVMFS
 export JANA_RESOURCE_DIR="/group/halld/www/halldweb/html/resources"
 
-ls -lrth > myverif.out
-
-# Record some info about the node and environment
-rm -f top.out
-top -b -n 1 > top.out
-
-rm -f cpuinfo.out
-cat /proc/cpuinfo > cpuinfo.out
-
-rm -f env.out
-env > env.out
-
-rm -f hostname.out
-hostname > hostname.out
-
+#TODO cleanup and improve log files and console output
+# record some info about the node and environment
+ls -lrth >| myverif.out
+top -b -n 1 >| top.out
+cat /proc/cpuinfo >| cpuinfo.out
+env >| env.out
+hostname >| hostname.out
 ls -lrth >> myverif.out
-
-# Run script in background that will send abort signal after some hours (hard coded in script)
-#/launch/assassin.sh &> assassin.out  &
 
 # Do not exit immediately if hd_root fails. This allows us to
 # catch the exit code and write it to a file. This is important
@@ -106,6 +93,7 @@ shopt -u nullglob
 process_ids=()  # array to hold process IDs of background hd_root processes
 for evio_file in "${evio_files[@]}"
 do
+  # get run and file numbers from EVIO file names; assumes file names are of the form `hd_rawdata_XXXXXX_YYY.evio`
   run_number="${evio_file:11:6}"
   file_number="${evio_file:18:3}"
   echo "${run_number} ${file_number}"
@@ -144,13 +132,14 @@ evio_files=(hd_rawdata_??????_???.evio)
 shopt -u nullglob
 for evio_file in "${evio_files[@]}"
 do
-  run_number="${evio_file:11:6}"  # Extracts 6 digits starting from index 9
-  file_number="${evio_file:18:3}"  # Extracts 3 digits starting from index 16
+  # get run and file numbers from EVIO file names; assumes file names are of the form `hd_rawdata_XXXXXX_YYY.evio`
+  run_number="${evio_file:11:6}"
+  file_number="${evio_file:18:3}"
   cd "${work_dir_task}/run-${run_number}-${file_number}"
   echo "${run_number} ${file_number}"
   echo "${PWD}"
   ls -lrth >> ../myverif.out
-  # Move small files into a directory and make a tarball
+  # move small files into a directory and make a tarball
   JOB_INFO_DIR="job_info_${run_number}_${file_number}"
   echo "${JOB_INFO_DIR}"
   mkdir "${JOB_INFO_DIR}"
@@ -182,7 +171,7 @@ done
 cd "${work_dir_task}"
 
 echo "I am here 3"
-ls ./* > my-second-verif.txt
+ls ./* >| my-second-verif.txt
 ls ./*/* >> my-second-verif.txt
 mv run-*/*.* .
 
