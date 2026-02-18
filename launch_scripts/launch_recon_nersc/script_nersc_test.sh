@@ -99,34 +99,34 @@ echo "${PWD}" >> myverif.out
 echo "${HALLD_RECON_HOME}" >> myverif.out
 echo "I am here 0"
 evio_files=(hd_rawdata_??????_???.evio)
-process_index=0
+process_ids=()  # array to hold process IDs of background hd_root processes
 for evio_file in "${evio_files[@]}"
 do
   run_number="${evio_file:11:6}"
   file_number="${evio_file:18:3}"
-  echo "${run_number} ${file_number} ${process_index}"
+  echo "${run_number} ${file_number}"
   mkdir -p "${work_dir_task}/run-${run_number}-${file_number}"
   cd "${work_dir_task}/run-${run_number}-${file_number}"
-  CMD="hd_root -PNTHREADS=${NMB_TREADS_PER_PROCESS} --loadconfigs ${JANA_CONFIG} ${EXTRA_ARGS} ../${evio_file}"  # -PNTHREADS=N overwrites any NTHREADS value set in the JANA config file
-  echo "${CMD}" >> ../myverif.out
+  HD_ROOT_CMD=(
+    hd_root
+    -PNTHREADS="${NMB_TREADS_PER_PROCESS}"  # -PNTHREADS=N overwrites any NTHREADS value set in the JANA config file
+    --loadconfigs "${JANA_CONFIG}"
+    "${EXTRA_ARGS}"
+    "../${evio_file}"
+  )
+  echo "${HD_ROOT_CMD[@]}" >> ../myverif.out
   # start hd_root process in background and redirect stdout and stderr to files
-  ${CMD} 2> "std_${run_number}_${file_number}.err" 1> "std_${run_number}_${file_number}.out" &
-
-  pid=${!}  # capture the background process ID (PID)
-
-  #TODO consider using array append syntax pids+=($pid) to eliminate the need for index tracking
-  pids[${process_index}]=${pid}  # store the PID for later use in capturing the exit code
-  ((i++))
+  "${HD_ROOT_CMD[@]}" 2> "std_${run_number}_${file_number}.err" 1> "std_${run_number}_${file_number}.out" &
+  process_ids+=("${!}")  # capture the background process ID and store it in an array
 done
 cd "${work_dir_task}"
 
 # wait for all background jobs to complete and capture their exit codes
 echo "I am here 1"
-for process_index in "${!pids[@]}"
+for process_index in "${!process_ids[@]}"
 do
-  wait "${pids[${process_index}]}"  # wait for the process to finish
-  exitcode=${?}
-  echo "Exit code for process ${process_index}: ${exitcode}" > "exitcode_${process_index}.txt"
+  wait "${process_ids[${process_index}]}"  # wait for the process to finish
+  echo "Exit code for process ${process_index}: ${?}" > "exitcode_${process_index}.txt"  #TODO the text does not add anything useful? why not just write the exit code to the file?
 done
 
 set -o errexit # turn on exit on error back
