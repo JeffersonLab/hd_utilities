@@ -19,7 +19,7 @@ source "${CONFIG_FILE}"
 
 # copy scripts and config files to NERSC
 echo "Copying launch scripts and config files from '../launch-${BATCH}' to '${NERSC_HOST}:${NERSC_PROJECT_DIR}'"
-rsync --archive --ignore-times --delete --verbose ../launch-${BATCH} ${NERSC_HOST}:${NERSC_PROJECT_DIR}  # ensure pristine copy
+rsync --archive --ignore-times --delete --verbose "../launch-${BATCH}" "${NERSC_HOST}:${NERSC_PROJECT_DIR}"  # ensure pristine copy
 
 # create and run swif2 workflow
 if swif2 status test_swif_workflow2 &> /dev/null
@@ -27,7 +27,7 @@ then
   echo "Workflow '${SWIF_WORKFLOW}' already exists; skipping creation"
 else
   echo "Creating swif2 workflow '${SWIF_WORKFLOW}' at site '${SWIF_SITE}' with max concurrent jobs ${SWIF_MAX_CONCURRENT_JOBS}"
-  swif2 create "${SWIF_WORKFLOW}" -site "${SWIF_SITE}" -maxconcurrent ${SWIF_MAX_CONCURRENT_JOBS}
+  swif2 create "${SWIF_WORKFLOW}" -site "${SWIF_SITE}" -maxconcurrent "${SWIF_MAX_CONCURRENT_JOBS}"
 fi
 swif2 run "${SWIF_WORKFLOW}"  #TODO is it really a good idea to run the workflow immediately?
 
@@ -66,9 +66,10 @@ do
       SWIF2_CMD+=(-input "${EVIO_FILE_NAME}" "mss:${EVIO_FILE_PATH}")
     done
     # construct output line for the given node, e.g. `-output match:RUN132194/NODE024/* /lustre/expphy/volatile/halld/offsite_prod/RunPeriod-2025-01/recon/ver03/RUN132194/NODE024/`
-    SUBDIR_TASK=$(printf "RUN%06d/NODE%03d" "${RUN_NUMBER}" "${NERSC_NODE_INDEX}")  # subdirectory for NERSC task
-    echo "mkdir -p ${SWIF_OUTPUT_ROOT}"
-    mkdir -p "${SWIF_OUTPUT_ROOT}"
+    SUBDIR_TASK=$(printf "RUN%06d/NODE%03d" "${RUN_NUMBER}" "${NERSC_NODE_INDEX}")  # subdirectory for NERSC task given by `${NERSC_NODE_INDEX}`
+    WORK_DIR_TASK="${SWIF_OUTPUT_ROOT}/${SUBDIR_TASK}"  # working directory for NERSC task; this is where `hd_root` will write its output files to
+    echo "mkdir -p ${WORK_DIR_TASK}"
+    mkdir -p "${WORK_DIR_TASK}"
     SWIF2_CMD+=(-output "match:${SUBDIR_TASK}/*" "${SWIF_OUTPUT_ROOT}")  # copy `${SUBDIR_TASK}/*` into `${SWIF_OUTPUT_ROOT}` after the job is done
   done
   # define NERSC job
