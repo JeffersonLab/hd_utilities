@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 
-# Master script that submits a reconstruction jobs to run at NERSC
-# using swif2. One job is submitted for each run number in the given
-# list file.
+# Master script that submits reconstruction jobs to run at NERSC using
+# swif2. One swif2/NERSC job is submitted for each run number in the
+# given list file.
 
 # The computation is subdivided into the following levels:
 # 1) `hd_root` with 32 threads processing one evio file = 1 NERSC process
 # 2) 256/32 = 8 NERSC processes running concurrently on a NERSC node = 1 NERSC task -> 1 task per node
-# 3) 1 run number with N evio files, processed by ceil(N/8) NERSC tasks (=nodes) running concurrently = 1 NERSC job -> ceil(N/8) tasks/nodes per job
+# 3) 1 run number with N evio files, processed by ceil(N/8) NERSC tasks (=nodes) running concurrently = 1 NERSC job -> ceil(N/8) tasks (nodes) per job
 # sbatch: submits one job per run number
 # srun: starts one task per node
-# job script: runs 8 `hd_root` processes in parallel, each processing one evio file
+# task script: runs 8 `hd_root` processes in parallel, each processing one evio file
 
 #TODO move the definitions into a config file
 RUN_NUMBER_LIST_FILE="list-2025-01-ver03-perl.txt"  # text file with list of run numbers to process; one run number per line
@@ -28,12 +28,12 @@ SWIF_SITE="nersc/perlmutter"  # swif2 site to use
 #
 NERSC_PROJECT="m3120"  # NERSC project to charge to.
 NERSC_PROJECT_DIR="/global/cfs/cdirs/${NERSC_PROJECT}"  # Project directory in the NERSC Common File System (CFS) where config files and scripts will be copied to and run from.
-NERSC_LAUNCH_DIR="${NERSC_PROJECT_DIR}/launch-${BATCH}"  # NERSC directory that will get mapped to /launch_${BATCH} inside the job container. Contains scripts and JANA config file to run the job.
+NERSC_LAUNCH_DIR="${NERSC_PROJECT_DIR}/launch-${BATCH}"  # NERSC directory that will get mapped to /launch_${BATCH} inside the task container. Contains scripts and JANA config file to run hd_root.
 NERSC_QOS="regular"  # NERSC queue to use; usually `regular` or `debug`. See NERSC documentation for details on charging and restrictions.
-NERSC_NODE_TYPE="cpu"  # Constraint to use for NERSC job; usually `cpu` or `gpu`.
-NERSC_MAX_WALL_TIME="5:00:00"  # Maximum wall time for NERSC job.
-NERSC_MAX_TREADS_PER_NODE=256  # Maximum number of threads on a NERSC Perlmutter CPU node.
-NERSC_NMB_TREADS_PER_PROCESS=32  # Number of threads of each `hd_root` process; must be <= ${NERSC_MAX_TREADS_PER_NODE}.
+NERSC_NODE_TYPE="cpu"  # Constraint for NERSC jobs; usually `cpu` or `gpu`.
+NERSC_MAX_WALL_TIME="5:00:00"  # Maximum wall time for NERSC jobs.
+NERSC_MAX_TREADS_PER_NODE=256  # Maximum number of threads available on a NERSC Perlmutter CPU node.
+NERSC_NMB_TREADS_PER_PROCESS=32  # Number of threads that each `hd_root` process uses; must be <= ${NERSC_MAX_TREADS_PER_NODE}.
 NERSC_NMB_PROCESSES_PER_NODE=$(echo "${NERSC_MAX_TREADS_PER_NODE} / ${NERSC_NMB_TREADS_PER_PROCESS}" | bc)  # Number of hd_root processes to run concurrently on a single NERSC Perlmutter CPU node.  #TODO works only if division is exact; need to round up if not exact
 NERSC_HOST="perlmutter-p1.nersc.gov"  # NERSC hostname to use for ssh.
 NERSC_CONTAINER_IMAGE="docker:jeffersonlab/gluex_almalinux_9:latest"  # Shifter image that was converted from Docker image. Is not pulled in automatically and needs to exist in Shifter registry.
@@ -69,7 +69,7 @@ do
   # files for each node.
   EVIO_DIR="${SWIF_RAW_DATA_ROOT}/Run${RUN_NUMBER}"
   EVIO_FILE_PATHS=("${EVIO_DIR}"/*.evio)  #TODO this is not empty if there are no evio files, but contains the pattern itself
-  # calculate number of nodes to request based on number of evio files and number of jobs to run per node
+  # calculate number of nodes to request based on number of evio files and number of processes to run per node
   NMB_EVIO_FILES=${#EVIO_FILE_PATHS[@]}
   echo "Run period: ${RUN_PERIOD} - run number: ${RUN_NUMBER} - number of evio files: ${NMB_EVIO_FILES} - divided by: ${NERSC_NMB_PROCESSES_PER_NODE}"
   NERSC_NMB_NODES=$(echo "(${NMB_EVIO_FILES} + ${NERSC_NMB_PROCESSES_PER_NODE} - 1) / ${NERSC_NMB_PROCESSES_PER_NODE}" | bc)  #TODO check whether this is generally correct
