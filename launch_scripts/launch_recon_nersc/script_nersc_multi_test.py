@@ -29,6 +29,7 @@ def main(args: argparse.Namespace) -> None:
   print(f"SCRIPT_FILE: {args.script_file_task}")
   print(f"JANA_CONFIG: {args.jana_config}")
   print(f"JANA_CALIB_CONTEXT: {args.jana_calib_context}")
+  print(f"JANA_GEOMETRY_URL: {args.jana_geometry_url}")
   print(f"HALLD_VERSION_SET_XML: {args.halld_version_set_xml}")
   print(f"NMB_PROCESSES_PER_NODE: {args.nmb_processes_per_node}")
   print(f"NMB_THREADS_PER_PROCESS: {args.nmb_threads_per_process}")
@@ -76,8 +77,9 @@ def main(args: argparse.Namespace) -> None:
     args.script_file_task,         # arg 2:  script to run inside shifter (all subsequent args are eventually passed to this script)
     args.jana_config,              # arg 3:  JANA config file
     args.jana_calib_context,       # arg 4:  JANA calibration context
-    args.halld_version_set_xml,    # arg 5:  Hall-D version set XML file
-    args.nmb_threads_per_process,  # arg 6:  number of threads of `hd_root` process
+    args.jana_geometry_url,        # arg 5:  JANA geometry URL
+    args.halld_version_set_xml,    # arg 6:  Hall-D version set XML file
+    args.nmb_threads_per_process,  # arg 7:  number of threads of `hd_root` process
   ]
   # n.b. run/file are derived from evio file names. (see run_shifter_multi.sh)
   print(f"Nb of nodes asked: {command}")
@@ -101,6 +103,7 @@ if __name__ == "__main__":
   parser.add_argument("script_file_task",        help = "Script file to run as task on each node")
   parser.add_argument("jana_config",             help = "JANA config file")
   parser.add_argument("jana_calib_context",      help = "JANA calibration context")
+  parser.add_argument("jana_geometry_url",       help = "JANA geometry URL")
   parser.add_argument("halld_version_set_xml",   help = "Hall-D version set XML file")
   parser.add_argument("nmb_processes_per_node",  help = "Number of processes per node",            type = int)
   parser.add_argument("nmb_threads_per_process", help = "Number of threads per `hd_root` process", type = int)
@@ -112,6 +115,7 @@ if __name__ == "__main__":
   # parser.add_argument("--script-file-task",        dest = "script_file_task",        required = True, help = "Script file to run as task on each node")
   # parser.add_argument("--jana-config",             dest = "jana_config",             required = True, help = "JANA config file")
   # parser.add_argument("--jana-calib-context",      dest = "jana_calib_context",      required = True, help = "JANA calibration context")
+  # parser.add_argument("--jana-geometry-url",       dest = "jana_geometry_url",       required = True, help = "JANA geometry URL")
   # parser.add_argument("--halld-version-set-xml",   dest = "halld_version_set_xml",   required = True, help = "Hall-D version set XML file")
   # parser.add_argument("--nmb-processes-per-node",  dest = "nmb_processes_per_node",  required = True, help = "Number of processes per node",            type = int)
   # parser.add_argument("--nmb-threads-per-process", dest = "nmb_threads_per_process", required = True, help = "Number of threads per `hd_root` process", type = int)

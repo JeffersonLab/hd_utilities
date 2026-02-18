@@ -17,8 +17,9 @@ set -o xtrace  # turn on command tracing
 #
 # arg 1:  JANA config file
 # arg 2:  JANA calibration context
-# arg 3:  Hall-D version set XML file
-# arg 4:  Number of threads to use for this job
+# arg 3:  JANA geometry URL
+# arg 4:  Hall-D version set XML file
+# arg 5:  Number of threads to use for this job
 
 # mount /var/udiMount/  #TODO is this really needed?
 # mount /var/udiMount/launch-BATCH  #TODO is this really needed?
@@ -36,8 +37,9 @@ trap 'echo "\"${last_command}\" command failed with exit code ${?}."' EXIT  #TOD
 
 JANA_CONFIG="${1}"
 JANA_CALIB_CONTEXT="${2}"
-HALLD_VERSION_SET_XML="${3}"
-NMB_TREADS_PER_PROCESS="${4}"
+JANA_GEOMETRY_URL="${3}"
+HALLD_VERSION_SET_XML="${4}"
+NMB_TREADS_PER_PROCESS="${5}"
 EXTRA_ARGS=""
 work_dir_task="${PWD}"  # absolute path of working directory of container task, i.e. `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}/subjob????`, where `????` is the 4-digit `${SLURM_NODEID}`
 
@@ -63,7 +65,7 @@ ls -lrth /dev/shm/rcdb.sqlite
 export JANA_CALIB_URL="sqlite:////dev/shm/ccdb.sqlite"
 export CCDB_CONNECTION="${JANA_CALIB_URL}"
 export RCDB_CONNECTION="sqlite:////dev/shm/rcdb.sqlite"
-export JANA_GEOMETRY_URL="ccdb:///GEOMETRY/main_HDDS.xml"
+export JANA_GEOMETRY_URL
 export JANA_RESOURCE_DIR="/group/halld/www/halldweb/html/resources"
 
 #TODO cleanup and improve log files and console output

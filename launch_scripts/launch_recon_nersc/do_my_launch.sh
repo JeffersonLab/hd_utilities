@@ -20,6 +20,7 @@ BATCH="${VER}-perl"  # Batch label used to hold details of the launch; is append
 HALLD_VERSION_SET_XML="version_7.4.0.xml"  # XML file that defines the Hall-D version set to be used.
 JANA_CONFIG="jana_recon_nersc.config"  # JANA config file to use; must be located in ${NERSC_LAUNCH_DIR}.
 JANA_CALIB_CONTEXT="calibtime=2025-12-24-00-00-01"  # JANA calibration context; overrides any value set in the JANA config file or in the environment.
+JANA_GEOMETRY_URL="ccdb:///GEOMETRY/main_HDDS.xml"  # JANA geometry to be used in reconstruction; some data sets such as CPP require custom geometry.
 #
 SWIF_MAX_CONCURRENT_JOBS=100  # Maximum number of swif2 jobs that can be in-flight at once. This can be set only once when the workflow is created. If jobs are submitted piecemeal by running this script multiple times specifying different run lists, only the first invocation that creates the workflow will set this parameter.
 SWIF_RAW_DATA_ROOT="/mss/halld/RunPeriod-${RUN_PERIOD}/rawdata"  # Root of JLab directory tree, where raw data files are located. Must be an `/mss` path.
@@ -119,6 +120,7 @@ do
       "/launch-${BATCH}/script_nersc_test.sh"  # script_file_task argument
       "/launch-${BATCH}/${JANA_CONFIG}"        # jana_config argument
       "${JANA_CALIB_CONTEXT}"                  # jana_calib_context argument
+      "${JANA_GEOMETRY_URL}"                   # jana_geometry_url argument
       "${HALLD_VERSION_SET_XML}"               # halld_version_set_xml argument
       "${NERSC_NMB_PROCESSES_PER_NODE}"        # nmb_processes_per_node argument
       "${NERSC_NMB_TREADS_PER_PROCESS}"        # nmb_threads_per_process argument
