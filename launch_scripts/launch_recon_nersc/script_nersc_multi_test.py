@@ -69,6 +69,7 @@ def main(args: argparse.Namespace) -> None:
     "srun",
     f"--ntasks={SLURM_JOB_NUM_NODES}",  # 1 task per node
     # "--output=task-%x-%j-%t.out",  # write stdout and stderr of task to file named task-<job name>-<job id>-<task id>.out in working directory of task
+    #TODO call shifter directly in srun command to avoid extra layer of indirection
     f"{args.launch_dir}/run_shifter_multi.sh",  # script to run as task
     work_dir_job,                  # arg 1:  top-level directory of job
     args.task_script_file,         # arg 2:  script to run inside shifter (all subsequent args are eventually passed to this script)
