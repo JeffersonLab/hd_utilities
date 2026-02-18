@@ -12,7 +12,8 @@
 # srun: starts one task per node
 # job script: runs 8 `hd_root` processes in parallel, each processing one evio file
 
-
+#TODO move the definitions into a config file
+RUN_NUMBER_LIST_FILE="list-2025-01-ver03-perl.txt"  # text file with list of run numbers to process; one run number per line
 RUN_PERIOD="2025-01"  # Run period to process.
 VER="03"  # Version of this reconstruction launch.
 HALLD_VERSION_SET_XML="version_7.4.0.xml"  # XML file that defines the Hall-D version set to be used.
@@ -37,10 +38,6 @@ NERSC_NMB_PROCESSES_PER_NODE=$(echo "${NERSC_MAX_TREADS_PER_NODE} / ${NERSC_NMB_
 NERSC_HOST="perlmutter-p1.nersc.gov"  # NERSC hostname to use for ssh.
 NERSC_CONTAINER_IMAGE="docker:jeffersonlab/gluex_almalinux_9:latest"  # Shifter image that was converted from Docker image. Is not pulled in automatically and needs to exist in Shifter registry.
 
-# load run list into array
-#TODO improve code
-RUN_NUMBERS=( $( cat list-2025-01-ver03-perl.txt ) )
-
 
 # copy scripts and config files to NERSC
 echo "Copying launch scripts and config files from '../launch-${BATCH}' to '${NERSC_HOST}:${NERSC_PROJECT_DIR}'"
@@ -56,7 +53,8 @@ else
 fi
 swif2 run "${SWIF_WORKFLOW}"  #TODO is it really a good idea to run the workflow immediately?
 
-# loop over run numbers and submit one swif2 job for each
+# loop over run numbers and submit one swif2 job each
+readarray -t RUN_NUMBERS < "${RUN_NUMBER_LIST_FILE}"  # read lines into array without trailing newlines
 for RUN_NUMBER in "${RUN_NUMBERS[@]}"
 do
   # construct command to submit a swif2 job for the given run number
@@ -102,9 +100,9 @@ do
       --image="${NERSC_CONTAINER_IMAGE}"
       --module=cvmfs
       --time="${NERSC_MAX_WALL_TIME}"
-      --nodes=${NERSC_NMB_NODES}
+      --nodes="${NERSC_NMB_NODES}"
       --tasks-per-node=1
-      --cpus-per-task=${NERSC_MAX_TREADS_PER_NODE}
+      --cpus-per-task="${NERSC_MAX_TREADS_PER_NODE}"
       #--exclusive  # allocated nodes cannot be shared with other jobs/users
       --qos="${NERSC_QOS}"
       --constraint="${NERSC_NODE_TYPE}"
@@ -119,7 +117,7 @@ do
       "/launch-${BATCH}/${JANA_CONFIG}"        # jana_config argument
       "${HALLD_VERSION_SET_XML}"               # halld_version_set_xml argument
       "${NERSC_NMB_PROCESSES_PER_NODE}"        # nmb_processes_per_node argument
-      ${NERSC_NMB_TREADS_PER_PROCESS}          # nmb_threads_per_process argument
+      "${NERSC_NMB_TREADS_PER_PROCESS}"        # nmb_threads_per_process argument
   )
   echo "${SWIF2_CMD[@]}" >| "./exec_${RUN_NUMBER}.sh"
   # # generate shell-escaped version of command array and write it to file so it becomes a script that can be run directly
