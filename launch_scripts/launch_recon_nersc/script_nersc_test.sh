@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # set -o nounset  # exit if trying to use an uninitialized variable
-set -o xtrace  # turn on command tracing
+#TODO make debug output switchable with a command line argument
+set -o verbose  # print shell input lines as they are read, i.e. before any expansion
+set -o xtrace  # print commands and their arguments as they are executed, i.e. after expansion and without I/O redirection
+ulimit -c unlimited  # allow core dumps with no size limit
 
 # This should be placed in the "launch" directory in the NERSC
 # project directory used for the job. e.g.
@@ -28,24 +31,22 @@ docker inspect jeffersonlab/gluex_almalinux_9:latest  #TODO shouldn't the image 
 # exit when any command fails
 set -o errexit
 
-# keep track of last executed command
-trap 'last_command=${current_command}; current_command=${BASH_COMMAND}' DEBUG
-# echo error message before exiting if error occurs
-trap 'echo "\"${last_command}\" command failed with exit code ${?}."' EXIT  #TODO is this is executed also for non-error exit? If so, it should be modified to only print the message if the exit code is non-zero.
+# # keep track of last executed command
+# trap 'last_command=${current_command}; current_command=${BASH_COMMAND}' DEBUG
+# # echo error message before exiting if error occurs
+# trap 'echo "\"${last_command}\" command failed with exit code ${?}."' EXIT  #TODO is this is executed also for non-error exit? If so, it should be modified to only print the message if the exit code is non-zero.
 
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
+# get command line arguments
 JANA_CONFIG="${1}"
 JANA_CALIB_CONTEXT="${2}"
 JANA_GEOMETRY_URL="${3}"
 HALLD_VERSION_SET_XML="${4}"
 NMB_TREADS_PER_PROCESS="${5}"
+
 EXTRA_ARGS=""
 work_dir_task="${PWD}"  # absolute path of working directory of container task, i.e. `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}/subjob????`, where `????` is the 4-digit `${SLURM_NODEID}`
 
-ulimit -c unlimited
-
-# Setup software environment according to Hall-D version set XML file
+# setup software environment according to Hall-D version set XML file
 source "/group/halld/Software/build_scripts/gluex_env_boot_jlab.sh"
 gxenv "${HALLD_VERSIONS}/${HALLD_VERSION_SET_XML}"
 
