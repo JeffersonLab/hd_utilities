@@ -161,7 +161,7 @@ do
   for file in "${files_tab[@]}"
   do
     echo "${file}"
-    if [[ ! "${file}" =~ *_([0-9]{6})_([0-9]{3}).* ]]  #TODO this regex will not work as the leading `*` is invalid (has nothing to repeat); fix by changing the leading `*` to `.*`
+    if [[ ! "${file}" =~ .*_([0-9]{6})_([0-9]{3}).* ]]  # files that do not match the pattern `*_XXXXXX_YYY*` where X and Y are digits
     then
       basefile=$(basename "${file}")  # extract base file name
       extension="${basefile##*.}"  # extract the file extension
