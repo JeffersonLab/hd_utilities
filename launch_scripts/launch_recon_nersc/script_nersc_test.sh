@@ -98,7 +98,9 @@ cat "${JANA_CONFIG}" >> myverif.out
 echo "${PWD}" >> myverif.out
 echo "${HALLD_RECON_HOME}" >> myverif.out
 echo "I am here 0"
+shopt -s nullglob  # ensure that array is empty if no files match the pattern
 evio_files=(hd_rawdata_??????_???.evio)
+shopt -u nullglob
 process_ids=()  # array to hold process IDs of background hd_root processes
 for evio_file in "${evio_files[@]}"
 do
@@ -134,7 +136,9 @@ echo "I am here 2"
 ls -lrth >> myverif.out
 ls -lrth ./*/* >> myverif.out
 
+shopt -s nullglob  # ensure that array is empty if no files match the pattern
 evio_files=(hd_rawdata_??????_???.evio)
+shopt -u nullglob
 for evio_file in "${evio_files[@]}"
 do
   run_number="${evio_file:11:6}"  # Extracts 6 digits starting from index 9
@@ -157,7 +161,9 @@ do
   mv "std_${run_number}_${file_number}.out" "${JOB_INFO_DIR}"
   #TODO also fetch job and task log files
   tar czf "${JOB_INFO_DIR}.tgz" "${JOB_INFO_DIR}"
+  shopt -s nullglob  # ensure that array is empty if no files match the pattern
   files_tab=(*.*)
+  shopt -u nullglob
   for file in "${files_tab[@]}"
   do
     echo "${file}"

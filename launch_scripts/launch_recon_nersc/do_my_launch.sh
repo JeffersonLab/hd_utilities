@@ -68,7 +68,9 @@ do
   # processed by individual NERSC nodes, defining the input and output
   # files for each node.
   EVIO_DIR="${SWIF_RAW_DATA_ROOT}/Run${RUN_NUMBER}"
-  EVIO_FILE_PATHS=("${EVIO_DIR}"/*.evio)  #TODO this is not empty if there are no evio files, but contains the pattern itself
+  shopt -s failglob  # exit with error if no files match the pattern
+  EVIO_FILE_PATHS=("${EVIO_DIR}"/*.evio)
+  shopt -u failglob
   # calculate number of nodes to request based on number of evio files and number of processes to run per node
   NMB_EVIO_FILES=${#EVIO_FILE_PATHS[@]}
   echo "Run period: ${RUN_PERIOD} - run number: ${RUN_NUMBER} - number of evio files: ${NMB_EVIO_FILES} - divided by: ${NERSC_NMB_PROCESSES_PER_NODE}"
