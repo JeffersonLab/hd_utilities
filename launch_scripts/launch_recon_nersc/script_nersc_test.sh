@@ -99,10 +99,14 @@ do
   echo "${run_number} ${file_number}"
   mkdir -p "${work_dir_task}/run-${run_number}-${file_number}"
   cd "${work_dir_task}/run-${run_number}-${file_number}"
+  # hd_root priorities for setting a parameter value is (lowest to highest):
+  #   1) environment variable
+  #   2) JANA config file
+  #   3) command line argument
   HD_ROOT_CMD=(
     hd_root
-    -PNTHREADS="${NMB_TREADS_PER_PROCESS}"  # -PNTHREADS=N overwrites any NTHREADS value set in the JANA config file
-    -Pjana:calib_context="${JANA_CALIB_CONTEXT}"  # set calibration context from local variable; this overwrites any value set in the JANA config file or in the environment
+    -PNTHREADS="${NMB_TREADS_PER_PROCESS}"  # override number of threads to use
+    -Pjana:calib_context="${JANA_CALIB_CONTEXT}"  # override calibration context from local variable
     --loadconfigs "${JANA_CONFIG}"
     "${EXTRA_ARGS}"
     "../${evio_file}"
