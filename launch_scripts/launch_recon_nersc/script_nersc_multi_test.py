@@ -70,7 +70,7 @@ def main(args: argparse.Namespace) -> None:
   command = [
     "srun",
     f"--ntasks={SLURM_JOB_NUM_NODES}",  # 1 task per node
-    # "--output=task-%x-%j-%t.out",  # write stdout and stderr of task to file named task-<job name>-<job id>-<task id>.out in working directory of task
+    "--output=task-%x-%j-%t.out",  # write stdout and stderr of task to file named `task-<job name>-<job id>-<task id>.out` in working directory of task
     #TODO call shifter directly in srun command to avoid extra layer of indirection
     f"{args.launch_dir}/run_shifter_multi.sh",  # script to run as task
     work_dir_job,                  # arg 1:  top-level working directory of job
@@ -81,7 +81,7 @@ def main(args: argparse.Namespace) -> None:
     args.halld_version_set_xml,    # arg 6:  Hall-D version set XML file
     args.nmb_threads_per_process,  # arg 7:  number of threads of `hd_root` process
   ]
-  # n.b. run/file are derived from evio file names. (see run_shifter_multi.sh)
+  # n.b. run/file are derived from evio file names. (see `run_shifter_multi.sh`)
   print(f"Nb of nodes asked: {command}")
   print(" ".join(command))
   with subprocess.Popen(command, stdout = subprocess.PIPE, stderr = subprocess.PIPE) as srun:

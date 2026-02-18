@@ -42,7 +42,7 @@ do
     -name "GLUEX_recon_${RUN_NUMBER}"  # swif2 job name
   )
   # loop over all evio files of the run and subdivide file list into
-  # chunks of size ${NERSC_NMB_PROCESSES_PER_NODE} that will be
+  # chunks of size `${NERSC_NMB_PROCESSES_PER_NODE}` that will be
   # processed by individual NERSC nodes, defining the input and output
   # files for each node.
   EVIO_DIR="${SWIF_RAW_DATA_ROOT}/Run${RUN_NUMBER}"
@@ -76,9 +76,9 @@ do
     -sbatch
       # these options are passed to `sbatch` when swif2 submits job at NERSC
       --account="${NERSC_PROJECT}"
-      --volume=\""${NERSC_LAUNCH_DIR}:/launch-${BATCH}"\"
-      --image="${NERSC_CONTAINER_IMAGE}"
-      --module=cvmfs
+      --volume="'${NERSC_LAUNCH_DIR}:/launch-${BATCH}'"  # map `${NERSC_LAUNCH_DIR}` on host to `/launch-${BATCH}` in container
+      --image="'${NERSC_CONTAINER_IMAGE}'"  #TODO verify that image exists in NERSC repository
+      --module=cvmfs  # enable CVMFS in the container so it can access the `/group/halld` tree
       --time="${NERSC_MAX_WALL_TIME}"
       --nodes="${NERSC_NMB_NODES}"
       --tasks-per-node=1
@@ -86,17 +86,17 @@ do
       #--exclusive  # allocated nodes cannot be shared with other jobs/users
       --qos="${NERSC_QOS}"
       --constraint="${NERSC_NODE_TYPE}"
-      --output="job-%x-%j.out"  # write stdout and stderr of job to file named job-<job name>-<job id>.out in working directory of job
+      --output="job-%x-%j.out"  # write stdout and stderr of job to file named `job-<job name>-<job id>.out` in working directory of job
       ::
       # job script to run at NERSC
       #TODO could we directly submit the python script?
-      "${NERSC_LAUNCH_DIR}/script_nersc_multi_test.sh"  # wrapper script for script_nersc_multi_test.py
+      "${NERSC_LAUNCH_DIR}/script_nersc_multi_test.sh"  # wrapper script for `script_nersc_multi_test.py`
       # arguments passed to script_nersc_multi_test.py
       "${NERSC_LAUNCH_DIR}"                    # launch_dir argument
       "/launch-${BATCH}/script_nersc_test.sh"  # script_file_task argument
       "/launch-${BATCH}/${JANA_CONFIG}"        # jana_config argument
-      "${JANA_CALIB_CONTEXT}"                  # jana_calib_context argument
-      "${JANA_GEOMETRY_URL}"                   # jana_geometry_url argument
+      "'${JANA_CALIB_CONTEXT}'"                # jana_calib_context argument
+      "'${JANA_GEOMETRY_URL}'"                 # jana_geometry_url argument
       "${HALLD_VERSION_SET_XML}"               # halld_version_set_xml argument
       "${NERSC_NMB_PROCESSES_PER_NODE}"        # nmb_processes_per_node argument
       "${NERSC_NMB_TREADS_PER_PROCESS}"        # nmb_threads_per_process argument
