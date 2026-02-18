@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -o nounset  # exit if trying to use an uninitialized variable
+# set -o nounset  # exit if trying to use an uninitialized variable
 set -o xtrace  # turn on command tracing
 
 # This script will be run on the individual nodes
@@ -27,7 +27,7 @@ set -o xtrace  # turn on command tracing
 # created a symbolic link named subjobZZZZ (where the
 # ZZZZ is the SLURM_NODEID) that points to the directory
 # we should use.
-subjobdir=$(printf "subjob%04d" ${SLURM_NODEID})
+subjobdir=$(printf "subjob%04d" "${SLURM_NODEID}")
 cd "${1}/${subjobdir}"
 
 

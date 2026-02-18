@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -o nounset  # exit if trying to use an uninitialized variable
+# set -o nounset  # exit if trying to use an uninitialized variable
 set -o xtrace  # turn on command tracing
 
 # This script is the entrypoint for a large multi-file

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -o nounset  # exit if trying to use an uninitialized variable
+# set -o nounset  # exit if trying to use an uninitialized variable
 set -o xtrace  # turn on command tracing
 
 # This should be placed in the "launch" directory in the NERSC
@@ -47,7 +47,7 @@ gxenv "${HALLD_VERSIONS}/${HALLD_VERSION_SET_XML}"
 
 # If the binaries in the group disk need to be replaced, then they can
 # be placed in a directory on $SCRATCH and we'll use the HALLD_MY
-# mechanism to superceed them. This was needed for offmon 2019-11 ver
+# mechanism to supersede them. This was needed for offmon 2019-11 ver
 # 13 when certain plugins had to be recompiled with a patch.
 # export HALLD_MY="${CSCRATCH}/HALLD_MY/${HALLD_RECON_VERSION}"  #TODO this seems to be dysfunctional; ${CSCRATCH} does not exist anymore on NERSC
 # export PATH="${HALLD_MY}/${BMS_OSNAME}/bin:${PATH}"
@@ -93,10 +93,10 @@ ls -lrth >> myverif.out
 set +o errexit
 
 # run hd_root process for each evio file in the directory in parallel
-ls -lrth ${JANA_CONFIG} >> myverif.out
-cat ${JANA_CONFIG} >> myverif.out
-echo ${PWD} >> myverif.out
-echo ${HALLD_RECON_HOME} >> myverif.out
+ls -lrth "${JANA_CONFIG}" >> myverif.out
+cat "${JANA_CONFIG}" >> myverif.out
+echo "${PWD}" >> myverif.out
+echo "${HALLD_RECON_HOME}" >> myverif.out
 echo "I am here 0"
 evio_files=(hd_rawdata_??????_???.evio)
 process_index=0
@@ -118,13 +118,13 @@ do
   pids[${process_index}]=${pid}  # store the PID for later use in capturing the exit code
   ((i++))
 done
-cd ${work_dir_task}
+cd "${work_dir_task}"
 
 # wait for all background jobs to complete and capture their exit codes
 echo "I am here 1"
 for process_index in "${!pids[@]}"
 do
-  wait ${pids[${process_index}]}  # wait for the process to finish
+  wait "${pids[${process_index}]}"  # wait for the process to finish
   exitcode=${?}
   echo "Exit code for process ${process_index}: ${exitcode}" > "exitcode_${process_index}.txt"
 done
@@ -132,7 +132,7 @@ done
 set -o errexit # turn on exit on error back
 echo "I am here 2"
 ls -lrth >> myverif.out
-ls -lrth */* >> myverif.out
+ls -lrth ./*/* >> myverif.out
 
 evio_files=(hd_rawdata_??????_???.evio)
 for evio_file in "${evio_files[@]}"
@@ -173,8 +173,8 @@ done
 cd "${work_dir_task}"
 
 echo "I am here 3"
-ls * > my-second-verif.txt
-ls */* >> my-second-verif.txt
+ls ./* > my-second-verif.txt
+ls ./*/* >> my-second-verif.txt
 mv run-*/*.* .
 
 # The swif2 job will copy all files in ${work_dir_task} back to JLab
