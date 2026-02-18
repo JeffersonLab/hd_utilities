@@ -37,6 +37,7 @@ JANA_CONFIG="${1}"
 HALLD_VERSION_SET_XML="${2}"
 NMB_TREADS_PER_PROCESS="${3}"
 EXTRA_ARGS=""
+work_dir_task="${PWD}"  # absolute path of working directory of container task, i.e. `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}/subjob????`, where `????` is the 4-digit `${SLURM_NODEID}`
 
 ulimit -c unlimited
 
@@ -44,23 +45,17 @@ ulimit -c unlimited
 source "/group/halld/Software/build_scripts/gluex_env_boot_jlab.sh"
 gxenv "${HALLD_VERSIONS}/${HALLD_VERSION_SET_XML}"
 
-# If the binaries in the group disk need to be replaced, then
-# they can be placed in a directory on $SCRATCH and we'll use
-# the HALLD_MY mechanism to superceed them. This was needed
-# for offmon 2019-11 ver 13 when certain plugins had to be
-# recompiled with a patch.
+# If the binaries in the group disk need to be replaced, then they can
+# be placed in a directory on $SCRATCH and we'll use the HALLD_MY
+# mechanism to superceed them. This was needed for offmon 2019-11 ver
+# 13 when certain plugins had to be recompiled with a patch.
 # export HALLD_MY="${CSCRATCH}/HALLD_MY/${HALLD_RECON_VERSION}"  #TODO this seems to be dysfunctional; ${CSCRATCH} does not exist anymore on NERSC
 # export PATH="${HALLD_MY}/${BMS_OSNAME}/bin:${PATH}"
 
-workdir="${PWD}"
-# Use CCDB and RCDB from CVMFS. Make a temporary local
-# copy so that we don't interfere with other jobs locking
-# the same file
-cp "/group/halld/www/halldweb/html/dist/ccdb.sqlite" /dev/shm
-#cp "/global/cscratch1/sd/jlab/work/2020.07.07.split_jobs/ccdb.sqlite" /dev/shm   # TEMPORARY <-- corrupt ccdb.sqlite file on 7/7/2020 forced this
-#if [ -z ${HOME+x} ]; then export HOME="/global/homes/j/jlab" ; fi
-#cp "${HOME}/ccdb.sqlite" /dev/shm   # TEMPORARY <-- corrupt ccdb.sqlite file on 7/18/2020 forced this
-cp "/group/halld/www/halldweb/html/dist/rcdb.sqlite" /dev/shm
+# Use CCDB and RCDB from CVMFS. Make a temporary local copy so that we
+# don't interfere with other jobs locking the same file
+cp --verbose "/group/halld/www/halldweb/html/dist/ccdb.sqlite" /dev/shm
+cp --verbose "/group/halld/www/halldweb/html/dist/rcdb.sqlite" /dev/shm
 ls -lrth /dev/shm/ccdb.sqlite
 ls -lrth /dev/shm/rcdb.sqlite
 export JANA_CALIB_URL="sqlite:////dev/shm/ccdb.sqlite"
@@ -97,112 +92,97 @@ ls -lrth >> myverif.out
 # by slurm.
 set +o errexit
 
-## Copy the raw data to RAM disk
-#file=$(ls hd_rawdata*.evio)
-#mv $file tmp.evio
-#cp tmp.evio $file
-#rm tmp.evio
-
+# run hd_root process for each evio file in the directory in parallel
 ls -lrth ${JANA_CONFIG} >> myverif.out
 cat ${JANA_CONFIG} >> myverif.out
 echo ${PWD} >> myverif.out
 echo ${HALLD_RECON_HOME} >> myverif.out
-# Run hd_root
 echo "I am here 0"
-rawdata_tab=(hd_rawdata_??????_???.evio)
-i=0
-for rawdata in "${rawdata_tab[@]}"
+evio_files=(hd_rawdata_??????_???.evio)
+process_index=0
+for evio_file in "${evio_files[@]}"
 do
-    run_number="${rawdata:11:6}"
-    file_number="${rawdata:18:3}"
-    echo "${run_number} ${file_number} ${i}"
-    mkdir -p "${workdir}/run-${run_number}-${file_number}"
-    cd "${workdir}/run-${run_number}-${file_number}"
-    CMD="hd_root -PNTHREADS=${NMB_TREADS_PER_PROCESS} --loadconfigs ${JANA_CONFIG} ${EXTRA_ARGS} ../${rawdata}"  # -PNTHREADS=N overwrites any NTHREADS value set in the JANA config file
-    echo "${CMD}" >> ../myverif.out
-    ${CMD} 2> "std_${run_number}_${file_number}.err" 1> "std_${run_number}_${file_number}.out" &
+  run_number="${evio_file:11:6}"
+  file_number="${evio_file:18:3}"
+  echo "${run_number} ${file_number} ${process_index}"
+  mkdir -p "${work_dir_task}/run-${run_number}-${file_number}"
+  cd "${work_dir_task}/run-${run_number}-${file_number}"
+  CMD="hd_root -PNTHREADS=${NMB_TREADS_PER_PROCESS} --loadconfigs ${JANA_CONFIG} ${EXTRA_ARGS} ../${evio_file}"  # -PNTHREADS=N overwrites any NTHREADS value set in the JANA config file
+  echo "${CMD}" >> ../myverif.out
+  # start hd_root process in background and redirect stdout and stderr to files
+  ${CMD} 2> "std_${run_number}_${file_number}.err" 1> "std_${run_number}_${file_number}.out" &
 
-    # Capture the background process ID (PID)
-    pid=${!}
+  pid=${!}  # capture the background process ID (PID)
 
-    # Store the PID for later use in capturing the exit code
-    pids[${i}]=${pid}
-    ((i++))
+  #TODO consider using array append syntax pids+=($pid) to eliminate the need for index tracking
+  pids[${process_index}]=${pid}  # store the PID for later use in capturing the exit code
+  ((i++))
 done
+cd ${work_dir_task}
+
+# wait for all background jobs to complete and capture their exit codes
 echo "I am here 1"
-cd ${workdir}
-# Wait for all background jobs to complete and capture their exit codes
-for i in "${!pids[@]}"
+for process_index in "${!pids[@]}"
 do
-    wait ${pids[${i}]}   # Wait for the process to finish
-    exitcode=${?}
-    # Turn back on exit on error
-
-    echo "Exit code for job ${i}: ${exitcode}" > "exitcode_${i}.txt"
+  wait ${pids[${process_index}]}  # wait for the process to finish
+  exitcode=${?}
+  echo "Exit code for process ${process_index}: ${exitcode}" > "exitcode_${process_index}.txt"
 done
-set -o errexit
+
+set -o errexit # turn on exit on error back
 echo "I am here 2"
 ls -lrth >> myverif.out
 ls -lrth */* >> myverif.out
 
-# Remove link to input file.
-# The swif2 job will copy all files in this directory back
-# to JLab so we don't want the raw data file to be copied back.
-######rm -f hd_rawdata_??????_???.evio
-#if [[ ! "$file" =~ rawdata_([0-9]{6})_([0-9]{3})\.evio ]]; then
-rawdata_tab=(hd_rawdata_??????_???.evio)
-###j=0
-for rawdata in "${rawdata_tab[@]}"
+evio_files=(hd_rawdata_??????_???.evio)
+for evio_file in "${evio_files[@]}"
 do
-    run_number="${rawdata:11:6}"  # Extracts 6 digits starting from index 9
-    file_number="${rawdata:18:3}"  # Extracts 3 digits starting from index 16
-    cd "${workdir}/run-${run_number}-${file_number}"
-    echo "${run_number} ${file_number} ${j}"
-    echo "${PWD}"
-    ls -lrth >> ../myverif.out
-    # Move small files into a directory and make a tarball
-    JOB_INFO="job_info_${run_number}_${file_number}"
-    echo "${JOB_INFO}"
-    mkdir "${JOB_INFO}"
-    cp ../top.out "${JOB_INFO}"
-    cp ../cpuinfo.out "${JOB_INFO}"
-    cp ../env.out "${JOB_INFO}"
-    cp ../hostname.out "${JOB_INFO}"
-    #    cp ../exitcode_$j.txt  "${JOB_INFO}/"
-    cp ../exitcode_*.txt  "${JOB_INFO}/"
-    cp ../myverif.out "${JOB_INFO}"
-    #mv helicity.log "std_${run_number}_${file_number}.err" "std_${run_number}_${file_number}.out" "${JOB_INFO}"
-    mv "std_${run_number}_${file_number}.err" "${JOB_INFO}"
-    mv "std_${run_number}_${file_number}.out" "${JOB_INFO}"
-    tar czf "${JOB_INFO}.tgz" "${JOB_INFO}"
-    #rm -rf "${JOB_INFO}"
-    #mv "${JOB_INFO}.tgz" ../
-    files_tab=(*.*)
-    for file in "${files_tab[@]}"
-    do
-        echo "${file}"
-        if [[ ! "${file}" =~ *_([0-9]{6})_([0-9]{3}).* ]]
-        then
-            # Extract the base filename without extension
-            basefile=$(basename "${file}")
-            # Extract the file extension
-            extension="${basefile##*.}"
-            # Construct the new filename with run_number and file_number inserted before the extension
-            new_name="${basefile%.*}_${run_number}_${file_number}.${extension}"
-            # Rename the file
-            mv "${file}" "${new_name}"
-        fi
-    done
-###((j++))
+  run_number="${evio_file:11:6}"  # Extracts 6 digits starting from index 9
+  file_number="${evio_file:18:3}"  # Extracts 3 digits starting from index 16
+  cd "${work_dir_task}/run-${run_number}-${file_number}"
+  echo "${run_number} ${file_number}"
+  echo "${PWD}"
+  ls -lrth >> ../myverif.out
+  # Move small files into a directory and make a tarball
+  JOB_INFO_DIR="job_info_${run_number}_${file_number}"
+  echo "${JOB_INFO_DIR}"
+  mkdir "${JOB_INFO_DIR}"
+  cp ../top.out "${JOB_INFO_DIR}"
+  cp ../cpuinfo.out "${JOB_INFO_DIR}"
+  cp ../env.out "${JOB_INFO_DIR}"
+  cp ../hostname.out "${JOB_INFO_DIR}"
+  cp ../exitcode_*.txt  "${JOB_INFO_DIR}/"
+  cp ../myverif.out "${JOB_INFO_DIR}"
+  mv "std_${run_number}_${file_number}.err" "${JOB_INFO_DIR}"
+  mv "std_${run_number}_${file_number}.out" "${JOB_INFO_DIR}"
+  #TODO also fetch job and task log files
+  tar czf "${JOB_INFO_DIR}.tgz" "${JOB_INFO_DIR}"
+  files_tab=(*.*)
+  for file in "${files_tab[@]}"
+  do
+    echo "${file}"
+    if [[ ! "${file}" =~ *_([0-9]{6})_([0-9]{3}).* ]]  #TODO this regex will not work as the leading `*` is invalid (has nothing to repeat); fix by changing the leading `*` to `.*`
+    then
+      basefile=$(basename "${file}")  # extract base file name
+      extension="${basefile##*.}"  # extract the file extension
+      new_name="${basefile%.*}_${run_number}_${file_number}.${extension}"  # new file name with run_number and file_number inserted before the extension
+      mv "${file}" "${new_name}"  # rename the file
+    fi
+  done
 done
+cd "${work_dir_task}"
+
 echo "I am here 3"
-cd "${workdir}"
 ls * > my-second-verif.txt
 ls */* >> my-second-verif.txt
 mv run-*/*.* .
+
+# The swif2 job will copy all files in ${work_dir_task} back to JLab
+# so we have to clean up
 echo "I am here 4"
-# Remove ccdb.sqlite and rcdb.sqlite files
+# remove ccdb.sqlite and rcdb.sqlite files
 rm -f /dev/shm/ccdb.sqlite
 rm -f /dev/shm/rcdb.sqlite
+rm -f hd_rawdata_??????_???.evio  # remove link to input file.
+#TODO this clean up is largely incomplete
 #rm -rf run-*
-rm -f hd_rawdata_??????_???.evio
