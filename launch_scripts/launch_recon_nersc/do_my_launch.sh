@@ -16,9 +16,10 @@
 RUN_NUMBER_LIST_FILE="list-2025-01-ver03-perl.txt"  # text file with list of run numbers to process; one run number per line
 RUN_PERIOD="2025-01"  # Run period to process.
 VER="03"  # Version of this reconstruction launch.
-HALLD_VERSION_SET_XML="version_7.4.0.xml"  # XML file that defines the Hall-D version set to be used.
-JANA_CONFIG="jana_recon_nersc.config"  # JANA config file to use; must be located in ${NERSC_LAUNCH_DIR}
 BATCH="${VER}-perl"  # Batch label used to hold details of the launch; is appended to workflow name and directory names; should make it clear where/how the campaign was being run.
+HALLD_VERSION_SET_XML="version_7.4.0.xml"  # XML file that defines the Hall-D version set to be used.
+JANA_CONFIG="jana_recon_nersc.config"  # JANA config file to use; must be located in ${NERSC_LAUNCH_DIR}.
+JANA_CALIB_CONTEXT="calibtime=2025-12-24-00-00-01"  # JANA calibration context; overrides any value set in the JANA config file or in the environment.
 #
 SWIF_MAX_CONCURRENT_JOBS=100  # Maximum number of swif2 jobs that can be in-flight at once. This can be set only once when the workflow is created. If jobs are submitted piecemeal by running this script multiple times specifying different run lists, only the first invocation that creates the workflow will set this parameter.
 SWIF_RAW_DATA_ROOT="/mss/halld/RunPeriod-${RUN_PERIOD}/rawdata"  # Root of JLab directory tree, where raw data files are located. Must be an `/mss` path.
@@ -33,7 +34,7 @@ NERSC_QOS="regular"  # NERSC queue to use; usually `regular` or `debug`. See NER
 NERSC_NODE_TYPE="cpu"  # Constraint for NERSC jobs; usually `cpu` or `gpu`.
 NERSC_MAX_WALL_TIME="5:00:00"  # Maximum wall time for NERSC jobs.
 NERSC_MAX_TREADS_PER_NODE=256  # Maximum number of threads available on a NERSC Perlmutter CPU node.
-NERSC_NMB_TREADS_PER_PROCESS=32  # Number of threads that each `hd_root` process uses; must be <= ${NERSC_MAX_TREADS_PER_NODE}.
+NERSC_NMB_TREADS_PER_PROCESS=32  # Number of threads that each `hd_root` process uses; must be <= ${NERSC_MAX_TREADS_PER_NODE}. Overrides any value set in the JANA config file.
 NERSC_NMB_PROCESSES_PER_NODE=$(echo "${NERSC_MAX_TREADS_PER_NODE} / ${NERSC_NMB_TREADS_PER_PROCESS}" | bc)  # Number of hd_root processes to run concurrently on a single NERSC Perlmutter CPU node.  #TODO works only if division is exact; need to round up if not exact
 NERSC_HOST="perlmutter-p1.nersc.gov"  # NERSC hostname to use for ssh.
 NERSC_CONTAINER_IMAGE="docker:jeffersonlab/gluex_almalinux_9:latest"  # Shifter image that was converted from Docker image. Is not pulled in automatically and needs to exist in Shifter registry.
@@ -115,8 +116,9 @@ do
       "${NERSC_LAUNCH_DIR}/script_nersc_multi_test.sh"  # wrapper script for script_nersc_multi_test.py
       # arguments passed to script_nersc_multi_test.py
       "${NERSC_LAUNCH_DIR}"                    # launch_dir argument
-      "/launch-${BATCH}/script_nersc_test.sh"  # task_script_file argument
+      "/launch-${BATCH}/script_nersc_test.sh"  # script_file_task argument
       "/launch-${BATCH}/${JANA_CONFIG}"        # jana_config argument
+      "${JANA_CALIB_CONTEXT}"                  # jana_calib_context argument
       "${HALLD_VERSION_SET_XML}"               # halld_version_set_xml argument
       "${NERSC_NMB_PROCESSES_PER_NODE}"        # nmb_processes_per_node argument
       "${NERSC_NMB_TREADS_PER_PROCESS}"        # nmb_threads_per_process argument

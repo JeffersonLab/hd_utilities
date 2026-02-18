@@ -16,8 +16,9 @@ set -o xtrace  # turn on command tracing
 # Arguments:
 #
 # arg 1:  JANA config file
-# arg 2:  Hall-D version set XML file
-# arg 3:  Number of threads to use for this job
+# arg 2:  JANA calibration context
+# arg 3:  Hall-D version set XML file
+# arg 4:  Number of threads to use for this job
 
 # mount /var/udiMount/  #TODO is this really needed?
 # mount /var/udiMount/launch-BATCH  #TODO is this really needed?
@@ -34,8 +35,9 @@ trap 'echo "\"${last_command}\" command failed with exit code ${?}."' EXIT  #TOD
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 JANA_CONFIG="${1}"
-HALLD_VERSION_SET_XML="${2}"
-NMB_TREADS_PER_PROCESS="${3}"
+JANA_CALIB_CONTEXT="${2}"
+HALLD_VERSION_SET_XML="${3}"
+NMB_TREADS_PER_PROCESS="${4}"
 EXTRA_ARGS=""
 work_dir_task="${PWD}"  # absolute path of working directory of container task, i.e. `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}/subjob????`, where `????` is the 4-digit `${SLURM_NODEID}`
 
@@ -112,6 +114,7 @@ do
   HD_ROOT_CMD=(
     hd_root
     -PNTHREADS="${NMB_TREADS_PER_PROCESS}"  # -PNTHREADS=N overwrites any NTHREADS value set in the JANA config file
+    -Pjana:calib_context="${JANA_CALIB_CONTEXT}"  # set calibration context from local variable; this overwrites any value set in the JANA config file or in the environment
     --loadconfigs "${JANA_CONFIG}"
     "${EXTRA_ARGS}"
     "../${evio_file}"

@@ -26,8 +26,9 @@ def main(args: argparse.Namespace) -> None:
 
   #TODO use a more elegant way to print the arguments
   print(f"LAUNCH_DIR: {args.launch_dir}")
-  print(f"SCRIPT_FILE: {args.task_script_file}")
+  print(f"SCRIPT_FILE: {args.script_file_task}")
   print(f"JANA_CONFIG: {args.jana_config}")
+  print(f"JANA_CALIB_CONTEXT: {args.jana_calib_context}")
   print(f"HALLD_VERSION_SET_XML: {args.halld_version_set_xml}")
   print(f"NMB_PROCESSES_PER_NODE: {args.nmb_processes_per_node}")
   print(f"NMB_THREADS_PER_PROCESS: {args.nmb_threads_per_process}")
@@ -71,11 +72,12 @@ def main(args: argparse.Namespace) -> None:
     # "--output=task-%x-%j-%t.out",  # write stdout and stderr of task to file named task-<job name>-<job id>-<task id>.out in working directory of task
     #TODO call shifter directly in srun command to avoid extra layer of indirection
     f"{args.launch_dir}/run_shifter_multi.sh",  # script to run as task
-    work_dir_job,                  # arg 1:  top-level directory of job
-    args.task_script_file,         # arg 2:  script to run inside shifter (all subsequent args are eventually passed to this script)
+    work_dir_job,                  # arg 1:  top-level working directory of job
+    args.script_file_task,         # arg 2:  script to run inside shifter (all subsequent args are eventually passed to this script)
     args.jana_config,              # arg 3:  JANA config file
-    args.halld_version_set_xml,    # arg 4:  Hall-D version set XML file
-    args.nmb_threads_per_process,  # arg 5:  number of threads of `hd_root` process
+    args.jana_calib_context,       # arg 4:  JANA calibration context
+    args.halld_version_set_xml,    # arg 5:  Hall-D version set XML file
+    args.nmb_threads_per_process,  # arg 6:  number of threads of `hd_root` process
   ]
   # n.b. run/file are derived from evio file names. (see run_shifter_multi.sh)
   print(f"Nb of nodes asked: {command}")
@@ -96,8 +98,9 @@ if __name__ == "__main__":
     description = "Prepare directory structure and use srun to start a reconstruction task on each node (positional args).",
   )
   parser.add_argument("launch_dir",              help = "Path to launch directory containing scripts and config files")
-  parser.add_argument("task_script_file",        help = "Script file to run as task on each node")
+  parser.add_argument("script_file_task",        help = "Script file to run as task on each node")
   parser.add_argument("jana_config",             help = "JANA config file")
+  parser.add_argument("jana_calib_context",      help = "JANA calibration context")
   parser.add_argument("halld_version_set_xml",   help = "Hall-D version set XML file")
   parser.add_argument("nmb_processes_per_node",  help = "Number of processes per node",            type = int)
   parser.add_argument("nmb_threads_per_process", help = "Number of threads per `hd_root` process", type = int)
@@ -106,8 +109,9 @@ if __name__ == "__main__":
 
   #TODO use named arguments
   # parser.add_argument("--launch-dir",              dest = "launch_dir",              required = True, help = "Path to launch directory containing scripts and config files")
-  # parser.add_argument("--task-script-file",        dest = "task_script_file",        required = True, help = "Script file to run as task on each node")
+  # parser.add_argument("--script-file-task",        dest = "script_file_task",        required = True, help = "Script file to run as task on each node")
   # parser.add_argument("--jana-config",             dest = "jana_config",             required = True, help = "JANA config file")
+  # parser.add_argument("--jana-calib-context",      dest = "jana_calib_context",      required = True, help = "JANA calibration context")
   # parser.add_argument("--halld-version-set-xml",   dest = "halld_version_set_xml",   required = True, help = "Hall-D version set XML file")
   # parser.add_argument("--nmb-processes-per-node",  dest = "nmb_processes_per_node",  required = True, help = "Number of processes per node",            type = int)
   # parser.add_argument("--nmb-threads-per-process", dest = "nmb_threads_per_process", required = True, help = "Number of threads per `hd_root` process", type = int)
