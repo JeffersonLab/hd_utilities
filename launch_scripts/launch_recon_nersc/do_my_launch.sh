@@ -4,16 +4,16 @@ set -o errexit  # exit when any command fails
 set -o pipefail  # exit if any command in a pipeline fails
 
 # Master script that submits reconstruction jobs to run at NERSC using
-# swif2. One swif2/NERSC job is submitted for each run number in the
+# swif2.  One swif2/NERSC job is submitted for each run number in the
 # given list file.
 
-# The computation is subdivided into the following levels:
+# The computation is subdivided into the following levels (lowest to highest):
 # 1) `hd_root` with 32 threads processing one evio file = 1 NERSC process
 # 2) 256/32 = 8 NERSC processes running concurrently on a NERSC node = 1 NERSC task -> 1 task per node
 # 3) 1 run number with N evio files, processed by ceil(N/8) NERSC tasks (=nodes) running concurrently = 1 NERSC job -> ceil(N/8) tasks (nodes) per job
-# sbatch: submits one job per run number
-# srun: starts one task per node
 # task script: runs 8 `hd_root` processes in parallel, each processing one evio file
+# srun: starts one task per node
+# sbatch: submits one job per run number
 
 CONFIG_FILE="${1:-./do_my_launch.config.sh}"  # configuration file that defines all variables used in this script
 echo "Reading configuration of reconstruction launch from '${CONFIG_FILE}'"
