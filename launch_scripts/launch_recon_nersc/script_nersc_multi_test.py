@@ -69,7 +69,7 @@ def main(args: argparse.Namespace) -> None:
   # each task will run args.nmb_processes_per_task hd_root processes in parallel, each processing a single evio file)
   command = [
     "srun",
-    f"--ntasks={nmb_tasks}",  #TODO is this really needed when --ntasks is already specified in the `sbatch` command?
+    # f"--ntasks={nmb_tasks}",  # --ntasks is already specified in the `sbatch` command and srun will automatically use all allocated tasks
     # "--output=task-%x-%j-%t.out",  # write stdout and stderr of task to file named `task-<job name>-<job id>-<task id>.out` in working directory of task  #TODO use this instead of capturing the `srun` output below
     #TODO call shifter directly in srun command to avoid extra layer of indirection
     f"{args.launch_dir}/run_shifter_multi.sh",  # script to run as task

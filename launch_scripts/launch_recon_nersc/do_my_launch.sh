@@ -43,6 +43,8 @@ do
     swif2 add-job
     -workflow "${SWIF_WORKFLOW}"
     -name "GLUEX_recon_${RUN_NUMBER}"  # swif2 job name
+    -stdout "swif2_job_${RUN_NUMBER}.out"  # file to write stdout of swif2 job to file named `swif2_job_<run number>.out` in working directory of job
+    -stderr "swif2_job_${RUN_NUMBER}.err"  # file to write stderr of swif2 job to file named `swif2_job_<run number>.err` in working directory of job
   )
   # loop over all evio files of the run and subdivide file list into
   # chunks of size `${NERSC_NMB_PROCESSES_PER_TASK}` that will be
@@ -80,8 +82,8 @@ do
     -sbatch
       # these options are passed to `sbatch` when swif2 submits job at NERSC
       --account="${NERSC_PROJECT}"
+      --image="'${NERSC_CONTAINER_IMAGE}'"  #TODO verify that container image exists in NERSC repository
       --volume="'${NERSC_LAUNCH_DIR}:/launch-${BATCH}'"  # map `${NERSC_LAUNCH_DIR}` on host to `/launch-${BATCH}` in container
-      --image="'${NERSC_CONTAINER_IMAGE}'"  #TODO verify that image exists in NERSC repository
       --module=cvmfs  # enable CVMFS in the container so it can access the `/group/halld` tree
       --time="${NERSC_MAX_WALL_TIME}"
       --nodes="${NERSC_NMB_TASKS}"  # 1 node per task
@@ -91,7 +93,7 @@ do
       #--exclusive  # allocated nodes cannot be shared with other jobs/users  #TODO clarify whether this is beneficial or not
       --qos="${NERSC_QOS}"
       --constraint="${NERSC_NODE_TYPE}"
-      --output="job-%x-%j.out"  # write stdout and stderr of job to file named `job-<job name>-<job id>.out` in working directory of job
+      --output="nersc-job-%x-%j.out"  # write stdout and stderr of job to file named `nersc-job-<job name>-<job id>.out` in working directory of job
       ::
       # job script to run at NERSC
       #TODO could we directly submit the python script?
