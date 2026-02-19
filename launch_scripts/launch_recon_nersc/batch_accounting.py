@@ -27,30 +27,30 @@ else:
 if not os.getenv("PYTHONPATH"):
   sys.path.append("/group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5/ccdb/ccdb_1.06.06/python")
 import mysql.connector
-sys.path.append('/group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5/rcdb/rcdb_0.06.00/python')
+sys.path.append("/group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5/rcdb/rcdb_0.06.00/python")
 import rcdb
 
 RCDB_HOST = "hallddb.jlab.org"
 RCDB_USER = "rcdb"
 RCDB_QUERY = "@is_dirc_production and @status_approved"
-db = rcdb.RCDBProvider("mysql://" + RCDB_USER + "@" + RCDB_HOST + "/rcdb")
+db = rcdb.RCDBProvider(f"mysql://{RCDB_USER}@{RCDB_HOST}/rcdb")
 
 if TYPE == "reprocessing":
   if testing == "production":
-    cmd = ("mkdir -p %s.recon_2019-11_ver01_catchup_batch%s/launch" % (DATEDIR, BATCHNB))
+    cmd = (f"mkdir -p {DATEDIR}.recon_2019-11_ver01_catchup_batch{BATCHNB}/launch")
     os.system(cmd)
-    cmd = "cp *.* %s.recon_2019-11_ver01_catchup_batch%s/launch/"
+    cmd = f"cp *.* {DATEDIR}.recon_2019-11_ver01_catchup_batch{BATCHNB}/launch/"
     os.system(cmd)
-    cmd = ("scp -r %s.recon_2019-11_ver01_catchup_batch%s bigred3.uits.iu.edu:/N/u/hpg/BigRed3/gluex/work/" % (DATEDIR, BATCHNB))
+    cmd = (f"scp -r {DATEDIR}.recon_2019-11_ver01_catchup_batch{BATCHNB} bigred3.uits.iu.edu:/N/u/hpg/BigRed3/gluex/work/")
     os.system(cmd)
-    # cmd = ('scp jana_recon_nersc_%s.config bigred3.uits.iu.edu:/N/u/hpg/BigRed3/gluex/work/%s.recon_2019-11_ver01_catchup_batch%s/launch/'%(BATCHNB, DATEDIR, BATCHNB))
-    # os.system(cmd)
+    cmd = (f"scp jana_recon_nersc_{BATCHNB}.config bigred3.uits.iu.edu:/N/u/hpg/BigRed3/gluex/work/{DATEDIR}.recon_2019-11_ver01_catchup_batch{BATCHNB}/launch/")
+    os.system(cmd)
   if testing == "testing":
-    cmd = ("mkdir -p %s.recon_2019-11_ver01_catchup_batch%s/launch" % (DATEDIR, BATCHNB))
+    cmd = (f"mkdir -p {DATEDIR}.recon_2019-11_ver01_catchup_batch{BATCHNB}/launch")
     print(cmd)
-    cmd = "cp *.* %s.recon_2019-11_ver01_catchup_batch%s/launch/"
+    cmd = f"cp *.* {DATEDIR}.recon_2019-11_ver01_catchup_batch{BATCHNB}/launch/"
     print(cmd)
-    cmd = ("scp -r %s.recon_2019-11_ver01_catchup_batch%s bigred3.uits.iu.edu:/N/u/hpg/BigRed3/gluex/work/" % (DATEDIR, BATCHNB))
+    cmd = (f"scp -r {DATEDIR}.recon_2019-11_ver01_catchup_batch{BATCHNB} bigred3.uits.iu.edu:/N/u/hpg/BigRed3/gluex/work/")
     print(cmd)
 
 
@@ -68,19 +68,19 @@ for r in db.select_runs(RCDB_QUERY, MINRUN, MAXRUN):
     evio_files_ctr += evio_files_nb
     for evio_index in range(evio_files_nb):
       if evio_index < 10:
-        cache_evio_file = "/cache/halld/RunPeriod-2019-11/recon/ver01/REST/0" + str(rnb) + "/dana_rest_0" + str(rnb) + "_00" + str(evio_index) + ".hddm"
-        mss_evio_file = "/mss/halld/RunPeriod-2019-11/recon/ver01/REST/0" + str(rnb) + "/dana_rest_0" + str(rnb) + "_00" + str(evio_index) + ".hddm"
-        evio_file = str(rnb) + "_00" + str(evio_index)
+        cache_evio_file = f"/cache/halld/RunPeriod-2019-11/recon/ver01/REST/0{rnb}/dana_rest_0{rnb}_00{evio_index}.hddm"
+        mss_evio_file = f"/mss/halld/RunPeriod-2019-11/recon/ver01/REST/0{rnb}/dana_rest_0{rnb}_00{evio_index}.hddm"
+        evio_file = f"{rnb}_00{evio_index}"
       if 9 < evio_index and evio_index < 100:
-        cache_evio_file = "/cache/halld/RunPeriod-2019-11/recon/ver01/REST/0" + str(rnb) + "/dana_rest_0" + str(rnb) + "_0" + str(evio_index) + ".hddm"
-        mss_evio_file = "/mss/halld/RunPeriod-2019-11/recon/ver01/REST/0" + str(rnb) + "/dana_rest_0" + str(rnb) + "_0" + str(evio_index) + ".hddm"
-        evio_file = str(rnb) + "_0" + str(evio_index)
+        cache_evio_file = f"/cache/halld/RunPeriod-2019-11/recon/ver01/REST/0{rnb}/dana_rest_0{rnb}_0{evio_index}.hddm"
+        mss_evio_file = f"/mss/halld/RunPeriod-2019-11/recon/ver01/REST/0{rnb}/dana_rest_0{rnb}_0{evio_index}.hddm"
+        evio_file = f"{rnb}_0{evio_index}"
       if 99 < evio_index and evio_index < 999:
-        cache_evio_file = "/cache/halld/RunPeriod-2019-11/recon/ver01/REST/0" + str(rnb) + "/dana_rest_0" + str(rnb) + "_" + str(evio_index) + ".hddm"
-        mss_evio_file = "/mss/halld/RunPeriod-2019-11/recon/ver01/REST/0" + str(rnb) + "/dana_rest_0" + str(rnb) + "_" + str(evio_index) + ".hddm"
-        evio_file = str(rnb) + "_" + str(evio_index)
+        cache_evio_file = f"/cache/halld/RunPeriod-2019-11/recon/ver01/REST/0{rnb}/dana_rest_0{rnb}_{evio_index}.hddm"
+        mss_evio_file = f"/mss/halld/RunPeriod-2019-11/recon/ver01/REST/0{rnb}/dana_rest_0{rnb}_{evio_index}.hddm"
+        evio_file = f"{rnb}_{evio_index}"
 
-            py_name = "launch_iu_" + evio_file + ".py"
+      py_name = f"launch_iu_{evio_file}.py"
 
       is_mssfile = os.path.isfile(mss_evio_file)
       is_cachefile = os.path.isfile(cache_evio_file)
@@ -89,29 +89,29 @@ for r in db.select_runs(RCDB_QUERY, MINRUN, MAXRUN):
         true_bit = 1
       else:
         if TYPE == "reprocessing":
-          subprocess.call(["sed 's,RUNNB,'%s',g; s,FILENB,'%s',g; s,BATCHNB,'%s',g; s,DATEDIR,'%s',g' dummy.py > %s" % (rnb, evio_index, BATCHNB, DATEDIR, py_name)], shell=True)
-          cmd = ("chmod +x %s" % (py_name))
+          subprocess.call([f"sed 's,RUNNB,'{rnb}',g; s,FILENB,'{evio_index}',g; s,BATCHNB,'{BATCHNB}',g; s,DATEDIR,'{DATEDIR}',g' dummy.py > {py_name}"], shell = True)
+          cmd = (f"chmod +x {py_name}")
           os.system(cmd)
-          cmd = ("scp %s bigred3.uits.iu.edu:/N/u/hpg/BigRed3/gluex/work/%s.recon_2019-11_ver01_catchup_batch%s/launch/" % (py_name, DATEDIR, BATCHNB))
+          cmd = (f"scp {py_name} bigred3.uits.iu.edu:/N/u/hpg/BigRed3/gluex/work/{DATEDIR}.recon_2019-11_ver01_catchup_batch{BATCHNB}/launch/")
           if testing == "production":
             os.system(cmd)
           if testing == "testing":
             print(cmd)
-          cmd = ('./%s' % (py_name))
+          cmd = (f"./{py_name}")
           if testing == "production":
             os.system(cmd)
           if testing == "testing":
             print(cmd)
-          print("%s" % (evio_file))
+          print(evio_file)
           ctr = ctr + 1
         if TYPE == "counting":
-          print("%s" % (evio_file))
+          print(evio_file)
           ctr = ctr + 1
 
-print("batch%s has %s runs made of %s evio files" % (BATCHNB, rnb_ctr, evio_files_ctr))
-print("Number of REST files on cache or mss %s" % (evio_files_ctr - ctr))
-print("Number of REST files missing %s" % (ctr))
-print("batch%s is %.2f percent done" % (BATCHNB, 100 * (float(evio_files_ctr) - float(ctr)) / float(evio_files_ctr)))
+print(f"batch{BATCHNB} has {rnb_ctr} runs made of {evio_files_ctr} evio files")
+print(f"Number of REST files on cache or mss {evio_files_ctr - ctr}")
+print(f"Number of REST files missing {ctr}")
+print(f"batch{BATCHNB} is {100 * (float(evio_files_ctr) - float(ctr)) / float(evio_files_ctr):.2f} percent done")
 
 d = datetime.datetime.today()
 print(d.strftime("job finish: %Y-%m-%d %H:%M:%S\n"))
