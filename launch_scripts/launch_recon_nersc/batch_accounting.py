@@ -5,6 +5,9 @@ import os
 import subprocess
 import sys
 
+import mysql.connector
+import rcdb
+
 
 d = datetime.datetime.today()
 print(d.strftime("job start: %Y-%m-%d %H:%M:%S\n"))
@@ -23,12 +26,6 @@ else:
   print("python batch_accounting.py [MINRUN] [MAXRUN] [BATCHNB] [DATEDIR] [TYPE:reprocessing/counting] [testing/production]")
   sys.exit()
 
-# mysql.connector not available via system and must come via PYTHONPATH
-if not os.getenv("PYTHONPATH"):
-  sys.path.append("/group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5/ccdb/ccdb_1.06.06/python")
-import mysql.connector
-sys.path.append("/group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5/rcdb/rcdb_0.06.00/python")
-import rcdb
 
 RCDB_HOST = "hallddb.jlab.org"
 RCDB_USER = "rcdb"
