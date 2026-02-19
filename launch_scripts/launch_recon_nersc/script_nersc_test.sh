@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# set -o nounset  # exit when trying to use an uninitialized variable
+# set -o nounset  # exit when trying to use an uninitialized variable; gxenv seems to require some variables to be unset, so we cannot use this option
 #TODO make debug output switchable with a command line argument
 set -o verbose  # print shell input lines as they are read, i.e. before any expansion
 set -o xtrace  # print commands and their arguments as they are executed, i.e. after expansion and without I/O redirection
@@ -125,12 +125,12 @@ echo "I am here 1"
 for process_index in "${!process_ids[@]}"
 do
   wait "${process_ids[${process_index}]}"  # wait for the process to finish
-  echo "Exit code for process ${process_index}: ${?}" > "exitcode_${process_index}.txt"  #TODO the text does not add anything useful? why not just write the exit code to the file?
+  echo "Exit code for process ${process_index}: ${?}" > "exitcode_${process_index}.txt"  #TODO the text does not add anything useful? why not just write the exit code to the file? Improve file name
 done
 
 set -o errexit  # turn on exit on error back
 echo "I am here 2"
-ls -lrth >> myverif.out
+ls -lrth >> myverif.out  #TODO is time ordering useful here?
 ls -lrth ./*/* >> myverif.out
 
 shopt -s nullglob  # ensure that array is empty if no files match the pattern

@@ -5,21 +5,26 @@
 # shellcheck shell=bash
 # shellcheck disable=SC2034  # variables are consumed by `do_my_launch.sh`
 
-readonly RUN_NUMBER_LIST_FILE="list-2025-01-ver03-perl.txt"  # text file with list of run numbers to process; one run number per line
-readonly RUN_PERIOD="2025-01"  # Run period to process.
-readonly VER="03"  # Version of this reconstruction launch.
+# set names and run list
+readonly RUN_PERIOD="2022-05"  # Run period to process.
+readonly VER="02"  # Version of this reconstruction launch.
 readonly BATCH="${VER}-perl"  # Batch label used to hold details of the launch; is appended to workflow name and directory names; should make it clear where/how the campaign was being run.
-readonly HALLD_VERSION_SET_XML="version_7.4.0.xml"  # XML file that defines the Hall-D version set to be used.
-readonly JANA_CONFIG="jana_recon_nersc.config"  # JANA config file to use; must be located in ${NERSC_LAUNCH_DIR}.
-readonly JANA_CALIB_CONTEXT="calibtime=2025-12-24-00-00-01"  # JANA calibration context; overrides any value set in the JANA config file or in the environment.
-readonly JANA_GEOMETRY_URL="ccdb:///GEOMETRY/main_HDDS.xml"  # JANA geometry to be used in reconstruction; some data sets such as CPP require custom geometry.
+readonly RUN_NUMBER_LIST_FILE="list.${RUN_PERIOD}_ver${BATCH}.txt"  # text file with list of run numbers to process; one run number per line
 
+# set reconstruction parameters
+readonly HALLD_VERSION_SET_XML="version_7.4.0.xml"  # XML file that defines the Hall-D version set to be used.
+readonly JANA_CONFIG="jana_recon_nersc.${RUN_PERIOD}_ver${BATCH}.config"  # JANA config file to use; must be located in ${NERSC_LAUNCH_DIR}.
+readonly JANA_CALIB_CONTEXT="calibtime=2026-02-18-00-00-01"  # JANA calibration context; overrides any value set in the JANA config file or in the environment.
+readonly JANA_GEOMETRY_URL="ccdb:///GEOMETRY/cpp_HDDS.xml"  # JANA geometry to be used in reconstruction; usually `ccdb:///GEOMETRY/main_HDDS.xml` but some data sets such as CPP require custom geometry.
+
+# set swif2 job parameters
 readonly SWIF_MAX_CONCURRENT_JOBS=100  # Maximum number of swif2 jobs that can be in-flight at once. This can be set only once when the workflow is created. If jobs are submitted piecemeal by running this script multiple times specifying different run lists, only the first invocation that creates the workflow will set this parameter.
 readonly SWIF_RAW_DATA_ROOT="/mss/halld/RunPeriod-${RUN_PERIOD}/rawdata"  # Root of JLab directory tree, where raw data files are located. Must be an `/mss` path.
 readonly SWIF_OUTPUT_ROOT="/lustre/expphy/volatile/halld/offsite_prod/RunPeriod-${RUN_PERIOD}/recon/ver${BATCH}"  # Root of JLab directory tree, where output files are copied to.
 readonly SWIF_WORKFLOW="recon_${RUN_PERIOD}_ver${BATCH}_batchNERSC-multi"  # only change this if default name is not appropriate  #TODO fix name?
 readonly SWIF_SITE="nersc/perlmutter"  # swif2 site to use
 
+# set NERSC job parameters
 readonly NERSC_PROJECT="m3120"  # NERSC project to charge to.
 readonly NERSC_PROJECT_DIR="/global/cfs/cdirs/${NERSC_PROJECT}"  # Project directory in the NERSC Common File System (CFS) where config files and scripts will be copied to and run from.
 readonly NERSC_LAUNCH_DIR="${NERSC_PROJECT_DIR}/launch-${BATCH}"  # NERSC directory that will get mapped to /launch_${BATCH} inside the task container. Contains scripts and JANA config file to run hd_root.
