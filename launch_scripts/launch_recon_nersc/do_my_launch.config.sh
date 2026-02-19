@@ -26,8 +26,8 @@ readonly NERSC_LAUNCH_DIR="${NERSC_PROJECT_DIR}/launch-${BATCH}"  # NERSC direct
 readonly NERSC_QOS="regular"  # NERSC queue to use; usually `regular` or `debug`. See NERSC documentation for details on charging and restrictions.
 readonly NERSC_NODE_TYPE="cpu"  # Constraint for NERSC jobs; usually `cpu` or `gpu`.
 readonly NERSC_MAX_WALL_TIME="5:00:00"  # Maximum wall time for NERSC jobs.
-readonly NERSC_MAX_TREADS_PER_NODE=256  # Maximum number of threads available on a NERSC Perlmutter CPU node.
-readonly NERSC_NMB_TREADS_PER_PROCESS=32  # Number of threads that each `hd_root` process uses; must be <= ${NERSC_MAX_TREADS_PER_NODE}. Overrides any value set in the JANA config file.
-readonly NERSC_NMB_PROCESSES_PER_NODE=$(echo "${NERSC_MAX_TREADS_PER_NODE} / ${NERSC_NMB_TREADS_PER_PROCESS}" | bc)  # Number of hd_root processes to run concurrently on a single NERSC Perlmutter CPU node.  #TODO works only if division is exact; need to round up if not exact
+readonly NERSC_MAX_THREADS_PER_TASK=256  # Maximum number of threads available on a NERSC Perlmutter CPU node.
+readonly NERSC_NMB_THREADS_PER_PROCESS=32  # Number of threads that each `hd_root` process uses; must be <= ${NERSC_MAX_THREADS_PER_TASK}. Overrides any value set in the JANA config file.
+readonly NERSC_NMB_PROCESSES_PER_TASK=$(echo "${NERSC_MAX_THREADS_PER_TASK} / ${NERSC_NMB_THREADS_PER_PROCESS}" | bc)  # Number of hd_root processes to run concurrently on a single NERSC Perlmutter CPU node.  #TODO works only if division is exact; need to round up if not exact
 readonly NERSC_HOST="perlmutter-p1.nersc.gov"  # NERSC hostname to use for ssh.
 readonly NERSC_CONTAINER_IMAGE="docker:jeffersonlab/gluex_almalinux_9:latest"  # Shifter image that was converted from Docker image. Is not pulled in automatically and needs to exist in Shifter registry.

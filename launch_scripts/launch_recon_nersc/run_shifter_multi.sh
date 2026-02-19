@@ -7,7 +7,7 @@ set -o xtrace  # turn on command tracing
 # It wakes up in the top-level working directory
 # for the job and cd's into the directory for the
 # file it is supposed to process based on the value
-# of SLURM_NODEID which should be a number between
+# of SLURM_PROCID which should be a number between
 # 0 and Ntasks-1.
 #
 # The first argument passed to this script is the
@@ -20,15 +20,15 @@ set -o xtrace  # turn on command tracing
 #
 
 # The actual working directory for this job will be
-# named something like RUNXXXXXX/NODEYYY. However, we
+# named something like RUNXXXXXX/TASKYYY. However, we
 # do not know the run/file numbers at this point, only
-# the SLURM_NODEID can be used to distinguish us from
+# the SLURM_PROCID can be used to distinguish us from
 # other tasks. The script_nersc_multi.py script though
 # created a symbolic link named subjobZZZZ (where the
-# ZZZZ is the SLURM_NODEID) that points to the directory
+# ZZZZ is the SLURM_PROCID) that points to the directory
 # we should use.
 work_dir_job="${1}"
-work_dir_task=$(printf "subjob%04d" "${SLURM_NODEID}")
+work_dir_task=$(printf "subjob%04d" "${SLURM_PROCID}")
 cd "${work_dir_job}/${work_dir_task}"
 
 

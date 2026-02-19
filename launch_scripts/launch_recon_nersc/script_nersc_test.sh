@@ -41,10 +41,10 @@ JANA_CONFIG="${1}"
 JANA_CALIB_CONTEXT="${2}"
 JANA_GEOMETRY_URL="${3}"
 HALLD_VERSION_SET_XML="${4}"
-NMB_TREADS_PER_PROCESS="${5}"
+NMB_THREADS_PER_PROCESS="${5}"
 
 EXTRA_ARGS=""
-work_dir_task="${PWD}"  # absolute path of working directory of container task, i.e. `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}/subjob????`, where `????` is the 4-digit `${SLURM_NODEID}`
+work_dir_task="${PWD}"  # absolute path of working directory of container task, i.e. `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}/subjob????`, where `????` is the 4-digit `${SLURM_PROCID}`
 
 # setup software environment according to Hall-D version set XML file
 source "/group/halld/Software/build_scripts/gluex_env_boot_jlab.sh"
@@ -108,7 +108,7 @@ do
   #   3) command line argument
   HD_ROOT_CMD=(
     hd_root
-    -PNTHREADS="${NMB_TREADS_PER_PROCESS}"  # override number of threads to use
+    -PNTHREADS="${NMB_THREADS_PER_PROCESS}"  # override number of threads to use
     -Pjana:calib_context="${JANA_CALIB_CONTEXT}"  # override calibration context from local variable
     --loadconfigs "${JANA_CONFIG}"
     "${EXTRA_ARGS}"

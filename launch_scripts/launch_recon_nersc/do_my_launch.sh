@@ -42,34 +42,33 @@ do
     -name "GLUEX_recon_${RUN_NUMBER}"  # swif2 job name
   )
   # loop over all evio files of the run and subdivide file list into
-  # chunks of size `${NERSC_NMB_PROCESSES_PER_NODE}` that will be
-  # processed by individual NERSC nodes, defining the input and output
-  # files for each node.
+  # chunks of size `${NERSC_NMB_PROCESSES_PER_TASK}` that will be
+  # processed by individual NERSC tasks, defining the input and output
+  # files for each task.
   EVIO_DIR="${SWIF_RAW_DATA_ROOT}/Run${RUN_NUMBER}"
   shopt -s failglob  # exit with error if no files match the pattern
   EVIO_FILE_PATHS=("${EVIO_DIR}"/*.evio)
   shopt -u failglob
-  # calculate number of nodes to request based on number of evio files and number of processes to run per node
+  # calculate number of tasks to request based on number of evio files and number of processes to run per task
   NMB_EVIO_FILES=${#EVIO_FILE_PATHS[@]}
-  echo "Run period: ${RUN_PERIOD} - run number: ${RUN_NUMBER} - number of evio files: ${NMB_EVIO_FILES} - divided by: ${NERSC_NMB_PROCESSES_PER_NODE}"
-  NERSC_NMB_NODES=$(echo "(${NMB_EVIO_FILES} + ${NERSC_NMB_PROCESSES_PER_NODE} - 1) / ${NERSC_NMB_PROCESSES_PER_NODE}" | bc)  #TODO check whether this is generally correct
-  echo "Number of nodes asked: ${NERSC_NMB_NODES}"
-  for (( NERSC_NODE_INDEX=0; NERSC_NODE_INDEX < NERSC_NMB_NODES; NERSC_NODE_INDEX++ ))
+  echo "Run period: ${RUN_PERIOD} - run number: ${RUN_NUMBER} - number of evio files: ${NMB_EVIO_FILES} - divided by: ${NERSC_NMB_PROCESSES_PER_TASK}"
+  NERSC_NMB_TASKS=$(echo "(${NMB_EVIO_FILES} + ${NERSC_NMB_PROCESSES_PER_TASK} - 1) / ${NERSC_NMB_PROCESSES_PER_TASK}" | bc)  #TODO check whether this is generally correct
+  echo "Number of tasks asked: ${NERSC_NMB_TASKS}"
+  for (( TASK_INDEX=0; TASK_INDEX < NERSC_NMB_TASKS; TASK_INDEX++ ))
   do
-    # construct input lines for the given node, e.g. `-input file1.evio mss:/mss/some_path/file1.evio -input file2.evio mss:/mss/some_path/file2.evio ...`
-    EVIO_FILE_START_INDEX=$((NERSC_NODE_INDEX * NERSC_NMB_PROCESSES_PER_NODE))
-    EVIO_FILE_END_INDEX=$((EVIO_FILE_START_INDEX + NERSC_NMB_PROCESSES_PER_NODE))
+    # construct the input lines for the given task, e.g. `-input file1.evio mss:/mss/some_path/file1.evio -input file2.evio mss:/mss/some_path/file2.evio ...`
+    EVIO_FILE_START_INDEX=$((TASK_INDEX * NERSC_NMB_PROCESSES_PER_TASK))
+    EVIO_FILE_END_INDEX=$((EVIO_FILE_START_INDEX + NERSC_NMB_PROCESSES_PER_TASK))
     for (( EVIO_FILE_INDEX=EVIO_FILE_START_INDEX; EVIO_FILE_INDEX < EVIO_FILE_END_INDEX && EVIO_FILE_INDEX < NMB_EVIO_FILES; EVIO_FILE_INDEX++ ))
     do
       EVIO_FILE_PATH="${EVIO_FILE_PATHS[${EVIO_FILE_INDEX}]}"
       EVIO_FILE_NAME="$(basename "${EVIO_FILE_PATH}")"
       SWIF2_CMD+=(-input "${EVIO_FILE_NAME}" "mss:${EVIO_FILE_PATH}")
     done
-    # construct output line for the given node, e.g. `-output match:RUN132194/NODE024/* /lustre/expphy/volatile/halld/offsite_prod/RunPeriod-2025-01/recon/ver03/RUN132194/NODE024/`
-    SUBDIR_TASK=$(printf "RUN%06d/NODE%03d" "${RUN_NUMBER}" "${NERSC_NODE_INDEX}")  # subdirectory for NERSC task given by `${NERSC_NODE_INDEX}`
-    WORK_DIR_TASK="${SWIF_OUTPUT_ROOT}/${SUBDIR_TASK}"  # working directory for NERSC task; this is where `hd_root` will write its output files to
+    # construct the output line for the given task, e.g. `-output match:RUN132194/TASK024/* /lustre/expphy/volatile/halld/offsite_prod/RunPeriod-2025-01/recon/ver03/RUN132194/TASK024/`
+    SUBDIR_TASK=$(printf "RUN%06d/TASK%03d" "${RUN_NUMBER}" "${TASK_INDEX}")  # subdirectory for NERSC task given by `${TASK_INDEX}`
     echo "mkdir -p ${WORK_DIR_TASK}"
-    mkdir -p "${WORK_DIR_TASK}"
+    mkdir -p "${WORK_DIR_TASK}"  #TODO are also created by `script_nersc_multi_test.py`
     SWIF2_CMD+=(-output "match:${SUBDIR_TASK}/*" "${SWIF_OUTPUT_ROOT}")  # copy `${SUBDIR_TASK}/*` into `${SWIF_OUTPUT_ROOT}` after the job is done
   done
   # define NERSC job
@@ -81,9 +80,10 @@ do
       --image="'${NERSC_CONTAINER_IMAGE}'"  #TODO verify that image exists in NERSC repository
       --module=cvmfs  # enable CVMFS in the container so it can access the `/group/halld` tree
       --time="${NERSC_MAX_WALL_TIME}"
-      --nodes="${NERSC_NMB_NODES}"
+      --nodes="${NERSC_NMB_TASKS}"  # 1 node per task
       --tasks-per-node=1
-      --cpus-per-task="${NERSC_MAX_TREADS_PER_NODE}"
+      --ntasks="${NERSC_NMB_TASKS}"
+      --cpus-per-task="${NERSC_MAX_THREADS_PER_TASK}"
       #--exclusive  # allocated nodes cannot be shared with other jobs/users
       --qos="${NERSC_QOS}"
       --constraint="${NERSC_NODE_TYPE}"
@@ -99,12 +99,12 @@ do
       "'${JANA_CALIB_CONTEXT}'"                # jana_calib_context argument
       "'${JANA_GEOMETRY_URL}'"                 # jana_geometry_url argument
       "${HALLD_VERSION_SET_XML}"               # halld_version_set_xml argument
-      "${NERSC_NMB_PROCESSES_PER_NODE}"        # nmb_processes_per_node argument
-      "${NERSC_NMB_TREADS_PER_PROCESS}"        # nmb_threads_per_process argument
+      "${NERSC_NMB_PROCESSES_PER_TASK}"        # nmb_processes_per_node argument
+      "${NERSC_NMB_THREADS_PER_PROCESS}"       # nmb_threads_per_process argument
   )
   echo "${SWIF2_CMD[@]}" >| "./exec_${RUN_NUMBER}.sh"
   # # generate shell-escaped version of command array and write it to file so it becomes a script that can be run directly
-  #TODO this would be the safer approach, but in `-output match:RUN132194/NODE024/*` this would escape the `*`; not sure if this would cause problems with swif2
+  #TODO this would be the safer approach, but in `-output match:RUN132194/TASK024/*` this would escape the `*`; not sure if this would cause problems with swif2
   # {
   #   printf '%q ' "${CMD[@]}"
   #   printf '\n'
