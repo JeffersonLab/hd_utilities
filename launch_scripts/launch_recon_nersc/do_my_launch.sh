@@ -84,7 +84,7 @@ do
       --tasks-per-node=1
       --ntasks="${NERSC_NMB_TASKS}"
       --cpus-per-task="${NERSC_MAX_THREADS_PER_TASK}"
-      #--exclusive  # allocated nodes cannot be shared with other jobs/users
+      #--exclusive  # allocated nodes cannot be shared with other jobs/users  #TODO clarify whether this is beneficial or not
       --qos="${NERSC_QOS}"
       --constraint="${NERSC_NODE_TYPE}"
       --output="job-%x-%j.out"  # write stdout and stderr of job to file named `job-<job name>-<job id>.out` in working directory of job

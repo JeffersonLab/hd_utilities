@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # set -o nounset  # exit if trying to use an uninitialized variable
-set -o xtrace  # turn on command tracing
+set -o verbose  # print shell input lines as they are read, i.e. before any expansion
+set -o xtrace  # print commands and their arguments as they are executed, i.e. after expansion and without I/O redirection
 
+#TODO update documentation for this script
 # This script will be run on the individual nodes
 # to process a single file for multi-file jobs.
 # It wakes up in the top-level working directory

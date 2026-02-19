@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # set -o nounset  # exit if trying to use an uninitialized variable
-set -o xtrace  # turn on command tracing
+set -o verbose  # print shell input lines as they are read, i.e. before any expansion
+set -o xtrace  # print commands and their arguments as they are executed, i.e. after expansion and without I/O redirection
 
 # This script is the entrypoint for a large multi-file
 # job. SLURM will run it and SWIF2 will make sure it
