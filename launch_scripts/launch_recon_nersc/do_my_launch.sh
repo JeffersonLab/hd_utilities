@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+set -o nounset  # exit when trying to use an uninitialized variable
+set -o errexit  # exit when any command fails
+set -o pipefail  # exit if any command in a pipeline fails
 
 # Master script that submits reconstruction jobs to run at NERSC using
 # swif2. One swif2/NERSC job is submitted for each run number in the
@@ -67,6 +70,7 @@ do
     done
     # construct the output line for the given task, e.g. `-output match:RUN132194/TASK024/* /lustre/expphy/volatile/halld/offsite_prod/RunPeriod-2025-01/recon/ver03/RUN132194/TASK024/`
     SUBDIR_TASK=$(printf "RUN%06d/TASK%03d" "${RUN_NUMBER}" "${TASK_INDEX}")  # subdirectory for NERSC task given by `${TASK_INDEX}`
+    WORK_DIR_TASK="${SWIF_OUTPUT_ROOT}/${SUBDIR_TASK}"  # working directory for NERSC task
     echo "mkdir -p ${WORK_DIR_TASK}"
     mkdir -p "${WORK_DIR_TASK}"  #TODO are also created by `script_nersc_multi_test.py`
     SWIF2_CMD+=(-output "match:${SUBDIR_TASK}/*" "${SWIF_OUTPUT_ROOT}")  # copy `${SUBDIR_TASK}/*` into `${SWIF_OUTPUT_ROOT}` after the job is done

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# set -o nounset  # exit if trying to use an uninitialized variable
+# set -o nounset  # exit when trying to use an uninitialized variable
 #TODO make debug output switchable with a command line argument
 set -o verbose  # print shell input lines as they are read, i.e. before any expansion
 set -o xtrace  # print commands and their arguments as they are executed, i.e. after expansion and without I/O redirection
@@ -28,8 +28,7 @@ ulimit -c unlimited  # allow core dumps with no size limit
 # mount /var/udiMount/launch-BATCH  #TODO is this really needed?
 docker inspect jeffersonlab/gluex_almalinux_9:latest  #TODO shouldn't the image be a parameter passed to the script?
 
-# exit when any command fails
-set -o errexit
+set -o errexit  # exit when any command fails
 
 # # keep track of last executed command
 # trap 'last_command=${current_command}; current_command=${BASH_COMMAND}' DEBUG
@@ -129,7 +128,7 @@ do
   echo "Exit code for process ${process_index}: ${?}" > "exitcode_${process_index}.txt"  #TODO the text does not add anything useful? why not just write the exit code to the file?
 done
 
-set -o errexit # turn on exit on error back
+set -o errexit  # turn on exit on error back
 echo "I am here 2"
 ls -lrth >> myverif.out
 ls -lrth ./*/* >> myverif.out

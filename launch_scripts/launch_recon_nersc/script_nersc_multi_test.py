@@ -53,7 +53,7 @@ def main(args: argparse.Namespace) -> None:
     # make work directory for task
     #TODO why is this called for every file? we know how many files each job processes
     work_dir_task = f"RUN{int(run_number):06d}/TASK{node_index:03d}"
-    os.makedirs(work_dir_task, exist_ok = True)
+    os.makedirs(work_dir_task, exist_ok = True)  #TODO are also created by `do_my_launch.sh`
 
     # make symlink pointing to work_dir_task so each task can cd into it via `${SLURM_PROCID}`
     #TODO why is this extra step needed? why not use work_dir_task directly in the task script? The only difference is the number of digits used
