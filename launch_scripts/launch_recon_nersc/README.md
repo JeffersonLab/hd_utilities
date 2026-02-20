@@ -34,7 +34,7 @@
 
 #### ifarm
 
-* `.` the name of the current directory is expected to have the form `launch-<batch>`, where `batch=<recon version>-<site>`, e.g. `launch-03-perl`.
+* `~gxproj4/NERSC/<start date>.recon.<run period>_<batch>/launch.<run period>_<batch>` directory with production scripts; where `batch=ver<recon version>_<site>`, e.g. `launch_ver03-perl`.
 * `/mss/halld/RunPeriod-<run period>/rawdata/Run<run number>` directory with input `.evio` files for given run number, e.g. `/mss/halld/RunPeriod-2025-01/rawdata/Run132313`.
 * `/lustre/expphy/volatile/halld/offsite_prod/RunPeriod-<run period>/recon/<version>/RUN<6-digit run number>/TASK<3-digit file number>` output directory for given run and NERSC task index.
 * Inside the container, the `/group/halld/` tree is mounted via CVMFS
@@ -44,7 +44,7 @@
 
 #### NERSC
 
-* `/global/cfs/cdirs/m3120/launch-<batch>` directory on NERSC Community File System that contains job scripts and JANA config file(s). Is mapped to `/launch-<batch>` inside the job container.
+* `/global/cfs/cdirs/m3120/launch.<run period>_<batch>` directory on NERSC Community File System that contains job scripts and JANA config file(s). Is mapped to `/launch.<run period>_<batch>` inside the job container.
 * `/pscratch/sd/j/jlab/swif` directory on NERSC Scratch Space that serves as root directory for job output (= swif2 site path). Has a quota of 500 TB.
   * `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}` top-level working directory the job wakes up in (identical to `${SWIF_JOB_STAGE_DIR}` and `${SWIF_JOB_WORK_DIR}`)
     * `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}/subjob????` top-level working directory the container task wakes up in, where `????` is the 4-digit `${SLURM_PROCID}`
