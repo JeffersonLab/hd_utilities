@@ -95,7 +95,7 @@ do
   run_number="${evio_file:11:6}"
   file_number="${evio_file:18:3}"
   echo "${run_number} ${file_number}"
-  mkdir -p "${work_dir_task}/run-${run_number}-${file_number}"
+  mkdir --parents "${work_dir_task}/run-${run_number}-${file_number}"
   cd "${work_dir_task}/run-${run_number}-${file_number}"
   # hd_root priorities for setting a parameter value is (lowest to highest):
   #   1) environment variable

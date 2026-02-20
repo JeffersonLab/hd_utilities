@@ -87,9 +87,9 @@ do
     done
     # construct the output line for the given task, e.g. `-output match:RUN132194/TASK024/* /lustre/expphy/volatile/halld/offsite_prod/RunPeriod-2025-01/recon/ver03/RUN132194/TASK024/`
     SUBDIR_TASK=$(printf "RUN%06d/TASK%03d" "${RUN_NUMBER}" "${TASK_INDEX}")  # subdirectory for NERSC task given by `${TASK_INDEX}`
-    WORK_DIR_TASK="${SWIF_OUTPUT_ROOT}/${SUBDIR_TASK}"  # working directory for NERSC task
-    echo "mkdir -p ${WORK_DIR_TASK}"
-    mkdir -p "${WORK_DIR_TASK}"  #TODO are also created by `script_nersc_multi_test.py`
+    SWIF_OUTPUT_DIR_TASK="${SWIF_OUTPUT_ROOT}/${SUBDIR_TASK}"  # output directory for NERSC tasks  #TODO is it really required to create them on the JLab file system or would swif2 take care of this?
+    echo "mkdir --parents ${SWIF_OUTPUT_DIR_TASK}"
+    mkdir --parents "${SWIF_OUTPUT_DIR_TASK}"  #TODO are also created by `script_nersc_multi_test.py`
     SWIF2_CMD+=(-output "match:${SUBDIR_TASK}/*" "${SWIF_OUTPUT_ROOT}")  # copy `${SUBDIR_TASK}/*` into `${SWIF_OUTPUT_ROOT}` after the job is done
   done
   # define NERSC job
@@ -105,7 +105,7 @@ do
       --tasks-per-node=1
       --ntasks="${NERSC_NMB_TASKS}"
       --cpus-per-task="${NERSC_MAX_THREADS_PER_TASK}"
-      #--exclusive  # allocated nodes cannot be shared with other jobs/users  #TODO clarify whether this is beneficial or not
+      #--exclusive  # allocated nodes cannot be shared with other jobs/users  #TODO clarify whether this is beneficial or not; swif2 also has `-exclusive` option that can be set when creating the workflow; is it redundant to set it in both places?
       --qos="${NERSC_QOS}"
       --constraint="${NERSC_NODE_TYPE}"
       --output="nersc-job-%x-%j.out"  # write stdout and stderr of job to file named `nersc-job-<job name>-<job id>.out`, which will be copied by slurm into `${SLURM_SUBMIT_DIR}`  #TODO this is `/global/u1/j/jlab`; better location?
@@ -133,3 +133,9 @@ do
   chmod +x "./exec_${RUN_NUMBER}.sh"
   "./exec_${RUN_NUMBER}.sh"
 done
+
+# print status of workflow after submitting all jobs
+# view jobs at https://scicomp.jlab.org/scicomp/swif/active
+swif2 list
+swif2 status "${SWIF_WORKFLOW}"
+swif2 status "${SWIF_WORKFLOW}" -jobs
