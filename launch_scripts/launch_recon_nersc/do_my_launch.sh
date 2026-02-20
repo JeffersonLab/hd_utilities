@@ -21,18 +21,22 @@ echo "Reading configuration of reconstruction launch from '${CONFIG_FILE}'"
 source "${CONFIG_FILE}"
 
 # copy scripts and config files to NERSC
-echo "Copying launch scripts and config files from '~${PRODUCTION_USER}/${PRODUCTION_LAUNCH_DIR}' to '${NERSC_HOST}:${NERSC_PROJECT_DIR}'"
+SRC="/home/${PRODUCTION_USER}/${PRODUCTION_LAUNCH_DIR}"
+DEST="${NERSC_HOST}:${NERSC_LAUNCH_DIR}"
+echo "Copying launch scripts and config files from '${SRC}' to '${DEST}'"
+ssh "${NERSC_HOST}" "mkdir --parents '${NERSC_LAUNCH_DIR}' && chown :${NERSC_PROJECT} '${NERSC_LAUNCH_DIR}'"  # rsync cannot set permissions on the destination directory if it does not exist beforehand
 RSYNC_CMD=(rsync
+  --verbose
   --delete  # ensure pristine copy
   --archive
   --ignore-times
   --chown=:"${NERSC_PROJECT}"  # ensure write permissions for project group
-  --chmod=g+w
-  --verbose
-  "~${PRODUCTION_USER}/${PRODUCTION_LAUNCH_DIR}"
-  "${NERSC_HOST}:${NERSC_PROJECT_DIR}"
+  --chmod="Dg+rwx,Fg+rw"  # ensure write permissions for project group for subdirectories and files
+  "${SRC}/"  # trailing slash is important: copy contents of `SRC` into existing `DEST` directory
+  "${DEST}"
 )
 "${RSYNC_CMD[@]}"
+unset SRC DEST
 
 # create and run swif2 workflow
 if swif2 status test_swif_workflow2 &> /dev/null
@@ -42,7 +46,7 @@ else
   echo "Creating swif2 workflow '${SWIF_WORKFLOW}' at site '${SWIF_SITE}' with max concurrent jobs ${SWIF_MAX_CONCURRENT_JOBS}"
   swif2 create "${SWIF_WORKFLOW}" -site "${SWIF_SITE}" -maxconcurrent "${SWIF_MAX_CONCURRENT_JOBS}"
 fi
-swif2 run "${SWIF_WORKFLOW}"  #TODO is it really a good idea to run the workflow immediately?
+# swif2 run "${SWIF_WORKFLOW}"  #TODO is it really a good idea to run the workflow immediately?
 
 # loop over run numbers and submit one swif2 job each
 readarray -t RUN_NUMBERS < "${RUN_NUMBER_LIST_FILE}"  # read lines into array without trailing newlines

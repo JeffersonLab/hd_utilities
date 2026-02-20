@@ -18,7 +18,7 @@ RSYNC_CMD=(rsync
   --from0  # tell rsync to read NUL-delimited input
   --files-from="${TMP}"
   ./
-  "${PRODUCTION_USER}@ifarm:/u/home/${PRODUCTION_USER}/${PRODUCTION_LAUNCH_DIR}/"  #NOTE there seems to be no sane way make rsync expand `~` or `${HOME}` correctly
+  "${PRODUCTION_USER}@ifarm:/home/${PRODUCTION_USER}/${PRODUCTION_LAUNCH_DIR}/"  #NOTE there seems to be no sane way make rsync expand `~` or `${HOME}` correctly
 )
 "${RSYNC_CMD[@]}"
 rm --force "${TMP}"

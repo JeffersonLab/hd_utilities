@@ -43,3 +43,11 @@ readonly NERSC_NMB_THREADS_PER_PROCESS=32  # Number of threads that each `hd_roo
 readonly NERSC_NMB_PROCESSES_PER_TASK=$(echo "${NERSC_MAX_THREADS_PER_TASK} / ${NERSC_NMB_THREADS_PER_PROCESS}" | bc)  # Number of hd_root processes to run concurrently on a single NERSC Perlmutter CPU node.  #TODO works only if division is exact; need to round up if not exact
 readonly NERSC_HOST="perlmutter-p1.nersc.gov"  # NERSC hostname to use for ssh.
 readonly NERSC_CONTAINER_IMAGE="docker:jeffersonlab/gluex_almalinux_9:latest"  # Shifter image that was converted from Docker image. Is not pulled in automatically and needs to exist in Shifter registry.
+
+# variables in the original script that are not used in the new version but might be needed in the future:
+# TESTMODE
+# VERBOSE
+# LAUNCHTYPE
+# NAME
+# TIMELIMIT
+# SCRIPTFILE
