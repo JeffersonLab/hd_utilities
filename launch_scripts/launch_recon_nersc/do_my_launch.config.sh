@@ -9,7 +9,14 @@
 readonly RUN_PERIOD="2022-05"  # Run period to process.
 readonly VER="02"  # Version of this reconstruction launch.
 readonly BATCH="${VER}-perl"  # Batch label used to hold details of the launch; is appended to workflow name and directory names; should make it clear where/how the campaign was being run.
+readonly LAUNCH_DIR="launch.${RUN_PERIOD}_ver${BATCH}"  # subdirectory where production scripts are located
 readonly RUN_NUMBER_LIST_FILE="list.${RUN_PERIOD}_ver${BATCH}.txt"  # text file with list of run numbers to process; one run number per line
+
+# set production campaign parameters for JLab site
+readonly PRODUCTION_USER="gxproj4"  # production user account name
+readonly PRODUCTION_START_DATE="2026-02-19"  # start date of production campaign
+readonly PRODUCTION_WORK_DIR="NERSC/${PRODUCTION_START_DATE}.recon.${RUN_PERIOD}_ver${BATCH}"  # subdirectory in home directory of `${PRODUCTION_USER}` where all production info is stored
+readonly PRODUCTION_LAUNCH_DIR="${PRODUCTION_WORK_DIR}/${LAUNCH_DIR}"  # directory where production is launched from at JLab
 
 # set reconstruction parameters
 readonly HALLD_VERSION_SET_XML="version_7.4.0.xml"  # XML file that defines the Hall-D version set to be used.
@@ -27,7 +34,7 @@ readonly SWIF_SITE="nersc/perlmutter"  # swif2 site to use
 # set NERSC job parameters
 readonly NERSC_PROJECT="m3120"  # NERSC project to charge to.
 readonly NERSC_PROJECT_DIR="/global/cfs/cdirs/${NERSC_PROJECT}"  # Project directory in the NERSC Common File System (CFS) where config files and scripts will be copied to and run from.
-readonly NERSC_LAUNCH_DIR="${NERSC_PROJECT_DIR}/launch-${BATCH}"  # NERSC directory that will get mapped to /launch_${BATCH} inside the task container. Contains scripts and JANA config file to run hd_root.
+readonly NERSC_LAUNCH_DIR="${NERSC_PROJECT_DIR}/${LAUNCH_DIR}"  # NERSC directory that will get mapped to /launch_${BATCH} inside the task container. Contains scripts and JANA config file to run hd_root.
 readonly NERSC_QOS="regular"  # NERSC queue to use; usually `regular` or `debug`. See NERSC documentation for details on charging and restrictions.
 readonly NERSC_NODE_TYPE="cpu"  # Constraint for NERSC jobs; usually `cpu` or `gpu`.
 readonly NERSC_MAX_WALL_TIME="5:00:00"  # Maximum wall time for NERSC jobs.
