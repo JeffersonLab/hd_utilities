@@ -24,10 +24,6 @@ ulimit -c unlimited  # allow core dumps with no size limit
 # arg 4:  Hall-D version set XML file
 # arg 5:  Number of threads to use for this job
 
-# mount /var/udiMount/  #TODO is this really needed?
-# mount /var/udiMount/launch-BATCH  #TODO is this really needed?
-docker inspect jeffersonlab/gluex_almalinux_9:latest  #TODO shouldn't the image be a parameter passed to the script?
-
 set -o errexit  # exit when any command fails
 
 # # keep track of last executed command
@@ -73,7 +69,7 @@ export JANA_RESOURCE_DIR="/group/halld/www/halldweb/html/resources"
 ls -lrth >| myverif.out
 top -b -n 1 >| top.out
 cat /proc/cpuinfo >| cpuinfo.out
-env >| env.out
+env >| env.out  #TODO use declare -p | sed 's/^declare -[^ ]\+ //' to get alphabetically sorted output without function definitions
 hostname >| hostname.out
 ls -lrth >> myverif.out
 
@@ -128,7 +124,7 @@ do
   echo "Exit code for process ${process_index}: ${?}" > "exitcode_${process_index}.txt"  #TODO the text does not add anything useful? why not just write the exit code to the file? Improve file name
 done
 
-set -o errexit  # turn on exit on error back
+set -o errexit  # turn exit on error back on
 echo "I am here 2"
 ls -lrth >> myverif.out  #TODO is time ordering useful here?
 ls -lrth ./*/* >> myverif.out
