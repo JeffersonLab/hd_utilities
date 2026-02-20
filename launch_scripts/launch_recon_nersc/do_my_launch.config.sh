@@ -28,8 +28,9 @@ readonly JANA_GEOMETRY_URL="ccdb:///GEOMETRY/cpp_HDDS.xml"  # JANA geometry to b
 readonly SWIF_MAX_CONCURRENT_JOBS=100  # Maximum number of swif2 jobs that can be in-flight at once. This can be set only once when the workflow is created. If jobs are submitted piecemeal by running this script multiple times specifying different run lists, only the first invocation that creates the workflow will set this parameter.
 readonly SWIF_RAW_DATA_ROOT="/mss/halld/RunPeriod-${RUN_PERIOD}/rawdata"  # Root of JLab directory tree, where raw data files are located. Must be an `/mss` path.
 readonly SWIF_OUTPUT_ROOT="/lustre/expphy/volatile/halld/offsite_prod/RunPeriod-${RUN_PERIOD}/recon/ver${BATCH}"  # Root of JLab directory tree, where output files are copied to.
-readonly SWIF_WORKFLOW="recon_${RUN_PERIOD}_ver${BATCH}_batchNERSC-multi"  # only change this if default name is not appropriate  #TODO fix name?
-readonly SWIF_SITE="nersc/perlmutter"  # swif2 site to use
+readonly SWIF_WORKFLOW="recon_${RUN_PERIOD}_ver${BATCH}_NERSC-multi"  # Only change this if default name is not appropriate
+readonly SWIF_LOG_DIR_ROOT="/farm_out/${PRODUCTION_USER}/${SWIF_WORKFLOW}"  # Root directory where swif2 log files are created for each job
+readonly SWIF_SITE="nersc/perlmutter"  # swif2 site to submit jobs to
 
 # set NERSC job parameters
 readonly NERSC_PROJECT="m3120"  # NERSC project to charge to.
