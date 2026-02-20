@@ -30,7 +30,7 @@ then
   echo "Could not determine git hash; set it to 'unknown'"
   GIT_HASH="unknown"
 fi
-ssh "${PRODUCTION_USER}@ifarm" "cat > ~/\"${PRODUCTION_LAUNCH_DIR}\"/DEPLOYED_HD_UTILITIES_GIT_HASH" <<< "${GIT_HASH}"
+ssh "${PRODUCTION_USER}@ifarm" "cat >! ~/\"${PRODUCTION_LAUNCH_DIR}\"/DEPLOYED_HD_UTILITIES_GIT_HASH" <<< "${GIT_HASH}"
 # alternative: printf '%s' "$VAR" | ssh user@remote-host "cat > /path/to/file"
 
 exit 0
