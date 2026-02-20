@@ -21,8 +21,18 @@ echo "Reading configuration of reconstruction launch from '${CONFIG_FILE}'"
 source "${CONFIG_FILE}"
 
 # copy scripts and config files to NERSC
-echo "Copying launch scripts and config files from '../launch-${BATCH}' to '${NERSC_HOST}:${NERSC_PROJECT_DIR}'"
-rsync --archive --ignore-times --delete --verbose "../launch-${BATCH}" "${NERSC_HOST}:${NERSC_PROJECT_DIR}"  # ensure pristine copy
+echo "Copying launch scripts and config files from '~${PRODUCTION_USER}/${PRODUCTION_LAUNCH_DIR}' to '${NERSC_HOST}:${NERSC_PROJECT_DIR}'"
+RSYNC_CMD=(rsync
+  --delete  # ensure pristine copy
+  --archive
+  --ignore-times
+  --chown=:"${NERSC_PROJECT}"  # ensure write permissions for project group
+  --chmod=g+w
+  --verbose
+  "~${PRODUCTION_USER}/${PRODUCTION_LAUNCH_DIR}"
+  "${NERSC_HOST}:${NERSC_PROJECT_DIR}"
+)
+"${RSYNC_CMD[@]}"
 
 # create and run swif2 workflow
 if swif2 status test_swif_workflow2 &> /dev/null
@@ -83,7 +93,7 @@ do
       # these options are passed to `sbatch` when swif2 submits job at NERSC
       --account="${NERSC_PROJECT}"
       --image="'${NERSC_CONTAINER_IMAGE}'"  #TODO verify that container image exists in NERSC repository
-      --volume="'${NERSC_LAUNCH_DIR}:/launch-${BATCH}'"  # map `${NERSC_LAUNCH_DIR}` on host to `/launch-${BATCH}` in container
+      --volume="'${NERSC_LAUNCH_DIR}:/${LAUNCH_DIR}'"  # map `${NERSC_LAUNCH_DIR}` on host to `/${LAUNCH_DIR}` in container
       --module=cvmfs  # enable CVMFS in the container so it can access the `/group/halld` tree
       --time="${NERSC_MAX_WALL_TIME}"
       --nodes="${NERSC_NMB_TASKS}"  # 1 node per task
@@ -99,14 +109,14 @@ do
       #TODO could we directly submit the python script?
       "${NERSC_LAUNCH_DIR}/script_nersc_multi_test.sh"  # wrapper script for `script_nersc_multi_test.py`
       # arguments passed to script_nersc_multi_test.py
-      "${NERSC_LAUNCH_DIR}"                    # launch_dir argument
-      "/launch-${BATCH}/script_nersc_test.sh"  # script_file_task argument
-      "/launch-${BATCH}/${JANA_CONFIG}"        # jana_config argument
-      "'${JANA_CALIB_CONTEXT}'"                # jana_calib_context argument
-      "'${JANA_GEOMETRY_URL}'"                 # jana_geometry_url argument
-      "${HALLD_VERSION_SET_XML}"               # halld_version_set_xml argument
-      "${NERSC_NMB_PROCESSES_PER_TASK}"        # nmb_processes_per_node argument
-      "${NERSC_NMB_THREADS_PER_PROCESS}"       # nmb_threads_per_process argument
+      "${NERSC_LAUNCH_DIR}"                  # launch_dir argument
+      "/${LAUNCH_DIR}/script_nersc_test.sh"  # script_file_task argument
+      "/${LAUNCH_DIR}/${JANA_CONFIG}"        # jana_config argument
+      "'${JANA_CALIB_CONTEXT}'"              # jana_calib_context argument
+      "'${JANA_GEOMETRY_URL}'"               # jana_geometry_url argument
+      "${HALLD_VERSION_SET_XML}"             # halld_version_set_xml argument
+      "${NERSC_NMB_PROCESSES_PER_TASK}"      # nmb_processes_per_node argument
+      "${NERSC_NMB_THREADS_PER_PROCESS}"     # nmb_threads_per_process argument
   )
   echo "${SWIF2_CMD[@]}" >| "./exec_${RUN_NUMBER}.sh"
   # # generate shell-escaped version of command array and write it to file so it becomes a script that can be run directly
