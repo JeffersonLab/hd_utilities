@@ -53,21 +53,22 @@ readarray -t RUN_NUMBERS < "${RUN_NUMBER_LIST_FILE}"  # read lines into array wi
 for RUN_NUMBER in "${RUN_NUMBERS[@]}"
 do
   # construct command to submit a swif2 job for the given run number
-  mkdir --parents "${SWIF_LOG_DIR_ROOT}"  # ensure that log directory for the workflow exists before submitting job
+  #NOTE swif2 jobs for remote sites do not produce stdout and stderr
+  #  on ifarm and the `-stdout` and `-stderr` arguments would need to
+  #  point to remote paths at NERSC. Specifying the NERSC log files
+  #  using the `-sbatch --output` argument is more flexible.
   SWIF2_CMD=(
     swif2 add-job
     -workflow "${SWIF_WORKFLOW}"
     -name "GLUEX_recon_${RUN_NUMBER}"  # swif2 job name
-    -stdout "${SWIF_LOG_DIR_ROOT}/swif2_job_${RUN_NUMBER}.out"  # write stdout of swif2 job to file
-    -stderr "${SWIF_LOG_DIR_ROOT}/swif2_job_${RUN_NUMBER}.err"  # write stderr of swif2 job to file
   )
   # loop over all evio files of the run and subdivide file list into
   # chunks of size `${NERSC_NMB_PROCESSES_PER_TASK}` that will be
   # processed by individual NERSC tasks, defining the input and output
   # files for each task.
-  EVIO_DIR="${SWIF_RAW_DATA_ROOT}/Run${RUN_NUMBER}"
+  EVIO_RUN_DIR="${SWIF_RAW_DATA_ROOT}/Run${RUN_NUMBER}"
   shopt -s failglob  # exit with error if no files match the pattern
-  EVIO_FILE_PATHS=("${EVIO_DIR}"/*.evio)
+  EVIO_FILE_PATHS=("${EVIO_RUN_DIR}"/*.evio)
   shopt -u failglob
   # calculate number of tasks to request based on number of evio files and number of processes to run per task
   NMB_EVIO_FILES=${#EVIO_FILE_PATHS[@]}

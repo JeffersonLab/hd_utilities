@@ -29,7 +29,6 @@ readonly SWIF_MAX_CONCURRENT_JOBS=100  # Maximum number of swif2 jobs that can b
 readonly SWIF_RAW_DATA_ROOT="/mss/halld/RunPeriod-${RUN_PERIOD}/rawdata"  # Root of JLab directory tree, where raw data files are located. Must be an `/mss` path.
 readonly SWIF_OUTPUT_ROOT="/lustre/expphy/volatile/halld/offsite_prod/RunPeriod-${RUN_PERIOD}/recon/ver${BATCH}"  # Root of JLab directory tree, where output files are copied to.
 readonly SWIF_WORKFLOW="recon_${RUN_PERIOD}_ver${BATCH}_NERSC-multi"  # Only change this if default name is not appropriate
-readonly SWIF_LOG_DIR_ROOT="/farm_out/${PRODUCTION_USER}/${SWIF_WORKFLOW}"  # Root directory where swif2 log files are created for each job
 readonly SWIF_SITE="nersc/perlmutter"  # swif2 site to submit jobs to
 
 # set NERSC job parameters
