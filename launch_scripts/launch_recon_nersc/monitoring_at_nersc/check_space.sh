@@ -1,12 +1,13 @@
-cd /pscratch/sd/j/jlab/swif
-echo 'Amount of data on pscratch'
-du -sh
-echo 'Amount of data on cfs'
-cd /global/cfs/cdirs/m3120
-du -sh
-cd
-echo "jlab quota"
-myquota -u jlab
-#echo "ijaegle quota"
-#myquota -u ijaegle
-cd
+#!/usr/bin/env bash
+
+# Checks the disk space usage and prints the quota for the user account.
+
+
+echo "NERSC Scratch Storage Space used by swif2"
+du -hs /pscratch/sd/j/jlab/swif
+echo
+echo "NERSC Community File System (CFS) Storage Space used"
+du -hs /global/cfs/cdirs/m3120
+echo
+echo "Quota for user 'jlab'"
+myquota
