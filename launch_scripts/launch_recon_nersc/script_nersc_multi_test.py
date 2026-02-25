@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
 
 """
-This job script is called from the script-multi.sh script which just
-serves as a wrapper for this one. It wakes up in the top-level working
-directory for the job, sets up the directories for each of the
-slurm task, and then calls `srun` to launch the tasks on all nodes.
+This is the main job script that processes all files of a given run.
+
+Swif2 will make sure that the script starts in a working directory
+that has links to all of the raw-data files of the run in it.  The
+script divides the files into groups of `nmb_processes_per_task`
+files, where each group is processed by a single slurm task.  Each
+slurm task occupies a complete NERSC CPU node.  The script sets up the
+directories for each of the slurm task.  Each directory holds links to
+the input files and will receive the output files.  The script then
+calls `srun` to launch the tasks on all nodes that were allocated by
+the submit script.
 """
 
 import argparse
@@ -97,23 +104,12 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(
     description = "Prepare directory structure and use srun to start a reconstruction task on each node (positional args).",
   )
-  parser.add_argument("launch_dir",              help = "Path to launch directory containing scripts and config files")
-  parser.add_argument("script_file_task",        help = "Script file to run as task on each node")
-  parser.add_argument("jana_config",             help = "JANA config file")
-  parser.add_argument("jana_calib_context",      help = "JANA calibration context")
-  parser.add_argument("jana_geometry_url",       help = "JANA geometry URL")
-  parser.add_argument("halld_version_set_xml",   help = "Hall-D version set XML file")
-  parser.add_argument("nmb_processes_per_task",  help = "Number of processes per task",            type = int)
-  parser.add_argument("nmb_threads_per_process", help = "Number of threads per `hd_root` process", type = int)
-  args = parser.parse_args()
-  main(args)
-
-  #TODO use named arguments
-  # parser.add_argument("--launch-dir",              dest = "launch_dir",              required = True, help = "Path to launch directory containing scripts and config files")
-  # parser.add_argument("--script-file-task",        dest = "script_file_task",        required = True, help = "Script file to run as task on each node")
-  # parser.add_argument("--jana-config",             dest = "jana_config",             required = True, help = "JANA config file")
-  # parser.add_argument("--jana-calib-context",      dest = "jana_calib_context",      required = True, help = "JANA calibration context")
-  # parser.add_argument("--jana-geometry-url",       dest = "jana_geometry_url",       required = True, help = "JANA geometry URL")
-  # parser.add_argument("--halld-version-set-xml",   dest = "halld_version_set_xml",   required = True, help = "Hall-D version set XML file")
-  # parser.add_argument("--nmb-processes-per-task",  dest = "nmb_processes_per_task",  required = True, help = "Number of processes per task",            type = int)
-  # parser.add_argument("--nmb-threads-per-process", dest = "nmb_threads_per_process", required = True, help = "Number of threads per `hd_root` process", type = int)
+  parser.add_argument("--launch-dir",              dest = "launch_dir",              required = True, help = "Path to launch directory containing scripts and config files")
+  parser.add_argument("--script-file-task",        dest = "script_file_task",        required = True, help = "Script file to run as task on each node")
+  parser.add_argument("--jana-config",             dest = "jana_config",             required = True, help = "JANA config file")
+  parser.add_argument("--jana-calib-context",      dest = "jana_calib_context",      required = True, help = "JANA calibration context")
+  parser.add_argument("--jana-geometry-url",       dest = "jana_geometry_url",       required = True, help = "JANA geometry URL")
+  parser.add_argument("--halld-version-set-xml",   dest = "halld_version_set_xml",   required = True, help = "Hall-D version set XML file")
+  parser.add_argument("--nmb-processes-per-task",  dest = "nmb_processes_per_task",  required = True, help = "Number of processes per task",            type = int)
+  parser.add_argument("--nmb-threads-per-process", dest = "nmb_threads_per_process", required = True, help = "Number of threads per `hd_root` process", type = int)
+  main(parser.parse_args())

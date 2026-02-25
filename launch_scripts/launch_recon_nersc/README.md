@@ -15,15 +15,13 @@
       |
      2|-> swif2 add-job (submits job at ifarm queue) + sbatch (submits job at NERSC queue)
           |
-         3|-> @NERSC: script_nersc_multi_test.sh  <--  main job script
+         3|-> @NERSC: script_nersc_multi_test.py  <--  main job script
               |
-             4|-> @NERSC: script_nersc_multi_test.py
+             4|-> @NERSC: srun run_shifter_multi.sh  <-- main task script
                   |
-                 5|-> @NERSC: srun run_shifter_multi.sh  <-- main task script
+                 5|-> @NERSC: shifter script_nersc_test.sh (run from inside a shifter container)
                       |
-                     6|-> @NERSC: shifter script_nersc_test.sh (run from inside a shifter container)
-                          |
-                         7|-> @NERSC: hd_root <-- process
+                     6|-> @NERSC: hd_root <-- process
 ```
 
 ## Used resources

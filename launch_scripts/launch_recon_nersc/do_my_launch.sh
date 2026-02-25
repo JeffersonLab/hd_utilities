@@ -115,17 +115,15 @@ do
       --output="nersc-job-%x-%j.out"  # write stdout and stderr of job to file named `nersc-job-<job name>-<job id>.out`, which will be copied by slurm into `${SLURM_SUBMIT_DIR}`  #TODO this is `/global/u1/j/jlab`; better location?
       ::
       # job script to run at NERSC
-      #TODO could we directly submit the python script?
-      "${NERSC_LAUNCH_DIR}/script_nersc_multi_test.sh"  # wrapper script for `script_nersc_multi_test.py`
-      # arguments passed to script_nersc_multi_test.py
-      "${NERSC_LAUNCH_DIR}"                  # launch_dir argument
-      "/${LAUNCH_DIR}/script_nersc_test.sh"  # script_file_task argument
-      "/${LAUNCH_DIR}/${JANA_CONFIG}"        # jana_config argument
-      "'${JANA_CALIB_CONTEXT}'"              # jana_calib_context argument
-      "'${JANA_GEOMETRY_URL}'"               # jana_geometry_url argument
-      "${HALLD_VERSION_SET_XML}"             # halld_version_set_xml argument
-      "${NERSC_NMB_PROCESSES_PER_TASK}"      # nmb_processes_per_node argument
-      "${NERSC_NMB_THREADS_PER_PROCESS}"     # nmb_threads_per_process argument
+      "${NERSC_LAUNCH_DIR}/script_nersc_multi_test.py"
+        --launch-dir="${NERSC_LAUNCH_DIR}"
+        --script-file-task="/${LAUNCH_DIR}/script_nersc_test.sh"
+        --jana-config="/${LAUNCH_DIR}/${JANA_CONFIG}"
+        --jana-calib-context="'${JANA_CALIB_CONTEXT}'"
+        --jana-geometry-url="'${JANA_GEOMETRY_URL}'"
+        --halld-version-set-xml="${HALLD_VERSION_SET_XML}"
+        --nmb-processes-per-task="${NERSC_NMB_PROCESSES_PER_TASK}"
+        --nmb-threads-per-process="${NERSC_NMB_THREADS_PER_PROCESS}"
   )
   echo "${SWIF2_CMD[@]}" >| "./exec_${RUN_NUMBER}.sh"
   # # generate shell-escaped version of command array and write it to file so it becomes a script that can be run directly
