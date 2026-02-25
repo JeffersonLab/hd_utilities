@@ -35,10 +35,11 @@ def write_env_to_file(output_file_name: str = "./env") -> None:
 
 def main(args: argparse.Namespace) -> None:
   print("Running job script with arguments:")
+  max_arg_name_length = max(len(arg_name) for arg_name in vars(args).keys())
   for arg_name, arg_value in sorted(vars(args).items()):  # sort keys for stable, tidy output
-    print(f"{arg_name:>25} : {arg_value}")
+    print(f"{arg_name:>{max_arg_name_length + 2}} : {arg_value}")
 
-  # get main job information
+  # gather job information
   write_env_to_file("job.env.out")
   host_name = socket.gethostname()  # name of compute node where this script is running
   with open("job.hostname.out", "w", encoding = "utf-8") as file:  #TODO is this really needed? the hostname is also available in the environment variable `SLURMD_NODENAME`
@@ -87,7 +88,7 @@ def main(args: argparse.Namespace) -> None:
     args.halld_version_set_xml,         # arg 6:  Hall-D version set XML file
     str(args.nmb_threads_per_process),  # arg 7:  number of threads of `hd_root` process
   ]
-  print(f"Executing command: '{' '.join(srun_cmd)}'")
+  print(f"Submitting tasks: '{' '.join(srun_cmd)}'")
   with subprocess.Popen(srun_cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE) as srun:
     stdout, stderr = srun.communicate()
     #TODO is this meaningful? wouldn't it be better to capture the output of each task separately using `srun --output`? the exit code also does not seem to be used
