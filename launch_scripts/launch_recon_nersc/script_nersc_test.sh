@@ -72,6 +72,10 @@ cat /proc/cpuinfo >| cpuinfo.out
 declare -p | sed 's/^declare -[^ ]\+ //' >| env.out  # get alphabetically sorted list of environment variables without function definitions
 hostname >| hostname.out
 ls -lrth >> myverif.out
+ls -lrth .. >> myverif.out
+ls -lrth ../.. >> myverif.out
+ls -lrth /pscratch/sd/j/jlab/swif/input/ >> myverif.out
+
 
 # Do not exit immediately if hd_root fails. This allows us to
 # catch the exit code and write it to a file. This is important
@@ -101,6 +105,8 @@ do
   #   1) environment variable
   #   2) JANA config file
   #   3) command line argument
+  echo "${PWD}" >> ../myverif.out
+  ls -lLh "../${evio_file}" >> ../myverif.out
   HD_ROOT_CMD=(
     hd_root
     -PNTHREADS="${NMB_THREADS_PER_PROCESS}"  # override number of threads to use
@@ -185,5 +191,4 @@ echo "I am here 4"
 rm -f /dev/shm/ccdb.sqlite
 rm -f /dev/shm/rcdb.sqlite
 rm -f hd_rawdata_??????_???.evio  # remove link to input file.
-#TODO this clean up is largely incomplete
 #rm -rf run-*
