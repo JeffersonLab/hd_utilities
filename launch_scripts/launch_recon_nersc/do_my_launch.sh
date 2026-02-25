@@ -2,6 +2,9 @@
 set -o nounset  # exit when trying to use an uninitialized variable
 set -o errexit  # exit when any command fails
 set -o pipefail  # exit if any command in a pipeline fails
+#TODO make debug output switchable
+set -o verbose  # print shell input lines as they are read, i.e. before any expansion
+set -o xtrace  # print commands and their arguments as they are executed, i.e. after expansion and without I/O redirection
 
 # Master script that submits reconstruction jobs to run at NERSC using
 # swif2.  One swif2/NERSC job is submitted for each run number in the
