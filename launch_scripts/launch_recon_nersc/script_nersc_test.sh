@@ -117,6 +117,7 @@ done
 cd "${work_dir_task}"
 
 # wait for all background jobs to complete and capture their exit codes
+#TODO evaluate using GNU parallel for this
 echo "I am here 1"
 for process_index in "${!process_ids[@]}"
 do

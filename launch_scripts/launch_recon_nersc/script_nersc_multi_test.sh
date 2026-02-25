@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# set -o nounset  # exit when trying to use an uninitialized variable
+set -o nounset  # exit when trying to use an uninitialized variable
 set -o verbose  # print shell input lines as they are read, i.e. before any expansion
 set -o xtrace  # print commands and their arguments as they are executed, i.e. after expansion and without I/O redirection
 
