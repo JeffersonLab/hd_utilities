@@ -38,7 +38,7 @@ def main(args: argparse.Namespace) -> None:
   print(f"Nb of tasks asked: {nmb_tasks}")
 
   # verify that the expected number of tasks matches nmb_tasks
-  if expected_nmb_tasks != nmb_tasks:
+  if int(expected_nmb_tasks) != int(nmb_tasks):
     print(f"MISMATCH IN NUMBER OF EVIO FILES PER TASK! #EVIO={len(evio_file_names)}  "
       f"Expected Tasks={expected_nmb_tasks}  SLURM_NTASKS={nmb_tasks}")
     sys.exit(101)

@@ -69,7 +69,7 @@ export JANA_RESOURCE_DIR="/group/halld/www/halldweb/html/resources"
 ls -lrth >| myverif.out
 top -b -n 1 >| top.out
 cat /proc/cpuinfo >| cpuinfo.out
-env >| env.out  #TODO use declare -p | sed 's/^declare -[^ ]\+ //' to get alphabetically sorted output without function definitions
+declare -p | sed 's/^declare -[^ ]\+ //' >| env.out  # get alphabetically sorted list of environment variables without function definitions
 hostname >| hostname.out
 ls -lrth >> myverif.out
 

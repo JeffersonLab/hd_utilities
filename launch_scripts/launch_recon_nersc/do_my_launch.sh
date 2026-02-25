@@ -101,17 +101,17 @@ do
     -sbatch
       # these options are passed to `sbatch` when swif2 submits job at NERSC
       --account="${NERSC_PROJECT}"
-      --image="'${NERSC_CONTAINER_IMAGE}'"  #TODO verify that container image exists in NERSC repository
-      --volume="'${NERSC_LAUNCH_DIR}:/${LAUNCH_DIR}'"  # map `${NERSC_LAUNCH_DIR}` on host to `/${LAUNCH_DIR}` in container
-      --module=cvmfs  # enable CVMFS in the container so it can access the `/group/halld` tree
+      --constraint="${NERSC_NODE_TYPE}"
+      --qos="${NERSC_QOS}"
       --time="${NERSC_MAX_WALL_TIME}"
       --nodes="${NERSC_NMB_TASKS}"  # 1 node per task
-      --tasks-per-node=1
+      --ntasks-per-node=1
       --ntasks="${NERSC_NMB_TASKS}"
       --cpus-per-task="${NERSC_MAX_THREADS_PER_TASK}"
       #--exclusive  # allocated nodes cannot be shared with other jobs/users  #TODO clarify whether this is beneficial or not; swif2 also has `-exclusive` option that can be set when creating the workflow; is it redundant to set it in both places?
-      --qos="${NERSC_QOS}"
-      --constraint="${NERSC_NODE_TYPE}"
+      --image="'${NERSC_CONTAINER_IMAGE}'"  #TODO verify that container image exists in NERSC repository
+      --volume="'${NERSC_LAUNCH_DIR}:/${LAUNCH_DIR}'"  # map `${NERSC_LAUNCH_DIR}` on host to `/${LAUNCH_DIR}` in container
+      --module=cvmfs  # enable CVMFS in the container so it can access the `/group/halld` tree
       --output="nersc-job-%x-%j.out"  # write stdout and stderr of job to file named `nersc-job-<job name>-<job id>.out`, which will be copied by slurm into `${SLURM_SUBMIT_DIR}`  #TODO this is `/global/u1/j/jlab`; better location?
       ::
       # job script to run at NERSC

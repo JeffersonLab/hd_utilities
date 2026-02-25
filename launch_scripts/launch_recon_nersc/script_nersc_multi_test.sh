@@ -16,6 +16,6 @@ set -o xtrace  # print commands and their arguments as they are executed, i.e. a
 
 LAUNCH_DIR="${1}"
 
-printenv > job.env.out
+declare -p | sed 's/^declare -[^ ]\+ //' >| job.env.out  # get alphabetically sorted list of environment variables without function definitions
 hostname > job.hostname.out
 python3 "${LAUNCH_DIR}/script_nersc_multi_test.py" "${@}"
