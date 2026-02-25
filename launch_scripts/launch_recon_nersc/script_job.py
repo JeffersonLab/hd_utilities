@@ -58,27 +58,18 @@ def main(args: argparse.Namespace) -> None:
     print(f"Error: mismatch of number of tasks = {expected_nmb_tasks} needed for {len(evio_file_names)} EVIO files and number of allocated slurm tasks = {nmb_tasks}")
     sys.exit(101)
 
-  # Loop over raw data files
+  # loop over raw data files and create task directories with links to input files
   for evio_file_name in evio_file_names:
     # get run and file numbers from EVIO file names; assumes file names are of the form `hd_rawdata_XXXXXX_YYY.evio`
     run_number = int(evio_file_name[11:17])
     file_index = int(evio_file_name[18:21])
     node_index = int(float(file_index) / args.nmb_processes_per_task)
-
     # make work directory for task
     #TODO why is this called for every file? we know how many files each job processes
     work_dir_task = f"RUN{int(run_number):06d}/TASK{node_index:03d}"
     os.makedirs(work_dir_task, exist_ok = True)  #TODO are also created by `do_my_launch.sh`
-
-    # make symlink pointing to work_dir_task so each task can cd into it via `${SLURM_PROCID}`
-    #TODO why is this extra step needed? why not use work_dir_task directly in the task script? The only difference is the number of digits used
-    subjob_dir_name = f"subjob{node_index:04d}"
-    if not os.path.exists(subjob_dir_name):
-      os.symlink(work_dir_task, subjob_dir_name)
-
     # create symlink to evio file in task directory
     os.symlink(f"../../{evio_file_name}", f"{work_dir_task}/{evio_file_name}")
-
 
   # run tasks in parallel
   # each task will run args.nmb_processes_per_task hd_root processes in parallel, each processing a single evio file)

@@ -39,7 +39,7 @@ HALLD_VERSION_SET_XML="${4}"
 NMB_THREADS_PER_PROCESS="${5}"
 
 EXTRA_ARGS=""
-work_dir_task="${PWD}"  # absolute path of working directory of container task, i.e. `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}/subjob????`, where `????` is the 4-digit `${SLURM_PROCID}`
+work_dir_task="${PWD}"  # absolute path of working directory of container task, i.e. `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}/RUNXXXXXX/TASKYYY`, where `XXXXXX` is the run number and `YYY` is the 3-digit `${SLURM_PROCID}`
 
 # setup software environment according to Hall-D version set XML file
 source "/group/halld/Software/build_scripts/gluex_env_boot_jlab.sh"

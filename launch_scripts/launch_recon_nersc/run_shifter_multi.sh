@@ -21,17 +21,16 @@ set -o xtrace  # print commands and their arguments as they are executed, i.e. a
 # command.
 #
 
-# The actual working directory for this job will be
-# named something like RUNXXXXXX/TASKYYY. However, we
-# do not know the run/file numbers at this point, only
-# the SLURM_PROCID can be used to distinguish us from
-# other tasks. The script_nersc_multi.py script though
-# created a symbolic link named subjobZZZZ (where the
-# ZZZZ is the SLURM_PROCID) that points to the directory
-# we should use.
-work_dir_job="${1}"
-work_dir_task=$(printf "subjob%04d" "${SLURM_PROCID}")
-cd "${work_dir_job}/${work_dir_task}"
+# The actual working directory for this task is RUNXXXXXX/TASKYYY,
+# where the YYY is the 3-digit SLURM_PROCID). The script_job.py script
+# passes the path of the RUNXXXXXX directory as the first argument to
+# this script, so we need to cd into the correct TASKYYY subdirectory
+# based on SLURM_PROCID. The script_nersc_test.sh script that is run
+# by shifter then wakes up in this directory and runs hd_root on the
+# evio file located there.
+work_dir_run="${1}"
+subdir_task=$(printf "TASK%03d" "${SLURM_PROCID}")
+cd "${work_dir_run}/${subdir_task}"
 
 
 # # The run/file numbers should be passed as the last 2 arguments
