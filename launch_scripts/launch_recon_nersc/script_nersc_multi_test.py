@@ -18,36 +18,44 @@ import argparse
 import glob
 import math
 import os
+import shlex
+import socket
 import subprocess
 import sys
 
 
+def write_env_to_file(output_file_name: str = "./env") -> None:
+  """Writes environment variables to given file in alphabetical order."""
+  with open(output_file_name, "w", encoding = "utf-8") as file:
+    for env_var_name in sorted(os.environ.keys()):
+      env_var_value = os.environ[env_var_name]
+      file.write(f"{env_var_name}={shlex.quote(env_var_value)}\n")  # ensure bash-safe quoting of the value
+  print(f"Wrote environment variables to '{output_file_name}'")
+
+
 def main(args: argparse.Namespace) -> None:
+  print("Running job script with arguments:")
+  for arg_name, arg_value in sorted(vars(args).items()):  # sort keys for stable, tidy output
+    print(f"{arg_name:>25} : {arg_value}")
 
+  # get main job information
+  write_env_to_file("job.env.out")
+  host_name = socket.gethostname()  # name of compute node where this script is running
+  with open("job.hostname.out", "w", encoding = "utf-8") as file:  #TODO is this really needed? the hostname is also available in the environment variable `SLURMD_NODENAME`
+    file.write(host_name)
   work_dir_job = os.getcwd()  # working directory of job as created by swif2, i.e. `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}; (identical to `${SWIF_JOB_STAGE_DIR}` and `${SWIF_JOB_WORK_DIR}`)
+  print(f"Job script is running in directory: '{work_dir_job}'")
+  evio_file_names = sorted(glob.glob("hd_rawdata_??????_???.evio"))  # list of raw data file names in working directory of job
+  print(f"Found {len(evio_file_names)} EVIO files that will be processed by this job:")
+  for index, evio_file_name in enumerate(evio_file_names):
+    print(f"  {index:4d}: '{evio_file_name}'")
+  nmb_tasks = os.getenv("SLURM_NTASKS")  # number of tasks allocated for this job = number of nodes  #TODO check for None
+  print(f"Number of tasks allocated for this job: {nmb_tasks}")
 
-  nmb_tasks = os.getenv("SLURM_NTASKS")  # number of tasks allocated for this job = number of nodes
-  evio_file_names = sorted(glob.glob("hd_rawdata_*.evio"))  # list of raw data file names
-  # calculate the expected number of tasks
-  expected_nmb_tasks = math.ceil(float(len(evio_file_names)) / args.nmb_processes_per_task)  # integer division
-
-  #TODO use a more elegant way to print the arguments
-  print(f"LAUNCH_DIR: {args.launch_dir}")
-  print(f"SCRIPT_FILE: {args.script_file_task}")
-  print(f"JANA_CONFIG: {args.jana_config}")
-  print(f"JANA_CALIB_CONTEXT: {args.jana_calib_context}")
-  print(f"JANA_GEOMETRY_URL: {args.jana_geometry_url}")
-  print(f"HALLD_VERSION_SET_XML: {args.halld_version_set_xml}")
-  print(f"NMB_PROCESSES_PER_TASK: {args.nmb_processes_per_task}")
-  print(f"NMB_THREADS_PER_PROCESS: {args.nmb_threads_per_process}")
-  print(f"Nb of evio files: {len(evio_file_names)}")
-  print(f"Nb of tasks: {expected_nmb_tasks}")
-  print(f"Nb of tasks asked: {nmb_tasks}")
-
-  # verify that the expected number of tasks matches nmb_tasks
+  # ensure that nmb_tasks is consistent with number of evio files and nmb_processes_per_task
+  expected_nmb_tasks = math.ceil(float(len(evio_file_names)) / args.nmb_processes_per_task)  # integer division  #TODO simplify
   if int(expected_nmb_tasks) != int(nmb_tasks):
-    print(f"MISMATCH IN NUMBER OF EVIO FILES PER TASK! #EVIO={len(evio_file_names)}  "
-      f"Expected Tasks={expected_nmb_tasks}  SLURM_NTASKS={nmb_tasks}")
+    print(f"Error: mismatch of number of tasks = {expected_nmb_tasks} needed for {len(evio_file_names)} EVIO files and number of allocated slurm tasks = {nmb_tasks}")
     sys.exit(101)
 
   # Loop over raw data files
