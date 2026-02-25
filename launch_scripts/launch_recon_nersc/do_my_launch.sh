@@ -93,7 +93,7 @@ do
     SUBDIR_TASK=$(printf "RUN%06d/TASK%03d" "${RUN_NUMBER}" "${TASK_INDEX}")  # subdirectory for NERSC task given by `${TASK_INDEX}`
     SWIF_OUTPUT_DIR_TASK="${SWIF_OUTPUT_ROOT}/${SUBDIR_TASK}"  # output directory for NERSC tasks  #TODO is it really required to create them on the JLab file system or would swif2 take care of this?
     echo "mkdir --parents ${SWIF_OUTPUT_DIR_TASK}"
-    mkdir --parents "${SWIF_OUTPUT_DIR_TASK}"  #TODO are also created by `script_nersc_multi_test.py`
+    mkdir --parents "${SWIF_OUTPUT_DIR_TASK}"  #TODO are also created by `script_job.py`
     SWIF2_CMD+=(-output "match:${SUBDIR_TASK}/*" "${SWIF_OUTPUT_ROOT}")  # copy `${SUBDIR_TASK}/*` into `${SWIF_OUTPUT_ROOT}` after the job is done
   done
   # define NERSC job
@@ -115,7 +115,7 @@ do
       --output="nersc-job-%x-%j.out"  # write stdout and stderr of job to file named `nersc-job-<job name>-<job id>.out`, which will be copied by slurm into `${SLURM_SUBMIT_DIR}`  #TODO this is `/global/u1/j/jlab`; better location?
       ::
       # job script to run at NERSC
-      "${NERSC_LAUNCH_DIR}/script_nersc_multi_test.py"
+      "${NERSC_LAUNCH_DIR}/script_job.py"
         --launch-dir="${NERSC_LAUNCH_DIR}"
         --script-file-task="/${LAUNCH_DIR}/script_nersc_test.sh"
         --jana-config="/${LAUNCH_DIR}/${JANA_CONFIG}"

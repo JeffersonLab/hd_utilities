@@ -15,7 +15,7 @@
       |
      2|-> swif2 add-job (submits job at ifarm queue) + sbatch (submits job at NERSC queue)
           |
-         3|-> @NERSC: script_nersc_multi_test.py  <--  main job script
+         3|-> @NERSC: script_job.py  <--  main job script
               |
              4|-> @NERSC: srun run_shifter_multi.sh  <-- main task script
                   |
