@@ -5,7 +5,7 @@
 ## Call hierarchy of scripts
 
 ```bash
-> do_my_launch.sh
+> submit_launch.sh + environment file (default: launch.env)
   * Creates and runs swif2 workflow at JLab Farm
   * Copies job scripts and JANA config to NERSC
   * For each run number: creates and executes exec_<run number>.sh script

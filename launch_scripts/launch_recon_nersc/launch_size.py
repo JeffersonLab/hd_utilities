@@ -66,7 +66,7 @@ def main(args: argparse.Namespace) -> None:
     evio_file_names = glob.glob(f"{evio_run_dir}/*.evio")
     total_size_gb        [run_number] = sum(get_file_size_from_mss_stub(file_name) for file_name in evio_file_names) / (1024**3)
     nmb_files            [run_number] = len(evio_file_names)
-    nmb_nodes            [run_number] = (nmb_files[run_number] + nersc_nmb_processes_per_task - 1) // nersc_nmb_processes_per_task  #TODO Igal's formula; see `do_my_launch.sh`
+    nmb_nodes            [run_number] = (nmb_files[run_number] + nersc_nmb_processes_per_task - 1) // nersc_nmb_processes_per_task  #TODO Igal's formula; see `submit_launch.sh`
     fraction_nodes_unused[run_number] = 1.0 - (nmb_files[run_number] % nersc_nmb_processes_per_task) / float(nersc_nmb_processes_per_task)
     print(f"    Run {run_number:6d} = {total_size_gb[run_number]:6.0f} GB, {nmb_files[run_number]:3d} files, {nmb_nodes[run_number]:3d} nodes, {fraction_nodes_unused[run_number]:3.1%} of last node wasted")
   total_nmb_nodes        = sum(nmb_nodes.values())
