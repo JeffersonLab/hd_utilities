@@ -127,7 +127,7 @@ do
   )
   echo "${HD_ROOT_CMD[@]}" >> ../myverif.out
   # start hd_root process in background and redirect stdout and stderr to files
-  "${HD_ROOT_CMD[@]}" 2> "std_${run_number}_${file_number}.err" 1> "std_${run_number}_${file_number}.out" &
+  "${HD_ROOT_CMD[@]}" 2> "hd_root_${run_number}_${file_number}.err" 1> "hd_root_${run_number}_${file_number}.out" &
   process_ids+=("${!}")  # capture the background process ID and store it in an array
 done
 cd "${WORK_DIR_TASK}"
@@ -169,8 +169,8 @@ do
   cp ../hostname.out "${JOB_INFO_DIR}"
   cp ../exitcode_*.txt  "${JOB_INFO_DIR}/"
   cp ../myverif.out "${JOB_INFO_DIR}"
-  mv "std_${run_number}_${file_number}.err" "${JOB_INFO_DIR}"
-  mv "std_${run_number}_${file_number}.out" "${JOB_INFO_DIR}"
+  mv "hd_root_${run_number}_${file_number}.err" "${JOB_INFO_DIR}"
+  mv "hd_root_${run_number}_${file_number}.out" "${JOB_INFO_DIR}"
   #TODO also fetch job and task log files
   tar czf "${JOB_INFO_DIR}.tgz" "${JOB_INFO_DIR}"
   shopt -s nullglob  # ensure that array is empty if no files match the pattern
