@@ -105,7 +105,7 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(
     description = "Prepare directory structure and use srun to start a reconstruction task on each node (positional args).",
   )
-  parser.add_argument("--run-number",              dest = "run_number",              required = True, help = "Run number for this job")
+  parser.add_argument("--run-number",              dest = "run_number",              required = True, help = "Run number for this job", type = int)
   parser.add_argument("--launch-dir",              dest = "launch_dir",              required = True, help = "Path to launch directory containing scripts and config files")
   parser.add_argument("--script-file-task",        dest = "script_file_task",        required = True, help = "Script file to run as task on each node")
   parser.add_argument("--jana-config",             dest = "jana_config",             required = True, help = "JANA config file")
