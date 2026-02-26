@@ -2,9 +2,9 @@
 
 # copies the launch directory to official location for production user account
 
-CONFIG_FILE="${1:-./do_my_launch.config.sh}"  # configuration file that defines all variables used in this script
+CONFIG_FILE="${1:-./do_my_launch.env}"  # configuration file that defines all variables used in this script
 echo "Reading configuration of reconstruction launch from '${CONFIG_FILE}'"
-# shellcheck source=./do_my_launch.config.sh
+# shellcheck source=./do_my_launch.env
 source "${CONFIG_FILE}"
 
 echo "Copying launch scripts and config files from '$(pwd)' to '${PRODUCTION_USER}@ifarm:~/${PRODUCTION_LAUNCH_DIR}'"
