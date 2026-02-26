@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-This is the main job script that processes all files of a given run.
+Main job script that processes all files of a given run.
 
 Swif2 will make sure that the script starts in a working directory
 that has links to all of the raw-data files of the run in it.  The
@@ -25,7 +25,7 @@ import sys
 
 
 def write_env_to_file(output_file_name: str = "./env") -> None:
-  """Writes environment variables to given file in alphabetical order."""
+  """Writes environment variables in alphabetical order into given file."""
   with open(output_file_name, "w", encoding = "utf-8") as file:
     for env_var_name in sorted(os.environ.keys()):
       env_var_value = os.environ[env_var_name]
@@ -51,7 +51,8 @@ def main(args: argparse.Namespace) -> None:
   print(f"Found {len(evio_file_names)} EVIO files that will be processed by this job:")
   for index, evio_file_name in enumerate(evio_file_names):
     print(f"  {index:4d}: '{evio_file_name}'")
-  nmb_tasks = os.getenv("SLURM_NTASKS")  # number of tasks allocated for this job = number of nodes  #TODO check for None
+  nmb_tasks = os.getenv("SLURM_NTASKS")  # number of tasks allocated for this job = number of nodes
+  assert nmb_tasks is not None, "Error: environment variable 'SLURM_NTASKS' is required but not set"
   print(f"Number of tasks allocated for this job: {nmb_tasks}")
 
   # ensure that nmb_tasks is consistent with number of evio files and nmb_processes_per_task
@@ -74,7 +75,7 @@ def main(args: argparse.Namespace) -> None:
     os.symlink(f"../../{evio_file_name}", f"{work_dir_task}/{evio_file_name}")
 
   # run tasks in parallel
-  # each task will run args.nmb_processes_per_task hd_root processes in parallel, each processing a single evio file)
+  # each task will run args.nmb_processes_per_task hd_root processes in parallel, each processing a single evio file
   srun_cmd = [
     "srun",
     # f"--ntasks={nmb_tasks}",  # --ntasks is already specified in the `sbatch` command and srun will automatically use all allocated tasks
@@ -95,6 +96,9 @@ def main(args: argparse.Namespace) -> None:
     file.write(f"{srun_result.returncode:d}")
   print(f"srun finished with return code {srun_result.returncode:d}")
   sys.exit(srun_result.returncode)  # forward return code of srun to the caller of this script, i.e. swif2
+  # `srun` will return i) a non-zero slurm exit code, if it cannot
+  # start the tasks, or ii) the highest exit code of any failed tasks.
+  # If a task is killed by signal, 128 + signal number is returned.
 
 
 if __name__ == "__main__":
