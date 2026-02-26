@@ -42,7 +42,7 @@ RSYNC_CMD=(rsync
 unset SRC DEST
 
 # create and run swif2 workflow
-if swif2 status test_swif_workflow2 &> /dev/null
+if swif2 status "${SWIF_WORKFLOW}" &> /dev/null
 then
   echo "Workflow '${SWIF_WORKFLOW}' already exists; skipping creation"
 else
