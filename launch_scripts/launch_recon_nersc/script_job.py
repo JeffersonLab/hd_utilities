@@ -10,8 +10,8 @@ files, where each group is processed by a single slurm task.  Each
 slurm task occupies a complete NERSC CPU node.  The script sets up the
 directories for each of the slurm task.  Each directory holds links to
 the input files and will receive the output files.  The script then
-calls `srun` to launch the tasks on all nodes that were allocated by
-the submit script.
+calls `srun` to launch the task script `script_nersc_test.sh` on all
+nodes that were allocated by the submit script.
 """
 
 import argparse
@@ -80,15 +80,14 @@ def main(args: argparse.Namespace) -> None:
     "srun",
     # f"--ntasks={nmb_tasks}",  # --ntasks is already specified in the `sbatch` command and srun will automatically use all allocated tasks
     f"--output=task.{run_label}.%j.%t.out",  # write stdout and stderr of task to file named `task.RUN<run number>.<job id>.<task id>.out` into job's working directory
-    #TODO call shifter directly in srun command to avoid extra layer of indirection
-    f"{args.launch_dir}/run_shifter_multi.sh",  # script to run as task
-    work_dir_job,                       # arg 1:  top-level working directory of job
-    args.script_file_task,              # arg 2:  script to run inside shifter (all subsequent args are eventually passed to this script)
-    args.jana_config,                   # arg 3:  JANA config file
-    args.jana_calib_context,            # arg 4:  JANA calibration context
-    args.jana_geometry_url,             # arg 5:  JANA geometry URL
-    args.halld_version_set_xml,         # arg 6:  Hall-D version set XML file
-    str(args.nmb_threads_per_process),  # arg 7:  number of threads of `hd_root` process
+    "shifter",
+    args.script_file_task,  # task script to run inside a container on each NERSC node (all subsequent arguments are passed to this script)
+    f"{work_dir_job}/{run_label}",      # arg 1:  path of working directory RUNXXXXXX for run number XXXXXX
+    args.jana_config,                   # arg 2:  JANA config file
+    args.jana_calib_context,            # arg 3:  JANA calibration context
+    args.jana_geometry_url,             # arg 4:  JANA geometry URL
+    args.halld_version_set_xml,         # arg 5:  GlueX software version set XML file
+    str(args.nmb_threads_per_process),  # arg 6:  number of threads each `hd_root` process should use
   ]
   print(f"Submitting tasks: '{' '.join(srun_cmd)}'")
   srun_result = subprocess.run(srun_cmd)

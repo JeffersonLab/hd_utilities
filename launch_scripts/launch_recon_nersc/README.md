@@ -6,22 +6,19 @@
 
 ```bash
 > do_my_launch.sh
-  * Generates script_nersc_test.sh and jana_recon_nersc.config from templates
-  * Creates and runs swif2 workflow at ifarm
+  * Creates and runs swif2 workflow at JLab Farm
   * Copies job scripts and JANA config to NERSC
   * For each run number: creates and executes exec_<run number>.sh script
   |
  1|-> exec_<run number>.sh
       |
-     2|-> swif2 add-job (submits job at ifarm queue) + sbatch (submits job at NERSC queue)
+     2|-> swif2 add-job (submits job to JLab Farm queue) + sbatch (submits job to NERSC queue)
           |
-         3|-> @NERSC: script_job.py  <--  main job script
+         3|-> @NERSC: script_job.py  <--  job script
               |
-             4|-> @NERSC: srun run_shifter_multi.sh  <-- main task script
+             4|-> @NERSC: srun shifter script_nersc_test.sh  <-- task script run from inside a container
                   |
-                 5|-> @NERSC: shifter script_nersc_test.sh (run from inside a shifter container)
-                      |
-                     6|-> @NERSC: hd_root <-- process
+                 6|-> @NERSC: hd_root <-- process
 ```
 
 ## Used resources
@@ -30,7 +27,7 @@
 
 ### File system paths
 
-#### ifarm
+#### JLab Farm
 
 * `~gxproj4/NERSC/<start date>.recon.<run period>_<batch>/launch.<run period>_<batch>` directory with production scripts; where `batch=ver<recon version>_<site>`, e.g. `launch_ver03-perl`.
 * `/mss/halld/RunPeriod-<run period>/rawdata/Run<run number>` directory with input `.evio` files for given run number, e.g. `/mss/halld/RunPeriod-2025-01/rawdata/Run132313`.

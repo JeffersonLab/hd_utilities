@@ -5,24 +5,32 @@ set -o verbose  # print shell input lines as they are read, i.e. before any expa
 set -o xtrace  # print commands and their arguments as they are executed, i.e. after expansion and without I/O redirection
 ulimit -c unlimited  # allow core dumps with no size limit
 
-# This should be placed in the "launch" directory in the NERSC
-# project directory used for the job. e.g.
+# Slurm task script that runs an `hd_root` process for each EVIO file
+# that it finds in its working directory.
 #
-#     /global/project/projectdirs/m3120/launch/script_nersc.sh
-#
-# This script will wake up in the shifter container in the job
-# directory created by swif2. GlueX software is available via CVMFS.
-#
-# 3 arguments are passed and the entire directory will be processed. Output
-# files are left in the working directory for swif2 to manage.
+# The task script runs inside a container launched by the job script
+# `script_job.py`, which also prepares the task's working directory
+# `RUNXXXXXX/TASKYYY`, where the YYY is the 3-digit slurm task ID.
+# The task script wakes up in the job's working directory and goes
+# into the task's working directory based on the value of
+# `SLURM_PROCID`.  The `hd-root` output files are written into
+# subdirectories of the task's working directory, defined by run
+# number and EVIO file index.  After all `hd_root` processes have
+# completed, the script collects information about the job and writes
+# it to files that are then tarred up for transfer back to JLab.  The
+# script assumes that inside the container GlueX software is available
+# in the usual `/group/halld/Software` location and sets up the
+# environment using `gxenv`.  The output files are left in the working
+# directory for swif2 to manage.
 #
 # Arguments:
 #
-# arg 1:  JANA config file
-# arg 2:  JANA calibration context
-# arg 3:  JANA geometry URL
-# arg 4:  Hall-D version set XML file
-# arg 5:  Number of threads to use for this job
+# arg 1:  path of working directory RUNXXXXXX for run number XXXXXX
+# arg 2:  JANA config file
+# arg 3:  JANA calibration context
+# arg 4:  JANA geometry URL
+# arg 5:  Hall-D version set XML file
+# arg 6:  number of threads each `hd_root` process should use
 
 set -o errexit  # exit when any command fails
 
@@ -32,14 +40,21 @@ set -o errexit  # exit when any command fails
 # trap 'echo "\"${last_command}\" command failed with exit code ${?}."' EXIT  #TODO is this is executed also for non-error exit? If so, it should be modified to only print the message if the exit code is non-zero.
 
 # get command line arguments
-JANA_CONFIG="${1}"
-JANA_CALIB_CONTEXT="${2}"
-JANA_GEOMETRY_URL="${3}"
-HALLD_VERSION_SET_XML="${4}"
-NMB_THREADS_PER_PROCESS="${5}"
-
+WORK_DIR_RUN="${1}"  #TODO maybe it would be better to pass the run number?
+JANA_CONFIG="${2}"
+JANA_CALIB_CONTEXT="${3}"
+JANA_GEOMETRY_URL="${4}"
+HALLD_VERSION_SET_XML="${5}"
+NMB_THREADS_PER_PROCESS="${6}"
 EXTRA_ARGS=""
-work_dir_task="${PWD}"  # absolute path of working directory of container task, i.e. `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}/RUNXXXXXX/TASKYYY`, where `XXXXXX` is the run number and `YYY` is the 3-digit `${SLURM_PROCID}`
+
+# construct the task's working directory and cd into it
+SUBDIR_TASK=$(printf "TASK%03d" "${SLURM_PROCID}")
+WORK_DIR_TASK="${WORK_DIR_RUN}/${SUBDIR_TASK}"  # absolute path of working directory of container task, i.e. `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}/RUNXXXXXX/TASKYYY`, where `XXXXXX` is the run number and `YYY` is the 3-digit `${SLURM_PROCID}`
+cd "${WORK_DIR_TASK}"
+echo "${WORK_DIR_TASK}" >| myverif.out
+pwd -P >> myverif.out
+
 
 # setup software environment according to Hall-D version set XML file
 source "/group/halld/Software/build_scripts/gluex_env_boot_jlab.sh"
@@ -66,7 +81,7 @@ export JANA_RESOURCE_DIR="/group/halld/www/halldweb/html/resources"
 
 #TODO cleanup and improve log files and console output
 # record some info about the node and environment
-ls -lrth >| myverif.out
+ls -lLh >> myverif.out
 top -b -n 1 >| top.out
 cat /proc/cpuinfo >| cpuinfo.out
 declare -p | sed 's/^declare -[^ ]\+ //' >| env.out  # get alphabetically sorted list of environment variables without function definitions
@@ -99,8 +114,8 @@ do
   run_number="${evio_file:11:6}"
   file_number="${evio_file:18:3}"
   echo "${run_number} ${file_number}"
-  mkdir --parents "${work_dir_task}/run-${run_number}-${file_number}"
-  cd "${work_dir_task}/run-${run_number}-${file_number}"
+  mkdir --parents "${WORK_DIR_TASK}/run-${run_number}-${file_number}"
+  cd "${WORK_DIR_TASK}/run-${run_number}-${file_number}"
   # hd_root priorities for setting a parameter value is (lowest to highest):
   #   1) environment variable
   #   2) JANA config file
@@ -120,7 +135,7 @@ do
   "${HD_ROOT_CMD[@]}" 2> "std_${run_number}_${file_number}.err" 1> "std_${run_number}_${file_number}.out" &
   process_ids+=("${!}")  # capture the background process ID and store it in an array
 done
-cd "${work_dir_task}"
+cd "${WORK_DIR_TASK}"
 
 # wait for all background jobs to complete and capture their exit codes
 #TODO evaluate using GNU parallel for this
@@ -144,7 +159,7 @@ do
   # get run and file numbers from EVIO file names; assumes file names are of the form `hd_rawdata_XXXXXX_YYY.evio`
   run_number="${evio_file:11:6}"
   file_number="${evio_file:18:3}"
-  cd "${work_dir_task}/run-${run_number}-${file_number}"
+  cd "${WORK_DIR_TASK}/run-${run_number}-${file_number}"
   echo "${run_number} ${file_number}"
   echo "${PWD}"
   ls -lrth >> ../myverif.out
@@ -177,14 +192,14 @@ do
     fi
   done
 done
-cd "${work_dir_task}"
+cd "${WORK_DIR_TASK}"
 
 echo "I am here 3"
 ls ./* >| my-second-verif.txt
 ls ./*/* >> my-second-verif.txt
 mv run-*/*.* .
 
-# The swif2 job will copy all files in ${work_dir_task} back to JLab
+# The swif2 job will copy all files in ${WORK_DIR_TASK} back to JLab
 # so we have to clean up
 echo "I am here 4"
 # remove ccdb.sqlite and rcdb.sqlite files
