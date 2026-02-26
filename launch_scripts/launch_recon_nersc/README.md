@@ -18,7 +18,7 @@
               |
              4|-> @NERSC: srun shifter script_task.sh  <-- task script run from inside a container
                   |
-                 6|-> @NERSC: hd_root <-- process
+                 5|-> @NERSC: hd_root <-- process
 ```
 
 ## Used resources

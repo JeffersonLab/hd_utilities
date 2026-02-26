@@ -41,7 +41,6 @@ JANA_CALIB_CONTEXT="${3}"
 JANA_GEOMETRY_URL="${4}"
 HALLD_VERSION_SET_XML="${5}"
 NMB_THREADS_PER_PROCESS="${6}"
-EXTRA_ARGS=""
 
 # construct the task's working directory and cd into it
 SUBDIR_TASK=$(printf "TASK%03d" "${SLURM_PROCID}")
@@ -122,7 +121,6 @@ do
     -PNTHREADS="${NMB_THREADS_PER_PROCESS}"  # override number of threads to use
     -Pjana:calib_context="${JANA_CALIB_CONTEXT}"  # override calibration context from local variable
     --loadconfigs "${JANA_CONFIG}"
-    "${EXTRA_ARGS}"
     "../${evio_file}"
   )
   echo "${HD_ROOT_CMD[@]}" >> ../myverif.out
