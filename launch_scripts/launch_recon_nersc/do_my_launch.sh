@@ -57,9 +57,9 @@ for RUN_NUMBER in "${RUN_NUMBERS[@]}"
 do
   # construct command to submit a swif2 job for the given run number
   #NOTE swif2 jobs for remote sites do not produce stdout and stderr
-  #  on ifarm and the `-stdout` and `-stderr` arguments would need to
-  #  point to remote paths at NERSC. Specifying the NERSC log files
-  #  using the `-sbatch --output` argument is more flexible.
+  #  on JLab Farm and the `-stdout` and `-stderr` arguments would need
+  #  to point to remote paths at NERSC.  Specifying the NERSC log
+  #  files using the `-sbatch --output` argument is more flexible.
   SWIF2_CMD=(
     swif2 add-job
     -workflow "${SWIF_WORKFLOW}"
@@ -113,7 +113,7 @@ do
       --image="'${NERSC_CONTAINER_IMAGE}'"  #TODO verify that container image exists in NERSC repository
       --volume="'${NERSC_LAUNCH_DIR}:/${LAUNCH_DIR}'"  # map `${NERSC_LAUNCH_DIR}` on host to `/${LAUNCH_DIR}` in container
       --module=cvmfs  # enable CVMFS in the container so it can access the `/group/halld` tree
-      --output="job.RUN${RUN_NUMBER}.%j.out"  # write stdout and stderr of job to file named `nersc-job-<job name>-<job id>.out`, which will be copied by slurm into `${SLURM_SUBMIT_DIR}`  #TODO this is `/global/u1/j/jlab`; better location?
+      --output="job.RUN${RUN_NUMBER}.%j.out"  # write stdout and stderr of job to file named `job.RUN<run number>.<job id>.out`, which will be copied by slurm into `${SLURM_SUBMIT_DIR}`  #TODO this is `/global/u1/j/jlab`; better location?
       ::
       # job script to run at NERSC
       "${NERSC_LAUNCH_DIR}/script_job.py"

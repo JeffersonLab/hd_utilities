@@ -110,7 +110,7 @@ if __name__ == "__main__":
   parser.add_argument("--jana-config",             dest = "jana_config",             required = True, help = "JANA config file")
   parser.add_argument("--jana-calib-context",      dest = "jana_calib_context",      required = True, help = "JANA calibration context")
   parser.add_argument("--jana-geometry-url",       dest = "jana_geometry_url",       required = True, help = "JANA geometry URL")
-  parser.add_argument("--halld-version-set-xml",   dest = "halld_version_set_xml",   required = True, help = "Hall-D version set XML file")
+  parser.add_argument("--halld-version-set-xml",   dest = "halld_version_set_xml",   required = True, help = "GlueX software version set XML file")
   parser.add_argument("--nmb-processes-per-task",  dest = "nmb_processes_per_task",  required = True, help = "Number of processes per task",            type = int)
   parser.add_argument("--nmb-threads-per-process", dest = "nmb_threads_per_process", required = True, help = "Number of threads per `hd_root` process", type = int)
   main(parser.parse_args())

@@ -29,15 +29,10 @@ ulimit -c unlimited  # allow core dumps with no size limit
 # arg 2:  JANA config file
 # arg 3:  JANA calibration context
 # arg 4:  JANA geometry URL
-# arg 5:  Hall-D version set XML file
+# arg 5:  GlueX software version set XML file
 # arg 6:  number of threads each `hd_root` process should use
 
 set -o errexit  # exit when any command fails
-
-# # keep track of last executed command
-# trap 'last_command=${current_command}; current_command=${BASH_COMMAND}' DEBUG
-# # echo error message before exiting if error occurs
-# trap 'echo "\"${last_command}\" command failed with exit code ${?}."' EXIT  #TODO is this is executed also for non-error exit? If so, it should be modified to only print the message if the exit code is non-zero.
 
 # get command line arguments
 WORK_DIR_RUN="${1}"  #TODO maybe it would be better to pass the run number?
@@ -56,7 +51,7 @@ echo "${WORK_DIR_TASK}" >| myverif.out
 pwd -P >> myverif.out
 
 
-# setup software environment according to Hall-D version set XML file
+# setup GlueX software environment according to version set defined by XML file
 source "/group/halld/Software/build_scripts/gluex_env_boot_jlab.sh"
 gxenv "${HALLD_VERSIONS}/${HALLD_VERSION_SET_XML}"
 
@@ -67,16 +62,15 @@ gxenv "${HALLD_VERSIONS}/${HALLD_VERSION_SET_XML}"
 # export HALLD_MY="${CSCRATCH}/HALLD_MY/${HALLD_RECON_VERSION}"  #TODO this seems to be dysfunctional; ${CSCRATCH} does not exist anymore on NERSC
 # export PATH="${HALLD_MY}/${BMS_OSNAME}/bin:${PATH}"
 
-# Use CCDB and RCDB from CVMFS. Make a temporary local copy so that we
-# don't interfere with other jobs locking the same file
+# make temporary local copy of CCDB and RCDB database files to avoid interferes with other jobs locking the same file
 cp --verbose "/group/halld/www/halldweb/html/dist/ccdb.sqlite" /dev/shm
 cp --verbose "/group/halld/www/halldweb/html/dist/rcdb.sqlite" /dev/shm
-ls -lrth /dev/shm/ccdb.sqlite
-ls -lrth /dev/shm/rcdb.sqlite
+ls -lh /dev/shm/ccdb.sqlite
+ls -lh /dev/shm/rcdb.sqlite
 export JANA_CALIB_URL="sqlite:////dev/shm/ccdb.sqlite"
 export CCDB_CONNECTION="${JANA_CALIB_URL}"
 export RCDB_CONNECTION="sqlite:////dev/shm/rcdb.sqlite"
-export JANA_GEOMETRY_URL
+export JANA_GEOMETRY_URL  # from command line argument
 export JANA_RESOURCE_DIR="/group/halld/www/halldweb/html/resources"
 
 #TODO cleanup and improve log files and console output
@@ -86,10 +80,11 @@ top -b -n 1 >| top.out
 cat /proc/cpuinfo >| cpuinfo.out
 declare -p | sed 's/^declare -[^ ]\+ //' >| env.out  # get alphabetically sorted list of environment variables without function definitions
 hostname >| hostname.out
-ls -lrth >> myverif.out
-ls -lrth .. >> myverif.out
-ls -lrth ../.. >> myverif.out
-ls -lrth /pscratch/sd/j/jlab/swif/input/ >> myverif.out
+ls -lh >> myverif.out
+ls -lh .. >> myverif.out
+ls -lh ../.. >> myverif.out
+ls -lh /pscratch/sd/j/jlab/swif/input/ >> myverif.out
+ls -lh /dev/shm >> myverif.out
 
 
 # Do not exit immediately if hd_root fails. This allows us to
@@ -99,13 +94,13 @@ ls -lrth /pscratch/sd/j/jlab/swif/input/ >> myverif.out
 set +o errexit
 
 # run hd_root process for each evio file in the directory in parallel
-ls -lrth "${JANA_CONFIG}" >> myverif.out
+ls -lh "${JANA_CONFIG}" >> myverif.out
 cat "${JANA_CONFIG}" >> myverif.out
 echo "${PWD}" >> myverif.out
 echo "${HALLD_RECON_HOME}" >> myverif.out
 echo "I am here 0"
 shopt -s nullglob  # ensure that array is empty if no files match the pattern
-evio_files=(hd_rawdata_??????_???.evio)
+evio_files=(hd_rawdata_??????_???.evio)  #TODO use absolute paths
 shopt -u nullglob
 process_ids=()  # array to hold process IDs of background hd_root processes
 for evio_file in "${evio_files[@]}"
@@ -144,12 +139,13 @@ for process_index in "${!process_ids[@]}"
 do
   wait "${process_ids[${process_index}]}"  # wait for the process to finish
   echo "Exit code for process ${process_index}: ${?}" > "exitcode_${process_index}.txt"  #TODO the text does not add anything useful? why not just write the exit code to the file? Improve file name
+  #TODO the exit code should be written ino the `run-${run_number}-${file_number}` directory
 done
 
 set -o errexit  # turn exit on error back on
 echo "I am here 2"
-ls -lrth >> myverif.out  #TODO is time ordering useful here?
-ls -lrth ./*/* >> myverif.out
+ls -lh >> myverif.out  #TODO is time ordering useful here?
+ls -lh ./*/* >> myverif.out
 
 shopt -s nullglob  # ensure that array is empty if no files match the pattern
 evio_files=(hd_rawdata_??????_???.evio)
@@ -162,7 +158,7 @@ do
   cd "${WORK_DIR_TASK}/run-${run_number}-${file_number}"
   echo "${run_number} ${file_number}"
   echo "${PWD}"
-  ls -lrth >> ../myverif.out
+  ls -lh >> ../myverif.out
   # move small files into a directory and make a tarball
   JOB_INFO_DIR="job_info_${run_number}_${file_number}"
   echo "${JOB_INFO_DIR}"
