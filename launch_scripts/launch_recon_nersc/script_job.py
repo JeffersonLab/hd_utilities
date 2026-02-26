@@ -10,8 +10,8 @@ files, where each group is processed by a single slurm task.  Each
 slurm task occupies a complete NERSC CPU node.  The script sets up the
 directories for each of the slurm task.  Each directory holds links to
 the input files and will receive the output files.  The script then
-calls `srun` to launch the task script `script_nersc_test.sh` on all
-nodes that were allocated by the submit script.
+calls `srun` to launch the task script `script_task.sh` on all nodes
+that were allocated by the submit script.
 """
 
 import argparse

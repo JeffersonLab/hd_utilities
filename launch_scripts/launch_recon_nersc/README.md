@@ -16,7 +16,7 @@
           |
          3|-> @NERSC: script_job.py  <--  job script
               |
-             4|-> @NERSC: srun shifter script_nersc_test.sh  <-- task script run from inside a container
+             4|-> @NERSC: srun shifter script_task.sh  <-- task script run from inside a container
                   |
                  6|-> @NERSC: hd_root <-- process
 ```
