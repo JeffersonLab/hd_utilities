@@ -10,6 +10,8 @@ source "${CONFIG_FILE}"
 echo "Copying launch scripts and config files from '$(pwd)' to '${PRODUCTION_USER}@ifarm:~/${PRODUCTION_LAUNCH_DIR}'"
 TMP=$(mktemp)
 git ls-files -z >| "${TMP}"  # get NUL-delimited list of all files tracked by git (safe for spaces/newlines)
+find . -maxdepth 1 -name "${RUN_NUMBER_LIST_FILE}" -print0 >> "${TMP}"
+find . -maxdepth 1 -name "${JANA_CONFIG}" -print0 >> "${TMP}"
 RSYNC_CMD=(rsync
   --verbose
   --archive
