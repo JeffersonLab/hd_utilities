@@ -8,9 +8,9 @@
 > submit_launch.sh + environment file (default: launch.env)
   * Creates and runs swif2 workflow at JLab Farm
   * Copies job scripts and JANA config to NERSC
-  * For each run number: creates and executes exec_<run number>.sh script
+  * For each run number: creates and executes submit_job_for_RUN<run number>.sh script
   |
- 1|-> exec_<run number>.sh
+ 1|-> submit_job_for_RUN<run number>.sh
       |
      2|-> swif2 add-job (submits job to JLab Farm queue) + sbatch (submits job to NERSC queue)
           |

@@ -126,15 +126,16 @@ do
         --nmb-processes-per-task="${NERSC_NMB_PROCESSES_PER_TASK}"
         --nmb-threads-per-process="${NERSC_NMB_THREADS_PER_PROCESS}"
   )
-  echo "${SWIF2_CMD[@]}" >| "./exec_${RUN_NUMBER}.sh"
+  SUBMIT_JOB_SCRIPT="submit_job_for_RUN${RUN_NUMBER}.sh"
+  echo "${SWIF2_CMD[@]}" >| "${SUBMIT_JOB_SCRIPT}"
   # # generate shell-escaped version of command array and write it to file so it becomes a script that can be run directly
   #TODO this would be the safer approach, but in `-output match:RUN132194/TASK024/*` this would escape the `*`; not sure if this would cause problems with swif2
   # {
   #   printf '%q ' "${CMD[@]}"
   #   printf '\n'
-  # } >| "exec_${RUN_NUMBER}.sh"
-  chmod +x "./exec_${RUN_NUMBER}.sh"
-  "./exec_${RUN_NUMBER}.sh"
+  # } >| "${SUBMIT_JOB_SCRIPT}"
+  chmod +x "${SUBMIT_JOB_SCRIPT}"
+  "./${SUBMIT_JOB_SCRIPT}"
 done
 
 # print status of workflow after submitting all jobs
