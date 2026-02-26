@@ -40,9 +40,10 @@ def main(args: argparse.Namespace) -> None:
     print(f"{arg_name:>{max_arg_name_length + 2}} : {arg_value}")
 
   # gather job information
-  write_env_to_file("job.env.out")
+  run_label = f"RUN{args.run_number:06d}"
+  write_env_to_file(f"job.{run_label}.env")
   host_name = socket.gethostname()  # name of compute node where this script is running
-  with open("job.hostname.out", "w", encoding = "utf-8") as file:  #TODO is this really needed? the hostname is also available in the environment variable `SLURMD_NODENAME`
+  with open(f"job.{run_label}.hostname", "w", encoding = "utf-8") as file:  #TODO is this really needed? the hostname is also available in the environment variable `SLURMD_NODENAME`
     file.write(host_name)
   work_dir_job = os.getcwd()  # working directory of job as created by swif2, i.e. `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}; (identical to `${SWIF_JOB_STAGE_DIR}` and `${SWIF_JOB_WORK_DIR}`)
   print(f"Job script is running in directory: '{work_dir_job}'")
@@ -62,12 +63,12 @@ def main(args: argparse.Namespace) -> None:
   # loop over raw data files and create task directories with links to input files
   for evio_file_name in evio_file_names:
     # get run and file numbers from EVIO file names; assumes file names are of the form `hd_rawdata_XXXXXX_YYY.evio`
-    run_number = int(evio_file_name[11:17])
+    # run_number = int(evio_file_name[11:17])
     file_index = int(evio_file_name[18:21])
     node_index = int(float(file_index) / args.nmb_processes_per_task)
     # make work directory for task
     #TODO why is this called for every file? we know how many files each job processes
-    work_dir_task = f"RUN{int(run_number):06d}/TASK{node_index:03d}"
+    work_dir_task = f"{run_label}/TASK{node_index:03d}"
     os.makedirs(work_dir_task, exist_ok = True)  #TODO are also created by `do_my_launch.sh`
     # create symlink to evio file in task directory
     os.symlink(f"../../{evio_file_name}", f"{work_dir_task}/{evio_file_name}")
@@ -104,6 +105,7 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(
     description = "Prepare directory structure and use srun to start a reconstruction task on each node (positional args).",
   )
+  parser.add_argument("--run-number",              dest = "run_number",              required = True, help = "Run number for this job")
   parser.add_argument("--launch-dir",              dest = "launch_dir",              required = True, help = "Path to launch directory containing scripts and config files")
   parser.add_argument("--script-file-task",        dest = "script_file_task",        required = True, help = "Script file to run as task on each node")
   parser.add_argument("--jana-config",             dest = "jana_config",             required = True, help = "JANA config file")
