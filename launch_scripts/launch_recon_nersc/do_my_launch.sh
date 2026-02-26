@@ -118,8 +118,7 @@ do
       # job script to run at NERSC
       "${NERSC_LAUNCH_DIR}/script_job.py"
         --run-number="${RUN_NUMBER}"
-        --launch-dir="${NERSC_LAUNCH_DIR}"
-        --script-file-task="/${LAUNCH_DIR}/script_task.sh"  #TODO do we really need to pass this as an argument?
+        --launch-dir="${LAUNCH_DIR}"
         --jana-config="/${LAUNCH_DIR}/${JANA_CONFIG}"
         --jana-calib-context="'${JANA_CALIB_CONTEXT}'"
         --jana-geometry-url="'${JANA_GEOMETRY_URL}'"

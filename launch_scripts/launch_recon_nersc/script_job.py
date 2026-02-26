@@ -81,7 +81,7 @@ def main(args: argparse.Namespace) -> None:
     # f"--ntasks={nmb_tasks}",  # --ntasks is already specified in the `sbatch` command and srun will automatically use all allocated tasks
     f"--output=task.{run_label}.%j.%t.out",  # write stdout and stderr of task to file named `task.RUN<run number>.<job id>.<task id>.out` into job's working directory
     "shifter",
-    args.script_file_task,  # task script to run inside a container on each NERSC node (all subsequent arguments are passed to this script)
+    f"{args.launch_dir}/script_task.sh",  # task script to run inside a container on each NERSC node (all subsequent arguments are passed to this script)
     f"{work_dir_job}/{run_label}",      # arg 1:  path of working directory RUNXXXXXX for run number XXXXXX
     args.jana_config,                   # arg 2:  JANA config file
     args.jana_calib_context,            # arg 3:  JANA calibration context
@@ -105,8 +105,7 @@ if __name__ == "__main__":
     description = "Prepare directory structure and use srun to start a reconstruction task on each node (positional args).",
   )
   parser.add_argument("--run-number",              dest = "run_number",              required = True, help = "Run number for this job", type = int)
-  parser.add_argument("--launch-dir",              dest = "launch_dir",              required = True, help = "Path to launch directory containing scripts and config files")
-  parser.add_argument("--script-file-task",        dest = "script_file_task",        required = True, help = "Script file to run as task on each node")
+  parser.add_argument("--launch-dir",              dest = "launch_dir",              required = True, help = "Path to launch directory containing scripts and config files inside container")
   parser.add_argument("--jana-config",             dest = "jana_config",             required = True, help = "JANA config file")
   parser.add_argument("--jana-calib-context",      dest = "jana_calib_context",      required = True, help = "JANA calibration context")
   parser.add_argument("--jana-geometry-url",       dest = "jana_geometry_url",       required = True, help = "JANA geometry URL")
