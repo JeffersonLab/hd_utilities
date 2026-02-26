@@ -95,7 +95,7 @@ do
     echo "mkdir --parents ${SWIF_OUTPUT_DIR_TASK}"
     mkdir --parents "${SWIF_OUTPUT_DIR_TASK}"  #TODO are also created by `script_job.py`
     # SWIF2_CMD+=(-output "match:${SUBDIR_TASK}/*" "${SWIF_OUTPUT_ROOT}")  # copy `${SUBDIR_TASK}/*` into `${SWIF_OUTPUT_ROOT}` after the job is done
-    SWIF2_CMD+=(-output "${SWIF_OUTPUT_ROOT}")  # copy everything in swif job attempt to `${SWIF_OUTPUT_ROOT}` after the job is done
+    SWIF2_CMD+=(-output "match:*" "${SWIF_OUTPUT_ROOT}")  # copy everything in swif job attempt directory to `${SWIF_OUTPUT_ROOT}` after the job is done
   done
   # define NERSC job
   SWIF2_CMD+=(
