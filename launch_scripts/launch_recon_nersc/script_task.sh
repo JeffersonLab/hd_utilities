@@ -154,7 +154,7 @@ done
 echo "--- Working directory of task at '$(pwd -P)' after all hd_root processes have completed:"
 ls -lhR .
 
-echo "--- Collect information about the task and hd_root processes"
+echo "--- Prepare output files for transfer back to JLab"
 set -o errexit  # turn exit on error back on
 shopt -s nullglob  # ensure that array is empty if no files match the pattern
 evio_file_names=(hd_rawdata_??????_???.evio)
@@ -169,9 +169,9 @@ do
   WORK_DIR_PROCESS="${WORK_DIR_TASK}/${SUBDIR_PROCESS}"
   cd "${WORK_DIR_PROCESS}"
   JOB_INFO_DIR="job_info_${run_number}_${file_number}"
-  echo "--- Move log files in process directory '$(pwd -P)' into subdirectory '${JOB_INFO_DIR}' and make a tarball"
-  mkdir --verbose "${JOB_INFO_DIR}"
+  echo "--- Move log files in process directory '$(pwd -P)' into subdirectory '${JOB_INFO_DIR}' and make a tarball:"
   ls -lhR .
+  mkdir --verbose "${JOB_INFO_DIR}"
   cp --verbose ../node.{hostname,env,top,cpuinfo} "${JOB_INFO_DIR}"
   mv --verbose hd_root.{out,err,rc} "${JOB_INFO_DIR}"
   tar czvf "${JOB_INFO_DIR}.tgz" "${JOB_INFO_DIR}"
@@ -190,8 +190,9 @@ do
     fi
   done
 done
+
 cd "${WORK_DIR_TASK}"
-echo "--- Status of task's working directory at '$(pwd -P)'"
+echo "--- Status of task's working directory at '$(pwd -P)':"
 ls -lhR .
 echo "--- Move output files from all process directories to the task's working directory at '$(pwd -P)'"
 mv --verbose run-??????-???/*.* .
@@ -202,6 +203,9 @@ echo "--- Clean up"
 rm --verbose --force ./hd_rawdata_??????_???.evio  # links to input files
 rm --verbose --force --recursive ./run-??????-???  # working directories of processes
 rm --verbose --force ./node.{hostname,env,top,cpuinfo}  # node log files
+
+echo "--- Status of task's working directory at '$(pwd -P)' at end of task script:"
+ls -lhR .
 
 echo "--- Task script finished with maximum exit code ${max_exit_code} among all hd_root processes"
 exit "${max_exit_code}"  # forward the maximum exit code among all `hd_root` processes to the job script  #TODO maybe it would be more useful to return number of failed processes?
