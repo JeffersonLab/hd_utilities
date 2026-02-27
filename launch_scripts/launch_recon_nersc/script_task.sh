@@ -85,10 +85,10 @@ export JANA_GEOMETRY_URL  # from command line argument
 export JANA_RESOURCE_DIR="/group/halld/www/halldweb/html/resources"
 
 echo "--- Log info about node and environment"
-hostname >| ./hostname.log
-declare -p | sed 's/^declare -[^ ]\+ //' >| ./env.log  # get alphabetically sorted list of environment variables without function definitions
-top -b -n 1 -c -w 512 >| ./top.log
-cat /proc/cpuinfo >| ./cpuinfo.log
+hostname >| ./node.hostname
+declare -p | sed 's/^declare -[^ ]\+ //' >| ./node.env  # get alphabetically sorted list of environment variables without function definitions
+top -b -n 1 -c -w 512 >| ./node.top
+cat /proc/cpuinfo >| ./node.cpuinfo
 
 echo "--- Find EVIO files in current directory:"
 shopt -s nullglob  # ensure that array is empty if no files match the pattern
@@ -172,7 +172,7 @@ do
   mkdir --verbose "${JOB_INFO_DIR}"
   echo "${PWD}"
   ls -lhR .
-  cp --verbose ../{hostname,env,top,cpuinfo}.log "${JOB_INFO_DIR}"
+  cp --verbose ../node.{hostname,env,top,cpuinfo} "${JOB_INFO_DIR}"
   mv --verbose hd_root.{out,err,rc} "${JOB_INFO_DIR}"
   tar czf "${JOB_INFO_DIR}.tgz" "${JOB_INFO_DIR}"
   shopt -s nullglob  # ensure that array is empty if no files match the pattern
@@ -199,8 +199,8 @@ mv --verbose run-*/*.* .
 # have to clean up
 echo "--- Clean up"
 rm --verbose --force ./hd_rawdata_??????_???.evio  # links to input files
-rm --verbose --force --recursive ./run-??????-???  # process working directories
-rm --verbose --force ./{hostname,env,top,cpuinfo}.log  # node log files
+rm --verbose --force --recursive ./run-??????-???  # working directories of processes
+rm --verbose --force ./node.{hostname,env,top,cpuinfo}  # node log files
 
 echo "--- Task script finished with maximum exit code ${max_exit_code} among all hd_root processes"
 exit "${max_exit_code}"  # forward the maximum exit code among all `hd_root` processes to the job script  #TODO maybe it would be more useful to return number of failed processes?
