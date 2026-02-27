@@ -76,18 +76,25 @@ def main(args: argparse.Namespace) -> None:
 
   # run tasks in parallel
   # each task will run args.nmb_processes_per_task hd_root processes in parallel, each processing a single evio file
+  task_cmd = [
+    f"{args.launch_dir}/script_task.sh",  # task script to run inside a container on each NERSC node (all subsequent arguments are passed to this script)
+    f"{work_dir_job}/{run_label}",      # arg 1:  path of working directory RUNXXXXXX for run number XXXXXX
+    f"{args.jana_config}",              # arg 2:  JANA config file
+    f"{args.jana_calib_context}",       # arg 3:  JANA calibration context
+    f"{args.jana_geometry_url}",        # arg 4:  JANA geometry URL
+    f"{args.halld_version_set_xml}",    # arg 5:  GlueX software version set XML file
+    f"{args.nmb_threads_per_process}",  # arg 6:  number of threads each `hd_root` process should use
+  ]
   srun_cmd = [
     "srun",
     # f"--ntasks={nmb_tasks}",  # --ntasks is already specified in the `sbatch` command and srun will automatically use all allocated tasks
     f"--output=task.{run_label}.%j.%t.out",  # write stdout and stderr of task to file named `task.RUN<run number>.<job id>.<task id>.out` into job's working directory
+    "--",
     "shifter",
-    f"{args.launch_dir}/script_task.sh",  # task script to run inside a container on each NERSC node (all subsequent arguments are passed to this script)
-    f"{work_dir_job}/{run_label}",      # arg 1:  path of working directory RUNXXXXXX for run number XXXXXX
-    args.jana_config,                   # arg 2:  JANA config file
-    args.jana_calib_context,            # arg 3:  JANA calibration context
-    args.jana_geometry_url,             # arg 4:  JANA geometry URL
-    args.halld_version_set_xml,         # arg 5:  GlueX software version set XML file
-    str(args.nmb_threads_per_process),  # arg 6:  number of threads each `hd_root` process should use
+    "--",
+    "bash",
+    "-c",
+    " ".join(task_cmd),  # command to run on each node; needs to be passed as a single string to `bash -c`
   ]
   print(f"Submitting tasks: '{' '.join(srun_cmd)}'")
   srun_result = subprocess.run(srun_cmd)
