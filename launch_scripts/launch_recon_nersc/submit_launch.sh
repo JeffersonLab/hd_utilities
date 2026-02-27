@@ -113,7 +113,7 @@ do
       --image="'${NERSC_CONTAINER_IMAGE}'"  #TODO verify that container image exists in NERSC repository
       --volume="'${NERSC_LAUNCH_DIR}:/${LAUNCH_DIR}'"  # map `${NERSC_LAUNCH_DIR}` on host to `/${LAUNCH_DIR}` in container
       --module=cvmfs  # enable CVMFS in the container so it can access the `/group/halld` tree
-      --output="job.RUN${RUN_NUMBER}.%j.out"  # write stdout and stderr of job to file named `job.RUN<run number>.<job id>.out`, which will be copied by slurm into `${SLURM_SUBMIT_DIR}`  #TODO this is `/global/u1/j/jlab`; better location?
+      --output="job_${RUN_NUMBER}_%j.out"  # write stdout and stderr of job to file named `job_<run number>_<job id>.out`, which will be copied by slurm into `${SLURM_SUBMIT_DIR}`  #TODO this is `/global/u1/j/jlab`; better location?
       ::
       # job script to run at NERSC
       "${NERSC_LAUNCH_DIR}/script_job.py"

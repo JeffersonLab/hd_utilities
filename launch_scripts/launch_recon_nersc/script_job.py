@@ -39,12 +39,13 @@ def main(args: argparse.Namespace) -> None:
   for arg_name, arg_value in sorted(vars(args).items()):  # sort keys for stable, tidy output
     print(f"{arg_name:>{max_arg_name_length + 2}} : {arg_value}")
 
-  # gather job information
-  run_label = f"RUN{args.run_number:06d}"
-  write_env_to_file(f"job.{run_label}.env")
-  host_name = socket.gethostname()  # name of compute node where this script is running
-  with open(f"job.{run_label}.hostname", "w", encoding = "utf-8") as file:  #TODO is this really needed? the hostname is also available in the environment variable `SLURMD_NODENAME`
-    file.write(host_name)
+  # gather information about job environment and write it to files
+  run_label = f"{args.run_number:06d}"
+  write_env_to_file(f"job_{run_label}.env")
+  with open(f"job_{run_label}.hostname", "w", encoding = "utf-8") as file:
+    subprocess.run(["hostnamectl"], stdout = file, stderr = subprocess.STDOUT)
+
+  # get job working directory and list of input files
   work_dir_job = os.getcwd()  # working directory of job as created by swif2, i.e. `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}; (identical to `${SWIF_JOB_STAGE_DIR}` and `${SWIF_JOB_WORK_DIR}`)
   print(f"Job script is running in directory: '{work_dir_job}'")
   evio_file_names = sorted(glob.glob("hd_rawdata_??????_???.evio"))  # list of raw data file names in working directory of job
@@ -69,7 +70,7 @@ def main(args: argparse.Namespace) -> None:
     node_index = int(float(file_index) / args.nmb_processes_per_task)
     # make work directory for task
     #TODO why is this called for every file? we know how many files each job processes
-    work_dir_task = f"{run_label}/TASK{node_index:03d}"
+    work_dir_task = f"RUN{run_label}/TASK{node_index:03d}"
     os.makedirs(work_dir_task, exist_ok = True)  #TODO are also created by `submit_launch.sh`
     # create symlink to evio file in task directory
     os.symlink(f"../../{evio_file_name}", f"{work_dir_task}/{evio_file_name}")
@@ -78,7 +79,7 @@ def main(args: argparse.Namespace) -> None:
   # each task will run args.nmb_processes_per_task hd_root processes in parallel, each processing a single evio file
   task_cmd = [
     f"{args.launch_dir}/script_task.sh",  # task script to run inside a container on each NERSC node (all subsequent arguments are passed to this script)
-    f"{work_dir_job}/{run_label}",      # arg 1:  path of working directory RUNXXXXXX for run number XXXXXX
+    f"{work_dir_job}/RUN{run_label}",   # arg 1:  path of working directory RUNXXXXXX for run number XXXXXX
     f"{args.jana_config}",              # arg 2:  JANA config file
     f"{args.jana_calib_context}",       # arg 3:  JANA calibration context
     f"{args.jana_geometry_url}",        # arg 4:  JANA geometry URL
@@ -88,7 +89,7 @@ def main(args: argparse.Namespace) -> None:
   srun_cmd = [
     "srun",
     # f"--ntasks={nmb_tasks}",  # --ntasks is already specified in the `sbatch` command and srun will automatically use all allocated tasks
-    f"--output=task.{run_label}.%j.%t.out",  # write stdout and stderr of task to file named `task.RUN<run number>.<job id>.<task id>.out` into job's working directory
+    f"--output=task_{run_label}_%t.out",  # write stdout and stderr of task to file named `task_<run number>_<task id>.out` into job's working directory
     "--",
     "shifter",
     "--",
@@ -98,7 +99,7 @@ def main(args: argparse.Namespace) -> None:
   ]
   print(f"Submitting tasks: '{' '.join(srun_cmd)}'")
   srun_result = subprocess.run(srun_cmd)
-  with open(f"./srun.{run_label}.rc", "w", encoding = "utf-8") as file:
+  with open(f"./srun_{run_label}.rc", "w", encoding = "utf-8") as file:
     file.write(f"{srun_result.returncode:d}")
   print(f"srun finished with return code {srun_result.returncode:d}")
   sys.exit(srun_result.returncode)  # forward return code of srun to the caller of this script, i.e. swif2
