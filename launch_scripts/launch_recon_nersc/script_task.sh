@@ -159,41 +159,42 @@ set -o errexit  # turn exit on error back on
 shopt -s nullglob  # ensure that array is empty if no files match the pattern
 evio_file_names=(hd_rawdata_??????_???.evio)
 shopt -u nullglob
-#TODO this still needs cleanup
 for evio_file_name in "${evio_file_names[@]}"
 do
+  #TODO avoid code duplication
   # get run and file numbers from EVIO file names; assumes file names are of the form `hd_rawdata_XXXXXX_YYY.evio`
   run_number="${evio_file_name:11:6}"
   file_number="${evio_file_name:18:3}"
-  cd "${WORK_DIR_TASK}/run-${run_number}-${file_number}"
-  echo "${run_number} ${file_number}"
-  # move small files into a directory and make a tarball
+  SUBDIR_PROCESS="run-${run_number}-${file_number}"
+  WORK_DIR_PROCESS="${WORK_DIR_TASK}/${SUBDIR_PROCESS}"
+  cd "${WORK_DIR_PROCESS}"
   JOB_INFO_DIR="job_info_${run_number}_${file_number}"
+  echo "--- Move log files in process directory '$(pwd -P)' into subdirectory '${JOB_INFO_DIR}' and make a tarball"
   mkdir --verbose "${JOB_INFO_DIR}"
-  echo "${PWD}"
   ls -lhR .
   cp --verbose ../node.{hostname,env,top,cpuinfo} "${JOB_INFO_DIR}"
   mv --verbose hd_root.{out,err,rc} "${JOB_INFO_DIR}"
-  tar czf "${JOB_INFO_DIR}.tgz" "${JOB_INFO_DIR}"
+  tar czvf "${JOB_INFO_DIR}.tgz" "${JOB_INFO_DIR}"
+  echo "--- Add '_${run_number}_${file_number}' suffix to all output file names if not already present"
   shopt -s nullglob  # ensure that array is empty if no files match the pattern
-  files_tab=(*.*)
+  files_names=(*.*)
   shopt -u nullglob
-  for file in "${files_tab[@]}"
+  for file_name in "${files_names[@]}"
   do
-    echo "${file}"
-    if [[ ! "${file}" =~ .*_([0-9]{6})_([0-9]{3}).* ]]  # files that do not match the pattern `*_XXXXXX_YYY*` where X and Y are digits
+    if [[ ! "${file_name}" =~ .*_([0-9]{6})_([0-9]{3}).* ]]  # files that do not match the pattern `*_XXXXXX_YYY*` where X and Y are digits
     then
-      basefile=$(basename "${file}")  # extract base file name
-      extension="${basefile##*.}"  # extract the file extension
-      new_name="${basefile%.*}_${run_number}_${file_number}.${extension}"  # new file name with run_number and file_number inserted before the extension
-      mv --verbose "${file}" "${new_name}"  # rename the file
+      new_file_name="${file_name/./_${run_number}_${file_number}.}"  # insert run and file number before the first '.' of the file extension
+      mv --verbose "${file_name}" "${new_file_name}"
+    else
+      echo "File '${file_name}' already has run number and file number in its name; skipping renaming"
     fi
   done
 done
 cd "${WORK_DIR_TASK}"
-echo "!!! I am here 3"
+echo "--- Status of task's working directory at '$(pwd -P)'"
 ls -lhR .
-mv --verbose run-*/*.* .
+echo "--- Move output files from all process directories to the task's working directory at '$(pwd -P)'"
+mv --verbose run-??????-???/*.* .
 
 # swif2 will copy all files in ${WORK_DIR_TASK} back to JLab, so we
 # have to clean up
