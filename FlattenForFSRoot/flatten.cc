@@ -2268,8 +2268,12 @@ bool GetPolarizationAngle(int runNumber, int& polarizationAngle)
   ostringstream locCommandStream;
   locCommandStream << "rcnd " << runNumber << " polarization_angle";
   FILE* locInputFile = gSystem->OpenPipe(locCommandStream.str().c_str(), "r");
-  if(locInputFile == NULL)
-    return false;
+  if(locInputFile == NULL){
+    std::cerr << "\nFATAL: rcnd returned no output.\n"
+	      << "       Command: " << localCommandStream.str() << "\n\n";
+    std::exit(2);
+  }
+
 
   //get the first line
   char buff[1024];
