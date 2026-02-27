@@ -154,23 +154,19 @@ done
 echo "--- Working directory of task at '$(pwd -P)' after all hd_root processes have completed:"
 ls -lhR .
 
+echo "--- Collect information about the task and hd_root processes"
 set -o errexit  # turn exit on error back on
-echo "I am here 2"
-ls -lh >> myverif.out  #TODO is time ordering useful here?
-ls -lh ./*/* >> myverif.out
-
 shopt -s nullglob  # ensure that array is empty if no files match the pattern
-evio_files=(hd_rawdata_??????_???.evio)
+evio_file_names=(hd_rawdata_??????_???.evio)
 shopt -u nullglob
-for evio_file in "${evio_files[@]}"
+#TODO this still needs cleanup
+for evio_file_name in "${evio_file_names[@]}"
 do
   # get run and file numbers from EVIO file names; assumes file names are of the form `hd_rawdata_XXXXXX_YYY.evio`
-  run_number="${evio_file:11:6}"
-  file_number="${evio_file:18:3}"
+  run_number="${evio_file_name:11:6}"
+  file_number="${evio_file_name:18:3}"
   cd "${WORK_DIR_TASK}/run-${run_number}-${file_number}"
   echo "${run_number} ${file_number}"
-  echo "${PWD}"
-  ls -lh >> ../myverif.out
   # move small files into a directory and make a tarball
   JOB_INFO_DIR="job_info_${run_number}_${file_number}"
   mkdir --verbose "${JOB_INFO_DIR}"
@@ -190,20 +186,21 @@ do
       basefile=$(basename "${file}")  # extract base file name
       extension="${basefile##*.}"  # extract the file extension
       new_name="${basefile%.*}_${run_number}_${file_number}.${extension}"  # new file name with run_number and file_number inserted before the extension
-      mv "${file}" "${new_name}"  # rename the file
+      mv --verbose "${file}" "${new_name}"  # rename the file
     fi
   done
 done
 cd "${WORK_DIR_TASK}"
+echo "!!! I am here 3"
+ls -lhR .
+mv --verbose run-*/*.* .
 
-echo "I am here 3"
-ls ./* >| my-second-verif.txt
-ls ./*/* >> my-second-verif.txt
-mv run-*/*.* .
+# swif2 will copy all files in ${WORK_DIR_TASK} back to JLab, so we
+# have to clean up
+echo "--- Clean up"
+rm --verbose --force ./hd_rawdata_??????_???.evio  # links to input files
+rm --verbose --force --recursive ./run-??????-???  # process working directories
+rm --verbose --force ./{hostname,env,top,cpuinfo}.log  # node log files
 
-# The swif2 job will copy all files in ${WORK_DIR_TASK} back to JLab
-# so we have to clean up
-echo "I am here 4"
-# remove ccdb.sqlite and rcdb.sqlite files
-rm -f hd_rawdata_??????_???.evio  # remove link to input file.
-#rm -rf run-*
+echo "--- Task script finished with maximum exit code ${max_exit_code} among all hd_root processes"
+exit "${max_exit_code}"  # forward the maximum exit code among all `hd_root` processes to the job script  #TODO maybe it would be more useful to return number of failed processes?
