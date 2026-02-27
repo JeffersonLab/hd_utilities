@@ -92,46 +92,67 @@ cat /proc/cpuinfo >| ./cpuinfo.log
 
 echo "--- Find EVIO files in current directory:"
 shopt -s nullglob  # ensure that array is empty if no files match the pattern
-evio_files=(hd_rawdata_??????_???.evio)  #TODO use absolute paths
+evio_file_paths=("${WORK_DIR_TASK}"/hd_rawdata_??????_???.evio)
 shopt -u nullglob
-process_ids=()  # array to hold process IDs of background hd_root processes
-for evio_file in "${evio_files[@]}"
+
+echo "--- Run hd_root process in parallel for each EVIO file in current directory"
+# Do not exit immediately if `hd_root` fails to allow us to catch the
+# exit code of each hd_root process and write it to a separate file.
+# This is important since individual error codes are not captured by
+# slurm.
+set +o errexit
+process_ids=()    # array to hold process IDs of background hd_root processes
+rc_file_names=()  # array to hold file names where exit codes of hd_root processes are written
+for evio_file_path in "${evio_file_paths[@]}"
 do
+  echo "--- Process EVIO file at '${evio_file_path}':"
+  ls -lLh "${evio_file_path}"
   # get run and file numbers from EVIO file names; assumes file names are of the form `hd_rawdata_XXXXXX_YYY.evio`
-  run_number="${evio_file:11:6}"
-  file_number="${evio_file:18:3}"
-  echo "${run_number} ${file_number}"
-  mkdir --parents "${WORK_DIR_TASK}/run-${run_number}-${file_number}"
-  cd "${WORK_DIR_TASK}/run-${run_number}-${file_number}"
+  evio_file_name="$(basename "${evio_file_path}")"
+  run_number="${evio_file_name:11:6}"
+  file_number="${evio_file_name:18:3}"
+  SUBDIR_PROCESS="run-${run_number}-${file_number}"
+  WORK_DIR_PROCESS="${WORK_DIR_TASK}/${SUBDIR_PROCESS}"
+  mkdir --verbose --parents "${WORK_DIR_PROCESS}"
+  cd "${WORK_DIR_PROCESS}"
+  echo "--- Working directory of hd_root process: '$(pwd -P)'"
   # hd_root priorities for setting a parameter value is (lowest to highest):
   #   1) environment variable
   #   2) JANA config file
   #   3) command line argument
-  echo "${PWD}" >> ../myverif.out
-  ls -lLh "../${evio_file}" >> ../myverif.out
   HD_ROOT_CMD=(
     hd_root
     -PNTHREADS="${NMB_THREADS_PER_PROCESS}"  # override number of threads to use
     -Pjana:calib_context="${JANA_CALIB_CONTEXT}"  # override calibration context from local variable
     --loadconfigs "${JANA_CONFIG}"
-    "../${evio_file}"
+    "${evio_file_path}"
   )
-  echo "${HD_ROOT_CMD[@]}" >> ../myverif.out
+  echo "--- Run" "${HD_ROOT_CMD[@]}"
   # start hd_root process in background and redirect stdout and stderr to files
-  "${HD_ROOT_CMD[@]}" 2> "hd_root_${run_number}_${file_number}.err" 1> "hd_root_${run_number}_${file_number}.out" &
+  "${HD_ROOT_CMD[@]}" 2> "hd_root.err" 1> "hd_root.out" &
   process_ids+=("${!}")  # capture the background process ID and store it in an array
+  rc_file_names+=("${SUBDIR_PROCESS}/hd_root.rc")  # file path relative to `${WORK_DIR_TASK}` where exit code of this hd_root process will be written to
+  echo "--- hd_root process with PID ${!} processes EVIO file '${evio_file_path}'"
 done
 cd "${WORK_DIR_TASK}"
 
-# wait for all background jobs to complete and capture their exit codes
+echo "--- Wait for all background hd_root processes to complete and capture their exit codes"
 #TODO evaluate using GNU parallel for this
-echo "I am here 1"
+max_exit_code=0  # variable to hold the maximum exit code among all hd_root processes
 for process_index in "${!process_ids[@]}"
 do
-  wait "${process_ids[${process_index}]}"  # wait for the process to finish
-  echo "Exit code for process ${process_index}: ${?}" > "exitcode_${process_index}.txt"  #TODO the text does not add anything useful? why not just write the exit code to the file? Improve file name
-  #TODO the exit code should be written ino the `run-${run_number}-${file_number}` directory
+  pid="${process_ids[${process_index}]}"
+  wait "${pid}"  # wait for the process to finish
+  exit_code="${?}"  # capture the exit code of the process
+  echo "hd_root process ${process_index} with PID ${pid} has exit code ${exit_code}" >| "${rc_file_names[${process_index}]}"  #TODO the exit code should be written into the `run-${run_number}-${file_number}` directory
+  # determine the maximum exit code among all hd_root processes; this will be the exit code of the task script, which is then forwarded to the job script
+  if [[ "${exit_code}" -gt "${max_exit_code}" ]]
+  then
+    max_exit_code="${exit_code}"
+  fi
 done
+echo "--- Working directory of task at '$(pwd -P)' after all hd_root processes have completed:"
+ls -lhR .
 
 set -o errexit  # turn exit on error back on
 echo "I am here 2"
@@ -152,17 +173,11 @@ do
   ls -lh >> ../myverif.out
   # move small files into a directory and make a tarball
   JOB_INFO_DIR="job_info_${run_number}_${file_number}"
-  echo "${JOB_INFO_DIR}"
-  mkdir "${JOB_INFO_DIR}"
-  cp ../top.out "${JOB_INFO_DIR}"
-  cp ../cpuinfo.out "${JOB_INFO_DIR}"
-  cp ../env.out "${JOB_INFO_DIR}"
-  cp ../hostname.out "${JOB_INFO_DIR}"
-  cp ../exitcode_*.txt  "${JOB_INFO_DIR}/"
-  cp ../myverif.out "${JOB_INFO_DIR}"
-  mv "hd_root_${run_number}_${file_number}.err" "${JOB_INFO_DIR}"
-  mv "hd_root_${run_number}_${file_number}.out" "${JOB_INFO_DIR}"
-  #TODO also fetch job and task log files
+  mkdir --verbose "${JOB_INFO_DIR}"
+  echo "${PWD}"
+  ls -lhR .
+  cp --verbose ../{hostname,env,top,cpuinfo}.log "${JOB_INFO_DIR}"
+  mv --verbose hd_root.{out,err,rc} "${JOB_INFO_DIR}"
   tar czf "${JOB_INFO_DIR}.tgz" "${JOB_INFO_DIR}"
   shopt -s nullglob  # ensure that array is empty if no files match the pattern
   files_tab=(*.*)
