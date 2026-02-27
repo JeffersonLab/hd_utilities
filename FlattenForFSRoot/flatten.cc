@@ -2269,31 +2269,38 @@ bool GetPolarizationAngle(int runNumber, int& polarizationAngle)
   locCommandStream << "rcnd " << runNumber << " polarization_angle";
   FILE* locInputFile = gSystem->OpenPipe(locCommandStream.str().c_str(), "r");
   if(locInputFile == NULL){
-    std::cerr << "\nFATAL: rcnd returned no output.\n"
-	      << "       Command: " << localCommandStream.str() << "\n\n";
+    std::cerr << "FATAL: Could not run rcnd (OpenPipe failed).  Is RCDB set up?\n"
+	      << "       Command was: " << locCommandStream.str() << "\n";
     std::exit(2);
   }
 
-
-  //get the first line
+  // read the first line of stdout
   char buff[1024];
-  if(fgets(buff, sizeof(buff), locInputFile) == NULL)
-    return 0;
-  istringstream locStringStream(buff);
+  if(!fgets(buff, sizeof(buff), locInputFile)){
+    gSystem->ClosePipe(locInputFile);
+    std::cerr << "FATAL: rcnd produced no stdout.\n";
+    std::exit(2);
+  }
 
-  //Close the pipe
-  gSystem->ClosePipe(locInputFile);
+  int rc = gSystem->ClosePipe(locInputFile);
+  if(rc != 0){
+    std::cerr << "FATAL: rcnd exited nonzero (" << rc << ").\n"
+	      << "        Command was: " << locCommandStream.str() << "\n"
+	      << " First line was: " << buff;
+    std::exit(2);
+  }
 
-  //extract it
-  string locPolarizationAngleString;
-  if(!(locStringStream >> locPolarizationAngleString))
-    return false;
+  int polTmp;
+  std::istringstream iss(buff);
+  if(!(iss >> polTmp)){
+    std::cerr << "FATAL: rcnd output not numeric: " << buff << "\n";
+    std::exit(2);
+  }
 
-  // convert string to integer
-  polarizationAngle = atoi(locPolarizationAngleString.c_str());
-  // amorphous runs have the value -1
-  if (polarizationAngle == -1)
+  polarizationAngle = polTmp;
+  if(polarizationAngle == -1)
     return false;
 
   return true;
+
 }
