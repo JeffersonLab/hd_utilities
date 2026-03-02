@@ -60,36 +60,39 @@ def GetRunInfo():
   good_runs = {}
 
   # If RCDB_QUERY is not defined, define with value None
-  try: RCDB_QUERY
-  except : RCDB_QUERY = None
+  try:
+    RCDB_QUERY
+  except:
+    RCDB_QUERY = None
 
   # Query through RCDB API
-  if len(RUNS)==0 and RCDB_QUERY!=None:
-    RUN_LIST_SOURCE = 'RCDB ' + str(MINRUN) + '-' + str(MAXRUN) + ' (query="' + RCDB_QUERY + '")'
+  if len(RUNS) == 0 and RCDB_QUERY is not None:
+    RUN_LIST_SOURCE = f'RCDB {MINRUN}-{MAXRUN} (query="{RCDB_QUERY}")'
     print ('Querying RCDB for run list ....')
 
     # Import RCDB python module. Add a path on the CUE just in case
     # PYTHONPATH is not already set
     sys.path.append('/group/halld/Software/builds/Linux_Alma9-x86_64-gcc11.5.0-cntr/rcdb/rcdb_0.09.01/python')
-    db = rcdb.RCDBProvider('mysql://' + RCDB_USER + '@' + RCDB_HOST + '/rcdb2')
-    print ('RCDB_QUERY = ' + RCDB_QUERY)
+    db = rcdb.RCDBProvider(f'mysql://{RCDB_USER}@{RCDB_HOST}/rcdb2')
+    print (f'RCDB_QUERY = {RCDB_QUERY}')
     for r in db.select_runs(RCDB_QUERY, MINRUN, MAXRUN):
       evio_files_count = r.get_condition_value('evio_files_count')
       if evio_files_count == None:
-        print('ERROR in RCDB: Run ' + str(r.number) + ' has no value for evio_files_count!...')
+        print(f'ERROR in RCDB: Run {r.number} has no value for evio_files_count!...')
         BAD_RCDB_QUERY_RUNS.append( int(r.number) )
         print('Attempting to extract number of files by examining /mss ...')
-        rawdatafiles = glob.glob('/mss/halld/RunPeriod-'+RUNPERIOD+'/rawdata/Run%06d/hd_rawdata_%06d_*.evio' % (r.number,r.number))
+        rawdatafiles = glob.glob(f'/mss/halld/RunPeriod-{RUNPERIOD}/rawdata/Run{r.number:06d}/hd_rawdata_{r.number:06d}_*.evio')
         if len(rawdatafiles) > 0: evio_files_count = len(rawdatafiles)
       if evio_files_count == None:
-        print('ERROR getting number of files for: Run ' + str(r.number) )
+        print(f'ERROR getting number of files for: Run {r.number}')
         BAD_FILE_COUNT_RUNS.append( int(r.number) )
         continue
       good_runs[r.number] = int(evio_files_count)
   elif len(RUNS)==0:
-    RUN_LIST_SOURCE = 'All runs in range ' + str(MINRUN) + '-' + str(MAXRUN)
-    print ('Getting info for all runs in range ' + str(MINRUN) + '-' + str(MAXRUN) + ' ....')
-    for RUN in range(MINRUN, MAXRUN+1): good_runs[RUN] = GetNumEVIOFiles(RUN)
+    RUN_LIST_SOURCE = f'All runs in range {MINRUN}-{MAXRUN}'
+    print (f'Getting info for all runs in range {MINRUN}-{MAXRUN} ....')
+    for RUN in range(MINRUN, MAXRUN+1):
+      good_runs[RUN] = GetNumEVIOFiles(RUN)
   else:
     RUN_LIST_SOURCE = 'Custom list: ' + ' '.join([str(x) for x in RUNS])
     print ('Getting info for runs : ' + ' '.join([str(x) for x in RUNS]))
@@ -99,7 +102,8 @@ def GetRunInfo():
   global EXCLUDE_RUNS
   good_runs_filtered = {}
   for run in good_runs.keys():
-    if run not in EXCLUDE_RUNS: good_runs_filtered[run] = good_runs[run]
+    if run not in EXCLUDE_RUNS:
+      good_runs_filtered[run] = good_runs[run]
 
   return good_runs_filtered
 
@@ -112,9 +116,9 @@ def GetNumEVIOFiles(RUN):
   # n.b. the file numbers start from 0 so the last valid file
   # number will be one less than the value returned
   global RCDB, cnx, cur
-  if not RCDB :
+  if not RCDB:
     try:
-      RCDB = 'mysql://' + RCDB_USER + '@' + RCDB_HOST + '/rcdb'
+      RCDB = f'mysql://{RCDB_USER}@{RCDB_HOST}/rcdb'
       cnx = mysql.connector.connect(user=RCDB_USER, host=RCDB_HOST, database='rcdb')
       cur = cnx.cursor()  # using dictionary=True crashes when running on ifarm (??)
     except Exception as e:
@@ -124,15 +128,15 @@ def GetNumEVIOFiles(RUN):
 
   Nfiles = 0
   sql  = 'SELECT int_value from conditions,condition_types WHERE condition_type_id=condition_types.id'
-  sql += ' AND condition_types.name="evio_files_count" AND run_number=' + str(RUN);
+  sql += f' AND condition_types.name="evio_files_count" AND run_number={RUN}'
   cur.execute(sql)
   c_rows = cur.fetchall()
-  if len(c_rows)>0 :
+  if len(c_rows)>0:
     Nfiles = int(c_rows[0][0])
   else:
     BAD_RCDB_QUERY_RUNS.append(RUN)
     print('Attempting to extract number of files by examining /mss ...')
-    rawdatafiles = glob.glob('/mss/halld/RunPeriod-'+RUNPERIOD+'/rawdata/Run%06d/hd_rawdata_%06d_*.evio' % (RUN,RUN))
+    rawdatafiles = glob.glob(f'/mss/halld/RunPeriod-{RUNPERIOD}/rawdata/Run{RUN:06d}/hd_rawdata_{RUN:06d}_*.evio')
     if len(rawdatafiles) > 0:
       Nfiles = len(rawdatafiles)
     else:
@@ -167,47 +171,53 @@ def GetFileNumbersToProcess(Nfiles):
   global MINFILENO, MAXFILENO, FILE_FRACTION
 
   # Make sure MINFILENO is not greater than max file number for the run
-  if MINFILENO >= Nfiles : return []
+  if MINFILENO >= Nfiles:
+    return []
 
   # Limit max file number to how many there are for this run according to RCDB
   maxfile = MAXFILENO+1  # set to 1 past the actual last file number we want to process
-  if Nfiles < maxfile : maxfile = Nfiles
+  if Nfiles < maxfile:
+    maxfile = Nfiles
 
   # If FILE_FRACTION is 1.0 then we want all files in the range.
-  if FILE_FRACTION == 1.0: return range( MINFILENO, maxfile)
+  if FILE_FRACTION == 1.0:
+    return range( MINFILENO, maxfile)
 
   # At this point, maxfile should be one greater than the last file
   # number we want to process. If the last file we want to process
   # is the last file in the run, then it could be a short file. Thus,
   # use the next to the last file in the run to determine the range.
-  if Nfiles < MAXFILENO : maxfile -= 1
+  if Nfiles < MAXFILENO:
+    maxfile -= 1
 
   # Number of files in run to process
   Nrange = float(maxfile-1) - float(MINFILENO)
   N = math.ceil(FILE_FRACTION * Nrange)
-  if N<2 : return [MINFILENO]
+  if N<2:
+    return [MINFILENO]
   nskip = Nrange/(N-1)
   filenos = []
-  for i in range(0, int(N)): filenos.append(int(i*nskip))
-#       print ('Nrange=%f N=%f nskip=%f ' % (Nrange, N, nskip))
+  for i in range(0, int(N)):
+    filenos.append(int(i*nskip))
+  # print ('Nrange=%f N=%f nskip=%f ' % (Nrange, N, nskip))
 
   return filenos
 
 
 def PrintConfigSummary():
   print ('=================================================')
-  print ('Launch Summary  ' + ('**** TEST MODE ****' if TESTMODE else ''))
+  print (f'Launch Summary  {"**** TEST MODE ****" if TESTMODE else ""}')
   print ('-----------------------------------------------')
-  print ('             RunPeriod: ' + RUNPERIOD)
-  print ('           Launch type: ' + LAUNCHTYPE)
-  print ('               Version: ' + VER)
-  print ('                 batch: ' + BATCH)
-  print ('              WORKFLOW: ' + WORKFLOW)
-  print ('    Origin of run list: ' + RUN_LIST_SOURCE)
-  print ('        Number of runs: ' + str(len(good_runs)))
-  print ('       Number of files: ' + str(NUM['files_to_process']) + ' (maximum ' + str(MAXFILENO-MINFILENO+1) + ' files/run)')
-  print ('         Min. file no.: ' + str(MINFILENO))
-  print ('         Max. file no.: ' + str(MAXFILENO))
+  print (f'             RunPeriod: {RUNPERIOD}')
+  print (f'           Launch type: {LAUNCHTYPE}')
+  print (f'               Version: {VER}')
+  print (f'                 batch: {BATCH}')
+  print (f'              WORKFLOW: {WORKFLOW}')
+  print (f'    Origin of run list: {RUN_LIST_SOURCE}')
+  print (f'        Number of runs: {len(good_runs)}')
+  print (f'       Number of files: {NUM["files_to_process"]} (maximum {MAXFILENO-MINFILENO+1} files/run)')
+  print (f'         Min. file no.: {MINFILENO}')
+  print (f'         Max. file no.: {MAXFILENO}')
   print ('=================================================')
 
 
@@ -233,19 +243,20 @@ if __name__ == "__main__":
   print('      the RCDB. An attempt to recover the information from the /mss filesystem')
   print('      was also made. Values in BAD_FILE_COUNT_RUNS are ones for which that failed.')
   print('      Thus, only runs listed in BAD_FILE_COUNT_RUNS will not have any jobs submitted')
-  print ('BAD_RCDB_QUERY_RUNS=' + str(BAD_RCDB_QUERY_RUNS))
-  print ('BAD_FILE_COUNT_RUNS=' + str(BAD_FILE_COUNT_RUNS))
-  print ('BAD_MSS_FILE_RUNS='   + str(BAD_MSS_FILE_RUNS))
+  print (f'BAD_RCDB_QUERY_RUNS={BAD_RCDB_QUERY_RUNS}')
+  print (f'BAD_FILE_COUNT_RUNS={BAD_FILE_COUNT_RUNS}')
+  print (f'BAD_MSS_FILE_RUNS={BAD_MSS_FILE_RUNS}')
 
   PrintConfigSummary()
 
   NUM['missing_mss_files'] = 0
-  for run,files in BAD_MSS_FILE_RUNS.items(): NUM['missing_mss_files'] += len(files)
+  for run,files in BAD_MSS_FILE_RUNS.items():
+    NUM['missing_mss_files'] += len(files)
 
   print('')
-  print('WORKFLOW: ' + WORKFLOW)
+  print(f'WORKFLOW: {WORKFLOW}')
   print('------------------------------------')
-  print('Number of runs: ' + str(len(good_runs)) + '  (only good runs)')
-  print(str(NUM['files_submitted']) + '/' + str(NUM['files_to_process']) + ' total files submitted  (' + str(NUM['missing_mss_files']) + ' files missing from mss)')
-  print(str(NUM['jobs_submitted']) + '/' + str(NUM['jobs_to_process']) + ' total jobs submitted')
+  print(f'Number of runs: {len(good_runs)}  (only good runs)')
+  print(f'{NUM["files_submitted"]}/{NUM["files_to_process"]} total files submitted  ({NUM["missing_mss_files"]} files missing from mss)')
+  print(f'{NUM["jobs_submitted"]}/{NUM["jobs_to_process"]} total jobs submitted')
   print('')
