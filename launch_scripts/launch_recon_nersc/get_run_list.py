@@ -1,76 +1,8 @@
 #!/usr/bin/env python3
-#
-# Submit multi-file jobs to run at NERSC Cori II via swif2
-#
-# See more detailed documentation here:
-#  https://halldweb.jlab.org/wiki/index.php/HOWTO_Execute_a_Launch_using_NERSC
-#
-# This will run commands submitting several recon jobs
-# with the run/file numbers hardcoded into this script.
-# Here is how this is supposed to work:
-#
-# launch_nerscB.py
-#    |
-#    |-> swif2 add-job (this will eventually run sbatch at cori ...)
-#         |
-#         |-> script_nersc_multi.sh
-#               |
-#               |-> script_nersc_multi.py
-#                     |
-#                     |-> run_shifter_multi.sh
-#                           |
-#                           |-> shifter
-#                                |
-#                                |-> script_nersc.sh (this is run from inside shifter)
-#                                     |
-#                                     |-> hd_root
-#
-#
-# This will run swif2 with *some* of the SBATCH(slurm) options
-# passed via command line. This includes the singularity image
-# that should be used. swif2 will then take care of getting
-# the file from tape and transferring it to PSC. Once
-# the file is there, it will submit the job to Bridges slurm.
-#
-# When the job wakes up, it will be in a subdirectory of the
-# NERSC scratch disk that swif2 has already setup.
-# This directory will contain a symbolic link pointing
-# to the raw data file which is somewhere else on the scratch
-# disk.
-#
-# The container will run the /launch/script_nersc.sh script
-# where /launch has been mounted in the container from the
-# "launch" directory in the project directory. The jana
-# config file is also kept in the launch directory.
-#
-# The container will also have /cvmfs mounted. The standard
-# gluex containers have links built in so that /group will
-# point to the appropriate subdirectory of /cvmfs making the
-# the GlueX software available. The script_nersc.sh script
-# will use this to setup the environment and then run hd_root
-# using the /launch/jana_recon_nersc.config file.
-#
-# A couple of more notes:
-#
-# 1. The CCDB and RCDB used comes from an sqlite file in
-# CVMFS. These are copied to the local node in /tmp at
-# the beginning of the job and deleted at the end. The
-# timestamp used is hardcoded in /launch/jana_recon_nersc.config
-#
-# 2. NERSC requires that the program being run is actually
-# a script that starts with #!/XXX/YYY . It is actually a
-# SLURM script where additional SLURM options could be set.
-# We do not put them there though. All SLURM options are
-# passed via the sbatch command swif2 runs and that we specify
-# here. The /launch/script_nersc.sh script is trivial and only
-# runs shifter passing any arguments we give to it here in
-# the swif2 command.
-#
-# 3. The output directory is created by this script
-# to allow group writing since the files are copied using
-# the davidl account on globus but swif2 is being run from
-# the gxproj4 account.
-#
+
+"""
+Generates a list of runs and files to process for a given run period.
+"""
 
 import glob
 import math
@@ -101,19 +33,6 @@ MINFILENO     = 0       # Min file number to process for each run (n.b. file num
 MAXFILENO     = 999     # Max file number to process for each run (n.b. file numbers start at 0!)
 FILE_FRACTION = 1.0     # Fraction of files to process for each run in specified range (see GetFileNumbersToProcess)
 
-MAX_CONCURRENT_JOBS = '100'      # Maximum number of jobs swif2 will have in flight at once
-PROJECT             = 'm3120'    # run "projects" command on bridges and look for "Charge ID"
-QOS                 = 'regular'  # debug, regular, premium, low, flex, scavenger
-NODETYPE            = 'cpu'      # cpu, gpu
-TIMELIMIT           = '5:00:00'  # time limit for full file jobs on KNL
-
-IMAGE        = 'docker:jeffersonlab/gluex_almalinux_9:latest'
-RECONVERSION = 'halld_recon/halld_recon-5.8.1'  # must exist in /group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5-cntr
-LAUNCHDIR    = f'/global/cfs/cdirs/{PROJECT}/launch-{VER}'  # will get mapped to /launch in singularity container
-MASTERSCRIPT = 'script_nersc_multi.sh'     # top-level script run by slurm job (outside container). Should be in LAUNCHDIR
-SCRIPTFILE   = f'/launch-{VER}/script_nerscc.sh'  # script run inside container
-CONFIG       = f'/launch-{VER}/jana_{LAUNCHTYPE}_nersc.config'
-
 RCDB_HOST = 'hallddb.jlab.org'
 RCDB_USER = 'rcdb'
 RCDB      = None
@@ -121,126 +40,7 @@ BAD_RCDB_QUERY_RUNS = []  # will be filled with runs that are missing evio_file_
 BAD_FILE_COUNT_RUNS = []  # will be filled with runs where number of evio files could not be obtained by any method
 BAD_MSS_FILE_RUNS   = {}  # will be filled with runs/files where the stub file in /mss is missing
 
-# Set output directory depending on launch type
-# We set two variables here whose purposes are:
-#    OUTPUTDIR - Temporary staging directory for output files copied from offsite
-#    OUTPUTMSS - Ultimate destination on tape
-# An external (cron??) job needs to be run to move them to tape.
-OUTPUTDIR = f'/lustre/expphy/volatile/halld/offsite_prod/RunPeriod-{RUNPERIOD}/{LAUNCHTYPE}/ver{VER}'
-OUTPUTMSS = f'mss:/mss/halld/halld-scratch/RunPeriod-{RUNPERIOD}/recon/ver{VER}'
 
-
-#----------------------------------------------------
-# MakeJob
-#
-# Make a single job with enough tasks(=nodes) to process
-# all of the files in the given list.
-#
-# TODO: This takes RUN as an argument and assumes all files
-# are for that given run. The scripts downstream of this
-# have some ability to handle jobs containing files from
-# multiple runs. This script, however, will need to be modified
-# to support those types of jobs.
-def MakeJob(RUN,files_to_process):
-
-        global NUM, DIRS_CREATED
-
-        # Make list of EVIO filenames in /mss to process in this job
-        mss_files = {}
-        outdirs   = {}
-        for FILE in files_to_process:
-                JOB_STR   = '%s_%06d_%03d' % (NAME, RUN, FILE)
-                EVIOFILE  = 'hd_rawdata_%06d_%03d.evio' % (RUN, FILE)
-                MSSFILE   = '/mss/halld/RunPeriod-%s/rawdata/Run%06d/%s' % (RUNPERIOD, RUN, EVIOFILE)
-
-                # Verify stub file exists before submitting job
-                if not os.path.exists( MSSFILE ):
-                        if RUN not in BAD_MSS_FILE_RUNS.keys(): BAD_MSS_FILE_RUNS[RUN] = []
-                        BAD_MSS_FILE_RUNS[RUN].append(FILE)
-                else:
-                        mss_files[EVIOFILE] = MSSFILE
-                        outpath = 'RUN%06d/FILE%03d' % (RUN, FILE)
-                        outdirs[EVIOFILE] = outpath
-
-        # Make sure we have at least one raw data file to process
-        if len(mss_files) == 0: return
-
-        NUM['files_submitted'] += len(mss_files)
-
-        # The OUTPUTDIR variable is a fully qualified path where the output
-        # files copied back to JLab are placed. The files will later be moved
-        # to tape by some external process (likely a cron job).
-        #
-        # A dedicated output directory is pre-created for each raw data file.
-        # We do this here as opposed to letting swif2 do it so we avoid permission
-        # errors if the Globus user is different from the one running swif2.
-#       outdirs = []
-#       for FILE in files_to_process:
-#               outpath = 'RUN%06d/FILE%03d' % (RUN, FILE)
-#               outdirs.append(outpath)
-
-        # Pare down list of outdirs to only those that don't already exist
-        new_outdirs = [x for x in list(outdirs.values()) if x not in DIRS_CREATED]
-
-        # Set umask to make directories group writable (but not world writable)
-        os.umask(0o002)
-
-        # Create output directories at JLab
-        for d in sorted(new_outdirs):
-                mydir = OUTPUTDIR + '/' + d
-                if not os.path.exists(mydir) :
-                        if VERBOSE > 1: print('mkdir -p ' + mydir)
-                        if not TESTMODE:
-                                os.makedirs(mydir)
-                                DIRS_CREATED.append(mydir)
-
-        # SLURM options
-        SBATCH  = ['-sbatch']
-        SBATCH += ['-A', PROJECT]
-        SBATCH += ['--volume="%s:/launch-%s"' % (LAUNCHDIR,VER)]
-        SBATCH += ['--image=%s' % IMAGE]
-        SBATCH += ['--module=cvmfs']
-        SBATCH += ['--time=%s' % TIMELIMIT]
-        SBATCH += ['-N', str(len(files_to_process))] # Number of nodes requested (1 per raw data file)
-        SBATCH += ['--tasks-per-node=1']
-        SBATCH += ['--cpus-per-task=256']  # I believe this is ignored since we always get whole nodes
-        SBATCH += ['--qos='+QOS]
-        SBATCH += ['-C', NODETYPE]
-
-        # Command for job to run
-        CMD  = ['%s/%s' % (LAUNCHDIR, MASTERSCRIPT)]  # Initial script on first node that runs srun to run jobs on all nodes
-        CMD += [LAUNCHDIR]      # arg 1:  launch directory on host (will be mapped to /launch in image)
-        CMD += [SCRIPTFILE]     # arg 2:  script to run inside container
-        CMD += [CONFIG]         # arg 3:  JANA config file
-        CMD += [RECONVERSION]   # arg 4:  sim-recon version
-                                # n.b. RUN and FILE are not passed here. MASTERSCRIPT figures them out for the tasks based on the evio files it finds
-
-        # Make swif2 command
-        SWIF2_CMD  = ['swif2']
-        SWIF2_CMD += ['add-job']
-        SWIF2_CMD += ['-workflow', WORKFLOW]
-        SWIF2_CMD += ['-name', '%s_%06d' % (NAME, RUN)]
-
-        for EVIOFILE in sorted(list(mss_files.keys())):
-                MSSFILE = mss_files[EVIOFILE]
-                outdir  = outdirs[EVIOFILE]
-                SWIF2_CMD += ['-input', EVIOFILE, 'mss:'+MSSFILE]
-                SWIF2_CMD += ['-output', 'match:'+outdir+'/*', OUTPUTDIR + '/' + outdir]
-        SWIF2_CMD += SBATCH + ['::'] + CMD
-
-        # Print commands
-        if VERBOSE > 1:
-                if VERBOSE > 2 : print (' '.join(SWIF2_CMD))
-                elif VERBOSE > 1 : print (' --- Job will be created for run:' + str(RUN) + ' file:' + str(FILE))
-
-        NUM['jobs_to_process'] += 1
-
-        if not TESTMODE:
-                subprocess.check_call(SWIF2_CMD)
-                NUM['jobs_submitted'] += 1
-
-
-#----------------------------------------------------
 def GetRunInfo():
 
         # Get the list of runs to process and the number of EVIO files for each.
@@ -306,7 +106,6 @@ def GetRunInfo():
         return good_runs_filtered
 
 
-#----------------------------------------------------
 def GetNumEVIOFiles(RUN):
 
         global BAD_RCDB_QUERY_RUNS, BAD_FILE_COUNT_RUNS
@@ -345,7 +144,6 @@ def GetNumEVIOFiles(RUN):
         return Nfiles
 
 
-#----------------------------------------------------
 def GetFileNumbersToProcess(Nfiles):
 
         # This will return a list of file numbers to process for a run
@@ -398,7 +196,6 @@ def GetFileNumbersToProcess(Nfiles):
         return filenos
 
 
-#----------------------------------------------------
 def PrintConfigSummary():
         print ('=================================================')
         print ('Launch Summary  ' + ('**** TEST MODE ****' if TESTMODE else ''))
@@ -413,18 +210,9 @@ def PrintConfigSummary():
         print ('       Number of files: ' + str(NUM['files_to_process']) + ' (maximum ' + str(MAXFILENO-MINFILENO+1) + ' files/run)')
         print ('         Min. file no.: ' + str(MINFILENO))
         print ('         Max. file no.: ' + str(MAXFILENO))
-        print ('                   QOS: ' + QOS)
-        print ('    Time limit per job: ' + TIMELIMIT)
-        print ('      JANA config file: ' + CONFIG)
-        print ('         NERSC project: ' + PROJECT)
-        print ('         Shifter image: ' + IMAGE)
-        print ('   halld_recon version: ' + RECONVERSION + ' (from CVMFS)')
-        print ('      launch directory: ' + LAUNCHDIR + ' (at NERSC)')
-        print ('      Output directory: ' + OUTPUTDIR)
         print ('=================================================')
 
 
-#----------------------------------------------------
 if __name__ == "__main__":
         # Initialize some counters
         NUM = {}
@@ -442,54 +230,6 @@ if __name__ == "__main__":
         for n in [x for (y,x) in good_runs.items()]:
                 NUM['files_to_process'] += len(GetFileNumbersToProcess(n))
 
-        if VERBOSE > 0: PrintConfigSummary()
-
-        # Create workflow
-        cmd =  ['swif2', 'create', '-workflow', WORKFLOW]
-        cmd += ['-site', 'nersc/perlmutter']
-        #cmd += ['-site', 'nersc/perlmutter', '-site-storage', 'nersc:'+PROJECT]
-        cmd += ['-max-concurrent', MAX_CONCURRENT_JOBS]
-        if VERBOSE>0 : print ('Workflow creation command: ' + ' '.join(cmd))
-        if TESTMODE:
-                print ('(TEST MODE so command will not be run)')
-        else:
-                (cmd_out, cmd_err) = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-                if VERBOSE>0:
-                        if len(cmd_err)>0 :
-                                if VERBOSE>1 : print (cmd_err)
-                                print ('Command returned error message. Assuming workflow already exists')
-                        else:
-                                print (cmd_out)
-
-        # Run workflow
-        cmd =  ['swif2', 'run', '-workflow', WORKFLOW]
-        if VERBOSE>0 : print ('Command to start workflow: ' + ' '.join(cmd))
-        if TESTMODE:
-                print ('(TEST MODE so command will not be run)')
-        else:
-                (cmd_out, cmd_err) = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-                if VERBOSE>0:
-                        print (cmd_out)
-                        print (cmd_err)
-
-        # Loop over runs
-        DIRS_CREATED = []   # keeps track of local directories we create so we don't create them twice
-        if VERBOSE>0 :
-                print ('Submitting jobs ....')
-                print ('-----------------------------------------------')
-        for (RUN, Nfiles) in good_runs.items():
-
-                # Get list of files to process
-                files_to_process = GetFileNumbersToProcess( Nfiles )
-
-                # Loop over files, creating job for each
-                MakeJob(RUN, files_to_process)
-        #       for FILE in files_to_process:
-        #               MakeJob(RUN, FILE)
-        #               if VERBOSE>0:
-        #                       sys.stdout.write('  ' + str(NUM['files_submitted']) + '/' + str(NUM['files_to_process']) + ' jobs \r')
-        #                       sys.stdout.flush()
-
         print('\n')
         print('NOTE: The values in BAD_RCDB_QUERY_RUNS is informative about what is missing from')
         print('      the RCDB. An attempt to recover the information from the /mss filesystem')
@@ -499,9 +239,7 @@ if __name__ == "__main__":
         print ('BAD_FILE_COUNT_RUNS=' + str(BAD_FILE_COUNT_RUNS))
         print ('BAD_MSS_FILE_RUNS='   + str(BAD_MSS_FILE_RUNS))
 
-        # If more than 5 jobs were submitted then the summary printed above probably
-        # rolled off of the screen. Print it again.
-        if (VERBOSE > 0) : PrintConfigSummary()
+        PrintConfigSummary()
 
         NUM['missing_mss_files'] = 0
         for run,files in BAD_MSS_FILE_RUNS.items(): NUM['missing_mss_files'] += len(files)
@@ -512,5 +250,4 @@ if __name__ == "__main__":
         print('Number of runs: ' + str(len(good_runs)) + '  (only good runs)')
         print(str(NUM['files_submitted']) + '/' + str(NUM['files_to_process']) + ' total files submitted  (' + str(NUM['missing_mss_files']) + ' files missing from mss)')
         print(str(NUM['jobs_submitted']) + '/' + str(NUM['jobs_to_process']) + ' total jobs submitted')
-        print(str(len(DIRS_CREATED)) + ' directories created for output')
         print('')
