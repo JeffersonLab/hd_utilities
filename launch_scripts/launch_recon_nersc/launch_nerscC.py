@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 #
 # Submit multi-file jobs to run at NERSC Cori II via swif2
 #
@@ -72,60 +72,51 @@
 # the gxproj4 account.
 #
 
-import subprocess
-import math
 import glob
-import sys
+import math
+import mysql.connector
 import os
+import subprocess
+import sys
+
 import rcdb
 
-# mysql.connector not available via system and must come via PYTHONPATH
-if not os.getenv('PYTHONPATH') : sys.path.append('/group/halld/Software/builds/Linux_Alma9-x86_64-gcc11.5.0/ccdb/ccdb_2.00.05/python')
-import mysql.connector
 
-TESTMODE       = True  # True=only print commands, but don't actually submit jobs
-#TESTMODE       = False  # True=only print commands, but don't actually submit jobs
-VERBOSE        = 3     # 1 is default
+TESTMODE = True  # True=only print commands, but don't actually submit jobs
+VERBOSE  = 3     # 1 is default
 
-RUNPERIOD      = '2017-01'
-LAUNCHTYPE     = 'recon'  # 'offmon' or 'recon' 
-VER            = '05-perl'
-BATCH          = 'NERSC-multi'
-WORKFLOW       = LAUNCHTYPE+'_'+RUNPERIOD+'_ver'+VER+'_batch'+BATCH
-NAME           = 'GLUEX_' + LAUNCHTYPE 
+RUNPERIOD  = '2022-05'
+LAUNCHTYPE = 'recon'  # 'offmon' or 'recon'
+VER        = '02-perl'
+BATCH      = 'NERSC-multi'
+WORKFLOW   = f'{LAUNCHTYPE}_{RUNPERIOD}_ver{VER}_{BATCH}'
+NAME       = f'GLUEX_{LAUNCHTYPE}'
 
-RCDB_QUERY     = "@is_production and @status_approved"  # Comment out for all runs in range MINRUN-MAXRUN
-RUNS           = [] # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
-#MINRUN         = 132362  # If RUNS is empty, then RCDB queried for this range
-#MAXRUN         = 132468  # If RUNS is empty, then RCDB queried for this range
-#MINRUN         = 133525
-#MAXRUN         = 133568
-MINRUN         = 30000
-MAXRUN         = 39999
-MINFILENO      = 0       # Min file number to process for each run (n.b. file numbers start at 0!)
-MAXFILENO      = 999     # Max file number to process for each run (n.b. file numbers start at 0!)
-FILE_FRACTION  = 1.0     # Fraction of files to process for each run in specified range (see GetFileNumbersToProcess)
+RCDB_QUERY    = "@is_cpp_production and @status_approved"  # Comment out for all runs in range MINRUN-MAXRUN
+RUNS          = []      # List of runs to process. If empty, MINRUN-MAXRUN are searched in RCDB
+EXCLUDE_RUNS  = []      # Runs that should be excluded from processing
+MINRUN        = 100000  # If RUNS is empty, then RCDB queried for this range
+MAXRUN        = 109999  # If RUNS is empty, then RCDB queried for this range
+MINFILENO     = 0       # Min file number to process for each run (n.b. file numbers start at 0!)
+MAXFILENO     = 999     # Max file number to process for each run (n.b. file numbers start at 0!)
+FILE_FRACTION = 1.0     # Fraction of files to process for each run in specified range (see GetFileNumbersToProcess)
 
-MAX_CONCURRENT_JOBS = '20'  # Maximum number of jobs swif2 will have in flight at once
-EXCLUDE_RUNS   = []      # Runs that should be excluded from processing
-PROJECT        = 'm3120' # run "projects" command on bridges and look for "Charge ID"
-TIMELIMIT      = '3:00:00' # time limit for full file jobs on KNL
-#TIMELIMIT      = '10:50:00' # time limit for full file jobs on KNL
-QOS            = 'regular'  # debug, regular, premium, low, flex, scavenger 
-#QOS            = 'premium'  # debug, regular, premium, low, flex, scavenger 
-NODETYPE       = 'cpu'      # haswell, knl  (quad,cache)
+MAX_CONCURRENT_JOBS = '100'      # Maximum number of jobs swif2 will have in flight at once
+PROJECT             = 'm3120'    # run "projects" command on bridges and look for "Charge ID"
+QOS                 = 'regular'  # debug, regular, premium, low, flex, scavenger
+NODETYPE            = 'cpu'      # cpu, gpu
+TIMELIMIT           = '5:00:00'  # time limit for full file jobs on KNL
 
-LAUNCHDIR      = '/global/cfs/cdirs/%s/launch-%s' % (PROJECT,VER)  # will get mapped to /launch in singularity container
-IMAGE          = 'docker:jeffersonlab/gluex_almalinux_9:latest'
-RECONVERSION   = 'halld_recon/halld_recon-5.8.1'  # must exist in /group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5-cntr
+IMAGE        = 'docker:jeffersonlab/gluex_almalinux_9:latest'
+RECONVERSION = 'halld_recon/halld_recon-5.8.1'  # must exist in /group/halld/Software/builds/Linux_CentOS7-x86_64-gcc4.8.5-cntr
+LAUNCHDIR    = f'/global/cfs/cdirs/{PROJECT}/launch-{VER}'  # will get mapped to /launch in singularity container
+MASTERSCRIPT = 'script_nersc_multi.sh'     # top-level script run by slurm job (outside container). Should be in LAUNCHDIR
+SCRIPTFILE   = f'/launch-{VER}/script_nerscc.sh'  # script run inside container
+CONFIG       = f'/launch-{VER}/jana_{LAUNCHTYPE}_nersc.config'
 
-MASTERSCRIPT   = 'script_nersc_multi.sh'     # top-level script run by slurm job (outside container). Should be in LAUNCHDIR
-SCRIPTFILE     = '/launch-%s/script_nerscc.sh' % VER  # script run inside container
-CONFIG         = '/launch-%s/jana_%s_nersc.config' % (VER,LAUNCHTYPE)
-
-RCDB_HOST    = 'hallddb.jlab.org'
-RCDB_USER    = 'rcdb'
-RCDB         = None
+RCDB_HOST = 'hallddb.jlab.org'
+RCDB_USER = 'rcdb'
+RCDB      = None
 BAD_RCDB_QUERY_RUNS = []  # will be filled with runs that are missing evio_file_count field in RCDB query
 BAD_FILE_COUNT_RUNS = []  # will be filled with runs where number of evio files could not be obtained by any method
 BAD_MSS_FILE_RUNS   = {}  # will be filled with runs/files where the stub file in /mss is missing
@@ -135,15 +126,9 @@ BAD_MSS_FILE_RUNS   = {}  # will be filled with runs/files where the stub file i
 #    OUTPUTDIR - Temporary staging directory for output files copied from offsite
 #    OUTPUTMSS - Ultimate destination on tape
 # An external (cron??) job needs to be run to move them to tape.
-OUTPUTDIR = '/lustre/expphy/volatile/halld/offsite_prod/RunPeriod-'+RUNPERIOD+'/' + LAUNCHTYPE +'/ver'+VER
-#OUTPUTDIR = '/lustre/enp/volatile/halld/offsite_prod/RunPeriod-'+RUNPERIOD+'/' + LAUNCHTYPE +'/ver'+VER
-if   LAUNCHTYPE=='offmon':
-        OUTPUTMSS      = 'mss:/mss/halld/halld-scratch/offline_monitoring/RunPeriod-'+RUNPERIOD+'/ver'+VER  # prefix with mss: for tape or file: for filesystem
-elif LAUNCHTYPE=='recon':
-        OUTPUTMSS      = 'mss:/mss/halld/halld-scratch/RunPeriod-'+RUNPERIOD+'/recon/ver'+VER
-else:
-        print ('Unknown launch type "'+LAUNCHTYPE+'"! Don\'t know where to put output files!')
-        sys.exit(-1)
+OUTPUTDIR = f'/lustre/expphy/volatile/halld/offsite_prod/RunPeriod-{RUNPERIOD}/{LAUNCHTYPE}/ver{VER}'
+OUTPUTMSS = f'mss:/mss/halld/halld-scratch/RunPeriod-{RUNPERIOD}/recon/ver{VER}'
+
 
 #----------------------------------------------------
 # MakeJob
@@ -151,15 +136,15 @@ else:
 # Make a single job with enough tasks(=nodes) to process
 # all of the files in the given list.
 #
-# TODO: This takes RUN as an argument and assumes all files 
+# TODO: This takes RUN as an argument and assumes all files
 # are for that given run. The scripts downstream of this
 # have some ability to handle jobs containing files from
 # multiple runs. This script, however, will need to be modified
-# to support those types of jobs. 
+# to support those types of jobs.
 def MakeJob(RUN,files_to_process):
 
         global NUM, DIRS_CREATED
-        
+
         # Make list of EVIO filenames in /mss to process in this job
         mss_files = {}
         outdirs   = {}
@@ -178,7 +163,7 @@ def MakeJob(RUN,files_to_process):
                         outdirs[EVIOFILE] = outpath
 
         # Make sure we have at least one raw data file to process
-        if len(mss_files) == 0: return  
+        if len(mss_files) == 0: return
 
         NUM['files_submitted'] += len(mss_files)
 
@@ -196,16 +181,16 @@ def MakeJob(RUN,files_to_process):
 
         # Pare down list of outdirs to only those that don't already exist
         new_outdirs = [x for x in list(outdirs.values()) if x not in DIRS_CREATED]
-        
+
         # Set umask to make directories group writable (but not world writable)
         os.umask(0o002)
-        
+
         # Create output directories at JLab
         for d in sorted(new_outdirs):
                 mydir = OUTPUTDIR + '/' + d
                 if not os.path.exists(mydir) :
                         if VERBOSE > 1: print('mkdir -p ' + mydir)
-                        if not TESTMODE: 
+                        if not TESTMODE:
                                 os.makedirs(mydir)
                                 DIRS_CREATED.append(mydir)
 
@@ -235,19 +220,18 @@ def MakeJob(RUN,files_to_process):
         SWIF2_CMD += ['add-job']
         SWIF2_CMD += ['-workflow', WORKFLOW]
         SWIF2_CMD += ['-name', '%s_%06d' % (NAME, RUN)]
-        
+
         for EVIOFILE in sorted(list(mss_files.keys())):
                 MSSFILE = mss_files[EVIOFILE]
                 outdir  = outdirs[EVIOFILE]
                 SWIF2_CMD += ['-input', EVIOFILE, 'mss:'+MSSFILE]
                 SWIF2_CMD += ['-output', 'match:'+outdir+'/*', OUTPUTDIR + '/' + outdir]
         SWIF2_CMD += SBATCH + ['::'] + CMD
-        
+
         # Print commands
         if VERBOSE > 1:
                 if VERBOSE > 2 : print (' '.join(SWIF2_CMD))
                 elif VERBOSE > 1 : print (' --- Job will be created for run:' + str(RUN) + ' file:' + str(FILE))
-        
 
         NUM['jobs_to_process'] += 1
 
@@ -276,11 +260,11 @@ def GetRunInfo():
 
         global RUNS, MINRUN, MAXRUN, RCDB_QUERY, RUN_LIST_SOURCE, BAD_RCDB_QUERY_RUNS, BAD_FILE_COUNT_RUNS
         good_runs = {}
-        
+
         # If RCDB_QUERY is not defined, define with value None
         try: RCDB_QUERY
         except : RCDB_QUERY = None
-               
+
         # Query through RCDB API
         if len(RUNS)==0 and RCDB_QUERY!=None:
                 RUN_LIST_SOURCE = 'RCDB ' + str(MINRUN) + '-' + str(MAXRUN) + ' (query="' + RCDB_QUERY + '")'
@@ -312,7 +296,7 @@ def GetRunInfo():
                 RUN_LIST_SOURCE = 'Custom list: ' + ' '.join([str(x) for x in RUNS])
                 print ('Getting info for runs : ' + ' '.join([str(x) for x in RUNS]))
                 for RUN in RUNS: good_runs[RUN] = GetNumEVIOFiles(RUN)
-                
+
         # Filter out runs in the EXCLUDE_RUNS list
         global EXCLUDE_RUNS
         good_runs_filtered = {}
@@ -320,6 +304,7 @@ def GetRunInfo():
                 if run not in EXCLUDE_RUNS: good_runs_filtered[run] = good_runs[run]
 
         return good_runs_filtered
+
 
 #----------------------------------------------------
 def GetNumEVIOFiles(RUN):
@@ -336,7 +321,7 @@ def GetNumEVIOFiles(RUN):
                         cnx = mysql.connector.connect(user=RCDB_USER, host=RCDB_HOST, database='rcdb')
                         cur = cnx.cursor()  # using dictionary=True crashes when running on ifarm (??)
                 except Exception as e:
-                        print ('Error connecting to RCDB: ' + RCDB)
+                        print (f'Error connecting to RCDB: {RCDB}')
                         print (str(e))
                         sys.exit(-1)
 
@@ -358,6 +343,7 @@ def GetNumEVIOFiles(RUN):
 
 
         return Nfiles
+
 
 #----------------------------------------------------
 def GetFileNumbersToProcess(Nfiles):
@@ -381,25 +367,25 @@ def GetFileNumbersToProcess(Nfiles):
         #             MAXFILENO = 1000    n.b. set this to something really big
         #         FILE_FRACTION = 0.05
         #
-        
+
         global MINFILENO, MAXFILENO, FILE_FRACTION
-        
+
         # Make sure MINFILENO is not greater than max file number for the run
         if MINFILENO >= Nfiles : return []
 
         # Limit max file number to how many there are for this run according to RCDB
         maxfile = MAXFILENO+1  # set to 1 past the actual last file number we want to process
         if Nfiles < maxfile : maxfile = Nfiles
-        
-        # If FILE_FRACTION is 1.0 then we want all files in the range. 
+
+        # If FILE_FRACTION is 1.0 then we want all files in the range.
         if FILE_FRACTION == 1.0: return range( MINFILENO, maxfile)
-        
+
         # At this point, maxfile should be one greater than the last file
         # number we want to process. If the last file we want to process
         # is the last file in the run, then it could be a short file. Thus,
         # use the next to the last file in the run to determine the range.
         if Nfiles < MAXFILENO : maxfile -= 1
-        
+
         # Number of files in run to process
         Nrange = float(maxfile-1) - float(MINFILENO)
         N = math.ceil(FILE_FRACTION * Nrange)
@@ -408,8 +394,9 @@ def GetFileNumbersToProcess(Nfiles):
         filenos = []
         for i in range(0, int(N)): filenos.append(int(i*nskip))
 #       print ('Nrange=%f N=%f nskip=%f ' % (Nrange, N, nskip))
-        
+
         return filenos
+
 
 #----------------------------------------------------
 def PrintConfigSummary():
@@ -422,7 +409,7 @@ def PrintConfigSummary():
         print ('                 batch: ' + BATCH)
         print ('              WORKFLOW: ' + WORKFLOW)
         print ('    Origin of run list: ' + RUN_LIST_SOURCE)
-        print ('        Number of runs: ' + str(len(good_runs))) 
+        print ('        Number of runs: ' + str(len(good_runs)))
         print ('       Number of files: ' + str(NUM['files_to_process']) + ' (maximum ' + str(MAXFILENO-MINFILENO+1) + ' files/run)')
         print ('         Min. file no.: ' + str(MINFILENO))
         print ('         Max. file no.: ' + str(MAXFILENO))
@@ -436,96 +423,94 @@ def PrintConfigSummary():
         print ('      Output directory: ' + OUTPUTDIR)
         print ('=================================================')
 
+
 #----------------------------------------------------
+if __name__ == "__main__":
+        # Initialize some counters
+        NUM = {}
+        NUM['files_to_process'] = 0
+        NUM['files_submitted'] = 0
+        NUM['jobs_to_process'] = 0
+        NUM['jobs_submitted'] = 0
 
-# --------------- MAIN --------------------
+        # Get list of runs with number of evio files for each.
+        # (parameters for search set at top of file)
+        good_runs = GetRunInfo()
+        #good_runs = db.select_runs(RCDB_QUERY, MINRUN, MAXRUN)
 
-# Initialize some counters
-NUM = {}
-NUM['files_to_process'] = 0
-NUM['files_submitted'] = 0
-NUM['jobs_to_process'] = 0
-NUM['jobs_submitted'] = 0
+        # Print some info before doing anything
+        for n in [x for (y,x) in good_runs.items()]:
+                NUM['files_to_process'] += len(GetFileNumbersToProcess(n))
 
-# Get list of runs with number of evio files for each.
-# (parameters for search set at top of file)
-good_runs = GetRunInfo()
-#good_runs = db.select_runs(RCDB_QUERY, MINRUN, MAXRUN)
+        if VERBOSE > 0: PrintConfigSummary()
 
-# Print some info before doing anything
-for n in [x for (y,x) in good_runs.items()]:
-        NUM['files_to_process'] += len(GetFileNumbersToProcess(n))
+        # Create workflow
+        cmd =  ['swif2', 'create', '-workflow', WORKFLOW]
+        cmd += ['-site', 'nersc/perlmutter']
+        #cmd += ['-site', 'nersc/perlmutter', '-site-storage', 'nersc:'+PROJECT]
+        cmd += ['-max-concurrent', MAX_CONCURRENT_JOBS]
+        if VERBOSE>0 : print ('Workflow creation command: ' + ' '.join(cmd))
+        if TESTMODE:
+                print ('(TEST MODE so command will not be run)')
+        else:
+                (cmd_out, cmd_err) = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+                if VERBOSE>0:
+                        if len(cmd_err)>0 :
+                                if VERBOSE>1 : print (cmd_err)
+                                print ('Command returned error message. Assuming workflow already exists')
+                        else:
+                                print (cmd_out)
 
-if VERBOSE > 0: PrintConfigSummary()
-
-# Create workflow
-cmd =  ['swif2', 'create', '-workflow', WORKFLOW]
-cmd += ['-site', 'nersc/perlmutter']
-#cmd += ['-site', 'nersc/perlmutter', '-site-storage', 'nersc:'+PROJECT]
-cmd += ['-max-concurrent', MAX_CONCURRENT_JOBS]
-if VERBOSE>0 : print ('Workflow creation command: ' + ' '.join(cmd))
-if TESTMODE:
-        print ('(TEST MODE so command will not be run)')
-else:
-        (cmd_out, cmd_err) = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-        if VERBOSE>0:
-                if len(cmd_err)>0 :
-                        if VERBOSE>1 : print (cmd_err)
-                        print ('Command returned error message. Assuming workflow already exists')
-                else:
+        # Run workflow
+        cmd =  ['swif2', 'run', '-workflow', WORKFLOW]
+        if VERBOSE>0 : print ('Command to start workflow: ' + ' '.join(cmd))
+        if TESTMODE:
+                print ('(TEST MODE so command will not be run)')
+        else:
+                (cmd_out, cmd_err) = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+                if VERBOSE>0:
                         print (cmd_out)
+                        print (cmd_err)
 
-# Run workflow
-cmd =  ['swif2', 'run', '-workflow', WORKFLOW]
-if VERBOSE>0 : print ('Command to start workflow: ' + ' '.join(cmd))
-if TESTMODE:
-        print ('(TEST MODE so command will not be run)')
-else:
-        (cmd_out, cmd_err) = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-        if VERBOSE>0:
-                print (cmd_out)
-                print (cmd_err)
+        # Loop over runs
+        DIRS_CREATED = []   # keeps track of local directories we create so we don't create them twice
+        if VERBOSE>0 :
+                print ('Submitting jobs ....')
+                print ('-----------------------------------------------')
+        for (RUN, Nfiles) in good_runs.items():
 
-# Loop over runs
-DIRS_CREATED = []   # keeps track of local directories we create so we don't create them twice
-if VERBOSE>0 :
-        print ('Submitting jobs ....')
-        print ('-----------------------------------------------')
-for (RUN, Nfiles) in good_runs.items():
+                # Get list of files to process
+                files_to_process = GetFileNumbersToProcess( Nfiles )
 
-        # Get list of files to process
-        files_to_process = GetFileNumbersToProcess( Nfiles )
-        
-        # Loop over files, creating job for each
-        MakeJob(RUN, files_to_process)
-#       for FILE in files_to_process:
-#               MakeJob(RUN, FILE)
-#               if VERBOSE>0:
-#                       sys.stdout.write('  ' + str(NUM['files_submitted']) + '/' + str(NUM['files_to_process']) + ' jobs \r')
-#                       sys.stdout.flush()
+                # Loop over files, creating job for each
+                MakeJob(RUN, files_to_process)
+        #       for FILE in files_to_process:
+        #               MakeJob(RUN, FILE)
+        #               if VERBOSE>0:
+        #                       sys.stdout.write('  ' + str(NUM['files_submitted']) + '/' + str(NUM['files_to_process']) + ' jobs \r')
+        #                       sys.stdout.flush()
 
-print('\n')
-print('NOTE: The values in BAD_RCDB_QUERY_RUNS is informative about what is missing from')
-print('      the RCDB. An attempt to recover the information from the /mss filesystem')
-print('      was also made. Values in BAD_FILE_COUNT_RUNS are ones for which that failed.')
-print('      Thus, only runs listed in BAD_FILE_COUNT_RUNS will not have any jobs submitted')
-print ('BAD_RCDB_QUERY_RUNS=' + str(BAD_RCDB_QUERY_RUNS))
-print ('BAD_FILE_COUNT_RUNS=' + str(BAD_FILE_COUNT_RUNS))
-print ('BAD_MSS_FILE_RUNS='   + str(BAD_MSS_FILE_RUNS))
+        print('\n')
+        print('NOTE: The values in BAD_RCDB_QUERY_RUNS is informative about what is missing from')
+        print('      the RCDB. An attempt to recover the information from the /mss filesystem')
+        print('      was also made. Values in BAD_FILE_COUNT_RUNS are ones for which that failed.')
+        print('      Thus, only runs listed in BAD_FILE_COUNT_RUNS will not have any jobs submitted')
+        print ('BAD_RCDB_QUERY_RUNS=' + str(BAD_RCDB_QUERY_RUNS))
+        print ('BAD_FILE_COUNT_RUNS=' + str(BAD_FILE_COUNT_RUNS))
+        print ('BAD_MSS_FILE_RUNS='   + str(BAD_MSS_FILE_RUNS))
 
-# If more than 5 jobs were submitted then the summary printed above probably
-# rolled off of the screen. Print it again.
-if (VERBOSE > 0) : PrintConfigSummary()
+        # If more than 5 jobs were submitted then the summary printed above probably
+        # rolled off of the screen. Print it again.
+        if (VERBOSE > 0) : PrintConfigSummary()
 
-NUM['missing_mss_files'] = 0
-for run,files in BAD_MSS_FILE_RUNS.items(): NUM['missing_mss_files'] += len(files)
+        NUM['missing_mss_files'] = 0
+        for run,files in BAD_MSS_FILE_RUNS.items(): NUM['missing_mss_files'] += len(files)
 
-print('')
-print('WORKFLOW: ' + WORKFLOW)
-print('------------------------------------')
-print('Number of runs: ' + str(len(good_runs)) + '  (only good runs)')
-print(str(NUM['files_submitted']) + '/' + str(NUM['files_to_process']) + ' total files submitted  (' + str(NUM['missing_mss_files']) + ' files missing from mss)')
-print(str(NUM['jobs_submitted']) + '/' + str(NUM['jobs_to_process']) + ' total jobs submitted')
-print(str(len(DIRS_CREATED)) + ' directories created for output')
-print('')
-
+        print('')
+        print('WORKFLOW: ' + WORKFLOW)
+        print('------------------------------------')
+        print('Number of runs: ' + str(len(good_runs)) + '  (only good runs)')
+        print(str(NUM['files_submitted']) + '/' + str(NUM['files_to_process']) + ' total files submitted  (' + str(NUM['missing_mss_files']) + ' files missing from mss)')
+        print(str(NUM['jobs_submitted']) + '/' + str(NUM['jobs_to_process']) + ' total jobs submitted')
+        print(str(len(DIRS_CREATED)) + ' directories created for output')
+        print('')
