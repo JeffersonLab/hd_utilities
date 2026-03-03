@@ -15,13 +15,12 @@ import subprocess
 import dotenv
 
 
+#TODO use function in launch_size.py
 def ensure_value_exists(
   config: dict[str, str | None],
   key:    str,
 ) -> str:
   """Ensure that the given key exists in the config dictionary and has a non-None value; return the value."""
-  if key not in config:
-    raise KeyError(f"Missing '{key}' key in .env file")
   value = config[key]
   if value is None:
     raise ValueError(f"Missing value for '{key}' key in .env file")
