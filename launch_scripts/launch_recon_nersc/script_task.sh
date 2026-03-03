@@ -12,11 +12,11 @@ ulimit -c unlimited  # allow core dumps with no size limit
 # `RUNXXXXXX/TASKYYY`, where the YYY is the 3-digit slurm task ID.
 # The task script wakes up in the job's working directory and goes
 # into the task's working directory based on the value of
-# `SLURM_PROCID`.  The `hd-root` output files are written into
-# subdirectories of the task's working directory, defined by run
-# number and EVIO file index.  After all `hd_root` processes have
-# completed, the script collects information about the task and the
-# `hd_root` processes and writes it to files that are then tarred up for
+# `SLURM_PROCID`.  The output files produced by `hd_root` are written
+# into subdirectories `FILEZZZ` of the task's working directory,
+# defined by the 3-digit EVIO file number.  After all `hd_root`
+# processes have completed, the script collects information about the
+# task and the `hd_root` processes and prepares the output files for
 # transfer back to JLab.  The script assumes that inside the container
 # GlueX software is available in the usual `/group/halld/Software`
 # location and sets up the environment using `gxenv`.  The output
@@ -111,9 +111,8 @@ do
   ls -lLh "${evio_file_path}"
   # get run and file numbers from EVIO file names; assumes file names are of the form `hd_rawdata_XXXXXX_YYY.evio`
   evio_file_name="$(basename "${evio_file_path}")"
-  run_number="${evio_file_name:11:6}"
   file_number="${evio_file_name:18:3}"
-  SUBDIR_PROCESS="run-${run_number}-${file_number}"  #TODO make naming more consistent, e.g. `PROCESSXXX` or `FILEXXX`
+  SUBDIR_PROCESS=$(printf "FILE%03d" "${file_number}")
   WORK_DIR_PROCESS="${WORK_DIR_TASK}/${SUBDIR_PROCESS}"
   mkdir --verbose --parents "${WORK_DIR_PROCESS}"
   cd "${WORK_DIR_PROCESS}"
@@ -145,7 +144,7 @@ do
   pid="${process_ids[${process_index}]}"
   wait "${pid}"  # wait for the process to finish
   exit_code="${?}"  # capture the exit code of the process
-  echo "hd_root process ${process_index} with PID ${pid} has exit code ${exit_code}" >| "${rc_file_names[${process_index}]}"  #TODO the exit code should be written into the `run-${run_number}-${file_number}` directory
+  echo "hd_root process ${process_index} with PID ${pid} has exit code ${exit_code}" >| "${rc_file_names[${process_index}]}"
   if (( exit_code >= 128 ))
   then
     sig=$(( exit_code - 128 ))
@@ -170,7 +169,7 @@ do
   # get run and file numbers from EVIO file names; assumes file names are of the form `hd_rawdata_XXXXXX_YYY.evio`
   run_number="${evio_file_name:11:6}"  #TODO check that it is identical to `${RUN_NUMBER}` passed as command line argument
   file_number="${evio_file_name:18:3}"
-  SUBDIR_PROCESS="run-${run_number}-${file_number}"
+  SUBDIR_PROCESS=$(printf "FILE%03d" "${file_number}")
   WORK_DIR_PROCESS="${WORK_DIR_TASK}/${SUBDIR_PROCESS}"
   cd "${WORK_DIR_PROCESS}"
   JOB_INFO_DIR="job_info_${run_number}_${file_number}"
@@ -200,13 +199,13 @@ cd "${WORK_DIR_TASK}"
 echo "--- Status of task's working directory '$(pwd -P)' after rearranging output files:"
 ls -lhR .
 echo "--- Move output files from all process directories to the task's working directory '$(pwd -P)'"
-mv --verbose run-??????-???/*.* .
+mv --verbose FILE???/*.* .
 
 # swif2 will copy all files in ${WORK_DIR_TASK} back to JLab, so we
 # have to clean up
 echo "--- Clean up"
 rm --verbose --force ./hd_rawdata_??????_???.evio  # links to input files
-rm --verbose --force --recursive ./run-??????-???  # working directories of processes
+rm --verbose --force --recursive ./FILE???  # working directories of processes
 rm --verbose --force ./node.{hostname,env,top,cpuinfo}  # node log files
 
 echo "--- Status of task's working directory '$(pwd -P)' at end of task script:"
