@@ -20,6 +20,7 @@ import glob
 import math
 import os
 import shlex
+import shutil
 import subprocess
 import sys
 
@@ -81,13 +82,14 @@ def main(args: argparse.Namespace) -> None:
 
   # debug error `slurmstepd: error: execve(): shifter: No such file or directory` leading to `srun` return code 2
   for debug_cmd in (
-    ["which", "shifter"],
-    ["ls", "-l", "/usr/bin/shifter"],
-    ["shifter"],
-    ["bash", "-c", "shifter"],
+    "which shifter",
+    "ls -l /usr/bin/shifter",
+    "shifter",
+    "bash -c shifter",
   ):
-    print(f"Running debug command: '{' '.join(debug_cmd)}'")
+    print(f"Running debug command: '{debug_cmd}'")
     subprocess.run(debug_cmd, shell = True, check = False)
+  print(f"{shutil.which('shifter')=}")
   # run tasks in parallel
   # each task will run args.nmb_processes_per_task hd_root processes in parallel, each processing a single evio file
   task_cmd = [
@@ -114,7 +116,7 @@ def main(args: argparse.Namespace) -> None:
     " ".join(task_cmd),  # command to run in container; needs to be passed as a single string to `bash -c`
   ]
   print(f"Submitting tasks: '{' '.join(srun_cmd)}'")
-  srun_result = subprocess.run(srun_cmd, shell = True, check = False)
+  srun_result = subprocess.run(srun_cmd, check = False)
   with open(f"./srun_{run_label}.rc", "w", encoding = "utf-8") as file:
     file.write(f"{srun_result.returncode:d}")
   print(f"srun finished with return code {srun_result.returncode:d}")
