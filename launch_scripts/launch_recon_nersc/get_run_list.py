@@ -6,14 +6,18 @@ Generates a list of runs and files to process for a given run period.
 
 from __future__ import annotations
 
+import argparse
 import glob
 import mysql.connector
 import sys
 
+import dotenv
+
 import rcdb
 
+from launch_size import ensure_dict_value_exists
 
-RUNPERIOD = '2022-05'
+
 MINFILENO = 0    # Min file number to process for each run (n.b. file numbers start at 0!)
 MAXFILENO = 999  # Max file number to process for each run (n.b. file numbers start at 0!)
 
@@ -91,6 +95,8 @@ def GetRunInfo(
     if run_number not in run_list_exclude:
       good_runs_filtered[run_number] = good_runs[run_number]
 
+  print(f'Found {len(good_runs_filtered)} good runs to process after filtering out runs in the exclude list (excluded {len(good_runs) - len(good_runs_filtered)} runs):')
+  print(good_runs_filtered)
   return good_runs_filtered
 
 
@@ -135,20 +141,14 @@ def GetNumEVIOFiles(
   return Nfiles
 
 
-def PrintConfigSummary():
-  print ('=================================================')
-  print ('Launch Summary')
-  print ('-----------------------------------------------')
-  print (f'             RunPeriod: {RUNPERIOD}')
-  print (f'    Origin of run list: {RUN_LIST_SOURCE}')
-  print (f'        Number of runs: {len(good_runs)}')
-  print (f'       Number of files: {NUM["files_to_process"]} (maximum {MAXFILENO-MINFILENO+1} files/run)')
-  print (f'         Min. file no.: {MINFILENO}')
-  print (f'         Max. file no.: {MAXFILENO}')
-  print ('=================================================')
+def main(args: argparse.Namespace) -> None:
+  print(f"Loading .env file from '{args.launch_env_file}'")
+  launch_config: dict[str, str | None] = dotenv.dotenv_values(args.launch_env_file)
+  assert launch_config, f"Failed to load .env file from '{args.launch_env_file}'"
 
+  print(f"Reading configuration variables from file '{args.launch_env_file}'")
+  run_period = ensure_dict_value_exists(launch_config, "RUN_PERIOD")
 
-if __name__ == "__main__":
   # Initialize some counters
   NUM = {}
   NUM['files_to_process'] = 0
@@ -159,12 +159,12 @@ if __name__ == "__main__":
   # Get list of runs with number of evio files for each.
   # (parameters for search set at top of file)
   good_runs = GetRunInfo(
-    run_period       = RUNPERIOD,
-    rcdb_query       = "@is_cpp_production and @status_approved",
+    run_period       = run_period,
+    rcdb_query       = "@is_cpp_production and @status_approved",  #TODO move to launch.env
     # rcdb_query       = "@is_cpp_production and @status_approved==0 and status>0",
     run_list         = [],
-    run_number_min   = 100000,
-    run_number_max   = 109999,
+    run_number_min   = 100000,  #TODO move to launch.env
+    run_number_max   = 109999,  #TODO move to launch.env
     run_list_exclude = [],
   )
   #good_runs = db.select_runs(rcdb_query, run_number_min, run_number_max)
@@ -190,10 +190,19 @@ if __name__ == "__main__":
   #   outpath = 'RUN%06d/FILE%03d' % (RUN, FILE)
   #   outdirs[EVIOFILE] = outpath
 
-  PrintConfigSummary()
+  print ('=================================================')
+  print ('Launch Summary')
+  print ('-----------------------------------------------')
+  print (f'             RunPeriod: {run_period}')
+  print (f'    Origin of run list: {RUN_LIST_SOURCE}')
+  print (f'        Number of runs: {len(good_runs)}')
+  print (f'       Number of files: {NUM["files_to_process"]} (maximum {MAXFILENO-MINFILENO+1} files/run)')
+  print (f'         Min. file no.: {MINFILENO}')
+  print (f'         Max. file no.: {MAXFILENO}')
+  print ('=================================================')
 
   NUM['missing_mss_files'] = 0
-  for run,files in BAD_MSS_FILE_RUNS.items():
+  for run, files in BAD_MSS_FILE_RUNS.items():
     NUM['missing_mss_files'] += len(files)
 
   print('------------------------------------')
@@ -201,3 +210,12 @@ if __name__ == "__main__":
   print(f'{NUM["files_submitted"]}/{NUM["files_to_process"]} total files submitted  ({NUM["missing_mss_files"]} files missing from mss)')
   print(f'{NUM["jobs_submitted"]}/{NUM["jobs_to_process"]} total jobs submitted')
   print('')
+
+
+if __name__ == "__main__":
+  parser = argparse.ArgumentParser(
+    description = "Prepare directory structure and use srun to start a reconstruction task on each node (positional args).",
+  )
+  parser.add_argument("launch_env_file", nargs = "?", default = "./launch.env", help = "Path to .env file defining the configuration variables of the reconstruction launch; default: '%(default)s'")
+  args = parser.parse_args()
+  main(args)

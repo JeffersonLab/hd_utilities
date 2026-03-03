@@ -41,7 +41,7 @@ def main(args: argparse.Namespace) -> None:
   launch_config: dict[str, str | None] = dotenv.dotenv_values(args.launch_env_file)
   assert launch_config, f"Failed to load .env file from '{args.launch_env_file}'"
 
-  print(f"Reading values from .env file '{args.launch_env_file}'")
+  print(f"Reading configuration variables from file '{args.launch_env_file}'")
   run_period                   = ensure_dict_value_exists(launch_config, "RUN_PERIOD")
   run_number_list_file         = ensure_dict_value_exists(launch_config, "RUN_NUMBER_LIST_FILE")
   swif_raw_data_root           = ensure_dict_value_exists(launch_config, "SWIF_RAW_DATA_ROOT")
@@ -81,6 +81,6 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(
     description = "Prepare directory structure and use srun to start a reconstruction task on each node (positional args).",
   )
-  parser.add_argument("launch_env_file", default = "./launch.env", help = "Path to .env file defining the configuration variables of the reconstruction launch; default: '%(default)s'")
+  parser.add_argument("launch_env_file", nargs = "?", default = "./launch.env", help = "Path to .env file defining the configuration variables of the reconstruction launch; default: '%(default)s'")
   args = parser.parse_args()
   main(args)
