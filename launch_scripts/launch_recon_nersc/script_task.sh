@@ -210,5 +210,10 @@ rm --verbose --force ./node.{hostname,env,top,cpuinfo}  # node log files
 echo "--- Status of task's working directory '$(pwd -P)' at end of task script:"
 ls -lhR .
 
+# avoid returning exit codes reserved by shell
+if (( max_exit_code >= 128 ))
+then
+  max_exit_code=$(( max_exit_code - 128 ))
+fi
 echo "--- Task script finished with maximum exit code ${max_exit_code} among all hd_root processes"
 exit "${max_exit_code}"  # forward the maximum exit code among all `hd_root` processes to the job script  #TODO maybe it would be more useful to return number of failed processes?
