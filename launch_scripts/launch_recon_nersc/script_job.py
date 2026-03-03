@@ -92,7 +92,7 @@ def main(args: argparse.Namespace) -> None:
   # each task will run args.nmb_processes_per_task hd_root processes in parallel, each processing a single evio file
   task_cmd = [
     f"/{args.launch_dir}/script_task.sh",  # task script to run inside a container on each NERSC node (all subsequent arguments are passed to this script)
-    f"{work_dir_job}/RUN{run_label}",   # arg 1:  path of working directory RUNXXXXXX for run number XXXXXX
+    f"{args.run_number}",               # arg 1:  Run number for this task
     f"{args.jana_config}",              # arg 2:  JANA config file
     f"{args.jana_calib_context}",       # arg 3:  JANA calibration context
     f"{args.jana_geometry_url}",        # arg 4:  JANA geometry URL

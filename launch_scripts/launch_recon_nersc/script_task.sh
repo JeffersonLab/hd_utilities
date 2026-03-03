@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# set -o nounset  # exit when trying to use an uninitialized variable; gxenv seems to require some variables to be unset, so we cannot use this option
-#TODO make debug output switchable with a command line argument
-set -o verbose  # print shell input lines as they are read, i.e. before any expansion
-set -o xtrace  # print commands and their arguments as they are executed, i.e. after expansion and without I/O redirection
+# set -o nounset     # exit when trying to use an uninitialized variable; gxenv seems to require some variables to be unset, so we cannot use this option
+set -o verbose       # print shell input lines as they are read, i.e. before any expansion
+set -o xtrace        # print commands and their arguments as they are executed, i.e. after expansion and without I/O redirection
 ulimit -c unlimited  # allow core dumps with no size limit
 
 # Slurm task script that runs an `hd_root` process for each EVIO file
@@ -25,7 +24,7 @@ ulimit -c unlimited  # allow core dumps with no size limit
 
 # Arguments:
 #
-# arg 1:  path of working directory RUNXXXXXX for run number XXXXXX
+# arg 1:  Run number for this task
 # arg 2:  JANA config file
 # arg 3:  JANA calibration context
 # arg 4:  JANA geometry URL
@@ -35,7 +34,7 @@ ulimit -c unlimited  # allow core dumps with no size limit
 set -o errexit  # exit when any command fails
 
 echo "--- Get task script command-line arguments"
-WORK_DIR_RUN="${1}"  #TODO maybe it would be better to pass the run number?
+RUN_NUMBER="${1}"
 JANA_CONFIG="${2}"
 JANA_CALIB_CONTEXT="${3}"
 JANA_GEOMETRY_URL="${4}"
@@ -60,6 +59,7 @@ ls -lh "${SWIF_INPUT_ROOT}"
 WORK_DIR_JOB=$(pwd -P)
 echo "--- Working directory of job: '${WORK_DIR_JOB}':"
 ls -lh "${WORK_DIR_JOB}"
+WORK_DIR_RUN="${WORK_DIR_JOB}/$(printf "RUN%06d" "${RUN_NUMBER}")"
 echo "--- Working directory of run: '${WORK_DIR_RUN}':"
 ls -lh "${WORK_DIR_RUN}"
 echo "--- Construct the task's working directory and cd into it"
@@ -131,7 +131,7 @@ do
   )
   echo "--- Run" "${HD_ROOT_CMD[@]}"
   # start hd_root process in background and redirect stdout and stderr to files
-  "${HD_ROOT_CMD[@]}" 2> "hd_root.err" 1> "hd_root.out" &
+  "${HD_ROOT_CMD[@]}" 1> "hd_root.out" 2> "hd_root.err" &
   process_ids+=("${!}")  # capture the background process ID and store it in an array
   rc_file_names+=("${SUBDIR_PROCESS}/hd_root.rc")  # file path relative to `${WORK_DIR_TASK}` where exit code of this hd_root process will be written to
   echo "--- hd_root process with PID ${!} processes EVIO file '${evio_file_path}'"
@@ -156,7 +156,7 @@ do
     max_exit_code="${exit_code}"
   fi
 done
-echo "--- Working directory of task '$(pwd -P)' after all hd_root processes have completed:"
+echo "--- Status of task's working directory '$(pwd -P)' after all hd_root processes have completed:"
 ls -lhR .
 
 echo "--- Prepare output files for transfer back to JLab"
@@ -168,7 +168,7 @@ for evio_file_name in "${evio_file_names[@]}"
 do
   #TODO avoid code duplication
   # get run and file numbers from EVIO file names; assumes file names are of the form `hd_rawdata_XXXXXX_YYY.evio`
-  run_number="${evio_file_name:11:6}"
+  run_number="${evio_file_name:11:6}"  #TODO check that it is identical to `${RUN_NUMBER}` passed as command line argument
   file_number="${evio_file_name:18:3}"
   SUBDIR_PROCESS="run-${run_number}-${file_number}"
   WORK_DIR_PROCESS="${WORK_DIR_TASK}/${SUBDIR_PROCESS}"
@@ -182,7 +182,7 @@ do
   tar czvf "${JOB_INFO_DIR}.tgz" "${JOB_INFO_DIR}"
   echo "--- Add '_${run_number}_${file_number}' suffix to all output file names if not already present"
   shopt -s nullglob  # ensure that array is empty if no files match the pattern
-  files_names=(*.*)
+  files_names=(*.*)  # all files with an extension in the process working directory
   shopt -u nullglob
   for file_name in "${files_names[@]}"
   do
@@ -197,7 +197,7 @@ do
 done
 
 cd "${WORK_DIR_TASK}"
-echo "--- Status of task's working directory '$(pwd -P)':"
+echo "--- Status of task's working directory '$(pwd -P)' after rearranging output files:"
 ls -lhR .
 echo "--- Move output files from all process directories to the task's working directory '$(pwd -P)'"
 mv --verbose run-??????-???/*.* .
