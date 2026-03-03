@@ -37,7 +37,7 @@ echo "--- Get task script command-line arguments"
 RUN_NUMBER="${1}"
 JANA_CONFIG="${2}"
 JANA_CALIB_CONTEXT="${3}"
-JANA_GEOMETRY_URL="${4}"
+JANA_GEOMETRY_URL_TASK="${4}"  #NOTE `${JANA_GEOMETRY_URL}` is reset by the `gxenv`call below
 HALLD_VERSION_SET_XML="${5}"
 NMB_THREADS_PER_PROCESS="${6}"
 
@@ -81,7 +81,7 @@ echo "--- Set environment variables"
 export JANA_CALIB_URL="sqlite:////dev/shm/ccdb.sqlite"
 export CCDB_CONNECTION="${JANA_CALIB_URL}"
 export RCDB_CONNECTION="sqlite:////dev/shm/rcdb.sqlite"
-export JANA_GEOMETRY_URL  # from command line argument
+export JANA_GEOMETRY_URL="${JANA_GEOMETRY_URL_TASK}"
 export JANA_RESOURCE_DIR="/group/halld/www/halldweb/html/resources"
 
 echo "--- Log info about node and environment"
