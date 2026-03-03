@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
-set -o nounset  # exit when trying to use an uninitialized variable
-set -o errexit  # exit when any command fails
+set -o nounset   # exit when trying to use an uninitialized variable
+set -o errexit   # exit when any command fails
 set -o pipefail  # exit if any command in a pipeline fails
-#TODO make debug output switchable
-set -o verbose  # print shell input lines as they are read, i.e. before any expansion
-set -o xtrace  # print commands and their arguments as they are executed, i.e. after expansion and without I/O redirection
+set -o verbose   # print shell input lines as they are read, i.e. before any expansion
+set -o xtrace    # print commands and their arguments as they are executed, i.e. after expansion and without I/O redirection
 
 # Master script that submits reconstruction jobs to run at NERSC using
 # swif2.  One swif2/NERSC job is submitted for each run number in the
@@ -49,7 +48,6 @@ else
   echo "Creating swif2 workflow '${SWIF_WORKFLOW}' at site '${SWIF_SITE}' with max concurrent jobs ${SWIF_MAX_CONCURRENT_JOBS}"
   swif2 create "${SWIF_WORKFLOW}" -site "${SWIF_SITE}" -maxconcurrent "${SWIF_MAX_CONCURRENT_JOBS}"
 fi
-# swif2 run "${SWIF_WORKFLOW}"  #TODO is it really a good idea to run the workflow immediately?
 
 # loop over run numbers and submit one swif2 job each
 readarray -t RUN_NUMBERS < "${RUN_NUMBER_LIST_FILE}"  # read lines into array without trailing newlines
@@ -111,15 +109,15 @@ do
       --cpus-per-task="${NERSC_MAX_THREADS_PER_TASK}"
       #--exclusive  # allocated nodes cannot be shared with other jobs/users  #TODO clarify whether this is beneficial or not; swif2 also has `-exclusive` option that can be set when creating the workflow; is it redundant to set it in both places?
       --image="'${NERSC_CONTAINER_IMAGE}'"  #TODO verify that container image exists in NERSC repository
-      --volume="'${NERSC_LAUNCH_DIR}:/${LAUNCH_DIR}'"  # map `${NERSC_LAUNCH_DIR}` on host to `/${LAUNCH_DIR}` in container
+      --volume="'${NERSC_LAUNCH_DIR}:${NERSC_LAUNCH_DIR_CONTAINER}'"  # map `${NERSC_LAUNCH_DIR}` on host to `${NERSC_LAUNCH_DIR_CONTAINER}` in container
       --module=cvmfs  # enable CVMFS in the container so it can access the `/group/halld` tree
       --output="job_${RUN_NUMBER}_%j.out"  # write stdout and stderr of job to file named `job_<run number>_<job id>.out`, which will be copied by slurm into `${SLURM_SUBMIT_DIR}`  #TODO this is `/global/u1/j/jlab`; better location?
       ::
       # job script to run at NERSC
       "${NERSC_LAUNCH_DIR}/script_job.py"
         --run-number="${RUN_NUMBER}"
-        --launch-dir="${LAUNCH_DIR}"  #TODO add leading `/`
-        --jana-config="/${LAUNCH_DIR}/${JANA_CONFIG}"
+        --launch-dir="${NERSC_LAUNCH_DIR_CONTAINER}"  # path of launch directory inside container
+        --jana-config="${NERSC_LAUNCH_DIR_CONTAINER}/${JANA_CONFIG}"
         --jana-calib-context="'${JANA_CALIB_CONTEXT}'"
         --jana-geometry-url="'${JANA_GEOMETRY_URL}'"
         --halld-version-set-xml="${HALLD_VERSION_SET_XML}"
