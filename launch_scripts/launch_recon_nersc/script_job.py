@@ -19,7 +19,6 @@ import glob
 import math
 import os
 import shlex
-import socket
 import subprocess
 import sys
 
