@@ -75,10 +75,19 @@ def main(args: argparse.Namespace) -> None:
     # create symlink to evio file in task directory
     os.symlink(f"../../{evio_file_name}", f"{work_dir_task}/{evio_file_name}")
 
+  # debug error `slurmstepd: error: execve(): shifter: No such file or directory` leading to `srun` return code 2
+  for debug_cmd in (
+    ["which", "shifter"],
+    ["ls", "-l", "/usr/bin/shifter"],
+    ["shifter"],
+    ["bash", "-c", "shifter"],
+  ):
+    print(f"Running debug command: '{' '.join(debug_cmd)}'")
+    subprocess.run(debug_cmd, check = False)
   # run tasks in parallel
   # each task will run args.nmb_processes_per_task hd_root processes in parallel, each processing a single evio file
   task_cmd = [
-    f"{args.launch_dir}/script_task.sh",  # task script to run inside a container on each NERSC node (all subsequent arguments are passed to this script)
+    f"/{args.launch_dir}/script_task.sh",  # task script to run inside a container on each NERSC node (all subsequent arguments are passed to this script)
     f"{work_dir_job}/RUN{run_label}",   # arg 1:  path of working directory RUNXXXXXX for run number XXXXXX
     f"{args.jana_config}",              # arg 2:  JANA config file
     f"{args.jana_calib_context}",       # arg 3:  JANA calibration context
@@ -91,14 +100,14 @@ def main(args: argparse.Namespace) -> None:
     # f"--ntasks={nmb_tasks}",  # --ntasks is already specified in the `sbatch` command and srun will automatically use all allocated tasks
     f"--output=task_{run_label}_%t.out",  # write stdout and stderr of task to file named `task_<run number>_<task id>.out` into job's working directory
     "--",
-    "shifter",
+    "/usr/bin/shifter",
     "--",
     "bash",
     "-c",
-    " ".join(task_cmd),  # command to run on each node; needs to be passed as a single string to `bash -c`
+    " ".join(task_cmd),  # command to run in container; needs to be passed as a single string to `bash -c`
   ]
   print(f"Submitting tasks: '{' '.join(srun_cmd)}'")
-  srun_result = subprocess.run(srun_cmd)
+  srun_result = subprocess.run(srun_cmd, check = False)
   with open(f"./srun_{run_label}.rc", "w", encoding = "utf-8") as file:
     file.write(f"{srun_result.returncode:d}")
   print(f"srun finished with return code {srun_result.returncode:d}")

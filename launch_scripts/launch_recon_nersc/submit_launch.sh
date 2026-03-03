@@ -118,7 +118,7 @@ do
       # job script to run at NERSC
       "${NERSC_LAUNCH_DIR}/script_job.py"
         --run-number="${RUN_NUMBER}"
-        --launch-dir="${LAUNCH_DIR}"
+        --launch-dir="${LAUNCH_DIR}"  #TODO add leading `/`
         --jana-config="/${LAUNCH_DIR}/${JANA_CONFIG}"
         --jana-calib-context="'${JANA_CALIB_CONTEXT}'"
         --jana-geometry-url="'${JANA_GEOMETRY_URL}'"
