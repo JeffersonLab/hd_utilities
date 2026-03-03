@@ -172,13 +172,12 @@ do
   SUBDIR_PROCESS=$(printf "FILE%03d" "${file_number}")
   WORK_DIR_PROCESS="${WORK_DIR_TASK}/${SUBDIR_PROCESS}"
   cd "${WORK_DIR_PROCESS}"
-  JOB_INFO_DIR="job_info_${run_number}_${file_number}"
-  echo "--- Move log files in process directory '$(pwd -P)' into subdirectory '${JOB_INFO_DIR}' and make a tarball:"
+  JOB_INFO_DIR="../job_info_${run_number}_${file_number}"
+  echo "--- Move log files from process directory '$(pwd -P)' into subdirectory '${JOB_INFO_DIR}':"
   ls -lhR .
   mkdir --verbose "${JOB_INFO_DIR}"
-  cp --verbose ../node.{hostname,env,top,cpuinfo} "${JOB_INFO_DIR}"
-  mv --verbose hd_root.{out,err,rc} "${JOB_INFO_DIR}"
-  tar czvf "${JOB_INFO_DIR}.tgz" "${JOB_INFO_DIR}"
+  mv --verbose hd_root.{out,err,rc} "${JOB_INFO_DIR}"  # move process log files
+  cp --verbose ../node.{hostname,env,top,cpuinfo} "${JOB_INFO_DIR}"  # copy node log files; these files are identical for all processes of the task
   echo "--- Add '_${run_number}_${file_number}' suffix to all output file names if not already present"
   shopt -s nullglob  # ensure that array is empty if no files match the pattern
   files_names=(*.*)  # all files with an extension in the process working directory
