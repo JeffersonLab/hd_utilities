@@ -44,7 +44,7 @@
   * `/pscratch/sd/j/jlab/swif/input` directory where swif2 copies all input files to, using catalog IDs as file names.
   * `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}` top-level working directory the job and the container task wakes up in (identical to `${SWIF_JOB_STAGE_DIR}` and `${SWIF_JOB_WORK_DIR}`); the content of this directory is copied back to job output directory at JLab by swif2.
     * `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}/RUN??????/TASK???` top-level working directory of the container task, where `???` is the 3-digit `${SLURM_PROCID}`.
-* `${CSCRATCH}}/HALLD_MY`??? <!--TODO-->
+      * `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}/RUN??????/TASK???/FILE???` top-level working directory of the `hd_root` process that processes the EVIO file with the 3-digit file number `???`.
 
 ### Container image
 
