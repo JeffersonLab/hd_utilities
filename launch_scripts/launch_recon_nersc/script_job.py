@@ -87,7 +87,7 @@ def main(args: argparse.Namespace) -> None:
     ["bash", "-c", "shifter"],
   ):
     print(f"Running debug command: '{' '.join(debug_cmd)}'")
-    subprocess.run(debug_cmd, check = False)
+    subprocess.run(debug_cmd, shell = True, check = False)
   # run tasks in parallel
   # each task will run args.nmb_processes_per_task hd_root processes in parallel, each processing a single evio file
   task_cmd = [
@@ -114,7 +114,7 @@ def main(args: argparse.Namespace) -> None:
     " ".join(task_cmd),  # command to run in container; needs to be passed as a single string to `bash -c`
   ]
   print(f"Submitting tasks: '{' '.join(srun_cmd)}'")
-  srun_result = subprocess.run(srun_cmd, check = False)
+  srun_result = subprocess.run(srun_cmd, shell = True, check = False)
   with open(f"./srun_{run_label}.rc", "w", encoding = "utf-8") as file:
     file.write(f"{srun_result.returncode:d}")
   print(f"srun finished with return code {srun_result.returncode:d}")
