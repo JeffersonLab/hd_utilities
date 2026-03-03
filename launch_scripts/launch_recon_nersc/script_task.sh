@@ -55,18 +55,18 @@ echo "--- Use halld_recon at '${HALLD_RECON_HOME}'"
 # export PATH="${HALLD_MY}/${BMS_OSNAME}/bin:${PATH}"
 
 SWIF_INPUT_ROOT="/pscratch/sd/j/jlab/swif/input"
-echo "--- swif2 input directory at '${SWIF_INPUT_ROOT}':"
-# ls -lh "${SWIF_INPUT_ROOT}"
+echo "--- swif2 input directory: '${SWIF_INPUT_ROOT}':"
+ls -lh "${SWIF_INPUT_ROOT}"
 WORK_DIR_JOB=$(pwd -P)
-echo "--- Working directory of job at '${WORK_DIR_JOB}':"
+echo "--- Working directory of job: '${WORK_DIR_JOB}':"
 ls -lh "${WORK_DIR_JOB}"
-echo "--- Working directory of run at '${WORK_DIR_RUN}':"
+echo "--- Working directory of run: '${WORK_DIR_RUN}':"
 ls -lh "${WORK_DIR_RUN}"
 echo "--- Construct the task's working directory and cd into it"
 SUBDIR_TASK=$(printf "TASK%03d" "${SLURM_PROCID}")
 WORK_DIR_TASK="${WORK_DIR_RUN}/${SUBDIR_TASK}"  # absolute path of working directory of container task, i.e. `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}/RUNXXXXXX/TASKYYY`, where `XXXXXX` is the run number and `YYY` is the 3-digit `${SLURM_PROCID}`
 cd "${WORK_DIR_TASK}"
-echo "--- Working directory of task at '$(pwd -P)':"
+echo "--- Working directory of task: '$(pwd -P)':"
 ls -lLh .
 
 echo "--- Make temporary local copy of CCDB and RCDB database files"
@@ -94,8 +94,10 @@ echo "--- Find EVIO files in current directory:"
 shopt -s nullglob  # ensure that array is empty if no files match the pattern
 evio_file_paths=("${WORK_DIR_TASK}"/hd_rawdata_??????_???.evio)
 shopt -u nullglob
+echo "Found ${#evio_file_paths[@]} EVIO files"
 
 echo "--- Run hd_root process in parallel for each EVIO file in current directory"
+#TODO evaluate using GNU parallel for this
 # Do not exit immediately if `hd_root` fails to allow us to catch the
 # exit code of each hd_root process and write it to a separate file.
 # This is important since individual error codes are not captured by
@@ -105,13 +107,13 @@ process_ids=()    # array to hold process IDs of background hd_root processes
 rc_file_names=()  # array to hold file names where exit codes of hd_root processes are written
 for evio_file_path in "${evio_file_paths[@]}"
 do
-  echo "--- Process EVIO file at '${evio_file_path}':"
+  echo "--- Process EVIO file '${evio_file_path}':"
   ls -lLh "${evio_file_path}"
   # get run and file numbers from EVIO file names; assumes file names are of the form `hd_rawdata_XXXXXX_YYY.evio`
   evio_file_name="$(basename "${evio_file_path}")"
   run_number="${evio_file_name:11:6}"
   file_number="${evio_file_name:18:3}"
-  SUBDIR_PROCESS="run-${run_number}-${file_number}"
+  SUBDIR_PROCESS="run-${run_number}-${file_number}"  #TODO make naming more consistent, e.g. `PROCESSXXX` or `FILEXXX`
   WORK_DIR_PROCESS="${WORK_DIR_TASK}/${SUBDIR_PROCESS}"
   mkdir --verbose --parents "${WORK_DIR_PROCESS}"
   cd "${WORK_DIR_PROCESS}"
@@ -137,21 +139,24 @@ done
 cd "${WORK_DIR_TASK}"
 
 echo "--- Wait for all background hd_root processes to complete and capture their exit codes"
-#TODO evaluate using GNU parallel for this
-max_exit_code=0  # variable to hold the maximum exit code among all hd_root processes
+max_exit_code=0  # variable to hold the maximum exit code among all hd_root processes; this will be the exit code of the task script, which is then forwarded to the job script
 for process_index in "${!process_ids[@]}"
 do
   pid="${process_ids[${process_index}]}"
   wait "${pid}"  # wait for the process to finish
   exit_code="${?}"  # capture the exit code of the process
   echo "hd_root process ${process_index} with PID ${pid} has exit code ${exit_code}" >| "${rc_file_names[${process_index}]}"  #TODO the exit code should be written into the `run-${run_number}-${file_number}` directory
-  # determine the maximum exit code among all hd_root processes; this will be the exit code of the task script, which is then forwarded to the job script
-  if [[ "${exit_code}" -gt "${max_exit_code}" ]]
+  if (( exit_code >= 128 ))
+  then
+    sig=$(( exit_code - 128 ))
+    echo "hd_root process ${process_index} with PID ${pid} was terminated by signal ${sig}"
+  fi
+  if [[ "${exit_code}" -gt "${max_exit_code}" ]]  # determine the maximum exit code among all hd_root processes
   then
     max_exit_code="${exit_code}"
   fi
 done
-echo "--- Working directory of task at '$(pwd -P)' after all hd_root processes have completed:"
+echo "--- Working directory of task '$(pwd -P)' after all hd_root processes have completed:"
 ls -lhR .
 
 echo "--- Prepare output files for transfer back to JLab"
@@ -192,9 +197,9 @@ do
 done
 
 cd "${WORK_DIR_TASK}"
-echo "--- Status of task's working directory at '$(pwd -P)':"
+echo "--- Status of task's working directory '$(pwd -P)':"
 ls -lhR .
-echo "--- Move output files from all process directories to the task's working directory at '$(pwd -P)'"
+echo "--- Move output files from all process directories to the task's working directory '$(pwd -P)'"
 mv --verbose run-??????-???/*.* .
 
 # swif2 will copy all files in ${WORK_DIR_TASK} back to JLab, so we
@@ -204,7 +209,7 @@ rm --verbose --force ./hd_rawdata_??????_???.evio  # links to input files
 rm --verbose --force --recursive ./run-??????-???  # working directories of processes
 rm --verbose --force ./node.{hostname,env,top,cpuinfo}  # node log files
 
-echo "--- Status of task's working directory at '$(pwd -P)' at end of task script:"
+echo "--- Status of task's working directory '$(pwd -P)' at end of task script:"
 ls -lhR .
 
 echo "--- Task script finished with maximum exit code ${max_exit_code} among all hd_root processes"
