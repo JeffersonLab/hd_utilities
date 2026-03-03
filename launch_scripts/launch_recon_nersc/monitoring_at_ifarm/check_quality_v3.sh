@@ -51,7 +51,7 @@ do
     read FILE_NUMBER < <(echo "${EVIO_FILE}" | grep -o '[0-9]\+' | tail -n 1)
     #echo "run number: ${RUN_NUMBER} - file number: ${FILE_NUMBER}"
     #echo "file: ${EVIO_FILE}"
-    #TODO improve logic and code
+    #TODO improve logic and code; files should exist in cache or MSS, or in both
     file1a="${RECON_DIR_CACHE}/REST/${RUN_NUMBER}/dana_rest_${RUN_NUMBER}_${FILE_NUMBER}.hddm"
     file2a="${RECON_DIR_CACHE}/tree_PSFlux/${RUN_NUMBER}/tree_PSFlux_${RUN_NUMBER}_${FILE_NUMBER}.root"
     file3a="${RECON_DIR_CACHE}/hists/${RUN_NUMBER}/hd_root_${RUN_NUMBER}_${FILE_NUMBER}.root"
@@ -62,9 +62,9 @@ do
     filear="${VOLATILE_DIR}/REST/${RUN_NUMBER}/dana_rest_${RUN_NUMBER}_${FILE_NUMBER}.hddm"
     fileaf="${VOLATILE_DIR}/tree_PSFlux/${RUN_NUMBER}/tree_PSFlux_${RUN_NUMBER}_${FILE_NUMBER}.root"
     fileah="${VOLATILE_DIR}/hists/${RUN_NUMBER}/hd_root_${RUN_NUMBER}_${FILE_NUMBER}.root"
-    if { [[ -f "${file1a}" ]] || [[ -f "${file1b}" ]]; } && \
-       { [[ -f "${file2a}" ]] || [[ -f "${file2b}" ]]; } && \
-       { [[ -f "${file3a}" ]] || [[ -f "${file3b}" ]]; }
+    if [[ ( -f "${file1a}" || -f "${file1b}" ) && \
+          ( -f "${file2a}" || -f "${file2b}" ) && \
+          ( -f "${file3a}" || -f "${file3b}" ) ]]
     then
       #echo "${RUN_NUMBER} ${FILE_NUMBER}" >> "good-list-${RUN_PERIOD}.txt"
       ((i1++))
