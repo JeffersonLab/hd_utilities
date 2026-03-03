@@ -15,12 +15,17 @@ that were allocated by the submit script.
 """
 
 import argparse
+import functools
 import glob
 import math
 import os
 import shlex
 import subprocess
 import sys
+
+
+# always flush print() to reduce garbling of log files due to buffering
+print = functools.partial(print, flush = True)
 
 
 def write_env_to_file(output_file_name: str = "./env") -> None:
@@ -97,6 +102,9 @@ def main(args: argparse.Namespace) -> None:
   srun_cmd = [
     "srun",
     # f"--ntasks={nmb_tasks}",  # --ntasks is already specified in the `sbatch` command and srun will automatically use all allocated tasks
+    "--kill-on-bad-exit=0",  # do not kill all tasks if one task fails; instead, let all tasks run to completion to capture their individual exit codes
+    # "--slurmd-debug=verbose",  # increase verbosity of slurmd debug output; this will be written to the slurm log file of the job; only allowed for root
+    "--verbose",  # this will print the exact command line that srun executes for each task
     f"--output=task_{run_label}_%t.out",  # write stdout and stderr of task to file named `task_<run number>_<task id>.out` into job's working directory
     "--",
     "/usr/bin/shifter",
