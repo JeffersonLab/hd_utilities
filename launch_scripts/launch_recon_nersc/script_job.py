@@ -76,7 +76,7 @@ def main(args: argparse.Namespace) -> None:
     # make work directory for task
     #TODO why is this called for every file? we know how many files each job processes
     work_dir_task = f"RUN{run_label}/TASK{node_index:03d}"
-    os.makedirs(work_dir_task, exist_ok = True)  #TODO are also created by `submit_launch.sh`
+    os.makedirs(work_dir_task, exist_ok = True)
     # create symlink to evio file in task directory
     os.symlink(f"../../{evio_file_name}", f"{work_dir_task}/{evio_file_name}")
 

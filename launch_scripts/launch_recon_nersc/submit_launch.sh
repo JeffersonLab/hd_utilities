@@ -85,14 +85,8 @@ do
     do
       EVIO_FILE_PATH="${EVIO_FILE_PATHS[${EVIO_FILE_INDEX}]}"
       EVIO_FILE_NAME="$(basename "${EVIO_FILE_PATH}")"
-      SWIF2_CMD+=(-input "${EVIO_FILE_NAME}" "mss:${EVIO_FILE_PATH}")
+      SWIF2_CMD+=(-input "${EVIO_FILE_NAME}" "mss:${EVIO_FILE_PATH}")  # `mss:/`` takes files directly from tape, bypassing JLab file systems; this is the most efficient way to transfer files to NERSC; `file:/` paths should be used for debugging only
     done
-    # construct the output line for the given task, e.g. `-output match:RUN132194/TASK024/* /lustre/expphy/volatile/halld/offsite_prod/RunPeriod-2025-01/recon/ver03/RUN132194/TASK024/`
-    SUBDIR_TASK=$(printf "RUN%06d/TASK%03d" "${RUN_NUMBER}" "${TASK_INDEX}")  # subdirectory for NERSC task given by `${TASK_INDEX}`
-    SWIF_OUTPUT_DIR_TASK="${SWIF_OUTPUT_ROOT}/${SUBDIR_TASK}"  # output directory for NERSC tasks  #TODO is it really required to create them on the JLab file system or would swif2 take care of this?
-    echo "mkdir --parents ${SWIF_OUTPUT_DIR_TASK}"
-    mkdir --parents "${SWIF_OUTPUT_DIR_TASK}"  #TODO are also created by `script_job.py`
-    # SWIF2_CMD+=(-output "match:${SUBDIR_TASK}/*" "${SWIF_OUTPUT_ROOT}")  # copy `${SUBDIR_TASK}/*` into `${SWIF_OUTPUT_ROOT}` after the job is done
   done
   SWIF2_CMD+=(-output "match:*" "${SWIF_OUTPUT_ROOT}")  # copy everything in swif job attempt directory to `${SWIF_OUTPUT_ROOT}` after the job is done
   # define NERSC job
