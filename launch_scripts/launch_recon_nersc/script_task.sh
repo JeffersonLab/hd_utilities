@@ -114,8 +114,8 @@ do
   ls -lLh "${evio_file_path}"
   # get run and file numbers from EVIO file names; assumes file names are of the form `hd_rawdata_XXXXXX_YYY.evio`
   evio_file_name="$(basename "${evio_file_path}")"
-  file_number="${evio_file_name:18:3}"
-  SUBDIR_PROCESS=$(printf "FILE%03d" "${file_number}")
+  file_number="${evio_file_name:18:3}"  # extract 3-digit file number
+  SUBDIR_PROCESS="FILE${file_number}"
   WORK_DIR_PROCESS="${WORK_DIR_TASK}/${SUBDIR_PROCESS}"
   mkdir --verbose --parents "${WORK_DIR_PROCESS}"
   cd "${WORK_DIR_PROCESS}"
@@ -170,9 +170,9 @@ for evio_file_name in "${evio_file_names[@]}"
 do
   #TODO avoid code duplication
   # get run and file numbers from EVIO file names; assumes file names are of the form `hd_rawdata_XXXXXX_YYY.evio`
-  run_number="${evio_file_name:11:6}"  #TODO check that it is identical to `${RUN_NUMBER}` passed as command line argument
-  file_number="${evio_file_name:18:3}"
-  SUBDIR_PROCESS=$(printf "FILE%03d" "${file_number}")
+  run_number="${evio_file_name:11:6}"  # extract 6-digit run number  #TODO check that it is identical to `${RUN_NUMBER}` passed as command line argument
+  file_number="${evio_file_name:18:3}"  # extract 3-digit file number
+  SUBDIR_PROCESS="FILE${file_number}"
   WORK_DIR_PROCESS="${WORK_DIR_TASK}/${SUBDIR_PROCESS}"
   cd "${WORK_DIR_PROCESS}"
   JOB_INFO_DIR="../job_info_${run_number}_${file_number}"
