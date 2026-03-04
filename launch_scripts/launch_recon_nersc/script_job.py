@@ -93,7 +93,7 @@ def main(args: argparse.Namespace) -> None:
   ):
     print(f"Running debug command: '{debug_cmd}'")
     subprocess.run(debug_cmd, shell = True, check = False)
-  print(f"{shutil.which('shifter')=}")
+  print(f"shutil.which('shifter') = {shutil.which('shifter')}")
   # run tasks in parallel
   # each task will run args.nmb_processes_per_task hd_root processes in parallel, each processing a single evio file
   task_cmd = [
