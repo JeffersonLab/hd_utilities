@@ -17,10 +17,13 @@ set -o xtrace    # print commands and their arguments as they are executed, i.e.
 # srun: starts one task per node
 # sbatch: submits one job per run number
 
-CONFIG_FILE="${1:-./launch.env}"  # configuration file that defines all variables used in this script
+THIS_SCRIPT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"  # get the directory of this script
+CONFIG_FILE="${1:-${THIS_SCRIPT_DIR}/launch.env}"  # configuration file that defines all variables used in this script
 echo "Reading configuration of reconstruction launch from '${CONFIG_FILE}'"
 # shellcheck source=./launch.env
 source "${CONFIG_FILE}"
+
+echo "Using launch scripts from git commit hash: $(cat "${THIS_SCRIPT_DIR}/DEPLOYED_HD_UTILITIES_GIT_HASH" || true)"
 
 # copy scripts and config files to NERSC
 SRC="/home/${PRODUCTION_USER}/${PRODUCTION_LAUNCH_DIR}"

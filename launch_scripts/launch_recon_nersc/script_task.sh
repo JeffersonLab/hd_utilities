@@ -41,6 +41,9 @@ JANA_GEOMETRY_URL_TASK="${4}"  #NOTE `${JANA_GEOMETRY_URL}` is reset by the `gxe
 HALLD_VERSION_SET_XML="${5}"
 NMB_THREADS_PER_PROCESS="${6}"
 
+THIS_SCRIPT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"  # get the directory of this script
+echo "Using launch scripts from git commit hash: $(cat "${THIS_SCRIPT_DIR}/DEPLOYED_HD_UTILITIES_GIT_HASH" || true)"
+
 echo "--- Setup GlueX software environment according to version set defined by XML file '${HALLD_VERSION_SET_XML}'"
 source "/group/halld/Software/build_scripts/gluex_env_boot_jlab.sh"
 gxenv "${HALLD_VERSIONS}/${HALLD_VERSION_SET_XML}"
