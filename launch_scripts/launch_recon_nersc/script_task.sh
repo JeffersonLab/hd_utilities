@@ -3,6 +3,7 @@
 set -o verbose       # print shell input lines as they are read, i.e. before any expansion
 set -o xtrace        # print commands and their arguments as they are executed, i.e. after expansion and without I/O redirection
 ulimit -c unlimited  # allow core dumps with no size limit
+SECONDS=0  # shell variable that counts seconds since it was initialized; used to measure elapsed time of the script
 
 # Slurm task script that runs an `hd_root` process for each EVIO file
 # that it finds in its working directory.
@@ -78,7 +79,8 @@ cp --verbose "/group/halld/www/halldweb/html/dist/ccdb.sqlite" /dev/shm
 cp --verbose "/group/halld/www/halldweb/html/dist/rcdb.sqlite" /dev/shm
 ls -lh /dev/shm/{ccdb,rcdb}.sqlite
 ls -lh /dev/shm
-trap 'rm --verbose --force /dev/shm/{ccdb,rcdb}.sqlite' EXIT INT TERM  # ensure files are removed when script exits or gets SIGINT or SIGTERM signal
+# ensure files are removed when script exits or gets SIGINT or SIGTERM signal; also print wall time
+trap 'rm --verbose --force /dev/shm/{ccdb,rcdb}.sqlite; echo "--- Elapsed wall time for task script: $((SECONDS/60)) min $((SECONDS%60)), sec"' EXIT INT TERM
 
 echo "--- Set environment variables"
 export JANA_CALIB_URL="sqlite:////dev/shm/ccdb.sqlite"

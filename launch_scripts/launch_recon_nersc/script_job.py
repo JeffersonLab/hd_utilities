@@ -23,6 +23,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import time
 
 
 # always flush print() to reduce garbling of log files due to buffering
@@ -39,6 +40,7 @@ def write_env_to_file(output_file_name: str = "./env") -> None:
 
 
 def main(args: argparse.Namespace) -> None:
+  start_time = time.time()
   print("Running job script with arguments:")
   max_arg_name_length = max(len(arg_name) for arg_name in vars(args).keys())
   for arg_name, arg_value in sorted(vars(args).items()):  # sort keys for stable, tidy output
@@ -123,6 +125,8 @@ def main(args: argparse.Namespace) -> None:
   srun_result = subprocess.run(srun_cmd, check = False)
   with open(f"./srun_{run_label}.rc", "w", encoding = "utf-8") as file:
     file.write(f"{srun_result.returncode:d}")
+  elapsed_time = int(time.time() - start_time)
+  print(f"Elapsed wall time for job script: {elapsed_time // 60} min, {elapsed_time % 60} sec")
   print(f"srun finished with return code {srun_result.returncode:d}")
   sys.exit(srun_result.returncode)  # forward return code of srun to the caller of this script, i.e. swif2
   # `srun` will return i) a non-zero slurm exit code, if it cannot
