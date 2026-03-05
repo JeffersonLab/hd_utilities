@@ -75,12 +75,13 @@ ls -lLh .
 
 echo "--- Make temporary local copy of CCDB and RCDB database files"
 #NOTE this assumes that the task script has the whole node to itself
+df /dev/shm
 cp --verbose "/group/halld/www/halldweb/html/dist/ccdb.sqlite" /dev/shm
 cp --verbose "/group/halld/www/halldweb/html/dist/rcdb.sqlite" /dev/shm
 ls -lh /dev/shm/{ccdb,rcdb}.sqlite
 ls -lh /dev/shm
 # ensure files are removed when script exits or gets SIGINT or SIGTERM signal; also print wall time
-trap 'rm --verbose --force /dev/shm/{ccdb,rcdb}.sqlite; echo "--- Elapsed wall time for task script: $((SECONDS/60)) min $((SECONDS%60)), sec"' EXIT INT TERM
+trap 'rm --verbose --force /dev/shm/{ccdb,rcdb}.sqlite; echo "--- Wall time consumed by task script: $((SECONDS/60)) min, $((SECONDS%60)) sec"' EXIT INT TERM
 
 echo "--- Set environment variables"
 export JANA_CALIB_URL="sqlite:////dev/shm/ccdb.sqlite"
@@ -92,6 +93,7 @@ export JANA_RESOURCE_DIR="/group/halld/www/halldweb/html/resources"
 echo "--- Log info about node and environment"
 hostname >| ./node.hostname
 declare -p | sed 's/^declare -[^ ]\+ //' >| ./node.env  # get alphabetically sorted list of environment variables without function definitions
+findmnt --canonicalize --output=TARGET,FSTYPE,SIZE,USED,AVAIL,USE% >| ./node.mounts  # get list of mounted file systems with their sizes and usage
 top -b -n 1 -c -w 512 >| ./node.top
 cat /proc/cpuinfo >| ./node.cpuinfo
 
@@ -182,7 +184,7 @@ do
   ls -lhR .
   mkdir --verbose "${JOB_INFO_DIR}"
   mv --verbose hd_root.{out,err,rc} "${JOB_INFO_DIR}"  # move process log files
-  cp --verbose ../node.{hostname,env,top,cpuinfo} "${JOB_INFO_DIR}"  # copy node log files; these files are identical for all processes of the task
+  cp --verbose ../node.{hostname,env,mounts,top,cpuinfo} "${JOB_INFO_DIR}"  # copy node log files; these files are identical for all processes of the task
   echo "--- Add '_${run_number}_${file_number}' suffix to all output file names if not already present"
   shopt -s nullglob  # ensure that array is empty if no files match the pattern
   files_names=(*.*)  # all files with an extension in the process working directory
@@ -210,7 +212,7 @@ mv --verbose FILE???/*.* .
 echo "--- Clean up"
 rm --verbose --force ./hd_rawdata_??????_???.evio  # links to input files
 rm --verbose --force --recursive ./FILE???  # working directories of processes
-rm --verbose --force ./node.{hostname,env,top,cpuinfo}  # node log files
+rm --verbose --force ./node.{hostname,env,mounts,top,cpuinfo}  # node log files
 
 echo "--- Status of task's working directory '$(pwd -P)' at end of task script:"
 ls -lhR .
