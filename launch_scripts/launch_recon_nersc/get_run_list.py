@@ -143,13 +143,13 @@ def main(args: argparse.Namespace) -> None:
     run_list   = run_list,
   )
   print(f"Write list of run numbers to './{run_number_list_file}'")
-  if os.path.exists(run_number_list_file):
-    print(f"File './{run_number_list_file}' already exists; skipping write")
-  else:
-    with open(run_number_list_file, mode = "w") as file:
+  try:
+    with open(f"./{run_number_list_file}", mode = "x") as file:
       for run_number in sorted(evio_files_per_run.keys()):
         if len(evio_files_per_run[run_number]) > 0:
           file.write(f"{run_number}\n")
+  except FileExistsError:
+    print(f"WARNING: file './{run_number_list_file}' already exists; skipping write")
 
 
 if __name__ == "__main__":
