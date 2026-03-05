@@ -131,12 +131,34 @@ def main(args: argparse.Namespace) -> None:
   with open(f"./srun_{run_label}.rc", "w", encoding = "utf-8") as log_file:
     log_file.write(f"{srun_result.returncode:d}")
   elapsed_time = int(time.time() - start_time)
-  print(f"Wall time consumed by job script: {elapsed_time // 60} min, {elapsed_time % 60} sec")
   print(f"`srun` finished with return code {srun_result.returncode:d}")
-  sys.exit(srun_result.returncode)  # forward return code of srun to the caller of this script, i.e. swif2
   # `srun` will return i) a non-zero slurm exit code, if it cannot
   # start the tasks, or ii) the highest exit code of any failed tasks.
   # If a task is killed by signal, 128 + signal number is returned.
+
+  # get relative paths of all files in job's working directory
+  base_dir = "."
+  relative_file_paths = []
+  for root, dir_names, file_names in os.walk(base_dir):
+    # skip hidden directories
+    dir_names[:] = [dir_name for dir_name in dir_names if not dir_name.startswith(".")]
+    for file_name in file_names:
+      # skip hidden and swif2 system files
+      if file_name.startswith(".") or file_name.startswith("__"):
+        continue
+      absolute_file_path = os.path.join(root, file_name)
+      # skip symlinked files
+      if os.path.islink(absolute_file_path):
+        continue
+      relative_file_paths.append(os.path.relpath(absolute_file_path, base_dir))
+  # defining output files that swif2 should transfer back to JLab
+  for relative_file_path in sorted(relative_file_paths):
+    output_cmd = f"swif2 output '{relative_file_path}' '/lustre/expphy/volatile/halld/offsite_prod/RunPeriod-2022-05/recon/ver02-perl'"  #TODO pass output dir into script
+    print(f"Defining output file: '{output_cmd}'")
+    subprocess.run(output_cmd, shell = True, check = False)
+
+  print(f"Wall time consumed by job script: {elapsed_time // 60} min, {elapsed_time % 60} sec")
+  sys.exit(srun_result.returncode)  # forward return code of srun to the caller of this script, i.e. swif2
 
 
 if __name__ == "__main__":

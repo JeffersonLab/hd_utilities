@@ -91,8 +91,7 @@ do
       SWIF2_CMD+=(-input "${EVIO_FILE_NAME}" "mss:${EVIO_FILE_PATH}")  # `mss:/`` takes files directly from tape, bypassing JLab file systems; this is the most efficient way to transfer files to NERSC; `file:/` paths should be used for debugging only
     done
   done
-  SWIF2_CMD+=(-output "match:*" "${SWIF_OUTPUT_ROOT}")  # copy everything in swif job attempt directory to `${SWIF_OUTPUT_ROOT}` after the job is done
-  # define NERSC job
+  # the output files that swif2 should transfer back to JLab are defined inside the job script
   SWIF2_CMD+=(
     -sbatch
       # these options are passed to `sbatch` when swif2 submits job at NERSC
