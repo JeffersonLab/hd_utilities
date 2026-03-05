@@ -53,8 +53,13 @@ def main(args: argparse.Namespace) -> None:
   # gather information about job environment and write it to files
   run_label = f"{args.run_number:06d}"
   write_env_to_file(f"job_{run_label}.env")
-  with open(f"job_{run_label}.hostname", "w", encoding = "utf-8") as file:
-    subprocess.run(["hostnamectl"], stdout = file, stderr = subprocess.STDOUT)
+  for log_file_suffix, log_cmd in (
+    ("hostname",  "hostnamectl"),
+    ("diskquota", "myquota --verbose --full-path --limit --common --hpss"),
+    ("mounts",    "findmnt --canonicalize --output=TARGET,FSTYPE,SIZE,USED,AVAIL,USE%"),
+  ):
+    with open(f"job_{run_label}.{log_file_suffix}", "w", encoding = "utf-8") as log_file:
+      subprocess.run(log_cmd, shell = True, check = False, stdout = log_file, stderr = subprocess.STDOUT)
 
   # get job working directory and list of input files
   work_dir_job = os.getcwd()  # working directory of job as created by swif2, i.e. `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}; (identical to `${SWIF_JOB_STAGE_DIR}` and `${SWIF_JOB_WORK_DIR}`)
@@ -123,11 +128,11 @@ def main(args: argparse.Namespace) -> None:
   ]
   print(f"Submitting tasks: '{' '.join(srun_cmd)}'")
   srun_result = subprocess.run(srun_cmd, check = False)
-  with open(f"./srun_{run_label}.rc", "w", encoding = "utf-8") as file:
-    file.write(f"{srun_result.returncode:d}")
+  with open(f"./srun_{run_label}.rc", "w", encoding = "utf-8") as log_file:
+    log_file.write(f"{srun_result.returncode:d}")
   elapsed_time = int(time.time() - start_time)
-  print(f"Elapsed wall time for job script: {elapsed_time // 60} min, {elapsed_time % 60} sec")
-  print(f"srun finished with return code {srun_result.returncode:d}")
+  print(f"Wall time consumed by job script: {elapsed_time // 60} min, {elapsed_time % 60} sec")
+  print(f"`srun` finished with return code {srun_result.returncode:d}")
   sys.exit(srun_result.returncode)  # forward return code of srun to the caller of this script, i.e. swif2
   # `srun` will return i) a non-zero slurm exit code, if it cannot
   # start the tasks, or ii) the highest exit code of any failed tasks.
