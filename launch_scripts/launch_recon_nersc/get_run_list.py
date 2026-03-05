@@ -133,9 +133,15 @@ def main(args: argparse.Namespace) -> None:
   rcdb_host = 'hallddb.jlab.org'
   rcdb_user = 'rcdb'
   db = rcdb.RCDBProvider(f'mysql://{rcdb_user}@{rcdb_host}/rcdb2')
-  print (f"Get run list for {run_number_min} <= run number <= {run_number_max} and RCDB query '{rcdb_query}'")
-  run_list = sorted([int(run.number) for run in db.select_runs(rcdb_query, run_number_min, run_number_max)])
-  print (f"Found {len(run_list)} runs")
+  run_list: list[int] = []
+  if args.override_run_list is None:
+    print(f"Get run list for {run_number_min} <= run number <= {run_number_max} from RCDB using query '{rcdb_query}'")
+    run_list = sorted([int(run.number) for run in db.select_runs(rcdb_query, run_number_min, run_number_max)])
+  else:
+    print(f"Reading run list from file '{args.override_run_list}'")
+    with open(args.override_run_list, mode = "r") as file:
+      run_list = sorted(int(line.strip()) for line in file if line.strip())  # skip blank lines
+  print(f"Found {len(run_list)} runs")
 
   evio_files_per_run: dict[int, list[str]] = get_evio_files_per_run(
     db         = db,
@@ -156,6 +162,7 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(
     description = "Prepare directory structure and use srun to start a reconstruction task on each node (positional args).",
   )
-  parser.add_argument("--launch_env_file", default = "./launch.env", help = "Path to .env file defining the configuration variables of the reconstruction launch; default: '%(default)s'")
+  parser.add_argument("--launch_env_file",   default = "./launch.env", help = "Path to .env file defining the configuration variables of the reconstruction launch; default: '%(default)s'")
+  parser.add_argument("--override_run_list", help = "Path to run-number list file to use instead of RCDB query")
   args = parser.parse_args()
   main(args)
