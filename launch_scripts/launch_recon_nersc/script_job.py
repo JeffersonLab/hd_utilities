@@ -163,7 +163,7 @@ def main(args: argparse.Namespace) -> None:
   print(f"shutil.which('swif2') = {shutil.which('swif2')}")
   # defining output files that swif2 should transfer back to JLab
   for relative_file_path in sorted(relative_file_paths):
-    output_cmd = f"./.swif/swif2 output '{relative_file_path}' '/lustre/expphy/volatile/halld/offsite_prod/RunPeriod-2022-05/recon/ver02-perl'"  # for some reason, swif2 is not in path  #TODO pass output dir into script
+    output_cmd = f"./.swif/swif2 output '{relative_file_path}' '/lustre/expphy/volatile/halld/offsite_prod/RunPeriod-2022-05/recon/ver02-perl/{relative_file_path}'"  # for some reason, swif2 is not in path  #TODO pass output dir into script
     print(f"Defining output file: '{output_cmd}'")
     subprocess.run(output_cmd, shell = True, check = False)
 
