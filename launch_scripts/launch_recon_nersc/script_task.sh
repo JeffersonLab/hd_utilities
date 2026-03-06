@@ -162,58 +162,6 @@ do
     max_exit_code="${exit_code}"
   fi
 done
-echo "--- Status of task's working directory '$(pwd -P)' after all hd_root processes have completed:"
-ls -lR .
-
-echo "--- Prepare output files for transfer back to JLab"
-set -o errexit  # turn exit on error back on
-shopt -s nullglob  # ensure that array is empty if no files match the pattern
-evio_file_names=(hd_rawdata_??????_???.evio)
-shopt -u nullglob
-for evio_file_name in "${evio_file_names[@]}"
-do
-  #TODO avoid code duplication
-  # get run and file numbers from EVIO file names; assumes file names are of the form `hd_rawdata_XXXXXX_YYY.evio`
-  run_number="${evio_file_name:11:6}"  # extract 6-digit run number  #TODO check that it is identical to `${RUN_NUMBER}` passed as command line argument
-  file_number="${evio_file_name:18:3}"  # extract 3-digit file number
-  SUBDIR_PROCESS="FILE${file_number}"
-  WORK_DIR_PROCESS="${WORK_DIR_TASK}/${SUBDIR_PROCESS}"
-  cd "${WORK_DIR_PROCESS}"
-  JOB_INFO_DIR="../job_info_${run_number}_${file_number}"
-  echo "--- Move log files from process directory '$(pwd -P)' into subdirectory '${JOB_INFO_DIR}':"
-  ls -lR .
-  mkdir --verbose "${JOB_INFO_DIR}"
-  mv --verbose hd_root.{out,err,rc} "${JOB_INFO_DIR}"  # move process log files
-  cp --verbose ../node.{hostname,env,mounts,top,cpuinfo} "${JOB_INFO_DIR}"  # copy node log files; these files are identical for all processes of the task
-  echo "--- Add '_${run_number}_${file_number}' suffix to all output file names if not already present"
-  shopt -s nullglob  # ensure that array is empty if no files match the pattern
-  files_names=(*.*)  # all files with an extension in the process working directory
-  shopt -u nullglob
-  for file_name in "${files_names[@]}"
-  do
-    if [[ ! "${file_name}" =~ .*_([0-9]{6})_([0-9]{3}).* ]]  # files that do not match the pattern `*_XXXXXX_YYY*` where X and Y are digits
-    then
-      new_file_name="${file_name/./_${run_number}_${file_number}.}"  # insert run and file number before the first '.' of the file extension
-      mv --verbose "${file_name}" "${new_file_name}"
-    else
-      echo "File '${file_name}' already has run number and file number in its name; skipping renaming"
-    fi
-  done
-done
-
-cd "${WORK_DIR_TASK}"
-echo "--- Status of task's working directory '$(pwd -P)' after rearranging output files:"
-ls -lR .
-echo "--- Move output files from all process directories to the task's working directory '$(pwd -P)'"
-mv --verbose FILE???/*.* .
-
-# swif2 will copy all files in ${WORK_DIR_TASK} back to JLab, so we
-# have to clean up
-echo "--- Clean up"
-rm --verbose --force ./hd_rawdata_??????_???.evio  # links to input files
-rm --verbose --force --recursive ./FILE???  # working directories of processes
-rm --verbose --force ./node.{hostname,env,mounts,top,cpuinfo}  # node log files
-
 echo "--- Status of task's working directory '$(pwd -P)' at end of task script:"
 ls -lR .
 
