@@ -59,27 +59,27 @@ echo "--- Use halld_recon at '${HALLD_RECON_HOME}'"
 
 SWIF_INPUT_ROOT="/pscratch/sd/j/jlab/swif/input"
 echo "--- swif2 input directory: '${SWIF_INPUT_ROOT}':"
-ls -lh "${SWIF_INPUT_ROOT}"
+ls -l "${SWIF_INPUT_ROOT}"
 WORK_DIR_JOB=$(pwd -P)
 echo "--- Working directory of job: '${WORK_DIR_JOB}':"
-ls -lh "${WORK_DIR_JOB}"
+ls -l "${WORK_DIR_JOB}"
 WORK_DIR_RUN="${WORK_DIR_JOB}/$(printf "RUN%06d" "${RUN_NUMBER}")"
 echo "--- Working directory of run: '${WORK_DIR_RUN}':"
-ls -lh "${WORK_DIR_RUN}"
+ls -l "${WORK_DIR_RUN}"
 echo "--- Construct the task's working directory and cd into it"
 SUBDIR_TASK=$(printf "TASK%03d" "${SLURM_PROCID}")
 WORK_DIR_TASK="${WORK_DIR_RUN}/${SUBDIR_TASK}"  # absolute path of working directory of container task, i.e. `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}/RUNXXXXXX/TASKYYY`, where `XXXXXX` is the run number and `YYY` is the 3-digit `${SLURM_PROCID}`
 cd "${WORK_DIR_TASK}"
 echo "--- Working directory of task: '$(pwd -P)':"
-ls -lLh .
+ls -lL .
 
 echo "--- Make temporary local copy of CCDB and RCDB database files"
 #NOTE this assumes that the task script has the whole node to itself
 df /dev/shm
 cp --verbose "/group/halld/www/halldweb/html/dist/ccdb.sqlite" /dev/shm
 cp --verbose "/group/halld/www/halldweb/html/dist/rcdb.sqlite" /dev/shm
-ls -lh /dev/shm/{ccdb,rcdb}.sqlite
-ls -lh /dev/shm
+ls -l /dev/shm/{ccdb,rcdb}.sqlite
+ls -l /dev/shm
 # ensure files are removed when script exits or gets SIGINT or SIGTERM signal; also print wall time
 trap 'rm --verbose --force /dev/shm/{ccdb,rcdb}.sqlite; echo "--- Wall time consumed by task script: $((SECONDS/60)) min, $((SECONDS%60)) sec"' EXIT INT TERM
 
@@ -115,7 +115,7 @@ rc_file_names=()  # array to hold file names where exit codes of hd_root process
 for evio_file_path in "${evio_file_paths[@]}"
 do
   echo "--- Process EVIO file '${evio_file_path}':"
-  ls -lLh "${evio_file_path}"
+  ls -lL "${evio_file_path}"
   # get run and file numbers from EVIO file names; assumes file names are of the form `hd_rawdata_XXXXXX_YYY.evio`
   evio_file_name="$(basename "${evio_file_path}")"
   file_number="${evio_file_name:18:3}"  # extract 3-digit file number
@@ -163,7 +163,7 @@ do
   fi
 done
 echo "--- Status of task's working directory '$(pwd -P)' after all hd_root processes have completed:"
-ls -lhR .
+ls -lR .
 
 echo "--- Prepare output files for transfer back to JLab"
 set -o errexit  # turn exit on error back on
@@ -181,7 +181,7 @@ do
   cd "${WORK_DIR_PROCESS}"
   JOB_INFO_DIR="../job_info_${run_number}_${file_number}"
   echo "--- Move log files from process directory '$(pwd -P)' into subdirectory '${JOB_INFO_DIR}':"
-  ls -lhR .
+  ls -lR .
   mkdir --verbose "${JOB_INFO_DIR}"
   mv --verbose hd_root.{out,err,rc} "${JOB_INFO_DIR}"  # move process log files
   cp --verbose ../node.{hostname,env,mounts,top,cpuinfo} "${JOB_INFO_DIR}"  # copy node log files; these files are identical for all processes of the task
@@ -203,7 +203,7 @@ done
 
 cd "${WORK_DIR_TASK}"
 echo "--- Status of task's working directory '$(pwd -P)' after rearranging output files:"
-ls -lhR .
+ls -lR .
 echo "--- Move output files from all process directories to the task's working directory '$(pwd -P)'"
 mv --verbose FILE???/*.* .
 
@@ -215,7 +215,7 @@ rm --verbose --force --recursive ./FILE???  # working directories of processes
 rm --verbose --force ./node.{hostname,env,mounts,top,cpuinfo}  # node log files
 
 echo "--- Status of task's working directory '$(pwd -P)' at end of task script:"
-ls -lhR .
+ls -lR .
 
 # avoid returning exit codes reserved by shell
 if (( max_exit_code >= 128 ))
