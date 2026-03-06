@@ -64,7 +64,7 @@ do
   SWIF2_CMD=(
     swif2 add-job
     -workflow "${SWIF_WORKFLOW}"
-    -name "GLUEX_recon_${RUN_NUMBER}"  # swif2 job name
+    -name "GlueX_recon_${RUN_NUMBER}"  # swif2 job name
   )
   # loop over all evio files of the run and subdivide file list into
   # chunks of size `${NERSC_NMB_PROCESSES_PER_TASK}` that will be

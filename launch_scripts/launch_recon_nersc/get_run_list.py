@@ -66,7 +66,7 @@ def get_evio_files(
     print(f"WARNING: could not find any EVIO files for run {run_number}")
     rcdb_errors.append(EvioFilesError(kind = EvioFilesErrorKind.NO_FILES_FOUND))
     return [], rcdb_errors
-  print(f"Ensure all {evio_files_count:3d} EVIO files exist for run {run_number}")
+  print(f"Ensure all {evio_files_count:3d} EVIO files for run {run_number} exist")
   evio_files: list[str] = []
   for evio_file_index in range(evio_files_count):
     evio_file_path = f"{raw_data_dir}/hd_rawdata_{run_number:06d}_{evio_file_index:03d}.evio"

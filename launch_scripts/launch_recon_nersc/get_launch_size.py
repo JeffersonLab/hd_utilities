@@ -74,7 +74,7 @@ def main(args: argparse.Namespace) -> None:
     print(f"    Run {run_number:6d} = {total_size_gb[run_number]:6.0f} GB, {nmb_files[run_number]:3d} files, {nmb_nodes[run_number]:3d} nodes, {fraction_nodes_unused[run_number]:3.1%} of last node wasted")
   total_nmb_nodes        = sum(nmb_nodes.values())
   total_nmb_nodes_unused = sum(fraction_nodes_unused.values())
-  print(f"Total for all runs: {sum(total_size_gb.values()):.0f} GB of raw data "
+  print(f"Total for {len(run_numbers)} runs: {sum(total_size_gb.values()):.0f} GB of raw data "
         f"in {sum(nmb_files.values())} files "
         f"processed by {total_nmb_nodes} NERSC nodes, "
         f"out of which {total_nmb_nodes_unused:.1f} nodes are unused (= {total_nmb_nodes_unused / total_nmb_nodes:.1%} of total nodes)")
