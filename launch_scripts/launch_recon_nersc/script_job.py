@@ -163,9 +163,9 @@ def main(args: argparse.Namespace) -> None:
     print(f"Running debug command: '{debug_cmd}'")
     subprocess.run(debug_cmd, shell = True, check = False)
   print(f"shutil.which('swif2') = {shutil.which('swif2')}")
-  # defining output files that swif2 should transfer back to JLab
+  # define all output files that swif2 should transfer back to JLab
   for relative_file_path in sorted(relative_file_paths):
-    output_cmd = f"./.swif/swif2 output '{relative_file_path}' '/lustre/expphy/volatile/halld/offsite_prod/RunPeriod-2022-05/recon/ver02-perl/{relative_file_path}'"  # for some reason, swif2 is not in path  #TODO pass output dir into script
+    output_cmd = f"./.swif/swif2 output '{relative_file_path}' '{args.swif_output_root}/{relative_file_path}'"  # for some reason, swif2 is not in path
     print(f"Defining output file: '{output_cmd}'")
     subprocess.run(output_cmd, shell = True, check = False)
 
@@ -185,4 +185,5 @@ if __name__ == "__main__":
   parser.add_argument("--halld-version-set-xml",   dest = "halld_version_set_xml",   required = True, help = "GlueX software version set XML file")
   parser.add_argument("--nmb-processes-per-task",  dest = "nmb_processes_per_task",  required = True, help = "Number of processes per task",            type = int)
   parser.add_argument("--nmb-threads-per-process", dest = "nmb_threads_per_process", required = True, help = "Number of threads per `hd_root` process", type = int)
+  parser.add_argument("--swif-output-root",        dest = "swif_output_root",        required = True, help = "Root of JLab directory tree, where output files will be copied to")
   main(parser.parse_args())

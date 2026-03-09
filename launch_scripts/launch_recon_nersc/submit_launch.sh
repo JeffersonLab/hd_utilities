@@ -119,6 +119,7 @@ do
         --halld-version-set-xml="${HALLD_VERSION_SET_XML}"
         --nmb-processes-per-task="${NERSC_NMB_PROCESSES_PER_TASK}"
         --nmb-threads-per-process="${NERSC_NMB_THREADS_PER_PROCESS}"
+        --swif-output-root="${SWIF_OUTPUT_ROOT}"
   )
   SUBMIT_JOB_SCRIPT="submit_job_for_RUN${RUN_NUMBER}.sh"
   echo "${SWIF2_CMD[@]}" >| "${SUBMIT_JOB_SCRIPT}"
