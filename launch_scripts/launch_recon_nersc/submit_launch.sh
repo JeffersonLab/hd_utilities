@@ -77,7 +77,7 @@ do
   # calculate number of tasks to request based on number of evio files and number of processes to run per task
   NMB_EVIO_FILES=${#EVIO_FILE_PATHS[@]}
   echo "Run period: ${RUN_PERIOD} - run number: ${RUN_NUMBER} - number of evio files: ${NMB_EVIO_FILES} - divided by: ${NERSC_NMB_PROCESSES_PER_TASK}"
-  NERSC_NMB_TASKS=$(echo "(${NMB_EVIO_FILES} + ${NERSC_NMB_PROCESSES_PER_TASK} - 1) / ${NERSC_NMB_PROCESSES_PER_TASK}" | bc)  #TODO check whether this is generally correct
+  NERSC_NMB_TASKS=$(echo "(${NMB_EVIO_FILES} + ${NERSC_NMB_PROCESSES_PER_TASK} - 1) / ${NERSC_NMB_PROCESSES_PER_TASK}" | bc)
   echo "Number of tasks asked: ${NERSC_NMB_TASKS}"
   for (( TASK_INDEX=0; TASK_INDEX < NERSC_NMB_TASKS; TASK_INDEX++ ))
   do

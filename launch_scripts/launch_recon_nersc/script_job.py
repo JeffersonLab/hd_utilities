@@ -17,7 +17,6 @@ that were allocated by the submit script.
 import argparse
 import functools
 import glob
-import math
 import os
 import shlex
 import shutil
@@ -65,6 +64,7 @@ def main(args: argparse.Namespace) -> None:
   work_dir_job = os.getcwd()  # working directory of job as created by swif2, i.e. `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}; (identical to `${SWIF_JOB_STAGE_DIR}` and `${SWIF_JOB_WORK_DIR}`)
   print(f"Job script is running in directory: '{work_dir_job}'")
   evio_file_names = sorted(glob.glob("hd_rawdata_??????_???.evio"))  # list of raw data file names in working directory of job
+  #TODO filter bad files if list is available?
   print(f"Found {len(evio_file_names)} EVIO files that will be processed by this job:")
   for index, evio_file_name in enumerate(evio_file_names):
     print(f"  {index:4d}: '{evio_file_name}'")
@@ -73,8 +73,8 @@ def main(args: argparse.Namespace) -> None:
   print(f"Number of tasks allocated for this job: {nmb_tasks}")
 
   # ensure that nmb_tasks is consistent with number of evio files and nmb_processes_per_task
-  expected_nmb_tasks = math.ceil(float(len(evio_file_names)) / args.nmb_processes_per_task)  # integer division  #TODO simplify
-  if int(expected_nmb_tasks) != int(nmb_tasks):
+  expected_nmb_tasks = (len(evio_file_names) + args.nmb_processes_per_task - 1) // args.nmb_processes_per_task
+  if expected_nmb_tasks != int(nmb_tasks):
     print(f"Error: mismatch of number of tasks = {expected_nmb_tasks} needed for {len(evio_file_names)} EVIO files and number of allocated slurm tasks = {nmb_tasks}")
     sys.exit(101)
 
@@ -151,7 +151,7 @@ def main(args: argparse.Namespace) -> None:
       if os.path.islink(absolute_file_path):
         continue
       relative_file_paths.append(os.path.relpath(absolute_file_path, base_dir))
-  # debug error /bin/sh: swif2: command not found
+  # debug error `/bin/sh: swif2: command not found`
   for debug_cmd in (
     "ls -l ./.swif/swif2",
     "which swif2",
