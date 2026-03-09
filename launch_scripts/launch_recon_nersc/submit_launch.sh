@@ -48,6 +48,15 @@ RSYNC_CMD=(rsync
 "${RSYNC_CMD[@]}"
 unset SRC DEST
 
+# verify that container image exists in NERSC repository
+if ssh "${NERSC_HOST}" "shifterimg lookup \"${NERSC_CONTAINER_IMAGE#docker:}\""
+then
+  echo "Container image '${NERSC_CONTAINER_IMAGE}' exists in NERSC repository"
+else
+  echo "Container image '${NERSC_CONTAINER_IMAGE}' does not exist in NERSC repository; aborting"
+  exit 1
+fi
+
 # create and run swif2 workflow
 if swif2 status "${SWIF_WORKFLOW}" &> /dev/null
 then
@@ -109,7 +118,7 @@ do
       --ntasks="${NERSC_NMB_TASKS}"
       --cpus-per-task="${NERSC_MAX_THREADS_PER_TASK}"
       #--exclusive  # allocated nodes cannot be shared with other jobs/users  #TODO clarify whether this is beneficial or not; swif2 also has `-exclusive` option that can be set when creating the workflow; is it redundant to set it in both places?
-      --image="'${NERSC_CONTAINER_IMAGE}'"  #TODO verify that container image exists in NERSC repository
+      --image="'${NERSC_CONTAINER_IMAGE}'"
       --volume="'${NERSC_LAUNCH_DIR}:${NERSC_LAUNCH_DIR_CONTAINER}'"  # map `${NERSC_LAUNCH_DIR}` on host to `${NERSC_LAUNCH_DIR_CONTAINER}` in container
       --module=cvmfs  # enable CVMFS in the container so it can access the `/group/halld` tree
       --output="job_${RUN_NUMBER}_%j.out"  # write stdout and stderr of job to file named `job_<run number>_<job id>.out`, which will be copied by slurm into `${SLURM_SUBMIT_DIR}`  #TODO this is `/global/u1/j/jlab`; better location?
