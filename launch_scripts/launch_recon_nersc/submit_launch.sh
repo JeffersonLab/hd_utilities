@@ -118,33 +118,31 @@ do
       --ntasks="${NERSC_NMB_TASKS}"
       --cpus-per-task="${NERSC_MAX_THREADS_PER_TASK}"
       #--exclusive  # allocated nodes cannot be shared with other jobs/users  #TODO clarify whether this is beneficial or not; swif2 also has `-exclusive` option that can be set when creating the workflow; is it redundant to set it in both places?
-      --image="'${NERSC_CONTAINER_IMAGE}'"
-      --volume="'${NERSC_LAUNCH_DIR}:${NERSC_LAUNCH_DIR_CONTAINER}'"  # map `${NERSC_LAUNCH_DIR}` on host to `${NERSC_LAUNCH_DIR_CONTAINER}` in container
+      --image="${NERSC_CONTAINER_IMAGE}"
+      --volume="${NERSC_LAUNCH_DIR}:${NERSC_LAUNCH_DIR_CONTAINER}"  # map `${NERSC_LAUNCH_DIR}` on host to `${NERSC_LAUNCH_DIR_CONTAINER}` in container
       --module=cvmfs  # enable CVMFS in the container so it can access the `/group/halld` tree
-      --output="job_${RUN_NUMBER}_%j.out"  # write stdout and stderr of job to file named `job_<run number>_<job id>.out`, which will be copied by slurm into `${SLURM_SUBMIT_DIR}`  #TODO this is `/global/u1/j/jlab`; better location?
+      --output="job_${RUN_NUMBER}_%j.out"  # write stdout and stderr of job to file named `job_<run number>_<job id>.out` into working directory of job
       ::
       # job script to run at NERSC
       "${NERSC_LAUNCH_DIR}/script_job.py"
         --run-number="${RUN_NUMBER}"
         --launch-dir="${NERSC_LAUNCH_DIR_CONTAINER}"  # path of launch directory inside container
         --jana-config="${NERSC_LAUNCH_DIR_CONTAINER}/${JANA_CONFIG}"
-        --jana-calib-context="'${JANA_CALIB_CONTEXT}'"
-        --jana-geometry-url="'${JANA_GEOMETRY_URL}'"
+        --jana-calib-context="${JANA_CALIB_CONTEXT}"
+        --jana-geometry-url="${JANA_GEOMETRY_URL}"
         --halld-version-set-xml="${HALLD_VERSION_SET_XML}"
         --nmb-processes-per-task="${NERSC_NMB_PROCESSES_PER_TASK}"
         --nmb-threads-per-process="${NERSC_NMB_THREADS_PER_PROCESS}"
         --swif-output-root="${SWIF_OUTPUT_ROOT}"
   )
   SUBMIT_JOB_SCRIPT="submit_job_for_RUN${RUN_NUMBER}.sh"
-  echo "${SWIF2_CMD[@]}" >| "${SUBMIT_JOB_SCRIPT}"
-  # # generate shell-escaped version of command array and write it to file so it becomes a script that can be run directly
-  #TODO this would be the safer approach, but in `-output match:RUN132194/TASK024/*` this would escape the `*`; not sure if this would cause problems with swif2
-  # {
-  #   printf '%q ' "${CMD[@]}"
-  #   printf '\n'
-  # } >| "${SUBMIT_JOB_SCRIPT}"
+  # generate shell-escaped version of command array and write it to file so it becomes a script that can be run directly
+  {
+    printf '%q ' "${SWIF2_CMD[@]}"
+    printf '\n'
+  } >| "${SUBMIT_JOB_SCRIPT}"
   chmod +x "${SUBMIT_JOB_SCRIPT}"
-  "./${SUBMIT_JOB_SCRIPT}"
+  "./${SUBMIT_JOB_SCRIPT}"  # run the generated script to submit the job
 done
 
 # print status of workflow after submitting all jobs
