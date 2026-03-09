@@ -79,18 +79,16 @@ def main(args: argparse.Namespace) -> None:
     print(f"Error: mismatch of number of tasks = {expected_nmb_tasks} needed for {len(evio_file_names)} EVIO files and number of allocated slurm tasks = {nmb_tasks}")
     sys.exit(101)
 
-  # loop over raw data files and create task directories with links to input files
-  for evio_file_name in evio_file_names:
-    # get run and file numbers from EVIO file names; assumes file names are of the form `hd_rawdata_XXXXXX_YYY.evio`
-    # run_number = int(evio_file_name[11:17])
-    file_index = int(evio_file_name[18:21])
-    node_index = int(float(file_index) / args.nmb_processes_per_task)
-    # make work directory for task
-    #TODO why is this called for every file? we know how many files each job processes
-    work_dir_task = f"RUN{run_label}/TASK{node_index:03d}"
+  # loop over tasks, create task directories, and assign args.nmb_processes_per_task EVIO files to each task by linking them into the task's directory
+  for task_index in range(int(nmb_tasks)):
+    work_dir_task = f"RUN{run_label}/TASK{task_index:03d}"
+    print(f"Creating working directory for task {task_index}: '{work_dir_task}'")
     os.makedirs(work_dir_task, exist_ok = True)
-    # create symlink to evio file in task directory
-    os.symlink(f"../../{evio_file_name}", f"{work_dir_task}/{evio_file_name}")
+    file_index_start = task_index * args.nmb_processes_per_task
+    file_index_end   = min(file_index_start + args.nmb_processes_per_task, len(evio_file_names))
+    for evio_file_name in evio_file_names[file_index_start:file_index_end]:
+      print(f"Linking EVIO file '{evio_file_name}' into task directory '{work_dir_task}'")
+      os.symlink(f"../../{evio_file_name}", f"{work_dir_task}/{evio_file_name}")
 
   # debug error `slurmstepd: error: execve(): shifter: No such file or directory` leading to `srun` return code 2
   for debug_cmd in (
