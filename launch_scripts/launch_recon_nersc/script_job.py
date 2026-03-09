@@ -18,6 +18,7 @@ import argparse
 import functools
 import glob
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -149,6 +150,9 @@ def main(args: argparse.Namespace) -> None:
       absolute_file_path = os.path.join(root, file_name)
       # skip symlinked files
       if os.path.islink(absolute_file_path):
+        continue
+      # skip raw-data files that match hd_rawdata_XXXXXX_YYY.evio, where XXXXXX is the 6-digit run number and YYY is the 3-digit file number
+      if re.fullmatch(r"hd_rawdata_\d{6}_\d{3}\.evio", file_name):
         continue
       relative_file_paths.append(os.path.relpath(absolute_file_path, base_dir))
   # debug error `/bin/sh: swif2: command not found`
