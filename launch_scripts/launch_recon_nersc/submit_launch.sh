@@ -29,7 +29,12 @@ echo "Using launch scripts from git commit hash: $(cat "${THIS_SCRIPT_DIR}/DEPLO
 SRC="/home/${PRODUCTION_USER}/${PRODUCTION_LAUNCH_DIR}"
 DEST="${NERSC_HOST}:${NERSC_LAUNCH_DIR}"
 echo "Copying launch scripts and config files from '${SRC}' to '${DEST}'"
-ssh "${NERSC_HOST}" "mkdir --parents '${NERSC_LAUNCH_DIR}' && chown :${NERSC_PROJECT} '${NERSC_LAUNCH_DIR}'"  # rsync cannot set permissions on the destination directory if it does not exist beforehand
+ssh "${NERSC_HOST}" "mkdir --verbose --parents '${NERSC_LAUNCH_DIR}' && chown --verbose :${NERSC_PROJECT} '${NERSC_LAUNCH_DIR}'"  # rsync cannot set permissions on the destination directory if it does not exist beforehand
+if [ "${?}" -ne 0 ]
+then
+  echo "Failed to create launch directory '${NERSC_LAUNCH_DIR}' at NERSC with group ownership '${NERSC_PROJECT}' and write permissions for the group; aborting"
+  exit 1
+fi
 RSYNC_CMD=(rsync
   --verbose
   --delete  # ensure pristine copy
