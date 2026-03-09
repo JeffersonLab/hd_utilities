@@ -1,0 +1,5 @@
+[/PHOTON_BEAM/hodoscope/fadc_time_offsets]
+mask = 0,1 1,1
+
+[/PHOTON_BEAM/hodoscope/tdc_time_offsets]
+mask = 0,1 1,1
