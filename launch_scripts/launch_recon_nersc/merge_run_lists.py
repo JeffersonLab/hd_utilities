@@ -2,6 +2,8 @@
 
 """Merges two run lists into a single run list with unique run numbers"""
 
+from __future__ import annotations
+
 import argparse
 
 

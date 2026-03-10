@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Generates a list of runs and files to process for a given run period.
+Generates list of runs and files to process for a given run period.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ import dotenv
 
 import rcdb
 
-from launch_size import ensure_dict_value_exists
+from get_launch_size import ensure_dict_value_exists
 
 
 def get_file_number_from_evio_file_name(evio_file_path: str) -> int | None:
@@ -160,7 +160,7 @@ def main(args: argparse.Namespace) -> None:
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(
-    description = "Prepare directory structure and use srun to start a reconstruction task on each node (positional args).",
+    description = "Generates list of runs to process for a given run period.",
   )
   parser.add_argument("--launch_env_file",   default = "./launch.env", help = "Path to .env file defining the configuration variables of the reconstruction launch; default: '%(default)s'")
   parser.add_argument("--override_run_list", help = "Path to run-number list file to use instead of RCDB query")
