@@ -11,12 +11,24 @@ from dataclasses import dataclass
 from enum import Enum, auto
 import glob
 import os
+from typing import TypeVar
 
 import dotenv
 
 import rcdb
 
-from get_launch_size import ensure_dict_value_exists
+
+KeyType   = TypeVar("KeyType",   bound = object)  # any not-None type
+ValueType = TypeVar("ValueType", bound = object)  # any not-None type
+def ensure_dict_value_exists(
+  dictionary: dict[KeyType, ValueType | None],
+  key:        KeyType,
+) -> ValueType:
+  """Ensure that value for the given key exists in the dictionary and has a non-None value; return the value."""
+  value = dictionary[key]
+  if value is None:
+    raise ValueError(f"Missing value for key '{key}'")
+  return value
 
 
 def get_file_number_from_evio_file_name(evio_file_path: str) -> int | None:

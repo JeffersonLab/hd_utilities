@@ -34,6 +34,8 @@ if [ "${?}" -ne 0 ]
 then
   echo "Failed to create launch directory '${NERSC_LAUNCH_DIR}' at NERSC with group ownership '${NERSC_PROJECT}' and write permissions for the group; aborting"
   exit 1
+else
+  echo "Successfully created launch directory '${NERSC_LAUNCH_DIR}' at NERSC with group ownership '${NERSC_PROJECT}' and write permissions for the group"
 fi
 RSYNC_CMD=(rsync
   --verbose

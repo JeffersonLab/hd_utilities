@@ -10,22 +10,10 @@ from __future__ import annotations
 import argparse
 import glob
 import subprocess
-from typing import TypeVar
 
 import dotenv
 
-
-KeyType   = TypeVar("KeyType",   bound = object)  # any not-None type
-ValueType = TypeVar("ValueType", bound = object)  # any not-None type
-def ensure_dict_value_exists(
-  config: dict[KeyType, ValueType | None],
-  key:    KeyType,
-) -> ValueType:
-  """Ensure that value for the given key exists in the dictionary and has a non-None value; return the value."""
-  value = config[key]
-  if value is None:
-    raise ValueError(f"Missing value for key '{key}'")
-  return value
+from get_run_list import ensure_dict_value_exists
 
 
 def get_file_size_from_mss_stub(mss_file_path: str) -> int:
