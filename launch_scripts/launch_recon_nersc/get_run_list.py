@@ -11,41 +11,14 @@ from dataclasses import dataclass
 from enum import Enum, auto
 import glob
 import os
-from typing import TypeVar
-
-import dotenv
 
 import rcdb
 
-
-KeyType   = TypeVar("KeyType",   bound = object)  # any not-None type
-ValueType = TypeVar("ValueType", bound = object)  # any not-None type
-def ensure_dict_value_exists(
-  dictionary: dict[KeyType, ValueType | None],
-  key:        KeyType,
-) -> ValueType:
-  """Ensure that value for the given key exists in the dictionary and has a non-None value; return the value."""
-  value = dictionary[key]
-  if value is None:
-    raise ValueError(f"Missing value for key '{key}'")
-  return value
-
-
-def get_file_number_from_evio_file_name(evio_file_path: str) -> int | None:
-  """Extracts the 3-digit file number from the given EVIO file name,
-  or returns `None` if it cannot be extracted."""
-  evio_file_name = os.path.basename(evio_file_path)
-  if len(evio_file_name) < 23:
-    print(f"WARNING: EVIO file name '{evio_file_path}' is too short to contain a valid file number; expected at least 23 characters; ignoring")
-    return None
-  file_number_str = evio_file_name[20:23]  # extract the 3-digit file number from the file name pattern
-  try:
-    file_number = int(file_number_str)
-    return file_number
-  except ValueError:
-    print(f"WARNING: could not extract file number from EVIO file name '{evio_file_path}'; expected characters 20-22 to be a 3-digit number; ignoring")
-    return None
-
+from utilities import (
+  ensure_dict_value_exists,
+  get_config_dict_from_env_file,
+  get_run_numbers_from_file,
+)
 
 class EvioFilesErrorKind(Enum):
   """Enum for failure modes when getting list of EVIO files."""
@@ -131,9 +104,7 @@ def get_evio_files_per_run(
 
 
 def main(args: argparse.Namespace) -> None:
-  print(f"Loading .env file from '{args.launch_env_file}'")
-  launch_config: dict[str, str | None] = dotenv.dotenv_values(args.launch_env_file)
-  assert launch_config, f"Failed to load .env file from '{args.launch_env_file}'"
+  launch_config: dict[str, str | None] = get_config_dict_from_env_file(args.launch_env_file)
 
   print(f"Reading configuration variables from file '{args.launch_env_file}'")
   run_period           =     ensure_dict_value_exists(launch_config, "RUN_PERIOD")
@@ -150,9 +121,7 @@ def main(args: argparse.Namespace) -> None:
     print(f"Get run list for {run_number_min} <= run number <= {run_number_max} from RCDB using query '{rcdb_query}'")
     run_list = sorted([int(run.number) for run in db.select_runs(rcdb_query, run_number_min, run_number_max)])
   else:
-    print(f"Reading run list from file '{args.override_run_list}'")
-    with open(args.override_run_list, mode = "r") as file:
-      run_list = sorted(int(line.strip()) for line in file if line.strip())  # skip blank lines
+    run_list = get_run_numbers_from_file(args.override_run_list)
   print(f"Found {len(run_list)} runs")
 
   evio_files_per_run: dict[int, list[str]] = get_evio_files_per_run(

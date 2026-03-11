@@ -11,11 +11,13 @@ from __future__ import annotations
 import argparse
 import glob
 import os
-import re
 
-import dotenv
-
-from get_run_list import ensure_dict_value_exists
+from utilities import (
+  ensure_dict_value_exists,
+  get_config_dict_from_env_file,
+  get_job_size,
+  get_run_numbers_from_file,
+)
 
 
 # subdirectory names and the file names they contain, i.e. subdir name -> (file base name, file type)
@@ -47,51 +49,41 @@ RECON_SUBDIR_INFO: dict[str, tuple[str, str]] = {
 
 
 def main(args: argparse.Namespace) -> None:
-  print(f"Loading .env file from '{args.launch_env_file}'")
-  launch_config: dict[str, str | None] = dotenv.dotenv_values(args.launch_env_file)
-  assert launch_config, f"Failed to load .env file from '{args.launch_env_file}'"
+  launch_config: dict[str, str | None] = get_config_dict_from_env_file(args.launch_env_file)
 
   print(f"Reading configuration variables from file '{args.launch_env_file}'")
-  swif_output_root = ensure_dict_value_exists(launch_config, "SWIF_OUTPUT_ROOT")
+  run_number_list_file         =     ensure_dict_value_exists(launch_config, "RUN_NUMBER_LIST_FILE") if args.override_run_list is None else args.override_run_list
+  swif_output_root             =     ensure_dict_value_exists(launch_config, "SWIF_OUTPUT_ROOT")
+  swif_raw_data_root           =     ensure_dict_value_exists(launch_config, "SWIF_RAW_DATA_ROOT")
+  nersc_nmb_processes_per_task = int(ensure_dict_value_exists(launch_config, "NERSC_NMB_PROCESSES_PER_TASK"))
 
+  run_numbers: list[int] = get_run_numbers_from_file(run_number_list_file)
   target_dir = f"/lustre24/expphy/volatile/halld/offsite_prod/RunPeriod-2022-05/recon/test.prepare"  #TODO add command-line argument
 
   file_path_map: dict[str, str] = {}  # map from original file name to new file name
-
-  run_dirs = sorted(glob.glob(f"{swif_output_root}/RUN??????"))  #TODO use regexp to ensure that ?????? are digits
-  task_dir_name_pattern  = re.compile(r"^TASK\d{3}$")  # "TASK" + 3-digit run number
-  file_dir_name_pattern  = re.compile(r"^FILE\d{3}$")  # "FILE" + 3-digit run number
-  node_file_name_pattern = re.compile(r"^node\..*$")  # "node.*"
-  for run_dir in run_dirs:
+  for run_number in run_numbers:  # loop over runs
+    job_log_files: list[str] = sorted(glob.glob(f"{swif_output_root}/job_{run_number:06d}*"))  #TODO move into separate function and check that all files are there
+    run_dir = f"{swif_output_root}/RUN{run_number:06d}"
+    if not os.path.isdir(run_dir):
+      print(f"WARNING: '{run_dir}' does not exist or is not a directory; ignoring.")
+      continue
     print(f"Processing run directory '{run_dir}")
-    run_number = int(os.path.basename(run_dir).removeprefix("RUN"))
-    task_dirs = sorted(glob.glob(f"{run_dir}/*"))  # a run directory should only contain task directories
-    for task_dir in task_dirs:
-      # check that it is a task directory
-      if not task_dir_name_pattern.match(os.path.basename(task_dir)):
-        print(f"WARNING: unexpected file or directory '{task_dir}'; ignoring.")
+    nmb_files, nmb_tasks, _, _, = get_job_size(run_number, swif_raw_data_root, nersc_nmb_processes_per_task)
+    for task_index in range(nmb_tasks):  # loop over tasks
+      task_dir = f"{run_dir}/TASK{task_index:03d}"
       if not os.path.isdir(task_dir):
-        raise ValueError(f"ERROR: '{task_dir}' is not a directory; aborting.")
+        raise ValueError(f"ERROR: '{task_dir}' does not exist or is not a directory; aborting.")
       print(f"  Processing task directory '{task_dir}")
-      all_entries_task_dir = sorted(glob.glob(f"{task_dir}/*"))
-      file_dirs  = []  # directories with hd_root output for a single input file
-      node_files = []  # files with node information
-      for entry in all_entries_task_dir:
-        entry_name = os.path.basename(entry)
-        # filter out file directories
-        if os.path.isdir(entry) and file_dir_name_pattern.match(entry_name):
-          file_dirs.append(entry)
-        # filter out node files
-        if os.path.isfile(entry) and node_file_name_pattern.match(entry_name):
-          node_files.append(entry)
-      # ensure that there are no other files or directories in the task directory
-      if len(all_entries_task_dir) > len(file_dirs) + len(node_files):
-        unexpected_entries = set(all_entries_task_dir) - set(file_dirs) - set(node_files)
-        print(f"WARNING: ignoring the following unexpected files or directories in '{task_dir}': {unexpected_entries}")
-      for file_dir in file_dirs:
+      node_log_files: list[str] = sorted(glob.glob(f"{task_dir}/node.*"))  #TODO move into separate function and check that all files are there
+      file_number_start = task_index * nersc_nmb_processes_per_task
+      file_number_end   = min(file_number_start + nersc_nmb_processes_per_task, nmb_files)
+      for file_number in range(file_number_start, file_number_end):  # loop over EVIO file numbers
+        file_dir = f"{task_dir}/FILE{file_number:03d}"
+        if not os.path.isdir(file_dir):
+          raise ValueError(f"ERROR: '{file_dir}' does not exist or is not a directory; aborting.")
         print(f"    Processing file directory '{file_dir}")
-        file_number = int(os.path.basename(file_dir).removeprefix("FILE"))
-        for _, (file_base_name, file_type) in RECON_SUBDIR_INFO.items():
+        #TODO also check hd_root_log_files
+        for _, (file_base_name, file_type) in RECON_SUBDIR_INFO.items():  # loop over hd_root output files
           file_name = f"hd_rawdata_{run_number:06d}_{file_number:03d}.{file_base_name}.{file_type}" if file_type == "evio" else f"{file_base_name}.{file_type}"
           file_path = f"{file_dir}/{file_name}"
           if not os.path.isfile(file_path):
@@ -109,5 +101,6 @@ if __name__ == "__main__":
     description = "Generates list of runs to process for a given run period.",
   )
   parser.add_argument("--launch_env_file", default = "./launch.env", help = "Path to .env file defining the configuration variables of the reconstruction launch; default: '%(default)s'")
+  parser.add_argument("--override_run_list", help = "Path to run-number list file to use instead of RCDB query")
   args = parser.parse_args()
   main(args)

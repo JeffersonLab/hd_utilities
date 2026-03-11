@@ -11,9 +11,11 @@ import glob
 import os
 import re
 
-import dotenv
-
-from get_launch_size import ensure_dict_value_exists
+from utilities import (
+  ensure_dict_value_exists,
+  get_config_dict_from_env_file,
+  get_run_numbers_from_file,
+)
 
 
 # subdirectory names and the file names they contain, i.e. subdir name -> (file base name, file type)
@@ -41,9 +43,7 @@ RECON_SUBDIR_INFO: dict[str, tuple[str, str]] = {
 
 
 def main(args: argparse.Namespace) -> None:
-  print(f"Loading .env file from '{args.launch_env_file}'")
-  launch_config: dict[str, str | None] = dotenv.dotenv_values(args.launch_env_file)
-  assert launch_config, f"Failed to load .env file from '{args.launch_env_file}'"
+  launch_config: dict[str, str | None] = get_config_dict_from_env_file(args.launch_env_file)
 
   print(f"Reading configuration variables from file '{args.launch_env_file}'")
   run_period           = ensure_dict_value_exists(launch_config, "RUN_PERIOD")  # e.g. 2022-05
@@ -52,10 +52,7 @@ def main(args: argparse.Namespace) -> None:
   recon_data_root_dir  = f"/mss/halld/RunPeriod-{run_period}/recon/{recon_version_label}"
   raw_data_root_dir    = f"/mss/halld/RunPeriod-2022-05/rawdata"
 
-  # read run numbers from run-number list file
-  run_numbers_from_list: list[int] = []
-  with open(run_number_list_file, mode = "r") as file:
-    run_numbers_from_list = sorted(int(line.strip()) for line in file if line.strip())  # skip blank lines
+  run_numbers_from_list: list[int] = get_run_numbers_from_file(run_number_list_file)
 
   run_dir_name_pattern = re.compile(r"^\d{6}$")  # 6-digit run number
   for recon_subdir, (recon_file_base_name, recon_file_type) in RECON_SUBDIR_INFO.items():
