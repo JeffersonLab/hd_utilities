@@ -22,15 +22,16 @@ from utilities import (
 
 
 # subdirectory names and the file names they contain, i.e. subdir name -> (file base name, file type)
-RECON_SUBDIR_INFO: dict[str, tuple[str, str]] = {
+#NOTE in most cases subdir name == file base name
+RECON_SUBDIR_BASENAME_MAP: dict[str, tuple[str, str]] = {
   # EVIO files
   "BCAL-LED" :               ("BCAL-LED",               "evio"),
-  "cpp_2c_skim" :            ("cpp_2c",                 "evio"),  #TODO _skim name?
+  "cpp_2c" :                 ("cpp_2c",                 "evio"),
   "DIRC-LED" :               ("DIRC-LED",               "evio"),  #TODO mostly missing in ver01
   "ECAL-LED" :               ("ECAL-LED",               "evio"),  #TODO ECAL vs. FCAL in ver01?
   "epem_selection" :         ("epem_selection",         "evio"),  # new w.r.t ver01
-  "npp_2g_skim" :            ("npp_2g",                 "evio"),  #TODO _skim name?
-  "npp_2pi0_skim" :          ("npp_2pi0",               "evio"),  #TODO _skim name?
+  "npp_2g" :                 ("npp_2g",                 "evio"),
+  "npp_2pi0" :               ("npp_2pi0",               "evio"),
   "pippim_selection" :       ("pippim_selection",       "evio"),
   "random" :                 ("random",                 "evio"),
   "sync" :                   ("sync",                   "evio"),
@@ -46,6 +47,10 @@ RECON_SUBDIR_INFO: dict[str, tuple[str, str]] = {
   "tree_tof_eff" :           ("tree_tof_eff",           "root"),
   "tree_TPOL" :              ("tree_TPOL",              "root"),
   "tree_TS_scaler" :         ("tree_TS_scaler",         "root"),
+}
+# construct reverse map file base name -> (subdir name, file type)
+RECON_BASENAME_SUBDIR_MAP: dict[str, tuple[str, str]] = {
+  file_base_name : (subdir_name, file_type) for subdir_name, (file_base_name, file_type) in RECON_SUBDIR_BASENAME_MAP.items()
 }
 
 
