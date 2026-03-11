@@ -93,15 +93,15 @@ double mangle(int pid, double m, double nindex) {
 }
 
 void reco_lut_simple(TString infile = "pip_p3_theta4.root", TString inlut = "/work/halld/home/jrsteven/RunPeriod-2019-11/dircsim-2019_11-ver05/lut/lut_all_avr.root",
-                 int ibar = 7, int ibin = -1, double moms = 3.0, int ivar=0) {
+                 int ibar = 7, int ibin = -1, double moms = 3.0, int ivar=0, double barend = -292.96, double radiatorL = 489.8, double average_wavelength = 394.0) {
 
   int indd = -1;
   const int nodes = 5184;
   int glx_nch = 5184;
-  const int luts = 24;
+  const int luts = 48;
 
   double c = 29.9792458; // speed of light in vacuum (cm/ns)
-  double average_wavelength = 394; // nm : 412 is average, 394 gives better performance?
+  //double average_wavelength = 394; // nm : 412 is average, 394 gives better performance?
   double nindex = n_fused_silica_nm->Eval(average_wavelength); // fused silica refractive index
   double vg_light_fused_silica = c / ng_fused_silica_nm->Eval(average_wavelength); // group velocity in fused silica (cm/ns)
 
@@ -109,7 +109,7 @@ void reco_lut_simple(TString infile = "pip_p3_theta4.root", TString inlut = "/wo
   bool truthHitSim = false;
   
   // apply correction factors to simulation (e.g. hit detection efficiency)
-  bool sim = true;
+  bool sim = false;
 
   // only use direct or reflected photons
   bool onlyDirect = false;
@@ -151,8 +151,8 @@ void reco_lut_simple(TString infile = "pip_p3_theta4.root", TString inlut = "/wo
   TString stdiff = ";t_{measured}-t_{calculated} [ns];entries [#]";
   TString scdiff = ";#theta_{C reco} - #theta_{C expected} [mrad];entries [#]";
 
-  double radiatorL = 489.8; // nominal = 4*122.5;
-  double barend = -292.96; // nominal = 4*122.5-196.0;
+  //double radiatorL = 489.8; // nominal = 4*122.5;
+  //double barend = -292.96; // nominal = 4*122.5-196.0;
 
   double minChangle = 0.6;
   double maxChangle = 0.9;
@@ -244,11 +244,12 @@ void reco_lut_simple(TString infile = "pip_p3_theta4.root", TString inlut = "/wo
 
   TGraph cagr;
   double bartime, luttime, diftime, adiff, len, leny, lenz;
-  double dibin = -100 + ibin * 20 + 10;
+  double dibin = -100 + ibin * 20 + 10; // center of 20 cm wide bins 0:[-100,-80] 1:[-80,-60] ... 
 
   TCut cut = "";
   if (ibar > -1) cut += Form("(DrcEvent.fId == %d)", ibar);
-  if (ibin > -1) cut += Form("fabs(DrcEvent.fPosition.fX-%f)<10", dibin); // 10
+  if (ibin > -1) cut += Form("fabs(DrcEvent.fPosition.fX-%f)<10", dibin); // 20 cm bins
+  if (moms > -1) cut += Form("fabs(DrcEvent.fMomentum.fMag-%f)<0.25", moms); // 0.5 GeV/c window
   cut.Print();
 
   if(!glx_initc(infile,1,"data/reco_lut")) return;
@@ -263,11 +264,30 @@ void reco_lut_simple(TString infile = "pip_p3_theta4.root", TString inlut = "/wo
       if(e%1000 == 0)
 	      cout<<"Particle count "<<count[2]<<" "<<count[3]<<endl;
 
+      if (glx_event->GetType() > 0) { // && !sim) { // beam // JRS test 
+        // if(glx_event->GetDcHits()<25) continue;
+        // if (glx_event->GetTofTrackDist() > 1.5) continue;
+        if (fabs(glx_event->GetPdg()) == 211) {
+          if (glx_event->GetChiSq() > 10) continue;
+          if (fabs(glx_event->GetInvMass() - 0.75) > 0.15) continue;     // 0.05
+          if (fabs(glx_event->GetMissMass()) > 0.05) continue; // 0.001
+        } else if (fabs(glx_event->GetPdg()) == 321) {
+          if (glx_event->GetChiSq() > 10) continue;
+          if (fabs(glx_event->GetInvMass() - 1.02) > 0.02) continue;     // 0.02
+          if (fabs(glx_event->GetMissMass()) > 0.05) continue; // 0.007
+        } else continue;
+      } else { // geant
+        noise = 0.2;
+      }
+
       int pdgId = glx_findPdgId(glx_event->GetPdg());
       int bar = glx_event->GetId();
       int lid = bar;
       int opbox = 0;
       double time0 = glx_event->GetTime();
+
+      if (glx_event->GetPdg() == 321) hphi->Fill(glx_event->GetInvMass());
+      if (glx_event->GetPdg() == 211) hrho->Fill(glx_event->GetInvMass());
 
       posInBar = glx_event->GetPosition();
       posInBar_true = glx_event->GetPosition_Truth();
@@ -863,7 +883,7 @@ void reco_lut_simple(TString infile = "pip_p3_theta4.root", TString inlut = "/wo
     hPathIdR->Draw();
   }
 
-  glx_canvasSave("data/reco_lut_02_scan_sel_05_barscan_lr", 2);
+  glx_canvasSave("plots/", 2);
 
   // write summary information to text file
   ofstream outfile;
