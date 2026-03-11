@@ -141,7 +141,7 @@ def process_file_dir(
     raise ValueError(f"ERROR: '{file_dir}' does not exist or is not a directory; aborting.")
   print(f"    Processing file directory '{file_dir}")
   # always process log files
-  job_info_dir = f"{target_dir}/job_info_{run_number:06d}_{file_number:03d}"  # target directory for all log files
+  job_info_dir = f"{target_dir}/job_info/{run_number:06d}/job_info_{run_number:06d}_{file_number:03d}"  # target directory for all log files
   file_move_paths: list[tuple[str, str]] = []
   file_move_paths += process_hd_root_log_files(file_dir, job_info_dir)  # pairs of old and new file paths for moving
   file_move_paths += process_task_log_files   (f"{job_dir}/RUN{run_number:06d}/TASK{task_index:03d}", job_info_dir)
@@ -159,15 +159,18 @@ def process_file_dir(
     print(f"WARNING: hd_root return code for run {run_number} and EVIO file number {file_number} is {hd_root_return_code}; ignoring EVIO file")
     return file_move_paths
   # process hd_root output files
-  for _, (file_base_name, file_type) in RECON_SUBDIR_INFO.items():
+  for _, (file_base_name, file_type) in RECON_SUBDIR_BASENAME_MAP.items():
     file_name = f"hd_rawdata_{run_number:06d}_{file_number:03d}.{file_base_name}.{file_type}" if file_type == "evio" else f"{file_base_name}.{file_type}"
     file_path = f"{file_dir}/{file_name}"
     if not os.path.isfile(file_path):
       print(f"WARNING: expected file '{file_path}' is missing; ignoring")
       continue
-    # fix file names of evio files and make file names of non-evio files unique
-    new_file_name = f"{file_base_name}_{run_number:06d}_{file_number:03d}.{file_type}"
-    file_move_paths.append((file_path, f"{target_dir}/{new_file_name}"))
+    new_file_name = file_name.replace(f".{file_type}", f"_{run_number:06d}_{file_number:03d}.{file_type}")  # ensure file names are unique (as Igal did it)
+    #NOTE for evio skims the line above produces file names such as `hd_rawdata_100532_000.BCAL-LED_100532_000.evio`
+    # the line below fixes the names evio skims to `BCAL-LED_100532_000.evio`:
+    # new_file_name = f"{file_base_name}_{run_number:06d}_{file_number:03d}.{file_type}"  # fix file names of evio files and make file names of non-evio files unique
+    new_subdir = f"{RECON_BASENAME_SUBDIR_MAP[file_base_name][0]}/{run_number:06d}"
+    file_move_paths.append((file_path, f"{target_dir}/{new_subdir}/{new_file_name}"))
   return file_move_paths
 
 
