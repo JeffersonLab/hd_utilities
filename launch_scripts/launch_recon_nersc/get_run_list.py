@@ -32,7 +32,7 @@ class EvioFilesError:
   kind:   EvioFilesErrorKind
   detail: str | None = None
 
-def get_evio_files(
+def get_evio_files_for_run(
   run_info,         # RCDB run info object to read information from
   run_period: str,  # e.g. "2022-05"
 ) -> tuple[list[str], list[EvioFilesError]]:
@@ -63,7 +63,7 @@ def get_evio_files(
   return evio_files, rcdb_errors
 
 
-def get_evio_files_per_run(
+def get_evio_files(
   db:         rcdb.RCDBProvider,  # RCDB object to read run information from
   run_period: str,                # e.g. '2022-05'
   run_list:   list[int],          # list of runs to process
@@ -78,7 +78,7 @@ def get_evio_files_per_run(
     # get list of evio files for this run, and any errors encountered in the process
     evio_files:  list[str]
     rcdb_errors: list[EvioFilesError]
-    evio_files, rcdb_errors = get_evio_files(run_info, run_period)
+    evio_files, rcdb_errors = get_evio_files_for_run(run_info, run_period)
     evio_files_per_run[run_number] = evio_files
     # tally any errors returned for this run
     for err in rcdb_errors:
@@ -124,7 +124,7 @@ def main(args: argparse.Namespace) -> None:
     run_list = get_run_numbers_from_file(args.override_run_list)
   print(f"Found {len(run_list)} runs")
 
-  evio_files_per_run: dict[int, list[str]] = get_evio_files_per_run(
+  evio_files_per_run: dict[int, list[str]] = get_evio_files(
     db         = db,
     run_period = run_period,
     run_list   = run_list,
@@ -143,7 +143,7 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(
     description = "Generates list of runs to process for a given run period.",
   )
-  parser.add_argument("--launch_env_file",   default = "./launch.env", help = "Path to .env file defining the configuration variables of the reconstruction launch; default: '%(default)s'")
+  parser.add_argument("--launch_env_file", default = "./launch.env", help = "Path to .env file defining the configuration variables of the reconstruction launch; default: '%(default)s'")
   parser.add_argument("--override_run_list", help = "Path to run-number list file to use instead of RCDB query")
   args = parser.parse_args()
   main(args)

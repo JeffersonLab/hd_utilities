@@ -64,7 +64,7 @@ def main(args: argparse.Namespace) -> None:
   # get job working directory and list of input files
   work_dir_job = os.getcwd()  # working directory of job as created by swif2, i.e. `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}; (identical to `${SWIF_JOB_STAGE_DIR}` and `${SWIF_JOB_WORK_DIR}`)
   print(f"Job script is running in directory: '{work_dir_job}'")
-  evio_file_names = sorted(glob.glob("hd_rawdata_??????_???.evio"))  # list of raw data file names in working directory of job
+  evio_file_names: list[str] = sorted(glob.glob("hd_rawdata_??????_???.evio"))  # list of raw data file names in working directory of job
   #TODO filter bad files if list is available?
   print(f"Found {len(evio_file_names)} EVIO files that will be processed by this job:")
   for index, evio_file_name in enumerate(evio_file_names):
