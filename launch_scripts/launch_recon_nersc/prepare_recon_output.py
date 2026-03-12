@@ -53,7 +53,7 @@ RECON_BASENAME_SUBDIR_MAP: dict[str, tuple[str, str]] = {
   file_base_name : (subdir_name, file_type) for subdir_name, (file_base_name, file_type) in RECON_SUBDIR_BASENAME_MAP.items()
 }
 
-
+#TODO reorganize code into a class
 def process_job_log_files(
   run_number:   int,
   nmb_tasks:    int,
@@ -229,6 +229,7 @@ def main(args: argparse.Namespace) -> None:
   target_dir = f"/lustre24/expphy/volatile/halld/offsite_prod/RunPeriod-2022-05/recon/test.prepare"  #TODO add command-line argument
 
   file_move_paths: list[tuple[str, str]] = []  # pairs of old and new file paths for moving
+  #TODO for some log files file_move_paths contains multiple entries, i.e. these files need to be copied and not just moved
   for run_number in run_numbers:  # loop over runs
     file_move_paths += process_run_dir(run_number, swif_output_root, swif_raw_data_root, nersc_nmb_processes_per_task, target_dir)
   for old_file_path, new_file_path in file_move_paths:

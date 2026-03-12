@@ -58,10 +58,10 @@ def main(args: argparse.Namespace) -> None:
   for recon_subdir, (recon_file_base_name, recon_file_type) in RECON_SUBDIR_INFO.items():
     # get run numbers in recon subdir
     run_numbers_from_subdirs: list[int] = []
-    for entry in sorted(glob.glob(f"{recon_data_root_dir}/{recon_subdir}/*")):  # loop over all entries in the recon subdir
-      entry_name = os.path.basename(entry)
-      if os.path.isdir(entry) and run_dir_name_pattern.match(entry_name):  # filter for directories with 6-digit names
-        run_numbers_from_subdirs.append(int(entry_name))
+    for item in sorted(glob.glob(f"{recon_data_root_dir}/{recon_subdir}/*")):  # loop over all items in the recon subdir
+      item_name = os.path.basename(item)
+      if os.path.isdir(item) and run_dir_name_pattern.match(item_name):  # filter for directories with 6-digit names
+        run_numbers_from_subdirs.append(int(item_name))
     run_numbers_from_subdirs.sort()
     # check that the run numbers from the list file match the run numbers from the recon subdir
     if run_numbers_from_subdirs != run_numbers_from_list:
