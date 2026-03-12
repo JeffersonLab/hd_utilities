@@ -35,6 +35,7 @@ print = functools.partial(print, flush = True)
 def print_arguments(args: argparse.Namespace) -> None:
   """Print all command-line arguments and their values and the git hash."""
   this_script_file_name = os.path.basename(sys.argv[0])  # get file name of script that was launched
+  print("-------------------------------------------------------------------------------")
   print(f"Running script {this_script_file_name} with arguments:")
   max_arg_name_length = max(len(arg_name) for arg_name in vars(args).keys())
   for arg_name, arg_value in sorted(vars(args).items()):  # sort keys for stable, tidy output
@@ -44,6 +45,7 @@ def print_arguments(args: argparse.Namespace) -> None:
     deployed_git_hash = open(f"{this_script_dir}/DEPLOYED_HD_UTILITIES_GIT_HASH", "r", encoding = "utf-8").read().strip()
     print(f"Using launch scripts from git commit hash: {deployed_git_hash}")
   #TODO add case where the script is run from the git repo
+  print("-------------------------------------------------------------------------------")
 
 
 def write_env_to_file(output_file_name: str = "./env") -> None:
