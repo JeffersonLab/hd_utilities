@@ -55,6 +55,60 @@ def write_env_to_file(output_file_name: str = "./env") -> None:
   print(f"Wrote environment variables to '{output_file_name}'")
 
 
+def get_hd_root_return_code(hd_root_rc_file_path: str) -> Optional[int]:
+  """Read the hd_root return code from the given file and return it as an int or `None` if unsucessful."""
+  try:
+    with open(hd_root_rc_file_path, "r", encoding="utf-8") as file:
+      hd_root_rc_file_content = file.read()
+  except OSError as e:  # file not found, permission denied, etc.
+    print(f"WARNING: unable to open hd_root return-code file '{hd_root_rc_file_path}': {e}")
+    return None
+  match = re.search(r"exit code (\d+)$", hd_root_rc_file_content)
+  if not match:
+    print(f"WARNING: cannot get hd_root return code from malformed file '{hd_root_rc_file_path}': '{hd_root_rc_file_content}'")
+    return None
+  return int(match.group(1))
+
+
+def get_output_file_paths(
+  run_number:       int,
+  swif_output_root: str,
+) -> List[Tuple[str, str]]:
+  """Get list with local relative paths w.r.t. current directory and absolute remote destination paths of all output files that should be transferred back to JLab"""
+  # this function assumes that the current directory is the working directory of the job
+  # first greedily collect all potential output items, then filter out directories and files that should not be transferred back to JLab
+  relative_output_paths: List[str] = []
+  relative_output_paths += sorted(glob.glob(f"*"))  # include all items in job dir
+  relative_output_paths += sorted(glob.glob(f"RUN{run_number:06d}/*"))  # include all items in run dir
+  # loop over task dirs
+  task_dirs: List[str] = sorted(glob.glob(f"RUN{run_number:06d}/TASK???"))
+  for task_dir in task_dirs:
+    relative_output_paths += sorted(glob.glob(f"{task_dir}/*"))  # include all items in task dir
+    # loop over file dirs
+    file_dirs: List[str] = sorted(glob.glob(f"{task_dir}/FILE???"))
+    for file_dir in file_dirs:
+      hd_root_return_code = get_hd_root_return_code(f"{file_dir}/hd_root.rc")
+      if hd_root_return_code is None or hd_root_return_code != 0:
+        # do not copy hd_root output files for failed hd_root processes; but try to recover debug info
+        print(f"WARNING: skipping hd_root output files in '{file_dir}' because hd_root return code is {hd_root_return_code} != 0")
+        relative_output_paths += [f"{file_dir}/hd_root.err", f"{file_dir}/hd_root.out", f"{file_dir}/hd_root.rc"]  # transfer hd_root log files for debugging
+        relative_output_paths += sorted(glob.glob(f"{file_dir}/core.hd_root*"))  # transfer core files for debugging
+        continue
+      relative_output_paths += sorted(glob.glob(f"{file_dir}/*"))  # include all items in file dir
+  output_file_paths: List[Tuple[str, str]] = []  # list of pairs of relative local file paths and absolute remote destination file paths
+  for relative_output_path in relative_output_paths:
+    # filter out all directories and nonexisting and unwanted and files
+    if not os.path.isfile(relative_output_path) or os.path.islink(relative_output_path):  # keep only existing, non-symlinked files
+      continue
+    output_file_name = os.path.basename(relative_output_path)
+    if output_file_name.startswith(".") or output_file_name.startswith("__"):  # skip hidden files and swif2 system files
+      continue
+    if re.fullmatch(r"hd_rawdata_\d{6}_\d{3}\.evio", output_file_name):  # skip raw-data files that match hd_rawdata_XXXXXX_YYY.evio, with 6-digit run number XXXXXX and 3-digit file number YYY
+      continue
+    output_file_paths.append((relative_output_path, f"{swif_output_root}/{relative_output_path}"))
+  return output_file_paths
+
+
 def main(args: argparse.Namespace) -> None:
   start_time = time.time()
   print_arguments(args)
@@ -143,24 +197,6 @@ def main(args: argparse.Namespace) -> None:
   # start the tasks, or ii) the highest exit code of any failed tasks.
   # If a task is killed by signal, 128 + signal number is returned.
 
-  # get relative paths of all files in job's working directory
-  base_dir = "."
-  relative_file_paths = []
-  for root, dir_names, file_names in os.walk(base_dir):
-    # skip hidden directories
-    dir_names[:] = [dir_name for dir_name in dir_names if not dir_name.startswith(".")]
-    for file_name in file_names:
-      # skip hidden and swif2 system files
-      if file_name.startswith(".") or file_name.startswith("__"):
-        continue
-      absolute_file_path = os.path.join(root, file_name)
-      # skip symlinked files
-      if os.path.islink(absolute_file_path):
-        continue
-      # skip raw-data files that match hd_rawdata_XXXXXX_YYY.evio, where XXXXXX is the 6-digit run number and YYY is the 3-digit file number
-      if re.fullmatch(r"hd_rawdata_\d{6}_\d{3}\.evio", file_name):
-        continue
-      relative_file_paths.append(os.path.relpath(absolute_file_path, base_dir))
   # debug error `/bin/sh: swif2: command not found`
   for debug_cmd in (
     "ls -l ./.swif/swif2",
@@ -172,8 +208,10 @@ def main(args: argparse.Namespace) -> None:
     subprocess.run(debug_cmd, shell = True, check = False)
   print(f"shutil.which('swif2') = {shutil.which('swif2')}")
   # define all output files that swif2 should transfer back to JLab
-  for relative_file_path in sorted(relative_file_paths):
-    output_cmd = f"./.swif/swif2 output '{relative_file_path}' '{args.swif_output_root}/{relative_file_path}'"  # for some reason, swif2 is not in path
+  output_file_paths: List[Tuple[str, str]] = get_output_file_paths(args.run_number, args.swif_output_root)
+  print(f"Transferring {len(output_file_paths)} files back to JLab")
+  for local_output_file_path, remote_output_file_path in output_file_paths:
+    output_cmd = f"./.swif/swif2 output '{local_output_file_path}' '{remote_output_file_path}'"  # for some reason, swif2 is not in path
     print(f"Defining output file: '{output_cmd}'")
     subprocess.run(output_cmd, shell = True, check = False)
 
