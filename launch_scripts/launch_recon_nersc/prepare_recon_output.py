@@ -165,10 +165,7 @@ def process_file_dir(
     if not os.path.isfile(file_path):
       print(f"WARNING: expected file '{file_path}' is missing; ignoring")
       continue
-    new_file_name = file_name.replace(f".{file_type}", f"_{run_number:06d}_{file_number:03d}.{file_type}")  # ensure file names are unique (as Igal did it)
-    #NOTE for evio skims the line above produces file names such as `hd_rawdata_100532_000.BCAL-LED_100532_000.evio`
-    # the line below fixes the names evio skims to `BCAL-LED_100532_000.evio`:
-    # new_file_name = f"{file_base_name}_{run_number:06d}_{file_number:03d}.{file_type}"  # fix file names of evio files and make file names of non-evio files unique
+    new_file_name = f"{file_base_name}_{run_number:06d}_{file_number:03d}.{file_type}"  # fix file names of evio files and make file names of non-evio files unique
     new_subdir = f"{RECON_BASENAME_SUBDIR_MAP[file_base_name][0]}/{run_number:06d}"
     file_move_paths.append((file_path, f"{target_dir}/{new_subdir}/{new_file_name}"))
   return file_move_paths
