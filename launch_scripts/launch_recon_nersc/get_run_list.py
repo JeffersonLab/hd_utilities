@@ -11,9 +11,11 @@ from dataclasses import dataclass
 from enum import Enum, auto
 import glob
 import os
+import time
 
 import rcdb
 
+from script_job import print_arguments
 from utilities import (
   ensure_dict_value_exists,
   get_config_dict_from_env_file,
@@ -45,13 +47,13 @@ def get_evio_files_for_run(
     print(f"WARNING: RCDB does not contain a value for `evio_files_count` for run {run_number}")
     rcdb_errors.append(EvioFilesError(kind = EvioFilesErrorKind.NO_RCDB_FILES_COUNT))
     evio_pattern = f"{raw_data_dir}/hd_rawdata_{run_number:06d}_???.evio"
-    print(f"Instead count files matching '{evio_pattern}'")
+    print(f"Counting files matching '{evio_pattern}' instead")
     evio_files_count = len(glob.glob(evio_pattern))
   if evio_files_count is None or evio_files_count == 0:
     print(f"WARNING: could not find any EVIO files for run {run_number}")
     rcdb_errors.append(EvioFilesError(kind = EvioFilesErrorKind.NO_FILES_FOUND))
     return [], rcdb_errors
-  print(f"Ensure all {evio_files_count:3d} EVIO files for run {run_number} exist")
+  print(f"Ensuring all {evio_files_count:3d} EVIO files for run {run_number} exist")
   evio_files: list[str] = []
   for evio_file_index in range(evio_files_count):
     evio_file_path = f"{raw_data_dir}/hd_rawdata_{run_number:06d}_{evio_file_index:03d}.evio"
@@ -104,6 +106,8 @@ def get_evio_files(
 
 
 def main(args: argparse.Namespace) -> None:
+  start_time = time.time()
+  print_arguments(args)
   launch_config: dict[str, str | None] = get_config_dict_from_env_file(args.launch_env_file)
 
   print(f"Reading configuration variables from file '{args.launch_env_file}'")
@@ -118,7 +122,7 @@ def main(args: argparse.Namespace) -> None:
   db = rcdb.RCDBProvider(f'mysql://{rcdb_user}@{rcdb_host}/rcdb2')
   run_list: list[int] = []
   if args.override_run_list is None:
-    print(f"Get run list for {run_number_min} <= run number <= {run_number_max} from RCDB using query '{rcdb_query}'")
+    print(f"Getting run list for {run_number_min} <= run number <= {run_number_max} from RCDB using query '{rcdb_query}'")
     run_list = sorted([int(run.number) for run in db.select_runs(rcdb_query, run_number_min, run_number_max)])
   else:
     run_list = get_run_numbers_from_file(args.override_run_list)
@@ -129,7 +133,7 @@ def main(args: argparse.Namespace) -> None:
     run_period = run_period,
     run_list   = run_list,
   )
-  print(f"Write list of run numbers to './{run_number_list_file}'")
+  print(f"Writing list of run numbers to './{run_number_list_file}'")
   try:
     with open(f"./{run_number_list_file}", mode = "x") as file:
       for run_number in sorted(evio_files_per_run.keys()):
@@ -137,6 +141,9 @@ def main(args: argparse.Namespace) -> None:
           file.write(f"{run_number}\n")
   except FileExistsError:
     print(f"WARNING: file './{run_number_list_file}' already exists; skipping write")
+
+  elapsed_time = int(time.time() - start_time)
+  print(f"Wall time consumed by script: {elapsed_time // 60} min, {elapsed_time % 60} sec")
 
 
 if __name__ == "__main__":
