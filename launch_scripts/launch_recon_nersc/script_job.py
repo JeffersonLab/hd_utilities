@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+#NOTE this script needs to be compatible with Python 3.6
 
 """
 Main job script that processes all files of a given run.
@@ -24,10 +25,25 @@ import shutil
 import subprocess
 import sys
 import time
+from typing import List, Tuple, Optional
 
 
 # always flush print() to reduce garbling of log files due to buffering
 print = functools.partial(print, flush = True)
+
+
+def print_arguments(args: argparse.Namespace) -> None:
+  """Print all command-line arguments and their values and the git hash."""
+  this_script_file_name = os.path.basename(sys.argv[0])  # get file name of script that was launched
+  print(f"Running script {this_script_file_name} with arguments:")
+  max_arg_name_length = max(len(arg_name) for arg_name in vars(args).keys())
+  for arg_name, arg_value in sorted(vars(args).items()):  # sort keys for stable, tidy output
+    print(f"{arg_name:>{max_arg_name_length + 2}} : {arg_value}")
+  this_script_dir = os.path.dirname(os.path.abspath(__file__))
+  if os.path.isfile(f"{this_script_dir}/DEPLOYED_HD_UTILITIES_GIT_HASH"):
+    deployed_git_hash = open(f"{this_script_dir}/DEPLOYED_HD_UTILITIES_GIT_HASH", "r", encoding = "utf-8").read().strip()
+    print(f"Using launch scripts from git commit hash: {deployed_git_hash}")
+  #TODO add case where the script is run from the git repo
 
 
 def write_env_to_file(output_file_name: str = "./env") -> None:
@@ -41,14 +57,7 @@ def write_env_to_file(output_file_name: str = "./env") -> None:
 
 def main(args: argparse.Namespace) -> None:
   start_time = time.time()
-  print("Running job script with arguments:")
-  max_arg_name_length = max(len(arg_name) for arg_name in vars(args).keys())
-  for arg_name, arg_value in sorted(vars(args).items()):  # sort keys for stable, tidy output
-    print(f"{arg_name:>{max_arg_name_length + 2}} : {arg_value}")
-  this_script_dir = os.path.dirname(os.path.abspath(__file__))
-  if os.path.isfile(f"{this_script_dir}/DEPLOYED_HD_UTILITIES_GIT_HASH"):
-    deployed_git_hash = open(f"{this_script_dir}/DEPLOYED_HD_UTILITIES_GIT_HASH", "r", encoding = "utf-8").read().strip()
-    print(f"Using launch scripts from git commit hash: {deployed_git_hash}")
+  print_arguments(args)
 
   # gather information about job environment and write it to files
   run_label = f"{args.run_number:06d}"
@@ -61,10 +70,10 @@ def main(args: argparse.Namespace) -> None:
     with open(f"job_{run_label}.{log_file_suffix}", "w", encoding = "utf-8") as log_file:
       subprocess.run(log_cmd, shell = True, check = False, stdout = log_file, stderr = subprocess.STDOUT)
 
-  # get job working directory and list of input files
+  # get job working directory and list of input raw-data files
   work_dir_job = os.getcwd()  # working directory of job as created by swif2, i.e. `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}; (identical to `${SWIF_JOB_STAGE_DIR}` and `${SWIF_JOB_WORK_DIR}`)
   print(f"Job script is running in directory: '{work_dir_job}'")
-  evio_file_names: list[str] = sorted(glob.glob("hd_rawdata_??????_???.evio"))  # list of raw data file names in working directory of job
+  evio_file_names: List[str] = sorted(glob.glob("hd_rawdata_??????_???.evio"))  # list of raw-data file names in working directory of job
   #TODO filter bad files if list is available?
   print(f"Found {len(evio_file_names)} EVIO files that will be processed by this job:")
   for index, evio_file_name in enumerate(evio_file_names):
@@ -101,8 +110,8 @@ def main(args: argparse.Namespace) -> None:
     subprocess.run(debug_cmd, shell = True, check = False)
   print(f"shutil.which('shifter') = {shutil.which('shifter')}")
   # run tasks in parallel
-  # each task will run args.nmb_processes_per_task hd_root processes in parallel, each processing a single evio file
-  task_cmd = [
+  # each task will run args.nmb_processes_per_task hd_root processes in parallel, each processing a single evio file using args.nmb_threads_per_process threads
+  task_cmd: List[str] = [
     f"/{args.launch_dir}/script_task.sh",  # task script to run inside a container on each NERSC node (all subsequent arguments are passed to this script)
     f"{args.run_number}",               # arg 1:  Run number for this task
     f"{args.jana_config}",              # arg 2:  JANA config file
@@ -111,7 +120,7 @@ def main(args: argparse.Namespace) -> None:
     f"{args.halld_version_set_xml}",    # arg 5:  GlueX software version set XML file
     f"{args.nmb_threads_per_process}",  # arg 6:  number of threads each `hd_root` process should use
   ]
-  srun_cmd = [
+  srun_cmd: List[str] = [
     "srun",
     # f"--ntasks={nmb_tasks}",  # --ntasks is already specified in the `sbatch` command and srun will automatically use all allocated tasks
     "--kill-on-bad-exit=0",  # do not kill all tasks if one task fails; instead, let all tasks run to completion to capture their individual exit codes
@@ -129,7 +138,6 @@ def main(args: argparse.Namespace) -> None:
   srun_result = subprocess.run(srun_cmd, check = False)
   with open(f"./srun_{run_label}.rc", "w", encoding = "utf-8") as log_file:
     log_file.write(f"{srun_result.returncode:d}")
-  elapsed_time = int(time.time() - start_time)
   print(f"`srun` finished with return code {srun_result.returncode:d}")
   # `srun` will return i) a non-zero slurm exit code, if it cannot
   # start the tasks, or ii) the highest exit code of any failed tasks.
@@ -169,6 +177,7 @@ def main(args: argparse.Namespace) -> None:
     print(f"Defining output file: '{output_cmd}'")
     subprocess.run(output_cmd, shell = True, check = False)
 
+  elapsed_time = int(time.time() - start_time)
   print(f"Wall time consumed by job script: {elapsed_time // 60} min, {elapsed_time % 60} sec")
   sys.exit(srun_result.returncode)  # forward return code of srun to the caller of this script, i.e. swif2
 
