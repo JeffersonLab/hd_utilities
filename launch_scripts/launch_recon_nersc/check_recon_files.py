@@ -44,8 +44,6 @@ RECON_SUBDIR_INFO: dict[str, tuple[str, str]] = {
 
 def main(args: argparse.Namespace) -> None:
   launch_config: dict[str, str | None] = get_config_dict_from_env_file(args.launch_env_file)
-
-  print(f"Reading configuration variables from file '{args.launch_env_file}'")
   run_period           = ensure_dict_value_exists(launch_config, "RUN_PERIOD")  # e.g. 2022-05
   recon_version_label  = args.recon_version_label if args.recon_version_label else ensure_dict_value_exists(launch_config, "VER")  # e.g. ver02
   run_number_list_file = args.run_list if args.run_list else ensure_dict_value_exists(launch_config, "RUN_NUMBER_LIST_FILE")

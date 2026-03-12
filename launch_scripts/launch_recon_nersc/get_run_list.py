@@ -40,7 +40,7 @@ def get_evio_files_for_run(
 ) -> tuple[list[str], list[EvioFilesError]]:
   """Gets list of EVIO files for the given RCDB run-info object."""
   run_number = int(run_info.number)
-  raw_data_dir = f"/mss/halld/RunPeriod-{run_period}/rawdata/Run{run_number:06d}"
+  raw_data_dir = f"/mss/halld/RunPeriod-{run_period}/rawdata/Run{run_number:06d}"  #TODO use value from .env file
   evio_files_count = run_info.get_condition_value("evio_files_count")  # get number of evio files for this run; file numbers are in range 0 to evio_files_count - 1
   rcdb_errors: list[EvioFilesError] = []
   if evio_files_count is None:
@@ -109,8 +109,6 @@ def main(args: argparse.Namespace) -> None:
   start_time = time.time()
   print_arguments(args)
   launch_config: dict[str, str | None] = get_config_dict_from_env_file(args.launch_env_file)
-
-  print(f"Reading configuration variables from file '{args.launch_env_file}'")
   run_period           =     ensure_dict_value_exists(launch_config, "RUN_PERIOD")
   run_number_min       = int(ensure_dict_value_exists(launch_config, "RUN_NUMBER_MIN"))
   run_number_max       = int(ensure_dict_value_exists(launch_config, "RUN_NUMBER_MAX"))

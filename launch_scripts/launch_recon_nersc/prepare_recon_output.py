@@ -215,8 +215,6 @@ def process_run_dir(
 
 def main(args: argparse.Namespace) -> None:
   launch_config: dict[str, str | None] = get_config_dict_from_env_file(args.launch_env_file)
-
-  print(f"Reading configuration variables from file '{args.launch_env_file}'")
   run_number_list_file         =     ensure_dict_value_exists(launch_config, "RUN_NUMBER_LIST_FILE") if args.override_run_list is None else args.override_run_list
   swif_output_root             =     ensure_dict_value_exists(launch_config, "SWIF_OUTPUT_ROOT")
   swif_raw_data_root           =     ensure_dict_value_exists(launch_config, "SWIF_RAW_DATA_ROOT")

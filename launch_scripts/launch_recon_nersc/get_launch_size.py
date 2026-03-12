@@ -8,7 +8,9 @@ the number of NERSC nodes required to process them.
 from __future__ import annotations
 
 import argparse
+import time
 
+from script_job import print_arguments
 from utilities import (
   ensure_dict_value_exists,
   get_config_dict_from_env_file,
@@ -18,9 +20,9 @@ from utilities import (
 
 
 def main(args: argparse.Namespace) -> None:
+  start_time = time.time()
+  print_arguments(args)
   launch_config: dict[str, str | None] = get_config_dict_from_env_file(args.launch_env_file)
-
-  print(f"Reading configuration variables from file '{args.launch_env_file}'")
   run_period                   =     ensure_dict_value_exists(launch_config, "RUN_PERIOD")
   run_number_list_file         =     ensure_dict_value_exists(launch_config, "RUN_NUMBER_LIST_FILE") if args.override_run_list is None else args.override_run_list
   swif_raw_data_root           =     ensure_dict_value_exists(launch_config, "SWIF_RAW_DATA_ROOT")
@@ -48,10 +50,13 @@ def main(args: argparse.Namespace) -> None:
         f"processed by {total_nmb_nodes} NERSC nodes, "
         f"out of which {total_nmb_nodes_unused:.1f} nodes are unused (= {total_nmb_nodes_unused / total_nmb_nodes:.1%} of total nodes)")
 
+  elapsed_time = int(time.time() - start_time)
+  print(f"Wall time consumed by script: {elapsed_time // 60} min, {elapsed_time % 60} sec")
+
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(
-    description = "Prepare directory structure and use srun to start a reconstruction task on each node (positional args).",
+    description = "Estimates the size of the raw data for the reconstruction launch and the number of NERSC nodes required to process them.",
   )
   parser.add_argument("--launch_env_file", default = "./launch.env", help = "Path to .env file defining the configuration variables of the reconstruction launch; default: '%(default)s'")
   parser.add_argument("--override_run_list", help = "Path to run-number list file to use instead of RCDB query")

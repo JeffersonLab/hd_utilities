@@ -31,7 +31,7 @@ from typing import List, Tuple, Optional
 # always flush print() to reduce garbling of log files due to buffering
 print = functools.partial(print, flush = True)
 
-
+#TODO find out whether this can be moved to the utilities module
 def print_arguments(args: argparse.Namespace) -> None:
   """Print all command-line arguments and their values and the git hash."""
   this_script_file_name = os.path.basename(sys.argv[0])  # get file name of script that was launched

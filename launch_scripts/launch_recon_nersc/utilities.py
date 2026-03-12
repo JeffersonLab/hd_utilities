@@ -26,8 +26,8 @@ def ensure_dict_value_exists(
 
 
 def get_config_dict_from_env_file(env_file: str) -> dict[str, str | None]:
-  """Load a .env file and return its contents as a dictionary."""
-  print(f"Loading .env file from '{env_file}'")
+  """Load a .env file with the production parameters and return its contents as a dictionary."""
+  print(f"Reading production parameters from .env file '{env_file}'")
   config: dict[str, str | None] = dotenv.dotenv_values(env_file)
   assert config, f"Failed to load .env file from '{env_file}'"
   if "NERSC_NMB_PROCESSES_PER_TASK" in config and config["NERSC_NMB_PROCESSES_PER_TASK"] is not None:
