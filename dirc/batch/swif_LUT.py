@@ -18,18 +18,18 @@ VERBOSE    = True
 # PROJECT INFO
 PROJECT    = "gluex-pro"          # http://scicomp.jlab.org/scicomp/#/projects
 TRACK      = "simulation"		   # https://scicomp.jlab.org/docs/batch_job_tracks
-ACCOUNT = "halld"
-PARTITION = "production"
+ACCOUNT    = "halld"
+PARTITION  = "production"
 
 # RESOURCES
 NCORES     = "1"               # Number of CPU cores
-DISK       = "100GB"            # Max Disk usage
-RAM        = "2GB"            # Max RAM usage
-TIMELIMIT  = "3600minutes"      # Max walltime
+DISK       = "20GB"            # Max Disk usage
+RAM        = "10GB"            # Max RAM usage
+TIMELIMIT  = "600minutes"      # Max walltime
 OS         = "el9"        # Specify CentOS65 machines
 
 # OUTPUT DATA LOCATION
-DATA_OUTPUT_BASE_DIR    = "/work/halld/home/%s/RunPeriod-2019-11/dircsim-2019_11-ver04/lut/"%(os.environ['USER']) 
+DATA_OUTPUT_BASE_DIR    = "/work/halld/home/%s/analysisGluexII/dircsim-2019_11-ver05/lut_50M/"%(os.environ['USER']) 
 
 # JOB EXECUTION
 BUILD_DIR         = "/work/halld2/home/jrsteven/analysisGluexII/builds/"

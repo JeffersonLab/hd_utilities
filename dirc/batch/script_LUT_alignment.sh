@@ -21,23 +21,27 @@ ls -l
 
 # get local copy of HDDS with modified geometry
 cp $BUILDDIR/hdds/ ./ -r
-cp $OUTDIR/var$VARIATION/DIRC_HDDS.xml ./
+cp $OUTDIR/DIRC_HDDS.xml ./hdds/
 cd hdds/
 scons -u install
 cd ../
 
 # set geometry to use local version
 setenv JANA_GEOMETRY_URL xmlfile://`pwd`/hdds/main_HDDS.xml
-cp $HD_UTILITIES_HOME/dirc/batch/run.mac ./
+cp $HD_UTILITIES_HOME/dirc/batch/run_alignment.mac ./run.mac
 
 # macros for averaging LUT
 ln -s $HD_UTILITIES_HOME/dirc/loadlib.C
 ln -s $HD_UTILITIES_HOME/dirc/glxlut_avr.C
+ln -s $HD_UTILITIES_HOME/dirc/glxlut_add.C
+ln -s $HD_UTILITIES_HOME/dirc/glxlut_convert.C
+ln -s $HALLD_RECON_HOME/$BMS_OSNAME/include/lut_dirc/DrcLutNode.h
 
 # loop over bars to create LUT
-foreach BAR (`seq 0 47`)
+#foreach BAR (`seq 0 47`)
 
-    # skip all but 2 bars in each bar box (8 bars total)
+# skip all but 2 bars in each bar box (8 bars total)
+foreach BAR (3 7 12 16 27 31 36 40)
 
     cp $HD_UTILITIES_HOME/dirc/batch/control_$BAR.in control.in
     ls -l
@@ -79,3 +83,13 @@ foreach BAR (`seq 0 47`)
     endif
 
 end
+
+root -l -b -q loadlib.C glxlut_add.C+'("'"root/lut_avr_*.root"'")'
+root -l -b -q loadlib.C glxlut_convert.C+
+if (-e lut_avr_all.root) then
+    cp -v lut_avr_all.root ${OUTDIR}/root/lut_avr_all.root
+    cp -v lut_avr_flat.root ${OUTDIR}/root/lut_avr_flat.root
+    chmod 664 ${OUTDIR}/root/lut_avr_all.root
+    chmod 664 ${OUTDIR}/root/lut_avr_flat.root
+endif
+

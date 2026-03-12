@@ -23,13 +23,13 @@ PARTITION  = "production"
 
 # RESOURCES
 NCORES     = "1"              # Number of CPU cores
-DISK       = "100GB"          # Max Disk usage
-RAM        = "2GB"            # Max RAM usage
-TIMELIMIT  = "3600minutes"    # Max walltime
+DISK       = "50GB"          # Max Disk usage
+RAM        = "3GB"            # Max RAM usage
+TIMELIMIT  = "1200minutes"    # Max walltime
 OS         = "el9"        # Specify CentOS65 machines
 
 # OUTPUT DATA LOCATION
-DATA_OUTPUT_BASE_DIR    = "/work/halld/home/%s/RunPeriod-2019-11/dircsim-2019_11-ver05/lut_alignment/"%(os.environ['USER']) 
+DATA_OUTPUT_BASE_DIR    = "/work/halld/home/%s/analysisGluexII/dircsim-2019_11-ver05/lut_alignment_MRAROT_Nominal/"%(os.environ['USER']) 
 
 # JOB EXECUTION
 BUILD_DIR         = "/work/halld2/home/jrsteven/analysisGluexII/builds/"
@@ -63,11 +63,11 @@ def generate_config(CONFIG_FILE, BAR):
     config_file.close()
 
 ################################################## GENERATE GEOMETRY CONFIG ##################################################
-def geom_config(GEOM_FILE,MRASROT,MRASOFFSET,MRANROT,MRANOFFSET):
+def geom_config(GEOM_FILE,MRASROT,MRASOFFSET,MRANROT,MRANOFFSET,hdds_iter):
 
     geom_config_file = open("geom_config.cfg", 'w')
     geom_config_file.write("[FILES] \n")
-    geom_config_file.write("NOMINAL = ../alignment/DIRC_HDDS_Nominal.xml \n")
+    geom_config_file.write("NOMINAL = ../alignment/DIRC_HDDS_%s.xml \n" % hdds_iter)
     geom_config_file.write("OUTPUT  = %s \n" % GEOM_FILE)
     geom_config_file.write("[OBCS] \n")
     geom_config_file.write("MRAS_rot = %f,%f,%f \n" % (MRASROT[0],MRASROT[1],MRASROT[2]))
@@ -110,8 +110,12 @@ def add_job(WORKFLOW, VARIATION):
 ########################################################## MAIN ##########################################################
 	
 def main(argv):
-    parser_usage = "swif_lut_alignment.py workflow"
+    parser_usage = "swif_lut_alignment.py [--hdds-iter ITER] workflow"
     parser = OptionParser(usage = parser_usage)
+    parser.add_option("--hdds-iter", dest="hdds_iter", default="Nominal",
+                      help="Use DIRC_HDDS_<ITER>.xml as nominal geometry input (default: %default)")
+    parser.add_option("--scan-mode", dest="scan_mode", type="choice", choices=["MRAROT", "MRAOFF"], default="MRAROT",
+                      help="Scan rotations (MRAROT) or offsets (MRAOFF) (default: %default)")
     (options, args) = parser.parse_args(argv)
     
     if(len(args) != 1):
@@ -120,6 +124,11 @@ def main(argv):
     
     # GET ARGUMENTS
     WORKFLOW = args[0]
+    HDDS_ITER = options.hdds_iter
+    SCAN_MODE = options.scan_mode
+
+    global DATA_OUTPUT_BASE_DIR
+    DATA_OUTPUT_BASE_DIR = "/work/halld/home/%s/analysisGluexII/dircsim-2019_11-ver05/lut_alignment_%s_%s/" % (os.environ['USER'], SCAN_MODE, HDDS_ITER)
     
     # CREATE WORKFLOW IF IT DOESN'T ALREADY EXIST
     #WORKFLOW_LIST = subprocess.check_output(["swif2", "list"])
@@ -134,25 +143,55 @@ def main(argv):
     # submit job for no variation
     VARIATION = 0
     subprocess.call(["mkdir","-p",DATA_OUTPUT_BASE_DIR+"/var%d" % VARIATION+"/log/"])
-    subprocess.call(["cp","../alignment/DIRC_HDDS_Nominal.xml","%s/var%d/DIRC_HDDS.xml" % (DATA_OUTPUT_BASE_DIR,VARIATION)])
+    subprocess.call(["cp","../alignment/DIRC_HDDS_%s.xml" % HDDS_ITER,"%s/var%d/DIRC_HDDS.xml" % (DATA_OUTPUT_BASE_DIR,VARIATION)])
     add_job(WORKFLOW, VARIATION)
-        
-    # loop over variations
-    MRASOFFSETS = [-2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0]
     
-    for MRASXOFFSET in MRASOFFSETS:
-        VARIATION += 1
-        
-        MRASOFFSET = [MRASXOFFSET,0.,0.]
-        MRASROT = [0.,0.,0.]
-        MRANOFFSET = [0.,0.,0.]
-        MRANROT = [0.,0.,0.]
+    # loop over variations
+    scan_values = [-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5]
+    if SCAN_MODE == "MRAROT":
+        MRASXOFFSETS = [0]
+        MRASYOFFSETS = [0]
+        MRASZOFFSETS = [0]
 
-        subprocess.call(["mkdir","-p",DATA_OUTPUT_BASE_DIR+"/var%d" % VARIATION+"/log/"])
+        MRASXROTATIONS = scan_values
+        MRASYROTATIONS = scan_values
+        MRASZROTATIONS = scan_values
+    else:
+        MRASXOFFSETS = scan_values
+        MRASYOFFSETS = scan_values
+        MRASZOFFSETS = scan_values
+
+        MRASXROTATIONS = [0]
+        MRASYROTATIONS = [0]
+        MRASZROTATIONS = [0]
+    
+    MRANXOFFSETS = MRASXOFFSETS
+    MRANYOFFSETS = MRASYOFFSETS
+    MRANZOFFSETS = MRASZOFFSETS
+    
+    MRANXROTATIONS = MRASXROTATIONS
+    MRANYROTATIONS = MRASYROTATIONS
+    MRANZROTATIONS = MRASZROTATIONS
+    
+    for MRASXOFFSET,MRANXOFFSET in zip(MRASXOFFSETS, MRANXOFFSETS):
+        for MRASYOFFSET,MRANYOFFSET in zip(MRASYOFFSETS, MRANYOFFSETS):
+            for MRASZOFFSET,MRANZOFFSET in zip(MRASZOFFSETS, MRANZOFFSETS):
+                for MRASXROTATION,MRANXROTATION in zip(MRASXROTATIONS, MRANXROTATIONS):
+                    for MRASYROTATION,MRANYROTATION in zip(MRASYROTATIONS, MRANYROTATIONS):
+                        for MRASZROTATION,MRANZROTATION in zip(MRASZROTATIONS, MRANZROTATIONS):
+                
+                            VARIATION += 1
         
-        # create alternative geometry file for each variation
-        geom_config("%s/var%d/DIRC_HDDS.xml" % (DATA_OUTPUT_BASE_DIR,VARIATION),MRASROT,MRASOFFSET,MRANROT,MRANOFFSET)
-        add_job(WORKFLOW, VARIATION)
+                            MRASOFFSET = [MRASXOFFSET,MRASYOFFSET,MRASZOFFSET]
+                            MRASROT = [MRASXROTATION,MRASYROTATION,MRASZROTATION]
+                            MRANOFFSET = [MRANXOFFSET,MRANYOFFSET,MRANZOFFSET]
+                            MRANROT = [MRANXROTATION,MRANYROTATION,MRANZROTATION]
+
+                            subprocess.call(["mkdir","-p",DATA_OUTPUT_BASE_DIR+"/var%d" % VARIATION+"/log/"])
+        
+                            # create alternative geometry file for each variation
+                            geom_config("%s/var%d/DIRC_HDDS.xml" % (DATA_OUTPUT_BASE_DIR,VARIATION),MRASROT,MRASOFFSET,MRANROT,MRANOFFSET,HDDS_ITER)
+                            add_job(WORKFLOW, VARIATION)
 
 if __name__ == "__main__":
    main(sys.argv[1:])
