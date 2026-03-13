@@ -23,20 +23,16 @@ from utilities import (
 )
 
 
-# subdirectory names and the file names they contain, i.e. subdir name -> (file base name, file type)
-#NOTE in most cases subdir name == file base name
+#TODO this should go in a period-dependent file
+# map subdirectory names to the the files they contain, i.e. subdir name -> (file base name, file type)
+#NOTE in most cases, subdir name == file base name
 RECON_SUBDIR_BASENAME_MAP: dict[str, tuple[str, str]] = {
   # EVIO files
-  "BCAL-LED" :               ("BCAL-LED",               "evio"),
   "cpp_2c" :                 ("cpp_2c",                 "evio"),
-  "DIRC-LED" :               ("DIRC-LED",               "evio"),  #TODO mostly missing in ver01
-  "ECAL-LED" :               ("ECAL-LED",               "evio"),  #TODO ECAL vs. FCAL in ver01?
   "epem_selection" :         ("epem_selection",         "evio"),  # new w.r.t ver01
   "npp_2g" :                 ("npp_2g",                 "evio"),
   "npp_2pi0" :               ("npp_2pi0",               "evio"),
   "pippim_selection" :       ("pippim_selection",       "evio"),
-  "random" :                 ("random",                 "evio"),
-  "sync" :                   ("sync",                   "evio"),
   # HDDM files
   "converted_random" :       ("converted_random",       "hddm"),
   "REST" :                   ("dana_rest",              "hddm"),
@@ -50,12 +46,29 @@ RECON_SUBDIR_BASENAME_MAP: dict[str, tuple[str, str]] = {
   "tree_TPOL" :              ("tree_TPOL",              "root"),
   "tree_TS_scaler" :         ("tree_TS_scaler",         "root"),
 }
-# construct reverse map file base name -> (subdir name, file type)
+# construct reverse map: file base name -> (subdir name, file type)
 RECON_BASENAME_SUBDIR_MAP: dict[str, tuple[str, str]] = {
   file_base_name : (subdir_name, file_type) for subdir_name, (file_base_name, file_type) in RECON_SUBDIR_BASENAME_MAP.items()
 }
 
+
 #TODO reorganize code into a class
+def process_log_files(
+  log_file_names: list[str],
+  src_dir:        str,
+  dest_dir:       str,
+) -> list[tuple[str, str]]:
+  """Process log files in the given log directory and return a map from original file paths to new file paths."""
+  file_move_paths: list[tuple[str, str]] = []  # pairs of old and new file paths for moving
+  for log_file_name in log_file_names:
+    log_file_path = f"{src_dir}/{log_file_name}"
+    if not os.path.isfile(log_file_path):
+      print(f"WARNING: cannot find file '{log_file_path}'; ignoring.")
+      continue
+    file_move_paths.append((log_file_path, f"{dest_dir}/{log_file_name}"))
+  return file_move_paths
+
+
 def process_job_log_files(
   run_number:   int,
   nmb_tasks:    int,
@@ -77,14 +90,7 @@ def process_job_log_files(
   # add task log files
   for task_index in range(nmb_tasks):
     log_file_names.append(f"task_{run_number}_{task_index}.out")
-  file_move_paths: list[tuple[str, str]] = []  # pairs of old and new file paths for moving
-  for log_file_name in log_file_names:
-    log_file_path = f"{job_dir}/{log_file_name}"
-    if not os.path.isfile(log_file_path):
-      print(f"WARNING: cannot find file '{log_file_path}'; ignoring.")
-      continue
-    file_move_paths.append((log_file_path, f"{job_info_dir}/{log_file_name}"))
-  return file_move_paths
+  return process_log_files(log_file_names, job_dir, job_info_dir)
 
 
 def process_task_log_files(
@@ -99,14 +105,7 @@ def process_task_log_files(
     "node.mounts",
     "node.top",
   ]
-  file_move_paths: list[tuple[str, str]] = []  # pairs of old and new file paths for moving
-  for log_file_name in log_file_names:
-    log_file_path = f"{task_dir}/{log_file_name}"
-    if not os.path.isfile(log_file_path):
-      print(f"WARNING: cannot find file '{log_file_path}'; ignoring.")
-      continue
-    file_move_paths.append((log_file_path, f"{job_info_dir}/{log_file_name}"))
-  return file_move_paths
+  return process_log_files(log_file_names, task_dir, job_info_dir)
 
 
 def process_hd_root_log_files(
@@ -119,14 +118,7 @@ def process_hd_root_log_files(
     "hd_root.out",
     "hd_root.rc",
   ]
-  file_move_paths: list[tuple[str, str]] = []  # pairs of old and new file paths for moving
-  for log_file_name in log_file_names:
-    log_file_path = f"{file_dir}/{log_file_name}"
-    if not os.path.isfile(log_file_path):
-      print(f"WARNING: cannot find file '{log_file_path}'; ignoring.")
-      continue
-    file_move_paths.append((log_file_path, f"{job_info_dir}/{log_file_name}"))
-  return file_move_paths
+  return process_log_files(log_file_names, file_dir, job_info_dir)
 
 
 def process_file_dir(
@@ -161,15 +153,15 @@ def process_file_dir(
     print(f"WARNING: hd_root return code for run {run_number} and EVIO file number {file_number} is {hd_root_return_code}; ignoring EVIO file")
     return file_move_paths
   # process hd_root output files
-  for _, (file_base_name, file_type) in RECON_SUBDIR_BASENAME_MAP.items():
+  for subdir_name, (file_base_name, file_type) in RECON_SUBDIR_BASENAME_MAP.items():
     file_name = f"hd_rawdata_{run_number:06d}_{file_number:03d}.{file_base_name}.{file_type}" if file_type == "evio" else f"{file_base_name}.{file_type}"
     file_path = f"{file_dir}/{file_name}"
     if not os.path.isfile(file_path):
       print(f"WARNING: expected file '{file_path}' is missing; ignoring")
       continue
     new_file_name = f"{file_base_name}_{run_number:06d}_{file_number:03d}.{file_type}"  # fix file names of evio files and make file names of non-evio files unique
-    new_subdir = f"{RECON_BASENAME_SUBDIR_MAP[file_base_name][0]}/{run_number:06d}"
-    file_move_paths.append((file_path, f"{target_dir}/{new_subdir}/{new_file_name}"))
+    new_file_path = f"{target_dir}/{subdir_name}/{run_number:06d}/{new_file_name}"
+    file_move_paths.append((file_path, f"{new_file_path}"))
   return file_move_paths
 
 
@@ -231,6 +223,8 @@ def main(args: argparse.Namespace) -> None:
   #TODO for some log files file_move_paths contains multiple entries, i.e. these files need to be copied and not just moved
   for run_number in run_numbers:  # loop over runs
     file_move_paths += process_run_dir(run_number, swif_output_root, swif_raw_data_root, nersc_nmb_processes_per_task, target_dir)
+
+  print("-------------------------------------------------------------------------------")
   for old_file_path, new_file_path in file_move_paths:
     print(f"'{old_file_path}' -> '{new_file_path}'")
     # os.symlink(file_path, f"{target_dir}/{new_file_name}")
