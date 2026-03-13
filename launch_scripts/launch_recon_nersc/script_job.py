@@ -211,6 +211,7 @@ def main(args: argparse.Namespace) -> None:
   print(f"shutil.which('swif2') = {shutil.which('swif2')}")
   # define all output files that swif2 should transfer back to JLab
   output_file_paths: List[Tuple[str, str]] = get_output_file_paths(args.run_number, args.swif_output_root)
+  print("-------------------------------------------------------------------------------")
   print(f"Transferring {len(output_file_paths)} files back to JLab")
   for local_output_file_path, remote_output_file_path in output_file_paths:
     output_cmd = f"./.swif/swif2 output '{local_output_file_path}' '{remote_output_file_path}'"  # for some reason, swif2 is not in path
