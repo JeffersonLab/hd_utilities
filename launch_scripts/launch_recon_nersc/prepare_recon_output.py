@@ -12,7 +12,9 @@ import argparse
 import glob
 import os
 import re
+import time
 
+from script_job import print_arguments
 from utilities import (
   ensure_dict_value_exists,
   get_config_dict_from_env_file,
@@ -214,6 +216,8 @@ def process_run_dir(
 
 
 def main(args: argparse.Namespace) -> None:
+  start_time = time.time()
+  print_arguments(args)
   launch_config: dict[str, str | None] = get_config_dict_from_env_file(args.launch_env_file)
   run_number_list_file         =     ensure_dict_value_exists(launch_config, "RUN_NUMBER_LIST_FILE") if args.override_run_list is None else args.override_run_list
   swif_output_root             =     ensure_dict_value_exists(launch_config, "SWIF_OUTPUT_ROOT")
@@ -230,6 +234,9 @@ def main(args: argparse.Namespace) -> None:
   for old_file_path, new_file_path in file_move_paths:
     print(f"'{old_file_path}' -> '{new_file_path}'")
     # os.symlink(file_path, f"{target_dir}/{new_file_name}")
+
+  elapsed_time = int(time.time() - start_time)
+  print(f"Wall time consumed by script: {elapsed_time // 60} min, {elapsed_time % 60} sec")
 
 
 if __name__ == "__main__":
