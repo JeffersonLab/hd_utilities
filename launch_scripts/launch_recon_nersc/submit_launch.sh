@@ -104,7 +104,7 @@ do
     do
       EVIO_FILE_PATH="${EVIO_FILE_PATHS[${EVIO_FILE_INDEX}]}"
       EVIO_FILE_NAME="$(basename "${EVIO_FILE_PATH}")"
-      SWIF2_CMD+=(-input "${EVIO_FILE_NAME}" "mss:${EVIO_FILE_PATH}")  # `mss:/`` takes files directly from tape, bypassing JLab file systems; this is the most efficient way to transfer files to NERSC; `file:/` paths should be used for debugging only
+      SWIF2_CMD+=(-input "${EVIO_FILE_NAME}" "mss:${EVIO_FILE_PATH}")  # `mss:/` takes files directly from tape, bypassing JLab file systems; this is the most efficient way to transfer files to NERSC; `file:/` paths should be used for debugging only  #TODO switch automatically to `file:/` paths if files are located in cache
       # SWIF2_CMD+=(-input "${EVIO_FILE_NAME}" "file:${EVIO_FILE_PATH}")
     done
   done
