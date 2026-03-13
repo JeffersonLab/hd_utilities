@@ -138,6 +138,7 @@ do
         --nmb_threads_per_process="${NERSC_NMB_THREADS_PER_PROCESS}"
         --swif_output_root="${SWIF_OUTPUT_ROOT}"
   )
+  #TODO check that SWIF2_CMD does not exceed size limits for command line arguments
   SUBMIT_JOB_SCRIPT="submit_job_for_RUN${RUN_NUMBER}.sh"
   # generate shell-escaped version of command array and write it to file so it becomes a script that can be run directly
   {
