@@ -120,7 +120,7 @@ def main(args: argparse.Namespace) -> None:
   write_env_to_file(f"job_{run_label}.env")
   for log_file_suffix, log_cmd in (
     ("hostname",  "hostnamectl"),
-    ("diskquota", "myquota --verbose --full-path --limit --common --hpss"),
+    ("diskquota", "myquota --verbose --full-path --limit --common --hpss"),  #TODO this does not seem to work NERSC nodes
     ("mounts",    "findmnt --canonicalize --output=TARGET,FSTYPE,SIZE,USED,AVAIL,USE%"),
   ):
     with open(f"job_{run_label}.{log_file_suffix}", "w", encoding = "utf-8") as log_file:
@@ -156,20 +156,9 @@ def main(args: argparse.Namespace) -> None:
       os.symlink(f"../../{evio_file_name}", f"{work_dir_task}/{evio_file_name}")
 
   print("-------------------------------------------------------------------------------")
-  # debug error `slurmstepd: error: execve(): shifter: No such file or directory` leading to `srun` return code 2
-  for debug_cmd in (
-    "ls -l /usr/bin/shifter",
-    "which shifter",
-    "bash -c 'which shifter'",
-    "shifter",
-  ):
-    print(f"Running debug command: '{debug_cmd}'")
-    subprocess.run(debug_cmd, shell = True, check = False)
-  print(f"shutil.which('shifter') = {shutil.which('shifter')}")
-  # run tasks in parallel
   # each task will run args.nmb_processes_per_task hd_root processes in parallel, each processing a single evio file using args.nmb_threads_per_process threads
   task_cmd: List[str] = [
-    f"/{args.launch_dir}/script_task.sh",  # task script to run inside a container on each NERSC node (all subsequent arguments are passed to this script)
+    f"{args.launch_dir}/script_task.sh",  # task script to run inside a container on each NERSC node (all subsequent arguments are passed to this script)
     f"{args.run_number}",               # arg 1:  Run number for this task
     f"{args.jana_config}",              # arg 2:  JANA config file
     f"{args.jana_calib_context}",       # arg 3:  JANA calibration context
@@ -185,13 +174,13 @@ def main(args: argparse.Namespace) -> None:
     "--verbose",  # this will print the exact command line that srun executes for each task
     f"--output=task_{run_label}_%t.out",  # write stdout and stderr of task to file named `task_<run number>_<task id>.out` into job's working directory
     "--",
-    "/usr/bin/shifter",
+    "/usr/bin/shifter",  #TODO use absolute path to work around spurious error `slurmstepd: error: execve(): shifter: No such file or directory` leading to `srun` return code 2
     "--",
     "bash",
     "-c",
     " ".join(task_cmd),  # command to run in container; needs to be passed as a single string to `bash -c`
   ]
-  print(f"Submitting tasks: '{' '.join(srun_cmd)}'")
+  print(f"Submitting {nmb_tasks} tasks: '{' '.join(srun_cmd)}'")
   srun_result = subprocess.run(srun_cmd, check = False)
   with open(f"./srun_{run_label}.rc", "w", encoding = "utf-8") as log_file:
     log_file.write(f"{srun_result.returncode:d}")
@@ -201,21 +190,11 @@ def main(args: argparse.Namespace) -> None:
   # If a task is killed by signal, 128 + signal number is returned.
 
   print("-------------------------------------------------------------------------------")
-  # debug error `/bin/sh: swif2: command not found`
-  for debug_cmd in (
-    "ls -l ./.swif/swif2",
-    "which swif2",
-    "bash -c 'which swif2'",
-    "swif2",
-  ):
-    print(f"Running debug command: '{debug_cmd}'")
-    subprocess.run(debug_cmd, shell = True, check = False)
-  print(f"shutil.which('swif2') = {shutil.which('swif2')}")
   # define all output files that swif2 should transfer back to JLab
   output_file_paths: List[Tuple[str, str]] = get_output_file_paths(args.run_number, args.swif_output_root)
   print(f"Transferring {len(output_file_paths)} files back to JLab")
   for local_output_file_path, remote_output_file_path in output_file_paths:
-    output_cmd = f"./.swif/swif2 output '{local_output_file_path}' '{remote_output_file_path}'"  # for some reason, swif2 is not in path
+    output_cmd = f"./.swif/swif2 output '{local_output_file_path}' '{remote_output_file_path}'"  #TODO   for some reason, swif2 is not in path
     print(f"Defining output file: '{output_cmd}'")
     subprocess.run(output_cmd, shell = True, check = False)
 
