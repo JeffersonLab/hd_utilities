@@ -10,7 +10,7 @@ from __future__ import annotations
 import argparse
 import time
 
-from script_job import print_arguments
+from script_job import print_command_line_arguments
 from utilities import (
   ensure_dict_value_exists,
   get_config_dict_from_env_file,
@@ -21,7 +21,7 @@ from utilities import (
 
 def main(args: argparse.Namespace) -> None:
   start_time = time.time()
-  print_arguments(args)
+  print_command_line_arguments(args)
   launch_config: dict[str, str | None] = get_config_dict_from_env_file(args.launch_env_file)
   run_period                   =     ensure_dict_value_exists(launch_config, "RUN_PERIOD")
   run_number_list_file         =     ensure_dict_value_exists(launch_config, "RUN_NUMBER_LIST_FILE") if args.override_run_list is None else args.override_run_list

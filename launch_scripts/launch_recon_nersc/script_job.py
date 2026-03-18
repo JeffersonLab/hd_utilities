@@ -32,7 +32,7 @@ from typing import List, Tuple, Optional
 print = functools.partial(print, flush = True)
 
 #TODO find out whether this can be moved to the utilities module
-def print_arguments(args: argparse.Namespace) -> None:
+def print_command_line_arguments(args: argparse.Namespace) -> None:
   """Print all command-line arguments and their values and the git hash."""
   this_script_file_name = os.path.basename(sys.argv[0])  # get file name of script that was launched
   print("-------------------------------------------------------------------------------")
@@ -113,7 +113,7 @@ def get_output_file_paths(
 
 def main(args: argparse.Namespace) -> None:
   start_time = time.time()
-  print_arguments(args)
+  print_command_line_arguments(args)
 
   # gather information about job environment and write it to files
   run_label = f"{args.run_number:06d}"
@@ -155,6 +155,7 @@ def main(args: argparse.Namespace) -> None:
       print(f"Linking EVIO file '{evio_file_name}' into task directory '{work_dir_task}'")
       os.symlink(f"../../{evio_file_name}", f"{work_dir_task}/{evio_file_name}")
 
+  print("-------------------------------------------------------------------------------")
   # debug error `slurmstepd: error: execve(): shifter: No such file or directory` leading to `srun` return code 2
   for debug_cmd in (
     "ls -l /usr/bin/shifter",
@@ -199,6 +200,7 @@ def main(args: argparse.Namespace) -> None:
   # start the tasks, or ii) the highest exit code of any failed tasks.
   # If a task is killed by signal, 128 + signal number is returned.
 
+  print("-------------------------------------------------------------------------------")
   # debug error `/bin/sh: swif2: command not found`
   for debug_cmd in (
     "ls -l ./.swif/swif2",
@@ -211,7 +213,6 @@ def main(args: argparse.Namespace) -> None:
   print(f"shutil.which('swif2') = {shutil.which('swif2')}")
   # define all output files that swif2 should transfer back to JLab
   output_file_paths: List[Tuple[str, str]] = get_output_file_paths(args.run_number, args.swif_output_root)
-  print("-------------------------------------------------------------------------------")
   print(f"Transferring {len(output_file_paths)} files back to JLab")
   for local_output_file_path, remote_output_file_path in output_file_paths:
     output_cmd = f"./.swif/swif2 output '{local_output_file_path}' '{remote_output_file_path}'"  # for some reason, swif2 is not in path

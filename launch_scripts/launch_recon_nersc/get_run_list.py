@@ -15,7 +15,7 @@ import time
 
 import rcdb
 
-from script_job import print_arguments
+from script_job import print_command_line_arguments
 from utilities import (
   ensure_dict_value_exists,
   get_config_dict_from_env_file,
@@ -109,7 +109,7 @@ def get_evio_files(
 
 def main(args: argparse.Namespace) -> None:
   start_time = time.time()
-  print_arguments(args)
+  print_command_line_arguments(args)
   launch_config: dict[str, str | None] = get_config_dict_from_env_file(args.launch_env_file)
   run_period           =     ensure_dict_value_exists(launch_config, "RUN_PERIOD")
   run_number_min       = int(ensure_dict_value_exists(launch_config, "RUN_NUMBER_MIN"))
