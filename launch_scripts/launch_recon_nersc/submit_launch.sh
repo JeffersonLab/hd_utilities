@@ -72,6 +72,7 @@ fi
 readarray -t RUN_NUMBERS < "${RUN_NUMBER_LIST_FILE}"  # read lines into array without trailing newlines
 for RUN_NUMBER in "${RUN_NUMBERS[@]}"
 do
+  #TODO limit run umbers to [RUN_NUMBER_MIN, RUN_NUMBER_MAX] from config file
   # construct command to submit a swif2 job for the given run number
   #NOTE swif2 jobs for remote sites do not produce stdout and stderr
   #  on JLab Farm and the `-stdout` and `-stderr` arguments would need
