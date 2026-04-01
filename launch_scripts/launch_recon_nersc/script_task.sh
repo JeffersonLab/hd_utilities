@@ -57,7 +57,7 @@ echo "--- Use halld_recon at '${HALLD_RECON_HOME}'"
 # export HALLD_MY="${CSCRATCH}/HALLD_MY/${HALLD_RECON_VERSION}"  #TODO this seems to be dysfunctional; ${CSCRATCH} does not exist anymore on NERSC
 # export PATH="${HALLD_MY}/${BMS_OSNAME}/bin:${PATH}"
 
-SWIF_INPUT_ROOT="/pscratch/sd/j/jlab/swif/input"
+SWIF_INPUT_ROOT="/pscratch/sd/j/jlab/swif/input"  #TODO propagate info from .env file
 echo "--- swif2 input directory: '${SWIF_INPUT_ROOT}':"
 ls -l "${SWIF_INPUT_ROOT}"
 WORK_DIR_JOB=$(pwd -P)
