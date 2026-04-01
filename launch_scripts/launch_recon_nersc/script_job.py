@@ -119,7 +119,7 @@ def main(args: argparse.Namespace) -> None:
   write_env_to_file(f"job_{run_label}.env")
   for log_file_suffix, log_cmd in (
     ("hostname",  "hostnamectl"),
-    ("diskquota", "myquota --verbose --full-path --limit --common --hpss"),  #TODO this does not seem to work NERSC nodes
+    # ("diskquota", "myquota --verbose --full-path --limit --common --hpss"),  # does not work NERSC nodes: /usr/lpp/mmfs/bin/mmlsquota is missing
     ("mounts",    "findmnt --canonicalize --output=TARGET,FSTYPE,SIZE,USED,AVAIL,USE%"),
   ):
     with open(f"job_{run_label}.{log_file_suffix}", "w", encoding = "utf-8") as log_file:

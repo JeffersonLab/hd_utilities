@@ -33,7 +33,7 @@ def main(args: argparse.Namespace) -> None:
   # get job summary for the workflow
   try:
     result = subprocess.run(
-      [
+      [  #TODO why not generate and parse JSON files
         "swif2",
         "status",
         "-workflow",
@@ -61,7 +61,7 @@ def main(args: argparse.Namespace) -> None:
   # get runs with problems
   try:
     result = subprocess.run(
-      [
+      [  #TODO why not generate and parse JSON files
         "swif2",
         "status",
         "-workflow",

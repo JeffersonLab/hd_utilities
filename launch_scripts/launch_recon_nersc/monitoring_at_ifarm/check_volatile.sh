@@ -2,15 +2,15 @@
 
 # Checks status of reconstruction jobs at JLab Farm
 
-RUN_PERIOD="${1}"
-BATCH="${2}"
+RUN_PERIOD="${1}"  # e.g. `2025-01`
+BATCH="${2}" # e.g. `ver03`
 TASK_INDEX="${3}"
 VER="${4}"
 
 TASK_INDEX=$(printf "%03d" "${TASK_INDEX}")  # ensure TASK_INDEX is zero-padded to three digits, e.g. 7 -> 007
 
-SWIF_WORKFLOW="recon_${RUN_PERIOD}_ver${BATCH}_NERSC-multi"
-SWIF_OUTPUT_ROOT="/lustre/expphy/volatile/halld/offsite_prod/RunPeriod-${RUN_PERIOD}/recon/ver${BATCH}"
+SWIF_WORKFLOW="recon_${RUN_PERIOD}_${BATCH}_NERSC-multi"
+SWIF_OUTPUT_ROOT="/lustre/expphy/volatile/halld/offsite_prod/RunPeriod-${RUN_PERIOD}/recon/${BATCH}"
 SUBDIR_TASK_PATTERN="RUN??????/TASK${TASK_INDEX}"
 
 swif2 status "${SWIF_WORKFLOW}"
