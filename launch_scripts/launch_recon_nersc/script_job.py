@@ -57,7 +57,7 @@ def write_env_to_file(output_file_name: str = "./env") -> None:
 
 
 def get_hd_root_return_code(hd_root_rc_file_path: str) -> Optional[int]:
-  """Read the hd_root return code from the given file and return it as an int or `None` if unsucessful."""
+  """Read the hd_root return code from the given file and return it as an int or `None` if unsuccessful."""
   try:
     with open(hd_root_rc_file_path, "r", encoding="utf-8") as file:
       hd_root_rc_file_content = file.read()
@@ -193,7 +193,7 @@ def main(args: argparse.Namespace) -> None:
   output_file_paths: List[Tuple[str, str]] = get_output_file_paths(args.run_number, args.swif_output_root)
   print(f"Transferring {len(output_file_paths)} files back to JLab")
   for local_output_file_path, remote_output_file_path in output_file_paths:
-    output_cmd = f"./.swif/swif2 output '{local_output_file_path}' '{remote_output_file_path}'"  #TODO   for some reason, swif2 is not in path
+    output_cmd = f"./.swif/swif2 output '{local_output_file_path}' '{remote_output_file_path}'"  #TODO for some reason, swif2 is not in path
     print(f"Defining output file: '{output_cmd}'")
     subprocess.run(output_cmd, shell = True, check = False)
 
