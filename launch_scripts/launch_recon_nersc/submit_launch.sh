@@ -154,4 +154,4 @@ done
 # view jobs at https://scicomp.jlab.org/scicomp/swif/active
 swif2 list
 swif2 status "${SWIF_WORKFLOW}"
-swif2 status "${SWIF_WORKFLOW}" -jobs
+# swif2 status "${SWIF_WORKFLOW}" -jobs
