@@ -39,7 +39,7 @@ def print_command_line_arguments(args: argparse.Namespace) -> None:
   max_arg_name_length = max(len(arg_name) for arg_name in vars(args).keys())
   for arg_name, arg_value in sorted(vars(args).items()):  # sort keys for stable, tidy output
     print(f"{arg_name:>{max_arg_name_length + 2}} : {arg_value}")
-  this_script_dir = os.path.dirname(os.path.abspath(__file__))
+  this_script_dir = os.path.dirname(os.path.abspath(__file__))  #TODO why not use `sys.argv[0]` here?
   if os.path.isfile(f"{this_script_dir}/DEPLOYED_HD_UTILITIES_GIT_HASH"):
     deployed_git_hash = open(f"{this_script_dir}/DEPLOYED_HD_UTILITIES_GIT_HASH", "r", encoding = "utf-8").read().strip()
     print(f"Using launch scripts from git commit hash: {deployed_git_hash}")
