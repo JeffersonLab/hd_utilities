@@ -2,16 +2,25 @@
 
 # copies the launch directory to official location for production user account
 
-CONFIG_FILE="${1:-./launch.env}"  # configuration file that defines all variables used in this script
+
+CONFIG_FILE="${1:-launch.env}"  # configuration file that defines all variables used in this script
 echo "Reading configuration of reconstruction launch from '${CONFIG_FILE}'"
 # shellcheck source=./launch.env
 source "${CONFIG_FILE}"
 
-echo "Copying launch scripts and config files from '$(pwd)' to '${PRODUCTION_USER}@ifarm:~/${PRODUCTION_LAUNCH_DIR}'"
-TMP=$(mktemp)
+REMOTE_LAUNCH_DIR="/home/${PRODUCTION_USER}/${PRODUCTION_LAUNCH_DIR}"
+echo "Copying launch scripts and config files from '$(pwd)' to '${PRODUCTION_USER}@ifarm:${REMOTE_LAUNCH_DIR}'"
+# ensure the full destination path exists before rsync starts copying files.
+if ! ssh "${PRODUCTION_USER}@ifarm" "mkdir --verbose --parents \"${REMOTE_LAUNCH_DIR}\""
+then
+  echo "ERROR: Could not create remote directory '${REMOTE_LAUNCH_DIR}'"
+  exit 1
+fi
+TMP=$(mktemp)  # temporary file to hold list of files to copy
 git ls-files -z >| "${TMP}"  # get NUL-delimited list of all files tracked by git (safe for spaces/newlines)
 find . -maxdepth 1 -name "${RUN_NUMBER_LIST_FILE}" -print0 >> "${TMP}"
 find . -maxdepth 1 -name "${JANA_CONFIG}" -print0 >> "${TMP}"
+find . -maxdepth 1 -name "${CONFIG_FILE}" -print0 >> "${TMP}"
 RSYNC_CMD=(rsync
   --verbose
   --archive
@@ -20,7 +29,7 @@ RSYNC_CMD=(rsync
   --from0  # tell rsync to read NUL-delimited input
   --files-from="${TMP}"
   ./
-  "${PRODUCTION_USER}@ifarm:/home/${PRODUCTION_USER}/${PRODUCTION_LAUNCH_DIR}/"  #NOTE there seems to be no sane way make rsync expand `~` or `${HOME}` correctly
+  "${PRODUCTION_USER}@ifarm:${REMOTE_LAUNCH_DIR}/"
 )
 "${RSYNC_CMD[@]}"
 rm --force "${TMP}"
