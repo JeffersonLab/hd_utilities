@@ -1100,7 +1100,7 @@ int main(int argc, char** argv){
 
   Long64_t gInNEntries = gInTree->GetEntries();
   TString gInFileName("");
-  int currPol; // hold polarization value for the entire run (assuming one run per tree!)
+  int currPol = -999; // hold polarization value for the entire run (assuming one run per tree!)
   cout << "LOOPING OVER " << gInNEntries << " ENTRIES..." << endl;
   for (Long64_t iEntry = 0; iEntry < gInNEntries; iEntry++){
     if ((iEntry+1) % 10000 == 0) cout << "entry = " << iEntry+1 << "  (" << (100.0*(iEntry+1))/gInNEntries << " percent)" << endl;
@@ -1287,11 +1287,12 @@ int main(int argc, char** argv){
       outRunNumber       = inRunNumber;
       outEventNumber     = inEventNumber;
       if(gUsePolarization) {
-        if(iEntry==0) {
+        if(currPol==-999) {
           if(GetPolarizationAngle(inRunNumber, currPol)) {
             outPolarization = currPol;
           } else {
             outPolarization = -1;
+	    currPol = -1;
           }
         } else {
           outPolarization = currPol;
