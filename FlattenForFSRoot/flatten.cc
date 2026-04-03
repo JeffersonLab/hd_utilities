@@ -1287,7 +1287,7 @@ int main(int argc, char** argv){
       outRunNumber       = inRunNumber;
       outEventNumber     = inEventNumber;
       if(gUsePolarization) {
-        if(currPol==-999) {
+        if(iEntry==0) {
           if(GetPolarizationAngle(inRunNumber, currPol)) {
             outPolarization = currPol;
           } else {
@@ -1295,6 +1295,10 @@ int main(int argc, char** argv){
             currPol = -1;
           }
         } else {
+	  if(currPol==-999){
+	    cout << "FATAL: unable to find polarization info!!" << endl;
+	    exit(0);
+	  }
           outPolarization = currPol;
         }
       }
