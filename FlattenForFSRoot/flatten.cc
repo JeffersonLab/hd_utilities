@@ -1292,7 +1292,7 @@ int main(int argc, char** argv){
             outPolarization = currPol;
           } else {
             outPolarization = -1;
-	    currPol = -1;
+            currPol = -1;
           }
         } else {
           outPolarization = currPol;
