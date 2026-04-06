@@ -66,7 +66,7 @@ def main(args: argparse.Namespace) -> None:
 
   # print("-------------------------------------------------------------------------------")  #TODO
   elapsed_time = int(time.time() - start_time)
-  print(f"Wall time consumed by job script: {elapsed_time // 60} min, {elapsed_time % 60} sec")
+  print(f"Wall time consumed defining swif2 output files: {elapsed_time // 60} min, {elapsed_time % 60} sec")
 
 
 if __name__ == "__main__":
