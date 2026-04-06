@@ -2,20 +2,20 @@
 #NOTE this script needs to be compatible with Python 3.6
 
 """
-  Defines the output files that should be transferred back to JLab
-  using `swif2 output` commands for the given run number.
+Defines the output files that should be transferred back to JLab
+using `swif2 output` commands for the given run number.
 
-  Use this to recover jobs that were killed due to Slurm timeout or
-  other failures that prevented the job script `script_job.py` from
-  finishing properly.
+Use this to recover jobs that were killed due to Slurm timeout or
+other failures that prevented the job script `script_job.py` from
+finishing properly.
 
-  Example usage:
-    ./nersc_define_swif2_output_files.py \
-      --run_working_dir /pscratch/sd/j/jlab/swif/jobs/gxproj4/GlueX_recon_100570/70263844 \
-      --swif_output_root /lustre/expphy/volatile/halld/offsite_prod/RunPeriod-2022-05/recon/ver02-perl \
-    >> /pscratch/sd/j/jlab/swif/jobs/gxproj4/GlueX_recon_100570/70263844/job_100570_50937509.out
-  and then bless the job
-    swif2 bless-jobs recon_2022-05_ver02-perl_NERSC-multi 55121879
+Example usage:
+  ./nersc_define_swif2_output_files.py \
+    --run_working_dir /pscratch/sd/j/jlab/swif/jobs/gxproj4/GlueX_recon_100570/70263844 \
+    --swif_output_root /lustre/expphy/volatile/halld/offsite_prod/RunPeriod-2022-05/recon/ver02-perl \
+  >> /pscratch/sd/j/jlab/swif/jobs/gxproj4/GlueX_recon_100570/70263844/job_100570_50937509.out
+and then bless the job
+  swif2 bless-jobs recon_2022-05_ver02-perl_NERSC-multi 55121879
 """
 
 import argparse
