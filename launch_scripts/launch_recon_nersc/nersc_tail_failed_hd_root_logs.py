@@ -62,7 +62,7 @@ def main(args: argparse.Namespace) -> None:
   hd_root_failed_rc_files: List[str] = []
   for hd_root_rc_file in hd_root_rc_files:
     hd_root_return_code = get_hd_root_return_code(hd_root_rc_file)
-    print(f"Found hd_root return code {return_code_signal_name(hd_root_return_code)} in '{hd_root_rc_file}'")
+    print(f"Found hd_root return code {hd_root_return_code:3d} in '{hd_root_rc_file}'")
     if hd_root_return_code is None or hd_root_return_code != 0:
       hd_root_failed_rc_files.append(hd_root_rc_file)
   print(f"Found {len(hd_root_failed_rc_files)} hd_root processes with non-zero or unknown return code")
