@@ -38,18 +38,23 @@ def main(args: argparse.Namespace) -> None:
 
   # loop over files with hd_root exit codes
   hd_root_rc_files = glob.glob(f"{args.run_working_dir}/RUN??????/TASK????/FILE???/hd_root.rc")
+  hd_root_failed_rc_files: List[str] = []
   for hd_root_rc_file in hd_root_rc_files:
     hd_root_return_code = get_hd_root_return_code(hd_root_rc_file)
     if hd_root_return_code is None or hd_root_return_code != 0:
-      # tail hd_root log files if return code is non-zero or could not be read
-      hd_root_log_dir_name = os.path.dirname(hd_root_rc_file)
-      print("-------------------------------------------------------------------------------")
-      print(f"hd_root return code: {hd_root_return_code} (from '{hd_root_rc_file}')")
-      for log_file in ("hd_root.out", "hd_root.err"):
-        log_file_path = f"{hd_root_log_dir_name}/{log_file}"
-        print(f"hd_root log file: '{log_file_path}'")
-        for line in tail(log_file_path, args.nmb_lines):
-          print(line, end = "")
+      hd_root_failed_rc_files.append(hd_root_rc_file)
+  print(f"Found {len(hd_root_failed_rc_files)} hd_root processes with non-zero or unknown return code")
+
+  for hd_root_rc_file in hd_root_failed_rc_files:
+    # tail hd_root log files if return code is non-zero or could not be read
+    hd_root_log_dir_name = os.path.dirname(hd_root_rc_file)
+    print("-------------------------------------------------------------------------------")
+    print(f"hd_root return code: {get_hd_root_return_code(hd_root_rc_file)} (from '{hd_root_rc_file}')")
+    for log_file in ("hd_root.out", "hd_root.err"):
+      log_file_path = f"{hd_root_log_dir_name}/{log_file}"
+      print(f"hd_root log file: '{log_file_path}'")
+      for line in tail(log_file_path, args.nmb_lines):
+        print(line, end = "")
 
   print("-------------------------------------------------------------------------------")
   elapsed_time = int(time.time() - start_time)
