@@ -10,10 +10,12 @@
   finishing properly.
 
   Example usage:
-    nersc_define_swif2_output_files.py \
-      --run_working_dir /pscratch/sd/j/jlab/swif/jobs/gxproj4/GlueX_recon_100553/70263838 \
+    ./nersc_define_swif2_output_files.py \
+      --run_working_dir /pscratch/sd/j/jlab/swif/jobs/gxproj4/GlueX_recon_100570/70263844 \
       --swif_output_root /lustre/expphy/volatile/halld/offsite_prod/RunPeriod-2022-05/recon/ver02-perl \
-    >> /pscratch/sd/j/jlab/swif/jobs/gxproj4/GlueX_recon_100553/70263838/job_100553_50929462.out
+    >> /pscratch/sd/j/jlab/swif/jobs/gxproj4/GlueX_recon_100570/70263844/job_100570_50937509.out
+  and then bless the job
+    swif2 bless-jobs recon_2022-05_ver02-perl_NERSC-multi 55121879
 """
 
 import argparse

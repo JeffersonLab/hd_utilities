@@ -66,7 +66,7 @@ then
   echo "Workflow '${SWIF_WORKFLOW}' already exists; skipping creation"
 else
   echo "Creating swif2 workflow '${SWIF_WORKFLOW}' at site '${SWIF_SITE}' with max concurrent jobs ${SWIF_MAX_CONCURRENT_JOBS}"
-  swif2 create "${SWIF_WORKFLOW}" -site "${SWIF_SITE}" -maxconcurrent "${SWIF_MAX_CONCURRENT_JOBS}"
+  swif2 create "${SWIF_WORKFLOW}" -site "${SWIF_SITE}" -max-concurrent "${SWIF_MAX_CONCURRENT_JOBS}"
 fi
 
 # loop over run numbers and submit one swif2 job each
