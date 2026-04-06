@@ -1291,10 +1291,10 @@ int main(int argc, char** argv){
           GetPolarizationAngle(inRunNumber, currPol);
           outPolarization = currPol;
         } else {
-	  if(currPol==-999){
-	    std::cerr << "FATAL: unable to find polarization info!!" << endl;
-	    exit(0);
-	  }
+            if(currPol==-999){
+              std::cerr << "FATAL: unable to find polarization info!!" << endl;
+              exit(0);
+            }
           outPolarization = currPol;
         }
       }
