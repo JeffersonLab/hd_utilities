@@ -51,6 +51,7 @@ def main(args: argparse.Namespace) -> None:
   run_number = int(run_dir[0][3:])
 
   # define output files for swif2
+  os.environ["SWIF_JOB_STAGE_DIR"] = os.path.abspath(os.getcwd())  # needed by `./.swif/swif2` command
   define_swif2_output_files(run_number, args.swif_output_root)
 
   print("-------------------------------------------------------------------------------")
