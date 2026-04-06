@@ -2,17 +2,21 @@
 #NOTE this script needs to be compatible with Python 3.6
 
 """
-Main job script that processes all files of a given run.
+Main job script that processes all EVIO files of the given run.
 
-Swif2 will make sure that the script starts in a working directory
-that has links to all of the raw-data files of the run in it.  The
-script divides the files into groups of `nmb_processes_per_task`
-files, where each group is processed by a single slurm task.  Each
-slurm task occupies a complete NERSC CPU node.  The script sets up the
-directories for each of the slurm task.  Each directory holds links to
-the input files and will receive the output files.  The script then
-calls `srun` to launch the task script `script_task.sh` on all nodes
-that were allocated by the submit script.
+Swif2 ensures that the script starts in a working directory containing
+symbolic links to all of the EVIO input files for the given run.  The
+script then groups these files into sets of `nmb_processes_per_task`
+files, with each group assigned to a single Slurm task.  Each Slurm
+task occupies an entire NERSC CPU node.  For each of the Slurm tasks,
+the script sets up a dedicated task working directory
+`RUNXXXXXX/TASKYYY`, where XXXXXX is the 6-digit run number and YYY is
+the 3-digit task number.  Within the task directory, the script
+creates symbolic links to all `nmb_processes_per_task` EVIO input
+files the task will process.  The script then invokes `srun` to launch
+the task script `script_task.sh` across all nodes allocated by the
+submit script.  Finally, the script defines all output files that
+should be transferred back to JLab using `swif2 output` commands.
 """
 
 import argparse
@@ -29,6 +33,7 @@ from typing import List, Tuple, Optional
 
 # always flush print() to reduce garbling of log files due to buffering
 print = functools.partial(print, flush = True)
+
 
 #TODO find out whether this can be moved to the utilities module
 def print_command_line_arguments(args: argparse.Namespace) -> None:
@@ -75,7 +80,7 @@ def get_output_file_paths(
   run_number:       int,
   swif_output_root: str,
 ) -> List[Tuple[str, str]]:
-  """Get list with local relative paths w.r.t. current directory and absolute remote destination paths of all output files that should be transferred back to JLab"""
+  """Get list with local relative paths w.r.t. current directory and absolute remote destination paths of all output files that should be transferred back to JLab."""
   # this function assumes that the current directory is the working directory of the job
   # first greedily collect all potential output items, then filter out directories and files that should not be transferred back to JLab
   relative_output_paths: List[str] = []
@@ -153,7 +158,7 @@ def main(args: argparse.Namespace) -> None:
   # ensure that nmb_tasks is consistent with number of evio files and nmb_processes_per_task
   expected_nmb_tasks = (len(evio_file_names) + args.nmb_processes_per_task - 1) // args.nmb_processes_per_task
   if expected_nmb_tasks != int(nmb_tasks):
-    print(f"Error: mismatch of number of tasks = {expected_nmb_tasks} needed for {len(evio_file_names)} EVIO files and number of allocated slurm tasks = {nmb_tasks}")
+    print(f"Error: mismatch of number of tasks = {expected_nmb_tasks} needed for {len(evio_file_names)} EVIO files and number of allocated Slurm tasks = {nmb_tasks}")
     sys.exit(101)
 
   # loop over tasks, create task directories, and assign args.nmb_processes_per_task EVIO files to each task by linking them into the task's directory
@@ -168,7 +173,7 @@ def main(args: argparse.Namespace) -> None:
       os.symlink(f"../../{evio_file_name}", f"{work_dir_task}/{evio_file_name}")
 
   print("-------------------------------------------------------------------------------")
-  # each task will run args.nmb_processes_per_task hd_root processes in parallel, each processing a single evio file using args.nmb_threads_per_process threads
+  # each task will run args.nmb_processes_per_task hd_root processes in parallel, each processing a single EVIO file using args.nmb_threads_per_process threads
   task_cmd: List[str] = [
     f"{args.launch_dir}/script_task.sh",  # task script to run inside a container on each NERSC node (all subsequent arguments are passed to this script)
     f"{args.run_number}",               # arg 1:  Run number for this task
@@ -182,7 +187,7 @@ def main(args: argparse.Namespace) -> None:
     "srun",
     # f"--ntasks={nmb_tasks}",  # --ntasks is already specified in the `sbatch` command and srun will automatically use all allocated tasks
     "--kill-on-bad-exit=0",  # do not kill all tasks if one task fails; instead, let all tasks run to completion to capture their individual exit codes
-    # "--slurmd-debug=verbose",  # increase verbosity of slurmd debug output; this will be written to the slurm log file of the job; only allowed for root
+    # "--slurmd-debug=verbose",  # increase verbosity of slurmd debug output; this will be written to the Slurm log file of the job; only allowed for root
     "--verbose",  # this will print the exact command line that srun executes for each task
     f"--output=task_{run_label}_%t.out",  # write stdout and stderr of task to file named `task_<run number>_<task id>.out` into job's working directory
     "--",
@@ -197,7 +202,7 @@ def main(args: argparse.Namespace) -> None:
   with open(f"./srun_{run_label}.rc", "w", encoding = "utf-8") as log_file:
     log_file.write(f"{srun_result.returncode:d}")
   print(f"`srun` finished with return code {srun_result.returncode:d}")
-  # `srun` will return i) a non-zero slurm exit code, if it cannot
+  # `srun` will return i) a non-zero Slurm exit code, if it cannot
   # start the tasks, or ii) the highest exit code of any failed tasks.
   # If a task is killed by signal, 128 + signal number is returned.
 
@@ -212,7 +217,7 @@ def main(args: argparse.Namespace) -> None:
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(
-    description = "Prepare directory structure and use srun to start a reconstruction task on each node (positional args).",
+    description = "Main job script that processes all EVIO files of the given run.",
   )
   parser.add_argument("--run_number",              required = True, help = "Run number for this job", type = int)
   parser.add_argument("--launch_dir",              required = True, help = "Path to launch directory containing scripts and config files inside container")
