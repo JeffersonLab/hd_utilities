@@ -2,7 +2,7 @@
 #NOTE this script needs to be compatible with Python 3.6
 
 """
-Prints the last N lines of the stdout and stderr log files for hd_root processes with non-zero exit code.
+Prints the last N lines of the stdout and stderr log files for hd_root processes with non-zero return code.
 """
 
 import argparse
@@ -10,6 +10,7 @@ from collections import deque
 import functools
 import glob
 import os
+import sys
 import time
 from typing import List
 
@@ -36,11 +37,15 @@ def main(args: argparse.Namespace) -> None:
   start_time = time.time()
   print_command_line_arguments(args)
 
-  # loop over files with hd_root exit codes
-  hd_root_rc_files = glob.glob(f"{args.run_working_dir}/RUN??????/TASK????/FILE???/hd_root.rc")
+  # loop over files with hd_root return codes
+  hd_root_rc_files = glob.glob(f"{args.run_working_dir}/RUN??????/TASK???/FILE???/hd_root.rc")
+  if len(hd_root_rc_files) == 0:
+    print(f"Error: No hd_root return code files found in '{args.run_working_dir}'")
+    sys.exit(1)
   hd_root_failed_rc_files: List[str] = []
   for hd_root_rc_file in hd_root_rc_files:
     hd_root_return_code = get_hd_root_return_code(hd_root_rc_file)
+    print(f"Found hd_root return code {hd_root_return_code} in '{hd_root_rc_file}'")
     if hd_root_return_code is None or hd_root_return_code != 0:
       hd_root_failed_rc_files.append(hd_root_rc_file)
   print(f"Found {len(hd_root_failed_rc_files)} hd_root processes with non-zero or unknown return code")
@@ -63,7 +68,7 @@ def main(args: argparse.Namespace) -> None:
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(
-    description = "Print the last N lines of the stdout and stderr log files for hd_root processes with non-zero exit code.",
+    description = "Print the last N lines of the stdout and stderr log files for hd_root processes with non-zero return code.",
   )
   parser.add_argument("--run_working_dir", required = True,         help = "Working directory of the run")
   parser.add_argument("--nmb_lines",       type = int, default = 3, help = "Number of lines to print from the end of the log files; default: %(default)i")
