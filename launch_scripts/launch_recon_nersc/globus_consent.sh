@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 
-source globus_collections.sh
+# consent to all necessary Globus scopes for the collections defined in `globus_collections.sh`
+
+
+THIS_SCRIPT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"  # get the directory of this script
+GLOBUS_COLLECTIONS="${THIS_SCRIPT_DIR}/globus_collections.sh"
+echo "Reading Globus collections from '${GLOBUS_COLLECTIONS}'"
+source "${GLOBUS_COLLECTIONS}"
 
 echo "--- Globus user identities"
 globus whoami --verbose

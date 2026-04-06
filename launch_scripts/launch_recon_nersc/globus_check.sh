@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 
-source globus_collections.sh
+# verifies that the user has given consent to access the Globus
+# collections defined in `globus_collections.sh` and prints
+# information about these collections
+
+
+THIS_SCRIPT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"  # get the directory of this script
+GLOBUS_COLLECTIONS="${THIS_SCRIPT_DIR}/globus_collections.sh"
+echo "Reading Globus collections from '${GLOBUS_COLLECTIONS}'"
+source "${GLOBUS_COLLECTIONS}"
 
 echo "--- Globus user identities"
 globus whoami --verbose
