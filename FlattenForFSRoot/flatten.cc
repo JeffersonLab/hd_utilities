@@ -1289,7 +1289,7 @@ int main(int argc, char** argv){
       if(gUsePolarization) {
         if(iEntry==0) {
           GetPolarizationAngle(inRunNumber, currPol);
-	  outPolarization = currPol;
+          outPolarization = currPol;
         } else {
 	  if(currPol==-999){
 	    std::cerr << "FATAL: unable to find polarization info!!" << endl;
