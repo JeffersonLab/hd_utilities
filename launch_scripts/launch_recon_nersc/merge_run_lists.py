@@ -20,6 +20,7 @@ def main(args: argparse.Namespace) -> None:
       out_file.write(f"{run_number}\n")
 
 
+#TODO expand to merging N files
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(
     description = "Merge two run list files into a single run list file.",

@@ -26,7 +26,8 @@ source "${CONFIG_FILE}"
 echo "Using launch scripts from git commit hash: $(cat "${THIS_SCRIPT_DIR}/DEPLOYED_HD_UTILITIES_GIT_HASH" || true)"
 
 # copy scripts and config files to NERSC
-SRC="/home/${PRODUCTION_USER}/${PRODUCTION_LAUNCH_DIR}"
+#TODO better separate JLab and NERSC parts of code and put everything needed at NERSC into separate directory
+SRC="/home/${PRODUCTION_USER}/${PRODUCTION_LAUNCH_DIR}"  #TODO is it really meaningful to hardwire this? why not use the current script dir?
 DEST="${NERSC_HOST}:${NERSC_LAUNCH_DIR}"
 echo "Copying launch scripts and config files from '${SRC}' to '${DEST}'"
 ssh "${NERSC_HOST}" "mkdir --verbose --parents '${NERSC_LAUNCH_DIR}' && chown --verbose :${NERSC_PROJECT} '${NERSC_LAUNCH_DIR}'"  # rsync cannot set permissions on the destination directory if it does not exist beforehand
