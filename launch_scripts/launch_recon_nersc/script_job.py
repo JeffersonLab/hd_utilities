@@ -124,7 +124,8 @@ def define_swif2_output_files(
   print(f"Transferring {len(output_file_paths)} files back to JLab")
   for local_output_file_path, remote_output_file_path in output_file_paths:
     output_cmd = f"./.swif/swif2 output '{local_output_file_path}' '{remote_output_file_path}'"  #TODO for some reason, swif2 is not in path
-    print(output_cmd)
+    print(f"Defining output file: '{output_cmd}'")
+    # print(output_cmd)  #TODO
     subprocess.run(output_cmd, shell = True, check = False)
 
 
@@ -137,7 +138,7 @@ def main(args: argparse.Namespace) -> None:
   write_env_to_file(f"job_{run_label}.env")
   for log_file_suffix, log_cmd in (
     ("hostname",  "hostnamectl"),
-    # ("diskquota", "myquota --verbose --full-path --limit --common --hpss"),  # does not work NERSC nodes: /usr/lpp/mmfs/bin/mmlsquota is missing
+    # ("diskquota", "myquota --verbose --full-path --limit --common --hpss"),  # does not work on NERSC nodes: /usr/lpp/mmfs/bin/mmlsquota is missing
     ("mounts",    "findmnt --canonicalize --output=TARGET,FSTYPE,SIZE,USED,AVAIL,USE%"),
   ):
     with open(f"job_{run_label}.{log_file_suffix}", "w", encoding = "utf-8") as log_file:
@@ -209,7 +210,7 @@ def main(args: argparse.Namespace) -> None:
   print("-------------------------------------------------------------------------------")
   define_swif2_output_files(args.run_number, args.swif_output_root)
 
-  print("-------------------------------------------------------------------------------")
+  # print("-------------------------------------------------------------------------------")  #TODO
   elapsed_time = int(time.time() - start_time)
   print(f"Wall time consumed by job script: {elapsed_time // 60} min, {elapsed_time % 60} sec")
   sys.exit(srun_result.returncode)  # forward return code of srun to the caller of this script, i.e. swif2

@@ -55,6 +55,7 @@ def main(args: argparse.Namespace) -> None:
     sys.exit(1)
   run_number = int(run_dir[0][3:])
 
+  # protect against accidentally appending files to existing `__swif_outfiles__` file
   if os.path.exists(f"./__swif_outfiles__"):
     raise RuntimeError(f"'__swif_outfiles__' already exists in '{args.run_working_dir}'; remove it before running this script")
   else:
@@ -63,7 +64,7 @@ def main(args: argparse.Namespace) -> None:
     os.environ["SWIF_JOB_STAGE_DIR"] = os.path.abspath(os.getcwd())  # needed by `./.swif/swif2` command
     define_swif2_output_files(run_number, args.swif_output_root)
 
-  print("-------------------------------------------------------------------------------")
+  # print("-------------------------------------------------------------------------------")  #TODO
   elapsed_time = int(time.time() - start_time)
   print(f"Wall time consumed by job script: {elapsed_time // 60} min, {elapsed_time % 60} sec")
 
