@@ -10,9 +10,10 @@ from collections import deque
 import functools
 import glob
 import os
+import signal
 import sys
 import time
-from typing import List
+from typing import List, Optional
 
 from script_job import (
   get_hd_root_return_code,
@@ -33,6 +34,22 @@ def tail(
     return list(deque(file, maxlen = nmb_lines))
 
 
+def return_code_signal_name(return_code: Optional[int]) -> str:
+  """Returns "<return_code> (<signal_name>)" if signal is known else the return code."""
+  if return_code is None:
+    return "unknown"
+  sig_names = {
+    value : name
+    for name, value in signal.__dict__.items()
+    if name.startswith("SIG") and not name.startswith("SIG_")
+  }
+  signal_number = return_code - 128
+  if signal_number in sig_names.keys():
+    return f"{return_code} ({sig_names[signal_number]})"
+  else:
+    return str(return_code)
+
+
 def main(args: argparse.Namespace) -> None:
   start_time = time.time()
   print_command_line_arguments(args)
@@ -45,7 +62,7 @@ def main(args: argparse.Namespace) -> None:
   hd_root_failed_rc_files: List[str] = []
   for hd_root_rc_file in hd_root_rc_files:
     hd_root_return_code = get_hd_root_return_code(hd_root_rc_file)
-    print(f"Found hd_root return code {hd_root_return_code} in '{hd_root_rc_file}'")
+    print(f"Found hd_root return code {return_code_signal_name(hd_root_return_code)} in '{hd_root_rc_file}'")
     if hd_root_return_code is None or hd_root_return_code != 0:
       hd_root_failed_rc_files.append(hd_root_rc_file)
   print(f"Found {len(hd_root_failed_rc_files)} hd_root processes with non-zero or unknown return code")
@@ -54,11 +71,11 @@ def main(args: argparse.Namespace) -> None:
     # tail hd_root log files if return code is non-zero or could not be read
     hd_root_log_dir_name = os.path.dirname(hd_root_rc_file)
     print("-------------------------------------------------------------------------------")
-    print(f"hd_root return code: {get_hd_root_return_code(hd_root_rc_file)} (from '{hd_root_rc_file}')")
-    for log_file in ("hd_root.out", "hd_root.err"):
-      log_file_path = f"{hd_root_log_dir_name}/{log_file}"
-      print(f"hd_root log file: '{log_file_path}'")
-      for line in tail(log_file_path, args.nmb_lines):
+    print(f"hd_root return code: {return_code_signal_name(get_hd_root_return_code(hd_root_rc_file))} (from '{hd_root_rc_file}')")
+    for hd_root_log_file_name in ("hd_root.out", "hd_root.err"):
+      hd_root_log_file_path = f"{hd_root_log_dir_name}/{hd_root_log_file_name}"
+      print(f"--- {hd_root_log_file_name}")
+      for line in tail(hd_root_log_file_path, args.nmb_lines):
         print(line, end = "")
 
   print("-------------------------------------------------------------------------------")
