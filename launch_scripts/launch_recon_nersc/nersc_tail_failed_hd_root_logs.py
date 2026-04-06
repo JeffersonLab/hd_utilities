@@ -10,8 +10,8 @@ from collections import deque
 import functools
 import glob
 import os
-import sys
 import time
+from typing import List
 
 from script_job import (
   get_hd_root_return_code,
@@ -25,11 +25,11 @@ print = functools.partial(print, flush = True)
 
 def tail(
   file_name: str,
-  n:        int = 3
-) -> list[str]:
+  nmb_lines: int = 3
+) -> List[str]:
   """Returns the last n lines of the given file."""
   with open(file_name, "r", encoding = "utf-8") as file:
-    return list(deque(file, maxlen = n))
+    return list(deque(file, maxlen = nmb_lines))
 
 
 def main(args: argparse.Namespace) -> None:
@@ -48,7 +48,7 @@ def main(args: argparse.Namespace) -> None:
       for log_file in ("hd_root.out", "hd_root.err"):
         log_file_path = f"{hd_root_log_dir_name}/{log_file}"
         print(f"hd_root log file: '{log_file_path}'")
-        for line in tail(log_file_path, args.number_lines):
+        for line in tail(log_file_path, args.nmb_lines):
           print(line, end = "")
 
   print("-------------------------------------------------------------------------------")
@@ -61,5 +61,5 @@ if __name__ == "__main__":
     description = "Print the last N lines of the stdout and stderr log files for hd_root processes with non-zero exit code.",
   )
   parser.add_argument("--run_working_dir", required = True,         help = "Working directory of the run")
-  parser.add_argument("--number_lines",    type = int, default = 3, help = "Number of lines to print from the end of the log files; default: %(default)i")
+  parser.add_argument("--nmb_lines",       type = int, default = 3, help = "Number of lines to print from the end of the log files; default: %(default)i")
   main(parser.parse_args())
