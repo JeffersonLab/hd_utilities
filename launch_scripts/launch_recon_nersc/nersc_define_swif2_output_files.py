@@ -35,7 +35,6 @@ print = functools.partial(print, flush = True)
 
 def main(args: argparse.Namespace) -> None:
   start_time = time.time()
-  print_command_line_arguments(args)
 
   # go into run working directory
   try:
@@ -59,6 +58,7 @@ def main(args: argparse.Namespace) -> None:
   if os.path.exists(f"./__swif_outfiles__"):
     raise RuntimeError(f"'__swif_outfiles__' already exists in '{args.run_working_dir}'; remove it before running this script")
   else:
+    print_command_line_arguments(args)
     # define output files for swif2
     os.environ["SWIF_JOB_STAGE_DIR"] = os.path.abspath(os.getcwd())  # needed by `./.swif/swif2` command
     define_swif2_output_files(run_number, args.swif_output_root)
