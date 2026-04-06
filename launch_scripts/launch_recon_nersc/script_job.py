@@ -110,6 +110,19 @@ def get_output_file_paths(
   return output_file_paths
 
 
+def define_swif2_output_files(
+  run_number:       int,
+  swif_output_root: str,
+) -> None:
+  """Register all output files with swif2 for transfer back to JLab."""
+  output_file_paths: List[Tuple[str, str]] = get_output_file_paths(run_number, swif_output_root)
+  print(f"Transferring {len(output_file_paths)} files back to JLab")
+  for local_output_file_path, remote_output_file_path in output_file_paths:
+    output_cmd = f"./.swif/swif2 output '{local_output_file_path}' '{remote_output_file_path}'"  #TODO for some reason, swif2 is not in path
+    print(output_cmd)
+    subprocess.run(output_cmd, shell = True, check = False)
+
+
 def main(args: argparse.Namespace) -> None:
   start_time = time.time()
   print_command_line_arguments(args)
@@ -189,14 +202,9 @@ def main(args: argparse.Namespace) -> None:
   # If a task is killed by signal, 128 + signal number is returned.
 
   print("-------------------------------------------------------------------------------")
-  # define all output files that swif2 should transfer back to JLab
-  output_file_paths: List[Tuple[str, str]] = get_output_file_paths(args.run_number, args.swif_output_root)
-  print(f"Transferring {len(output_file_paths)} files back to JLab")
-  for local_output_file_path, remote_output_file_path in output_file_paths:
-    output_cmd = f"./.swif/swif2 output '{local_output_file_path}' '{remote_output_file_path}'"  #TODO for some reason, swif2 is not in path
-    print(f"Defining output file: '{output_cmd}'")
-    subprocess.run(output_cmd, shell = True, check = False)
+  define_swif2_output_files(args.run_number, args.swif_output_root)
 
+  print("-------------------------------------------------------------------------------")
   elapsed_time = int(time.time() - start_time)
   print(f"Wall time consumed by job script: {elapsed_time // 60} min, {elapsed_time % 60} sec")
   sys.exit(srun_result.returncode)  # forward return code of srun to the caller of this script, i.e. swif2
