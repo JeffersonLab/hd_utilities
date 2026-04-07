@@ -31,7 +31,11 @@ def tail(
 ) -> List[str]:
   """Returns the last n lines of the given file."""
   with open(file_name, "r", encoding = "utf-8") as file:
-    return list(deque(file, maxlen = nmb_lines))
+    try:
+      return list(deque(file, maxlen = nmb_lines))
+    except UnicodeDecodeError as error:
+      print(f"WARNING: unable to decode '{file_name}' as utf-8: {error}")
+      return []
 
 
 def return_code_signal_name(return_code: Optional[int]) -> str:
@@ -65,7 +69,7 @@ def main(args: argparse.Namespace) -> None:
     print(f"Found hd_root return code {hd_root_return_code:3d} in '{hd_root_rc_file}'")
     if hd_root_return_code is None or hd_root_return_code != 0:
       hd_root_failed_rc_files.append(hd_root_rc_file)
-  print(f"Found {len(hd_root_failed_rc_files)} hd_root processes with non-zero or unknown return code")
+  print(f"Found {len(hd_root_failed_rc_files)} out of {len(hd_root_rc_files)} hd_root processes with non-zero or unknown return code")
 
   for hd_root_rc_file in hd_root_failed_rc_files:
     # tail hd_root log files if return code is non-zero or could not be read
@@ -74,7 +78,7 @@ def main(args: argparse.Namespace) -> None:
     print(f"hd_root return code: {return_code_signal_name(get_hd_root_return_code(hd_root_rc_file))} (from '{hd_root_rc_file}')")
     for hd_root_log_file_name in ("hd_root.out", "hd_root.err"):
       hd_root_log_file_path = f"{hd_root_log_dir_name}/{hd_root_log_file_name}"
-      print(f"--- {hd_root_log_file_name}")
+      print(f"--- {hd_root_log_file_path}")
       for line in tail(hd_root_log_file_path, args.nmb_lines):
         print(line, end = "")
 
