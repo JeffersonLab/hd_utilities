@@ -1100,7 +1100,8 @@ int main(int argc, char** argv){
 
   Long64_t gInNEntries = gInTree->GetEntries();
   TString gInFileName("");
-  int currPol; // hold polarization value for the entire run (assuming one run per tree!)
+  int currPol = -999; // hold polarization value for the entire run (assuming one run per tree!)
+  bool triedPolarizationInitialize=false;
   cout << "LOOPING OVER " << gInNEntries << " ENTRIES..." << endl;
   for (Long64_t iEntry = 0; iEntry < gInNEntries; iEntry++){
     if ((iEntry+1) % 10000 == 0) cout << "entry = " << iEntry+1 << "  (" << (100.0*(iEntry+1))/gInNEntries << " percent)" << endl;
@@ -1287,13 +1288,15 @@ int main(int argc, char** argv){
       outRunNumber       = inRunNumber;
       outEventNumber     = inEventNumber;
       if(gUsePolarization) {
-        if(iEntry==0) {
-          if(GetPolarizationAngle(inRunNumber, currPol)) {
-            outPolarization = currPol;
-          } else {
-            outPolarization = -1;
-          }
+        if(!triedPolarizationInitialize) {
+          GetPolarizationAngle(inRunNumber, currPol);
+          outPolarization = currPol;
+          triedPolarizationInitialize=true;
         } else {
+            if(currPol==-999){
+              std::cerr << "FATAL: unable to find polarization info!!" << endl;
+              exit(0);
+            }
           outPolarization = currPol;
         }
       }
@@ -2268,13 +2271,17 @@ bool GetPolarizationAngle(int runNumber, int& polarizationAngle)
   ostringstream locCommandStream;
   locCommandStream << "rcnd " << runNumber << " polarization_angle";
   FILE* locInputFile = gSystem->OpenPipe(locCommandStream.str().c_str(), "r");
-  if(locInputFile == NULL)
-    return false;
-
+  if(locInputFile == NULL){
+    std::cerr << "FATAL: Could not run rcnd. Is RCDB set up? " << endl;
+    exit(2);
+  }
   //get the first line
   char buff[1024];
-  if(fgets(buff, sizeof(buff), locInputFile) == NULL)
-    return 0;
+  if(fgets(buff, sizeof(buff), locInputFile) == NULL){
+    std::cerr << "FATAL: rcnd produced no stdout" << endl;
+    exit(2);
+  }
+
   istringstream locStringStream(buff);
 
   //Close the pipe
@@ -2282,8 +2289,10 @@ bool GetPolarizationAngle(int runNumber, int& polarizationAngle)
 
   //extract it
   string locPolarizationAngleString;
-  if(!(locStringStream >> locPolarizationAngleString))
-    return false;
+  if(!(locStringStream >> locPolarizationAngleString)){
+    std::cerr << "FATAL: unable to read PolarizationAngle from istringstream" << endl;
+    exit(2);
+  }
 
   // convert string to integer
   polarizationAngle = atoi(locPolarizationAngleString.c_str());
