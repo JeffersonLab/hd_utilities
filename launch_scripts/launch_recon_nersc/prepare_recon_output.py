@@ -224,19 +224,6 @@ def transfer_files(
   # move files with unique destinations and copy files with multiple destinations before deleting original file
   # use links instead of copying/moving if `link_files` is True
   for old_file_path, new_file_paths in destination_map.items():
-    if len(new_file_paths) == 1:
-      new_file_path = new_file_paths[0]
-      new_file_dir_name = os.path.dirname(new_file_path)
-      if not os.path.isdir(new_file_dir_name):
-        print(f"Creating directory '{new_file_dir_name}'")
-        # os.makedirs(new_file_dir_name, exist_ok = True)
-      if link_files:
-        print(f"Linking '{old_file_path}' -> '{new_file_path}'")
-        # os.link(old_file_path, new_file_path)
-      else:
-        print(f"Moving '{old_file_path}' -> '{new_file_path}'")
-        # shutil.move(old_file_path, new_file_path)
-      continue
     for new_file_path in new_file_paths:
       #TODO verify that destination file does not already exist
       new_file_dir_name = os.path.dirname(new_file_path)
@@ -246,11 +233,16 @@ def transfer_files(
       if link_files:
         print(f"Linking '{old_file_path}' -> '{new_file_path}'")
         # os.link(old_file_path, new_file_path)
+      elif len(new_file_paths) == 1:
+        print(f"Moving '{old_file_path}' -> '{new_file_path}'")
+        # shutil.move(old_file_path, new_file_path)
+        continue
       else:
         print(f"Copying '{old_file_path}' -> '{new_file_path}'")
         # shutil.copy2(old_file_path, new_file_path)
-    print(f"Deleting '{old_file_path}'")
-    # os.remove(old_file_path)
+    if not link_files and len(new_file_paths) > 1:
+      print(f"Deleting '{old_file_path}'")
+      # os.remove(old_file_path)
 
 
 def main(args: argparse.Namespace) -> None:
