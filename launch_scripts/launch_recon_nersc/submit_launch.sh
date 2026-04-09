@@ -27,9 +27,8 @@ echo "Using launch scripts from git commit hash: $(cat "${THIS_SCRIPT_DIR}/DEPLO
 
 # copy scripts and config files to NERSC
 #TODO better separate JLab and NERSC parts of code and put everything needed at NERSC into separate directory
-SRC="/home/${PRODUCTION_USER}/${PRODUCTION_LAUNCH_DIR}"  #TODO is it really meaningful to hardwire this? why not use the current script dir?
 DEST="${NERSC_HOST}:${NERSC_LAUNCH_DIR}"
-echo "Copying launch scripts and config files from '${SRC}' to '${DEST}'"
+echo "Copying launch scripts and config files from '${THIS_SCRIPT_DIR}' to '${DEST}'"
 ssh "${NERSC_HOST}" "mkdir --verbose --parents '${NERSC_LAUNCH_DIR}' && chown --verbose :${NERSC_PROJECT} '${NERSC_LAUNCH_DIR}'"  # rsync cannot set permissions on the destination directory if it does not exist beforehand
 if [ "${?}" -ne 0 ]
 then
@@ -45,11 +44,11 @@ RSYNC_CMD=(rsync
   --ignore-times
   --chown=:"${NERSC_PROJECT}"  # ensure write permissions for project group
   --chmod="Dg+rwx,Fg+rw"  # ensure write permissions for project group for subdirectories and files
-  "${SRC}/"  # trailing slash is important: copy contents of `SRC` into existing `DEST` directory
+  "${THIS_SCRIPT_DIR}/"  # trailing slash is important: copy contents of `THIS_SCRIPT_DIR` into existing `DEST` directory
   "${DEST}"
 )
 "${RSYNC_CMD[@]}"
-unset SRC DEST
+unset DEST
 
 # verify that container image exists in NERSC repository
 if ssh "${NERSC_HOST}" "shifterimg lookup \"${NERSC_CONTAINER_IMAGE#docker:}\""
