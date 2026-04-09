@@ -35,7 +35,7 @@ from typing import List, Tuple, Optional
 print = functools.partial(print, flush = True)
 
 
-#TODO find out whether this can be moved to the utilities module
+#TODO find out whether these functions can be moved to the/a utilities module
 def print_command_line_arguments(args: argparse.Namespace) -> None:
   """Print all command-line arguments and their values and the git hash."""
   this_script_file_name = os.path.basename(sys.argv[0])  # get file name of script that was launched

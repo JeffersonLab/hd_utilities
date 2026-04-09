@@ -77,6 +77,7 @@ def read_run_numbers_from_file(run_number_list_file: str) -> list[int]:
   run_numbers: list[int] = []
   with open(run_number_list_file) as file:
     run_numbers = [int(line.strip()) for line in file if line.strip()]  # skip blank lines
+  print(f"Read {len(run_numbers)} run number(s) from file '{run_number_list_file}'")
   return run_numbers
 
 
