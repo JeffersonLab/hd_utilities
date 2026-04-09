@@ -8,15 +8,44 @@ the number of NERSC nodes required to process them.
 from __future__ import annotations
 
 import argparse
+import math
 import time
+from typing import Iterable
+
+import ROOT
 
 from script_job import print_command_line_arguments
 from utilities import (
   ensure_dict_value_exists,
   get_config_dict_from_env_file,
+  get_evio_file_paths_for_run,
+  get_file_size_from_mss_stub,
   get_job_size,
   read_run_numbers_from_file,
 )
+
+
+def plot_evio_file_size(
+  run_numbers:   Iterable[int],
+  raw_data_root: str,
+) -> None:
+  """Plots the distribution of EVIO file sizes for the given run numbers."""
+  print(f"Plotting EVIO file size distribution for {len(run_numbers)} runs...")
+  # get sizes of all EVIO files for the given runs
+  file_sizes_gb: list[float] = []  # file sizes in GB
+  for run_number in run_numbers:
+    for evio_file_path in get_evio_file_paths_for_run(run_number, raw_data_root):
+      file_sizes_gb.append(float(get_file_size_from_mss_stub(evio_file_path)) / 1024**3)
+  # histogram file sizes
+  canv = ROOT.TCanvas()
+  hist = ROOT.TH1F("evio_file_size", ";EVIO File Size (GB);Count", 100, 0, math.ceil(max(file_sizes_gb) * 1.05))
+  for size_gb in file_sizes_gb:
+    hist.Fill(size_gb)
+  canv.SetLogy()
+  hist.SetMinimum(0.1)  # improve log scale
+  hist.Draw()
+  #TODO print total, average, and median file size on plot
+  canv.SaveAs(f"./{hist.GetName()}.pdf")
 
 
 def main(args: argparse.Namespace) -> None:
@@ -58,11 +87,17 @@ def main(args: argparse.Namespace) -> None:
           f"    processed by {total_nmb_nodes} NERSC nodes,\n"
           f"    out of which {total_nmb_nodes_unused:.1f} nodes are unused (= {total_nmb_nodes_unused / total_nmb_nodes:.1%} of total nodes)")
 
+  print("-------------------------------------------------------------------------------")
+  plot_evio_file_size(run_numbers, swif_raw_data_root)
+
   elapsed_time = int(time.time() - start_time)
   print(f"Wall time consumed by script: {elapsed_time // 60} min, {elapsed_time % 60} sec")
 
 
 if __name__ == "__main__":
+  ROOT.gROOT.SetBatch(True)
+  ROOT.gStyle.SetOptStat(False)
+  # ROOT.gStyle.SetOptStat(111111)
   parser = argparse.ArgumentParser(
     description = "Estimates the size of the raw data for the reconstruction launch and the number of NERSC nodes required to process them.",
   )
