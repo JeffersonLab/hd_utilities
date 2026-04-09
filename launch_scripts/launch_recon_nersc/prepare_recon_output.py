@@ -78,9 +78,9 @@ class FileTransferMapGenerator:
     if not os.path.isdir(self._run_dir):
       print(f"WARNING: '{self._run_dir}' does not exist or is not a directory; ignoring run {self.run_number}.")  #TODO collect missing runs and report at the end of the script
       return
-    print(f"Processing run directory '{self._run_dir}'")
     #TODO get list of EVIO files and check that output exists for each of them instead of relying on the number of files and the file numbering scheme
     nmb_files, nmb_tasks, _, _, = get_job_size(self.run_number, self.raw_data_root, self.nmb_processes_per_task)
+    print(f"Processing run {self.run_number} with {nmb_tasks} tasks and {nmb_files} files in directory '{self._run_dir}'")
     for task_index in range(nmb_tasks):  # loop over tasks
       self.process_task_dir(task_index, nmb_tasks, nmb_files)
 
@@ -94,7 +94,7 @@ class FileTransferMapGenerator:
     task_dir = f"{self._run_dir}/TASK{task_index:03d}"
     if not os.path.isdir(task_dir):
       raise ValueError(f"ERROR: '{task_dir}' does not exist or is not a directory; aborting.") #TODO collect missing task directories and report at the end of the script instead of aborting
-    print(f"  Processing task directory '{task_dir}'")
+    print(f"  Processing task {task_index} in directory '{task_dir}'")
     file_number_start = task_index * self.nmb_processes_per_task
     file_number_end   = min(file_number_start + self.nmb_processes_per_task, nmb_files)
     for file_number in range(file_number_start, file_number_end):  # loop over EVIO file numbers
@@ -111,7 +111,7 @@ class FileTransferMapGenerator:
     file_dir = f"{task_dir}/FILE{file_number:03d}"
     if not os.path.isdir(file_dir):
       raise ValueError(f"ERROR: '{file_dir}' does not exist or is not a directory; aborting.")  #TODO collect missing file directories and report at the end of the script instead of aborting
-    print(f"    Processing file directory '{file_dir}'")
+    print(f"    Processing file {file_number} in directory '{file_dir}'")
     #TODO divert log and core files for failed hd_root processes into separate directory tree; in case of failure just move all files in the FILE directory
     # always process log files
     job_info_dir = f"{self.target_dir}/job_info/{self.run_number:06d}/job_info_{self.run_number:06d}_{file_number:03d}"  # target directory for all log files
@@ -209,11 +209,11 @@ class FileTransferMapGenerator:
 
 def transfer_files(
   file_transfer_map: list[tuple[str, str]],
-  symlink_files:     bool = True,
-  #TODO add dry-run option that only prints planned file operations without actually performing them
+  symlink_files:     bool = False,
+  dryrun:            bool = False,
 ) -> None:
   """Move unique source files and copy duplicate source files before deleting the original."""
-  print(f"Executing {len(file_transfer_map)} file operations:")
+  print(f"{'Executing' if not dryrun else 'Previewing'} {len(file_transfer_map)} file operations:")
   # convert list into dictionary mapping source file paths to list of destination file paths
   destination_map: dict[str, list[str]] = {}
   for old_file_path, new_file_path in file_transfer_map:
@@ -229,20 +229,28 @@ def transfer_files(
       new_file_dir_name = os.path.dirname(new_file_path)
       if not os.path.isdir(new_file_dir_name):
         print(f"Creating directory '{new_file_dir_name}'")
-        os.makedirs(new_file_dir_name, exist_ok = True)
+        if not dryrun:
+          os.makedirs(new_file_dir_name, exist_ok = True)
       if symlink_files:
         print(f"Linking '{old_file_path}' -> '{new_file_path}'")
-        os.symlink(old_file_path, new_file_path)
+        if not dryrun:
+          os.symlink(old_file_path, new_file_path)
       elif len(new_file_paths) == 1:
         print(f"Moving '{old_file_path}' -> '{new_file_path}'")
-        # shutil.move(old_file_path, new_file_path)
+        if not dryrun:
+          # shutil.move(old_file_path, new_file_path)
+          pass
         continue
       else:
         print(f"Copying '{old_file_path}' -> '{new_file_path}'")
-        # shutil.copy2(old_file_path, new_file_path)
+        if not dryrun:
+          # shutil.copy2(old_file_path, new_file_path)
+          pass
     if not symlink_files and len(new_file_paths) > 1:
       print(f"Deleting '{old_file_path}'")
-      # os.remove(old_file_path)
+      if not dryrun:
+        # os.remove(old_file_path)
+        pass
 
 
 def main(args: argparse.Namespace) -> None:
@@ -260,6 +268,8 @@ def main(args: argparse.Namespace) -> None:
 
   file_transfer_map: list[tuple[str, str]] = []  # pairs of old and new file paths for moving/copying
   for run_number in run_numbers:  # loop over runs
+    print("...............................................................................")
+    print(f"Verifying completeness of files for run {run_number} and preparing file transfer map")
     file_transfer_map_gen = FileTransferMapGenerator(
       run_number             = run_number,
       job_dir                = swif_output_root,
@@ -271,7 +281,16 @@ def main(args: argparse.Namespace) -> None:
     file_transfer_map += file_transfer_map_gen._file_transfer_map
 
   print("-------------------------------------------------------------------------------")
-  transfer_files(file_transfer_map)
+  if args.mode == "check":
+    print(f"Check mode: found {len(file_transfer_map)} file operations.")
+  elif args.mode == "dryrun":
+    transfer_files(file_transfer_map, dryrun = True)
+  elif args.mode == "symlink":
+    transfer_files(file_transfer_map, symlink_files = True)
+  elif args.mode == "move":
+    transfer_files(file_transfer_map)
+  else:
+    raise ValueError(f"Unknown mode '{args.mode}'")
   #TODO tar log directories
 
   elapsed_time = int(time.time() - start_time)
@@ -280,9 +299,10 @@ def main(args: argparse.Namespace) -> None:
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(
-    description = "Generates list of runs to process for a given run period.",
+    description = "Checks completeness of files in swif2 output directory and creates directory structure in target directory that can be written to tape.",
   )
   parser.add_argument("--launch_env_file", default = "./launch.env", help = "Path to .env file defining the configuration variables of the reconstruction launch; default: '%(default)s'")
   parser.add_argument("--override_run_list", help = "Path to run-number list file to use instead of RCDB query")
+  parser.add_argument("--mode", choices = ["check", "dryrun", "symlink", "move"], default = "check", help = "Operation mode: 'check': verify completeness of files, 'dryrun': preview transfer commands, 'symlink': create symbolic links, or 'move' perform transfers; default: '%(default)s'")
   args = parser.parse_args()
   main(args)
