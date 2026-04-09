@@ -12,6 +12,7 @@ import argparse
 import glob
 import os
 import re
+import shutil
 import time
 
 from script_job import print_command_line_arguments
@@ -24,7 +25,8 @@ from utilities import (
 
 
 #TODO this should go in a period-dependent file
-# map subdirectory names to the the files they contain, i.e. subdir name -> (file base name, file type)
+# map subdirectory names in the final directory layout to the files
+# they contain, i.e. subdir name -> (file base name, file type)
 #NOTE in most cases, subdir name == file base name
 RECON_SUBDIR_BASENAME_MAP: dict[str, tuple[str, str]] = {
   # EVIO files
@@ -52,21 +54,21 @@ RECON_BASENAME_SUBDIR_MAP: dict[str, tuple[str, str]] = {
 }
 
 
-#TODO reorganize code into a class
+#TODO reorganize code into a class to avoid passing many arguments to functions and to make it easier to maintain state (e.g. file path map) across function calls
 def process_log_files(
   log_file_names: list[str],
   src_dir:        str,
   dest_dir:       str,
 ) -> list[tuple[str, str]]:
   """Process log files in the given log directory and return a map from original file paths to new file paths."""
-  file_move_paths: list[tuple[str, str]] = []  # pairs of old and new file paths for moving
+  file_path_map: list[tuple[str, str]] = []  # pairs of old and new file paths for moving
   for log_file_name in log_file_names:
     log_file_path = f"{src_dir}/{log_file_name}"
     if not os.path.isfile(log_file_path):
-      print(f"WARNING: cannot find file '{log_file_path}'; ignoring.")
+      print(f"WARNING: cannot find file '{log_file_path}'; ignoring.")  #TODO collect missing files and report at the end of the script
       continue
-    file_move_paths.append((log_file_path, f"{dest_dir}/{log_file_name}"))
-  return file_move_paths
+    file_path_map.append((log_file_path, f"{dest_dir}/{log_file_name}"))
+  return file_path_map
 
 
 def process_job_log_files(
@@ -77,7 +79,7 @@ def process_job_log_files(
 ) -> list[tuple[str, str]]:
   """Process log files in the given job directory and return a map from original file paths to new file paths."""
   log_file_names: list[str] = [
-    f"job_{run_number}.diskquota",
+    # f"job_{run_number}.diskquota",
     f"job_{run_number}.env",
     f"job_{run_number}.hostname",
     f"job_{run_number}.mounts",
@@ -130,39 +132,42 @@ def process_file_dir(
   target_dir:  str,
 ) -> list[tuple[str, str]]:
   """Process the file directory defined by the arguments and return a map from original file paths to new file paths."""
-  file_dir = f"{job_dir}/RUN{run_number:06d}/TASK{task_index:03d}/FILE{file_number:03d}"
+  task_dir = f"{job_dir}/RUN{run_number:06d}/TASK{task_index:03d}"
+  file_dir = f"{task_dir}/FILE{file_number:03d}"
   if not os.path.isdir(file_dir):
     raise ValueError(f"ERROR: '{file_dir}' does not exist or is not a directory; aborting.")
-  print(f"    Processing file directory '{file_dir}")
+  print(f"    Processing file directory '{file_dir}'")
+  #TODO divert log and core files for failed hd_root processes into separate directory tree; in case of failure just move all files in the FILE directory
   # always process log files
   job_info_dir = f"{target_dir}/job_info/{run_number:06d}/job_info_{run_number:06d}_{file_number:03d}"  # target directory for all log files
-  file_move_paths: list[tuple[str, str]] = []
-  file_move_paths += process_hd_root_log_files(file_dir, job_info_dir)  # pairs of old and new file paths for moving
-  file_move_paths += process_task_log_files   (f"{job_dir}/RUN{run_number:06d}/TASK{task_index:03d}", job_info_dir)
-  file_move_paths += process_job_log_files    (run_number, nmb_tasks, job_dir, job_info_dir)
+  file_path_map: list[tuple[str, str]] = []
+  file_path_map += process_hd_root_log_files(file_dir, job_info_dir)
+  file_path_map += process_task_log_files   (task_dir, job_info_dir)
+  file_path_map += process_job_log_files    (run_number, nmb_tasks, job_dir, job_info_dir)
   # ensure that hd_root exit code is 0
+  #TODO use get_hd_root_return_code function
   hd_root_rc_file_path = f"{file_dir}/hd_root.rc"
   hd_root_rc_file_content: str = open(hd_root_rc_file_path).read()
   match = re.search(r"exit code (\d+)$", hd_root_rc_file_content)
   hd_root_return_code = None
   if not match:
     print(f"WARNING: malformed hd_root return-code file '{hd_root_rc_file_path}': '{hd_root_rc_file_content}'; ignoring EVIO file")
-    return file_move_paths
+    return file_path_map
   hd_root_return_code = int(match.group(1))
   if hd_root_return_code != 0:
     print(f"WARNING: hd_root return code for run {run_number} and EVIO file number {file_number} is {hd_root_return_code}; ignoring EVIO file")
-    return file_move_paths
+    return file_path_map
   # process hd_root output files
   for subdir_name, (file_base_name, file_type) in RECON_SUBDIR_BASENAME_MAP.items():
     file_name = f"hd_rawdata_{run_number:06d}_{file_number:03d}.{file_base_name}.{file_type}" if file_type == "evio" else f"{file_base_name}.{file_type}"
     file_path = f"{file_dir}/{file_name}"
     if not os.path.isfile(file_path):
-      print(f"WARNING: expected file '{file_path}' is missing; ignoring")
+      print(f"WARNING: expected file '{file_path}' is missing; ignoring")  #TODO collect missing files and report at the end of the script
       continue
     new_file_name = f"{file_base_name}_{run_number:06d}_{file_number:03d}.{file_type}"  # fix file names of evio files and make file names of non-evio files unique
     new_file_path = f"{target_dir}/{subdir_name}/{run_number:06d}/{new_file_name}"
-    file_move_paths.append((file_path, f"{new_file_path}"))
-  return file_move_paths
+    file_path_map.append((file_path, f"{new_file_path}"))
+  return file_path_map
 
 
 def process_task_dir(
@@ -178,13 +183,13 @@ def process_task_dir(
   task_dir = f"{job_dir}/RUN{run_number:06d}/TASK{task_index:03d}"
   if not os.path.isdir(task_dir):
     raise ValueError(f"ERROR: '{task_dir}' does not exist or is not a directory; aborting.")
-  print(f"  Processing task directory '{task_dir}")
+  print(f"  Processing task directory '{task_dir}'")
   file_number_start = task_index * nmb_processes_per_task
   file_number_end   = min(file_number_start + nmb_processes_per_task, nmb_files)
-  file_move_paths: list[tuple[str, str]] = []  # pairs of old and new file paths for moving
+  file_path_map: list[tuple[str, str]] = []  # pairs of old and new file paths for moving
   for file_number in range(file_number_start, file_number_end):  # loop over EVIO file numbers
-    file_move_paths += process_file_dir(job_dir, run_number, task_index, nmb_tasks, file_number, target_dir)
-  return file_move_paths
+    file_path_map += process_file_dir(job_dir, run_number, task_index, nmb_tasks, file_number, target_dir)
+  return file_path_map
 
 
 def process_run_dir(
@@ -199,12 +204,59 @@ def process_run_dir(
   if not os.path.isdir(run_dir):
     print(f"WARNING: '{run_dir}' does not exist or is not a directory; ignoring.")
     return []
-  print(f"Processing run directory '{run_dir}")
+  print(f"Processing run directory '{run_dir}'")
+  #TODO get list of EVIO files and check that output exists for each of them instead of relying on the number of files and the file numbering scheme
   nmb_files, nmb_tasks, _, _, = get_job_size(run_number, raw_data_root, nmb_processes_per_task)
-  file_move_paths: list[tuple[str, str]] = []  # pairs of old and new file paths for moving
+  file_path_map: list[tuple[str, str]] = []  # pairs of old and new file paths for moving
   for task_index in range(nmb_tasks):  # loop over tasks
-    file_move_paths += process_task_dir(job_dir, run_number, task_index, nmb_tasks, nmb_files, nmb_processes_per_task, target_dir)
-  return file_move_paths
+    file_path_map += process_task_dir(job_dir, run_number, task_index, nmb_tasks, nmb_files, nmb_processes_per_task, target_dir)
+  return file_path_map
+
+
+def transfer_files(
+  file_path_map: list[tuple[str, str]],
+  link_files:    bool = True,
+  #TODO add dry-run option that only prints planned file operations without actually performing them
+) -> None:
+  """Move unique source files and copy duplicate source files before deleting the original."""
+  print(f"Executing {len(file_path_map)} file operations:")
+  # convert list into dictionary mapping source file paths to list of destination file paths
+  destination_map: dict[str, list[str]] = {}
+  for old_file_path, new_file_path in file_path_map:
+    if old_file_path not in destination_map:
+      destination_map[old_file_path] = []
+    if new_file_path not in destination_map[old_file_path]:
+      destination_map[old_file_path].append(new_file_path)
+  # move files with unique destinations and copy files with multiple destinations before deleting original file
+  # use links instead of copying/moving if `link_files` is True
+  for old_file_path, new_file_paths in destination_map.items():
+    if len(new_file_paths) == 1:
+      new_file_path = new_file_paths[0]
+      new_file_dir_name = os.path.dirname(new_file_path)
+      if not os.path.isdir(new_file_dir_name):
+        print(f"Creating directory '{new_file_dir_name}'")
+        # os.makedirs(new_file_dir_name, exist_ok = True)
+      if link_files:
+        print(f"Linking '{old_file_path}' -> '{new_file_path}'")
+        # os.link(old_file_path, new_file_path)
+      else:
+        print(f"Moving '{old_file_path}' -> '{new_file_path}'")
+        # shutil.move(old_file_path, new_file_path)
+      continue
+    for new_file_path in new_file_paths:
+      #TODO verify that destination file does not already exist
+      new_file_dir_name = os.path.dirname(new_file_path)
+      if not os.path.isdir(new_file_dir_name):
+        print(f"Creating directory '{new_file_dir_name}'")
+        # os.makedirs(new_file_dir_name, exist_ok = True)
+      if link_files:
+        print(f"Linking '{old_file_path}' -> '{new_file_path}'")
+        # os.link(old_file_path, new_file_path)
+      else:
+        print(f"Copying '{old_file_path}' -> '{new_file_path}'")
+        # shutil.copy2(old_file_path, new_file_path)
+    print(f"Deleting '{old_file_path}'")
+    # os.remove(old_file_path)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -217,17 +269,21 @@ def main(args: argparse.Namespace) -> None:
   nersc_nmb_processes_per_task = int(ensure_dict_value_exists(launch_config, "NERSC_NMB_PROCESSES_PER_TASK"))
 
   run_numbers: list[int] = read_run_numbers_from_file(run_number_list_file)
-  target_dir = f"/lustre24/expphy/volatile/halld/offsite_prod/RunPeriod-2022-05/recon/test.prepare"  #TODO add command-line argument
+  target_dir = f"/lustre24/expphy/volatile/halld/offsite_prod/RunPeriod-2022-05/recon/ready_for_tape"  #TODO add command-line argument
 
-  file_move_paths: list[tuple[str, str]] = []  # pairs of old and new file paths for moving
-  #TODO for some log files file_move_paths contains multiple entries, i.e. these files need to be copied and not just moved
+  file_path_map: list[tuple[str, str]] = []  # pairs of old and new file paths for moving/copying  #TODO use a dictionary instead to avoid transformation in `transfer_files` function
   for run_number in run_numbers:  # loop over runs
-    file_move_paths += process_run_dir(run_number, swif_output_root, swif_raw_data_root, nersc_nmb_processes_per_task, target_dir)
+    file_path_map += process_run_dir(
+      run_number             = run_number,
+      job_dir                = swif_output_root,
+      raw_data_root          = swif_raw_data_root,
+      nmb_processes_per_task = nersc_nmb_processes_per_task,
+      target_dir             = target_dir,
+    )
 
   print("-------------------------------------------------------------------------------")
-  for old_file_path, new_file_path in file_move_paths:
-    print(f"'{old_file_path}' -> '{new_file_path}'")
-    # os.symlink(file_path, f"{target_dir}/{new_file_name}")
+  transfer_files(file_path_map)
+  #TODO tar log directories
 
   elapsed_time = int(time.time() - start_time)
   print(f"Wall time consumed by script: {elapsed_time // 60} min, {elapsed_time % 60} sec")
