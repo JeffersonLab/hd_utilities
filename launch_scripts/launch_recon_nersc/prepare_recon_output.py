@@ -209,7 +209,7 @@ class FileTransferMapGenerator:
 
 def transfer_files(
   file_transfer_map: list[tuple[str, str]],
-  link_files:    bool = True,
+  symlink_files:     bool = True,
   #TODO add dry-run option that only prints planned file operations without actually performing them
 ) -> None:
   """Move unique source files and copy duplicate source files before deleting the original."""
@@ -222,17 +222,17 @@ def transfer_files(
     if new_file_path not in destination_map[old_file_path]:
       destination_map[old_file_path].append(new_file_path)
   # move files with unique destinations and copy files with multiple destinations before deleting original file
-  # use links instead of copying/moving if `link_files` is True
+  # use symbolic links instead of copying/moving if `symlink_files` is True
   for old_file_path, new_file_paths in destination_map.items():
     for new_file_path in new_file_paths:
       #TODO verify that destination file does not already exist
       new_file_dir_name = os.path.dirname(new_file_path)
       if not os.path.isdir(new_file_dir_name):
         print(f"Creating directory '{new_file_dir_name}'")
-        # os.makedirs(new_file_dir_name, exist_ok = True)
-      if link_files:
+        os.makedirs(new_file_dir_name, exist_ok = True)
+      if symlink_files:
         print(f"Linking '{old_file_path}' -> '{new_file_path}'")
-        # os.link(old_file_path, new_file_path)
+        os.symlink(old_file_path, new_file_path)
       elif len(new_file_paths) == 1:
         print(f"Moving '{old_file_path}' -> '{new_file_path}'")
         # shutil.move(old_file_path, new_file_path)
@@ -240,7 +240,7 @@ def transfer_files(
       else:
         print(f"Copying '{old_file_path}' -> '{new_file_path}'")
         # shutil.copy2(old_file_path, new_file_path)
-    if not link_files and len(new_file_paths) > 1:
+    if not symlink_files and len(new_file_paths) > 1:
       print(f"Deleting '{old_file_path}'")
       # os.remove(old_file_path)
 
@@ -255,7 +255,8 @@ def main(args: argparse.Namespace) -> None:
   nersc_nmb_processes_per_task = int(ensure_dict_value_exists(launch_config, "NERSC_NMB_PROCESSES_PER_TASK"))
 
   run_numbers: list[int] = read_run_numbers_from_file(run_number_list_file)
-  target_dir = f"/lustre24/expphy/volatile/halld/offsite_prod/RunPeriod-2022-05/recon/ready_for_tape"  #TODO add command-line argument
+  # target_dir = f"/lustre24/expphy/volatile/halld/offsite_prod/RunPeriod-2022-05/recon/ready_for_tape"  #TODO add command-line argument
+  target_dir = f"./ready_for_tape"
 
   file_transfer_map: list[tuple[str, str]] = []  # pairs of old and new file paths for moving/copying
   for run_number in run_numbers:  # loop over runs
