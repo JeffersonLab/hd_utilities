@@ -14,7 +14,7 @@ import re
 from utilities import (
   ensure_dict_value_exists,
   get_config_dict_from_env_file,
-  get_run_numbers_from_file,
+  read_run_numbers_from_file,
 )
 
 
@@ -50,7 +50,7 @@ def main(args: argparse.Namespace) -> None:
   recon_data_root_dir  = f"/mss/halld/RunPeriod-{run_period}/recon/{recon_version_label}"
   raw_data_root_dir    = f"/mss/halld/RunPeriod-2022-05/rawdata"
 
-  run_numbers_from_list: list[int] = get_run_numbers_from_file(run_number_list_file)
+  run_numbers_from_list: list[int] = read_run_numbers_from_file(run_number_list_file)
 
   run_dir_name_pattern = re.compile(r"^\d{6}$")  # 6-digit run number
   for recon_subdir, (recon_file_base_name, recon_file_type) in RECON_SUBDIR_INFO.items():

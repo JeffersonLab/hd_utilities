@@ -19,7 +19,7 @@ from utilities import (
   ensure_dict_value_exists,
   get_config_dict_from_env_file,
   get_job_size,
-  get_run_numbers_from_file,
+  read_run_numbers_from_file,
 )
 
 
@@ -216,7 +216,7 @@ def main(args: argparse.Namespace) -> None:
   swif_raw_data_root           =     ensure_dict_value_exists(launch_config, "SWIF_RAW_DATA_ROOT")
   nersc_nmb_processes_per_task = int(ensure_dict_value_exists(launch_config, "NERSC_NMB_PROCESSES_PER_TASK"))
 
-  run_numbers: list[int] = get_run_numbers_from_file(run_number_list_file)
+  run_numbers: list[int] = read_run_numbers_from_file(run_number_list_file)
   target_dir = f"/lustre24/expphy/volatile/halld/offsite_prod/RunPeriod-2022-05/recon/test.prepare"  #TODO add command-line argument
 
   file_move_paths: list[tuple[str, str]] = []  # pairs of old and new file paths for moving

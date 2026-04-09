@@ -19,7 +19,7 @@ from script_job import print_command_line_arguments
 from utilities import (
   ensure_dict_value_exists,
   get_config_dict_from_env_file,
-  get_run_numbers_from_file,
+  read_run_numbers_from_file,
 )
 
 class EvioFilesErrorKind(Enum):
@@ -127,7 +127,7 @@ def main(args: argparse.Namespace) -> None:
     print(f"Getting run list from RCDB using {run_number_min} <= run number <= {run_number_max} and query '{rcdb_query}'")
     run_list = sorted([int(run.number) for run in db.select_runs(rcdb_query, run_number_min, run_number_max)])
   else:
-    run_list = get_run_numbers_from_file(args.override_run_list)
+    run_list = read_run_numbers_from_file(args.override_run_list)
   print(f"Found {len(run_list)} runs")
 
   evio_files_per_run: dict[int, list[str]] = get_evio_files(db, run_period, run_list, swif_raw_data_root)

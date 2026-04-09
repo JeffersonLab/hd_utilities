@@ -15,7 +15,7 @@ from utilities import (
   ensure_dict_value_exists,
   get_config_dict_from_env_file,
   get_job_size,
-  get_run_numbers_from_file,
+  read_run_numbers_from_file,
 )
 
 
@@ -29,7 +29,7 @@ def main(args: argparse.Namespace) -> None:
   nmb_processes_per_nersc_node = int(ensure_dict_value_exists(launch_config, "NERSC_NMB_PROCESSES_PER_TASK"))
   print(f"Allocating {nmb_processes_per_nersc_node} hd_root processes per NERSC node")
 
-  run_numbers: list[int] = get_run_numbers_from_file(run_number_list_file)
+  run_numbers: list[int] = read_run_numbers_from_file(run_number_list_file)
   print(f"Calculating resources for '{run_period}' raw data: {len(run_numbers)} run(s) listed in '{run_number_list_file}' and located in '{swif_raw_data_root}'")
   nmb_files:             dict[int, int  ] = {}  # number of files per run
   nmb_nodes:             dict[int, int  ] = {}  # number of NERSC nodes required per run

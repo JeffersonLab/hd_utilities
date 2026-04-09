@@ -39,12 +39,22 @@ def get_config_dict_from_env_file(env_file: str) -> dict[str, str | None]:
 
 
 def get_file_size_from_mss_stub(mss_file_path: str) -> int:
-  """Extract the file size in bytes from 'size' field in the MSS stub file."""
+  """Extract the file size in bytes from the 'size' field in the MSS stub file."""
   assert mss_file_path.startswith("/mss"), f"File '{mss_file_path}' must be an `/mss` path"
   mss_stub = dotenv.dotenv_values(mss_file_path)
   assert mss_stub, f"Failed to load MSS stub file from '{mss_file_path}'"
   size_bytes = int(ensure_dict_value_exists(mss_stub, "size"))
   return size_bytes
+
+
+def get_evio_file_paths_for_run(
+  run_number:    int,
+  raw_data_root: str,
+) -> list[str]:
+  """Get the list of EVIO file paths for the given run number and raw data root directory."""
+  evio_run_dir = f"{raw_data_root}/Run{run_number:06d}"
+  evio_file_paths: list[str] = sorted(glob.glob(f"{evio_run_dir}/hd_rawdata_{run_number:06d}_???.evio"))
+  return evio_file_paths
 
 
 def get_job_size(
@@ -53,16 +63,15 @@ def get_job_size(
   nmb_processes_per_task: int,
 ) -> tuple[int, int, int, float] :
   """Calculate the number of files, number of tasks required, number of processes in last task, and total raw-data size in GB for the given run."""
-  evio_run_dir = f"{raw_data_root}/Run{run_number:06d}"
-  evio_file_names: list[str] = sorted(glob.glob(f"{evio_run_dir}/hd_rawdata_{run_number:06d}_???.evio"))
-  nmb_files = len(evio_file_names)
+  evio_file_paths = get_evio_file_paths_for_run(run_number, raw_data_root)
+  nmb_files = len(evio_file_paths)
   nmb_tasks = (nmb_files + nmb_processes_per_task - 1) // nmb_processes_per_task
   nmb_remainder_processes = nmb_files % nmb_processes_per_task  # number of processes on last
-  total_evio_size_gb = sum(get_file_size_from_mss_stub(file_name) for file_name in evio_file_names) / (1024**3)
+  total_evio_size_gb = float(sum(get_file_size_from_mss_stub(file_path) for file_path in evio_file_paths)) / 1024**3
   return nmb_files, nmb_tasks, nmb_remainder_processes, total_evio_size_gb
 
 
-def get_run_numbers_from_file(run_number_list_file: str) -> list[int]:
+def read_run_numbers_from_file(run_number_list_file: str) -> list[int]:
   """Reads a list of run numbers from the given file. The file is expected to contain one run number per line, and may contain blank lines which are ignored."""
   print(f"Reading list of run numbers from file '{run_number_list_file}'")
   run_numbers: list[int] = []

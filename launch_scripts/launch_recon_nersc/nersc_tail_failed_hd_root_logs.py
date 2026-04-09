@@ -25,7 +25,7 @@ from script_job import (
 print = functools.partial(print, flush = True)
 
 
-def tail(
+def tail_file(
   file_name: str,
   nmb_lines: int = 3
 ) -> List[str]:
@@ -79,7 +79,7 @@ def main(args: argparse.Namespace) -> None:
     for hd_root_log_file_name in ("hd_root.out", "hd_root.err"):
       hd_root_log_file_path = f"{hd_root_log_dir_name}/{hd_root_log_file_name}"
       print(f"--- {hd_root_log_file_path}")
-      for line in tail(hd_root_log_file_path, args.nmb_lines):
+      for line in tail_file(hd_root_log_file_path, args.nmb_lines):
         print(line, end = "")
 
   print("-------------------------------------------------------------------------------")
