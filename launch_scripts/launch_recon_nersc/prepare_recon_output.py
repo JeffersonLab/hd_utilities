@@ -11,11 +11,13 @@ from __future__ import annotations
 import argparse
 import glob
 import os
-import re
 import shutil
 import time
 
-from script_job import print_command_line_arguments
+from script_job import (
+  get_hd_root_return_code,
+  print_command_line_arguments,
+)
 from utilities import (
   ensure_dict_value_exists,
   get_config_dict_from_env_file,
@@ -54,6 +56,8 @@ RECON_BASENAME_SUBDIR_MAP: dict[str, tuple[str, str]] = {
 }
 
 
+#TODO the transfer maps should be generated per original EVIO file and not per run
+#TODO add whitelist of EVIO files not to check/process
 class FileTransferMapGenerator:
   """Class for generating a map of source file paths to destination file paths for transferring files from the SWIF output directory to the target directory."""
 
@@ -119,15 +123,8 @@ class FileTransferMapGenerator:
     self.process_task_log_files   (task_dir,  job_info_dir)
     self.process_job_log_files    (nmb_tasks, job_info_dir)
     # ensure that hd_root exit code is 0
-    #TODO use get_hd_root_return_code function
     hd_root_rc_file_path = f"{file_dir}/hd_root.rc"
-    hd_root_rc_file_content: str = open(hd_root_rc_file_path).read()
-    match = re.search(r"exit code (\d+)$", hd_root_rc_file_content)
-    hd_root_return_code = None
-    if not match:
-      print(f"WARNING: malformed hd_root return-code file '{hd_root_rc_file_path}': '{hd_root_rc_file_content}'; ignoring EVIO file")
-      return
-    hd_root_return_code = int(match.group(1))
+    hd_root_return_code = get_hd_root_return_code(hd_root_rc_file_path)
     if hd_root_return_code != 0:
       print(f"WARNING: hd_root return code for run {self.run_number} and EVIO file number {file_number} is {hd_root_return_code}; ignoring EVIO file")
       return
