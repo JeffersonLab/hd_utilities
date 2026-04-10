@@ -139,20 +139,6 @@ class FileTransferMapGenerator:
       new_file_path = f"{self.target_dir}/{subdir_name}/{self.run_number:06d}/{new_file_name}"
       self._file_transfer_map.append((file_path, f"{new_file_path}"))
 
-  def process_log_files(
-    self,
-    log_file_names: list[str],
-    src_dir:        str,
-    dest_dir:       str,
-  ) -> None:
-    """Process log files in the given log directory and append to map of original file paths to new file paths."""
-    for log_file_name in log_file_names:
-      log_file_path = f"{src_dir}/{log_file_name}"
-      if not os.path.isfile(log_file_path):
-        print(f"WARNING: cannot find file '{log_file_path}'; ignoring.")  #TODO collect missing files and report at the end of the script
-        continue
-      self._file_transfer_map.append((log_file_path, f"{dest_dir}/{log_file_name}"))
-
   def process_job_log_files(
     self,
     nmb_tasks:    int,
@@ -202,6 +188,21 @@ class FileTransferMapGenerator:
       "hd_root.rc",
     ]
     self.process_log_files(log_file_names, file_dir, job_info_dir)
+
+  def process_log_files(
+    self,
+    log_file_names: list[str],
+    src_dir:        str,
+    dest_dir:       str,
+  ) -> None:
+    """Process log files in the given log directory and append to map of original file paths to new file paths."""
+    for log_file_name in log_file_names:
+      log_file_path = f"{src_dir}/{log_file_name}"
+      if not os.path.isfile(log_file_path):
+        print(f"WARNING: cannot find file '{log_file_path}'; ignoring.")
+        self._missing_items["log file(s)"].add(log_file_path)
+        continue
+      self._file_transfer_map.append((log_file_path, f"{dest_dir}/{log_file_name}"))
 
 
 def transfer_files(
