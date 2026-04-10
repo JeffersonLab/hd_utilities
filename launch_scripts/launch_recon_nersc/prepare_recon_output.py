@@ -9,6 +9,7 @@ Files can either be moved or symlinked to the target directory.
 from __future__ import annotations
 
 import argparse
+from collections import defaultdict
 import glob
 import os
 import shutil
@@ -64,23 +65,27 @@ class FileTransferMapGenerator:
   def __init__(
     self,
     run_number:             int,
-    job_dir:                str,
-    raw_data_root:          str,
-    nmb_processes_per_task: int,
-    target_dir:             str,
+    job_dir:                str,  # directory containing the SWIF output for the run; assuming structure: <job_dir>/RUN<run number>/TASK<task index>/FILE<file number>
+    raw_data_root:          str,  # root directory containing the EVIO data files; assuming structure: <raw_data_root>/RUN<run number>/hd_rawdata_<run number>_<file number>.evio
+    nmb_processes_per_task: int,  # number of processes per task used in the reconstruction launch
+    target_dir:             str,  # root directory to which the output files of hd_root processes with exit code 0 will be moved
+    # failed_log_file_dir:    str,  # directory to which log files of hd_root processes with non-zero exit code will be moved for further investigation
   ) -> None:
     self.run_number             = run_number
-    self.job_dir                = job_dir
+    self.job_dir                = job_dir + "/../test"
     self.raw_data_root          = raw_data_root
     self.nmb_processes_per_task = nmb_processes_per_task
     self.target_dir             = target_dir
-    self._file_transfer_map: list[tuple[str, str]] = []  # pairs of old and new file paths for moving   #TODO use a dictionary instead to avoid transformation in `transfer_files` function
-    self._run_dir = f"{self.job_dir}/RUN{self.run_number:06d}"
+    self._run_dir               = f"{self.job_dir}/RUN{self.run_number:06d}"
+    self._file_transfer_map: list[tuple[str, str]]      = []  # pairs of old and new file paths for moving   #TODO use a dictionary instead to avoid transformation in `transfer_files` function
+    self._missing_items:     defaultdict[str, set[str]] = defaultdict(set)  # collect missing items by item type for reporting at the end of the script
+    self._failed_evio_files: list[str]                  = []  # collect paths of EVIO files for which hd_root failed
 
   def process_run_dir(self) -> None:
     """Process the run directory defined by the arguments and append to map of original file paths to new file paths."""
     if not os.path.isdir(self._run_dir):
-      print(f"WARNING: '{self._run_dir}' does not exist or is not a directory; ignoring run {self.run_number}.")  #TODO collect missing runs and report at the end of the script
+      print(f"WARNING: '{self._run_dir}' does not exist or is not a directory; ignoring run {self.run_number}.")
+      self._missing_items["run dir(s)"].add(self._run_dir)
       return
     #TODO get list of EVIO files and check that output exists for each of them instead of relying on the number of files and the file numbering scheme
     nmb_files, nmb_tasks, _, _, = get_job_size(self.run_number, self.raw_data_root, self.nmb_processes_per_task)
@@ -97,7 +102,9 @@ class FileTransferMapGenerator:
     """Process the task directory defined by the task index and append to map of original file paths to new file paths."""
     task_dir = f"{self._run_dir}/TASK{task_index:03d}"
     if not os.path.isdir(task_dir):
-      raise ValueError(f"ERROR: '{task_dir}' does not exist or is not a directory; aborting.") #TODO collect missing task directories and report at the end of the script instead of aborting
+      print(f"WARNING: '{task_dir}' does not exist or is not a directory; ignoring task {task_index}.")
+      self._missing_items["task dir(s)"].add(task_dir)
+      return
     print(f"  Processing task {task_index} in directory '{task_dir}'")
     file_number_start = task_index * self.nmb_processes_per_task
     file_number_end   = min(file_number_start + self.nmb_processes_per_task, nmb_files)
@@ -114,7 +121,9 @@ class FileTransferMapGenerator:
     task_dir = f"{self._run_dir}/TASK{task_index:03d}"
     file_dir = f"{task_dir}/FILE{file_number:03d}"
     if not os.path.isdir(file_dir):
-      raise ValueError(f"ERROR: '{file_dir}' does not exist or is not a directory; aborting.")  #TODO collect missing file directories and report at the end of the script instead of aborting
+      print(f"WARNING: '{file_dir}' does not exist or is not a directory; ignoring file {file_number}.")
+      self._missing_items["file dir(s)"].add(file_dir)
+      return
     print(f"    Processing file {file_number} in directory '{file_dir}'")
     #TODO divert log and core files for failed hd_root processes into separate directory tree; in case of failure just move all files in the FILE directory
     # always process log files
@@ -127,13 +136,15 @@ class FileTransferMapGenerator:
     hd_root_return_code = get_hd_root_return_code(hd_root_rc_file_path)
     if hd_root_return_code != 0:
       print(f"WARNING: hd_root return code for run {self.run_number} and EVIO file number {file_number} is {hd_root_return_code}; ignoring EVIO file")
+      self._failed_evio_files.append(f"{self.raw_data_root}/Run{self.run_number:06d}/hd_rawdata_{self.run_number:06d}_{file_number:03d}.evio")
       return
     # process hd_root output files
     for subdir_name, (file_base_name, file_type) in RECON_SUBDIR_BASENAME_MAP.items():
       file_name = f"hd_rawdata_{self.run_number:06d}_{file_number:03d}.{file_base_name}.{file_type}" if file_type == "evio" else f"{file_base_name}.{file_type}"
       file_path = f"{file_dir}/{file_name}"
       if not os.path.isfile(file_path):
-        print(f"WARNING: expected file '{file_path}' is missing; ignoring")  #TODO collect missing files and report at the end of the script
+        print(f"WARNING: expected file '{file_path}' is missing; ignoring")
+        self._missing_items[f"{file_base_name} file(s)"].add(file_path)
         continue
       new_file_name = f"{file_base_name}_{self.run_number:06d}_{file_number:03d}.{file_type}"  # fix file names of evio files and make file names of non-evio files unique
       new_file_path = f"{self.target_dir}/{subdir_name}/{self.run_number:06d}/{new_file_name}"
@@ -226,29 +237,26 @@ def transfer_files(
       #TODO verify that destination file does not already exist
       new_file_dir_name = os.path.dirname(new_file_path)
       if not os.path.isdir(new_file_dir_name):
-        print(f"Creating directory '{new_file_dir_name}'")
         if not dryrun:
+          print(f"Creating directory '{new_file_dir_name}'")
           os.makedirs(new_file_dir_name, exist_ok = True)
       if symlink_files:
-        print(f"Linking '{old_file_path}' -> '{new_file_path}'")
         if not dryrun:
+          print(f"Linking '{old_file_path}' -> '{new_file_path}'")
           os.symlink(old_file_path, new_file_path)
-      elif len(new_file_paths) == 1:
-        print(f"Moving '{old_file_path}' -> '{new_file_path}'")
+      elif len(new_file_paths) > 1:
         if not dryrun:
-          # shutil.move(old_file_path, new_file_path)
-          pass
-        continue
-      else:
-        print(f"Copying '{old_file_path}' -> '{new_file_path}'")
-        if not dryrun:
+          print(f"Copying '{old_file_path}' -> '{new_file_path}'")
           # shutil.copy2(old_file_path, new_file_path)
-          pass
+      else:  # len(new_file_paths) == 1
+        if not dryrun:
+          print(f"Moving '{old_file_path}' -> '{new_file_path}'")
+          # shutil.move(old_file_path, new_file_path)
+        continue
     if not symlink_files and len(new_file_paths) > 1:
-      print(f"Deleting '{old_file_path}'")
       if not dryrun:
+        print(f"Deleting '{old_file_path}'")
         # os.remove(old_file_path)
-        pass
 
 
 def main(args: argparse.Namespace) -> None:
@@ -264,7 +272,9 @@ def main(args: argparse.Namespace) -> None:
   # target_dir = f"/lustre24/expphy/volatile/halld/offsite_prod/RunPeriod-2022-05/recon/ready_for_tape"  #TODO add command-line argument
   target_dir = f"./ready_for_tape"
 
-  file_transfer_map: list[tuple[str, str]] = []  # pairs of old and new file paths for moving/copying
+  file_transfer_map: list[tuple[str, str]]            = []  # pairs of old and new file paths for moving/copying
+  missing_items_runs:     list[defaultdict[str, set[str]]] = []  # collect missing items for each run by item type for reporting at the end of the script
+  failed_evio_files: list[str]                        = []  # collect paths of EVIO files for which hd_root failed
   for run_number in run_numbers:  # loop over runs
     print("...............................................................................")
     print(f"Verifying completeness of files for run {run_number} and preparing file transfer map")
@@ -277,6 +287,32 @@ def main(args: argparse.Namespace) -> None:
     )
     file_transfer_map_gen.process_run_dir()
     file_transfer_map += file_transfer_map_gen._file_transfer_map
+    missing_items_runs.append(file_transfer_map_gen._missing_items)
+    failed_evio_files += file_transfer_map_gen._failed_evio_files
+
+  # merge missing items into one dictionary mapping item type to set of missing items across all runs
+  missing_items_merged: defaultdict[str, set[str]] = defaultdict(set)
+  for missing_items_run in missing_items_runs:
+    for item_type, missing_items in missing_items_run.items():
+      missing_items_merged[item_type].update(missing_items)
+  # print summary of missing items by item type
+  if len(missing_items_merged) == 0:
+    print("Found no missing items; all expected files are present.")
+  else:
+    print("-------------------------------------------------------------------------------")
+    print("Summary of missing items across all runs:")
+    for item_type, missing_items in missing_items_merged.items():
+      print(f"{len(missing_items)} {item_type} missing:")
+      for missing_item in sorted(missing_items):
+        print(f"  {missing_item}")
+  # print summary of failed EVIO files
+  if len(failed_evio_files) == 0:
+    print("Found no EVIO files, for which hd_root has a non-zero return code.")
+  else:
+    print("-------------------------------------------------------------------------------")
+    print(f"{len(failed_evio_files)} EVIO files for which hd_root has a non-zero return code:")
+    for failed_evio_file in sorted(failed_evio_files):
+      print(f"  {failed_evio_file}")
 
   print("-------------------------------------------------------------------------------")
   if args.mode == "check":
