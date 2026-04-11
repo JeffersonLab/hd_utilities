@@ -69,7 +69,7 @@ def get_hd_root_return_code(hd_root_rc_file_path: str) -> Optional[int]:
   except OSError as e:  # file not found, permission denied, etc.
     print(f"WARNING: unable to open hd_root return-code file '{hd_root_rc_file_path}': {e}")
     return None
-  match = re.search(r"exit code (\d+)$", hd_root_rc_file_content)
+  match = re.search(r"exit code (\d+)$", hd_root_rc_file_content)  #TODO make naming consistent -> return code
   if not match:
     print(f"WARNING: cannot get hd_root return code from malformed file '{hd_root_rc_file_path}': '{hd_root_rc_file_content}'")
     return None
@@ -187,7 +187,7 @@ def main(args: argparse.Namespace) -> None:
   srun_cmd: List[str] = [
     "srun",
     # f"--ntasks={nmb_tasks}",  # --ntasks is already specified in the `sbatch` command and srun will automatically use all allocated tasks
-    "--kill-on-bad-exit=0",  # do not kill all tasks if one task fails; instead, let all tasks run to completion to capture their individual exit codes
+    "--kill-on-bad-exit=0",  # do not kill all tasks if one task fails; instead, let all tasks run to completion to capture their individual return codes
     # "--slurmd-debug=verbose",  # increase verbosity of slurmd debug output; this will be written to the Slurm log file of the job; only allowed for root
     "--verbose",  # this will print the exact command line that srun executes for each task
     f"--output=task_{run_label}_%t.out",  # write stdout and stderr of task to file named `task_<run number>_<task id>.out` into job's working directory
@@ -203,9 +203,10 @@ def main(args: argparse.Namespace) -> None:
   with open(f"./srun_{run_label}.rc", "w", encoding = "utf-8") as log_file:
     log_file.write(f"{srun_result.returncode:d}")
   print(f"`srun` finished with return code {srun_result.returncode:d}")
-  # `srun` will return i) a non-zero Slurm exit code, if it cannot
-  # start the tasks, or ii) the highest exit code of any failed tasks.
-  # If a task is killed by signal, 128 + signal number is returned.
+  # `srun` will return i) a non-zero Slurm return code, if it cannot
+  # start the tasks, or ii) the highest return code of any failed
+  # tasks. If a task is killed by signal, 128 + signal number is
+  # returned.
 
   print("-------------------------------------------------------------------------------")
   define_swif2_output_files(args.run_number, args.swif_output_root)

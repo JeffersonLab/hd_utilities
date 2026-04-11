@@ -68,18 +68,20 @@ class FileTransferMapGenerator:
     job_dir:                str,  # directory containing the SWIF output for the run; assuming structure: <job_dir>/RUN<run number>/TASK<task index>/FILE<file number>
     raw_data_root:          str,  # root directory containing the EVIO data files; assuming structure: <raw_data_root>/RUN<run number>/hd_rawdata_<run number>_<file number>.evio
     nmb_processes_per_task: int,  # number of processes per task used in the reconstruction launch
-    target_dir:             str,  # root directory to which the output files of hd_root processes with exit code 0 will be moved
-    # failed_log_file_dir:    str,  # directory to which log files of hd_root processes with non-zero exit code will be moved for further investigation
+    target_dir:             str,  # root directory to which the output files of hd_root processes with return code 0 will be moved
+    # failed_log_file_dir:    str,  # directory to which log files of hd_root processes with non-zero return code will be moved for further investigation
   ) -> None:
     self.run_number             = run_number
+    # self.job_dir                = job_dir
     self.job_dir                = job_dir + "/../test"
     self.raw_data_root          = raw_data_root
     self.nmb_processes_per_task = nmb_processes_per_task
     self.target_dir             = target_dir
     self._run_dir               = f"{self.job_dir}/RUN{self.run_number:06d}"
+    self._nmb_files             = None  # number of EVIO files for the run; set in `process_run_dir` function
     self._file_transfer_map: list[tuple[str, str]]      = []  # pairs of old and new file paths for moving   #TODO use a dictionary instead to avoid transformation in `transfer_files` function
-    self._missing_items:     defaultdict[str, set[str]] = defaultdict(set)  # collect missing items by item type for reporting at the end of the script
     self._failed_evio_files: list[str]                  = []  # collect paths of EVIO files for which hd_root failed
+    self._missing_items:     defaultdict[str, set[str]] = defaultdict(set)  # collect missing items by item type for reporting at the end of the script
 
   def process_run_dir(self) -> None:
     """Process the run directory defined by the arguments and append to map of original file paths to new file paths."""
@@ -88,16 +90,15 @@ class FileTransferMapGenerator:
       self._missing_items["run dir(s)"].add(self._run_dir)
       return
     #TODO get list of EVIO files and check that output exists for each of them instead of relying on the number of files and the file numbering scheme
-    nmb_files, nmb_tasks, _, _, = get_job_size(self.run_number, self.raw_data_root, self.nmb_processes_per_task)
-    print(f"Processing run {self.run_number} with {nmb_tasks} tasks and {nmb_files} files in directory '{self._run_dir}'")
+    self._nmb_files, nmb_tasks, _, _, = get_job_size(self.run_number, self.raw_data_root, self.nmb_processes_per_task)
+    print(f"Processing run {self.run_number} with {nmb_tasks} tasks and {self._nmb_files} files in directory '{self._run_dir}'")
     for task_index in range(nmb_tasks):  # loop over tasks
-      self.process_task_dir(task_index, nmb_tasks, nmb_files)
+      self.process_task_dir(task_index, nmb_tasks)
 
   def process_task_dir(
     self,
     task_index: int,
     nmb_tasks:  int,
-    nmb_files:  int,
   ) -> None:
     """Process the task directory defined by the task index and append to map of original file paths to new file paths."""
     task_dir = f"{self._run_dir}/TASK{task_index:03d}"
@@ -107,7 +108,8 @@ class FileTransferMapGenerator:
       return
     print(f"  Processing task {task_index} in directory '{task_dir}'")
     file_number_start = task_index * self.nmb_processes_per_task
-    file_number_end   = min(file_number_start + self.nmb_processes_per_task, nmb_files)
+    assert self._nmb_files is not None, "Number of files must be set before processing task directories"
+    file_number_end   = min(file_number_start + self.nmb_processes_per_task, self._nmb_files)
     for file_number in range(file_number_start, file_number_end):  # loop over EVIO file numbers
       self.process_file_dir(task_index, nmb_tasks, file_number)
 
@@ -131,7 +133,7 @@ class FileTransferMapGenerator:
     self.process_hd_root_log_files(file_dir,  job_info_dir)
     self.process_task_log_files   (task_dir,  job_info_dir)
     self.process_job_log_files    (nmb_tasks, job_info_dir)
-    # ensure that hd_root exit code is 0
+    # ensure that hd_root return code is 0
     hd_root_rc_file_path = f"{file_dir}/hd_root.rc"
     hd_root_return_code = get_hd_root_return_code(hd_root_rc_file_path)
     if hd_root_return_code != 0:
@@ -272,9 +274,10 @@ def main(args: argparse.Namespace) -> None:
   # target_dir = f"/lustre24/expphy/volatile/halld/offsite_prod/RunPeriod-2022-05/recon/ready_for_tape"  #TODO add command-line argument
   target_dir = f"./ready_for_tape"
 
-  file_transfer_map: list[tuple[str, str]]            = []  # pairs of old and new file paths for moving/copying
-  missing_items_runs:     list[defaultdict[str, set[str]]] = []  # collect missing items for each run by item type for reporting at the end of the script
-  failed_evio_files: list[str]                        = []  # collect paths of EVIO files for which hd_root failed
+  total_nmb_evio_files = 0
+  file_transfer_map:  list[tuple[str, str]]            = []  # pairs of old and new file paths for moving/copying
+  failed_evio_files:  list[str]                        = []  # collect paths of EVIO files for which hd_root failed
+  missing_items_runs: list[defaultdict[str, set[str]]] = []  # collect missing items for each run by item type for reporting at the end of the script
   for run_number in run_numbers:  # loop over runs
     print("...............................................................................")
     print(f"Verifying completeness of files for run {run_number} and preparing file transfer map")
@@ -286,9 +289,10 @@ def main(args: argparse.Namespace) -> None:
       target_dir             = target_dir,
     )
     file_transfer_map_gen.process_run_dir()
-    file_transfer_map += file_transfer_map_gen._file_transfer_map
+    total_nmb_evio_files += file_transfer_map_gen._nmb_files if file_transfer_map_gen._nmb_files is not None else 0
+    file_transfer_map    += file_transfer_map_gen._file_transfer_map
+    failed_evio_files    += file_transfer_map_gen._failed_evio_files
     missing_items_runs.append(file_transfer_map_gen._missing_items)
-    failed_evio_files += file_transfer_map_gen._failed_evio_files
 
   # merge missing items into one dictionary mapping item type to set of missing items across all runs
   missing_items_merged: defaultdict[str, set[str]] = defaultdict(set)
@@ -302,7 +306,8 @@ def main(args: argparse.Namespace) -> None:
     print("-------------------------------------------------------------------------------")
     print("Summary of missing items across all runs:")
     for item_type, missing_items in missing_items_merged.items():
-      print(f"{len(missing_items)} {item_type} missing:")
+      #TODO also print fraction of missing items among all expected items of the given type
+      print(f"{len(missing_items)} out of {total_nmb_evio_files} {item_type} missing:")
       for missing_item in sorted(missing_items):
         print(f"  {missing_item}")
   # print summary of failed EVIO files
@@ -310,7 +315,8 @@ def main(args: argparse.Namespace) -> None:
     print("Found no EVIO files, for which hd_root has a non-zero return code.")
   else:
     print("-------------------------------------------------------------------------------")
-    print(f"{len(failed_evio_files)} EVIO files for which hd_root has a non-zero return code:")
+    print(f"{len(failed_evio_files)} out of {total_nmb_evio_files} EVIO files have a non-zero hd_root return code:")
+    #TODO calculate fraction of failed EVIO files among all processed EVIO files
     for failed_evio_file in sorted(failed_evio_files):
       print(f"  {failed_evio_file}")
 

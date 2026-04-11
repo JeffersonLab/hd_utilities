@@ -61,7 +61,7 @@ def get_job_size(
   run_number:             int,
   raw_data_root:          str,
   nmb_processes_per_task: int,
-) -> tuple[int, int, int, float] :
+) -> tuple[int, int, int, float]:
   """Calculate the number of files, number of tasks required, number of processes in last task, and total raw-data size in GB for the given run."""
   evio_file_paths = get_evio_file_paths_for_run(run_number, raw_data_root)
   nmb_files = len(evio_file_paths)
