@@ -61,14 +61,14 @@ def get_job_size(
   run_number:             int,
   raw_data_root:          str,
   nmb_processes_per_task: int,
-) -> tuple[int, int, int, float]:
-  """Calculate the number of files, number of tasks required, number of processes in last task, and total raw-data size in GB for the given run."""
+) -> tuple[int, int, int, float, list[str]]:
+  """Calculate the number of files, number of tasks required, number of processes in last task, total raw-data size in GB, and list of EVIO file paths for the given run."""
   evio_file_paths = get_evio_file_paths_for_run(run_number, raw_data_root)
   nmb_files = len(evio_file_paths)
   nmb_tasks = (nmb_files + nmb_processes_per_task - 1) // nmb_processes_per_task
   nmb_remainder_processes = nmb_files % nmb_processes_per_task  # number of processes on last
   total_evio_size_gb = float(sum(get_file_size_from_mss_stub(file_path) for file_path in evio_file_paths)) / 1024**3
-  return nmb_files, nmb_tasks, nmb_remainder_processes, total_evio_size_gb
+  return nmb_files, nmb_tasks, nmb_remainder_processes, total_evio_size_gb, evio_file_paths
 
 
 def read_run_numbers_from_file(run_number_list_file: str) -> list[int]:

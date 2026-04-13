@@ -70,6 +70,7 @@ def main(args: argparse.Namespace) -> None:
       nmb_nodes[run_number],
       nmb_remainder_jobs,
       size_gb[run_number],
+      _,
     ) = get_job_size(run_number, swif_raw_data_root, nmb_processes_per_nersc_node)
     fraction_nodes_unused[run_number] = 0.0 if nmb_remainder_jobs == 0 else 1.0 - nmb_remainder_jobs / float(nmb_processes_per_nersc_node)
     print(f"    Run {run_number:6d} = {size_gb[run_number]:6.0f} GB, {nmb_files[run_number]:3d} files, {nmb_nodes[run_number]:3d} nodes, {fraction_nodes_unused[run_number]:5.1%} of last node wasted")

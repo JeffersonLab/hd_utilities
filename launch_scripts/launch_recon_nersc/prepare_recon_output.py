@@ -23,6 +23,7 @@ from script_job import (
 from utilities import (
   ensure_dict_value_exists,
   get_config_dict_from_env_file,
+  get_file_number_from_evio_file_name,
   get_job_size,
   read_run_numbers_from_file,
 )
@@ -82,21 +83,22 @@ class FileTransferMapGenerator:
     self.raw_data_root          = raw_data_root
     self.nmb_processes_per_task = nmb_processes_per_task
     self.target_dir             = target_dir
-    self._run_dir               = f"{self.job_dir}/RUN{self.run_number:06d}"
-    self._nmb_files             = None  # number of EVIO files for the run; set in `process_run_dir` function
+    self._run_dir               = f"{self.job_dir}/RUN{self.run_number:06d}"  # directory containing the SWIF output for the run
+    self._evio_file_paths:   list[str]                  = []  # list of EVIO file paths for the run
     self._file_transfer_map: list[tuple[str, str]]      = []  # pairs of old and new file paths for moving   #TODO use a dictionary instead to avoid transformation in `transfer_files` function
-    self._failed_evio_files: list[str]                  = []  # collect paths of EVIO files for which hd_root failed
+    self._failed_evio_files: list[str]                  = []  # collect paths of EVIO files that are missing or for which hd_root failed
     self._missing_items:     defaultdict[str, set[str]] = defaultdict(set)  # collect missing items by item type for reporting at the end of the script
 
   def process_run_dir(self) -> None:
     """Process the run directory defined by the arguments and append to map of original file paths to new file paths."""
+    nmb_evio_files, nmb_tasks, _, _, self._evio_file_paths = get_job_size(self.run_number, self.raw_data_root, self.nmb_processes_per_task)
     if not os.path.isdir(self._run_dir):
-      print(f"WARNING: '{self._run_dir}' does not exist or is not a directory; ignoring run {self.run_number}.")
+      print(f"WARNING: '{self._run_dir}' does not exist or is not a directory; ignoring run {self.run_number}")
       self._missing_items["run dir(s)"].add(self._run_dir)
+      for evio_file_path in self._evio_file_paths:
+        self._failed_evio_files.append(evio_file_path)
       return
-    #TODO get list of EVIO files and check that output exists for each of them instead of relying on the number of files and the file numbering scheme
-    self._nmb_files, nmb_tasks, _, _, = get_job_size(self.run_number, self.raw_data_root, self.nmb_processes_per_task)
-    print(f"Processing run {self.run_number} with {nmb_tasks} tasks and {self._nmb_files} files in directory '{self._run_dir}'")
+    print(f"Processing run {self.run_number} with {nmb_tasks} tasks and {nmb_evio_files} files in directory '{self._run_dir}'")
     for task_index in range(nmb_tasks):  # loop over tasks
       self.process_task_dir(task_index, nmb_tasks)
 
@@ -106,30 +108,34 @@ class FileTransferMapGenerator:
     nmb_tasks:  int,
   ) -> None:
     """Process the task directory defined by the task index and append to map of original file paths to new file paths."""
+    evio_file_start_index = task_index * self.nmb_processes_per_task
+    evio_file_end_index   = min(evio_file_start_index + self.nmb_processes_per_task, len(self._evio_file_paths))
     task_dir = f"{self._run_dir}/TASK{task_index:03d}"
     if not os.path.isdir(task_dir):
-      print(f"WARNING: '{task_dir}' does not exist or is not a directory; ignoring task {task_index}.")
+      print(f"WARNING: '{task_dir}' does not exist or is not a directory; ignoring task {task_index}")
       self._missing_items["task dir(s)"].add(task_dir)
+      for evio_file_path in self._evio_file_paths[evio_file_start_index:evio_file_end_index]:
+        self._failed_evio_files.append(evio_file_path)
       return
     print(f"  Processing task {task_index} in directory '{task_dir}'")
-    file_number_start = task_index * self.nmb_processes_per_task
-    assert self._nmb_files is not None, "Number of files must be set before processing task directories"
-    file_number_end   = min(file_number_start + self.nmb_processes_per_task, self._nmb_files)
-    for file_number in range(file_number_start, file_number_end):  # loop over EVIO file numbers
-      self.process_file_dir(task_index, nmb_tasks, file_number)
+    for evio_file_path in self._evio_file_paths[evio_file_start_index:evio_file_end_index]:  # loop over EVIO files
+      self.process_file_dir(task_index, nmb_tasks, evio_file_path)
 
   def process_file_dir(
     self,
-    task_index:  int,
-    nmb_tasks:   int,
-    file_number: int,
+    task_index:     int,
+    nmb_tasks:      int,
+    evio_file_path: str,
   ) -> None:
     """Process the file directory defined by the arguments and append to map of original file paths to new file paths."""
     task_dir = f"{self._run_dir}/TASK{task_index:03d}"
+    file_number = get_file_number_from_evio_file_name(evio_file_path)
+    assert file_number is not None, f"Failed to extract file number from EVIO file name '{evio_file_path}'"
     file_dir = f"{task_dir}/FILE{file_number:03d}"
     if not os.path.isdir(file_dir):
-      print(f"WARNING: '{file_dir}' does not exist or is not a directory; ignoring file {file_number}.")
+      print(f"WARNING: '{file_dir}' does not exist or is not a directory; ignoring file {file_number}")
       self._missing_items["file dir(s)"].add(file_dir)
+      self._failed_evio_files.append(evio_file_path)
       return
     print(f"    Processing file {file_number} in directory '{file_dir}'")
     #TODO divert log and core files for failed hd_root processes into separate directory tree; in case of failure just move all files in the FILE directory
@@ -143,7 +149,7 @@ class FileTransferMapGenerator:
     hd_root_return_code = get_hd_root_return_code(hd_root_rc_file_path)
     if hd_root_return_code != 0:
       print(f"WARNING: hd_root return code for run {self.run_number} and EVIO file number {file_number} is {hd_root_return_code}; ignoring EVIO file")
-      self._failed_evio_files.append(f"{self.raw_data_root}/Run{self.run_number:06d}/hd_rawdata_{self.run_number:06d}_{file_number:03d}.evio")
+      self._failed_evio_files.append(evio_file_path)
       return
     # process hd_root output files
     for subdir_name, (file_base_name, file_type) in RECON_SUBDIR_BASENAME_MAP.items():
@@ -294,7 +300,7 @@ def main(args: argparse.Namespace) -> None:
       target_dir             = target_dir,
     )
     file_transfer_map_gen.process_run_dir()
-    total_nmb_evio_files += file_transfer_map_gen._nmb_files if file_transfer_map_gen._nmb_files is not None else 0
+    total_nmb_evio_files += len(file_transfer_map_gen._evio_file_paths)
     file_transfer_map    += file_transfer_map_gen._file_transfer_map
     failed_evio_files    += file_transfer_map_gen._failed_evio_files
     missing_items_runs.append(file_transfer_map_gen._missing_items)
