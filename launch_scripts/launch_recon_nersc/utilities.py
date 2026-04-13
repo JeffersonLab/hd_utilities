@@ -83,16 +83,15 @@ def read_run_numbers_from_file(run_number_list_file: str) -> list[int]:
 
 #TODO is this needed?
 def get_file_number_from_evio_file_name(evio_file_path: str) -> int | None:
-  """Extracts the 3-digit file number from the given EVIO file name,
-  or returns `None` if it cannot be extracted."""
+  """Extracts the 3-digit file number from the given EVIO file name, or returns `None` if it cannot be extracted."""
   evio_file_name = os.path.basename(evio_file_path)
-  if len(evio_file_name) < 23:
-    print(f"WARNING: EVIO file name '{evio_file_path}' is too short to contain a valid file number; expected at least 23 characters; ignoring")
+  if len(evio_file_name) < 21:
+    print(f"WARNING: EVIO file name '{evio_file_path}' is too short to contain a valid file number; expected at least 21 characters; ignoring")
     return None
-  file_number_str = evio_file_name[20:23]  # extract the 3-digit file number from the file name pattern
+  file_number_str = evio_file_name[18:21]  # extract the 3-digit file number from the file name pattern
   try:
     file_number = int(file_number_str)
     return file_number
   except ValueError:
-    print(f"WARNING: could not extract file number from EVIO file name '{evio_file_path}'; expected characters 20-22 to be a 3-digit number; ignoring")
+    print(f"WARNING: expected file name pattern 'hd_rawdata_XXXXXX_YYY*'; could not extract 3-digit file number YYY from EVIO file name '{evio_file_path}'; ignoring")
     return None
