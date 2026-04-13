@@ -78,8 +78,8 @@ class FileTransferMapGenerator:
     # failed_log_file_dir:    str,  # directory to which log files of hd_root processes with non-zero return code will be moved for further investigation
   ) -> None:
     self.run_number             = run_number
-    # self.job_dir                = job_dir
-    self.job_dir                = job_dir + "/../test"
+    self.job_dir                = job_dir
+    # self.job_dir                = job_dir + "/../test"
     self.raw_data_root          = raw_data_root
     self.nmb_processes_per_task = nmb_processes_per_task
     self.target_dir             = target_dir
@@ -133,7 +133,7 @@ class FileTransferMapGenerator:
     assert file_number is not None, f"Failed to extract file number from EVIO file name '{evio_file_path}'"
     file_dir = f"{task_dir}/FILE{file_number:03d}"
     if not os.path.isdir(file_dir):
-      print(f"WARNING: '{file_dir}' does not exist or is not a directory; ignoring file {file_number}")
+      print(f"WARNING: '{file_dir}' does not exist or is not a directory; ignoring EVIO file")
       self._missing_items["file dir(s)"].add(file_dir)
       self._failed_evio_files.append(evio_file_path)
       return
@@ -156,7 +156,7 @@ class FileTransferMapGenerator:
       file_name = f"hd_rawdata_{self.run_number:06d}_{file_number:03d}.{file_base_name}.{file_type}" if file_type == "evio" else f"{file_base_name}.{file_type}"
       file_path = f"{file_dir}/{file_name}"
       if not os.path.isfile(file_path):
-        print(f"WARNING: expected file '{file_path}' is missing; ignoring")
+        print(f"WARNING: expected hd_root output file '{file_path}' is missing; ignoring this file")
         self._missing_items[f"{file_base_name} file(s)"].add(file_path)
         continue
       new_file_name = f"{file_base_name}_{self.run_number:06d}_{file_number:03d}.{file_type}"  # fix file names of evio files and make file names of non-evio files unique
@@ -223,7 +223,7 @@ class FileTransferMapGenerator:
     for log_file_name in log_file_names:
       log_file_path = f"{src_dir}/{log_file_name}"
       if not os.path.isfile(log_file_path):
-        print(f"WARNING: cannot find file '{log_file_path}'; ignoring.")
+        print(f"WARNING: expected log file '{log_file_path}' is missing; ignoring this file")
         self._missing_items["log file(s)"].add(log_file_path)
         continue
       self._file_transfer_map.append((log_file_path, f"{dest_dir}/{log_file_name}"))
@@ -312,28 +312,28 @@ def main(args: argparse.Namespace) -> None:
       missing_items_merged[item_type].update(missing_items)
   # print summary of missing items by item type
   if len(missing_items_merged) == 0:
-    print("Found no missing items; all expected files are present.")
+    print("Found no missing items; all expected files are present")
   else:
     print("-------------------------------------------------------------------------------")
-    print("Summary of missing items across all runs:")
+    print(f"Summary of missing items across {len(run_numbers)} run(s) with {total_nmb_evio_files} EVIO file(s):")
     for item_type, missing_items in missing_items_merged.items():
       #TODO also print fraction of missing items among all expected items of the given type
-      print(f"{len(missing_items)} out of {total_nmb_evio_files} {item_type} missing:")
+      print(f"{len(missing_items)} {item_type} missing:")
       for missing_item in sorted(missing_items):
         print(f"  {missing_item}")
   # print summary of failed EVIO files
   if len(failed_evio_files) == 0:
-    print("Found no EVIO files, for which hd_root has a non-zero return code.")
+    print("Found no EVIO files, that are missing or for which hd_root has a non-zero return code")
   else:
     print("-------------------------------------------------------------------------------")
-    print(f"{len(failed_evio_files)} out of {total_nmb_evio_files} EVIO files have a non-zero hd_root return code:")
+    print(f"{len(failed_evio_files)} out of {total_nmb_evio_files} EVIO file(s) {'are' if len(failed_evio_files) != 1 else 'is'} missing or have a non-zero hd_root return code:")
     #TODO calculate fraction of failed EVIO files among all processed EVIO files
     for failed_evio_file in sorted(failed_evio_files):
       print(f"  {failed_evio_file}")
 
   print("-------------------------------------------------------------------------------")
   if args.mode == "check":
-    print(f"Check mode: found {len(file_transfer_map)} file operations.")
+    print(f"Check mode: found {len(file_transfer_map)} file operations")
   elif args.mode == "dryrun":
     transfer_files(file_transfer_map, dryrun = True)
   elif args.mode == "symlink":
