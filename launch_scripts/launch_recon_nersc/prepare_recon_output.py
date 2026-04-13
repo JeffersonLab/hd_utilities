@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 from collections import defaultdict
+import functools
 import glob
 import os
 import shutil
@@ -25,6 +26,10 @@ from utilities import (
   get_job_size,
   read_run_numbers_from_file,
 )
+
+
+# always flush print() to reduce garbling of log files due to buffering
+print = functools.partial(print, flush = True)
 
 
 #TODO this should go in a period-dependent file
