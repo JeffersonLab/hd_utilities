@@ -290,6 +290,8 @@ def tar_directories(
   delete_original: bool = False,
   dry_run:         bool = False,
 ) -> None:
+  """Create tarball for each directory in the given list of directories and optionally delete the original directory after creating the tarball."""
+  print(f"{'Previewing creation of' if dry_run else 'Creating'} tarballs for {len(directories)} directories:")
   for dir_index, directory in enumerate(sorted(directories)):
     tar_file = f"{directory}.tgz"
     print(f"[{dir_index + 1:5d}/{len(directories):5d}] Creating tarball '{tar_file}' from directory '{directory}'")
@@ -313,6 +315,7 @@ def main(args: argparse.Namespace) -> None:
   run_number_list_file         =     ensure_dict_value_exists(launch_config, "RUN_NUMBER_LIST_FILE") if args.override_run_list is None else args.override_run_list
   swif_output_root             =     ensure_dict_value_exists(launch_config, "SWIF_OUTPUT_ROOT")
   swif_raw_data_root           =     ensure_dict_value_exists(launch_config, "SWIF_RAW_DATA_ROOT")
+  swif_workflow                =     ensure_dict_value_exists(launch_config, "SWIF_WORKFLOW")
   nersc_nmb_processes_per_task = int(ensure_dict_value_exists(launch_config, "NERSC_NMB_PROCESSES_PER_TASK"))
 
   run_numbers: list[int] = read_run_numbers_from_file(run_number_list_file)
@@ -356,19 +359,24 @@ def main(args: argparse.Namespace) -> None:
     print("-------------------------------------------------------------------------------")
     print(f"Summary of missing items across {len(run_numbers)} run(s) with {total_nmb_evio_files} EVIO file(s):")
     for item_type, missing_items in sorted(missing_items_merged.items()):
-      #TODO also print fraction of missing items among all expected items of the given type
       print(f"{len(missing_items)} {item_type} missing:")
       for missing_item in sorted(missing_items):
         print(f"  {missing_item}")
+  #TODO write missing items to file
   # print summary of failed EVIO files
   if len(failed_evio_files) == 0:
     print("Found no EVIO files, that are missing or for which hd_root has a non-zero return code")
   else:
     print("-------------------------------------------------------------------------------")
     print(f"{len(failed_evio_files)} out of {total_nmb_evio_files} EVIO file(s) {'are' if len(failed_evio_files) != 1 else 'is'} missing or have a non-zero hd_root return code:")
-    #TODO calculate fraction of failed EVIO files among all processed EVIO files
     for failed_evio_file in sorted(failed_evio_files):
       print(f"  {failed_evio_file}")
+    failed_list_file_name = f"./{swif_workflow}.failed_evio_files.list"  #TODO make this a command-line argument
+    #TODO prevent overwriting of existing file?
+    print(f"Writing list of failed EVIO files to '{failed_list_file_name}'")
+    with open(failed_list_file_name, "w", encoding="utf-8") as failed_list_file:
+      for failed_evio_file in sorted(failed_evio_files):
+        failed_list_file.write(f"{failed_evio_file}\n")
 
   print("-------------------------------------------------------------------------------")
   if args.mode == "check":
