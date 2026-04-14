@@ -75,7 +75,7 @@ class FileTransferMapGenerator:
     raw_data_root:          str,  # root directory containing the EVIO data files; assuming structure: <raw_data_root>/RUN<run number>/hd_rawdata_<run number>_<file number>.evio
     nmb_processes_per_task: int,  # number of processes per task used in the reconstruction launch
     target_dir:             str,  # root directory to which the output files of hd_root processes with return code 0 will be moved
-    # failed_log_file_dir:    str,  # directory to which log files of hd_root processes with non-zero return code will be moved for further investigation
+    failed_hd_root_dir:     str,  # directory to which any log and output files of hd_root processes with non-zero return code will be moved for further investigation
   ) -> None:
     self.run_number             = run_number
     self.job_dir                = job_dir
@@ -83,6 +83,7 @@ class FileTransferMapGenerator:
     self.raw_data_root          = raw_data_root
     self.nmb_processes_per_task = nmb_processes_per_task
     self.target_dir             = target_dir
+    self.failed_hd_root_dir     = failed_hd_root_dir
     self._run_dir               = f"{self.job_dir}/RUN{self.run_number:06d}"  # directory containing the SWIF output for the run
     self._evio_file_paths:   list[str]                  = []  # list of EVIO file paths for the run
     self._file_transfer_map: list[tuple[str, str]]      = []  # pairs of old and new file paths for moving   #TODO use a dictionary instead to avoid transformation in `transfer_files` function
@@ -138,20 +139,27 @@ class FileTransferMapGenerator:
       self._failed_evio_files.append(evio_file_path)
       return
     print(f"    Processing file {file_number} in directory '{file_dir}'")
-    #TODO divert log and core files for failed hd_root processes into separate directory tree; in case of failure just move all files in the FILE directory
-    # always process log files
-    job_info_dir = f"{self.target_dir}/job_info/{self.run_number:06d}/job_info_{self.run_number:06d}_{file_number:03d}"  # target directory for all log files
-    self.process_hd_root_log_files(file_dir,  job_info_dir)
-    self.process_task_log_files   (task_dir,  job_info_dir)
-    self.process_job_log_files    (nmb_tasks, job_info_dir)
-    # ensure that hd_root return code is 0
+    # move log and output files of failed hd_root processes into separate directory for further investigation
     hd_root_rc_file_path = f"{file_dir}/hd_root.rc"
     hd_root_return_code = get_hd_root_return_code(hd_root_rc_file_path)
     if hd_root_return_code != 0:
-      print(f"WARNING: hd_root return code for run {self.run_number} and EVIO file number {file_number} is {hd_root_return_code}; ignoring EVIO file")
       self._failed_evio_files.append(evio_file_path)
+      failed_file_dir = f"{self.failed_hd_root_dir}/{hd_root_return_code}/{self.run_number:06d}_{file_number:03d}"
+      print(f"WARNING: hd_root return code for run {self.run_number} and EVIO file number {file_number} is {hd_root_return_code}; tagging EVIO file as failed and moving output files to '{failed_file_dir}'")
+      # move job and task log files
+      self.process_job_log_files (nmb_tasks, failed_file_dir)
+      self.process_task_log_files(task_dir,  failed_file_dir)
+      # move all files in file directory
+      for output_file in sorted(glob.glob(f"{file_dir}/*")):
+        new_file_path = f"{failed_file_dir}/{os.path.basename(output_file)}"
+        print(f"!!! '{output_file}' -> '{new_file_path}'")
+        self._file_transfer_map.append((output_file, new_file_path))
       return
-    # process hd_root output files
+    # process log and output files of successful hd_root processes
+    job_info_dir = f"{self.target_dir}/job_info/{self.run_number:06d}/job_info_{self.run_number:06d}_{file_number:03d}"  # target directory for all log files
+    self.process_job_log_files    (nmb_tasks, job_info_dir)
+    self.process_task_log_files   (task_dir,  job_info_dir)
+    self.process_hd_root_log_files(file_dir,  job_info_dir)
     for subdir_name, (file_base_name, file_type) in RECON_SUBDIR_BASENAME_MAP.items():
       file_name = f"hd_rawdata_{self.run_number:06d}_{file_number:03d}.{file_base_name}.{file_type}" if file_type == "evio" else f"{file_base_name}.{file_type}"
       file_path = f"{file_dir}/{file_name}"
@@ -284,6 +292,7 @@ def main(args: argparse.Namespace) -> None:
   run_numbers: list[int] = read_run_numbers_from_file(run_number_list_file)
   # target_dir = f"/lustre24/expphy/volatile/halld/offsite_prod/RunPeriod-2022-05/recon/ready_for_tape"  #TODO add command-line argument
   target_dir = f"./ready_for_tape"
+  failed_hd_root_dir = f"./failed_evio_files_by_hd_root_return_code"
 
   total_nmb_evio_files = 0
   file_transfer_map:  list[tuple[str, str]]            = []  # pairs of old and new file paths for moving/copying
@@ -298,6 +307,7 @@ def main(args: argparse.Namespace) -> None:
       raw_data_root          = swif_raw_data_root,
       nmb_processes_per_task = nersc_nmb_processes_per_task,
       target_dir             = target_dir,
+      failed_hd_root_dir     = failed_hd_root_dir,
     )
     file_transfer_map_gen.process_run_dir()
     total_nmb_evio_files += len(file_transfer_map_gen._evio_file_paths)
