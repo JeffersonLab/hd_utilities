@@ -267,23 +267,22 @@ def transfer_files(
         print(f"{count_transfer_str} Linking '{old_file_path}' -> '{new_file_path}'")
         if not dry_run:
           os.symlink(old_file_path, new_file_path)  # will throw FileExistsError if destination file already exists
-      #TODO verify that destination file does not already exist
       elif len(new_file_paths) > 1:
         print(f"{count_transfer_str} Copying '{old_file_path}' -> '{new_file_path}'")
         if not dry_run:
-          # shutil.copy2(old_file_path, new_file_path)
-          pass
+          if os.path.exists(new_file_path):
+            raise FileExistsError(f"Destination '{new_file_path}' already exists")
+          shutil.copy2(old_file_path, new_file_path)
       else:  # len(new_file_paths) == 1
         print(f"{count_transfer_str} Moving '{old_file_path}' -> '{new_file_path}'")
         if not dry_run:
-          # shutil.move(old_file_path, new_file_path)
-          pass
-        continue
+          if os.path.exists(new_file_path):
+            raise FileExistsError(f"Destination '{new_file_path}' already exists")
+          shutil.move(old_file_path, new_file_path)
     if not symlink_files and len(new_file_paths) > 1:
       print(f"Deleting '{old_file_path}'")
       if not dry_run:
-        # os.remove(old_file_path)
-        pass
+        os.remove(old_file_path)
 
 
 def tar_directories(
@@ -382,9 +381,9 @@ def main(args: argparse.Namespace) -> None:
     raise ValueError(f"Unknown mode '{args.mode}'")
 
   print("-------------------------------------------------------------------------------")
-  print(f"Creating tarballs for {len(job_info_dirs_to_tar)} job-info directories")
   tar_directories(job_info_dirs_to_tar, delete_original = True, dry_run = args.dry_run)
 
+  print("-------------------------------------------------------------------------------")
   elapsed_time = int(time.time() - start_time)
   print(f"Wall time consumed by script: {elapsed_time // 60} min, {elapsed_time % 60} sec")
 
