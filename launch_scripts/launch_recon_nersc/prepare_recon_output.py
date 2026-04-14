@@ -252,32 +252,38 @@ def transfer_files(
     if new_file_path not in destination_map[old_file_path]:
       destination_map[old_file_path].append(new_file_path)
   # default: move files with unique destinations and copy files with multiple destinations before deleting original file
-  # use symbolic links instead of copying/moving if `symlink_files` is True
+  # if `symlink_files` is True: use symbolic links instead of copying/moving
+  count_transfer = 0
   for old_file_path, new_file_paths in destination_map.items():
     for new_file_path in new_file_paths:
-      #TODO verify that destination file does not already exist
+      count_transfer += 1
+      count_transfer_str = f"[{count_transfer:6d}/{len(file_transfer_map):6d}]"
       new_file_dir_name = os.path.dirname(new_file_path)
       if not os.path.isdir(new_file_dir_name):
         if not dry_run:
           print(f"Creating directory '{new_file_dir_name}'")
           os.makedirs(new_file_dir_name, exist_ok = True)
       if symlink_files:
+        print(f"{count_transfer_str} Linking '{old_file_path}' -> '{new_file_path}'")
         if not dry_run:
-          print(f"Linking '{old_file_path}' -> '{new_file_path}'")
-          os.symlink(old_file_path, new_file_path)
+          os.symlink(old_file_path, new_file_path)  # will throw FileExistsError if destination file already exists
+      #TODO verify that destination file does not already exist
       elif len(new_file_paths) > 1:
+        print(f"{count_transfer_str} Copying '{old_file_path}' -> '{new_file_path}'")
         if not dry_run:
-          print(f"Copying '{old_file_path}' -> '{new_file_path}'")
           # shutil.copy2(old_file_path, new_file_path)
+          pass
       else:  # len(new_file_paths) == 1
+        print(f"{count_transfer_str} Moving '{old_file_path}' -> '{new_file_path}'")
         if not dry_run:
-          print(f"Moving '{old_file_path}' -> '{new_file_path}'")
           # shutil.move(old_file_path, new_file_path)
+          pass
         continue
     if not symlink_files and len(new_file_paths) > 1:
+      print(f"Deleting '{old_file_path}'")
       if not dry_run:
-        print(f"Deleting '{old_file_path}'")
         # os.remove(old_file_path)
+        pass
 
 
 def tar_directories(
