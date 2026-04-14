@@ -94,7 +94,7 @@ class FileTransferMapGenerator:
     """Process the run directory defined by the arguments and append to map of original file paths to new file paths."""
     nmb_evio_files, nmb_tasks, _, _, self._evio_file_paths = get_job_size(self.run_number, self.raw_data_root, self.nmb_processes_per_task)
     if not os.path.isdir(self._run_dir):
-      print(f"WARNING: '{self._run_dir}' does not exist or is not a directory; ignoring run {self.run_number}")
+      print(f"WARNING: '{self._run_dir}' does not exist or is not a directory; tagging {nmb_evio_files} EVIO files as failed")
       self._missing_items["run dir(s)"].add(self._run_dir)
       for evio_file_path in self._evio_file_paths:
         self._failed_evio_files.append(evio_file_path)
@@ -113,7 +113,7 @@ class FileTransferMapGenerator:
     evio_file_end_index   = min(evio_file_start_index + self.nmb_processes_per_task, len(self._evio_file_paths))
     task_dir = f"{self._run_dir}/TASK{task_index:03d}"
     if not os.path.isdir(task_dir):
-      print(f"WARNING: '{task_dir}' does not exist or is not a directory; ignoring task {task_index}")
+      print(f"WARNING: '{task_dir}' does not exist or is not a directory; tagging {evio_file_end_index - evio_file_start_index} EVIO files as failed")
       self._missing_items["task dir(s)"].add(task_dir)
       for evio_file_path in self._evio_file_paths[evio_file_start_index:evio_file_end_index]:
         self._failed_evio_files.append(evio_file_path)
@@ -134,7 +134,7 @@ class FileTransferMapGenerator:
     assert file_number is not None, f"Failed to extract file number from EVIO file name '{evio_file_path}'"
     file_dir = f"{task_dir}/FILE{file_number:03d}"
     if not os.path.isdir(file_dir):
-      print(f"WARNING: '{file_dir}' does not exist or is not a directory; ignoring EVIO file")
+      print(f"WARNING: '{file_dir}' does not exist or is not a directory; tagging EVIO file as failed")
       self._missing_items["file dir(s)"].add(file_dir)
       self._failed_evio_files.append(evio_file_path)
       return
@@ -290,7 +290,8 @@ def main(args: argparse.Namespace) -> None:
   nersc_nmb_processes_per_task = int(ensure_dict_value_exists(launch_config, "NERSC_NMB_PROCESSES_PER_TASK"))
 
   run_numbers: list[int] = read_run_numbers_from_file(run_number_list_file)
-  # target_dir = f"/lustre24/expphy/volatile/halld/offsite_prod/RunPeriod-2022-05/recon/ready_for_tape"  #TODO add command-line argument
+  #TODO derive from .env file and add command-line argument to override
+  # target_dir = f"/lustre24/expphy/volatile/halld/offsite_prod/RunPeriod-2022-05/recon/ready_for_tape"
   target_dir = f"./ready_for_tape"
   failed_hd_root_dir = f"./failed_evio_files_by_hd_root_return_code"
 
@@ -326,7 +327,7 @@ def main(args: argparse.Namespace) -> None:
   else:
     print("-------------------------------------------------------------------------------")
     print(f"Summary of missing items across {len(run_numbers)} run(s) with {total_nmb_evio_files} EVIO file(s):")
-    for item_type, missing_items in missing_items_merged.items():
+    for item_type, missing_items in sorted(missing_items_merged.items()):
       #TODO also print fraction of missing items among all expected items of the given type
       print(f"{len(missing_items)} {item_type} missing:")
       for missing_item in sorted(missing_items):
@@ -363,7 +364,7 @@ if __name__ == "__main__":
     description = "Checks completeness of files in swif2 output directory and creates directory structure in target directory that can be written to tape.",
   )
   parser.add_argument("--launch_env_file", default = "./launch.env", help = "Path to .env file defining the configuration variables of the reconstruction launch; default: '%(default)s'")
-  parser.add_argument("--override_run_list", help = "Path to run-number list file to use instead of RCDB query")
-  parser.add_argument("--mode", choices = ["check", "dryrun", "symlink", "move"], default = "check", help = "Operation mode: 'check': verify completeness of files, 'dryrun': preview transfer commands, 'symlink': create symbolic links, or 'move' perform transfers; default: '%(default)s'")
+  parser.add_argument("--override_run_list", help = "Path to run-number list file to use instead of the one defined in the launch environment file")  #TODO allow also list of run lists
+  parser.add_argument("--mode", choices = ["check", "dryrun", "symlink", "move"], default = "check", help = "Operation mode: 'check': verify completeness of files, 'dryrun': preview transfer commands, 'symlink': create symbolic links, or 'move' execute transfer commands; default: '%(default)s'")
   args = parser.parse_args()
   main(args)
