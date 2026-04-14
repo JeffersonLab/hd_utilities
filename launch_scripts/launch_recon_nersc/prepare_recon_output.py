@@ -240,10 +240,10 @@ class FileTransferMapGenerator:
 def transfer_files(
   file_transfer_map: list[tuple[str, str]],
   symlink_files:     bool = False,
-  dryrun:            bool = False,
+  dry_run:            bool = False,
 ) -> None:
   """Move unique source files and copy duplicate source files before deleting the original."""
-  print(f"{'Executing' if not dryrun else 'Previewing'} {len(file_transfer_map)} file operations:")
+  print(f"{'Executing' if not dry_run else 'Previewing'} {len(file_transfer_map)} file operations:")
   # convert list into dictionary mapping source file paths to list of destination file paths
   destination_map: dict[str, list[str]] = {}
   for old_file_path, new_file_path in file_transfer_map:
@@ -251,31 +251,31 @@ def transfer_files(
       destination_map[old_file_path] = []
     if new_file_path not in destination_map[old_file_path]:
       destination_map[old_file_path].append(new_file_path)
-  # move files with unique destinations and copy files with multiple destinations before deleting original file
+  # default: move files with unique destinations and copy files with multiple destinations before deleting original file
   # use symbolic links instead of copying/moving if `symlink_files` is True
   for old_file_path, new_file_paths in destination_map.items():
     for new_file_path in new_file_paths:
       #TODO verify that destination file does not already exist
       new_file_dir_name = os.path.dirname(new_file_path)
       if not os.path.isdir(new_file_dir_name):
-        if not dryrun:
+        if not dry_run:
           print(f"Creating directory '{new_file_dir_name}'")
           os.makedirs(new_file_dir_name, exist_ok = True)
       if symlink_files:
-        if not dryrun:
+        if not dry_run:
           print(f"Linking '{old_file_path}' -> '{new_file_path}'")
           os.symlink(old_file_path, new_file_path)
       elif len(new_file_paths) > 1:
-        if not dryrun:
+        if not dry_run:
           print(f"Copying '{old_file_path}' -> '{new_file_path}'")
           # shutil.copy2(old_file_path, new_file_path)
       else:  # len(new_file_paths) == 1
-        if not dryrun:
+        if not dry_run:
           print(f"Moving '{old_file_path}' -> '{new_file_path}'")
           # shutil.move(old_file_path, new_file_path)
         continue
     if not symlink_files and len(new_file_paths) > 1:
-      if not dryrun:
+      if not dry_run:
         print(f"Deleting '{old_file_path}'")
         # os.remove(old_file_path)
 
@@ -345,12 +345,10 @@ def main(args: argparse.Namespace) -> None:
   print("-------------------------------------------------------------------------------")
   if args.mode == "check":
     print(f"Check mode: found {len(file_transfer_map)} file operations")
-  elif args.mode == "dryrun":
-    transfer_files(file_transfer_map, dryrun = True)
   elif args.mode == "symlink":
-    transfer_files(file_transfer_map, symlink_files = True)
+    transfer_files(file_transfer_map, dry_run = args.dry_run, symlink_files = True)
   elif args.mode == "move":
-    transfer_files(file_transfer_map)
+    transfer_files(file_transfer_map, dry_run = args.dry_run)
   else:
     raise ValueError(f"Unknown mode '{args.mode}'")
   #TODO tar log directories
@@ -365,6 +363,7 @@ if __name__ == "__main__":
   )
   parser.add_argument("--launch_env_file", default = "./launch.env", help = "Path to .env file defining the configuration variables of the reconstruction launch; default: '%(default)s'")
   parser.add_argument("--override_run_list", help = "Path to run-number list file to use instead of the one defined in the launch environment file")  #TODO allow also list of run lists
-  parser.add_argument("--mode", choices = ["check", "dryrun", "symlink", "move"], default = "check", help = "Operation mode: 'check': verify completeness of files, 'dryrun': preview transfer commands, 'symlink': create symbolic links, or 'move' execute transfer commands; default: '%(default)s'")
+  parser.add_argument("--mode", choices = ["check", "symlink", "move"], default = "check", help = "Operation mode: 'check': verify completeness of files, 'symlink': create symbolic links, or 'move' execute transfer commands; default: '%(default)s'")
+  parser.add_argument("--dry_run", action = "store_true", help = "Preview file operations without performing them; default: false")
   args = parser.parse_args()
   main(args)
