@@ -37,6 +37,7 @@ then
 else
   echo "Successfully created launch directory '${NERSC_LAUNCH_DIR}' at NERSC with group ownership '${NERSC_PROJECT}' and write permissions for the group"
 fi
+#TODO exclude __pycache__ directories; use `--exclude` option of rsync; better copy only the files needed at NERSC; e.g. use `--files-from` option of rsync with a generated list of files to copy; maybe create an extra deploy script for NERSC
 RSYNC_CMD=(rsync
   --verbose
   --delete  # ensure pristine copy

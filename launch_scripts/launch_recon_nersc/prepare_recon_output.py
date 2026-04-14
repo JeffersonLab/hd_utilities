@@ -312,6 +312,7 @@ def main(args: argparse.Namespace) -> None:
   start_time = time.time()
   print_command_line_arguments(args)
   launch_config: dict[str, str | None] = get_config_dict_from_env_file(args.launch_env_file)
+  batch_name                   =     ensure_dict_value_exists(launch_config, "BATCH")
   run_number_list_file         =     ensure_dict_value_exists(launch_config, "RUN_NUMBER_LIST_FILE") if args.override_run_list is None else args.override_run_list
   swif_output_root             =     ensure_dict_value_exists(launch_config, "SWIF_OUTPUT_ROOT")
   swif_raw_data_root           =     ensure_dict_value_exists(launch_config, "SWIF_RAW_DATA_ROOT")
@@ -319,10 +320,11 @@ def main(args: argparse.Namespace) -> None:
   nersc_nmb_processes_per_task = int(ensure_dict_value_exists(launch_config, "NERSC_NMB_PROCESSES_PER_TASK"))
 
   run_numbers: list[int] = read_run_numbers_from_file(run_number_list_file)
-  #TODO derive from .env file and add command-line argument to override
-  # target_dir = f"/lustre24/expphy/volatile/halld/offsite_prod/RunPeriod-2022-05/recon/ready_for_tape"
-  target_dir = f"./ready_for_tape"
-  failed_hd_root_dir = f"./failed_evio_files_by_hd_root_return_code"
+  target_base_dir = os.path.dirname(swif_output_root)
+  target_dir = f"{target_base_dir}/{batch_name}.ready_for_tape"
+  failed_hd_root_dir = f"{target_base_dir}/{batch_name}.failed_evio_files_by_hd_root_return_code"
+  # target_dir = f"./{batch_name}.ready_for_tape"
+  # failed_hd_root_dir = f"./{batch_name}.failed_evio_files_by_hd_root_return_code"
 
   total_nmb_evio_files = 0
   failed_evio_files:    list[str]                        = []  # paths of EVIO files for which hd_root failed
@@ -388,8 +390,9 @@ def main(args: argparse.Namespace) -> None:
   else:
     raise ValueError(f"Unknown mode '{args.mode}'")
 
-  print("-------------------------------------------------------------------------------")
-  tar_directories(job_info_dirs_to_tar, delete_original = True, dry_run = args.dry_run)
+  if args.mode == "symlink" or args.mode == "move":
+    print("-------------------------------------------------------------------------------")
+    tar_directories(job_info_dirs_to_tar, delete_original = True, dry_run = args.dry_run)
 
   print("-------------------------------------------------------------------------------")
   elapsed_time = int(time.time() - start_time)
