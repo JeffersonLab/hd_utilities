@@ -14,6 +14,7 @@ import functools
 import glob
 import os
 import shutil
+import tarfile
 import time
 
 from script_job import (
@@ -85,10 +86,11 @@ class FileTransferMapGenerator:
     self.target_dir             = target_dir
     self.failed_hd_root_dir     = failed_hd_root_dir
     self._run_dir               = f"{self.job_dir}/RUN{self.run_number:06d}"  # directory containing the SWIF output for the run
-    self._evio_file_paths:   list[str]                  = []  # list of EVIO file paths for the run
-    self._file_transfer_map: list[tuple[str, str]]      = []  # pairs of old and new file paths for moving   #TODO use a dictionary instead to avoid transformation in `transfer_files` function
-    self._failed_evio_files: list[str]                  = []  # collect paths of EVIO files that are missing or for which hd_root failed
-    self._missing_items:     defaultdict[str, set[str]] = defaultdict(set)  # collect missing items by item type for reporting at the end of the script
+    self._evio_file_paths:      list[str]                  = []  # EVIO file paths for the run
+    self._failed_evio_files:    list[str]                  = []  # paths of EVIO files that are missing or for which hd_root failed
+    self._missing_items:        defaultdict[str, set[str]] = defaultdict(set)  # missing items by item type for reporting at the end of the script
+    self._file_transfer_map:    list[tuple[str, str]]      = []  # pairs of old and new file paths for moving   #TODO use a dictionary instead to avoid transformation in `transfer_files` function
+    self._job_info_dirs_to_tar: list[str]                  = []  # paths of directories with job infos to be tarred later
 
   def process_run_dir(self) -> None:
     """Process the run directory defined by the arguments and append to map of original file paths to new file paths."""
@@ -152,11 +154,11 @@ class FileTransferMapGenerator:
       # move all files in file directory
       for output_file in sorted(glob.glob(f"{file_dir}/*")):
         new_file_path = f"{failed_file_dir}/{os.path.basename(output_file)}"
-        print(f"!!! '{output_file}' -> '{new_file_path}'")
         self._file_transfer_map.append((output_file, new_file_path))
       return
     # process log and output files of successful hd_root processes
     job_info_dir = f"{self.target_dir}/job_info/{self.run_number:06d}/job_info_{self.run_number:06d}_{file_number:03d}"  # target directory for all log files
+    self._job_info_dirs_to_tar.append(job_info_dir)  # directory to be tarred at the end of the script
     self.process_job_log_files    (nmb_tasks, job_info_dir)
     self.process_task_log_files   (task_dir,  job_info_dir)
     self.process_hd_root_log_files(file_dir,  job_info_dir)
@@ -240,15 +242,13 @@ class FileTransferMapGenerator:
 def transfer_files(
   file_transfer_map: list[tuple[str, str]],
   symlink_files:     bool = False,
-  dry_run:            bool = False,
+  dry_run:           bool = False,
 ) -> None:
   """Move unique source files and copy duplicate source files before deleting the original."""
   print(f"{'Executing' if not dry_run else 'Previewing'} {len(file_transfer_map)} file operations:")
   # convert list into dictionary mapping source file paths to list of destination file paths
-  destination_map: dict[str, list[str]] = {}
+  destination_map: defaultdict[str, list[str]] = defaultdict(list)
   for old_file_path, new_file_path in file_transfer_map:
-    if old_file_path not in destination_map:
-      destination_map[old_file_path] = []
     if new_file_path not in destination_map[old_file_path]:
       destination_map[old_file_path].append(new_file_path)
   # default: move files with unique destinations and copy files with multiple destinations before deleting original file
@@ -280,6 +280,27 @@ def transfer_files(
         # os.remove(old_file_path)
 
 
+def tar_directories(
+  directories:     list[str],
+  delete_original: bool = False,
+  dry_run:         bool = False,
+) -> None:
+  for dir_index, directory in enumerate(sorted(directories)):
+    tar_file = f"{directory}.tgz"
+    print(f"[{dir_index + 1:5d}/{len(directories):5d}] Creating tarball '{tar_file}' from directory '{directory}'")
+    if not dry_run:
+      with tarfile.open(name = tar_file, mode = "x:gz") as tar:  # will throw FileExistsError if tar file already exists
+        tar.add(
+          name      = directory,
+          arcname   = os.path.basename(directory),  # set directory created when extracting the tarball
+          recursive = True,
+        )
+    if delete_original:
+      print(f"Deleting original directory '{directory}'")
+      if not dry_run:
+        shutil.rmtree(directory)
+
+
 def main(args: argparse.Namespace) -> None:
   start_time = time.time()
   print_command_line_arguments(args)
@@ -296,9 +317,10 @@ def main(args: argparse.Namespace) -> None:
   failed_hd_root_dir = f"./failed_evio_files_by_hd_root_return_code"
 
   total_nmb_evio_files = 0
-  file_transfer_map:  list[tuple[str, str]]            = []  # pairs of old and new file paths for moving/copying
-  failed_evio_files:  list[str]                        = []  # collect paths of EVIO files for which hd_root failed
-  missing_items_runs: list[defaultdict[str, set[str]]] = []  # collect missing items for each run by item type for reporting at the end of the script
+  failed_evio_files:    list[str]                        = []  # paths of EVIO files for which hd_root failed
+  missing_items_runs:   list[defaultdict[str, set[str]]] = []  # missing items for each run by item type for reporting at the end of the script
+  file_transfer_map:    list[tuple[str, str]]            = []  # pairs of old and new file paths for moving/copying
+  job_info_dirs_to_tar: list[str]                        = []  # paths of directories with job infos to be tarred later
   for run_number in run_numbers:  # loop over runs
     print("...............................................................................")
     print(f"Verifying completeness of files for run {run_number} and preparing file transfer map")
@@ -312,9 +334,10 @@ def main(args: argparse.Namespace) -> None:
     )
     file_transfer_map_gen.process_run_dir()
     total_nmb_evio_files += len(file_transfer_map_gen._evio_file_paths)
-    file_transfer_map    += file_transfer_map_gen._file_transfer_map
     failed_evio_files    += file_transfer_map_gen._failed_evio_files
     missing_items_runs.append(file_transfer_map_gen._missing_items)
+    file_transfer_map    += file_transfer_map_gen._file_transfer_map
+    job_info_dirs_to_tar += file_transfer_map_gen._job_info_dirs_to_tar
 
   # merge missing items into one dictionary mapping item type to set of missing items across all runs
   missing_items_merged: defaultdict[str, set[str]] = defaultdict(set)
@@ -351,7 +374,10 @@ def main(args: argparse.Namespace) -> None:
     transfer_files(file_transfer_map, dry_run = args.dry_run)
   else:
     raise ValueError(f"Unknown mode '{args.mode}'")
-  #TODO tar log directories
+
+  print("-------------------------------------------------------------------------------")
+  print(f"Creating tarballs for {len(job_info_dirs_to_tar)} job-info directories")
+  tar_directories(job_info_dirs_to_tar, delete_original = True, dry_run = args.dry_run)
 
   elapsed_time = int(time.time() - start_time)
   print(f"Wall time consumed by script: {elapsed_time // 60} min, {elapsed_time % 60} sec")
