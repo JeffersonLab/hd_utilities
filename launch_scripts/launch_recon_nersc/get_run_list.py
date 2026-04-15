@@ -146,7 +146,7 @@ def main(args: argparse.Namespace) -> None:
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(
-    description = "Generates list of runs to process for a given run period.",
+    description = "Generates list of runs and files to process for a given run period.",
   )
   parser.add_argument("--launch_env_file", default = "./launch.env", help = "Path to .env file defining the configuration variables of the reconstruction launch; default: '%(default)s'")
   parser.add_argument("--override_run_list", help = "Path to run-number list file to use instead of RCDB query")

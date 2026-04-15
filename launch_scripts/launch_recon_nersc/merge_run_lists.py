@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Merges two run lists into a single run list with unique run numbers"""
+"""Merges multiple run-list files into a single run-list file with unique run numbers"""
 
 from __future__ import annotations
 
@@ -9,7 +9,8 @@ import argparse
 
 def main(args: argparse.Namespace) -> None:
   run_numbers = set()
-  for file_path in (args.list_file_1_path, args.list_file_2_path):
+  print(f"Merging run numbers from {len(args.list_file_paths)} files into file '{args.merged_list_path}'")
+  for file_path in args.list_file_paths:
     print(f"Reading run numbers from '{file_path}'")
     with open(file_path) as in_file:
       for line in in_file:
@@ -20,12 +21,17 @@ def main(args: argparse.Namespace) -> None:
       out_file.write(f"{run_number}\n")
 
 
-#TODO expand to merging N files
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(
-    description = "Merge two run list files into a single run list file.",
+    description = "Merges multiple run-list files into a single run-list file with unique run numbers.",
   )
-  parser.add_argument("list_file_1_path", metavar = "list-file-1", help = "Path of first run list to merge")
-  parser.add_argument("list_file_2_path", metavar = "list-file-2", help = "Path of second run list to merge")
-  parser.add_argument("merged_list_path", metavar = "merged-list", help = "Path of merged run-list file")
-  main(parser.parse_args())
+  parser.add_argument("merged_list_path", help = "Path of merged run-list file")
+  parser.add_argument(
+    "list_file_paths",
+    nargs = "+",
+    help = "Paths of run-list files to merge",
+  )
+  args = parser.parse_args()
+  if len(args.list_file_paths) < 2:
+    parser.error("provide at least two input run-list files after the path of the merged run-list file")
+  main(args)
