@@ -373,12 +373,13 @@ def main(args: argparse.Namespace) -> None:
     print(f"{len(failed_evio_files)} out of {total_nmb_evio_files} EVIO file(s) {'are' if len(failed_evio_files) != 1 else 'is'} missing or have a non-zero hd_root return code:")
     for failed_evio_file in sorted(failed_evio_files):
       print(f"  {failed_evio_file}")
-    failed_list_file_name = f"./{swif_workflow}.failed_evio_files.list"  #TODO make this a command-line argument
-    #TODO prevent overwriting of existing file?
-    print(f"Writing list of failed EVIO files to '{failed_list_file_name}'")
-    with open(failed_list_file_name, "w", encoding="utf-8") as failed_list_file:
-      for failed_evio_file in sorted(failed_evio_files):
-        failed_list_file.write(f"{failed_evio_file}\n")
+    if args.write_failed_evio_list is not None:
+      failed_list_file_name = args.write_failed_evio_list or f"./{swif_workflow}.failed_evio_files.list"
+      #TODO prevent overwriting of existing file?
+      print(f"Writing list of failed EVIO files to '{failed_list_file_name}'")
+      with open(failed_list_file_name, "w", encoding="utf-8") as failed_list_file:
+        for failed_evio_file in sorted(failed_evio_files):
+          failed_list_file.write(f"{failed_evio_file}\n")
 
   print("-------------------------------------------------------------------------------")
   if args.mode == "check":
@@ -407,5 +408,6 @@ if __name__ == "__main__":
   parser.add_argument("--override_run_list", help = "Path to run-number list file to use instead of the one defined in the launch environment file")  #TODO allow also list of run lists
   parser.add_argument("--mode", choices = ["check", "symlink", "move"], default = "check", help = "Operation mode: 'check': verify completeness of files, 'symlink': create symbolic links, or 'move' execute transfer commands; default: '%(default)s'")
   parser.add_argument("--dry_run", action = "store_true", help = "Preview file operations without performing them; default: false")
+  parser.add_argument("--write_failed_evio_list", nargs = "?", const = "", default = None, help = "Write list of failed EVIO files to file, if no value is provided, write to './<workflow name>.failed_evio_files.list'; default: do not write file")
   args = parser.parse_args()
   main(args)
