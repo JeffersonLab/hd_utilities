@@ -76,7 +76,7 @@ def get_hd_root_return_code(hd_root_rc_file_path: str) -> Optional[int]:
   return int(match.group(1))
 
 
-def get_output_file_paths(
+def get_file_transfer_paths(
   run_number:       int,
   swif_output_root: str,
 ) -> List[Tuple[str, str]]:
@@ -101,7 +101,7 @@ def get_output_file_paths(
         relative_output_paths += sorted(glob.glob(f"{file_dir}/core.hd_root*"))  # transfer core files for debugging
         continue
       relative_output_paths += sorted(glob.glob(f"{file_dir}/*"))  # include all items in file dir
-  output_file_paths: List[Tuple[str, str]] = []  # list of pairs of relative local file paths and absolute remote destination file paths
+  file_transfer_paths: List[Tuple[str, str]] = []  # list of pairs of relative local file paths and absolute remote destination file paths
   for relative_output_path in relative_output_paths:
     # filter out all directories and nonexisting and unwanted and files
     if not os.path.isfile(relative_output_path) or os.path.islink(relative_output_path):  # keep only existing, non-symlinked files
@@ -111,8 +111,8 @@ def get_output_file_paths(
       continue
     if re.fullmatch(r"hd_rawdata_\d{6}_\d{3}\.evio", output_file_name):  # skip raw-data files that match hd_rawdata_XXXXXX_YYY.evio, with 6-digit run number XXXXXX and 3-digit file number YYY
       continue
-    output_file_paths.append((relative_output_path, f"{swif_output_root}/{relative_output_path}"))
-  return output_file_paths
+    file_transfer_paths.append((relative_output_path, f"{swif_output_root}/{relative_output_path}"))
+  return file_transfer_paths
 
 
 def define_swif2_output_files(
@@ -120,12 +120,11 @@ def define_swif2_output_files(
   swif_output_root: str,
 ) -> None:
   """Registers all output files with swif2 for transfer back to JLab."""
-  output_file_paths: List[Tuple[str, str]] = get_output_file_paths(run_number, swif_output_root)
-  print(f"Transferring {len(output_file_paths)} files back to JLab")
-  for local_output_file_path, remote_output_file_path in output_file_paths:
+  file_transfer_paths: List[Tuple[str, str]] = get_file_transfer_paths(run_number, swif_output_root)
+  print(f"Defining {len(file_transfer_paths)} output files for transfer back to JLab")
+  for local_output_file_path, remote_output_file_path in file_transfer_paths:
     output_cmd = f"./.swif/swif2 output '{local_output_file_path}' '{remote_output_file_path}'"  #TODO for some reason, swif2 is not in path
-    print(f"Defining output file: '{output_cmd}'")
-    # print(output_cmd)  #TODO
+    print(output_cmd)
     subprocess.run(output_cmd, shell = True, check = False)
 
 
@@ -198,7 +197,7 @@ def main(args: argparse.Namespace) -> None:
     "-c",
     " ".join(task_cmd),  # command to run in container; needs to be passed as a single string to `bash -c`
   ]
-  print(f"Submitting {nmb_tasks} tasks: '{' '.join(srun_cmd)}'")
+  print(f"Submitting {nmb_tasks} tasks: {' '.join(srun_cmd)}")
   srun_result = subprocess.run(srun_cmd, check = False)
   with open(f"./srun_{run_label}.rc", "w", encoding = "utf-8") as log_file:
     log_file.write(f"{srun_result.returncode:d}")
