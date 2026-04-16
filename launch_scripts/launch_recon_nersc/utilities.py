@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import glob
 import os
+from pathlib import Path
 import subprocess
 from typing import TypeVar
 
@@ -34,6 +35,11 @@ def get_config_dict_from_env_file(env_file: str) -> dict[str, str | None]:
     nersc_nmb_processes_per_task = subprocess.check_output([nersc_nmb_processes_per_task], shell = True, text = True)
     config["NERSC_NMB_PROCESSES_PER_TASK"] = nersc_nmb_processes_per_task
   return config
+
+
+def get_directory_size(path: str | Path) -> int:
+  """Returns the total size in bytes of all files (including symlinks) in the directory tree rooted at the given path."""
+  return sum(file_path.stat().st_size for file_path in Path(path).rglob("*") if file_path.is_file())
 
 
 def get_file_size_from_mss_stub(mss_file_path: str) -> int:

@@ -43,12 +43,12 @@ def main(args: argparse.Namespace) -> None:
     subprocess.run(["swif2", "create", swif_workflow], check = True)
 
   # submit swif2 job that copies the directory structure with all files to tape
-  os.makedirs(dest_dir, exist_ok = True)
+  job_name = f"GlueX_copy_{run_period}_{batch}"
   swif2_cmd: list[str] = [
     "swif2",
     "add-job",
     "-workflow", swif_workflow,  # swif2 workflow name
-    "-name", f"GlueX_copy_{run_period}_{batch}",  # swif2 job name
+    "-name", job_name,  # swif2 job name
     # "-account", "halld-pro",
     "-account", "halld",
     # "-partition", "production",
@@ -56,11 +56,11 @@ def main(args: argparse.Namespace) -> None:
     "-cores", "1",
     "-disk", "1GB",
     "-ram", "1GB",
-    "-time", "30min",
-    "-output", f"match:{dir_to_copy}/*", dest_dir,
-    # "-stdout", "/volatile/halld/home/bgrube/job.out",
-    # "-stderr", "/volatile/halld/home/bgrube/job.err",
-    "true",
+    "-time", f"30min",
+    # "-output", f"match:{recon_dir_path}/**", f"file:{tape_dir_path}",
+    "-stdout", f"/volatile/halld/home/bgrube/{job_name}.out",
+    "-stderr", f"/volatile/halld/home/bgrube/{job_name}.err",
+    f'{os.path.abspath("./script_copy_dir_to_tape.py")} --src_dir_path="{recon_dir_path}" --dest_dir_path="{tape_dir_path}"',
   ]
   print(f"Submitting job: '{' '.join(swif2_cmd)}'")
   swif2_result = subprocess.run(swif2_cmd, check = False)
