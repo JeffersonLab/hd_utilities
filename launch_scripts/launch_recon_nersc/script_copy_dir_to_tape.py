@@ -7,7 +7,6 @@ from __future__ import annotations
 import argparse
 import glob
 import os
-import shutil
 import subprocess
 import sys
 import time
@@ -58,9 +57,7 @@ def define_swif2_output_files(
   """Registers files with swif2 for transfer back to tape."""
   file_transfer_paths: list[tuple[str, str]] = get_transfer_file_paths(src_dir_path, dest_dir_path)
   print(f"Transferring {len(file_transfer_paths)} files from '{src_dir_path}' to '{dest_dir_path}'")
-  print(f"!!! {shutil.which('swif2')=}")
   for src_file_path, dest_file_path in file_transfer_paths:
-    # output_cmd = f"./.swif/swif2 output '{src_file_path}' '{dest_file_path}'"  #TODO for some reason, swif2 is not in path
     output_cmd = f"swif2 output '{src_file_path}' '{dest_file_path}'"
     print(output_cmd)
     subprocess.run(output_cmd, shell = True, check = False)
@@ -69,9 +66,6 @@ def define_swif2_output_files(
 def main(args: argparse.Namespace) -> None:
   start_time = time.time()
   print_command_line_arguments(args)
-
-  print(f"Job script is running in directory: '{os.getcwd()}'")
-  subprocess.run("ls -la", shell = True, check = False)
 
   define_swif2_output_files(args.src_dir_path, args.dest_dir_path)
 
