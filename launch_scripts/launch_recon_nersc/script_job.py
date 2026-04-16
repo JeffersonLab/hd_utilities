@@ -37,7 +37,7 @@ print = functools.partial(print, flush = True)
 
 #TODO find out whether these functions can be moved to the/a utilities module
 def print_command_line_arguments(args: argparse.Namespace) -> None:
-  """Print all command-line arguments and their values and the git hash."""
+  """Prints all command-line arguments and their values and the git hash."""
   this_script_file_name = os.path.basename(sys.argv[0])  # get file name of script that was launched
   print("-------------------------------------------------------------------------------")
   print(f"Running script {this_script_file_name} with arguments:")
@@ -62,7 +62,7 @@ def write_env_to_file(output_file_name: str = "./env") -> None:
 
 
 def get_hd_root_return_code(hd_root_rc_file_path: str) -> Optional[int]:
-  """Read the hd_root return code from the given file and return it as an int or `None` if unsuccessful."""
+  """Reads the hd_root return code from the given file and returns it as an int or `None` if unsuccessful."""
   try:
     with open(hd_root_rc_file_path, "r", encoding="utf-8") as file:
       hd_root_rc_file_content = file.read()
@@ -80,7 +80,7 @@ def get_output_file_paths(
   run_number:       int,
   swif_output_root: str,
 ) -> List[Tuple[str, str]]:
-  """Get list with local relative paths w.r.t. current directory and absolute remote destination paths of all output files that should be transferred back to JLab."""
+  """Gets list of local relative paths w.r.t. current directory and absolute remote destination paths of all output files that should be transferred back to JLab."""
   # this function assumes that the current directory is the working directory of the job
   # first greedily collect all potential output items, then filter out directories and files that should not be transferred back to JLab
   relative_output_paths: List[str] = []
@@ -119,7 +119,7 @@ def define_swif2_output_files(
   run_number:       int,
   swif_output_root: str,
 ) -> None:
-  """Register all output files with swif2 for transfer back to JLab."""
+  """Registers all output files with swif2 for transfer back to JLab."""
   output_file_paths: List[Tuple[str, str]] = get_output_file_paths(run_number, swif_output_root)
   print(f"Transferring {len(output_file_paths)} files back to JLab")
   for local_output_file_path, remote_output_file_path in output_file_paths:

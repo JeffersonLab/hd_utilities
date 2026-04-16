@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
-"""
-Generates list of runs and files to process for a given run period.
-"""
+"""Generates list of runs and files to process for a given run period."""
 
 from __future__ import annotations
 
@@ -71,8 +69,7 @@ def get_evio_files(
   run_list:           list[int],          # list of runs to process
   swif_raw_data_root: str,                # root dir for EVIO files
 ) -> dict[int, list[str]]:
-  """Gets the list of EVIO files for each run in the given list of
-  runs, and also tallies any errors encountered in the process."""
+  """Gets the list of EVIO files for each run in the given list of runs, and also tallies any errors encountered in the process."""
   print(f"Searching for raw-data .evio files in '{swif_raw_data_root}'")
   evio_files_per_run: dict[int, list[str]] = {}
   error_counts: dict[EvioFilesErrorKind, int] = {kind : 0 for kind in EvioFilesErrorKind}

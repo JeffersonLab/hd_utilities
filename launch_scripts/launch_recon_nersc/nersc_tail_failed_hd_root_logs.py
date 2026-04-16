@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 #NOTE this script needs to be compatible with Python 3.6
 
-"""
-Prints the last N lines of the stdout and stderr log files for hd_root processes with non-zero return code.
-"""
+"""Prints the last N lines of the stdout and stderr log files for hd_root processes with non-zero return code."""
 
 import argparse
 from collections import deque

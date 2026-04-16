@@ -1,6 +1,4 @@
-"""
-Collection of utility functions for the scripts in this directory.
-"""
+"""Collection of utility functions for the scripts in this directory."""
 
 from __future__ import annotations
 
@@ -18,7 +16,7 @@ def ensure_dict_value_exists(
   dictionary: dict[KeyType, ValueType | None],
   key:        KeyType,
 ) -> ValueType:
-  """Ensure that value for the given key exists in the dictionary and has a non-None value; return the value."""
+  """Ensures that value for the given key exists in the dictionary and has a non-None value; returns the value."""
   value = dictionary[key]
   if value is None:
     raise ValueError(f"Missing value for key '{key}'")
@@ -26,7 +24,7 @@ def ensure_dict_value_exists(
 
 
 def get_config_dict_from_env_file(env_file: str) -> dict[str, str | None]:
-  """Load a .env file with the production parameters and return its contents as a dictionary."""
+  """Loads a .env file with the production parameters and returns its contents as a dictionary."""
   print(f"Reading production parameters from .env file '{env_file}'")
   config: dict[str, str | None] = dotenv.dotenv_values(env_file)
   assert config, f"Failed to load .env file from '{env_file}'"
@@ -39,7 +37,7 @@ def get_config_dict_from_env_file(env_file: str) -> dict[str, str | None]:
 
 
 def get_file_size_from_mss_stub(mss_file_path: str) -> int:
-  """Extract the file size in bytes from the 'size' field in the MSS stub file."""
+  """Extracts the file size in bytes from the 'size' field in the MSS stub file."""
   assert mss_file_path.startswith("/mss"), f"File '{mss_file_path}' must be an `/mss` path"
   mss_stub = dotenv.dotenv_values(mss_file_path)
   assert mss_stub, f"Failed to load MSS stub file from '{mss_file_path}'"
@@ -51,7 +49,7 @@ def get_evio_file_paths_for_run(
   run_number:    int,
   raw_data_root: str,
 ) -> list[str]:
-  """Get the list of EVIO file paths for the given run number and raw data root directory."""
+  """Gets the list of EVIO file paths for the given run number and raw data root directory."""
   evio_run_dir = f"{raw_data_root}/Run{run_number:06d}"
   evio_file_paths: list[str] = sorted(glob.glob(f"{evio_run_dir}/hd_rawdata_{run_number:06d}_???.evio"))
   return evio_file_paths
@@ -62,7 +60,7 @@ def get_job_size(
   raw_data_root:          str,
   nmb_processes_per_task: int,
 ) -> tuple[int, int, int, float, list[str]]:
-  """Calculate the number of files, number of tasks required, number of processes in last task, total raw-data size in GB, and list of EVIO file paths for the given run."""
+  """Calculates the number of files, number of tasks required, number of processes in last task, total raw-data size in GB, and list of EVIO file paths for the given run."""
   evio_file_paths = get_evio_file_paths_for_run(run_number, raw_data_root)
   nmb_files = len(evio_file_paths)
   nmb_tasks = (nmb_files + nmb_processes_per_task - 1) // nmb_processes_per_task

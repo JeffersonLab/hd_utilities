@@ -93,7 +93,7 @@ class FileTransferMapGenerator:
     self._job_info_dirs_to_tar: list[str]                  = []  # paths of directories with job infos to be tarred later
 
   def process_run_dir(self) -> None:
-    """Process the run directory defined by the arguments and append to map of original file paths to new file paths."""
+    """Processes the run directory defined by the arguments and appends to the map of original file paths to new file paths."""
     nmb_evio_files, nmb_tasks, _, _, self._evio_file_paths = get_job_size(self.run_number, self.raw_data_root, self.nmb_processes_per_task)
     if not os.path.isdir(self._run_dir):
       print(f"WARNING: '{self._run_dir}' does not exist or is not a directory; tagging {nmb_evio_files} EVIO files as failed")
@@ -110,7 +110,7 @@ class FileTransferMapGenerator:
     task_index: int,
     nmb_tasks:  int,
   ) -> None:
-    """Process the task directory defined by the task index and append to map of original file paths to new file paths."""
+    """Processes the task directory defined by the task index and appends to the map of original file paths to new file paths."""
     evio_file_start_index = task_index * self.nmb_processes_per_task
     evio_file_end_index   = min(evio_file_start_index + self.nmb_processes_per_task, len(self._evio_file_paths))
     task_dir = f"{self._run_dir}/TASK{task_index:03d}"
@@ -130,7 +130,7 @@ class FileTransferMapGenerator:
     nmb_tasks:      int,
     evio_file_path: str,
   ) -> None:
-    """Process the file directory defined by the arguments and append to map of original file paths to new file paths."""
+    """Processes the file directory defined by the arguments and appends to the map of original file paths to new file paths."""
     task_dir = f"{self._run_dir}/TASK{task_index:03d}"
     file_number = get_file_number_from_evio_file_name(evio_file_path)
     assert file_number is not None, f"Failed to extract file number from EVIO file name '{evio_file_path}'"
@@ -178,7 +178,7 @@ class FileTransferMapGenerator:
     nmb_tasks:    int,
     job_info_dir: str,
   ) -> None:
-    """Process log files in the given job directory and append to map of original file paths to new file paths."""
+    """Processes log files in the given job directory and appends to the map of original file paths to new file paths."""
     log_file_names: list[str] = [
       # f"job_{run_number}.diskquota",
       f"job_{self.run_number}.env",
@@ -200,7 +200,7 @@ class FileTransferMapGenerator:
     task_dir:     str,
     job_info_dir: str,
   ) -> None:
-    """Process node log files in the given task directory and append to map of original file paths to new file paths."""
+    """Processes node log files in the given task directory and appends to the map of original file paths to new file paths."""
     log_file_names: list[str] = [
       "node.cpuinfo",
       "node.env",
@@ -215,7 +215,7 @@ class FileTransferMapGenerator:
     file_dir:     str,
     job_info_dir: str,
   ) -> None:
-    """Process hd_root log files in the given file directory and append to map of original file paths to new file paths."""
+    """Processes hd_root log files in the given file directory and appends to the map of original file paths to new file paths."""
     log_file_names: list[str] = [
       "hd_root.err",
       "hd_root.out",
@@ -229,7 +229,7 @@ class FileTransferMapGenerator:
     src_dir:        str,
     dest_dir:       str,
   ) -> None:
-    """Process log files in the given log directory and append to map of original file paths to new file paths."""
+    """Processes log files in the given log directory and appends to the map of original file paths to new file paths."""
     for log_file_name in log_file_names:
       log_file_path = f"{src_dir}/{log_file_name}"
       if not os.path.isfile(log_file_path):
@@ -244,7 +244,7 @@ def transfer_files(
   symlink_files:     bool = False,
   dry_run:           bool = False,
 ) -> None:
-  """Move unique source files and copy duplicate source files before deleting the original."""
+  """Moves unique source files and copies duplicate source files before deleting the original."""
   print(f"{'Executing' if not dry_run else 'Previewing'} {len(file_transfer_map)} file operations:")
   # convert list into dictionary mapping source file paths to list of destination file paths
   destination_map: defaultdict[str, list[str]] = defaultdict(list)
@@ -290,7 +290,7 @@ def tar_directories(
   delete_original: bool = False,
   dry_run:         bool = False,
 ) -> None:
-  """Create tarball for each directory in the given list of directories and optionally delete the original directory after creating the tarball."""
+  """Creates a tarball for each directory in the given list of directories and optionally deletes the original directory after creating the tarball."""
   print(f"{'Previewing creation of' if dry_run else 'Creating'} tarballs for {len(directories)} directories:")
   for dir_index, directory in enumerate(sorted(directories)):
     tar_file = f"{directory}.tgz"

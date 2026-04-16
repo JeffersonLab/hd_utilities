@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
-"""
-Submits a swif2 job that copies the full content of a directory to tape.
-"""
+"""Submits a swif2 job that copies the full content of a directory to tape."""
 
 from __future__ import annotations
 
