@@ -106,12 +106,12 @@ echo "Found ${#evio_file_paths[@]} EVIO files"
 echo "--- Run hd_root process in parallel for each EVIO file in current directory"
 #TODO evaluate using GNU parallel for this
 # Do not exit immediately if `hd_root` fails to allow us to catch the
-# exit code of each hd_root process and write it to a separate file.
-# This is important since individual error codes are not captured by
+# return code of each hd_root process and write it to a separate file.
+# This is important since individual return codes are not captured by
 # slurm.
 set +o errexit
 process_ids=()    # array to hold process IDs of background hd_root processes
-rc_file_names=()  # array to hold file names where exit codes of hd_root processes are written
+rc_file_names=()  # array to hold file names where return codes of hd_root processes are written
 for evio_file_path in "${evio_file_paths[@]}"
 do
   echo "--- Process EVIO file '${evio_file_path}':"
@@ -139,36 +139,36 @@ do
   # start hd_root process in background and redirect stdout and stderr to files
   "${HD_ROOT_CMD[@]}" 1> "hd_root.out" 2> "hd_root.err" &
   process_ids+=("${!}")  # capture the background process ID and store it in an array
-  rc_file_names+=("${SUBDIR_PROCESS}/hd_root.rc")  # file path relative to `${WORK_DIR_TASK}` where exit code of this hd_root process will be written to
+  rc_file_names+=("${SUBDIR_PROCESS}/hd_root.rc")  # file path relative to `${WORK_DIR_TASK}` where return code of this hd_root process will be written to
   echo "--- hd_root process with PID ${!} processes EVIO file '${evio_file_path}'"
 done
 cd "${WORK_DIR_TASK}"
 
-echo "--- Wait for all background hd_root processes to complete and capture their exit codes"
-max_exit_code=0  # variable to hold the maximum exit code among all hd_root processes; this will be the exit code of the task script, which is then forwarded to the job script
+echo "--- Wait for all background hd_root processes to complete and capture their return codes"
+max_return_code=0  # variable to hold the maximum return code among all hd_root processes; this will be the return code of the task script, which is then forwarded to the job script
 for process_index in "${!process_ids[@]}"
 do
   pid="${process_ids[${process_index}]}"
   wait "${pid}"  # wait for the process to finish
-  exit_code="${?}"  # capture the exit code of the process
-  echo "hd_root process ${process_index} with PID ${pid} has exit code ${exit_code}" >| "${rc_file_names[${process_index}]}"
-  if (( exit_code >= 128 ))
+  return_code="${?}"  # capture the return code of the process
+  echo "hd_root process ${process_index} with PID ${pid} has return code ${return_code}" >| "${rc_file_names[${process_index}]}"
+  if (( return_code >= 128 ))
   then
-    sig=$(( exit_code - 128 ))
+    sig=$(( return_code - 128 ))  #TODO for return code 128 this would result in 0
     echo "hd_root process ${process_index} with PID ${pid} was terminated by signal ${sig}"
   fi
-  if [[ "${exit_code}" -gt "${max_exit_code}" ]]  # determine the maximum exit code among all hd_root processes
+  if [[ "${return_code}" -gt "${max_return_code}" ]]  # determine the maximum return code among all hd_root processes
   then
-    max_exit_code="${exit_code}"
+    max_return_code="${return_code}"
   fi
 done
 echo "--- Status of task's working directory '$(pwd -P)' at end of task script:"
 ls -lR .
 
-# avoid returning exit codes reserved by shell
-if (( max_exit_code >= 128 ))
+# avoid returning return codes reserved by shell
+if (( max_return_code >= 128 ))
 then
-  max_exit_code=$(( max_exit_code - 128 ))
+  max_return_code=$(( max_return_code - 128 ))
 fi
-echo "--- Task script finished with maximum exit code ${max_exit_code} among all hd_root processes"
-exit "${max_exit_code}"  # forward the maximum exit code among all `hd_root` processes to the job script  #TODO maybe it would be more useful to return number of failed processes?
+echo "--- Task script finished with maximum return code ${max_return_code} among all hd_root processes"
+exit "${max_return_code}"  # forward the maximum return code among all `hd_root` processes to the job script  #TODO maybe it would be more useful to return number of failed processes?

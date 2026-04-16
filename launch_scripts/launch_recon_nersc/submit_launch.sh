@@ -60,7 +60,7 @@ else
   exit 1
 fi
 
-# create and run swif2 workflow
+# create swif2 workflow
 if swif2 status "${SWIF_WORKFLOW}" &> /dev/null
 then
   echo "Workflow '${SWIF_WORKFLOW}' already exists; skipping creation"

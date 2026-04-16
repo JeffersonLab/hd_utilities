@@ -69,7 +69,7 @@ def get_hd_root_return_code(hd_root_rc_file_path: str) -> Optional[int]:
   except OSError as e:  # file not found, permission denied, etc.
     print(f"WARNING: unable to open hd_root return-code file '{hd_root_rc_file_path}': {e}")
     return None
-  match = re.search(r"exit code (\d+)$", hd_root_rc_file_content)  #TODO make naming consistent -> return code
+  match = re.search(r"return code (\d+)$", hd_root_rc_file_content)
   if not match:
     print(f"WARNING: cannot get hd_root return code from malformed file '{hd_root_rc_file_path}': '{hd_root_rc_file_content}'")
     return None
