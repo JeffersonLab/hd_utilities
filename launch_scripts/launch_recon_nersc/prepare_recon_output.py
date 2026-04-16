@@ -396,8 +396,8 @@ def main(args: argparse.Namespace) -> None:
     tar_directories(job_info_dirs_to_tar, delete_original = True, dry_run = args.dry_run)
 
   print("-------------------------------------------------------------------------------")
-  elapsed_time = int(time.time() - start_time)
-  print(f"Wall time consumed by script: {elapsed_time // 60} min, {elapsed_time % 60} sec")
+  elapsed_time_sec = int(time.time() - start_time)
+  print(f"Wall time consumed by script: {elapsed_time_sec // 60} min, {elapsed_time_sec % 60} sec")
 
 
 if __name__ == "__main__":

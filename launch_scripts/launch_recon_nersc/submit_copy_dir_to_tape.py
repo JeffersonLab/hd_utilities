@@ -68,8 +68,9 @@ def main(args: argparse.Namespace) -> None:
   swif2_result = subprocess.run(swif2_cmd, check = False)
   print(f"`swif2` finished with return code {swif2_result.returncode:d}")
 
-  elapsed_time = int(time.time() - start_time)
-  print(f"Wall time consumed by script: {elapsed_time // 60} min, {elapsed_time % 60} sec")
+  print("-------------------------------------------------------------------------------")
+  elapsed_time_sec = int(time.time() - start_time)
+  print(f"Wall time consumed by script: {elapsed_time_sec // 60} min, {elapsed_time_sec % 60} sec")
 
 
 if __name__ == "__main__":

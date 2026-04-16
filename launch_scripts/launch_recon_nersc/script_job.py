@@ -211,9 +211,9 @@ def main(args: argparse.Namespace) -> None:
   print("-------------------------------------------------------------------------------")
   define_swif2_output_files(args.run_number, args.swif_output_root)
 
-  # print("-------------------------------------------------------------------------------")  #TODO
-  elapsed_time = int(time.time() - start_time)
-  print(f"Wall time consumed by job script: {elapsed_time // 60} min, {elapsed_time % 60} sec")
+  print("-------------------------------------------------------------------------------")
+  elapsed_time_sec = int(time.time() - start_time)
+  print(f"Wall time consumed by job script: {elapsed_time_sec // 60} min, {elapsed_time_sec % 60} sec")
   sys.exit(srun_result.returncode)  # forward return code of srun to the caller of this script, i.e. swif2
 
 

@@ -83,8 +83,8 @@ def main(args: argparse.Namespace) -> None:
         print(line, end = "")
 
   print("-------------------------------------------------------------------------------")
-  elapsed_time = int(time.time() - start_time)
-  print(f"Wall time consumed: {elapsed_time // 60} min, {elapsed_time % 60} sec")
+  elapsed_time_sec = int(time.time() - start_time)
+  print(f"Wall time consumed: {elapsed_time_sec // 60} min, {elapsed_time_sec % 60} sec")
 
 
 if __name__ == "__main__":

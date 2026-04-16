@@ -66,9 +66,9 @@ def main(args: argparse.Namespace) -> None:
     os.environ["SWIF_JOB_STAGE_DIR"] = os.path.abspath(os.getcwd())  # needed by `./.swif/swif2` command
     define_swif2_output_files(run_number, args.swif_output_root)
 
-  # print("-------------------------------------------------------------------------------")  #TODO
-  elapsed_time = int(time.time() - start_time)
-  print(f"Wall time consumed defining swif2 output files: {elapsed_time // 60} min, {elapsed_time % 60} sec")
+  print("-------------------------------------------------------------------------------")  #TODO
+  elapsed_time_sec = int(time.time() - start_time)
+  print(f"Wall time consumed defining swif2 output files: {elapsed_time_sec // 60} min, {elapsed_time_sec % 60} sec")
 
 
 if __name__ == "__main__":

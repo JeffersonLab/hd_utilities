@@ -91,8 +91,9 @@ def main(args: argparse.Namespace) -> None:
   print("-------------------------------------------------------------------------------")
   plot_evio_file_size(run_numbers, swif_raw_data_root)
 
-  elapsed_time = int(time.time() - start_time)
-  print(f"Wall time consumed by script: {elapsed_time // 60} min, {elapsed_time % 60} sec")
+  print("-------------------------------------------------------------------------------")
+  elapsed_time_sec = int(time.time() - start_time)
+  print(f"Wall time consumed by script: {elapsed_time_sec // 60} min, {elapsed_time_sec % 60} sec")
 
 
 if __name__ == "__main__":

@@ -140,8 +140,9 @@ def main(args: argparse.Namespace) -> None:
   except FileExistsError:
     print(f"WARNING: file './{run_number_list_file}' already exists; skipping write")
 
-  elapsed_time = int(time.time() - start_time)
-  print(f"Wall time consumed by script: {elapsed_time // 60} min, {elapsed_time % 60} sec")
+  print("-------------------------------------------------------------------------------")
+  elapsed_time_sec = int(time.time() - start_time)
+  print(f"Wall time consumed by script: {elapsed_time_sec // 60} min, {elapsed_time_sec % 60} sec")
 
 
 if __name__ == "__main__":
