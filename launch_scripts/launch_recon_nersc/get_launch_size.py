@@ -39,15 +39,18 @@ def plot_evio_file_size(
   """Plots the distribution of EVIO file sizes for the given run numbers."""
   print(f"Plotting EVIO file size distribution for {len(run_numbers)} runs...")
   # get sizes of all EVIO files for the given runs
-  file_sizes_GB: list[float] = []  # file sizes in GB
-  for run_number in run_numbers:
-    for evio_file_path in get_evio_file_paths_for_run(run_number, raw_data_root):
-      file_sizes_GB.append(float(get_file_size_from_mss_stub(evio_file_path)) / 1024**3)
+  file_sizes_GB = np.array(
+    [
+      float(get_file_size_from_mss_stub(evio_file_path)) / 1024**3
+      for run_number in run_numbers
+      for evio_file_path in get_evio_file_paths_for_run(run_number, raw_data_root)
+    ],
+    dtype = float,
+  )
   # histogram file sizes
   canv = ROOT.TCanvas()
   hist = ROOT.TH1F(f"evio_file_size.{swif_workflow}", f"{swif_workflow};EVIO File Size (GB);Count", 200, 0, math.ceil(max(file_sizes_GB) * 1.05))
-  for size_GB in file_sizes_GB:
-    hist.Fill(size_GB)
+  hist.FillN(len(file_sizes_GB), file_sizes_GB, ROOT.nullptr)
   canv.SetLogy()
   hist.SetMinimum(0.1)  # improve log scale
   hist.SetFillColor(ROOT.kBlue - 10)
