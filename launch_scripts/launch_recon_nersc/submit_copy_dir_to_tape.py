@@ -36,7 +36,7 @@ def main(args: argparse.Namespace) -> None:
   # tape_dest_path = "/volatile/halld/home/bgrube/test_copy_dir_to_tape"
   # tape_dest_path = "mss:/mss/halld/home/bgrube/test/test_copy_dir_to_tape"
   tape_dest_path = f"mss:{reco_data_root}/{ver}"
-  swif_workflow  = f"copy_${run_period}_${batch}_NERSC-multi"
+  swif_workflow  = f"copy_{run_period}_{batch}_NERSC-multi"
   print(f"Copying content of directory '{recon_src_path}' into destination directory '{tape_dest_path}' using swif2 workflow '{swif_workflow}'")
   # recon_dir_size_TB = get_directory_size(recon_src_path) / 1024**4
   # print(f"Data volume to copy: {recon_dir_size_TB:.3f} TB")
