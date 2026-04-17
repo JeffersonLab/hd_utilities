@@ -15,7 +15,7 @@ from script_job import print_command_line_arguments
 from utilities import (
   ensure_dict_value_exists,
   get_config_dict_from_env_file,
-  get_directory_size,
+  # get_directory_size,
 )
 
 
@@ -36,7 +36,7 @@ def main(args: argparse.Namespace) -> None:
   # tape_dest_path = "/volatile/halld/home/bgrube/test_copy_dir_to_tape"
   # tape_dest_path = "mss:/mss/halld/home/bgrube/test/test_copy_dir_to_tape"
   tape_dest_path = f"mss:{reco_data_root}/{ver}"
-  swif_workflow  = f"copy_{run_period}_{batch}"
+  swif_workflow  = f"copy_${run_period}_${batch}_NERSC-multi"
   print(f"Copying content of directory '{recon_src_path}' into destination directory '{tape_dest_path}' using swif2 workflow '{swif_workflow}'")
   # recon_dir_size_TB = get_directory_size(recon_src_path) / 1024**4
   # print(f"Data volume to copy: {recon_dir_size_TB:.3f} TB")
@@ -58,10 +58,10 @@ def main(args: argparse.Namespace) -> None:
     "add-job",
     "-workflow",  swif_workflow,  # swif2 workflow name
     "-name",      job_name,       # swif2 job name
-    # "-account",   "halld-pro",
-    # "-partition", "production",
-    "-account",   "halld",
-    "-partition", "priority",
+    "-account",   "halld-pro",
+    "-partition", "production",
+    # "-account",   "halld",
+    # "-partition", "priority",
     "-cores",     "1",
     "-disk",      "1GB",
     "-ram",       "1GB",
