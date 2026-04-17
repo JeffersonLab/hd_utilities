@@ -38,8 +38,8 @@ def main(args: argparse.Namespace) -> None:
   tape_dest_path = f"mss:{reco_data_root}/{ver}"
   swif_workflow  = f"copy_{run_period}_{batch}"
   print(f"Copying content of directory '{recon_src_path}' into destination directory '{tape_dest_path}' using swif2 workflow '{swif_workflow}'")
-  recon_dir_size_TB = get_directory_size(recon_src_path) / 1024**4
-  print(f"Data volume to copy: {recon_dir_size_TB:.3f} TB")
+  # recon_dir_size_TB = get_directory_size(recon_src_path) / 1024**4
+  # print(f"Data volume to copy: {recon_dir_size_TB:.3f} TB")
 
   # create swif2 workflow
   workflow_status = subprocess.run(["swif2", "status", swif_workflow], stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL, check = False)
