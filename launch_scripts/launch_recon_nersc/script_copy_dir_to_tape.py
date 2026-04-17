@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""swif2 job script that copies the full content of a source directory to a destination directory."""
+"""swif2 job script that copies the full content of a source directory to a destination directory using the reaping stage."""
 
 from __future__ import annotations
 
@@ -8,27 +8,9 @@ import argparse
 import glob
 import os
 import subprocess
-import sys
 import time
 
-# from script_job import print_command_line_arguments
-
-
-#TODO import from script_job
-def print_command_line_arguments(args: argparse.Namespace) -> None:
-  """Prints all command-line arguments and their values and the git hash."""
-  this_script_file_name = os.path.basename(sys.argv[0])  # get file name of script that was launched
-  print("-------------------------------------------------------------------------------")
-  print(f"Running script {this_script_file_name} with arguments:")
-  max_arg_name_length = max(len(arg_name) for arg_name in vars(args).keys())
-  for arg_name, arg_value in sorted(vars(args).items()):  # sort keys for stable, tidy output
-    print(f"{arg_name:>{max_arg_name_length + 2}} : {arg_value}")
-  this_script_dir = os.path.dirname(os.path.abspath(__file__))  #TODO why not use `sys.argv[0]` here?
-  if os.path.isfile(f"{this_script_dir}/DEPLOYED_HD_UTILITIES_GIT_HASH"):
-    deployed_git_hash = open(f"{this_script_dir}/DEPLOYED_HD_UTILITIES_GIT_HASH", "r", encoding = "utf-8").read().strip()
-    print(f"Using launch scripts from git commit hash: {deployed_git_hash}")
-  #TODO add case where the script is run from the git repo
-  print("-------------------------------------------------------------------------------")
+from script_job import print_command_line_arguments  # needs PYTHONPATH to include the directory where `script_job.py` is located
 
 
 def get_transfer_file_paths(
@@ -76,7 +58,7 @@ def main(args: argparse.Namespace) -> None:
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(
-    description = "swif2 job script that copies the full content of the given source directory to the given destination directory.",
+    description = "swif2 job script that copies the full content of the given source directory to the given destination directory using the reaping stage.",
   )
   parser.add_argument("--src_dir_path",  help = "Path to the source directory, the content of which will be copied to the destination directory")
   parser.add_argument("--dest_dir_path", help = "Path to the destination directory (usually on tape)")
