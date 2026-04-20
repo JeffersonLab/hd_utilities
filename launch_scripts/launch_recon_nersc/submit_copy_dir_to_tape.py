@@ -38,7 +38,7 @@ def main(args: argparse.Namespace) -> None:
   tape_dest_path = f"mss:{reco_data_root}/{ver}"
   swif_workflow  = f"copy_{run_period}_{batch}_NERSC-multi"
   print(f"Copying content of directory '{recon_src_path}' into destination directory '{tape_dest_path}' using swif2 workflow '{swif_workflow}'")
-  # recon_dir_size_TB = get_directory_size(recon_src_path) / 1024**4
+  # recon_dir_size_TB = get_directory_size(recon_src_path) / 1024**4  #TODO this takes a looong time
   # print(f"Data volume to copy: {recon_dir_size_TB:.3f} TB")
 
   # create swif2 workflow
@@ -52,28 +52,32 @@ def main(args: argparse.Namespace) -> None:
   # submit swif2 job that copies the directory structure with all files to tape
   this_script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
   recon_dir_name  = os.path.basename(recon_src_path)
-  job_name        = f"GlueX_copy_{run_period}_{recon_dir_name}"
-  swif2_cmd: list[str] = [
-    "swif2",
-    "add-job",
-    "-workflow",  swif_workflow,  # swif2 workflow name
-    "-name",      job_name,       # swif2 job name
-    "-account",   "halld-pro",
-    "-partition", "production",
-    # "-account",   "halld",
-    # "-partition", "priority",
-    "-cores",     "1",
-    "-disk",      "1GB",
-    "-ram",       "1GB",
-    "-time",      "30min", # wall time of job is defined by the time it takes to create the list of output files; the copying is done in the `reaping` stage, which does not have a time limit
-    "-stdout",    f"{this_script_dir}/{job_name}.out",
-    "-stderr",    f"{this_script_dir}/{job_name}.err",
-    "-shell",     "/bin/bash",  # ensure that the job runs in bash
-    f'PYTHONPATH="{this_script_dir}:${{PYTHONPATH}}" {this_script_dir}/script_copy_dir_to_tape.py --src_dir_path="{recon_src_path}" --dest_dir_path="{tape_dest_path}"',
-  ]
-  print(f"Submitting job: {' '.join(swif2_cmd)}")
-  swif2_result = subprocess.run(swif2_cmd, check = False)
-  print(f"`swif2` finished with return code {swif2_result.returncode:d}")
+  # submit a separate job for each subdirectory in the recon directory to limit number of files per job to less than about 10k  #TODO Chris is working on extending swif2 to handle larger numbers of files per job
+  subdir_names = [item_name for item_name in os.listdir(recon_src_path) if os.path.isdir(f"{recon_src_path}/{item_name}")]
+  for subdir_name in subdir_names:
+    print (f"Submitting copy job for subdirectory [{subdir_names.index(subdir_name) + 1}/{len(subdir_names)}] '{subdir_name}'")
+    job_name = f"GlueX_copy_{run_period}_{recon_dir_name}_{subdir_name}"
+    swif2_cmd: list[str] = [
+      "swif2",
+      "add-job",
+      "-workflow",  swif_workflow,  # swif2 workflow name
+      "-name",      job_name,       # swif2 job name
+      "-account",   "halld-pro",
+      "-partition", "production",
+      # "-account",   "halld",
+      # "-partition", "priority",
+      "-cores",     "1",
+      "-disk",      "1GB",
+      "-ram",       "1GB",
+      "-time",      "12h", # wall time of job is defined by the time it takes to create the list of output files; the copying is done in the `reaping` stage, which does not have a time limit
+      "-stdout",    f"{this_script_dir}/{job_name}.out",
+      "-stderr",    f"{this_script_dir}/{job_name}.err",
+      "-shell",     "/bin/bash",  # ensure that the job runs in bash
+      f'PYTHONPATH="{this_script_dir}:${{PYTHONPATH}}" {this_script_dir}/script_copy_dir_to_tape.py --src_dir_path="{recon_src_path}/{subdir_name}" --dest_dir_path="{tape_dest_path}/{subdir_name}"',
+    ]
+    print(f"Submitting job: {' '.join(swif2_cmd)}")
+    swif2_result = subprocess.run(swif2_cmd, check = False)
+    print(f"`swif2` finished with return code {swif2_result.returncode:d}")
 
   print("-------------------------------------------------------------------------------")
   elapsed_time_sec = int(time.time() - start_time)
