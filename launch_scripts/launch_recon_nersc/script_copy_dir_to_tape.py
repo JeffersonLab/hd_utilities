@@ -16,6 +16,7 @@ from script_job import print_command_line_arguments  # needs PYTHONPATH to inclu
 def get_transfer_file_paths(
   src_dir_path:  str,  # path to the source directory, the content of which will be copied to the destination directory
   dest_dir_path: str,  # path to the destination directory
+  do_overwrite:  bool = False,  # if True, files that already exist will still be included in the list of files to transfer; if False, these files will be skipped
 ) -> list[tuple[str, str]]:  # list of pairs of absolute local file paths and absolute destination file paths
   """Builds list of all files with local absolute paths and absolute destination paths."""
   # go into the directory to copy and get list of all files with relative paths in that directory
@@ -25,9 +26,10 @@ def get_transfer_file_paths(
   file_transfer_paths: list[tuple[str, str]] = []
   for relative_file_path in relative_file_paths:
     dest_file_path = f"{dest_dir_path}/{relative_file_path}"
-    if not os.path.isfile(dest_file_path):  #TODO check that sizes match?
+    if do_overwrite or not os.path.isfile(dest_file_path):
       file_transfer_paths.append((os.path.abspath(relative_file_path), dest_file_path))
     else:
+      #TODO check that sizes match?
       print(f"File '{dest_file_path}' already exists; skipping transfer")
   return file_transfer_paths
 
