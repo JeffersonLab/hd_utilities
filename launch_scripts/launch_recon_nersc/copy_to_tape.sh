@@ -9,10 +9,11 @@
 LAUNCH_ENV_FILE="${1:-launch.env}"  # path to .env file defining the configuration variables of the reconstruction launch
 echo "Reading production parameters from .env file '${LAUNCH_ENV_FILE}'"
 source "${LAUNCH_ENV_FILE}"
-RECON_SRC_PATH="/lustre24/expphy/volatile/halld/offsite_prod/RunPeriod-2022-05/recon/ver02-perl.ready_for_tape.2/job_info"  # absolute path to the prepared reconstruction directory, the content of which will be copied to tape
-SRC_PATH_REPLACE=""/lustre24/expphy/volatile/halld/offsite_prod/RunPeriod-2022-05/recon/ver02-perl.ready_for_tape.2""  # part of path to replace by DEST_PATH_REPLACE
+RECON_SRC_DIR="ver02-perl.ready_for_tape.2/job_info"
+RECON_SRC_PATH="/lustre24/expphy/volatile/halld/offsite_prod/RunPeriod-2022-05/recon/${RECON_SRC_DIR}"  # absolute path to the prepared reconstruction directory, the content of which will be copied to tape
+SRC_PATH_REPLACE="/lustre24/expphy/volatile/halld/offsite_prod/RunPeriod-2022-05/recon/ver02-perl.ready_for_tape.2"  # part of path to replace by DEST_PATH_REPLACE
 DEST_PATH_REPLACE="/mss/halld/RunPeriod-2022-05/recon/ver02"  # path that replaces SRC_PATH_REPLACE
-export JMIRROR_LOG_DIR="${PRODUCTION_LAUNCH_DIR}/jmigrate_logs"
+export JMIRROR_LOG_DIR="${PRODUCTION_LAUNCH_DIR}/jmigrate_logs/${RECON_SRC_DIR}"  # directory to store jmigrate logs
 # debug
 # RECON_SRC_PATH="/w/halld-scshelf2101/bgrube/halldRepos/hd_utilities/launch_scripts/launch_recon_nersc/test/test_work_dir_job"
 # SRC_PATH_REPLACE="${RECON_SRC_PATH}"
