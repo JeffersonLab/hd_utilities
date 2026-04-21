@@ -5,7 +5,7 @@
 # information about these collections
 
 
-THIS_SCRIPT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"  # get the directory of this script
+THIS_SCRIPT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"  # get the directory of this script
 GLOBUS_COLLECTIONS="${THIS_SCRIPT_DIR}/globus_collections.sh"
 echo "Reading Globus collections from '${GLOBUS_COLLECTIONS}'"
 source "${GLOBUS_COLLECTIONS}"

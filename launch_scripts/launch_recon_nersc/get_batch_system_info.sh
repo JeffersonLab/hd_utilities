@@ -2,7 +2,7 @@
 
 # retrieves information from batch systems of JLab Farm and NERSC in JSON format
 
-THIS_SCRIPT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"  # get the directory of this script
+THIS_SCRIPT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"  # get the directory of this script
 LAUNCH_ENV_FILE="${1:-${THIS_SCRIPT_DIR}/launch.env}"  # path to .env file defining the configuration variables of the reconstruction launch
 echo "Reading production parameters from .env file '${LAUNCH_ENV_FILE}'"
 source "${LAUNCH_ENV_FILE}"
