@@ -30,9 +30,10 @@ def main(args: argparse.Namespace) -> None:
   reco_data_root = ensure_dict_value_exists(launch_config, "RECO_DATA_ROOT")
 
   recon_src_path = os.path.abspath(args.recon_src_path)
+  recon_subdir_name = os.path.basename(recon_src_path)
   # tape_dest_path = "/volatile/halld/home/bgrube/test_copy_dir_to_tape"
   # tape_dest_path = "/mss/halld/home/bgrube/test/test_copy_dir_to_tape"
-  tape_dest_path = f"{reco_data_root}/{ver}"
+  tape_dest_path = f"{reco_data_root}/{ver}/{recon_subdir_name}"
   file_transfer_paths: list[tuple[str, str]] = get_transfer_file_paths(recon_src_path, tape_dest_path, do_overwrite = True)
   if len(file_transfer_paths) == 0:
     print(f"Found no files to transfer from '{recon_src_path}' to '{tape_dest_path}'")
@@ -80,6 +81,6 @@ if __name__ == "__main__":
     description = "Verifies that content of a directory with prepared recon output was successfully copied to tape.",
   )
   parser.add_argument("--launch_env_file", default = "./launch.env", help = "Path to .env file defining the configuration variables of the reconstruction launch; default: '%(default)s'")
-  parser.add_argument("--recon_src_path",  help = "Path to the prepared reconstruction directory, the content of which will be verified")
+  parser.add_argument("--recon_src_path",  help = "Path to first-level subdirectory in the prepared reconstruction directory, the content of which will be verified")
   args = parser.parse_args()
   main(args)
