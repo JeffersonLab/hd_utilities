@@ -4,9 +4,9 @@
 
 
 THIS_SCRIPT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"  # get the directory of this script
-CONFIG_FILE="${1:-${THIS_SCRIPT_DIR}/launch.env}"  # configuration file that defines all variables used in this script
-echo "Reading configuration of reconstruction launch from '${CONFIG_FILE}'"
-source "${CONFIG_FILE}"
+LAUNCH_ENV_FILE="${1:-${THIS_SCRIPT_DIR}/launch.env}"  # path to .env file defining the configuration variables of the reconstruction launch
+echo "Reading production parameters from .env file '${LAUNCH_ENV_FILE}'"
+source "${LAUNCH_ENV_FILE}"
 
 echo "NERSC Scratch Storage Space used by swif2"
 echo "swif2 input files:"

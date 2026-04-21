@@ -18,10 +18,9 @@ set -o xtrace    # print commands and their arguments as they are executed, i.e.
 # sbatch: submits one job per run number
 
 THIS_SCRIPT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"  # get the directory of this script
-CONFIG_FILE="${1:-${THIS_SCRIPT_DIR}/launch.env}"  # configuration file that defines all variables used in this script
-echo "Reading configuration of reconstruction launch from '${CONFIG_FILE}'"
-# shellcheck source=./launch.env
-source "${CONFIG_FILE}"
+LAUNCH_ENV_FILE="${1:-${THIS_SCRIPT_DIR}/launch.env}"  # path to .env file defining the configuration variables of the reconstruction launch
+echo "Reading production parameters from .env file '${LAUNCH_ENV_FILE}'"
+source "${LAUNCH_ENV_FILE}"
 
 echo "Using launch scripts from git commit hash: $(cat "${THIS_SCRIPT_DIR}/DEPLOYED_HD_UTILITIES_GIT_HASH" || true)"
 

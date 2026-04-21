@@ -3,10 +3,9 @@
 # copies the launch directory to official location for production user account
 
 
-CONFIG_FILE="${1:-launch.env}"  # configuration file that defines all variables used in this script
-echo "Reading configuration of reconstruction launch from '${CONFIG_FILE}'"
-# shellcheck source=./launch.env
-source "${CONFIG_FILE}"
+LAUNCH_ENV_FILE="${1:-launch.env}"  # path to .env file defining the configuration variables of the reconstruction launch
+echo "Reading production parameters from .env file '${LAUNCH_ENV_FILE}'"
+source "${LAUNCH_ENV_FILE}"
 
 REMOTE_LAUNCH_DIR="/home/${PRODUCTION_USER}/${PRODUCTION_LAUNCH_DIR}"
 echo "Copying launch scripts and config files from '$(pwd)' to '${PRODUCTION_USER}@ifarm:${REMOTE_LAUNCH_DIR}'"
@@ -20,7 +19,7 @@ TMP=$(mktemp)  # temporary file to hold list of files to copy
 git ls-files -z >| "${TMP}"  # get NUL-delimited list of all files tracked by git (safe for spaces/newlines)
 find . -maxdepth 1 -name "${RUN_NUMBER_LIST_FILE}" -print0 >> "${TMP}"
 find . -maxdepth 1 -name "${JANA_CONFIG}" -print0 >> "${TMP}"
-find . -maxdepth 1 -name "${CONFIG_FILE}" -print0 >> "${TMP}"
+find . -maxdepth 1 -name "${LAUNCH_ENV_FILE}" -print0 >> "${TMP}"
 RSYNC_CMD=(rsync
   --verbose
   --archive
