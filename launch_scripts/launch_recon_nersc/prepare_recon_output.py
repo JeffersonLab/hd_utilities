@@ -331,9 +331,9 @@ def main(args: argparse.Namespace) -> None:
   missing_items_runs:   list[defaultdict[str, set[str]]] = []  # missing items for each run by item type for reporting at the end of the script
   file_transfer_map:    list[tuple[str, str]]            = []  # pairs of old and new file paths for moving/copying
   job_info_dirs_to_tar: list[str]                        = []  # paths of directories with job infos to be tarred later
-  for run_number in run_numbers:  # loop over runs
+  for run_index, run_number in enumerate(run_numbers):  # loop over runs
     print("...............................................................................")
-    print(f"Verifying completeness of files for run {run_number} and preparing file transfer map")
+    print(f"[{run_index + 1}/{len(run_numbers)}] Verifying completeness of files for run {run_number} and preparing file transfer map")
     file_transfer_map_gen = FileTransferMapGenerator(
       run_number             = run_number,
       job_dir                = swif_output_root,
