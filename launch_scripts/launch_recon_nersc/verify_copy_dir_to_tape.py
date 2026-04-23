@@ -12,6 +12,8 @@ import time
 from script_copy_dir_to_tape import get_transfer_file_paths
 from script_job import print_command_line_arguments
 from utilities import (
+  get_file_crc32,
+  get_file_crc32_from_mss_stub,
   ensure_dict_value_exists,
   get_config_dict_from_env_file,
   get_file_size_from_mss_stub,
@@ -39,30 +41,43 @@ def main(args: argparse.Namespace) -> None:
     print(f"Found no files to transfer from '{recon_src_path}' to '{tape_dest_path}'")
     return
   print(f"Verifying that all {len(file_transfer_paths)} files in '{recon_src_path}' were successfully copied to '{tape_dest_path}'")
-  files_missing:    list[str] = []
-  files_wrong_size: list[str] = []
+  files_missing:     list[str] = []
+  files_wrong_size:  list[str] = []
+  files_wrong_crc32: list[str] = []
   for file_index, (src_file_path, dest_file_path) in enumerate(file_transfer_paths):
     print(f"Checking file [{file_index + 1:6d}/{len(file_transfer_paths):6d}]: '{src_file_path}' -> '{dest_file_path}'")
+    # check if file exists at destination path
     if not os.path.isfile(dest_file_path):
       print(f"ERROR: file '{dest_file_path}' does not exist")
       files_missing.append(dest_file_path)
-    else:
-      src_file_size  = os.path.getsize(src_file_path)
-      dest_file_size = (
-          get_file_size_from_mss_stub(dest_file_path) if dest_file_path.startswith("/mss")
-          else os.path.getsize(dest_file_path)
-        )
-      if src_file_size != dest_file_size:
-        print(f"ERROR: file '{dest_file_path}' has size {dest_file_size} bytes, but expected {src_file_size} bytes based on source file '{src_file_path}'")
-        files_wrong_size.append(dest_file_path)
-      else:
-        # file exists and has correct size; assume it was successfully copied to tape
-        if args.delete_verified_files:
-          print(f"Deleting verified file '{src_file_path}'")
-          os.remove(src_file_path)
+      continue
+    # check if file size at destination path matches the size of the source file
+    src_file_size  = os.path.getsize(src_file_path)
+    dest_file_size = (
+        get_file_size_from_mss_stub(dest_file_path) if dest_file_path.startswith("/mss")
+        else os.path.getsize(dest_file_path)
+      )
+    if src_file_size != dest_file_size:
+      print(f"ERROR: file '{dest_file_path}' has size {dest_file_size} bytes, but expected {src_file_size} bytes based on source file '{src_file_path}'")
+      files_wrong_size.append(dest_file_path)
+      continue
+    # check if file at destination path matches the CRC32 checksum of the source file
+    src_file_crc32  = get_file_crc32(src_file_path)
+    dest_file_crc32 = (
+        get_file_crc32_from_mss_stub(dest_file_path) if dest_file_path.startswith("/mss")
+        else get_file_crc32(dest_file_path)
+      )
+    if src_file_crc32 != dest_file_crc32:
+      print(f"ERROR: file '{dest_file_path}' has CRC32 {dest_file_crc32}, but expected {src_file_crc32} based on source file '{src_file_path}'")
+      files_wrong_crc32.append(dest_file_path)
+      continue
+    # file exists and has correct size and CRC32; assume it was successfully copied to tape
+    if args.delete_verified_files:
+      print(f"Deleting verified file '{src_file_path}'")
+      os.remove(src_file_path)
 
   print("-------------------------------------------------------------------------------")
-  if len(files_missing) == 0 and len(files_wrong_size) == 0:
+  if len(files_missing) == 0 and len(files_wrong_size) == 0 and len(files_wrong_crc32) == 0:
     print("All files were successfully copied to tape!")
   else:
     if len(files_missing) > 0:
@@ -73,6 +88,10 @@ def main(args: argparse.Namespace) -> None:
       print(f"{len(files_wrong_size)} files have incorrect size on tape:")
       for wrong_size_file in files_wrong_size:
         print(f"  {wrong_size_file}")
+    if len(files_wrong_crc32) > 0:
+      print(f"{len(files_wrong_crc32)} files have incorrect CRC32 checksum on tape:")
+      for wrong_crc32_file in files_wrong_crc32:
+        print(f"  {wrong_crc32_file}")
   elapsed_time_sec = int(time.time() - start_time)
   print(f"Wall time consumed by script: {elapsed_time_sec // 60} min, {elapsed_time_sec % 60} sec")
 
