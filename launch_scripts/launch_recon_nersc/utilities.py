@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import subprocess
 from typing import TypeVar
+import zlib
 
 import dotenv
 
@@ -42,13 +43,36 @@ def get_directory_size(path: str | Path) -> int:
   return sum(file_path.stat().st_size for file_path in Path(path).rglob("*") if file_path.is_file())
 
 
-def get_file_size_from_mss_stub(mss_file_path: str) -> int:
-  """Extracts the file size in bytes from the 'size' field in the MSS stub file."""
+def load_mss_stub_file(mss_file_path: str) -> dict[str, str | None]:
+  """Loads the MSS stub file at the given path and returns its contents as a dictionary."""
   assert mss_file_path.startswith("/mss"), f"File '{mss_file_path}' must be an `/mss` path"
   mss_stub = dotenv.dotenv_values(mss_file_path)
   assert mss_stub, f"Failed to load MSS stub file from '{mss_file_path}'"
-  size_bytes = int(ensure_dict_value_exists(mss_stub, "size"))
+  return mss_stub
+
+
+def get_file_size_from_mss_stub(mss_file_path: str) -> int:
+  """Extracts the file size in bytes from the 'size' field in the MSS stub file."""
+  size_bytes = int(ensure_dict_value_exists(load_mss_stub_file(mss_file_path), "size"))
   return size_bytes
+
+
+def get_file_crc32(
+  file_path:       str,
+  read_chunk_size: int = 2**23,  # 8 MiB
+) -> str:
+  """Calculates the CRC32 checksum of the given file."""
+  crc = 0
+  with open(file_path, "rb") as file:
+    while chunk := file.read(read_chunk_size):
+      crc = zlib.crc32(chunk, crc)
+  return f"{crc & 0xffffffff:x}"  # convert to 32 bit unsigned integer and format as hexadecimal string, no leading zeros
+
+
+def get_file_crc32_from_mss_stub(mss_file_path: str) -> str:
+  """Reads the CRC32 checksum from the 'crc32' field in a MSS stub file."""
+  crc32 = ensure_dict_value_exists(load_mss_stub_file(mss_file_path), "crc32")
+  return crc32
 
 
 def get_evio_file_paths_for_run(
