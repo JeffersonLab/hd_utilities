@@ -23,11 +23,11 @@ export JMIRROR_LOG_DIR="$(realpath "$(eval echo "~${PRODUCTION_USER}")/${PRODUCT
 # export JMIRROR_MIN_MODIFICATION_AGE_SECONDS=600  # default is 1800 seconds, 0 means copy all files regardless of modification time
 echo "Copying files from '${RECON_SRC_PATH}' to tape, replacing '${SRC_PATH_REPLACE}' with '${DEST_PATH_REPLACE}'"
 JMIGRATE_CMD=(jmigrate
-  # -verbose  # not very helpful
-  -delete written
-  "${RECON_SRC_PATH}"
+  "${RECON_SRC_PATH}"  # needs to be first argument so that lock file in /tmp is named correctly
   "${SRC_PATH_REPLACE}"
   "${DEST_PATH_REPLACE}"
+  # -verbose  # not very helpful
+  -delete written
 )
 echo "Running ${JMIGRATE_CMD[*]}"
 "${JMIGRATE_CMD[@]}"
