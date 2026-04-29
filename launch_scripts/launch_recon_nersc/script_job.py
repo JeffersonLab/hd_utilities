@@ -176,13 +176,17 @@ def main(args: argparse.Namespace) -> None:
   # each task will run args.nmb_processes_per_task hd_root processes in parallel, each processing a single EVIO file using args.nmb_threads_per_process threads
   task_cmd: List[str] = [
     f"{args.launch_dir}/script_task.sh",  # task script to run inside a container on each NERSC node (all subsequent arguments are passed to this script)
+    # required arguments
     f"{args.run_number}",               # arg 1:  Run number for this task
     f"{args.jana_config}",              # arg 2:  JANA config file
     f"{args.jana_calib_context}",       # arg 3:  JANA calibration context
-    f"{args.jana_geometry_url}",        # arg 4:  JANA geometry URL
-    f"{args.halld_version_set_xml}",    # arg 5:  GlueX software version set XML file
-    f"{args.nmb_threads_per_process}",  # arg 6:  number of threads each `hd_root` process should use
+    f"{args.halld_version_set_xml}",    # arg 4:  GlueX software version set XML file
+    f"{args.nmb_threads_per_process}",  # arg 5:  number of threads each `hd_root` process should use
   ]
+  # arg 6: optional JANA geometry URL override
+  if args.jana_geometry_url_override is not None:
+    task_cmd.append(f"{args.jana_geometry_url_override}")
+
   srun_cmd: List[str] = [
     "srun",
     # f"--ntasks={nmb_tasks}",  # --ntasks is already specified in the `sbatch` command and srun will automatically use all allocated tasks
@@ -220,13 +224,13 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(
     description = "Main job script that processes all EVIO files of the given run.",
   )
-  parser.add_argument("--run_number",              required = True, help = "Run number for this job", type = int)
-  parser.add_argument("--launch_dir",              required = True, help = "Path to launch directory containing scripts and config files inside container")
-  parser.add_argument("--jana_config",             required = True, help = "JANA config file")
-  parser.add_argument("--jana_calib_context",      required = True, help = "JANA calibration context")
-  parser.add_argument("--jana_geometry_url",       required = True, help = "JANA geometry URL")
-  parser.add_argument("--halld_version_set_xml",   required = True, help = "GlueX software version set XML file")
-  parser.add_argument("--nmb_processes_per_task",  required = True, help = "Number of processes per task",            type = int)
-  parser.add_argument("--nmb_threads_per_process", required = True, help = "Number of threads per `hd_root` process", type = int)
-  parser.add_argument("--swif_output_root",        required = True, help = "Root of JLab directory tree, where output files will be copied to")
+  parser.add_argument("--run_number",                 required = True,  help = "Run number for this job", type = int)
+  parser.add_argument("--launch_dir",                 required = True,  help = "Path to launch directory containing scripts and config files inside container")
+  parser.add_argument("--jana_config",                required = True,  help = "JANA config file")
+  parser.add_argument("--jana_calib_context",         required = True,  help = "JANA calibration context")
+  parser.add_argument("--jana_geometry_url_override", required = False, help = "Override JANA geometry URL; optional")
+  parser.add_argument("--halld_version_set_xml",      required = True,  help = "GlueX software version set XML file")
+  parser.add_argument("--nmb_processes_per_task",     required = True,  help = "Number of processes per task",            type = int)
+  parser.add_argument("--nmb_threads_per_process",    required = True,  help = "Number of threads per `hd_root` process", type = int)
+  parser.add_argument("--swif_output_root",           required = True,  help = "Root of JLab directory tree, where output files will be copied to")
   main(parser.parse_args())

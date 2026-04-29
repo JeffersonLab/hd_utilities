@@ -133,13 +133,16 @@ do
         --launch_dir="${NERSC_LAUNCH_DIR_CONTAINER}"  # path of launch directory inside container
         --jana_config="${NERSC_LAUNCH_DIR_CONTAINER}/${JANA_CONFIG}"
         --jana_calib_context="${JANA_CALIB_CONTEXT}"
-        --jana_geometry_url="${JANA_GEOMETRY_URL}"
         --halld_version_set_xml="${HALLD_VERSION_SET_XML}"
         --nmb_processes_per_task="${NERSC_NMB_PROCESSES_PER_TASK}"
         --nmb_threads_per_process="${NERSC_NMB_THREADS_PER_PROCESS}"
         --swif_output_root="${SWIF_OUTPUT_ROOT}"
   )
-  #TODO check that SWIF2_CMD does not exceed size limits for command line arguments
+  # handle optional arguments of the job script
+  if [[ -n "${JANA_GEOMETRY_URL_OVERRIDE:-}" ]]
+  then
+    SWIF2_CMD+=(--jana_geometry_url_override="${JANA_GEOMETRY_URL_OVERRIDE}")
+  fi
   SUBMIT_JOB_SCRIPT="submit_job_for_RUN${RUN_NUMBER}.sh"
   # generate shell-escaped version of command array and write it to file so it becomes a script that can be run directly
   {

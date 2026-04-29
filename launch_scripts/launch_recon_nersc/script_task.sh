@@ -28,9 +28,9 @@ SECONDS=0  # shell variable that counts seconds since it was initialized; used t
 # arg 1:  Run number for this task
 # arg 2:  JANA config file
 # arg 3:  JANA calibration context
-# arg 4:  JANA geometry URL
-# arg 5:  GlueX software version set XML file
-# arg 6:  number of threads each `hd_root` process should use
+# arg 4:  GlueX software version set XML file
+# arg 5:  number of threads each `hd_root` process should use
+# arg 6:  optional JANA geometry URL override
 
 set -o errexit  # exit when any command fails
 
@@ -38,9 +38,9 @@ echo "--- Get task script command-line arguments"
 RUN_NUMBER="${1}"
 JANA_CONFIG="${2}"
 JANA_CALIB_CONTEXT="${3}"
-JANA_GEOMETRY_URL_TASK="${4}"  #NOTE `${JANA_GEOMETRY_URL}` is reset by the `gxenv`call below
-HALLD_VERSION_SET_XML="${5}"
-NMB_THREADS_PER_PROCESS="${6}"
+HALLD_VERSION_SET_XML="${4}"
+NMB_THREADS_PER_PROCESS="${5}"
+JANA_GEOMETRY_URL_OVERRIDE="${6:-}"
 
 THIS_SCRIPT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"  # get the directory of this script
 echo "Using launch scripts from git commit hash: $(cat "${THIS_SCRIPT_DIR}/DEPLOYED_HD_UTILITIES_GIT_HASH" || true)"
@@ -87,7 +87,11 @@ echo "--- Set environment variables"
 export JANA_CALIB_URL="sqlite:////dev/shm/ccdb.sqlite"
 export CCDB_CONNECTION="${JANA_CALIB_URL}"
 export RCDB_CONNECTION="sqlite:////dev/shm/rcdb.sqlite"
-export JANA_GEOMETRY_URL="${JANA_GEOMETRY_URL_TASK}"
+# optional JANA geometry URL override
+if [[ -n "${JANA_GEOMETRY_URL_OVERRIDE}" ]]
+then
+  export JANA_GEOMETRY_URL="${JANA_GEOMETRY_URL_OVERRIDE}"  #NOTE this needs to happen after the `gxenv` call, because `gxenv` sets `JANA_GEOMETRY_URL`
+fi
 export JANA_RESOURCE_DIR="/group/halld/www/halldweb/html/resources"
 
 echo "--- Log info about node and environment"
