@@ -312,7 +312,7 @@ def main(args: argparse.Namespace) -> None:
   start_time = time.time()
   print_command_line_arguments(args)
   launch_config: dict[str, str | None] = get_config_dict_from_env_file(args.launch_env_file)
-  batch_name                   =     ensure_dict_value_exists(launch_config, "BATCH")
+  ver_label                    =     ensure_dict_value_exists(launch_config, "VER_LABEL")
   run_number_list_file         =     ensure_dict_value_exists(launch_config, "RUN_NUMBER_LIST_FILE") if args.override_run_list is None else args.override_run_list
   swif_output_root             =     ensure_dict_value_exists(launch_config, "SWIF_OUTPUT_ROOT")
   raw_data_root                =     ensure_dict_value_exists(launch_config, "RAW_DATA_ROOT")
@@ -321,10 +321,10 @@ def main(args: argparse.Namespace) -> None:
 
   run_numbers: list[int] = read_run_numbers_from_file(run_number_list_file)
   target_base_dir = os.path.dirname(swif_output_root)
-  target_dir = f"{target_base_dir}/{batch_name}.ready_for_tape"
-  failed_hd_root_dir = f"{target_base_dir}/{batch_name}.failed_evio_files_by_hd_root_return_code"
-  # target_dir = f"./{batch_name}.ready_for_tape"
-  # failed_hd_root_dir = f"./{batch_name}.failed_evio_files_by_hd_root_return_code"
+  target_dir = f"{target_base_dir}/{ver_label}.ready_for_tape"
+  failed_hd_root_dir = f"{target_base_dir}/{ver_label}.failed_evio_files_by_hd_root_return_code"
+  # target_dir = f"./{ver_label}.ready_for_tape"
+  # failed_hd_root_dir = f"./{ver_label}.failed_evio_files_by_hd_root_return_code"
 
   total_nmb_evio_files = 0
   failed_evio_files:    list[str]                        = []  # paths of EVIO files for which hd_root failed
