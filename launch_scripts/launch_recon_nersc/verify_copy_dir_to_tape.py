@@ -61,17 +61,18 @@ def main(args: argparse.Namespace) -> None:
       print(f"ERROR: file '{dest_file_path}' has size {dest_file_size} bytes, but expected {src_file_size} bytes based on source file '{src_file_path}'")
       files_wrong_size.append(dest_file_path)
       continue
-    # check if file at destination path matches the CRC32 checksum of the source file
-    src_file_crc32  = get_file_crc32(src_file_path)
-    dest_file_crc32 = (
-        get_file_crc32_from_mss_stub(dest_file_path) if dest_file_path.startswith("/mss")
-        else get_file_crc32(dest_file_path)
-      )
-    if src_file_crc32 != dest_file_crc32:
-      print(f"ERROR: file '{dest_file_path}' has CRC32 {dest_file_crc32}, but expected {src_file_crc32} based on source file '{src_file_path}'")
-      files_wrong_crc32.append(dest_file_path)
-      continue
-    # file exists and has correct size and CRC32; assume it was successfully copied to tape
+    if args.verify_file_content:
+      # check if file at destination path matches the CRC32 checksum of the source file
+      src_file_crc32  = get_file_crc32(src_file_path)
+      dest_file_crc32 = (
+          get_file_crc32_from_mss_stub(dest_file_path) if dest_file_path.startswith("/mss")
+          else get_file_crc32(dest_file_path)
+        )
+      if src_file_crc32 != dest_file_crc32:
+        print(f"ERROR: file '{dest_file_path}' has CRC32 {dest_file_crc32}, but expected {src_file_crc32} based on source file '{src_file_path}'")
+        files_wrong_crc32.append(dest_file_path)
+        continue
+    # file exists and has correct size (and CRC32, if enabled); assume it was successfully copied to tape
     if args.delete_verified_files:
       print(f"Deleting verified file '{src_file_path}'")
       os.remove(src_file_path)
@@ -101,6 +102,7 @@ if __name__ == "__main__":
     description = "Verifies that content of a directory with prepared recon output was successfully copied to tape.",
   )
   parser.add_argument("--launch_env_file",       default = "./launch.env", help = "Path to .env file defining the configuration variables of the reconstruction launch; default: '%(default)s'")
+  parser.add_argument("--verify_file_content",   action = "store_true",    help = "Verify the content of files after copying by comparing their CRC32 checksums; default: false")
   parser.add_argument("--delete_verified_files", action = "store_true",    help = "Delete verified files from source path after verification; default: false")
   parser.add_argument("--recon_src_path",                                  help = "Path to first-level subdirectory in the prepared reconstruction directory, the content of which will be verified")
   args = parser.parse_args()
