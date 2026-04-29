@@ -66,7 +66,7 @@ def main(args: argparse.Namespace) -> None:
     os.environ["SWIF_JOB_STAGE_DIR"] = os.path.abspath(os.getcwd())  # needed by `./.swif/swif2` command
     define_swif2_output_files(run_number, args.swif_output_root)
 
-  print("-------------------------------------------------------------------------------")  #TODO
+  print("-------------------------------------------------------------------------------")
   elapsed_time_sec = int(time.time() - start_time)
   print(f"Wall time consumed defining swif2 output files: {elapsed_time_sec // 60} min, {elapsed_time_sec % 60} sec")
 
@@ -76,5 +76,5 @@ if __name__ == "__main__":
     description = "Define the output files that should be transferred back to JLab using `swif2 output` commands for the given run number.",
   )
   parser.add_argument("--run_working_dir",  required = True, help = "Working directory of the run")
-  parser.add_argument("--swif_output_root", required = True, help = "Root of JLab directory tree, where output files will be copied to")  #TODO take from .env file or from info job .out file
+  parser.add_argument("--swif_output_root", required = True, help = "Root of JLab directory tree, where output files will be copied to")  #TODO make optional and take default from .env file or from info job .out file
   main(parser.parse_args())

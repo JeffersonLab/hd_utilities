@@ -10,7 +10,7 @@ import os
 import subprocess
 import time
 
-from script_job import print_command_line_arguments  # needs PYTHONPATH to include the directory where `script_job.py` is located
+from script_job import print_command_line_arguments  # job-submission script needs to add the directory where `script_job.py` is located to PYTHONPATH
 
 
 def get_transfer_file_paths(
@@ -29,7 +29,7 @@ def get_transfer_file_paths(
     if do_overwrite or not os.path.isfile(dest_file_path):
       file_transfer_paths.append((os.path.abspath(relative_file_path), dest_file_path))
     else:
-      #TODO check that sizes match?
+      #TODO check that sizes match? return existing files in a separate list?
       print(f"File '{dest_file_path}' already exists; skipping transfer")
   return file_transfer_paths
 

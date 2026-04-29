@@ -25,7 +25,7 @@ source "${LAUNCH_ENV_FILE}"
 echo "Using launch scripts from git commit hash: $(cat "${THIS_SCRIPT_DIR}/DEPLOYED_HD_UTILITIES_GIT_HASH" || true)"
 
 # copy scripts and config files to NERSC
-#TODO better separate JLab and NERSC parts of code and put everything needed at NERSC into separate directory
+#TODO better separate JLab and NERSC parts of code and put everything needed at NERSC into separate directory; move code into a separate script, e.g. `deploy_to_nersc.sh` that copies only the files needed at NERSC
 DEST="${NERSC_HOST}:${NERSC_LAUNCH_DIR}"
 echo "Copying launch scripts and config files from '${THIS_SCRIPT_DIR}' to '${DEST}'"
 ssh "${NERSC_HOST}" "mkdir --verbose --parents '${NERSC_LAUNCH_DIR}' && chown --verbose :${NERSC_PROJECT} '${NERSC_LAUNCH_DIR}'"  # rsync cannot set permissions on the destination directory if it does not exist beforehand
