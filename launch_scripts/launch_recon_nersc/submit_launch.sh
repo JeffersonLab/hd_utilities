@@ -87,7 +87,7 @@ do
   # chunks of size `${NERSC_NMB_PROCESSES_PER_TASK}` that will be
   # processed by individual NERSC tasks, defining the input and output
   # files for each task.
-  EVIO_RUN_DIR="${SWIF_RAW_DATA_ROOT}/Run${RUN_NUMBER}"
+  EVIO_RUN_DIR="${RAW_DATA_ROOT}/Run${RUN_NUMBER}"
   shopt -s failglob  # exit with error if no files match the pattern
   EVIO_FILE_PATHS=("${EVIO_RUN_DIR}"/*.evio)
   shopt -u failglob

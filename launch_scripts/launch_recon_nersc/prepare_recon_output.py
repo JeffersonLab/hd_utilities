@@ -315,7 +315,7 @@ def main(args: argparse.Namespace) -> None:
   batch_name                   =     ensure_dict_value_exists(launch_config, "BATCH")
   run_number_list_file         =     ensure_dict_value_exists(launch_config, "RUN_NUMBER_LIST_FILE") if args.override_run_list is None else args.override_run_list
   swif_output_root             =     ensure_dict_value_exists(launch_config, "SWIF_OUTPUT_ROOT")
-  swif_raw_data_root           =     ensure_dict_value_exists(launch_config, "SWIF_RAW_DATA_ROOT")
+  raw_data_root                =     ensure_dict_value_exists(launch_config, "RAW_DATA_ROOT")
   swif_workflow                =     ensure_dict_value_exists(launch_config, "SWIF_WORKFLOW")
   nersc_nmb_processes_per_task = int(ensure_dict_value_exists(launch_config, "NERSC_NMB_PROCESSES_PER_TASK"))
 
@@ -337,7 +337,7 @@ def main(args: argparse.Namespace) -> None:
     file_transfer_map_gen = FileTransferMapGenerator(
       run_number             = run_number,
       job_dir                = swif_output_root,
-      raw_data_root          = swif_raw_data_root,
+      raw_data_root          = raw_data_root,
       nmb_processes_per_task = nersc_nmb_processes_per_task,
       target_dir             = target_dir,
       failed_hd_root_dir     = failed_hd_root_dir,

@@ -82,13 +82,13 @@ def main(args: argparse.Namespace) -> None:
   launch_config: dict[str, str | None] = get_config_dict_from_env_file(args.launch_env_file)
   run_period                   =     ensure_dict_value_exists(launch_config, "RUN_PERIOD")
   run_number_list_file         =     ensure_dict_value_exists(launch_config, "RUN_NUMBER_LIST_FILE") if args.override_run_list is None else args.override_run_list
-  swif_raw_data_root           =     ensure_dict_value_exists(launch_config, "SWIF_RAW_DATA_ROOT")
+  raw_data_root                =     ensure_dict_value_exists(launch_config, "RAW_DATA_ROOT")
   swif_workflow                =     ensure_dict_value_exists(launch_config, "SWIF_WORKFLOW")
   nmb_processes_per_nersc_node = int(ensure_dict_value_exists(launch_config, "NERSC_NMB_PROCESSES_PER_TASK"))
   print(f"Allocating {nmb_processes_per_nersc_node} hd_root processes per NERSC node")
 
   run_numbers: list[int] = read_run_numbers_from_file(run_number_list_file)
-  print(f"Calculating resources for '{run_period}' raw data: {len(run_numbers)} run(s) listed in '{run_number_list_file}' and located in '{swif_raw_data_root}'")
+  print(f"Calculating resources for '{run_period}' raw data: {len(run_numbers)} run(s) listed in '{run_number_list_file}' and located in '{raw_data_root}'")
   nmb_files:             dict[int, int  ] = {}  # number of files per run
   nmb_nodes:             dict[int, int  ] = {}  # number of NERSC nodes required per run
   fraction_nodes_unused: dict[int, float] = {}  # unused fraction of last NERSC node per run
@@ -100,7 +100,7 @@ def main(args: argparse.Namespace) -> None:
       nmb_remainder_jobs,
       size_gb[run_number],
       _,
-    ) = get_job_size(run_number, swif_raw_data_root, nmb_processes_per_nersc_node)
+    ) = get_job_size(run_number, raw_data_root, nmb_processes_per_nersc_node)
     fraction_nodes_unused[run_number] = 0.0 if nmb_remainder_jobs == 0 else 1.0 - nmb_remainder_jobs / float(nmb_processes_per_nersc_node)
     print(f"    Run {run_number:6d} = {size_gb[run_number]:6.0f} GB, {nmb_files[run_number]:3d} files, {nmb_nodes[run_number]:3d} nodes, {fraction_nodes_unused[run_number]:5.1%} of last node wasted")
   # compute totals
@@ -118,7 +118,7 @@ def main(args: argparse.Namespace) -> None:
           f"    out of which {total_nmb_nodes_unused:.1f} nodes are unused (= {total_nmb_nodes_unused / total_nmb_nodes:.1%} of total nodes)")
 
   print("-------------------------------------------------------------------------------")
-  plot_evio_file_size(run_numbers, swif_raw_data_root, swif_workflow)
+  plot_evio_file_size(run_numbers, raw_data_root, swif_workflow)
 
   print("-------------------------------------------------------------------------------")
   elapsed_time_sec = int(time.time() - start_time)
