@@ -25,30 +25,7 @@ source "${LAUNCH_ENV_FILE}"
 echo "Using launch scripts from git commit hash: $(cat "${THIS_SCRIPT_DIR}/DEPLOYED_HD_UTILITIES_GIT_HASH" || true)"
 
 # copy scripts and config files to NERSC
-#TODO better separate JLab and NERSC parts of code and put everything needed at NERSC into separate directory; move code into a separate script, e.g. `deploy_to_nersc.sh` that copies only the files needed at NERSC
-DEST="${NERSC_HOST}:${NERSC_LAUNCH_DIR}"
-echo "Copying launch scripts and config files from '${THIS_SCRIPT_DIR}' to '${DEST}'"
-ssh "${NERSC_HOST}" "mkdir --verbose --parents '${NERSC_LAUNCH_DIR}' && chown --verbose :${NERSC_PROJECT} '${NERSC_LAUNCH_DIR}'"  # rsync cannot set permissions on the destination directory if it does not exist beforehand
-if [ "${?}" -ne 0 ]
-then
-  echo "Failed to create launch directory '${NERSC_LAUNCH_DIR}' at NERSC with group ownership '${NERSC_PROJECT}' and write permissions for the group; aborting"
-  exit 1
-else
-  echo "Successfully created launch directory '${NERSC_LAUNCH_DIR}' at NERSC with group ownership '${NERSC_PROJECT}' and write permissions for the group"
-fi
-#TODO exclude __pycache__ directories; use `--exclude` option of rsync; better copy only the files needed at NERSC; e.g. use `--files-from` option of rsync with a generated list of files to copy; maybe create an extra deploy script for NERSC
-RSYNC_CMD=(rsync
-  --verbose
-  --delete  # ensure pristine copy
-  --archive
-  --ignore-times
-  --chown=:"${NERSC_PROJECT}"  # ensure write permissions for project group
-  --chmod="Dg+rwx,Fg+rw"  # ensure write permissions for project group for subdirectories and files
-  "${THIS_SCRIPT_DIR}/"  # trailing slash is important: copy contents of `THIS_SCRIPT_DIR` into existing `DEST` directory
-  "${DEST}"
-)
-"${RSYNC_CMD[@]}"
-unset DEST
+"${THIS_SCRIPT_DIR}/deploy_launch_dir_to_nersc.sh" "${LAUNCH_ENV_FILE}"
 
 # verify that container image exists in NERSC repository
 if ssh "${NERSC_HOST}" "shifterimg lookup \"${NERSC_CONTAINER_IMAGE#docker:}\""
