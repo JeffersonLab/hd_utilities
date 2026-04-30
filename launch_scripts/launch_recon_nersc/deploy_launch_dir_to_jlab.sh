@@ -3,12 +3,19 @@
 # copies the launch directory to official location for production user account
 
 
-LAUNCH_ENV_FILE="${1:-launch.env}"  # path to .env file defining the configuration variables of the reconstruction launch
+THIS_SCRIPT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"  # get the directory of this script
+LAUNCH_ENV_FILE="${1}"  # path to .env file defining the configuration variables of the reconstruction launch
+if [ -z "${LAUNCH_ENV_FILE}" ]
+then
+  echo "You must provide the configuration .env file as the first argument."
+  exit 1
+fi
 echo "Reading production parameters from .env file '${LAUNCH_ENV_FILE}'"
 source "${LAUNCH_ENV_FILE}"
 
 REMOTE_LAUNCH_DIR="/home/${PRODUCTION_USER}/${PRODUCTION_LAUNCH_DIR}"
-echo "Copying launch scripts and config files from '$(pwd)' to '${PRODUCTION_USER}@ifarm:${REMOTE_LAUNCH_DIR}'"
+DEST="${PRODUCTION_USER}@ifarm:${REMOTE_LAUNCH_DIR}"
+echo "Copying launch scripts and config files from '${THIS_SCRIPT_DIR}' to '${DEST}'"
 # ensure the full destination path exists before rsync starts copying files.
 if ! ssh "${PRODUCTION_USER}@ifarm" "mkdir --verbose --parents \"${REMOTE_LAUNCH_DIR}\""
 then
@@ -27,11 +34,19 @@ RSYNC_CMD=(rsync
   --chmod=g+w
   --from0  # tell rsync to read NUL-delimited input
   --files-from="${TMP}"
-  ./
-  "${PRODUCTION_USER}@ifarm:${REMOTE_LAUNCH_DIR}/"
+  "${THIS_SCRIPT_DIR}/"  # trailing slash is important: copy contents of `THIS_SCRIPT_DIR` into existing `DEST` directory
+  "${DEST}"
 )
 "${RSYNC_CMD[@]}"
+if "${RSYNC_CMD[@]}"
+then
+  echo "Successfully copied launch scripts and config files to '${DEST}'"
+else
+  echo "ERROR: Could not copy launch scripts and config files to '${DEST}'"
+  exit 1
+fi
 rm --force "${TMP}"
+unset TMP
 
 # write current git hash (short) into deployed tree
 GIT_HASH=$(git rev-parse --short HEAD 2> /dev/null)

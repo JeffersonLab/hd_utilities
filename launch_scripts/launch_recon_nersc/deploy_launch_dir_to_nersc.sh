@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-set -o errexit   # exit when any command fails
-set -o pipefail  # exit if any command in a pipeline fails
 
 # copies the launch directory to official location at NERSC
 
@@ -37,16 +35,13 @@ RSYNC_CMD=(rsync
   "${THIS_SCRIPT_DIR}/"  # trailing slash is important: copy contents of `THIS_SCRIPT_DIR` into existing `DEST` directory
   "${DEST}"
 )
-"${RSYNC_CMD[@]}"
-
-# write current git hash (short) into deployed tree
-GIT_HASH=$(git rev-parse --short HEAD 2> /dev/null)
-if [[ -z "${GIT_HASH}" ]]
+if "${RSYNC_CMD[@]}"
 then
-  echo "WARNING: Could not determine git hash; set it to 'unknown'"
-  GIT_HASH="unknown"
+  echo "Successfully copied launch scripts and config files to '${DEST}'"
+else
+  echo "ERROR: Could not copy launch scripts and config files to '${DEST}'"
+  exit 1
 fi
-ssh "${NERSC_HOST}" "cat >! ~/\"${NERSC_LAUNCH_DIR}\"/DEPLOYED_HD_UTILITIES_GIT_HASH" <<< "${GIT_HASH}"
-
 unset DEST
+
 exit 0
