@@ -24,6 +24,7 @@ import shlex
 import subprocess
 import sys
 import time
+from typing import Any
 
 from script_job import print_command_line_arguments
 from utilities import (
@@ -39,18 +40,17 @@ print = functools.partial(print, flush = True)
 
 
 def run_cmd(
-  cmd:       str,
-  check:     bool = True,   # whether to raise an exception if the command exits with a non-zero status
-  print_cmd: bool = False,  # whether to print the command before executing it
-  dry_run:   bool = False,  # if True, only print the command without executing it
-  #TODO pass through all additional arguments to subprocess.run()
+  cmd:              str,
+  print_cmd:        bool = False,  # whether to print the command before executing it
+  dry_run:          bool = False,  # if True, only print the command without executing it
+  **kwargs_for_run: Any,           # additional keyword arguments forwarded to subprocess.run()
 ) -> bool:
   """Runs the given command using subprocess.run() and returns True if the command succeeds."""
   if print_cmd or dry_run:
     print(f"+ {cmd}")
   if dry_run:
     return True
-  return subprocess.run(cmd, shell = True, check = check).returncode == 0
+  return subprocess.run(cmd, shell = True, **kwargs_for_run).returncode == 0
 
 
 def main(args: argparse.Namespace) -> None:
@@ -68,28 +68,21 @@ def main(args: argparse.Namespace) -> None:
     print("DRY RUN mode enabled: no external commands will be executed")
 
   # copy scripts and config files to NERSC
-  run_cmd(f"{this_script_dir}/deploy_launch_dir_to_nersc.sh {args.launch_env_file}", dry_run = args.dry_run)
+  run_cmd(f"{this_script_dir}/deploy_launch_dir_to_nersc.sh {args.launch_env_file}", print_cmd = True, dry_run = args.dry_run)
 
   # verify that container image exists in NERSC's `shifter` repository
   nersc_host            = ensure_dict_value_exists(launch_config, "NERSC_HOST")
   nersc_container_image = ensure_dict_value_exists(launch_config, "NERSC_CONTAINER_IMAGE")
-  if run_cmd(f'ssh {nersc_host} shifterimg lookup "{nersc_container_image}"', check = False, dry_run = args.dry_run):
+  if run_cmd(f'ssh {nersc_host} shifterimg lookup "{nersc_container_image}"', check = False, stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL, dry_run = args.dry_run):
     print(f"Container image '{nersc_container_image}' exists in NERSC `shifter` repository")
   else:
     print(f"Container image '{nersc_container_image}' does not exist in NERSC `shifter` repository; aborting")
     sys.exit(1)
 
-  # create swif2 workflow
-  #   workflow_status = subprocess.run(
-  #     workflow_status_cmd,
-  #     stdout=subprocess.DEVNULL,
-  #     stderr=subprocess.DEVNULL,
-  #     check=False,
-  #   )
   swif_workflow            = ensure_dict_value_exists(launch_config, "SWIF_WORKFLOW")
   swif_site                = ensure_dict_value_exists(launch_config, "SWIF_SITE")
   swif_max_concurrent_jobs = ensure_dict_value_exists(launch_config, "SWIF_MAX_CONCURRENT_JOBS")
-  if run_cmd(f'swif2 status "{swif_workflow}"', check = False, dry_run = args.dry_run):
+  if run_cmd(f'swif2 status "{swif_workflow}"', check = False, stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL, dry_run = args.dry_run):
     print(f"Workflow '{swif_workflow}' already exists; skipping creation")
   else:
     print(f"Creating swif2 workflow '{swif_workflow}' at site '{swif_site}' with {swif_max_concurrent_jobs} max concurrent jobs")
