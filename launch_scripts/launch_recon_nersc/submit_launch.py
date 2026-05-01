@@ -128,21 +128,16 @@ def main(args: argparse.Namespace) -> None:
     evio_file_paths = get_evio_file_paths_for_run(run_number, raw_data_root)
     nmb_evio_files = len(evio_file_paths)
     assert nmb_evio_files > 0, print(f"No EVIO files found for run {run_number} in '{raw_data_root}'; aborting")
-    #TODO improve log output
-    # calculate number of tasks to request based on number of EVIO files and number of processes to run per task
-    print(f"Run period: '{run_period}' - run number: {run_number} - number of evio files: {nmb_evio_files} - divided by: {nersc_nmb_processes_per_task}")
+    for evio_file_path in evio_file_paths:
+      # construct the swif2 input line for the given file, e.g. `-input file1.evio mss:/mss/some_path/file1.evio -input file2.evio mss:/mss/some_path/file2.evio ...`
+      # `mss:/` takes files directly from tape, bypassing JLab file systems; this is the most efficient way to transfer files to NERSC
+      # `file:/` paths should be used for debugging only
+      evio_file_abs_path = os.path.abspath(evio_file_path)
+      evio_file_name = os.path.basename(evio_file_path)
+      swif2_cmd += ["-input", evio_file_name, ("mss:" if evio_file_abs_path.startswith("/mss/") else "file:") + evio_file_abs_path]
+    # all output files that swif2 should transfer back to JLab are defined inside the job script
+    # calculate number of tasks from number of EVIO files and number of processes to run per task
     nersc_nmb_tasks = (nmb_evio_files + nersc_nmb_processes_per_task - 1) // nersc_nmb_processes_per_task
-    print(f"Number of NERSC tasks asked: {nersc_nmb_tasks}")
-    for task_index in range(nersc_nmb_tasks):  #TODO couldn't this be simplified? all EVIO files for the run need to be registered as job input; the subdivision into tasks is irrelevant here  #TODO move chopping of EVIO file list into separate function
-      # construct the swif2 input lines for the given task, e.g. `-input file1.evio mss:/mss/some_path/file1.evio -input file2.evio mss:/mss/some_path/file2.evio ...`
-      evio_file_start_index = task_index * nersc_nmb_processes_per_task
-      evio_file_end_index = evio_file_start_index + nersc_nmb_processes_per_task
-      for evio_file_index in range(evio_file_start_index, min(evio_file_end_index, nmb_evio_files)):
-        evio_file_path = os.path.abspath(evio_file_paths[evio_file_index])
-        evio_file_name = os.path.basename(evio_file_path)
-        swif2_cmd += ["-input", evio_file_name, f"mss:{evio_file_path}"]  # `mss:/` takes files directly from tape, bypassing JLab file systems; this is the most efficient way to transfer files to NERSC; `file:/` paths should be used for debugging only  #TODO switch automatically to `file:/` paths if files are located in cache
-      # swif2_cmd += ["-input", evio_file_name, f"file:{evio_file_path}"]
-    # the output files that swif2 should transfer back to JLab are defined inside the job script
     swif2_cmd += [
       "-sbatch",
         # these options are passed to Slurm's `sbatch` when swif2 submits job at NERSC
