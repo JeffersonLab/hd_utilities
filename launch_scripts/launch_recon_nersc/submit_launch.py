@@ -21,6 +21,7 @@ import argparse
 import functools
 import os
 import shlex
+import stat
 import subprocess
 import sys
 import time
@@ -89,6 +90,7 @@ def main(args: argparse.Namespace) -> None:
     run_cmd(f"swif2 create {swif_workflow} -site {swif_site} -max-concurrent {swif_max_concurrent_jobs}", dry_run = args.dry_run)
 
   # read run numbers from file and submit one swif2 job each run
+  print("-------------------------------------------------------------------------------")
   run_period                    =     ensure_dict_value_exists(launch_config, "RUN_PERIOD")
   run_number_list_file          =     ensure_dict_value_exists(launch_config, "RUN_NUMBER_LIST_FILE") if args.override_run_list is None else args.override_run_list
   raw_data_root                 =     ensure_dict_value_exists(launch_config, "RAW_DATA_ROOT")
@@ -108,18 +110,19 @@ def main(args: argparse.Namespace) -> None:
   swif_output_root              =     ensure_dict_value_exists(launch_config, "SWIF_OUTPUT_ROOT")
   run_numbers: list[int] = read_run_numbers_from_file(run_number_list_file)
   print(f"Submitting a swif2 job for each of the {len(run_numbers)} run(s) of run period '{run_period}'")
-  for run_number in run_numbers:
+  for run_counter, run_number in enumerate(run_numbers):
     #TODO limit run umbers to [RUN_NUMBER_MIN, RUN_NUMBER_MAX] from config file
     # construct command to submit a swif2 job for the given run number
     #NOTE swif2 jobs for remote sites do not produce stdout and stderr
     #  on JLab Farm and the `-stdout` and `-stderr` arguments would need
     #  to point to remote paths at NERSC.  Specifying the NERSC log
     #  files using the `-sbatch --output` argument is more flexible.
+    swif_job_name = f"GlueX_recon_{run_number:06d}"
     swif2_cmd: list[str] = [
       "swif2",
       "add-job",
-      "-workflow", swif_workflow,                # swif2 workflow name
-      "-name",     f"GlueX_recon_{run_number:06d}",  # swif2 job name
+      "-workflow", swif_workflow,
+      "-name",     swif_job_name,
     ]
     # loop over all EVIO files of the run and subdivide file list into
     # chunks of size `${NERSC_NMB_PROCESSES_PER_TASK}` that will be
@@ -175,21 +178,16 @@ def main(args: argparse.Namespace) -> None:
       swif2_cmd += [f"--jana_geometry_url_override={jana_geometry_url_override}"]
     # apply shell-escaping to `swif2` command and write it to a file so it becomes a shell script that can be run directly
     submit_job_script_name = f"submit_job_for_RUN{run_number:06d}.sh"
-    # run_cmd(f"""
-    #   {{
-    #     printf '%q ' "{' '.join(swif2_cmd)}"
-    #     printf '\n'
-    #   }} >| "{submit_job_script_name}"
-    # """)
-    # write `shlex.join(swif2_cmd)` to the script file `submit_job_script_name`
     with open(submit_job_script_name, "w") as script_file:
       script_file.write(f"{shlex.join(swif2_cmd)}\n")
-    run_cmd(f'chmod +x "{submit_job_script_name}"', dry_run = args.dry_run)
+    current_permissions = os.stat(submit_job_script_name).st_mode
+    os.chmod(submit_job_script_name, current_permissions | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)  # make file executable for user, group, and others
     # run the generated script to submit the job
+    print(f"    [{run_counter + 1:4d}/{len(run_numbers):4d}] Submitting swif2 job '{swif_job_name}' for run {run_number} with {nmb_evio_files} EVIO file(s) using {nersc_nmb_tasks} NERSC tasks (nodes) with {nersc_nmb_processes_per_task} processes per task")
     run_cmd(f'./"{submit_job_script_name}"', dry_run = args.dry_run)
 
   print("-------------------------------------------------------------------------------")
-  print("Status of workflow after submitting all jobs; view jobs at https://scicomp.jlab.org/scicomp/swif/active")
+  print(f"Status of swif2 workflow '{swif_workflow}' after submitting all jobs; view jobs at https://scicomp.jlab.org/scicomp/swif/active")
   run_cmd("swif2 list", dry_run = args.dry_run)
   run_cmd(f"swif2 status {swif_workflow}", dry_run = args.dry_run)
 
@@ -202,7 +200,7 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(
     description = "Submits reconstruction jobs to run at NERSC using swif2.",
   )
-  parser.add_argument("--launch_env_file", required = True, help = "Path to .env file defining the configuration variables of the reconstruction launch")  #TODO make this a positional argument
+  parser.add_argument("launch_env_file", help = "Path to .env file defining the configuration variables  of the reconstruction launch")  #TODO transfer this to other scripts
   parser.add_argument("--override_run_list", help = "Path to run-number list file to use instead of RCDB query")
   parser.add_argument("--dry_run", action = "store_true", help = "Preview commands without performing them; default: false")
   args = parser.parse_args()
