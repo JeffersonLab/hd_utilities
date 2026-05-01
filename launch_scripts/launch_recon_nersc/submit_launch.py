@@ -40,14 +40,14 @@ from utilities import (
 print = functools.partial(print, flush = True)
 
 
-def run_cmd(
+def run_shell_cmd(
   cmd:              str,
-  print_cmd:        bool = False,  # whether to print the command before executing it
+  echo_cmd:         bool = False,  # whether to print the command before executing it
   dry_run:          bool = False,  # if True, only print the command without executing it
   **kwargs_for_run: Any,           # additional keyword arguments forwarded to subprocess.run()
 ) -> bool:
   """Runs the given command using subprocess.run() and returns True if the command succeeds."""
-  if print_cmd or dry_run:
+  if echo_cmd or dry_run:
     print(f"+ {cmd}")
   if dry_run:
     return True
@@ -69,12 +69,12 @@ def main(args: argparse.Namespace) -> None:
     print("DRY RUN mode enabled: no external commands will be executed")
 
   # copy scripts and config files to NERSC
-  run_cmd(f"{this_script_dir}/deploy_launch_dir_to_nersc.sh {args.launch_env_file}", print_cmd = True, dry_run = args.dry_run)
+  run_shell_cmd(f"{this_script_dir}/deploy_launch_dir_to_nersc.sh {args.launch_env_file}", echo_cmd = True, dry_run = args.dry_run)
 
   # verify that container image exists in NERSC's `shifter` repository
   nersc_host            = ensure_dict_value_exists(launch_config, "NERSC_HOST")
   nersc_container_image = ensure_dict_value_exists(launch_config, "NERSC_CONTAINER_IMAGE")
-  if run_cmd(f'ssh {nersc_host} shifterimg lookup "{nersc_container_image}"', check = False, stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL, dry_run = args.dry_run):
+  if run_shell_cmd(f'ssh {nersc_host} shifterimg lookup "{nersc_container_image}"', check = False, stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL, dry_run = args.dry_run):
     print(f"Container image '{nersc_container_image}' exists in NERSC `shifter` repository")
   else:
     print(f"Container image '{nersc_container_image}' does not exist in NERSC `shifter` repository; aborting")
@@ -83,11 +83,12 @@ def main(args: argparse.Namespace) -> None:
   swif_workflow            = ensure_dict_value_exists(launch_config, "SWIF_WORKFLOW")
   swif_site                = ensure_dict_value_exists(launch_config, "SWIF_SITE")
   swif_max_concurrent_jobs = ensure_dict_value_exists(launch_config, "SWIF_MAX_CONCURRENT_JOBS")
-  if run_cmd(f'swif2 status "{swif_workflow}"', check = False, stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL, dry_run = args.dry_run):
-    print(f"Workflow '{swif_workflow}' already exists; skipping creation")
+  if run_shell_cmd(f'swif2 status "{swif_workflow}"', check = False, stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL, dry_run = args.dry_run):
+    print(f"Workflow '{swif_workflow}' already exists; pausing workflow")
+    run_shell_cmd(f'swif2 pause "{swif_workflow}"', dry_run = args.dry_run)  # pausing workflow to allow inspection of submitted jobs before resuming
   else:
     print(f"Creating swif2 workflow '{swif_workflow}' at site '{swif_site}' with {swif_max_concurrent_jobs} max concurrent jobs")
-    run_cmd(f"swif2 create {swif_workflow} -site {swif_site} -max-concurrent {swif_max_concurrent_jobs}", dry_run = args.dry_run)
+    run_shell_cmd(f"swif2 create {swif_workflow} -site {swif_site} -max-concurrent {swif_max_concurrent_jobs}", dry_run = args.dry_run)
 
   # read run numbers from file and submit one swif2 job each run
   print("-------------------------------------------------------------------------------")
@@ -184,12 +185,12 @@ def main(args: argparse.Namespace) -> None:
     os.chmod(submit_job_script_name, current_permissions | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)  # make file executable for user, group, and others
     # run the generated script to submit the job
     print(f"    [{run_counter + 1:4d}/{len(run_numbers):4d}] Submitting swif2 job '{swif_job_name}' for run {run_number} with {nmb_evio_files} EVIO file(s) using {nersc_nmb_tasks} NERSC tasks (nodes) with {nersc_nmb_processes_per_task} processes per task")
-    run_cmd(f'./"{submit_job_script_name}"', dry_run = args.dry_run)
+    run_shell_cmd(f'./"{submit_job_script_name}"', dry_run = args.dry_run)
 
   print("-------------------------------------------------------------------------------")
   print(f"Status of swif2 workflow '{swif_workflow}' after submitting all jobs; view jobs at https://scicomp.jlab.org/scicomp/swif/active")
-  run_cmd("swif2 list", dry_run = args.dry_run)
-  run_cmd(f"swif2 status {swif_workflow}", dry_run = args.dry_run)
+  run_shell_cmd("swif2 list", dry_run = args.dry_run)
+  run_shell_cmd(f"swif2 status {swif_workflow}", dry_run = args.dry_run)
 
   print("-------------------------------------------------------------------------------")
   elapsed_time_sec = int(time.time() - start_time)
@@ -200,8 +201,8 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(
     description = "Submits reconstruction jobs to run at NERSC using swif2.",
   )
-  parser.add_argument("launch_env_file", help = "Path to .env file defining the configuration variables  of the reconstruction launch")  #TODO transfer this to other scripts
-  parser.add_argument("--override_run_list", help = "Path to run-number list file to use instead of RCDB query")
+  parser.add_argument("launch_env_file",                  help = "Path to .env file defining the configuration variables  of the reconstruction launch")  #TODO transfer this to other scripts
+  parser.add_argument("--override_run_list",              help = "Path to run-number list file to use instead of RCDB query")
   parser.add_argument("--dry_run", action = "store_true", help = "Preview commands without performing them; default: false")
   args = parser.parse_args()
   main(args)
