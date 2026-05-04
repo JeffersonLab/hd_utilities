@@ -10,12 +10,14 @@ import os
 import time
 
 from script_copy_dir_to_tape import get_transfer_file_paths
-from script_job import print_command_line_arguments
 from utilities import (
-  get_file_crc32,
-  get_file_crc32_from_mss_stub,
   ensure_dict_value_exists,
+  get_file_crc32,
+  print_command_line_arguments,
+)
+from utilities_dotenv import (
   get_config_dict_from_env_file,
+  get_file_crc32_from_mss_stub,
   get_file_size_from_mss_stub,
 )
 

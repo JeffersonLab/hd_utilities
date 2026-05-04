@@ -25,7 +25,7 @@ import os
 import sys
 import time
 
-from script_job import (
+from utilities import (
   define_swif2_output_files,
   print_command_line_arguments,
 )

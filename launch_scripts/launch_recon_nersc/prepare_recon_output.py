@@ -17,16 +17,16 @@ import shutil
 import tarfile
 import time
 
-from script_job import (
-  get_hd_root_return_code,
-  print_command_line_arguments,
-)
 from utilities import (
   ensure_dict_value_exists,
-  get_config_dict_from_env_file,
   get_file_number_from_evio_file_name,
-  get_job_size,
+  get_hd_root_return_code,
+  print_command_line_arguments,
   read_run_numbers_from_file,
+)
+from utilities_dotenv import (
+  get_config_dict_from_env_file,
+  get_job_size,
 )
 
 

@@ -16,14 +16,16 @@ from typing import Sequence
 
 import ROOT
 
-from script_job import print_command_line_arguments
 from utilities import (
   ensure_dict_value_exists,
-  get_config_dict_from_env_file,
   get_evio_file_paths_for_run,
+  print_command_line_arguments,
+  read_run_numbers_from_file,
+)
+from utilities_dotenv import (
+  get_config_dict_from_env_file,
   get_file_size_from_mss_stub,
   get_job_size,
-  read_run_numbers_from_file,
 )
 
 

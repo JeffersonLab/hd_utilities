@@ -11,12 +11,11 @@ import subprocess
 import sys
 import time
 
-from script_job import print_command_line_arguments
 from utilities import (
   ensure_dict_value_exists,
-  get_config_dict_from_env_file,
-  # get_directory_size,
+  print_command_line_arguments,
 )
+from utilities_dotenv import get_config_dict_from_env_file
 
 
 # always flush print() to reduce garbling of log files due to buffering

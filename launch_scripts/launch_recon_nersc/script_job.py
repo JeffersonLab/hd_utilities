@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-#NOTE this script needs to be compatible with Python 3.6
 
 """
 Main job script that processes all EVIO files of the given run.
@@ -19,37 +18,26 @@ submit script.  Finally, the script defines all output files that
 should be transferred back to JLab using `swif2 output` commands.
 """
 
+from __future__ import annotations
+
 import argparse
 import functools
 import glob
 import os
-import re
 import shlex
 import subprocess
 import sys
 import time
-from typing import List, Tuple, Optional
+
+from utilities import (
+  define_swif2_output_files,
+  print_command_line_arguments,
+  print_python_env,
+)
 
 
 # always flush print() to reduce garbling of log files due to buffering
 print = functools.partial(print, flush = True)
-
-
-#TODO find out whether these functions can be moved to the/a utilities module
-def print_command_line_arguments(args: argparse.Namespace) -> None:
-  """Prints all command-line arguments and their values and the git hash."""
-  this_script_file_name = os.path.basename(sys.argv[0])  # get file name of script that was launched
-  print("-------------------------------------------------------------------------------")
-  print(f"Running script {this_script_file_name} with arguments:")
-  max_arg_name_length = max(len(arg_name) for arg_name in vars(args).keys())
-  for arg_name, arg_value in sorted(vars(args).items()):  # sort keys for stable, tidy output
-    print(f"{arg_name:>{max_arg_name_length + 2}} : {arg_value}")
-  this_script_dir = os.path.dirname(os.path.abspath(__file__))  #TODO why not use `sys.argv[0]` here?
-  if os.path.isfile(f"{this_script_dir}/DEPLOYED_HD_UTILITIES_GIT_HASH"):
-    deployed_git_hash = open(f"{this_script_dir}/DEPLOYED_HD_UTILITIES_GIT_HASH", "r", encoding = "utf-8").read().strip()
-    print(f"Using launch scripts from git commit hash: {deployed_git_hash}")
-  #TODO add case where the script is run from the git repo
-  print("-------------------------------------------------------------------------------")
 
 
 def write_env_to_file(output_file_name: str = "./env") -> None:
@@ -61,75 +49,9 @@ def write_env_to_file(output_file_name: str = "./env") -> None:
   print(f"Wrote environment variables to '{output_file_name}'")
 
 
-def get_hd_root_return_code(hd_root_rc_file_path: str) -> Optional[int]:
-  """Reads the hd_root return code from the given file and returns it as an int or `None` if unsuccessful."""
-  try:
-    with open(hd_root_rc_file_path, "r", encoding="utf-8") as file:
-      hd_root_rc_file_content = file.read()
-  except OSError as e:  # file not found, permission denied, etc.
-    print(f"WARNING: unable to open hd_root return-code file '{hd_root_rc_file_path}': {e}")
-    return None
-  match = re.search(r"return code (\d+)$", hd_root_rc_file_content)
-  if not match:
-    print(f"WARNING: cannot get hd_root return code from malformed file '{hd_root_rc_file_path}': '{hd_root_rc_file_content}'")
-    return None
-  return int(match.group(1))
-
-
-def get_file_transfer_paths(
-  run_number:       int,
-  swif_output_root: str,
-) -> List[Tuple[str, str]]:
-  """Gets list of local relative paths w.r.t. current directory and absolute remote destination paths of all output files that should be transferred back to JLab."""
-  # this function assumes that the current directory is the working directory of the job
-  # first greedily collect all potential output items, then filter out directories and files that should not be transferred back to JLab
-  relative_output_paths: List[str] = []
-  relative_output_paths += sorted(glob.glob(f"*"))  # include all items in job dir
-  relative_output_paths += sorted(glob.glob(f"RUN{run_number:06d}/*"))  # include all items in run dir
-  # loop over task dirs
-  task_dirs: List[str] = sorted(glob.glob(f"RUN{run_number:06d}/TASK???"))
-  for task_dir in task_dirs:
-    relative_output_paths += sorted(glob.glob(f"{task_dir}/*"))  # include all items in task dir
-    # loop over file dirs
-    file_dirs: List[str] = sorted(glob.glob(f"{task_dir}/FILE???"))
-    for file_dir in file_dirs:
-      hd_root_return_code = get_hd_root_return_code(f"{file_dir}/hd_root.rc")
-      if hd_root_return_code is None or hd_root_return_code != 0:
-        # do not copy hd_root output files for failed hd_root processes; but try to recover debug info
-        print(f"WARNING: skipping hd_root output files in '{file_dir}' because hd_root return code is {hd_root_return_code} != 0")
-        relative_output_paths += [f"{file_dir}/hd_root.err", f"{file_dir}/hd_root.out", f"{file_dir}/hd_root.rc"]  # transfer hd_root log files for debugging
-        relative_output_paths += sorted(glob.glob(f"{file_dir}/core.hd_root*"))  # transfer core files for debugging
-        continue
-      relative_output_paths += sorted(glob.glob(f"{file_dir}/*"))  # include all items in file dir
-  file_transfer_paths: List[Tuple[str, str]] = []  # list of pairs of relative local file paths and absolute remote destination file paths
-  for relative_output_path in relative_output_paths:
-    # filter out all directories and nonexisting and unwanted and files
-    if not os.path.isfile(relative_output_path) or os.path.islink(relative_output_path):  # keep only existing, non-symlinked files
-      continue
-    output_file_name = os.path.basename(relative_output_path)
-    if output_file_name.startswith(".") or output_file_name.startswith("__"):  # skip hidden files and swif2 system files
-      continue
-    if re.fullmatch(r"hd_rawdata_\d{6}_\d{3}\.evio", output_file_name):  # skip raw-data files that match hd_rawdata_XXXXXX_YYY.evio, with 6-digit run number XXXXXX and 3-digit file number YYY
-      continue
-    file_transfer_paths.append((relative_output_path, f"{swif_output_root}/{relative_output_path}"))
-  return file_transfer_paths
-
-
-def define_swif2_output_files(
-  run_number:       int,
-  swif_output_root: str,
-) -> None:
-  """Registers all output files with swif2 for transfer back to JLab."""
-  file_transfer_paths: List[Tuple[str, str]] = get_file_transfer_paths(run_number, swif_output_root)
-  print(f"Defining {len(file_transfer_paths)} output files for transfer back to JLab")
-  for local_output_file_path, remote_output_file_path in file_transfer_paths:
-    output_cmd = f"./.swif/swif2 output '{local_output_file_path}' '{remote_output_file_path}'"  #TODO for some reason, swif2 is not in path
-    print(output_cmd)
-    subprocess.run(output_cmd, shell = True, check = False)
-
-
 def main(args: argparse.Namespace) -> None:
   start_time = time.time()
+  print_python_env()
   print_command_line_arguments(args)
 
   # gather information about job environment and write it to files
@@ -146,7 +68,7 @@ def main(args: argparse.Namespace) -> None:
   # get job working directory and list of input raw-data files
   work_dir_job = os.getcwd()  # working directory of job as created by swif2, i.e. `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}; (identical to `${SWIF_JOB_STAGE_DIR}` and `${SWIF_JOB_WORK_DIR}`)
   print(f"Job script is running in directory: '{work_dir_job}'")
-  evio_file_names: List[str] = sorted(glob.glob("hd_rawdata_??????_???.evio"))  # list of raw-data file names in working directory of job
+  evio_file_names: list[str] = sorted(glob.glob("hd_rawdata_??????_???.evio"))  # list of raw-data file names in working directory of job
   #TODO filter bad files if list is available?
   print(f"Found {len(evio_file_names)} EVIO files that will be processed by this job:")
   for index, evio_file_name in enumerate(evio_file_names):
@@ -162,6 +84,7 @@ def main(args: argparse.Namespace) -> None:
     sys.exit(101)
 
   # loop over tasks, create task directories, and assign args.nmb_processes_per_task EVIO files to each task by linking them into the task's directory
+  #TODO move chopping of EVIO file list into separate function
   for task_index in range(int(nmb_tasks)):
     work_dir_task = f"RUN{run_label}/TASK{task_index:03d}"
     print(f"Creating working directory for task {task_index}: '{work_dir_task}'")
@@ -174,7 +97,7 @@ def main(args: argparse.Namespace) -> None:
 
   print("-------------------------------------------------------------------------------")
   # each task will run args.nmb_processes_per_task hd_root processes in parallel, each processing a single EVIO file using args.nmb_threads_per_process threads
-  task_cmd: List[str] = [
+  task_cmd: list[str] = [
     f"{args.launch_dir}/script_task.sh",  # task script to run inside a container on each NERSC node (all subsequent arguments are passed to this script)
     # required arguments
     f"{args.run_number}",               # arg 1:  Run number for this task
@@ -187,7 +110,7 @@ def main(args: argparse.Namespace) -> None:
   if args.jana_geometry_url_override is not None:
     task_cmd.append(f"{args.jana_geometry_url_override}")
 
-  srun_cmd: List[str] = [
+  srun_cmd: list[str] = [
     "srun",
     # f"--ntasks={nmb_tasks}",  # --ntasks is already specified in the `sbatch` command and srun will automatically use all allocated tasks
     "--kill-on-bad-exit=0",  # do not kill all tasks if one task fails; instead, let all tasks run to completion to capture their individual return codes
@@ -233,4 +156,5 @@ if __name__ == "__main__":
   parser.add_argument("--nmb_processes_per_task",     required = True,  help = "Number of processes per task",            type = int)
   parser.add_argument("--nmb_threads_per_process",    required = True,  help = "Number of threads per `hd_root` process", type = int)
   parser.add_argument("--swif_output_root",           required = True,  help = "Root of JLab directory tree, where output files will be copied to")
+  #TODO add --dry_run flag
   main(parser.parse_args())

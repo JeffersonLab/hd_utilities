@@ -10,12 +10,14 @@ import argparse
 import glob
 import os
 import re
+import time
 
 from utilities import (
   ensure_dict_value_exists,
-  get_config_dict_from_env_file,
+  print_command_line_arguments,
   read_run_numbers_from_file,
 )
+from utilities_dotenv import get_config_dict_from_env_file
 
 
 # subdirectory names and the file names they contain, i.e. subdir name -> (file base name, file type)
@@ -43,10 +45,13 @@ RECON_SUBDIR_INFO: dict[str, tuple[str, str]] = {
 
 
 def main(args: argparse.Namespace) -> None:
+  start_time = time.time()
+  print_command_line_arguments(args)
   launch_config: dict[str, str | None] = get_config_dict_from_env_file(args.launch_env_file)
   run_period           = ensure_dict_value_exists(launch_config, "RUN_PERIOD")  # e.g. 2022-05
   recon_version_label  = args.recon_version_label if args.recon_version_label else ensure_dict_value_exists(launch_config, "VER")  # e.g. ver02
   run_number_list_file = args.run_list if args.run_list else ensure_dict_value_exists(launch_config, "RUN_NUMBER_LIST_FILE")
+  #TODO turn this into command-line arguments with defaults from .env file, e.g. `--run_list` and `--recon_version_label`
   recon_data_root_dir  = f"/mss/halld/RunPeriod-{run_period}/recon/{recon_version_label}"
   raw_data_root_dir    = f"/mss/halld/RunPeriod-2022-05/rawdata"
 
@@ -84,6 +89,10 @@ def main(args: argparse.Namespace) -> None:
         expected_recon_file = f"{recon_data_run_dir}/{recon_file_name}"
         if not os.path.isfile(expected_recon_file):
           print(f"ERROR: expected recon file '{expected_recon_file}' does not exist")
+
+  print("-------------------------------------------------------------------------------")
+  elapsed_time_sec = int(time.time() - start_time)
+  print(f"Wall time consumed by script: {elapsed_time_sec // 60} min, {elapsed_time_sec % 60} sec")
 
 
 if __name__ == "__main__":

@@ -14,12 +14,12 @@ import time
 
 import rcdb
 
-from script_job import print_command_line_arguments
 from utilities import (
   ensure_dict_value_exists,
-  get_config_dict_from_env_file,
+  print_command_line_arguments,
   read_run_numbers_from_file,
 )
+from utilities_dotenv import get_config_dict_from_env_file
 
 class EvioFilesErrorKind(Enum):
   """Enum for failure modes when getting list of EVIO files."""
