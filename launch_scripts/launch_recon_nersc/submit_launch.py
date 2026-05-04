@@ -160,13 +160,12 @@ def main(args: argparse.Namespace) -> None:
         f"--output=job_{run_number:06d}_%j.out",  # write stdout and stderr of job to file named `job_<run number>_<job id>.out` into working directory of job
         "::",
         # job script to run at NERSC
-        #TODO this does not seem to work; swif just recognizes the first line after `::` as the job script and ignores the rest
-        # 'module load python/3.9;'
-        # 'PYTHONPATH='"${NERSC_LAUNCH_DIR}"':${PYTHONPATH}'
-        f"{nersc_launch_dir}/script_job.py",
+        f"{nersc_launch_dir}/script_job_wrapper.sh",  # sets up Python environment and runs the actual job script `script_job.py` with the given arguments
+          nersc_launch_dir,  # NERSC directory that contains `script_job.py`
+          # arguments passed to `script_job.py`
           f"--run_number={run_number}",
           f"--launch_dir={nersc_launch_dir_container}",  # path of launch directory inside container
-          f"--jana_config={nersc_launch_dir_container}/{jana_config}",
+          f"--jana_config={nersc_launch_dir_container}/{jana_config}",  # path of JANA config file inside container
           f"--jana_calib_context={jana_calib_context}",
           f"--halld_version_set_xml={halld_version_set_xml}",
           f"--nmb_processes_per_task={nersc_nmb_processes_per_task}",
@@ -191,6 +190,7 @@ def main(args: argparse.Namespace) -> None:
   print(f"Status of swif2 workflow '{swif_workflow}' after submitting all jobs; view jobs at https://scicomp.jlab.org/scicomp/swif/active")
   run_shell_cmd("swif2 list", dry_run = args.dry_run)
   run_shell_cmd(f"swif2 status {swif_workflow}", dry_run = args.dry_run)
+  print(f"Run 'swif2 run {swif_workflow}' to (re)start the paused workflow")
 
   print("-------------------------------------------------------------------------------")
   elapsed_time_sec = int(time.time() - start_time)
