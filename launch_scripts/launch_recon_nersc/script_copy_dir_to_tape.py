@@ -21,7 +21,7 @@ def get_transfer_file_paths(
   """Builds list of all files with local absolute paths and absolute destination paths."""
   # go into the directory to copy and get list of all files with relative paths in that directory
   os.chdir(src_dir_path)
-  relative_file_paths: list[str] = [path for path in glob.glob("**/*", recursive = True) if os.path.isfile(path)]
+  relative_file_paths: list[str] = sorted([path for path in glob.glob("**/*", recursive = True) if os.path.isfile(path)])
   # build list of pairs of absolute local file paths and absolute destination file paths
   file_transfer_paths: list[tuple[str, str]] = []
   for relative_file_path in relative_file_paths:

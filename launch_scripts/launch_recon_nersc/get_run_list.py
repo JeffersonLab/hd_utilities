@@ -134,7 +134,7 @@ def main(args: argparse.Namespace) -> None:
     with open(f"./{run_number_list_file}", mode = "x") as file:
       for run_number in sorted(evio_files_per_run.keys()):
         if len(evio_files_per_run[run_number]) > 0:
-          file.write(f"{run_number}\n")
+          file.write(f"{run_number:06d}\n")
   except FileExistsError:
     print(f"WARNING: file './{run_number_list_file}' already exists; skipping write")
 

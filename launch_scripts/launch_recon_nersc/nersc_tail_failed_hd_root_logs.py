@@ -57,7 +57,7 @@ def main(args: argparse.Namespace) -> None:
   print_command_line_arguments(args)
 
   # loop over files with hd_root return codes
-  hd_root_rc_files = glob.glob(f"{args.run_working_dir}/RUN??????/TASK???/FILE???/hd_root.rc")
+  hd_root_rc_files = sorted(glob.glob(f"{args.run_working_dir}/RUN??????/TASK???/FILE???/hd_root.rc"))
   if len(hd_root_rc_files) == 0:
     print(f"Error: No hd_root return code files found in '{args.run_working_dir}'")
     sys.exit(1)
