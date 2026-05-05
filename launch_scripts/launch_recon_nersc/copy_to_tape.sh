@@ -6,9 +6,10 @@
 #NOTE the preferred way to copy data to tape is to submit a dedicated swif2 job using `submit_copy_dir_to_tape.py`
 
 
-LAUNCH_ENV_FILE="${1:-launch.env}"  # path to .env file defining the configuration variables of the reconstruction launch
-echo "Reading production parameters from .env file '${LAUNCH_ENV_FILE}'"
-source "${LAUNCH_ENV_FILE}"
+LAUNCH_ENV_FILE="${1}"  # path to .env file defining the configuration variables of the reconstruction launch (required argument)
+source utilities.sh
+source_config_file "${LAUNCH_ENV_FILE}"
+
 RECON_SRC_DIR="ver02-perl.ready_for_tape.2/job_info"
 RECON_SRC_PATH="/lustre24/expphy/volatile/halld/offsite_prod/RunPeriod-2022-05/recon/${RECON_SRC_DIR}"  # absolute path to the prepared reconstruction directory, the content of which will be copied to tape
 SRC_PATH_REPLACE="/lustre24/expphy/volatile/halld/offsite_prod/RunPeriod-2022-05/recon/ver02-perl.ready_for_tape.2"  # part of path to replace by DEST_PATH_REPLACE
