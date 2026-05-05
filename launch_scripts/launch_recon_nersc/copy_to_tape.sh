@@ -30,5 +30,5 @@ JMIGRATE_CMD=(jmigrate
   -delete written
 )
 echo "Running ${JMIGRATE_CMD[*]}"
-"${JMIGRATE_CMD[@]}"
 echo "See logs in '${JMIRROR_LOG_DIR}'"
+"${JMIGRATE_CMD[@]}"
