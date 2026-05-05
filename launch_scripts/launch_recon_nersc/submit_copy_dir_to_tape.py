@@ -87,7 +87,7 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(
     description = "Submits a swif2 job that copies the full content of the given directory with prepared recon output to tape.",
   )
-  parser.add_argument("--launch_env_file", default = "./launch.env", help = "Path to .env file defining the configuration variables of the reconstruction launch; default: '%(default)s'")
-  parser.add_argument("--recon_src_path",  help = "Path to the prepared reconstruction directory, the content of which will be copied to tape")
+  parser.add_argument("launch_env_file",  help = "Path to .env file defining the configuration variables of the reconstruction launch")
+  parser.add_argument("--recon_src_path", help = "Path to the prepared reconstruction directory, the content of which will be copied to tape")
   args = parser.parse_args()
   main(args)

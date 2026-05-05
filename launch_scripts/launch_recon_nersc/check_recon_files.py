@@ -50,8 +50,8 @@ def main(args: argparse.Namespace) -> None:
   launch_config: dict[str, str | None] = get_config_dict_from_env_file(args.launch_env_file)
   run_period           = ensure_dict_value_exists(launch_config, "RUN_PERIOD")  # e.g. 2022-05
   recon_version_label  = args.recon_version_label if args.recon_version_label else ensure_dict_value_exists(launch_config, "VER")  # e.g. ver02
-  run_number_list_file = args.run_list if args.run_list else ensure_dict_value_exists(launch_config, "RUN_NUMBER_LIST_FILE")
-  #TODO turn this into command-line arguments with defaults from .env file, e.g. `--run_list` and `--recon_version_label`
+  run_number_list_file = args.override_run_list if args.override_run_list else ensure_dict_value_exists(launch_config, "RUN_NUMBER_LIST_FILE")
+  #TODO turn this into command-line arguments with defaults from .env file
   recon_data_root_dir  = f"/mss/halld/RunPeriod-{run_period}/recon/{recon_version_label}"
   raw_data_root_dir    = f"/mss/halld/RunPeriod-2022-05/rawdata"
 
@@ -97,10 +97,10 @@ def main(args: argparse.Namespace) -> None:
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(
-    description = "Generates list of runs to process for a given run period.",
+    description = "Checks completeness of files in directory, where final reconstruction output is stored at JLab.",
   )
-  parser.add_argument("--launch_env_file", default = "./launch.env", help = "Path to .env file defining the configuration variables of the reconstruction launch; default: '%(default)s'")
-  parser.add_argument("--run_list", help = "Path to run-number list file to use instead of the one defined in .env file")
+  parser.add_argument("launch_env_file",       help = "Path to .env file defining the configuration variables of the reconstruction launch")
+  parser.add_argument("--override_run_list",   help = "Path to run-number list file to use instead the one defined in .env file")
   parser.add_argument("--recon_version_label", help = "Reconstruction version label (e.g. `ver02`) to use instead of the one defined in .env file")
   args = parser.parse_args()
   main(args)

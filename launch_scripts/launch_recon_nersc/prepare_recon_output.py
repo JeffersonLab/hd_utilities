@@ -404,8 +404,8 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(
     description = "Checks completeness of files in swif2 output directory and creates directory structure in target directory that can be written to tape.",
   )
-  parser.add_argument("--launch_env_file", default = "./launch.env", help = "Path to .env file defining the configuration variables of the reconstruction launch; default: '%(default)s'")
-  parser.add_argument("--override_run_list", help = "Path to run-number list file to use instead of the one defined in the launch environment file")  #TODO allow also list of run lists
+  parser.add_argument("launch_env_file",     help = "Path to .env file defining the configuration variables of the reconstruction launch")
+  parser.add_argument("--override_run_list", help = "Path to run-number list file to use instead the one defined in .env file")  #TODO allow also list of run lists
   parser.add_argument("--mode", choices = ["check", "symlink", "move"], default = "check", help = "Operation mode: 'check': verify completeness of files, 'symlink': create symbolic links, or 'move' execute transfer commands; default: '%(default)s'")
   parser.add_argument("--dry_run", action = "store_true", help = "Preview file operations without performing them; default: false")
   parser.add_argument("--write_failed_evio_list", nargs = "?", const = "", default = None, help = "Write list of failed EVIO files to file, if no value is provided, write to './<workflow name>.failed_evio_files.list'; default: do not write file")
