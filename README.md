@@ -7,4 +7,4 @@ various stand-alone scripts and programs
 * RCDB_scripts - python script to dump all values from rcdb for a run or run range
 * rootlocks - scripts to check root locking in plugins
 * Vertex_scripts - C script to find z vertex resolution from simulated GlueX data
-* watch_epics - cron job scripts to monitor EPICS PVs
+* online_cron - cron job scripts to monitor EPICS PVs
