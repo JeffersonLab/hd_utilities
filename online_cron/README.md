@@ -3,13 +3,13 @@
 
 These are running on gluon153.  The first one has to run from the hdops account.
 
-# save\_monitoring\_plots
+## save\_monitoring\_plots
 
 - This waits until a specified number of events have been accumulated, and then uses the RootSpy macro to save the monitoring plots to the logbook.
 - NB the list of plots is hard-coded in the python script. 
 
 
-# watch\_epics
+## watch\_epics
 
 - This monitors EPICS to find when the daq is on with a radiator in place and beam on. 
 - If so, it makes a logbook entry if there is a PS converter and the PS rates are not changing over a short period (minutes).
@@ -17,7 +17,7 @@ These are running on gluon153.  The first one has to run from the hdops account.
 - Regardless of the above, it makes a logbook entry if any of the EPICS PVs used by RoboCDC are unavailable.
 
 
-# watch\_for\_frozen\_trigger
+## watch\_for\_frozen\_trigrate
 
 - This works like watch\_epics, but warns if the trigger rate is non-zero and not changing over a long time period (hours).
 - When running at low rates the trigger rate does apparently not change enough to update EPICS.
