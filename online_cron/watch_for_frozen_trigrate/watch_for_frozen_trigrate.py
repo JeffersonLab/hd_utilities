@@ -74,10 +74,8 @@ base_url += "&start=" + wavestart + "&end=" + wavestop + "&"
 #-----------------------------------------------------------------------------------
 
 def run_mystats(epicsfile) :
-
-    # SOL:i:BarPress2 is included for monitoring EPICS blackouts
     
-    pvlist = 'IBCAD00CRCUR6,hd:collimator_at_block,hd:radiator_at_home,hd:polarimeter_at_home,hd:converter_at_home,HD:coda:daq:status,HD:coda:LiveTime,HD:trig:rate:main'
+    pvlist = 'IBCAD00CRCUR6,HD:coda:daq:status,HD:coda:LiveTime,HD:trig:rate:main'
 
     if os.path.exists(epicsfile):
         os.remove(epicsfile)
@@ -137,6 +135,13 @@ def read_mystats(epicsfile) :
         else :
             mean = float(things[2])
 
+        if things[3] == 'N/A' :
+            max = -1
+        elif things[3] == '<undefined>' :
+            max = -1
+        else :
+            max = float(things[3])
+
         if things[4] == 'N/A' :
             sigma = -1
         elif things[4] == '<undefined>' :
@@ -144,40 +149,12 @@ def read_mystats(epicsfile) :
         else :
             sigma = float(things[4])        
 
-        dict = {pvname : { "min":min, "mean":mean, "sigma":sigma}}
+        dict = {pvname : { "min":min, "mean":mean, "max":max, "sigma":sigma}}
         dictlist.update(dict)
         
     return dictlist
 
 #-----------------------------------------------------------------------------------
-
-def check_goni(radfile) :
-    
-    # we have to check the radiator name to distinguish between goni-blank and goni-amo as both have radiator-id 0
-    # mystats returns N/A for the name, so use myget to see the most recent change
-
-    if os.path.exists(radfile):
-        os.remove(radfile)
-    
-    cmd = '/usr/csite/certified/bin/myget -c HD:GONI:RADIATOR_NAME -t0 > ' + radfile
-
-    os.system(cmd)
-    #    print('reading old epics file in check_goni')
-
-    allok = check_output_exists(radfile)
-
-    if not allok:              # create error logentry and assume goni is blank to avoid false alarms
-        issue_warning('err')
-        return False
-    
-    f = open(radfile,'r')
-    line = f.readline()
-    f.close()
-
-    if 'BLANK' in line or 'RETRACTED' in line:
-        return False
-    else :
-        return True
 
     
 #-----------------------------------------------------------------------------------    
@@ -220,23 +197,11 @@ def issue_warning(pv) :
 
     for line in lines:
         things = line.strip().split(" ")
-        #newline = f'{things[0]:22}' + ' '
         newline = '{:<23}'.format(things[0])
         for i in range(1,len(things)):
-            #newline = newline + f'{ things[i]:10}'
             newline = newline + '{:14}'.format(things[i])
         f2.write(newline + "\n")
 
-    f2.write("\n")
-
-    f2.write("Goniometer setting:\n\n")        
-   
-    f = open(radfile,'r')
-    lines = f.readlines()
-    f.close()
-
-    for line in lines:
-        f2.write(line)
 
     f2.write("\n\n")
 
@@ -308,34 +273,12 @@ dictlist = read_mystats(epicsfile)
 # eg {'IBCAD00CRCUR6': {'mean': 0.275, 'sigma': 0.641775}}
 # invalid mean or sigma, eg 'N/A', are set to -1
 
-# if we ever set up new PVs for this, they could be set to
-# 0 if the beam on or daq on tests fail
-# 1 if beam and daq are on and PV being checked is good
-# 0 if beam and daq are on but PV being checked is bad
-
-
-# check for epics outages. - N/A values will have been set to -1   (HD:GONI:RADIATOR_NAME not used as it always returns N/A if not 'BLANK')
-
 outages = ""
 
 for dict in dictlist:
     if dictlist[dict]['min'] < 0  or dictlist[dict]['mean'] < 0  or dictlist[dict]['sigma'] < 0 :
         outages = outages + dict + " "
 
-# if there is an outage, repeat the above <sleeptime> seconds later, in case the outaage is temporary 
-if outages != "" :
-    time.sleep(sleeptime)
-    run_mystats(epicsfile)
-    allok = check_output_exists(epicsfile)   # this issues a warning if the file is not there
-    if not allok:
-        exit()
-    dictlist = read_mystats(epicsfile)   
-    outages = ""
-
-    for dict in dictlist:
-        if dictlist[dict]['min'] < 0  or dictlist[dict]['mean'] < 0  or dictlist[dict]['sigma'] < 0 :
-            outages = outages + dict + " "
-        
 if outages != "" :
     time_since_warning = find_time_since_warning(outagefile,timeformat)
     
@@ -349,54 +292,36 @@ if outages != "" :
 
 # no outages were found, so check other data
 
-if dictlist['HD:coda:daq:status']['mean'] != 2 :   # daq status - HD:coda:daq:status = 2 for 'go'
+
+if dictlist['HD:coda:daq:status']['max'] != 2 :   # daq status - HD:coda:daq:status = 2 for 'go'
     if testing:
-        print('DAQ is not running')
+        print('DAQ was not in GO')
     exit()
 
     
-if dictlist['IBCAD00CRCUR6']['mean'] < beam_on_current :
+if dictlist['IBCAD00CRCUR6']['sigma'] == 0 :
     if testing:
-        print('Mean beam current is < ' + str(beam_on_current) + 'nA')
+        print('Beam current sigma was 0')
     exit()
 
-    
-if dictlist['hd:collimator_at_block']['mean'] == 1 :
-    if testing:
-        print('Collimator is blocking')
-    exit()
-
-
-# find out if a radiator is in place.
-# amo ladder is retracted if hd:radiator_at_home=1
-
-radiator_in_place = False
-if dictlist['hd:radiator_at_home']['min'] == 0 :    # using amo ladder at least part of the time
-    radiator_in_place = True
-else : 
-    radiator_in_place = check_goni(radfile)       # set false if blank or retracted, otherwise true
-
-
-if not radiator_in_place :
-    if testing:
-        print('no radiator')
-    exit()
-
-# now we have beam on and daq on and radiator in place
+# at some point the daq was on, and beam current was varying
 
 # the daq status PV get stuck when it crashes
 # don't complain about the trigger rates if the daq livetime is zero.
+# 
 
 daq_live = True
-if dictlist['HD:coda:LiveTime']['min'] == 0 :
+if dictlist['HD:coda:LiveTime']['mean'] == 0 :
     daq_live = False
 
 
-# now we have beam on and daq on (and alive) and radiator in place
+# now we have beam on and daq on (and alive) 
 
 trig_zero = False
 if dictlist['HD:trig:rate:main']['sigma'] == 0 and dictlist['HD:trig:rate:main']['mean'] > 0 :
     trig_zero = True
+    if testing:
+        print('trig rate sigma =0 and mean > 0')
         
 
 # here one could do caput to populate epics pv with 0 or 1 -------------
