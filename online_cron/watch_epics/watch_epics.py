@@ -335,7 +335,7 @@ for dict in dictlist:
 
 # if there is an outage, repeat the above <sleeptime> seconds later, in case the outaage is temporary 
 if outages != "" :
-    time.sleep(sleeptime)
+    sleep(sleeptime)
     run_mystats(epicsfile)
     allok = check_output_exists(epicsfile)   # this issues a warning if the file is not there
     if not allok:
