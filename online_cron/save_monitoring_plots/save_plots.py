@@ -37,7 +37,7 @@ outagefile = '_epics_outage_warning.txt'     # time of last mystats outage warni
 #list of plots to include
 include_histos = ' -H //BCAL_occupancy -H //CDC_occupancy -H //DIRC_occupancy -H //ECAL_occupancy -H //FCAL_occupancy -H //FDC_occupancy'
 include_histos += ' -H //FDC_P1_pseudo_occupancy  -H //FDC_P2_pseudo_occupancy  -H //FDC_P3_pseudo_occupancy  -H //FDC_P4_pseudo_occupancy -H //PS_occupancy -H //RF_TPOL_occupancy -H //ST_occupancy -H //TAGGER_occupancy -H //TOF_occupancy'
-include_histos += ' -H //HistMacro_Beam -H //HistMacro_Kinematics -H //HistMacro_NumHighLevelObjects -H //HistMacro_OnlineRF -H //HistMacro_PID -H //HistMacro_Trigger -H //HistMacro_Trigger_EnergyCorrelation -H //HistMacro_Vertex'
+include_histos += ' -H //HistMacro_Beam -H //HistMacro_Kinematics -H //HistMacro_NumHighLevelObjects -H //HistMacro_OnlineRF_LE -H //HistMacro_PID -H //HistMacro_Trigger -H //HistMacro_Trigger_EnergyCorrelation -H //HistMacro_Vertex'
 include_histos += ' -H //HistMacro_bad_hits -H //HistMacro_fa125_itrig -H //HistMacro_fa125_temp'
 
 
