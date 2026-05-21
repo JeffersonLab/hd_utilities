@@ -44,7 +44,8 @@ def main(args: argparse.Namespace) -> None:
   #TODO use run_shell_cmd from submit_launch.py
   workflow_status = subprocess.run(["swif2", "status", swif_workflow], stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL, check = False)
   if workflow_status.returncode == 0:
-    print(f"Workflow '{swif_workflow}' already exists; skipping creation")
+    print(f"Workflow '{swif_workflow}' already exists; pausing workflow")
+    subprocess.run(["swif2", "pause", swif_workflow], check = True)  # pausing workflow to allow inspection of submitted jobs before resuming
   else:
     print(f"Creating swif2 workflow '{swif_workflow}'")
     subprocess.run(["swif2", "create", swif_workflow], check = True)
