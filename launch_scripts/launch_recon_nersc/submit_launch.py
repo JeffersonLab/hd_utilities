@@ -44,6 +44,7 @@ def run_shell_cmd(
   cmd:              str,
   echo_cmd:         bool = False,  # whether to print the command before executing it
   dry_run:          bool = False,  # if True, only print the command without executing it
+  check:            bool = True,   # whether to raise an exception if the command returns a non-zero exit code
   **kwargs_for_run: Any,           # additional keyword arguments forwarded to subprocess.run()
 ) -> bool:
   """Runs the given command using subprocess.run() and returns True if the command succeeds."""
@@ -51,7 +52,7 @@ def run_shell_cmd(
     print(f"+ {cmd}")
   if dry_run:
     return True
-  return subprocess.run(cmd, shell = True, **kwargs_for_run).returncode == 0
+  return subprocess.run(cmd, shell = True, check = check, **kwargs_for_run).returncode == 0
 
 
 def main(args: argparse.Namespace) -> None:
@@ -153,6 +154,12 @@ def main(args: argparse.Namespace) -> None:
          "--ntasks-per-node=1",
         f"--ntasks={nersc_nmb_tasks}",
         f"--cpus-per-task={nersc_max_threads_per_task}",
+        #  "--qos=debug",
+        #  "--time=10:00",
+        #  "--nodes=1",
+        #  "--ntasks-per-node=1",
+        #  "--ntasks=1",
+        #  "--cpus-per-task=1",
         #  "--exclusive",  # allocated nodes cannot be shared with other jobs/users  #TODO clarify whether this is beneficial or not; swif2 also has `-exclusive` option that can be set when creating the workflow; is it redundant to set it in both places?
         f"--image={nersc_container_image}",
         f"--volume={nersc_launch_dir}:{nersc_launch_dir_container}",  # map `${NERSC_LAUNCH_DIR}` on host to `${NERSC_LAUNCH_DIR_CONTAINER}` in container
