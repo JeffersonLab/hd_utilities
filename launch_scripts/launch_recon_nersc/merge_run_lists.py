@@ -8,7 +8,7 @@ import argparse
 
 
 def main(args: argparse.Namespace) -> None:
-  run_numbers = set()
+  run_numbers: set[int] = set()
   print(f"Merging run numbers from {len(args.list_file_paths)} files into file '{args.merged_list_path}'")
   for file_path in args.list_file_paths:
     print(f"Reading run numbers from '{file_path}'")
@@ -18,7 +18,7 @@ def main(args: argparse.Namespace) -> None:
   print(f"Writing merged run numbers to '{args.merged_list_path}'")
   with open(args.merged_list_path, "w") as out_file:
     for run_number in sorted(run_numbers):
-      out_file.write(f"{run_number}\n")
+      out_file.write(f"{run_number:06d}\n")
 
 
 if __name__ == "__main__":
