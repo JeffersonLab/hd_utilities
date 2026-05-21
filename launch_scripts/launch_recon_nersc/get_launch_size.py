@@ -118,6 +118,9 @@ def main(args: argparse.Namespace) -> None:
           f"    {total_size_gb:.0f} GB of raw data in {total_nmb_files} EVIO files\n"
           f"    processed by {total_nmb_nodes} NERSC nodes,\n"
           f"    out of which {total_nmb_nodes_unused:.1f} nodes are unused (= {total_nmb_nodes_unused / total_nmb_nodes:.1%} of total nodes)")
+    if args.job_wall_time_estimate is not None:
+      total_node_hours = total_nmb_nodes * args.job_wall_time_estimate / 60.0
+      print(f"    this corresponds to {total_node_hours:.0f} node-hours at an estimated {args.job_wall_time_estimate} minutes of wall time per job")
 
   print("-------------------------------------------------------------------------------")
   plot_evio_file_size(run_numbers, raw_data_root, swif_workflow)
@@ -134,7 +137,8 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(
     description = "Estimates the size of the raw data for the reconstruction launch and the number of NERSC nodes required to process them.",
   )
-  parser.add_argument("launch_env_file",     help = "Path to .env file defining the configuration variables of the reconstruction launch")
-  parser.add_argument("--override_run_list", help = "Path to run-number list file to use instead the one defined in .env file")
+  parser.add_argument("launch_env_file",                      help = "Path to .env file defining the configuration variables of the reconstruction launch")
+  parser.add_argument("--override_run_list",                  help = "Path to run-number list file to use instead the one defined in .env file")
+  parser.add_argument("--job_wall_time_estimate", type = int, help = "Estimated wall time for job in minutes; if provided, the script will calculate the total node hours required")
   args = parser.parse_args()
   main(args)
