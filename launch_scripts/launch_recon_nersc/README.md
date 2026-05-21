@@ -10,15 +10,17 @@
   * Creates and runs swif2 workflow at JLab Farm
   * For each run number: creates and executes submit_job_for_RUN<run number>.sh script
   |
- 1|-> submit_job_for_RUN<run number>.sh
+ 1|-> submit_job_for_RUN<run number>.sh  <--  submits job
       |
      2|-> swif2 add-job (submits job to JLab Farm queue) + sbatch (submits job to NERSC queue)
           |
-         3|-> @NERSC: script_job.py  <--  job script
+         3|-> @NERSC: script_job_wrapper.sh  <--  sets up Python environment
               |
-             4|-> @NERSC: srun shifter script_task.sh  <-- task script run from inside a container
-                  |
-                 5|-> @NERSC: hd_root <-- process
+             4|-> @NERSC: script_job.py  <--  actual job script
+                   |
+                  5|-> @NERSC: srun shifter script_task.sh  <-- runs task script run in a container on several NERSC nodes
+                        |
+                       6|-> @NERSC: hd_root <-- processes data
 ```
 
 ## Used resources

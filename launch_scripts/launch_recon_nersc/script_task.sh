@@ -5,6 +5,7 @@ set -o xtrace        # print commands and their arguments as they are executed, 
 ulimit -c unlimited  # allow core dumps with no size limit
 SECONDS=0  # shell variable that counts seconds since it was initialized; used to measure elapsed time of the script
 
+#TODO convert to Python
 # Slurm task script that runs an `hd_root` process for each EVIO file
 # that it finds in its working directory.
 #

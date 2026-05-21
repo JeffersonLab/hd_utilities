@@ -135,6 +135,8 @@ def main(args: argparse.Namespace) -> None:
   # returned.
 
   print("-------------------------------------------------------------------------------")
+  #TODO move part of post-processing of output files here
+  #     leave only processing of the log files to the script run at JLab
   define_swif2_output_files(args.run_number, args.swif_output_root)
 
   print("-------------------------------------------------------------------------------")

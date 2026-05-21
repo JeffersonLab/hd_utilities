@@ -41,6 +41,7 @@ def main(args: argparse.Namespace) -> None:
   # print(f"Data volume to copy: {recon_dir_size_TB:.3f} TB")
 
   # create swif2 workflow
+  #TODO use run_shell_cmd from submit_launch.py
   workflow_status = subprocess.run(["swif2", "status", swif_workflow], stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL, check = False)
   if workflow_status.returncode == 0:
     print(f"Workflow '{swif_workflow}' already exists; skipping creation")
