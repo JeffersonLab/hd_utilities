@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 from dataclasses import dataclass
 from enum import Enum, auto
+import functools
 import glob
 import os
 import time
@@ -20,6 +21,11 @@ from utilities import (
   read_run_numbers_from_file,
 )
 from utilities_dotenv import get_config_dict_from_env_file
+
+
+# always flush print() to reduce garbling of log files due to buffering
+print = functools.partial(print, flush = True)
+
 
 class EvioFilesErrorKind(Enum):
   """Enum for failure modes when getting list of EVIO files."""
