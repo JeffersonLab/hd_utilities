@@ -24,7 +24,6 @@ import argparse
 import functools
 import glob
 import os
-import shlex
 import subprocess
 import sys
 import time
@@ -33,20 +32,12 @@ from utilities import (
   define_swif2_output_files,
   print_command_line_arguments,
   print_python_env,
+  write_env_to_file,
 )
 
 
 # always flush print() to reduce garbling of log files due to buffering
 print = functools.partial(print, flush = True)
-
-
-def write_env_to_file(output_file_name: str = "./env") -> None:
-  """Writes environment variables in alphabetical order into given file."""
-  with open(output_file_name, "w", encoding = "utf-8") as file:
-    for env_var_name in sorted(os.environ.keys()):
-      env_var_value = os.environ[env_var_name]
-      file.write(f"{env_var_name}={shlex.quote(env_var_value)}\n")  # ensure bash-safe quoting of the value
-  print(f"Wrote environment variables to '{output_file_name}'")
 
 
 def main(args: argparse.Namespace) -> None:
@@ -98,6 +89,7 @@ def main(args: argparse.Namespace) -> None:
   print("-------------------------------------------------------------------------------")
   # each task will run args.nmb_processes_per_task hd_root processes in parallel, each processing a single EVIO file using args.nmb_threads_per_process threads
   task_cmd: list[str] = [
+    f'PYTHONPATH="{args.launch_dir}:${{PYTHONPATH}}"',  # set Python environment
     f"{args.launch_dir}/script_task.sh",  # task script to run inside a container on each NERSC node (all subsequent arguments are passed to this script)
     # required arguments
     f"{args.run_number}",               # arg 1:  Run number for this task

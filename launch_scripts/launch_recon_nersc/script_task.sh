@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # set -o nounset     # exit when trying to use an uninitialized variable; gxenv seems to require some variables to be unset, so we cannot use this option
+set -o errexit       # exit when any command fails
 set -o verbose       # print shell input lines as they are read, i.e. before any expansion
 set -o xtrace        # print commands and their arguments as they are executed, i.e. after expansion and without I/O redirection
 ulimit -c unlimited  # allow core dumps with no size limit
@@ -32,8 +33,6 @@ SECONDS=0  # shell variable that counts seconds since it was initialized; used t
 # arg 4:  GlueX software version set XML file
 # arg 5:  number of threads each `hd_root` process should use
 # arg 6:  optional JANA geometry URL override
-
-set -o errexit  # exit when any command fails
 
 echo "--- Get task script command-line arguments"
 RUN_NUMBER="${1}"

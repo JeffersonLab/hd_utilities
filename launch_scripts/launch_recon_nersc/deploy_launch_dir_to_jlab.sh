@@ -24,6 +24,7 @@ then
 fi
 TMP=$(mktemp)  # temporary file to hold list of files to copy
 git ls-files -z >| "${TMP}"  # get NUL-delimited list of all files tracked by git (safe for spaces/newlines)
+#TODO print warning message if any of the following files are not found
 find . -maxdepth 1 -name "${RUN_NUMBER_LIST_FILE}" -print0 >> "${TMP}"
 find . -maxdepth 1 -name "${JANA_CONFIG}" -print0 >> "${TMP}"
 find . -maxdepth 1 -name "${LAUNCH_ENV_FILE}" -print0 >> "${TMP}"

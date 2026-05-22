@@ -7,6 +7,7 @@ import glob
 import os
 from pathlib import Path
 import re
+import shlex
 import subprocess
 import sys
 from typing import TypeVar
@@ -27,6 +28,15 @@ def print_command_line_arguments(args: argparse.Namespace) -> None:
     print(f"Using launch scripts from git commit hash: {deployed_git_hash}")
   #TODO add case where the script is run from the git repo
   print("-------------------------------------------------------------------------------")
+
+
+def write_env_to_file(output_file_name: str = "./env") -> None:
+  """Writes environment variables in alphabetical order into given file."""
+  with open(output_file_name, "w", encoding = "utf-8") as file:
+    for env_var_name in sorted(os.environ.keys()):
+      env_var_value = os.environ[env_var_name]
+      file.write(f"{env_var_name}={shlex.quote(env_var_value)}\n")  # ensure bash-safe quoting of the value
+  print(f"Wrote environment variables to '{output_file_name}'")
 
 
 def print_python_env() -> None:
