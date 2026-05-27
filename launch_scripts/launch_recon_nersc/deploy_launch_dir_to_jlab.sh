@@ -2,6 +2,7 @@
 
 # copies the launch directory to official location for production user account
 
+#TODO use consistent naming scheme for JLAB- and NERSC-only scripts
 
 THIS_SCRIPT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"  # get the directory of this script
 LAUNCH_ENV_FILE="${1}"  # path to .env file defining the configuration variables of the reconstruction launch
