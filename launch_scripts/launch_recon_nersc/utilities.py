@@ -111,8 +111,9 @@ def get_hd_root_return_code(hd_root_rc_file_path: str) -> int | None:
 
 
 def get_file_transfer_paths(
-  run_number:       int,
-  swif_output_root: str,
+  run_number:         int,
+  swif_output_root:   str,
+  transfer_all_files: bool = False,  # if True, do not filter out any files
 ) -> list[tuple[str, str]]:
   """Gets list of local relative paths w.r.t. current directory and absolute remote destination paths of all output files that should be transferred back to JLab."""
   # this function assumes that the current directory is the working directory of the job
@@ -127,13 +128,14 @@ def get_file_transfer_paths(
     # loop over file dirs
     file_dirs: list[str] = sorted(glob.glob(f"{task_dir}/FILE???"))
     for file_dir in file_dirs:
-      hd_root_return_code = get_hd_root_return_code(f"{file_dir}/hd_root.rc")
-      if hd_root_return_code is None or hd_root_return_code != 0:
-        # do not copy hd_root output files for failed hd_root processes; but try to recover debug info
-        print(f"WARNING: skipping hd_root output files in '{file_dir}' because hd_root return code is {hd_root_return_code} != 0")
-        relative_output_paths += [f"{file_dir}/hd_root.err", f"{file_dir}/hd_root.out", f"{file_dir}/hd_root.rc"]  # transfer hd_root log files for debugging
-        relative_output_paths += sorted(glob.glob(f"{file_dir}/core.hd_root*"))  # transfer core files for debugging
-        continue
+      if not transfer_all_files:
+        hd_root_return_code = get_hd_root_return_code(f"{file_dir}/hd_root.rc")
+        if hd_root_return_code is None or hd_root_return_code != 0:
+          # do not copy hd_root output files for failed hd_root processes; but try to recover debug info
+          print(f"WARNING: skipping hd_root output files in '{file_dir}' because hd_root return code is {hd_root_return_code} != 0")
+          relative_output_paths += [f"{file_dir}/hd_root.err", f"{file_dir}/hd_root.out", f"{file_dir}/hd_root.rc"]  # transfer hd_root log files for debugging
+          relative_output_paths += sorted(glob.glob(f"{file_dir}/core.hd_root*"))  # transfer core files for debugging
+          continue
       relative_output_paths += sorted(glob.glob(f"{file_dir}/*"))  # include all items in file dir
   file_transfer_paths: list[tuple[str, str]] = []  # list of pairs of relative local file paths and absolute remote destination file paths
   for relative_output_path in relative_output_paths:
@@ -150,11 +152,12 @@ def get_file_transfer_paths(
 
 
 def define_swif2_output_files(
-  run_number:       int,
-  swif_output_root: str,
+  run_number:         int,
+  swif_output_root:   str,
+  transfer_all_files: bool = False,  # if True, do not filter out any files
 ) -> None:
   """Registers all output files with swif2 for transfer back to JLab."""
-  file_transfer_paths: list[tuple[str, str]] = get_file_transfer_paths(run_number, swif_output_root)
+  file_transfer_paths: list[tuple[str, str]] = get_file_transfer_paths(run_number, swif_output_root, transfer_all_files)
   print(f"Defining {len(file_transfer_paths)} output files for transfer back to JLab")
   for local_output_file_path, remote_output_file_path in file_transfer_paths:
     output_cmd = f"./.swif/swif2 output '{local_output_file_path}' '{remote_output_file_path}'"  #TODO for some reason, swif2 is not in path
