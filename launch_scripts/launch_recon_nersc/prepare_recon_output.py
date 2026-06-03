@@ -38,25 +38,40 @@ print = functools.partial(print, flush = True)
 # map subdirectory names in the final directory layout to the files
 # they contain, i.e. subdir name -> (file base name, file type)
 #NOTE in most cases, subdir name == file base name
+# # 2022-05_ver02
+# RECON_SUBDIR_BASENAME_MAP: dict[str, tuple[str, str]] = {
+#   # EVIO files
+#   "cpp_2c" :                 ("cpp_2c",                 "evio"),
+#   "epem_selection" :         ("epem_selection",         "evio"),  # new w.r.t ver01
+#   "npp_2g" :                 ("npp_2g",                 "evio"),
+#   "npp_2pi0" :               ("npp_2pi0",               "evio"),
+#   "pippim_selection" :       ("pippim_selection",       "evio"),
+#   "pippim_selection" :       ("pippim_selection",       "evio"),
+#   # HDDM files
+#   "converted_random" :       ("converted_random",       "hddm"),
+#   "REST" :                   ("dana_rest",              "hddm"),
+#   # ROOT files
+#   "hists" :                  ("hd_root",                "root"),
+#   "syncskim" :               ("syncskim",               "root"),  # new w.r.t ver01
+#   "tree_bcal_hadronic_eff" : ("tree_bcal_hadronic_eff", "root"),
+#   "tree_fcal_hadronic_eff" : ("tree_fcal_hadronic_eff", "root"),
+#   "tree_PSFlux" :            ("tree_PSFlux",            "root"),
+#   "tree_tof_eff" :           ("tree_tof_eff",           "root"),
+#   "tree_TPOL" :              ("tree_TPOL",              "root"),
+#   "tree_TS_scaler" :         ("tree_TS_scaler",         "root"),
+# }
+# 2021-11_ver05
 RECON_SUBDIR_BASENAME_MAP: dict[str, tuple[str, str]] = {
   # EVIO files
-  "cpp_2c" :                 ("cpp_2c",                 "evio"),
-  "epem_selection" :         ("epem_selection",         "evio"),  # new w.r.t ver01
-  "npp_2g" :                 ("npp_2g",                 "evio"),
-  "npp_2pi0" :               ("npp_2pi0",               "evio"),
-  "pippim_selection" :       ("pippim_selection",       "evio"),
+  "ps" :               ("ps",               "evio"),
   # HDDM files
-  "converted_random" :       ("converted_random",       "hddm"),
-  "REST" :                   ("dana_rest",              "hddm"),
+  "converted_random" : ("converted_random", "hddm"),
+  "REST" :             ("dana_rest",        "hddm"),
   # ROOT files
-  "hists" :                  ("hd_root",                "root"),
-  "syncskim" :               ("syncskim",               "root"),  # new w.r.t ver01
-  "tree_bcal_hadronic_eff" : ("tree_bcal_hadronic_eff", "root"),
-  "tree_fcal_hadronic_eff" : ("tree_fcal_hadronic_eff", "root"),
-  "tree_PSFlux" :            ("tree_PSFlux",            "root"),
-  "tree_tof_eff" :           ("tree_tof_eff",           "root"),
-  "tree_TPOL" :              ("tree_TPOL",              "root"),
-  "tree_TS_scaler" :         ("tree_TS_scaler",         "root"),
+  "hists" :            ("hd_root",          "root"),
+  "tree_PSFlux" :      ("tree_PSFlux",      "root"),
+  "tree_TPOL" :        ("tree_TPOL",        "root"),
+  "tree_TS_scaler" :   ("tree_TS_scaler",   "root"),
 }
 # construct reverse map: file base name -> (subdir name, file type)
 RECON_BASENAME_SUBDIR_MAP: dict[str, tuple[str, str]] = {
@@ -180,19 +195,20 @@ class FileTransferMapGenerator:
   ) -> None:
     """Processes log files in the given job directory and appends to the map of original file paths to new file paths."""
     log_file_names: list[str] = [
-      # f"job_{run_number}.diskquota",
-      f"job_{self.run_number}.env",
-      f"job_{self.run_number}.hostname",
-      f"job_{self.run_number}.mounts",
-      f"srun_{self.run_number}.rc",
+      # f"job_{self.run_number:06d}.diskquota",
+      f"job_{self.run_number:06d}.env",
+      f"job_{self.run_number:06d}.hostname",
+      f"job_{self.run_number:06d}.mounts",
+      f"srun_{self.run_number:06d}.rc",
     ]
     # add main job log file that has name `job_<run number>_<job id>.out`; use glob since we don't know the job ID at this stage
-    files: list[str] = sorted(glob.glob(f"{self.job_dir}/job_{self.run_number}_*.out"))
-    assert len(files) == 1, f"File pattern '{self.job_dir}/job_{self.run_number}_*.out' did not return exactly one result: {files}"
+    job_log_file_name_pattern = f"{self.job_dir}/job_{self.run_number:06d}_*.out"
+    files: list[str] = sorted(glob.glob(job_log_file_name_pattern))
+    assert len(files) == 1, f"File pattern '{job_log_file_name_pattern}' did not return exactly one result: {files}"
     log_file_names.append(os.path.basename(files[0]))
     # add task log files
     for task_index in range(nmb_tasks):
-      log_file_names.append(f"task_{self.run_number}_{task_index}.out")
+      log_file_names.append(f"task_{self.run_number:06d}_{task_index}.out")
     self.process_log_files(log_file_names, self.job_dir, job_info_dir)
 
   def process_task_log_files(
