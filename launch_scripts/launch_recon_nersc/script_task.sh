@@ -115,9 +115,9 @@ cat /proc/cpuinfo >| ./node.cpuinfo
 
 echo "--- Find EVIO files in current directory:"
 shopt -s nullglob  # ensure that array is empty if no files match the pattern
-evio_file_paths=("${WORK_DIR_TASK}"/hd_rawdata_??????_???.evio)
+EVIO_FILE_PATHS=("${WORK_DIR_TASK}"/hd_rawdata_??????_???.evio)
 shopt -u nullglob
-echo "Found ${#evio_file_paths[@]} EVIO files"
+echo "Found ${#EVIO_FILE_PATHS[@]} EVIO files"
 
 echo "--- Run hd_root process in parallel for each EVIO file in current directory"
 #TODO evaluate using GNU parallel for this
@@ -126,16 +126,16 @@ echo "--- Run hd_root process in parallel for each EVIO file in current director
 # This is important since individual return codes are not captured by
 # slurm.
 set +o errexit
-process_ids=()    # array to hold process IDs of background hd_root processes
-rc_file_names=()  # array to hold file names where return codes of hd_root processes are written
-for evio_file_path in "${evio_file_paths[@]}"
+PROCESS_IDS=()    # array to hold process IDs of background hd_root processes
+RC_FILE_NAMES=()  # array to hold file names where return codes of hd_root processes are written
+for EVIO_FILE_PATH in "${EVIO_FILE_PATHS[@]}"
 do
-  echo "--- Process EVIO file '${evio_file_path}':"
-  ls -lL "${evio_file_path}"
+  echo "--- Process EVIO file '${EVIO_FILE_PATH}':"
+  ls -lL "${EVIO_FILE_PATH}"
   # get run and file numbers from EVIO file names; assumes file names are of the form `hd_rawdata_XXXXXX_YYY.evio`
-  evio_file_name="$(basename "${evio_file_path}")"
-  file_number="${evio_file_name:18:3}"  # extract 3-digit file number
-  SUBDIR_PROCESS="FILE${file_number}"
+  EVIO_FILE_NAME="$(basename "${EVIO_FILE_PATH}")"
+  FILE_NUMBER="${EVIO_FILE_NAME:18:3}"  # extract 3-digit file number
+  SUBDIR_PROCESS="FILE${FILE_NUMBER}"
   WORK_DIR_PROCESS="${WORK_DIR_TASK}/${SUBDIR_PROCESS}"
   mkdir --verbose --parents "${WORK_DIR_PROCESS}"
   cd "${WORK_DIR_PROCESS}"
@@ -149,42 +149,42 @@ do
     -PNTHREADS="${NMB_THREADS_PER_PROCESS}"  # override number of threads to use
     -Pjana:calib_context="${JANA_CALIB_CONTEXT}"  # override calibration context from local variable
     --loadconfigs "${JANA_CONFIG}"
-    "${evio_file_path}"
+    "${EVIO_FILE_PATH}"
   )
   echo "--- Run" "${HD_ROOT_CMD[@]}"
   # start hd_root process in background and redirect stdout and stderr to files
   "${HD_ROOT_CMD[@]}" 1> "hd_root.out" 2> "hd_root.err" &
-  process_ids+=("${!}")  # capture the background process ID and store it in an array
-  rc_file_names+=("${SUBDIR_PROCESS}/hd_root.rc")  # file path relative to `${WORK_DIR_TASK}` where return code of this hd_root process will be written to
-  echo "--- hd_root process with PID ${!} processes EVIO file '${evio_file_path}'"
+  PROCESS_IDS+=("${!}")  # capture the background process ID and store it in an array
+  RC_FILE_NAMES+=("${SUBDIR_PROCESS}/hd_root.rc")  # file path relative to `${WORK_DIR_TASK}` where return code of this hd_root process will be written to
+  echo "--- hd_root process with PID ${!} processes EVIO file '${EVIO_FILE_PATH}'"
 done
 cd "${WORK_DIR_TASK}"
 
 echo "--- Wait for all background hd_root processes to complete and capture their return codes"
-max_return_code=0  # variable to hold the maximum return code among all hd_root processes; this will be the return code of the task script, which is then forwarded to the job script
-for process_index in "${!process_ids[@]}"
+MAX_RETURN_CODE=0  # variable to hold the maximum return code among all hd_root processes; this will be the return code of the task script, which is then forwarded to the job script
+for PROCESS_INDEX in "${!PROCESS_IDS[@]}"
 do
-  pid="${process_ids[${process_index}]}"
-  wait "${pid}"  # wait for the process to finish
-  return_code="${?}"  # capture the return code of the process
-  echo "hd_root process ${process_index} with PID ${pid} has return code ${return_code}" >| "${rc_file_names[${process_index}]}"
-  if (( return_code >= 128 ))
+  PID="${PROCESS_IDS[${PROCESS_INDEX}]}"
+  wait "${PID}"  # wait for the process to finish
+  RETURN_CODE="${?}"  # capture the return code of the process
+  echo "hd_root process ${PROCESS_INDEX} with PID ${PID} has return code ${RETURN_CODE}" >| "${RC_FILE_NAMES[${PROCESS_INDEX}]}"
+  if (( RETURN_CODE >= 128 ))
   then
-    sig=$(( return_code - 128 ))  #TODO for return code 128 this would result in 0
-    echo "hd_root process ${process_index} with PID ${pid} was terminated by signal ${sig}"
+    SIG=$(( RETURN_CODE - 128 ))  #TODO for return code 128 this would result in 0
+    echo "hd_root process ${PROCESS_INDEX} with PID ${PID} was terminated by signal ${SIG}"
   fi
-  if [[ "${return_code}" -gt "${max_return_code}" ]]  # determine the maximum return code among all hd_root processes
+  if [[ "${RETURN_CODE}" -gt "${MAX_RETURN_CODE}" ]]  # determine the maximum return code among all hd_root processes
   then
-    max_return_code="${return_code}"
+    MAX_RETURN_CODE="${RETURN_CODE}"
   fi
 done
 echo "--- Status of task's working directory '$(pwd -P)' at end of task script:"
 ls -lR .
 
 # avoid returning return codes reserved by shell
-if (( max_return_code >= 128 ))
+if (( MAX_RETURN_CODE >= 128 ))
 then
-  max_return_code=$(( max_return_code - 128 ))
+  MAX_RETURN_CODE=$(( MAX_RETURN_CODE - 128 ))
 fi
-echo "--- Task script finished with maximum return code ${max_return_code} among all hd_root processes"
-exit "${max_return_code}"  # forward the maximum return code among all `hd_root` processes to the job script  #TODO maybe it would be more useful to return number of failed processes?
+echo "--- Task script finished with maximum return code ${MAX_RETURN_CODE} among all hd_root processes"
+exit "${MAX_RETURN_CODE}"  # forward the maximum return code among all `hd_root` processes to the job script  #TODO maybe it would be more useful to return number of failed processes?
