@@ -59,7 +59,19 @@ echo "--- Use halld_recon at '${HALLD_RECON_HOME}'"
 
 SWIF_INPUT_ROOT="/pscratch/sd/j/jlab/swif/input"  #TODO propagate info from .env file
 echo "--- swif2 input directory: '${SWIF_INPUT_ROOT}':"
+#NOTE For unknown reasons, the `ls` command below may yield return
+#     code 1 because it cannot list some files in the swif input
+#     directory, causing the whole task to fail before it can do any
+#     work.  In these rare cases `ls` yields, for example,
+#     ...
+#     -rw-r--r-- 1 jlab m3120  8555053880 Jun  1 14:04 111646692
+#     -????????? ? ?    ?               ?            ? 111646763
+#     ...
+#     Since these unlistable files are not related to the task, we
+#     ignore failures of the command below.
+set +o errexit  # disable exiting on error
 ls -l "${SWIF_INPUT_ROOT}"
+set -o errexit  # reenable exiting on error
 WORK_DIR_JOB=$(pwd -P)
 echo "--- Working directory of job: '${WORK_DIR_JOB}':"
 ls -l "${WORK_DIR_JOB}"
