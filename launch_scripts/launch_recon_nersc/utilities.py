@@ -165,9 +165,8 @@ def define_swif2_output_files(
     subprocess.run(output_cmd, shell = True, check = False)
 
 
-#TODO is this needed?
 def get_file_number_from_evio_file_name(evio_file_path: str) -> int | None:
-  """Extracts the 3-digit file number from the given EVIO file name, or returns `None` if it cannot be extracted."""
+  """Extracts the 3-digit file number from the given EVIO file name, or returns `None` if it cannot be extracted.  Assumes file name pattern 'hd_rawdata_XXXXXX_YYY*'."""
   evio_file_name = os.path.basename(evio_file_path)
   if len(evio_file_name) < 21:
     print(f"WARNING: EVIO file name '{evio_file_path}' is too short to contain a valid file number; expected at least 21 characters; ignoring")
@@ -177,5 +176,5 @@ def get_file_number_from_evio_file_name(evio_file_path: str) -> int | None:
     file_number = int(file_number_str)
     return file_number
   except ValueError:
-    print(f"WARNING: expected file name pattern 'hd_rawdata_XXXXXX_YYY*'; could not extract 3-digit file number YYY from EVIO file name '{evio_file_path}'; ignoring")
+    print(f"WARNING: could not extract 3-digit file number YYY from EVIO file name '{evio_file_path}' assuming file name pattern 'hd_rawdata_XXXXXX_YYY*'")
     return None

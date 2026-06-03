@@ -47,7 +47,7 @@ def main(args: argparse.Namespace) -> None:
   # find attempt subdirectory to process and cd into it
   swif_attempt_dirs = [entry for entry in sorted(glob.glob("*")) if os.path.isdir(entry)]
   if len(swif_attempt_dirs) == 0:
-    print(f"Error: No directories with swif attempts found in '{run_working_dir}'")
+    print(f"WARNING: No directories with swif attempts found in '{run_working_dir}'")
     sys.exit(1)
   if args.swif_attempt_id is not None:
     # find matching swif attempt dir
@@ -59,11 +59,11 @@ def main(args: argparse.Namespace) -> None:
         os.chdir(swif_attempt_dir)
         break
     if not found_matching_swif_attempt_dir:
-      print(f"Error: No matching swif attempt directory for ID {args.swif_attempt_id} found in '{run_working_dir}'")
+      print(f"WARNING: No matching swif attempt directory for ID {args.swif_attempt_id} found in '{run_working_dir}'")
       sys.exit(1)
   else:
     if len(swif_attempt_dirs) > 1:
-      print(f"Warning: Multiple directories with swif attempts found in '{run_working_dir}': {swif_attempt_dirs}; using the last one")
+      print(f"WARNING: Multiple directories with swif attempts found in '{run_working_dir}': {swif_attempt_dirs}; using the last one")
     os.chdir(swif_attempt_dirs[-1])
   print(f"Processing swif attempt directory '{os.getcwd()}'")
 
