@@ -84,6 +84,7 @@ def main(args: argparse.Namespace) -> None:
   swif_workflow            = ensure_dict_value_exists(launch_config, "SWIF_WORKFLOW")
   swif_site                = ensure_dict_value_exists(launch_config, "SWIF_SITE")
   swif_max_concurrent_jobs = ensure_dict_value_exists(launch_config, "SWIF_MAX_CONCURRENT_JOBS")
+  #TODO move this code into a separate function and reuse in submit_launch.py
   if run_shell_cmd(f'swif2 status "{swif_workflow}"', check = False, stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL, dry_run = args.dry_run):
     print(f"Workflow '{swif_workflow}' already exists; pausing workflow")
     run_shell_cmd(f'swif2 pause "{swif_workflow}"', dry_run = args.dry_run)  # pausing workflow to allow inspection of submitted jobs before resuming
