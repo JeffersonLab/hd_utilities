@@ -11,6 +11,7 @@ import subprocess
 import sys
 import time
 
+from prepare_recon_output import RECON_SUBDIR_BASENAME_MAP
 from utilities import (
   ensure_dict_value_exists,
   print_command_line_arguments,
@@ -53,9 +54,11 @@ def main(args: argparse.Namespace) -> None:
   this_script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
   recon_dir_name  = os.path.basename(recon_src_path)
   # submit a separate job for each subdirectory in the recon directory to limit number of files per job to less than about 10k  #TODO Chris is working on extending swif2 to handle larger numbers of files per job
-  subdir_names = [item_name for item_name in os.listdir(recon_src_path) if os.path.isdir(f"{recon_src_path}/{item_name}")]
+  subdir_names = list(RECON_SUBDIR_BASENAME_MAP.keys()) + ["job_info"]
+  index_subdir = 0
   for subdir_name in subdir_names:
-    print (f"Submitting copy job for subdirectory [{subdir_names.index(subdir_name) + 1}/{len(subdir_names)}] '{subdir_name}'")
+    index_subdir += 1
+    print (f"Submitting copy job for subdirectory [{index_subdir}/{len(subdir_names)}]: '{subdir_name}'")
     job_name = f"GlueX_copy_{run_period}_{recon_dir_name}_{subdir_name}"
     swif2_cmd: list[str] = [
       "swif2",
