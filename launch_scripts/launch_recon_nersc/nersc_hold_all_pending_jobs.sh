@@ -11,6 +11,7 @@ do
   echo "Putting all pending jobs into hold state; sleeping for ${INTERVAL} before repeating"
   while read -r JOB_ID
   do
+    echo "    Putting job ${JOB_ID} into hold state"
     scontrol hold "${JOB_ID}"
   done < <(squeue -t PENDING --me -h -o "%i")
   sleep "${INTERVAL}"

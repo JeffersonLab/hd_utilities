@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import subprocess
 
 import dotenv
@@ -10,6 +11,10 @@ from utilities import (
   ensure_dict_value_exists,
   get_evio_file_paths_for_run,
 )
+
+
+# always flush print() to reduce garbling of log files due to buffering
+print = functools.partial(print, flush = True)
 
 
 def get_config_dict_from_env_file(env_file: str) -> dict[str, str | None]:

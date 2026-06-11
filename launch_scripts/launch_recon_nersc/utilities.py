@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import functools
 import glob
 import os
 from pathlib import Path
@@ -12,6 +13,10 @@ import subprocess
 import sys
 from typing import TypeVar
 import zlib
+
+
+# always flush print() to reduce garbling of log files due to buffering
+print = functools.partial(print, flush = True)
 
 
 def print_command_line_arguments(args: argparse.Namespace) -> None:

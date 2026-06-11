@@ -135,7 +135,7 @@ class FileTransferMapGenerator:
       for evio_file_path in self._evio_file_paths[evio_file_start_index:evio_file_end_index]:
         self._failed_evio_files.append(evio_file_path)
       return
-    print(f"  Processing task [{task_index:2d}/{nmb_tasks:2d}] in directory '{task_dir}'")
+    print(f"  Processing task [{task_index + 1:2d}/{nmb_tasks:2d}] in directory '{task_dir}'")
     for evio_file_path in self._evio_file_paths[evio_file_start_index:evio_file_end_index]:  # loop over EVIO files of task
       self.process_file_dir(task_index, nmb_tasks, evio_file_path)
 
@@ -337,8 +337,8 @@ def main(args: argparse.Namespace) -> None:
 
   run_numbers: list[int] = read_run_numbers_from_file(run_number_list_file)
   target_base_dir    = os.path.dirname(swif_output_root)
-  target_dir         = args.override_target_directory or f"{target_base_dir}/{ver_label}.ready_for_tape"
-  failed_hd_root_dir = args.override_failed_hd_root_dir or f"{target_base_dir}/{ver_label}.failed_evio_files_by_hd_root_return_code"
+  target_dir         = os.path.abspath(args.override_target_directory or f"{target_base_dir}/{ver_label}.ready_for_tape")
+  failed_hd_root_dir = os.path.abspath(args.override_failed_hd_root_dir or f"{target_base_dir}/{ver_label}.failed_evio_files_by_hd_root_return_code")
   print(f"Using target directory '{target_dir}' for hd_root output files with return code 0")
   print(f"Using target directory '{failed_hd_root_dir}' for hd_root output files with non-zero return code")
   

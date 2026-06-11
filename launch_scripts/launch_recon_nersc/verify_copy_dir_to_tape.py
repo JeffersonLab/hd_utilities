@@ -38,9 +38,10 @@ def main(args: argparse.Namespace) -> None:
   # tape_dest_path    = "/volatile/halld/home/bgrube/test_copy_dir_to_tape"
   # tape_dest_path    = "/mss/halld/home/bgrube/test/test_copy_dir_to_tape"
   tape_dest_path    = f"{reco_data_root}/{ver}/{recon_subdir_name}"
+  print(f"Building list of files to verify in '{recon_src_path}' and corresponding paths on tape in '{tape_dest_path}'")
   file_transfer_paths: list[tuple[str, str]] = get_transfer_file_paths(recon_src_path, tape_dest_path, do_overwrite = True)
   if len(file_transfer_paths) == 0:
-    print(f"Found no files to transfer from '{recon_src_path}' to '{tape_dest_path}'")
+    print(f"Found no files that were transferred from '{recon_src_path}' to '{tape_dest_path}'")
     return
   print(f"Verifying that all {len(file_transfer_paths)} files in '{recon_src_path}' were successfully copied to '{tape_dest_path}'")
   files_missing:     list[str] = []

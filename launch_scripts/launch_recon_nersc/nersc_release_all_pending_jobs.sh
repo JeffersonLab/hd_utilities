@@ -5,5 +5,6 @@
 echo "Releasing all pending jobs from hold state"
 while read -r JOB_ID
 do
+  echo "    Releasing job ${JOB_ID}"
   scontrol release "${JOB_ID}"
 done < <(squeue --states="PENDING" --me --noheader --format="%i")
