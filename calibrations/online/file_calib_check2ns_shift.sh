@@ -29,7 +29,7 @@ echo running 2ns check ... >> message.txt
 
 # config
 CALIB_PLUGINS=HLDetectorTiming
-CALIB_OPTIONS="  -Pjana:nevents=100000 -PTRKFIT:HYPOTHESES_POSITIVE=8 -PTRKFIT:HYPOTHESES_NEGATIVE=9 " 
+CALIB_OPTIONS="  -Pjana:nevents=100000 -PTRKFIT:HYPOTHESES_POSITIVE=8 -PTRKFIT:HYPOTHESES_NEGATIVE=9 -PTRKFIT:FAST_TRACKING_MODE=1 " 
 PASS2_OUTPUT_FILENAME=hd_calib_2ns_check_Run${RUN}.root
 # run
 echo Running these plugins: $CALIB_PLUGINS

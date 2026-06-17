@@ -6,6 +6,9 @@
 source /gluex/software/gluex_RHEL95_top/gluex_env_boot.sh
 gxenv
 
+source /gluonfs1/gapps/python/VENV/rhel9_20241121/venv/bin/activate.csh
+
 cd /gluex/builds/devel/$BMS_OSNAME/bin
 # update run range for a new run period
-python3 update_skim_files.py $1- 
+#python3 update_skim_files.py $1-
+python3 update_skim_files.py 

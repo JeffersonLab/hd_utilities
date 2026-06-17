@@ -15,8 +15,8 @@ import subprocess
 import multiprocessing
 import glob
 from optparse import OptionParser
-import rcdb
-import ccdb
+#import rcdb
+#import ccdb
 from epics import caget,caput
 import tempfile
 
@@ -30,11 +30,17 @@ import tempfile
 #NODES = { 'gluon151':2, 'gluon156':2, 'gluon152':1, 'gluon153':1, 'gluon154':1, 'gluon155':1 }
 
 # maximum processing
-# MAX_JOBS = 20
-# NODES = { 'gluon150':2, 'gluon151':2, 'gluon152':2, 'gluon153':2, 'gluon154':2, 'gluon155':2, 'gluon156':2, 'gluon157':2, 'gluon158':2, 'gluon159':2 }
-MAX_JOBS = 18
-NODES = { 'gluon150':2, 'gluon151':2, 'gluon152':2, 'gluon153':2, 'gluon154':2, 'gluon155':2, 'gluon156':2, 'gluon157':2, 'gluon158':2  }
+#MAX_JOBS = 30
+#NODES = { 'gluon150':3, 'gluon151':3, 'gluon152':3, 'gluon153':3, 'gluon154':3, 'gluon155':3, 'gluon156':3, 'gluon157':3, 'gluon158':3, 'gluon159':3 }
+#MAX_JOBS = 18
+#NODES = { 'gluon150':2, 'gluon151':2, 'gluon152':2, 'gluon153':2, 'gluon154':2, 'gluon155':2, 'gluon156':2, 'gluon157':2, 'gluon158':2  }
 
+MAX_JOBS = 16
+NODES = { 'gluon159':4, 'gluon152':3, 'gluon153':3, 'gluon154':3, 'gluon155':3 }
+          
+#MAX_JOBS = 6
+#NODES = { 'gluon159':1 }
+          
 DRY_RUN = False
 
 # DB configuration parameters
@@ -47,7 +53,9 @@ def ProcessSkims(run,fnum,fpath,host,calibdb_cursor):
     print("In ProcessSkims() ...")
     BASEDIR = "/gluonraid4/data1/online_skimming/run"
     #rundir = tempfile.TemporaryDirectory(dir=BASEDIR).name
-    
+
+    #return 0
+        
     # connect to calibration tracking DB
     # note that each process needs its own connection!
     try:
@@ -85,19 +93,23 @@ def ProcessSkims(run,fnum,fpath,host,calibdb_cursor):
     
     print("sshing to %s"%host)
     #cmd = "ssh %s 'cd %s; ./file_calib_skim.sh %d %d %s %s'"%(host,rundir,run,fnum,fpath,rundir)
-    cmd = "ssh %s 'cd %s; /gluonwork1/Users/sdobbs/calibration_train/online/file_calib_skim.sh %d %d %s %s'>& /gluonwork1/Users/sdobbs/calibration_train/online/skim_logs/skim_log_%d_%d.%s"%(host,rundir,run,fnum,fpath,rundir,run,fnum,host)
-    print(cmd)
+    #cmd = "ssh %s 'cd %s; /gluonfs1/gluex/software/gluex_7.5.0_top/hd_utilities/hd_utilities^master/calibrations/online/file_calib_skim.sh %d %d %s %s'>& /gluonraid4/data1/online_skimming/logs/skim_log_%d_%d.%s"%(host,rundir,run,fnum,fpath,rundir,run,fnum,host)
+    cmd = [ "ssh", "%s"%host, "cd %s; /gluonfs1/gluex/software/gluex_7.5.0_top/hd_utilities/hd_utilities^master/calibrations/online/file_calib_skim.sh %d %d %s %s"%(rundir,run,fnum,fpath,rundir) ]
+    print(" ".join(cmd))
     if DRY_RUN:
-        print(cmd)
+        print(" ".join(cmd))
     else:
-        retval = os.system(cmd)
-        if(retval != 0):
-            print("ERROR in run %d %s(%d): %d"%(run,cmd,fnum,retval))
+        try:
+            with open("/gluonraid4/data1/online_skimming/logs/skim_log_%d_%d.%s"%(run,fnum,host), "w") as logf:
+                subprocess.run(cmd, check=True, stdout=logf, stderr=subprocess.STDOUT, timeout=21600)
+            #retval = os.system(cmd)
+        except subprocess.CalledProcessError as e:
+            print(f"Command '{e.cmd}' failed with exit code: {e.returncode}")
 
         # update skim db
-        query = "UPDATE skim_files SET done=1 WHERE run=%d AND file=%d"%(run,fnum)
-        calibdb_cursor.execute(query)
-        calibdb_cnx.commit()
+        #query = "UPDATE skim_files SET done=1 WHERE run=%d AND file=%d"%(run,fnum)
+        #calibdb_cursor.execute(query)
+        #calibdb_cnx.commit()
 
 
     # cleanup
@@ -112,6 +124,9 @@ def ProcessSkims(run,fnum,fpath,host,calibdb_cursor):
 def test_func(args=()):
     print("TEST")
     return 0
+
+def handle_error(exc):
+    print(f"Job failed with error: {exc}")
 
     
 # this part gets executed when this file is run on the command line 
@@ -161,7 +176,7 @@ if __name__ == "__main__":
         print("number of running jobs = ",num_jobs)
 
         if num_jobs<MAX_JOBS:
-            query = "select distinct * from skim_files where done=0 and run>=%d limit %d"%(MIN_RUN,2*MAX_JOBS)
+            query = "select distinct * from skim_files where done=0 and run>=%d limit %d"%(MIN_RUN,3*MAX_JOBS)
             calibdb_cursor.execute(query)
             skim_files_to_process = calibdb_cursor.fetchall()
             print(skim_files_to_process)
@@ -211,9 +226,12 @@ if __name__ == "__main__":
                 query = 'INSERT INTO running_jobs (run,file,host) VALUES (%d,%d,"%s")'%(run,fnum,next_node)
                 calibdb_cursor.execute(query)
                 calibdb_cnx.commit()
-                result = compute_thread_pool.apply_async(ProcessSkims, args=(run,fnum,filepath,next_node,calibdb_cursor))
+                result = compute_thread_pool.apply_async(ProcessSkims, args=(run,fnum,filepath,next_node,calibdb_cursor), error_callback=handle_error)
+                #result = compute_thread_pool.apply_async(test_func, args=())
                 #print(result.get(timeout=1))
                 #res = compute_thread_pool.apply_async(test_func, args=())
+
+                time.sleep(5)
                 
                 # check to see if it's time to be done
                 num_jobs += 1
