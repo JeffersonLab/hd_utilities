@@ -17,7 +17,7 @@ source /gluex/software/gluex_RHEL95_top/build_scripts/gluex_env_version.sh /gluo
 unset HAVE_ET
 unset ETROOT
 
-export HALLD_MY=/gluonwork1/Users/sdobbs/Software/plugins
+#export HALLD_MY=/gluonwork1/Users/sdobbs/Software/plugins
 
 export JANA_RESOURCE_DIR=/gluonwork1/Users/sdobbs/work/resources
 export JANA_CALIB_URL=mysql://ccdb_user@gluondb1.jlab.org/ccdb
