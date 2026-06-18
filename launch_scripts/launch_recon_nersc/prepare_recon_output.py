@@ -13,8 +13,9 @@ from collections import defaultdict
 import functools
 import glob
 import os
+import shlex
 import shutil
-import tarfile
+import subprocess
 import time
 
 from utilities import (
@@ -310,14 +311,24 @@ def tar_directories(
   print(f"{'Previewing creation of' if dry_run else 'Creating'} tarballs for {len(directories)} directories:")
   for dir_index, directory in enumerate(sorted(directories)):
     tar_file = f"{directory}.tgz"
-    print(f"[{dir_index + 1:5d}/{len(directories):5d}] Creating tarball '{tar_file}' from directory '{directory}'")
+    if os.path.exists(tar_file):
+      raise FileExistsError(f"Tarball '{tar_file}' already exists")
+    parent_dir_path = os.path.dirname(directory)
+    dir_name = os.path.basename(directory)
+    # ensure only `dir_name` is saved in the tarball and not the full path
+    tar_cmd = [
+      "tar",
+      # "--verbose",
+      "--create",
+      "--gzip",
+      "--file", tar_file,
+      "--directory", parent_dir_path,
+      dir_name
+    ]
+    print(shlex.join(tar_cmd))
     if not dry_run:
-      with tarfile.open(name = tar_file, mode = "x:gz") as tar:  # will throw FileExistsError if tar file already exists
-        tar.add(
-          name      = directory,
-          arcname   = os.path.basename(directory),  # set directory created when extracting the tarball
-          recursive = True,
-        )
+      #TODO use run_shell_cmd
+      subprocess.run(tar_cmd, check = True)
     if delete_original:
       print(f"Deleting original directory '{directory}'")
       if not dry_run:
