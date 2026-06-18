@@ -53,7 +53,9 @@ def main(args: argparse.Namespace) -> None:
     # ("diskquota", "myquota --verbose --full-path --limit --common --hpss"),  # does not work on NERSC nodes: /usr/lpp/mmfs/bin/mmlsquota is missing
     ("mounts",    "findmnt --canonicalize --output=TARGET,FSTYPE,SIZE,USED,AVAIL,USE%"),
   ):
-    with open(f"job_{run_label}.{log_file_suffix}", "w", encoding = "utf-8") as log_file:
+    log_file_name = f"job_{run_label}.{log_file_suffix}"
+    with open(log_file_name, "w", encoding = "utf-8") as log_file:
+      print(f"Writing output of '{log_cmd}' to log file '{log_file_name}'")
       subprocess.run(log_cmd, shell = True, check = False, stdout = log_file, stderr = subprocess.STDOUT)
 
   # get job working directory and list of input raw-data files

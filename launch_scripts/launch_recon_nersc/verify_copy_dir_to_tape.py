@@ -47,8 +47,10 @@ def main(args: argparse.Namespace) -> None:
   files_missing:     list[str] = []
   files_wrong_size:  list[str] = []
   files_wrong_crc32: list[str] = []
+  nmb_file_transfers = len(file_transfer_paths)
+  max_nmb_digits     = len(str(nmb_file_transfers))
   for file_index, (src_file_path, dest_file_path) in enumerate(file_transfer_paths):
-    print(f"Checking file [{file_index + 1:6d}/{len(file_transfer_paths):6d}]: '{src_file_path}' -> '{dest_file_path}'")
+    print(f"Checking file [{file_index + 1:{max_nmb_digits}d}/{nmb_file_transfers:{max_nmb_digits}d}]: '{src_file_path}' -> '{dest_file_path}'")
     # check if file exists at destination path
     if not os.path.isfile(dest_file_path):
       print(f"ERROR: file '{dest_file_path}' does not exist")

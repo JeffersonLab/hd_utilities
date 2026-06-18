@@ -42,7 +42,7 @@ print = functools.partial(print, flush = True)
 
 def run_shell_cmd(
   cmd:              str,
-  echo_cmd:         bool = False,  # whether to print the command before executing it
+  echo_cmd:         bool = True,   # whether to print the command before executing it
   dry_run:          bool = False,  # if True, only print the command without executing it
   check:            bool = True,   # whether to raise an exception if the command returns a non-zero exit code
   **kwargs_for_run: Any,           # additional keyword arguments forwarded to subprocess.run()
@@ -70,7 +70,7 @@ def main(args: argparse.Namespace) -> None:
     print("DRY RUN mode enabled: no external commands will be executed")
 
   # copy scripts and config files to NERSC
-  run_shell_cmd(f"{this_script_dir}/deploy_launch_dir_to_nersc.sh {args.launch_env_file}", echo_cmd = True, dry_run = args.dry_run)
+  run_shell_cmd(f"{this_script_dir}/deploy_launch_dir_to_nersc.sh {args.launch_env_file}", dry_run = args.dry_run)
 
   # verify that container image exists in NERSC's `shifter` repository
   nersc_host            = ensure_dict_value_exists(launch_config, "NERSC_HOST")
@@ -191,7 +191,9 @@ def main(args: argparse.Namespace) -> None:
     current_permissions = os.stat(submit_job_script_name).st_mode
     os.chmod(submit_job_script_name, current_permissions | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)  # make file executable for user, group, and others
     # run the generated script to submit the job
-    print(f"    [{run_counter + 1:4d}/{len(run_numbers):4d}] Submitting swif2 job '{swif_job_name}' for run {run_number} with {nmb_evio_files} EVIO file(s) using {nersc_nmb_tasks} NERSC tasks (nodes) with {nersc_nmb_processes_per_task} processes per task")
+    nmb_runs       = len(run_numbers)
+    max_nmb_digits = len(str(nmb_runs))
+    print(f"    [{run_counter + 1:{max_nmb_digits}d}/{nmb_runs:{max_nmb_digits}d}] Submitting swif2 job '{swif_job_name}' for run {run_number} with {nmb_evio_files} EVIO file(s) using {nersc_nmb_tasks} NERSC tasks (nodes) with {nersc_nmb_processes_per_task} processes per task")
     run_shell_cmd(f'./"{submit_job_script_name}"', dry_run = args.dry_run)
 
   print("-------------------------------------------------------------------------------")

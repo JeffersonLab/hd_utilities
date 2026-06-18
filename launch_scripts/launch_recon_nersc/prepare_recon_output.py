@@ -136,7 +136,8 @@ class FileTransferMapGenerator:
       for evio_file_path in self._evio_file_paths[evio_file_start_index:evio_file_end_index]:
         self._failed_evio_files.append(evio_file_path)
       return
-    print(f"  Processing task [{task_index + 1:2d}/{nmb_tasks:2d}] in directory '{task_dir}'")
+    max_nmb_digits = len(str(nmb_tasks))
+    print(f"  Processing task [{task_index + 1:{max_nmb_digits}d}/{nmb_tasks:{max_nmb_digits}d}] in directory '{task_dir}'")
     for evio_file_path in self._evio_file_paths[evio_file_start_index:evio_file_end_index]:  # loop over EVIO files of task
       self.process_file_dir(task_index, nmb_tasks, evio_file_path)
 
@@ -270,11 +271,13 @@ def transfer_files(
       destination_map[old_file_path].append(new_file_path)
   # default: move files with unique destinations and copy files with multiple destinations before deleting original file
   # if `symlink_files` is True: use symbolic links instead of copying/moving
-  count_transfer = 0
+  count_transfer     = 0
+  nmb_file_transfers = len(file_transfer_map)
+  max_nmb_digits     = len(str(nmb_file_transfers))
   for old_file_path, new_file_paths in destination_map.items():
     for new_file_path in new_file_paths:
       count_transfer += 1
-      count_transfer_str = f"[{count_transfer:6d}/{len(file_transfer_map):6d}]"
+      count_transfer_str = f"[{count_transfer:{max_nmb_digits}d}/{nmb_file_transfers:{max_nmb_digits}d}]"
       new_file_dir_name = os.path.dirname(new_file_path)
       if not os.path.isdir(new_file_dir_name):
         if not dry_run:
@@ -309,8 +312,11 @@ def tar_directories(
 ) -> None:
   """Creates a tarball for each directory in the given list of directories and optionally deletes the original directory after creating the tarball."""
   print(f"{'Previewing creation of' if dry_run else 'Creating'} tarballs for {len(directories)} directories:")
+  nmb_directories = len(directories)
+  max_nmb_digits  = len(str(nmb_directories))
   for dir_index, directory in enumerate(sorted(directories)):
     tar_file = f"{directory}.tgz"
+    print(f"[{dir_index + 1:{max_nmb_digits}d}/{nmb_directories:{max_nmb_digits}d}] Creating tarball '{tar_file}' from directory '{directory}'")
     if os.path.exists(tar_file):
       raise FileExistsError(f"Tarball '{tar_file}' already exists")
     parent_dir_path = os.path.dirname(directory)
