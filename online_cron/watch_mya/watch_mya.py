@@ -25,8 +25,8 @@ import subprocess
 from datetime import datetime,timedelta
 from time import sleep
 
-TESTING = True
-LOGBOOK = "TLOG"
+TESTING = False
+LOGBOOK = "HDLOG"
     
 MIN_BEAM_CURRENT = 0      # minimum nA to consider as beam on
 
