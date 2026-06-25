@@ -15,6 +15,9 @@
 # Makes log entries warning about disconnections and frozen PVs.
 # Records the warning times, so that over-frequent warnings can be suppressed.
 #
+# This is written for python 2.7
+# To modify for python 3, the subprocess calls will need to be updated
+
 # Naomi Jarvis, June 2026
 
 
@@ -28,7 +31,7 @@ from time import sleep
 TESTING = False
 LOGBOOK = "HDLOG"
     
-MIN_BEAM_CURRENT = 0      # minimum nA to consider as beam on
+MIN_BEAM_CURRENT = 10      # minimum nA to consider as beam on
 
 INTEGRATION_TIME_MINS = 5  # integration time for mystats
 DISCONNECT_TOLERANCE_MINS = 10 # complain about PVs disconnected for longer than this
@@ -254,18 +257,18 @@ def check_tagger_scalers(taggername, dictlist, frac_change):
     ids_unordered = []  # counter id extracted from pv
     
     for dict in dictlist:
-        if dict[:4] == taggername and dictlist[dict]['sigma'] == 0:
-            mean = dictlist[dict]['mean']
-            id = int(dict.split(":")[2])
-            if mean == 0:
-                ids_unordered.append(id)
-            else:
-                db = find_deadband(dict, mean)
-                if TESTING:
-                    print(dict + ' frac_change x mean: ' +  str(round(frac_change*mean, 0)) + ' db: ' + str(db))
-                if (db) :
-                    if frac_change*mean > 2*db: 
-                        ids_unordered.append(id)
+        
+        mean = dictlist[dict]['mean']
+        sigma = dictlist[dict]['sigma']
+        
+        if dict[:4] == taggername and mean > 0 and sigma == 0:
+            db = find_deadband(dict, mean)
+            if TESTING:
+                print(dict + ' frac_change x mean: ' +  str(round(frac_change*mean, 0)) + ' db: ' + str(db))
+            if (db) :
+                if frac_change*mean > 2*db: 
+                    id = int(dict.split(":")[2])
+                    ids_unordered.append(id)
                     
     if len(ids_unordered) == 0:
         return leaders
@@ -416,7 +419,7 @@ def issue_warnings(title, message, time_now, epicsfile) :
     
         os.putenv('JAVA_HOME','/gapps/Java/jdk/23.0.1/x64/jdk23.0.1/')  # needed to make the log entry
         cmd_arr = ["/site/ace/certified/apps/bin/logentry", "-l", LOGBOOK, "-g", "Autolog", "-t", title, "-b", "_logmsg.txt", "-n", "njarvis@jlab.org"]
-        
+
         try:
             subprocess.check_call(cmd_arr)
         except subprocess.CalledProcessError as e:
@@ -450,11 +453,13 @@ def main() :
         x = sys.argv.pop(0)
         
         if x == "-f" :
+            TESTING = True
             override_mystats_file = sys.argv.pop(0)
             if not os.path.exists(override_mystats_file) :
                 exit('File not found: ' + override_mystats_file)
-                
+                    
         elif x == "-t" :
+            TESTING = True
             time_now = sys.argv.pop(0)
             try:
                 datetime.strptime(time_now, DATE_FORMAT)
@@ -467,7 +472,6 @@ def main() :
 
             except ValueError:
                 exit('Invalid date format')
-
                 
     logbook_title = ""
     logbook_message = ""
