@@ -61,14 +61,16 @@ void timedifference(int Run, int REF, int REFPLANE){
   RunNumber = Run;
   NPMTS = 176;            // TOF 1 geometry
   GoodMax = GoodMax44;
+  int NShorts = 1;
   if (RunNumber>69999){
     NPMTS = 184;          // TOF 2 geometry
     GoodMax = GoodMax46;
+    NShorts = 2;
   }
   BARS_PER_PLANE = NPMTS/4;
   PMTS_PER_PLANE = NPMTS/2;
 
-  if (TMath::Abs(REF - BARS_PER_PLANE/2 - 0.5 )<2.){
+  if (TMath::Abs(REF - BARS_PER_PLANE/2 - 0.5 )<NShorts){
     return;
   }
 

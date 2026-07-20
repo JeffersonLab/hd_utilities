@@ -11,20 +11,14 @@ Setup_Script()
 
 	# ENVIRONMENT
 	source $ENVIRONMENT
+	export PATH=/site/bin:${PATH} #because .login isn't executed, and need this path for SWIF
 	printenv
 	echo "PERL INCLUDES: "
 	perl -e "print qq(@INC)"
 	echo ""
 
-	# COPY INPUT FILE TO WORKING DIRECTORY
-	# This step is necessary since the cache files will be created as soft links in the current directory, and we want to avoid large I/O processes.
-	# We first copy the input file to the current directory, then remove the link.
-	echo "LOCAL FILES PRIOR TO INPUT COPY"
-	ls -l
-	cp $INPUTFILE ./tmp_file
-	rm -f $INPUTFILE
-	mv tmp_file $INPUTFILE
-	echo "LOCAL FILES AFTER INPUT COPY"
+	# LIST WORKING DIRECTORY
+	echo "LOCAL FILES"
 	ls -l
 }
 
@@ -68,7 +62,6 @@ Save_Histograms()
 
 		# setup output dirs
 		local OUTDIR_THIS=${OUTDIR_LARGE}/hists/${RUN_NUMBER}/
-		mkdir -p -m 755 ${OUTDIR_THIS}
 
 		# save it to web dir
 		mkdir -p -m 755 ${WEBDIR_LARGE}
@@ -76,16 +69,8 @@ Save_Histograms()
 
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/hd_root_${RUN_NUMBER}_${FILE_NUMBER}.root
-		mv -v hd_root.root $OUTPUT_FILE
-		chmod 644 $OUTPUT_FILE
-
-		# force save to tape & pin
-		if [ "$TAPEDIR" != "" ]; then
-			echo jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			echo jcache put $OUTPUT_FILE
-			jcache put $OUTPUT_FILE
-		fi
+		echo "Adding hd_root.root to swif2 output: $OUTPUT_FILE"
+		swif2 output hd_root.root $OUTPUT_FILE
 	fi
 }
 
@@ -97,20 +82,11 @@ Save_REST()
 
 		# setup output dirs
 		local OUTDIR_THIS=${OUTDIR_LARGE}/REST/${RUN_NUMBER}/
-		mkdir -p -m 755 $OUTDIR_THIS
 
 		# save it
 		local OUTPUT_FILE=${OUTDIR_THIS}/dana_rest_${RUN_NUMBER}_${FILE_NUMBER}.hddm
-		mv -v dana_rest.hddm $OUTPUT_FILE
-		chmod 644 $OUTPUT_FILE
-
-		# force save to tape & pin
-		if [ "$TAPEDIR" != "" ]; then
-		        echo jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			jcache pin $OUTPUT_FILE -D $CACHE_PIN_DAYS
-			echo jcache put $OUTPUT_FILE
-			jcache put $OUTPUT_FILE
-		fi
+		echo "Adding dana_rest.hddm to swif2 output: $OUTPUT_FILE"
+		swif2 output dana_rest.hddm $OUTPUT_FILE
 	fi
 }
 
@@ -160,7 +136,12 @@ Make_Plots()
 
 Create_SQLite()
 {
-	$CCDB_HOME/scripts/mysql2sqlite/mysql2sqlite.sh -hhallddb.jlab.org -uccdb_user ccdb | sqlite3 ccdb.sqlite
+	mysqldump -u ccdb_user -h hallddb.jlab.org ccdb > dump.mysql.sql
+	$CCDB_HOME/scripts/mysql2sqlite/mysql2sqlite dump.mysql.sql | sqlite3 ccdb.sqlite
+	ls -l
+	export CCDB_CONNECTION=sqlite:///$PWD/ccdb.sqlite
+        export JANA_CALIB_URL=sqlite:///$PWD/ccdb.sqlite
+        echo "JANA_CALIB_URL: " $JANA_CALIB_URL
 }
 
 ########################################################## MAIN FUNCTION ########################################################
@@ -195,9 +176,8 @@ OUTDIR_LARGE=$4
 OUTDIR_SMALL=$5
 RUN_NUMBER=$6
 FILE_NUMBER=$7
-CACHE_PIN_DAYS=$8
-WEBDIR_SMALL=$9
-WEBDIR_LARGE=${10}
+WEBDIR_SMALL=$8
+WEBDIR_LARGE=$9
 
 # PRINT INPUTS
 echo "HOSTNAME          = $HOSTNAME"
@@ -208,7 +188,6 @@ echo "OUTDIR_LARGE      = $OUTDIR_LARGE"
 echo "OUTDIR_SMALL      = $OUTDIR_SMALL"
 echo "RUN_NUMBER        = $RUN_NUMBER"
 echo "FILE_NUMBER       = $FILE_NUMBER"
-echo "CACHE_PIN_DAYS    = $CACHE_PIN_DAYS"
 echo "WEBDIR_SMALL      = $WEBDIR_SMALL"
 echo "WEBDIR_LARGE      = $WEBDIR_LARGE"
 

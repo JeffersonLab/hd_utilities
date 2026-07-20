@@ -36,6 +36,7 @@ translateDict =	{
   "16": "ks",
   "17": "eta",
   "18": "lamb",
+  "19": "sigp",
   "20": "sig0",
   "22": "Xi0",
   "23": "Xim",
@@ -43,7 +44,8 @@ translateDict =	{
   "25": "antin",
   "26": "antilamb",
   "30": "antiXi0",
-  "31": "antiXiPlus"
+  "31": "antiXiPlus",
+  "35": "ks"
 }
 
 def TranslateID(id):
@@ -70,19 +72,19 @@ def TreeName(reaction):
 
 def WriteLinesToFile(ReactionNum,jobj,configF):
     #print "Reaction"+str(ReactionNum)+" "+jobj["Reaction"]
-    print "\n"
+    print("\n")
     #configF.write("\n\n")
-    print "#"+jobj["Name"]
-    print "#"+TreeName(jobj["Reaction"])
+    print("#"+jobj["Name"])
+    print("#"+TreeName(jobj["Reaction"]))
     #configF.write("#"+jobj["Name"]+"\n")
-    print "Reaction"+str(ReactionNum)+" "+jobj["Reaction"]
+    print("Reaction"+str(ReactionNum)+" "+jobj["Reaction"])
     #configF.write("Reaction"+str(ReactionNum)+" "+jobj["Reaction"])
     decnum=0
     for dec in jobj["Decays"]:
         decnum=decnum+1
-        #print "Reaction"+str(ReactionNum)+":Decay"+str(decnum)+" "+dec
+        #print("Reaction"+str(ReactionNum)+":Decay"+str(decnum)+" "+dec)
         #configF.write("\n")
-        print "Reaction"+str(ReactionNum)+":Decay"+str(decnum)+" "+dec
+        print("Reaction"+str(ReactionNum)+":Decay"+str(decnum)+" "+dec)
         #configF.write("Reaction"+str(ReactionNum)+":Decay"+str(decnum)+" "+dec)
     #configF.write("\n")
     flagstrpre="Reaction"+str(ReactionNum)+":Flags "
@@ -94,6 +96,10 @@ def WriteLinesToFile(ReactionNum,jobj,configF):
         flagstr+="F"+jobj["F"]+"_"
     if(jobj["T"] != "3"):
         flagstr+="T"+jobj["T"]+"_"
+
+    if("S" in jobj):
+        if(jobj["S"] != "999"):
+            flagstr+="S"+jobj["S"]+"_"
     if(jobj["U"] != "0"):
         flagstr+="U"+jobj["U"]+"_"
     
@@ -108,7 +114,7 @@ def WriteLinesToFile(ReactionNum,jobj,configF):
             flagstr=flagstr[1:]
 
     if len(flagstr) > 0:
-        print flagstrpre+flagstr
+        print(flagstrpre+flagstr)
 
     #configF.write(flagstr)
 ########################################################## MAIN ##########################################################
@@ -125,9 +131,9 @@ def main(argv):
 
     ananameSTR=""
     restnameSTR=""
-    numThread="12"
+    numThread="16"
     isMC=0
-    dataset=""
+    dataset="2017-01_ver03"
 
     for argu in argv:
         splitArg=argu.split("=")
@@ -147,29 +153,30 @@ def main(argv):
             dataset=splitArg[1]
         
         else:
-            print "argument: "+splitArg[0]+" not found"
+            print("argument: "+splitArg[0]+" not found")
             #exit(1)
 
 
     dir="/u/group/halld/www/halldweb/data/webdata/analysis/newlines/"+dataset+"/"
     Files=os.listdir(dir)
-    #print Files
+    #print(Files)
     ReactionNum=0
 
     configF=1#open("ANALaunch.config","w+")
-    print "PLUGINS monitoring_hists,ReactionFilter"
+    print("PLUGINS monitoring_hists,ReactionFilter")
     #configF.write("PLUGINS monitoring_hists,ReactionFilter")
     
     #if(isMC != 0):
     #    configF.write(",mcthrown_tree")
 
-    print "\nNTHREADS "+str(numThread)+"\n"
+    print("\nNTHREADS "+str(numThread)+"\n")
     #configF.write("\n\nNTHREADS "+str(numThread)+"\n\n")
-    print "COMBO:MAX_NEUTRALS 15"
+    print("COMBO:MAX_NEUTRALS 15")
     #configF.write("COMBO:MAX_NEUTRALS 15\n\n")
+    print("JANA:BATCH_MODE 1")
 
-   #print "REST:DATAVERSIONSTRING recon_"+restnameSTR
-   #print "ANALYSIS:DATAVERSIONSTRING analysis_"+ananameSTR
+   #print("REST:DATAVERSIONSTRING recon_"+restnameSTR)
+   #print("ANALYSIS:DATAVERSIONSTRING analysis_"+ananameSTR)
     #configF.write("REST:DATAVERSIONSTRING recon_"+restnameSTR+"\n")
     #configF.write("ANALYSIS:DATAVERSIONSTRING analysis_"+ananameSTR)
 
@@ -182,7 +189,7 @@ def main(argv):
             ReactionNum=ReactionNum+1
             data = json.load(tf)
             WriteLinesToFile(ReactionNum,data,configF)
-            ##print data["Reaction"]
+            ##print(data["Reaction"])
                 
 if __name__ == "__main__":
    main(sys.argv[1:])

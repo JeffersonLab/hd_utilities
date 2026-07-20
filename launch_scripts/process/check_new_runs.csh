@@ -3,14 +3,14 @@
 set LOCKFILE=lock.online
 
 #set MONITORING_HOME=/home/gxproj1/halld/monitoring/process
-set MONITORING_HOME=/home/gluex/halld/monitoring/process
+set MONITORING_HOME=/home/gluex/hd_utilities/launch_scripts/process
 set MONITORING_LIBDIR=$MONITORING_HOME/lib
 set MONITORING_LOGDIR=$MONITORING_HOME/log
 
 # Load standard environment for ROOT
 #source /home/gluex/setup_jlab.csh
 cd $MONITORING_HOME
-source setup_jlab.csh
+#source setup_jlab.csh
 source $MONITORING_HOME/monitoring_env.csh
 
 # run the script

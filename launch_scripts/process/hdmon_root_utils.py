@@ -27,25 +27,25 @@ def load_calibration_library():
     VERBOSE = False
     if VERBOSE:
         if 'CALIB_LIBDIR' in os.environ:
-            print "CALIB_LIBDIR = %s"%(os.environ['CALIB_LIBDIR'])
+            print("CALIB_LIBDIR = %s"%(os.environ['CALIB_LIBDIR']))
         if 'BMS_OSNAME' in os.environ:
-            print "BMS_OSNAME   = %s"%(os.environ['BMS_OSNAME'])
-        print "libdir       = %s"%(libdir)
-        print "osdir        = %s"%(osdir)
-        print "solibdir     = %s"%(solibdir)
+            print("BMS_OSNAME   = %s"%(os.environ['BMS_OSNAME']))
+        print("libdir       = %s"%(libdir))
+        print("osdir        = %s"%(osdir))
+        print("solibdir     = %s"%(solibdir))
 
     # Load shared libraries into ROOT
     if isdir(solibdir):
         solibs  = [ lib for lib in listdir(solibdir) if isfile(join(solibdir,lib)) and lib[-3:] == ".so" ] 
         for lib in solibs:
             if VERBOSE:
-                print "Loading shared lib = %s"%join(solibdir,lib)
+                print("Loading shared lib = %s"%join(solibdir,lib))
             gSystem.Load(join(solibdir,lib))
     if isdir(join(solibdir,'lib')):
         solibs = [ lib for lib in listdir(join(solibdir,'lib')) if isfile(join(solibdir,'lib',lib)) and lib[-3:] == ".so" ] 
         for lib in solibs:
             if VERBOSE:
-                print "Loading shared lib = %s"%join(solibdir,'lib',lib)
+                print("Loading shared lib = %s"%join(solibdir,'lib',lib))
             gSystem.Load(join(solibdir,'lib',lib))
 
     # Run any Root scripts
@@ -53,7 +53,7 @@ def load_calibration_library():
         scripts = [ f for f in listdir(libdir) if isfile(join(libdir,f)) and f[-2:] == '.C' ] 
         for script in scripts:
             if VERBOSE:
-                print "Loading ROOT script = %s"%(join(libdir,f))
+                print("Loading ROOT script = %s"%(join(libdir,f)))
             gROOT.ProcessLine(".L %s"%(join(libdir,f)))
 
 

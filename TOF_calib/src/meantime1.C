@@ -453,7 +453,8 @@ void findpeak(double *MTPosition, double *MTSigma){
 
 	  }
 	  if (DEBUG>1){
-	    if (!((k-3)%10) || (DEBUG>98)){
+            if (!((k-3)%10) || (DEBUG>98)){
+	    //if ((DEBUG>98)){
 	      gPad->SetLogz(0);  
 	      h->Draw();
 	      sprintf(exnam,"Mean-Time-Difference Pad%d to Ref-Pad%d",k,REFPAD);

@@ -1,0 +1,5 @@
+
+The current TPOL analysis, performed prior to code being given to the end user, 
+is performed in two stages:
+* Stage 1: Waveform fitting and production of output tree for the next stage
+* Stage 2: Creation of the final histograms used to determine the polarization

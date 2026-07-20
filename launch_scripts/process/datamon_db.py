@@ -65,7 +65,7 @@ class datamon_db:
         for table in self.table_names:
             if table == "run_info" or table == "version_info":
                 continue
-            print "clearing " + table + "..."
+            print("clearing " + table + "...")
             self.db.execute('DELETE FROM ' + table)
         ## reset autoincrement counters
         self.db.execute('ALTER TABLE run_info AUTO_INCREMENT = 1')
@@ -173,28 +173,28 @@ class datamon_db:
     def InsertData(self, table_name, values):
         if(len(values) == 0):
             logging.warn('Trying to add data to DB without any data')
-        db_cmd = 'INSERT INTO ' + table_name + ' VALUES (' + " ".join(['%s,' for i in xrange(len(values)-1)]) +  ' %s)'
+        db_cmd = 'INSERT INTO ' + table_name + ' VALUES (' + " ".join(['%s,' for i in range(len(values)-1)]) +  ' %s)'
         if(self.verbose):
             logging.info(db_cmd + '  <--  ' + str(values))
         #print "Insert cmd = " + str(db_cmd)
         try:
             self.db.execute(db_cmd, values)
             self.db_conn.commit()
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             # right now, just print out errors
             self.print_mysql_error(e)
 
     def ReplaceData(self, table_name, values):
         if(len(values) == 0):
             logging.warn('Trying to add data to DB without any data')
-        db_cmd = 'REPLACE INTO ' + table_name + ' VALUES (' + " ".join(['%s,' for i in xrange(len(values)-1)]) +  ' %s)'
+        db_cmd = 'REPLACE INTO ' + table_name + ' VALUES (' + " ".join(['%s,' for i in range(len(values)-1)]) +  ' %s)'
         if(self.verbose):
             logging.info(db_cmd + '  <--  ' + str(values))
         #print "Insert cmd = " + str(db_cmd)
         try:
             self.db.execute(db_cmd, values)
             self.db_conn.commit()
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             # right now, just print out errors
             self.print_mysql_error(e)
 
@@ -218,23 +218,23 @@ class datamon_db:
 
         if mode=="":
             # default is to pretty print to the screen
-            print "---------------------------------"
-            print table_name.upper()
-            print "---------------------------------"
+            print("---------------------------------")
+            print(table_name.upper())
+            print("---------------------------------")
             #table = texttable.Texttable(max_width=0)
             #table.header(fields)
             #table.add_rows(rows,header=False)
             #print table.draw() + "\n"
         elif mode.lower()=="csv":
             # simple print of comma separated values
-            print "# " + " ".join(fields)
+            print("# " + " ".join(fields))
             for row in rows:
-                print ",".join([str(e) for e in row])
+                print(",".join([str(e) for e in row]))
         elif mode.lower()=="tsv":
             # simple print of comma separated values
-            print "# " + " ".join(fields)
+            print("# " + " ".join(fields))
             for row in rows:
-                print "\t".join([str(e) for e in row])
+                print("\t".join([str(e) for e in row]))
 
     ### Functions to deal with meta data
     def CreateRun(self, run_num):

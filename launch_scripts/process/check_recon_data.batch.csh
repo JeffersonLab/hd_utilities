@@ -28,13 +28,12 @@ set INPUT_SMALLFILE_DIR=/work/halld2/recon/$RUNPERIOD
 #set INPUTDIR=/cache/halld/$RUNPERIOD/$DATATYPE/$VERSION
 set OUTPUTDIR=/work/halld2/data_monitoring/${RUNPERIOD}/${DATATYPE}_ver${VERSION}
 set ROOTOUTPUTDIR=/work/halld/data_monitoring/${RUNPERIOD}/${DATATYPE}_ver${VERSION}/rootfiles
-set ARGS=" --force -B -R $RUN -E -v $RUNPERIOD,$VERSION --merge-trees=tree_bcal_hadronic_eff,tree_fcal_hadronic_eff,tree_sc_eff,tree_tof_eff,tree_trackeff,tree_TS_scaler,tree_PSFlux,p3pi_excl_skim,tree_TPOL --merge-skims=BCAL-LED,bigevents,FCAL-LED,sync --merge-hddms=converted_random --merged-root-output-dir=$ROOTOUTPUTDIR "
-
+set ARGUMENTS=" --force -B -R $RUN -E -v $RUNPERIOD,$VERSION --merge-trees=tree_bcal_hadronic_eff,tree_fcal_hadronic_eff,tree_sc_eff,tree_tof_eff,tree_trackeff,tree_TS_scaler,tree_PSFlux,p3pi_excl_skim,tree_TPOL --merge-skims=BCAL-LED,bigevents,FCAL-LED,sync --merge-hddms=converted_random --merged-root-output-dir=$ROOTOUTPUTDIR"
 
 # Load standard environment for ROOT
 source /home/gxproj5/env_monitoring_launch.csh
 
-set MONITORING_HOME=/home/gxproj5/monitoring/process
+set MONITORING_HOME=/home/gxproj5/hd_utilities/launch_scripts/process
 source $MONITORING_HOME/monitoring_env.csh
 set MONITORING_LIBDIR=$MONITORING_HOME/lib
 set MONITORING_LOGDIR=$MONITORING_HOME/log
@@ -43,4 +42,5 @@ setenv BATCH_TMPDIR `pwd`
 # run the script
 cd $MONITORING_HOME
 
-./process_new_offline_data.py $ARGS ver$VERSION $INPUTDIR $INPUT_SMALLFILE_DIR $OUTPUTDIR
+echo ./process_new_offline_data.py $ARGUMENTS ver$VERSION $INPUTDIR $INPUT_SMALLFILE_DIR $OUTPUTDIR
+./process_new_offline_data.py $ARGUMENTS ver$VERSION $INPUTDIR $INPUT_SMALLFILE_DIR $OUTPUTDIR

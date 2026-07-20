@@ -81,7 +81,7 @@ class phadd:
     def Add(self):
         if len(self.sourcefiles) == 1:
             # merging one file is easy!  just copy it
-            print "cp %s %s"%(self.sourcefiles[0],self.targetfile)
+            print("cp %s %s"%(self.sourcefiles[0],self.targetfile))
             os.system("cp %s %s"%(self.sourcefiles[0],self.targetfile))
         elif len(self.sourcefiles) <= self.chunksize:
             # if we have fewer files than our chunk size, then we can just do one round of adding files
@@ -95,7 +95,7 @@ class phadd:
             # do two rounds of merging - first split up the files
             njobs = len(self.sourcefiles)/self.chunksize + 1
             jobs = []
-            for x in xrange(njobs):
+            for x in range(int(njobs)):
                 #sumfilename = os.path.join(tempfile.gettempdir(),"phadd_tmp_%s.root"%next(tempfile._get_candidate_names()))
                 sumfilename = os.path.join(self.tempdir,"phadd_tmp_%s.root"%str(uuid.uuid4()))
                 if x == njobs-1: 

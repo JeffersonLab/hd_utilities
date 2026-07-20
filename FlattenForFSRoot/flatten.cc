@@ -40,7 +40,7 @@ pair<int,int> FSCode(vector< vector<int> > pdgIDs);
   // utility functions for MC truth parsing
 vector< vector<int> > OrderedThrownIndices(int numThrown, int pids[], int parentIndices[]);
 vector<int> MCDecayParticles(int numThrown, int pids[], int parentIndices[]);
-void DisplayMCThrown(int numThrown, int pids[], int parentIndices[]);
+void DisplayMCThrown(int numThrown, int pids[], int parentIndices[], TClonesArray* p4s);
 int FSMCExtras(int numThrown, int pids[]);
 int BaryonNumber(int fsCode1, int fsCode2, int mcExtras = 0);
 int Charge(int fsCode1, int fsCode2, int mcExtras = 0);
@@ -92,7 +92,7 @@ int main(int argc, char** argv){
   cout << "                       when parsing truth information?  0 or 1] (default: 1)" << endl;
   cout << "           -safe  [check array sizes?  0 or 1]          (default: 1)" << endl;
   cout << "           -print [print to screen: " << endl;
-  cout << "                   -1 (less); 0 (regular); 1 (more)]    (default: 0)" << endl;
+  cout << "                   -1 (less); 0 (regular); 1 (more); 2 (even more)]    (default: 0)" << endl;
   cout << endl;
   cout << "Notes:" << endl;
   cout << "  * multiple input files can be specified using wildcards, but they"  << endl;
@@ -659,6 +659,10 @@ int main(int argc, char** argv){
 
         //   *** Thrown Beam Particle ***
 
+  TLorentzVector* inThrownBeam__X4 = NULL;
+      if (gUseMCInfo) gInTree->SetBranchAddress("ThrownBeam__X4", &inThrownBeam__X4);
+  TLorentzVector* inThrownBeam__P4 = NULL;
+      if (gUseMCInfo) gInTree->SetBranchAddress("ThrownBeam__P4", &inThrownBeam__P4);
   Float_t inThrownBeam__GeneratedEnergy = -1.0;
       if (gUseMCInfo) gInTree->SetBranchAddress("ThrownBeam__GeneratedEnergy", &inThrownBeam__GeneratedEnergy);
 
@@ -677,6 +681,10 @@ int main(int argc, char** argv){
       if (gUseMCParticles) inThrown__P4 = new TClonesArray("TLorentzVector", MAXTHROWN);
       if (gUseMCParticles) gInTree->GetBranch       ("Thrown__P4")->SetAutoDelete(kFALSE);
       if (gUseMCParticles) gInTree->SetBranchAddress("Thrown__P4",&(inThrown__P4));
+  TClonesArray *inThrown__X4 = NULL;
+      if (gUseMCParticles) inThrown__X4 = new TClonesArray("TLorentzVector", MAXTHROWN);
+      if (gUseMCParticles) gInTree->GetBranch       ("Thrown__X4")->SetAutoDelete(kFALSE);
+      if (gUseMCParticles) gInTree->SetBranchAddress("Thrown__X4",&(inThrown__X4));
 
 
 
@@ -723,7 +731,8 @@ int main(int argc, char** argv){
       if (gUseParticles) inBeam__X4_Measured = new TClonesArray("TLorentzVector",MAXBEAM);
       if (gUseParticles) gInTree->GetBranch       ("Beam__X4_Measured")->SetAutoDelete(kFALSE);
       if (gUseParticles) gInTree->SetBranchAddress("Beam__X4_Measured", &(inBeam__X4_Measured));
-
+  Bool_t inBeam__IsGenerator[MAXBEAM] {};
+      if (gUseParticles&&gUseMCParticles) gInTree->SetBranchAddress("Beam__IsGenerator", &inBeam__IsGenerator);
 
         //   *** Charged Track Hypotheses (indexed using <particleName>__ChargedIndex) ***
 
@@ -731,6 +740,10 @@ int main(int argc, char** argv){
       if (gUseParticles) inChargedHypo__P4_Measured = new TClonesArray("TLorentzVector",MAXTRACKS);
       if (gUseParticles) gInTree->GetBranch       ("ChargedHypo__P4_Measured")->SetAutoDelete(kFALSE);
       if (gUseParticles) gInTree->SetBranchAddress("ChargedHypo__P4_Measured",&(inChargedHypo__P4_Measured));
+  TClonesArray *inChargedHypo__X4_Measured;
+      if (gUseParticles) inChargedHypo__X4_Measured = new TClonesArray("TLorentzVector",MAXTRACKS);
+      if (gUseParticles) gInTree->GetBranch       ("ChargedHypo__X4_Measured")->SetAutoDelete(kFALSE);
+      if (gUseParticles) gInTree->SetBranchAddress("ChargedHypo__X4_Measured",&(inChargedHypo__X4_Measured));
   Float_t inChargedHypo__ChiSq_Tracking[MAXTRACKS] = {};
       if (gUseParticles) gInTree->SetBranchAddress("ChargedHypo__ChiSq_Tracking", inChargedHypo__ChiSq_Tracking);
   UInt_t  inChargedHypo__NDF_Tracking[MAXTRACKS] = {};
@@ -779,6 +792,10 @@ int main(int argc, char** argv){
       if (gUseParticles) inNeutralHypo__P4_Measured = new TClonesArray("TLorentzVector",MAXNEUTRALS);
       if (gUseParticles) gInTree->GetBranch       ("NeutralHypo__P4_Measured")->SetAutoDelete(kFALSE);
       if (gUseParticles) gInTree->SetBranchAddress("NeutralHypo__P4_Measured",&(inNeutralHypo__P4_Measured));
+  TClonesArray *inNeutralHypo__X4_Measured;
+      if (gUseParticles) inNeutralHypo__X4_Measured = new TClonesArray("TLorentzVector",MAXNEUTRALS);
+      if (gUseParticles) gInTree->GetBranch       ("NeutralHypo__X4_Measured")->SetAutoDelete(kFALSE);
+      if (gUseParticles) gInTree->SetBranchAddress("NeutralHypo__X4_Measured",&(inNeutralHypo__X4_Measured));
   Float_t inNeutralHypo__ShowerQuality[MAXNEUTRALS] = {};
       if (gUseParticles) gInTree->SetBranchAddress("NeutralHypo__ShowerQuality", inNeutralHypo__ShowerQuality);
 
@@ -821,6 +838,7 @@ int main(int argc, char** argv){
         //     (all indexed by particleIndex and combo)
 
   TClonesArray *inP4_KinFit[MAXPARTICLES] = {};
+  TClonesArray *inX4_KinFit[MAXPARTICLES] = {};
   Int_t inChargedIndex[MAXPARTICLES][MAXCOMBOS] = {};
   Float_t inBeta_Timing[MAXPARTICLES][MAXCOMBOS] = {};
   Float_t inChiSq_Timing[MAXPARTICLES][MAXCOMBOS] = {};
@@ -840,6 +858,10 @@ int main(int argc, char** argv){
             if (gUseParticles && gUseKinFit) inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
             if (gUseParticles && gUseKinFit) gInTree->GetBranch       (var_P4_KinFit)->SetAutoDelete(kFALSE);
             if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress(var_P4_KinFit,&(inP4_KinFit[pIndex]));
+        TString var_X4_KinFit(name); var_X4_KinFit += "__X4_KinFit";
+            if (gUseParticles && gUseKinFitVtx) inX4_KinFit[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
+            if (gUseParticles && gUseKinFitVtx) gInTree->GetBranch       (var_X4_KinFit)->SetAutoDelete(kFALSE);
+            if (gUseParticles && gUseKinFitVtx) gInTree->SetBranchAddress(var_X4_KinFit,&(inX4_KinFit[pIndex]));
         TString var_ChargedIndex(name);  var_ChargedIndex += "__ChargedIndex";
             if (gUseParticles) gInTree->SetBranchAddress(var_ChargedIndex,inChargedIndex[pIndex]);
         TString var_Beta_Timing(name);
@@ -859,6 +881,10 @@ int main(int argc, char** argv){
             if (gUseParticles && gUseKinFit) inP4_KinFit[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
             if (gUseParticles && gUseKinFit) gInTree->GetBranch       (var_P4_KinFit)->SetAutoDelete(kFALSE);
             if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress(var_P4_KinFit,&(inP4_KinFit[pIndex]));
+        TString var_X4_KinFit(name); var_X4_KinFit += "__X4_KinFit";
+            if (gUseParticles && gUseKinFitVtx) inX4_KinFit[pIndex] = new TClonesArray("TLorentzVector",MAXCOMBOS);
+            if (gUseParticles && gUseKinFitVtx) gInTree->GetBranch       (var_X4_KinFit)->SetAutoDelete(kFALSE);
+            if (gUseParticles && gUseKinFitVtx) gInTree->SetBranchAddress(var_X4_KinFit,&(inX4_KinFit[pIndex]));
         TString var_NeutralIndex(name);  var_NeutralIndex += "__NeutralIndex";
             if (gUseParticles) gInTree->SetBranchAddress(var_NeutralIndex,inNeutralIndex[pIndex]);
       }
@@ -921,10 +947,19 @@ int main(int argc, char** argv){
                                                  gOutTree->Branch("PzPB",            &outPzPB);
   double outEnPB;             if (gUseParticles && gUseKinFit)
                                                  gOutTree->Branch("EnPB",            &outEnPB);
+  double outVxPB;             if (gUseParticles && gUseKinFitVtx)
+                                                 gOutTree->Branch("VxPB",            &outVxPB);
+  double outVyPB;             if (gUseParticles && gUseKinFitVtx)
+                                                 gOutTree->Branch("VyPB",            &outVyPB);
+  double outVzPB;             if (gUseParticles && gUseKinFitVtx)
+                                                 gOutTree->Branch("VzPB",            &outVzPB);
   double outRPxPB;            if (gUseParticles) gOutTree->Branch("RPxPB",           &outRPxPB);
   double outRPyPB;            if (gUseParticles) gOutTree->Branch("RPyPB",           &outRPyPB);
   double outRPzPB;            if (gUseParticles) gOutTree->Branch("RPzPB",           &outRPzPB);
   double outREnPB;            if (gUseParticles) gOutTree->Branch("REnPB",           &outREnPB);
+  double outRVxPB;            if (gUseParticles) gOutTree->Branch("RVxPB",           &outRVxPB);
+  double outRVyPB;            if (gUseParticles) gOutTree->Branch("RVyPB",           &outRVyPB);
+  double outRVzPB;            if (gUseParticles) gOutTree->Branch("RVzPB",           &outRVzPB);
 
     // MC information
 
@@ -932,10 +967,14 @@ int main(int argc, char** argv){
   double outMCPyPB;        if (gUseMCParticles) gOutTree->Branch("MCPyPB", &outMCPyPB);
   double outMCPzPB;        if (gUseMCParticles) gOutTree->Branch("MCPzPB", &outMCPzPB);
   double outMCEnPB;        if (gUseMCInfo) gOutTree->Branch("MCEnPB",      &outMCEnPB);
+  double outMCVxPB;        if (gUseMCParticles) gOutTree->Branch("MCVxPB", &outMCVxPB);
+  double outMCVyPB;        if (gUseMCParticles) gOutTree->Branch("MCVyPB", &outMCVyPB);
+  double outMCVzPB;        if (gUseMCParticles) gOutTree->Branch("MCVzPB", &outMCVzPB);
   double outMCDecayCode1;  if (gUseMCInfo) gOutTree->Branch("MCDecayCode1",&outMCDecayCode1);
   double outMCDecayCode2;  if (gUseMCInfo) gOutTree->Branch("MCDecayCode2",&outMCDecayCode2);
   double outMCExtras;      if (gUseMCInfo) gOutTree->Branch("MCExtras",    &outMCExtras);
   double outMCSignal;      if (gUseMCParticles&&gUseParticles) gOutTree->Branch("MCSignal", &outMCSignal);
+  bool outMCIsGenBeam;      if (gUseMCParticles&&gUseParticles) gOutTree->Branch("MCIsGenBeam", &outMCIsGenBeam);
   double outMCDecayParticle1;   double outMCDecayParticle2;   double outMCDecayParticle3;
   double outMCDecayParticle4;   double outMCDecayParticle5;   double outMCDecayParticle6;
   if (gUseMCInfo) gOutTree->Branch("MCDecayParticle1",&outMCDecayParticle1);
@@ -948,8 +987,11 @@ int main(int argc, char** argv){
     // particle information
 
   double   outPx[MAXPARTICLES]={},   outPy[MAXPARTICLES]={},   outPz[MAXPARTICLES]={},   outEn[MAXPARTICLES]={};
+  double   outVx[MAXPARTICLES]={},   outVy[MAXPARTICLES]={},   outVz[MAXPARTICLES]={};
   double  outRPx[MAXPARTICLES]={},  outRPy[MAXPARTICLES]={},  outRPz[MAXPARTICLES]={},  outREn[MAXPARTICLES]={};
+  double  outRVx[MAXPARTICLES]={},  outRVy[MAXPARTICLES]={},  outRVz[MAXPARTICLES]={};
   double outMCPx[MAXPARTICLES]={}, outMCPy[MAXPARTICLES]={}, outMCPz[MAXPARTICLES]={}, outMCEn[MAXPARTICLES]={};
+  double outMCVx[MAXPARTICLES]={}, outMCVy[MAXPARTICLES]={}, outMCVz[MAXPARTICLES]={};
   double outPxUN[MAXPARTICLES]={}, outPyUN[MAXPARTICLES]={}, outPzUN[MAXPARTICLES]={}, outEnUN[MAXPARTICLES]={};
   double outVeeL[MAXPARTICLES]={}, outVeeLSigma[MAXPARTICLES]={};
   double outTkChi2[MAXPARTICLES]={}, outTkNDF[MAXPARTICLES]={};
@@ -976,11 +1018,22 @@ int main(int argc, char** argv){
         TString vPz("PzP");   vPz  += fsIndex; gOutTree->Branch(vPz, &outPz [pIndex]);
         TString vEn("EnP");   vEn  += fsIndex; gOutTree->Branch(vEn, &outEn [pIndex]);
       }
+      if (gUseParticles && gUseKinFitVtx && (GlueXParticleClass(name) == "Charged" ||
+                                             GlueXParticleClass(name) == "Neutral")){
+        TString vVx("VxP");   vVx  += fsIndex; gOutTree->Branch(vVx, &outVx [pIndex]);
+        TString vVy("VyP");   vVy  += fsIndex; gOutTree->Branch(vVy, &outVy [pIndex]);
+        TString vVz("VzP");   vVz  += fsIndex; gOutTree->Branch(vVz, &outVz [pIndex]);
+      }
       if (gUseParticles){
         TString vRPx("RPxP"); vRPx += fsIndex; gOutTree->Branch(vRPx,&outRPx[pIndex]);
         TString vRPy("RPyP"); vRPy += fsIndex; gOutTree->Branch(vRPy,&outRPy[pIndex]);
         TString vRPz("RPzP"); vRPz += fsIndex; gOutTree->Branch(vRPz,&outRPz[pIndex]);
         TString vREn("REnP"); vREn += fsIndex; gOutTree->Branch(vREn,&outREn[pIndex]);
+        if (GlueXParticleClass(name) == "Charged" || GlueXParticleClass(name) == "Neutral"){
+          TString vRVx("RVxP"); vRVx += fsIndex; gOutTree->Branch(vRVx,&outRVx[pIndex]);
+          TString vRVy("RVyP"); vRVy += fsIndex; gOutTree->Branch(vRVy,&outRVy[pIndex]);
+          TString vRVz("RVzP"); vRVz += fsIndex; gOutTree->Branch(vRVz,&outRVz[pIndex]);
+        }
         if (GlueXParticleClass(name) == "Charged"){
           TString vTkNDF("TkNDFP");   vTkNDF  += fsIndex; gOutTree->Branch(vTkNDF, &outTkNDF [pIndex]);
           TString vTkChi2("TkChi2P"); vTkChi2 += fsIndex; gOutTree->Branch(vTkChi2,&outTkChi2[pIndex]);
@@ -1018,6 +1071,11 @@ int main(int argc, char** argv){
         TString vMCPy("MCPyP"); vMCPy += fsIndex; gOutTree->Branch(vMCPy,&outMCPy[pIndex]);
         TString vMCPz("MCPzP"); vMCPz += fsIndex; gOutTree->Branch(vMCPz,&outMCPz[pIndex]);
         TString vMCEn("MCEnP"); vMCEn += fsIndex; gOutTree->Branch(vMCEn,&outMCEn[pIndex]);
+        if (GlueXParticleClass(name) == "Charged" || GlueXParticleClass(name) == "Neutral"){
+          TString vMCVx("MCVxP"); vMCVx += fsIndex; gOutTree->Branch(vMCVx,&outMCVx[pIndex]);
+          TString vMCVy("MCVyP"); vMCVy += fsIndex; gOutTree->Branch(vMCVy,&outMCVy[pIndex]);
+          TString vMCVz("MCVzP"); vMCVz += fsIndex; gOutTree->Branch(vMCVz,&outMCVz[pIndex]);
+        }
       }
       if (GlueXParticleClass(name) == "DecayingToCharged"){
         if (gUseParticles && gUseKinFitVtx){
@@ -1042,7 +1100,8 @@ int main(int argc, char** argv){
 
   Long64_t gInNEntries = gInTree->GetEntries();
   TString gInFileName("");
-  int currPol; // hold polarization value for the entire run (assuming one run per tree!)
+  int currPol = -999; // hold polarization value for the entire run (assuming one run per tree!)
+  bool triedPolarizationInitialize=false;
   cout << "LOOPING OVER " << gInNEntries << " ENTRIES..." << endl;
   for (Long64_t iEntry = 0; iEntry < gInNEntries; iEntry++){
     if ((iEntry+1) % 10000 == 0) cout << "entry = " << iEntry+1 << "  (" << (100.0*(iEntry+1))/gInNEntries << " percent)" << endl;
@@ -1050,13 +1109,17 @@ int main(int argc, char** argv){
       // clear arrays (from ROOT documentation, see $ROOTSYS/tutorials/tree/tcl.C, also for SetAutoDelete, etc.)
 
     if (gUseMCParticles) inThrown__P4->Clear();
+    if (gUseMCParticles) inThrown__X4->Clear();
     if (gUseParticles) inBeam__P4_Measured->Clear();
     if (gUseParticles) inBeam__X4_Measured->Clear();
     if (gUseParticles) inChargedHypo__P4_Measured->Clear();
+    if (gUseParticles) inChargedHypo__X4_Measured->Clear();
     if (gUseParticles) inNeutralHypo__P4_Measured->Clear();
+    if (gUseParticles) inNeutralHypo__X4_Measured->Clear();
     if (gUseParticles && gUseKinFit) inBeam__P4_KinFit->Clear();
     if (gUseParticles && gUseKinFitVtx) inBeam__X4_KinFit->Clear();
     for (unsigned int i = 0; i < MAXPARTICLES; i++){ if (inP4_KinFit[i]) inP4_KinFit[i]->Clear(); }
+    for (unsigned int i = 0; i < MAXPARTICLES; i++){ if (inX4_KinFit[i]) inX4_KinFit[i]->Clear(); }
     for (unsigned int i = 0; i < MAXPARTICLES; i++){ if (inX4[i]) inX4[i]->Clear(); }
 
 
@@ -1119,7 +1182,7 @@ int main(int argc, char** argv){
     if ((iEntry+1 == 1) && (gPrint == 1)){
       cout << endl << "PRINTING TEST INFORMATION FOR FIVE EVENTS..." << endl << endl;
     }
-    if ((iEntry < 5) && (gPrint == 1)){
+    if (((iEntry < 5) && (gPrint == 1)) || (gPrint == 2)){
       cout << endl << endl;
       cout << "  ***************************" << endl;
       cout << "  ******* NEW EVENT " << iEntry+1 << " *******" << endl;
@@ -1192,7 +1255,7 @@ int main(int argc, char** argv){
       //  mcWarning = true;
       //}
         // print a few events to make sure MC makes sense
-      if (((iEntry < 5) && gPrint == 1) || (mcError) || (mcWarning && gPrint > 0)){
+      if (((iEntry < 5) && gPrint == 1) || (mcError) || (mcWarning && gPrint > 0) || (gPrint == 2)){
       //if (isMC && (iEntry < 5||inIsThrownTopology)){
         cout << endl << endl;
         if (mcError||mcWarning) cout << "WARNING: problems with the truth parsing (see below)..." << endl;
@@ -1202,7 +1265,7 @@ int main(int argc, char** argv){
         cout << "  FSCode = " << (int)outMCDecayCode2 << "_" << (int)outMCDecayCode1 << endl;
         cout << "  MCExtras = " << outMCExtras << endl;
         cout << "  IsThrownTopology = " << inIsThrownTopology << endl;
-        DisplayMCThrown(inNumThrown,inThrown__PID,inThrown__ParentIndex);
+        DisplayMCThrown(inNumThrown,inThrown__PID,inThrown__ParentIndex,inThrown__P4);
         cout << endl << endl;
       }
       if (mcError){
@@ -1225,13 +1288,15 @@ int main(int argc, char** argv){
       outRunNumber       = inRunNumber;
       outEventNumber     = inEventNumber;
       if(gUsePolarization) {
-        if(iEntry==0) {
-          if(GetPolarizationAngle(inRunNumber, currPol)) {
-            outPolarization = currPol;
-          } else {
-            outPolarization = -1;
-          }
+        if(!triedPolarizationInitialize) {
+          GetPolarizationAngle(inRunNumber, currPol);
+          outPolarization = currPol;
+          triedPolarizationInitialize=true;
         } else {
+            if(currPol==-999){
+              std::cerr << "FATAL: unable to find polarization info!!" << endl;
+              exit(0);
+            }
           outPolarization = currPol;
         }
       }
@@ -1267,19 +1332,34 @@ int main(int argc, char** argv){
           outPzPB = p4->Pz();
           outEnPB = p4->E();
         }
+        if (gUseKinFitVtx){
+              x4 = (TLorentzVector*)inBeam__X4_KinFit->At(ic);
+          outVxPB = x4->X();
+          outVyPB = x4->Y();
+          outVzPB = x4->Z();
+        }
             p4 = (TLorentzVector*)inBeam__P4_Measured->At(inBeamIndex[ic]);
         outRPxPB = p4->Px();
         outRPyPB = p4->Py();
         outRPzPB = p4->Pz();
         outREnPB = p4->E();
-      }
-      if (gUseMCParticles){
-        outMCPxPB = 0.0;
-        outMCPyPB = 0.0;
-        outMCPzPB = inThrownBeam__GeneratedEnergy;
+            x4 = (TLorentzVector*)inBeam__X4_Measured->At(inBeamIndex[ic]);
+        outRVxPB = x4->X();
+        outRVyPB = x4->Y();
+        outRVzPB = x4->Z();
       }
       if (gUseMCInfo){
         outMCEnPB = inThrownBeam__GeneratedEnergy;
+      }
+      if (gUseMCParticles){
+	outMCIsGenBeam = inBeam__IsGenerator[inBeamIndex[ic]];
+        outMCPxPB = inThrownBeam__P4->Px();
+        outMCPyPB = inThrownBeam__P4->Py();
+        outMCPzPB = inThrownBeam__P4->Pz();
+        outMCEnPB = inThrownBeam__P4->E();
+        outMCVxPB = inThrownBeam__X4->X();
+        outMCVyPB = inThrownBeam__X4->Y();
+        outMCVzPB = inThrownBeam__X4->Z();
       }
 
         // particle information
@@ -1302,14 +1382,24 @@ int main(int argc, char** argv){
               outPz[pIndex] = p4->Pz();
               outEn[pIndex] = p4->E();
           }
+          if (gUseParticles && gUseKinFitVtx){
+            x4 = (TLorentzVector*)inX4_KinFit[pIndex]->At(ic);
+              outVx[pIndex] = x4->X();
+              outVy[pIndex] = x4->Y();
+              outVz[pIndex] = x4->Z();
+          }
           if (gUseParticles){
             p4 = (TLorentzVector*)inChargedHypo__P4_Measured->At(inChargedIndex[pIndex][ic]);
-            outRPx[pIndex] = p4->Px();
+              outRPx[pIndex] = p4->Px();
               outRPy[pIndex] = p4->Py();
               outRPz[pIndex] = p4->Pz();
               outREn[pIndex] = p4->E();
               outTkNDF [pIndex] = inChargedHypo__NDF_Tracking  [(inChargedIndex[pIndex][ic])];
               outTkChi2[pIndex] = inChargedHypo__ChiSq_Tracking[(inChargedIndex[pIndex][ic])];
+            x4 = (TLorentzVector*)inChargedHypo__X4_Measured->At(inChargedIndex[pIndex][ic]);
+              outRVx[pIndex] = x4->X();
+              outRVy[pIndex] = x4->Y();
+              outRVz[pIndex] = x4->Z();
             if (gAddPID){
               outTkTOFBeta[pIndex] = inBeta_Timing[pIndex][ic];
               outTkTOFChi2[pIndex] = inChiSq_Timing[pIndex][ic];
@@ -1334,6 +1424,10 @@ int main(int argc, char** argv){
               outMCPy[pIndex] = p4->Py();
               outMCPz[pIndex] = p4->Pz();
               outMCEn[pIndex] = p4->E();
+            x4 = (TLorentzVector*)inThrown__X4->At(tIndex);
+              outMCVx[pIndex] = x4->X();
+              outMCVy[pIndex] = x4->Y();
+              outMCVz[pIndex] = x4->Z();
           }
         }
 
@@ -1347,12 +1441,22 @@ int main(int argc, char** argv){
               outPz[pIndex] = p4->Pz();
               outEn[pIndex] = p4->E();
           }
+          if (gUseParticles && gUseKinFitVtx){
+            x4 = (TLorentzVector*)inX4_KinFit[pIndex]->At(ic);
+              outVx[pIndex] = x4->X();
+              outVy[pIndex] = x4->Y();
+              outVz[pIndex] = x4->Z();
+          }
           if (gUseParticles){
             p4 = (TLorentzVector*)inNeutralHypo__P4_Measured->At(inNeutralIndex[pIndex][ic]);
               outRPx[pIndex] = p4->Px();
               outRPy[pIndex] = p4->Py();
               outRPz[pIndex] = p4->Pz();
               outREn[pIndex] = p4->E();
+            x4 = (TLorentzVector*)inNeutralHypo__X4_Measured->At(inNeutralIndex[pIndex][ic]);
+              outRVx[pIndex] = x4->X();
+              outRVy[pIndex] = x4->Y();
+              outRVz[pIndex] = x4->Z();
             outShQuality[pIndex] = inNeutralHypo__ShowerQuality[(inNeutralIndex[pIndex][ic])];
             if (outShQuality[pIndex] < gShQualityCut) cutDueToParticleInfo = true;
             vUsedNeutralIndices.push_back(inNeutralIndex[pIndex][ic]);
@@ -1363,6 +1467,10 @@ int main(int argc, char** argv){
               outMCPy[pIndex] = p4->Py();
               outMCPz[pIndex] = p4->Pz();
               outMCEn[pIndex] = p4->E();
+            x4 = (TLorentzVector*)inThrown__X4->At(tIndex);
+              outMCVx[pIndex] = x4->X();
+              outMCVy[pIndex] = x4->Y();
+              outMCVz[pIndex] = x4->Z();
           }
         }
 
@@ -1377,11 +1485,13 @@ int main(int argc, char** argv){
         if (GlueXParticleClass(name) == "DecayingToCharged"){
           int pIndex1 = gMapGlueXNameToParticleIndex[gOrderedParticleNames[im][1]];
           int pIndex2 = gMapGlueXNameToParticleIndex[gOrderedParticleNames[im][2]];
+          //int tIndex0;  if (gUseMCParticles && outMCSignal > 0.1) tIndex0 = orderedThrownIndices[im][0];
           int tIndex1;  if (gUseMCParticles && outMCSignal > 0.1) tIndex1 = orderedThrownIndices[im][1];
           int tIndex2;  if (gUseMCParticles && outMCSignal > 0.1) tIndex2 = orderedThrownIndices[im][2];
           if (gUseParticles && gUseKinFitVtx){
             p4a = (TLorentzVector*)inP4_KinFit[pIndex1]->At(ic);
             p4b = (TLorentzVector*)inP4_KinFit[pIndex2]->At(ic);
+            TLorentzVector* p4 = new TLorentzVector(0,0,0,0);
             *p4 = *p4a + *p4b;
               outPx[pIndex] = p4a->Px() + p4b->Px();
               outPy[pIndex] = p4a->Py() + p4b->Py();
@@ -1389,6 +1499,7 @@ int main(int argc, char** argv){
               outEn[pIndex] = p4a->E()  + p4b->E();
             x4a = (TLorentzVector*)inBeam__X4_KinFit->At(ic);
             x4b = (TLorentzVector*)inX4[pIndex]->At(ic);
+            TLorentzVector* x4 = new TLorentzVector(0,0,0,0);
             *x4 = *x4b - *x4a;
             outVeeL[pIndex] = (x4->Vect()).Mag();
             if ( (x4->Angle(p4->Vect()))/TMath::Pi() > 0.5 )
@@ -1397,6 +1508,8 @@ int main(int argc, char** argv){
               outVeeLSigma[pIndex] = -10000.;
             else
               outVeeLSigma[pIndex] = outVeeL[pIndex]/inPathLengthSigma[pIndex][ic];
+            delete p4;
+            delete x4;
           }
           if (gUseParticles){
             p4a = (TLorentzVector*)inChargedHypo__P4_Measured->At(inChargedIndex[pIndex1][ic]);
@@ -1418,8 +1531,13 @@ int main(int argc, char** argv){
             }
           }
           if (gUseMCParticles && outMCSignal > 0.1){
+            //p4  = (TLorentzVector*)inThrown__P4->At(tIndex0);
             p4a = (TLorentzVector*)inThrown__P4->At(tIndex1);
             p4b = (TLorentzVector*)inThrown__P4->At(tIndex2);
+              //outMCPx[pIndex] = p4->Px();
+              //outMCPy[pIndex] = p4->Py();
+              //outMCPz[pIndex] = p4->Pz();
+              //outMCEn[pIndex] = p4->E();
               outMCPx[pIndex] = p4a->Px() + p4b->Px();
               outMCPy[pIndex] = p4a->Py() + p4b->Py();
               outMCPz[pIndex] = p4a->Pz() + p4b->Pz();
@@ -1477,7 +1595,7 @@ int main(int argc, char** argv){
 
       // print some information (for debugging only)
 
-      if ((iEntry < 5) && (gPrint == 1) && (gUseParticles)){
+      if (((iEntry < 5) && (gPrint == 1) && (gUseParticles)) || ((gPrint == 2) && (gUseParticles))){
         cout << "  *******************************" << endl;
         cout << "  **** INFO FOR EVENT " << iEntry+1 << " ****" << endl;
         cout << "  *******************************" << endl;
@@ -1763,13 +1881,17 @@ TString PDGReadableName(int id){
   return name;
 }
 
-void DisplayMCThrown(int numThrown, int pids[], int parentIndices[]){
-  cout << "  LIST OF THROWN PARTICLES: " << endl;
+void DisplayMCThrown(int numThrown, int pids[], int parentIndices[], TClonesArray* p4s){
+  cout << "  LIST OF THROWN PARTICLES (STRAIGHT FROM ANALYSIS TREE): " << endl;
+  TLorentzVector *p4;
   for (int i = 0; i < numThrown; i++){
+    p4 = (TLorentzVector*)p4s->At(i);
     cout << "    THROWN INDEX = " << i << endl;
     cout << "      PID = " << pids[i] << endl;
     cout << "      PDG Name = " << PDGReadableName(pids[i]) << endl;
     cout << "      Parent Index = " << parentIndices[i] << endl;
+    cout << "      Mass = " << p4->M() << endl;
+    cout << "      Energy = " << p4->E() << endl;
   }
   vector< pair<int,int> > firstList;
   for (int index = 0; index < numThrown; index++){
@@ -2149,13 +2271,17 @@ bool GetPolarizationAngle(int runNumber, int& polarizationAngle)
   ostringstream locCommandStream;
   locCommandStream << "rcnd " << runNumber << " polarization_angle";
   FILE* locInputFile = gSystem->OpenPipe(locCommandStream.str().c_str(), "r");
-  if(locInputFile == NULL)
-    return false;
-
+  if(locInputFile == NULL){
+    std::cerr << "FATAL: Could not run rcnd. Is RCDB set up? " << endl;
+    exit(2);
+  }
   //get the first line
   char buff[1024];
-  if(fgets(buff, sizeof(buff), locInputFile) == NULL)
-    return 0;
+  if(fgets(buff, sizeof(buff), locInputFile) == NULL){
+    std::cerr << "FATAL: rcnd produced no stdout" << endl;
+    exit(2);
+  }
+
   istringstream locStringStream(buff);
 
   //Close the pipe
@@ -2163,8 +2289,10 @@ bool GetPolarizationAngle(int runNumber, int& polarizationAngle)
 
   //extract it
   string locPolarizationAngleString;
-  if(!(locStringStream >> locPolarizationAngleString))
-    return false;
+  if(!(locStringStream >> locPolarizationAngleString)){
+    std::cerr << "FATAL: unable to read PolarizationAngle from istringstream" << endl;
+    exit(2);
+  }
 
   // convert string to integer
   polarizationAngle = atoi(locPolarizationAngleString.c_str());

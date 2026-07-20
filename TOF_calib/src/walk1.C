@@ -62,7 +62,7 @@ void walk1(int Run){
   // first get base time offset from ccdb data base
   system(TOFDIRcmd);
   ifstream INF1("calib.log");
-  if (INF1 == NULL){
+  if (!INF1){
     cout<<"Error no calibration file found! BAIL NOW!"<<endl;
     return;
   }

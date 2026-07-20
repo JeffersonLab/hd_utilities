@@ -1,0 +1,41 @@
+The main purpose of this code is to create the run dependent histograms
+that are used to determine the polarization. 
+
+Example on how to run: For run 90063, polarization plane at 0 degrees, with input 
+file ../stage1/stage1Out_090063.root and output file ./tpolAna_090063.root
+
+ ./stage2 ../stage1/stage1Out_090063.root -o./tpolAna_090063.root -p0 -r90063
+
+NOTE: Example plots can be found in the analysis note 
+( http://meson.hldsite.com/tpol/analysisNoteV2.pdf )
+
+Some histograms that might be of interest:
+
+root -l tpolAna_090063.root
+   hTime->Draw()
+
+You can compare to Figure 10 in the analysis note. NOTE: The peak
+is at aproximately 300 ns for Sp 18 onward.
+
+   hTimeVsPhi->Draw("colz")
+
+The above plot shows the timing versus azimuthal angle.
+
+   hEDepVsSector->Draw("colz")
+
+The above plot shows the energy deposited in the silicon strip detector
+vs the sector number. 
+
+   hPhiCut->Draw()
+
+The above shows the azimuthal distribution along with a fit to the data
+
+   hPhiCutVsRun->Draw("colz") 
+
+The above shows the azimuthal distribution as a function of run number
+NOTE: Only interesting when many run files are added together
+
+    hPolVsRun->Draw()
+
+The above shows the polarization versus the run number
+

@@ -1,4 +1,4 @@
-#!/bin/tcsh
+#!/bin/bash
 # Export environmental variables for cron job
 export LOCKFILE=lock.offline
 
@@ -26,12 +26,12 @@ export LOGNAME=check_monitoring_data.log.`date +%F_%T`
 # make log directory if it doesn't exist
 if (! -d $MONITORING_LOGDIR ) then
     mkdir -p $MONITORING_LOGDIR
-endif
+fi
 
 # delete logs that are older than 30 days
 if (-d $MONITORING_LOGDIR && $MONITORING_LOGDIR != "/log" ) then
     find $MONITORING_LOGDIR/ -mtime +30 -exec rm '{}' \;
-endif
+fi
 
 # run the script
 cd $MONITORING_HOME
@@ -39,9 +39,7 @@ cd $MONITORING_HOME
 if ( ! -e $LOCKFILE ) then
     touch $LOCKFILE
     ./process_new_offline_data.py $ARGS ver$VERSION $INPUTDIR $INPUT_SMALLFILE_DIR $OUTPUTDIR --logfile=$MONITORING_LOGDIR/check_monitoring_data.`date +%F_%T`.log
-    #./process_new_offline_data.py $ARGS ver$VERSION $INPUTDIR $INPUT_SMALLFILE_DIR $OUTPUTDIR
     rm $LOCKFILE
 else 
     echo "process is locked by another job, exiting..."
-endif
-
+fi

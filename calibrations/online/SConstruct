@@ -1,0 +1,120 @@
+
+import os
+import sys
+import subprocess
+import glob
+
+# Add SBMS directory to PYTHONPATH
+ONLINE_PACKAGE_DIR =  "/gluex/builds/devel/packages"
+sbmsdir = "%s/SBMS" % (ONLINE_PACKAGE_DIR)
+sys.path.append(sbmsdir)
+
+import sbms
+
+# Get command-line options
+SHOWBUILD = ARGUMENTS.get('SHOWBUILD', 0)
+OPTIMIZATION = ARGUMENTS.get('OPTIMIZATION', 3)
+DEBUG = ARGUMENTS.get('DEBUG', 1)
+
+# Get platform-specific name
+print("%s/osrelease.pl" % sbmsdir)
+osname = os.getenv('BMS_OSNAME', subprocess.Popen(["%s/osrelease.pl" % sbmsdir], stdout=subprocess.PIPE).communicate()[0].strip())
+
+# Get architecture name
+arch = subprocess.Popen(["uname"], stdout=subprocess.PIPE).communicate()[0].strip()
+
+# Setup initial environment
+#installdir = "#%s" %(osname)
+#ginstalldir = "#../../%s" % (osname)
+ginstalldir = "#/gluex/builds/devel/%s" % (osname)
+installdir = ginstalldir   # Only install in global directory
+include = "%s/include" % (installdir)
+bin = "%s/bin" % (installdir)
+lib = "%s/lib" % (installdir)
+plugins = "%s/plugins" % (installdir)
+examples = "%s/examples" % (installdir)
+env = Environment(        ENV = os.environ,  # Bring in full environement, including PATH
+                      CPPPATH = [include],
+                      #LIBPATH = [lib],
+                  variant_dir = "src/.%s" % (osname))
+
+# These are SBMS-specific variables (i.e. not default scons ones)
+env.Replace(INSTALLDIR    = installdir,
+				GINSTALLDIR   = ginstalldir,
+				OSNAME        = osname,
+				INCDIR        = include,
+				BINDIR        = bin,
+				LIBDIR        = lib,
+				PLUGINSDIR    = plugins,
+				ALL_SOURCES   = [],        # used so we can add generated sources
+            SHOWBUILD     = SHOWBUILD,
+				OPTIMIZATION  = OPTIMIZATION,
+				DEBUG         = DEBUG,
+	  COMMAND_LINE_TARGETS = COMMAND_LINE_TARGETS)
+
+# Use terse output unless otherwise specified
+if SHOWBUILD==0:
+	env.Replace(CCCOMSTR       = "Compiling  [$SOURCE]",
+				  CXXCOMSTR       = "Compiling  [$SOURCE]",
+				  FORTRANPPCOMSTR = "Compiling  [$SOURCE]",
+				  FORTRANCOMSTR   = "Compiling  [$SOURCE]",
+				  SHCCCOMSTR      = "Compiling  [$SOURCE]",
+				  SHCXXCOMSTR     = "Compiling  [$SOURCE]",
+				  LINKCOMSTR      = "Linking    [$TARGET]",
+				  SHLINKCOMSTR    = "Linking    [$TARGET]",
+				  INSTALLSTR      = "Installing [$TARGET]",
+				  ARCOMSTR        = "Archiving  [$TARGET]",
+				  RANLIBCOMSTR    = "Ranlib     [$TARGET]")
+
+
+# Get compiler from environment variables (if set)
+env.Replace( CXX = os.getenv('CXX', 'g++'),
+             CC  = os.getenv('CC' , 'gcc'),
+             FC  = os.getenv('FC' , 'gfortran') )
+
+# Add libraries and libraries/include to include search path
+#env.PrependUnique(CPPPATH = ['#', '#src/libRootSpy', '#src/libRootSpy-client'])
+
+# Use C++11
+if 'gcc4.4.7' not in osname:
+	env.Replace(HAS_CPP11 = True)
+	env.PrependUnique(    CXXFLAGS = ['-std=c++11'])
+else:
+	env.Replace(HAS_CPP11 = False)
+
+# Standard flags (optimization level and warnings)
+env.PrependUnique(      CFLAGS = ['-O%s' % OPTIMIZATION, '-fPIC', '-Wall'])
+env.PrependUnique(    CXXFLAGS = ['-O%s' % OPTIMIZATION, '-fPIC', '-Wall'])
+env.PrependUnique(FORTRANFLAGS = ['-O%s' % OPTIMIZATION, '-fPIC', '-Wall'])
+
+# Turn on debug symbols unless user told us not to
+if not DEBUG=='0':
+	env.PrependUnique(      CFLAGS = ['-g'])
+	env.PrependUnique(    CXXFLAGS = ['-g'])
+	env.PrependUnique(FORTRANFLAGS = ['-g'])
+
+# Apply any platform/architecture specific settings
+sbms.ApplyPlatformSpecificSettings(env, arch)
+sbms.ApplyPlatformSpecificSettings(env, osname)
+
+# Include SConscript in src
+#SConscript('src/SConscript', variant_dir="src/.%s" % (osname), exports='env osname', duplicate=0)
+
+# Make install target
+env.Alias('install', installdir)
+env.Alias('ginstall', ginstalldir)
+
+# Install selected scripts that can be centrally run
+scripts_to_install = [ 'launch_skim_jobs.py', 'update_skim_files.py', 'update_rcdb.py' ]
+scripts_to_install += [ 'run_update_skim_files.sh', 'run_update_rcdb.sh' ]
+for script in scripts_to_install:
+	myscript = '%s' % script  # convert to simple string
+	if 'SConscript' in myscript or 'SConstruct' in myscript: continue
+
+	if os.path.isdir(myscript):
+		if os.path.exists( os.path.join(myscript, 'SConscript')):
+			SConscript(dirs=[script], exports='env osname', duplicate=0, must_exist=0)
+	else:
+		sbms.script(env, script)
+
+

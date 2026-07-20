@@ -10,7 +10,7 @@ import sys,os,errno
 from os import listdir
 from os.path import isfile, join
 from optparse import OptionParser
-import pickle
+import json
 import logging
 
 from ROOT import gROOT,gSystem
@@ -43,12 +43,12 @@ class CheckNewRuns:
         self.ONLINE_ROOT_DIR = self.BASE_ONLINEMON_DIR + '/root'
         self.ONLINE_CONDITION_DIR = self.BASE_ONLINEMON_DIR + '/conditions'
 
-        self.MIN_RUN_NUMBER = 30001
+        self.MIN_RUN_NUMBER = 130001
         #self.MAX_RUN_NUMBER = 9000
         self.MAX_RUN_NUMBER = 1000000
-        self.VERSION_NUMBER  =  88  ## hardcode default - need to change this
+        self.VERSION_NUMBER  =  361  ## hardcode default - need to change this
         self.MONITORING_OUTPUT_DIR = "/work/halld2/data_monitoring"
-        self.RUN_PERIOD = "RunPeriod-2017-01"
+        self.RUN_PERIOD = "RunPeriod-2025-01"
 
         self.MAKE_PLOTS = True
         self.MAKE_DB_SUMMARY = True
@@ -68,7 +68,7 @@ class CheckNewRuns:
         # use separate log files for ROOT and all other output
         # append by default
         self.LOGFILE = logfile
-        if self.LOGFILE is not "":
+        if self.LOGFILE != "":
             logging.basicConfig(filename=self.LOGFILE)
             gSystem.RedirectOutput(self.LOGFILE)
             #gSystem.RedirectOutput(self.LOGFILE+"_root")
@@ -96,7 +96,7 @@ class CheckNewRuns:
         #run_list = self.LoadProcessedRunList(self.PROCESSED_RUN_LIST_FILE)
         try:
             with open(self.PROCESSED_RUN_LIST_FILE,"r") as inf:
-                oldrun_list = pickle.load( inf )
+                oldrun_list = json.load( inf )
         except IOError:
             oldrun_list = []
 
@@ -110,7 +110,7 @@ class CheckNewRuns:
 
         # kludge for now, since the online ROOT files have stopped since run 1764, get a new run if a new condition file shows up
         condition_files_on_disk = [ f for f in listdir(self.ONLINE_CONDITION_DIR) if (isfile(join(self.ONLINE_CONDITION_DIR,f))and(f[-4:]=='.dat')) ]
-        run_numbers_on_disk = [ (int(fname[15:20]),fname) for fname in condition_files_on_disk if (int(fname[15:20])>=self.MIN_RUN_NUMBER and int(fname[15:20])<=self.MAX_RUN_NUMBER) ]
+        run_numbers_on_disk = [ (int(fname[14:20]),fname) for fname in condition_files_on_disk if (int(fname[14:20])>=self.MIN_RUN_NUMBER and int(fname[14:20])<=self.MAX_RUN_NUMBER) ]
         run_numbers_on_disk.sort(key=lambda runinfo: int(runinfo[0]))
 
         # do the heavy work
@@ -118,7 +118,7 @@ class CheckNewRuns:
             ## if we haven't already processed the run, make the plots and add its info to the DB
             if run not in oldrun_list or self.FORCE_PROCESSING:
                 if self.VERBOSE>0:
-                    print "processing " + str(run) + "..."
+                    print("processing " + str(run) + "...")
 
                 ## add blank run to DB if it doesn't exist
                 if(self.db.GetRunID(run) < 0):
@@ -130,19 +130,19 @@ class CheckNewRuns:
                 rootfile_name = join(self.ONLINE_ROOT_DIR,"hdmon_online%06d.root"%run)
 
                 if not isfile(rootfile_name):
-                    print "can't find ROOT file!"
+                    print("can't find ROOT file!")
                     continue
         
                 if self.MAKE_PLOTS:
                     if self.VERBOSE>1:
-                        print "  creating plots..."
+                        print("  creating plots...")
                     monitoring_data_dir = join(self.MONITORING_OUTPUT_DIR, self.RUN_PERIOD, "rawdata_ver00", ("Run%06d" % run))
                     #mkdir_p(monitoring_data_dir)
                     os.system("mkdir -m"+self.NEWDIR_MODE+" -p " + monitoring_data_dir)  ## need error checks
 
                     plotter = make_monitoring_plots.make_monitoring_plots()
-                    plotter.histlist_filename = "/home/gluex/halld/monitoring/process/histograms_to_monitor"
-                    plotter.macrolist_filename = "/home/gluex/halld/monitoring/process/macros_to_monitor"
+                    plotter.histlist_filename = "/home/gluex/hd_utilities/launch_scripts/process/histograms_to_monitor"
+                    plotter.macrolist_filename = "/home/gluex/hd_utilities/launch_scripts/process/macros_to_monitor"
                     plotter.base_root_dir = "rootspy/"
                     plotter.output_directory = monitoring_data_dir
                     plotter.rootfile_name = rootfile_name
@@ -151,7 +151,7 @@ class CheckNewRuns:
 
                 if self.MAKE_DB_SUMMARY:
                     if self.VERBOSE>1:
-                        print "  analyzing DB info..."
+                        print("  analyzing DB info...")
                     summarizer = summarize_monitoring_data.summarize_monitoring_data()
                     summarizer.RUN_NUMBER = run
                     summarizer.VERSION_NUMBER = self.VERSION_NUMBER
@@ -163,14 +163,14 @@ class CheckNewRuns:
                 if self.MAKE_RUN_CONDITIONS:
                     # update the run metadata
                     cmdargs = str(run)
-                    print "  saving conditions..."
+                    print("  saving conditions...")
                     process_run_conditions.main(cmdargs.split())
 
                 ## we successfully processed the run!  make a note of that
                 oldrun_list.append(run)
                 with open(self.PROCESSED_RUN_LIST_FILE,"w") as outf:
-                    print "WRITING LIST OUT"
-                    pickle.dump( oldrun_list, outf )
+                    print("WRITING LIST OUT")
+                    json.dump( oldrun_list, outf )
 
 
 
@@ -230,7 +230,7 @@ if __name__ == "__main__":
          except:
              logging.critical("Invalid version specification = " + options.version_string)
              sys.exit(0)
-         print "Configured RunPeriod = %s  Revision = %d  ->  VersionID = %d" % (run_period,revision,checker.VERSION_NUMBER)
+         print("Configured RunPeriod = %s  Revision = %d  ->  VersionID = %d" % (run_period,revision,checker.VERSION_NUMBER))
      if(options.version_number):
          try:
              checker.VERSION_NUMBER = int(options.version_number) 

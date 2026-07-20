@@ -1,0 +1,10 @@
+SHELL=/bin/bash
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+MAILTO=sdobbs@jlab.org
+HOME=/home/sdobbs
+
+*/15 * * * * /home/sdobbs/work/calibration_train/online/run_online_calibrations.sh
+*/20 * * * * /home/sdobbs/work/calibration_train/online/run_update_rcdb.sh
+## save reference plots for offsite monitoring
+#55 * * * * cp /gluonfs1/gluex/data/REFERENCE_PLOTS/*.png  /gluonfs1/home/sdobbs/group_home/rootspy_reference_plots
+

@@ -49,19 +49,19 @@ def parse_version_file(fname):
                 properties[ tokens[0] ] = " ".join(tokens[2:])
         infile.close()
     except IOError as e:
-        print "I/O error({0}): {1}".format(e.errno, e.strerror)
+        print("I/O error({0}): {1}".format(e.errno, e.strerror))
         return None
         #sys.exit(0)
 #    except:
-#        print "Unexpected error:", sys.exc_info()[0]
+#        print("Unexpected error:", sys.exc_info()[0])
 #        return None
         #sys.exit(0)
     return properties
 
 
 def print_usage():
-    print "usage: register_new_version.py add filename"
-    print "       register_new_version.py update version_id filename"
+    print("usage: register_new_version.py add filename")
+    print("       register_new_version.py update version_id filename")
 
 def main(argv):
     if len(argv) <= 1:
@@ -69,7 +69,7 @@ def main(argv):
         return
     cmd = argv[0]
     if cmd not in VALID_COMMANDS:
-        print "Invalud command = " + cmd
+        print("Invalud command = " + cmd)
         print_usage()
         return
         
@@ -85,7 +85,7 @@ def main(argv):
         try:
             version_id = int(argv[1])
         except ValueError:
-            print "Bad version ID = " + argv[1]
+            print("Bad version ID = " + argv[1])
             return
         filename = argv[2]
 
@@ -96,13 +96,13 @@ def main(argv):
 
     # do some sanity checking
     if input_properties['data_type'] not in VALID_DATA_TYPES:
-        print "Invalid data_type specified = " + input_properties['data_type']
-        print "Valid data types = " + " ".join(VALID_DATA_TYPES)
+        print("Invalid data_type specified = " + input_properties['data_type'])
+        print("Valid data types = " + " ".join(VALID_DATA_TYPES))
         return
     try:
         revision = int(input_properties['revision'])
     except ValueError:
-        print "Bad revision value = " + input_properties['revision']
+        print("Bad revision value = " + input_properties['revision'])
         return
 
 
@@ -116,7 +116,7 @@ def main(argv):
     db = datamon_db()
     if cmd == "add":
         version_id = db.AddVersionInfo(version_properties)
-        print "Your new version number is:  " + str(int(version_id[0]))
+        print("Your new version number is:  " + str(int(version_id[0])))
     elif cmd == "update":
         db.UpdateVersionInfo(version_id, version_properties)
 
