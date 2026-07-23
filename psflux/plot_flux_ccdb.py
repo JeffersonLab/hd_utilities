@@ -64,23 +64,26 @@ def getCCDBContext(run, ANALYSISVERSION):
 
     # get run period by run number
     runPeriod = ""
-    firstGluexIEnergyRecalibAna = 0
+    firstEnergyRecalibAnaTAGM = 0
+    firstEnergyRecalibAnaTAGH = 0
     defaultRESTversion = 999
     
-    firstGluexIEnergyRecalibAna = 0
     if run < 20000: 
         runPeriod = "RunPeriod-2016-02"
     elif run < 40000:
         runPeriod = "RunPeriod-2017-01"
-        firstGluexIEnergyRecalibAna = 60
+        firstEnergyRecalibAnaTAGM = 60
+        firstEnergyRecalibAnaTAGH = 70
         defaultRESTversionID = 154
     elif run < 50000:
         runPeriod = "RunPeriod-2018-01"
-        firstGluexIEnergyRecalibAna = 23
+        firstEnergyRecalibAnaTAGM = 23
+        firstEnergyRecalibAnaTAGH = 24
         defaultRESTversionID = 176
     elif run < 60000: 
         runPeriod = "RunPeriod-2018-08"
-        firstGluexIEnergyRecalibAna = 20
+        firstEnergyRecalibAnaTAGM = 20
+        firstEnergyRecalibAnaTAGH = 23
         defaultRESTversionID = 189
     elif run < 70000:
         runPeriod = "RunPeriod-2019-01"
@@ -103,13 +106,15 @@ def getCCDBContext(run, ANALYSISVERSION):
     elif begin_run < 159999:
         runPeriod = "RunPeriod-2026-06"
     
-    if ANALYSISVERSION < firstGluexIEnergyRecalibAna: 
+    if ANALYSISVERSION < firstEnergyRecalibAnaTAGM: 
         # if analysis launch before energy recalibration, then use the default context for REST version
         contextREST = loadCCDBContextREST(defaultRESTversionID)
         RESTVERSION = contextREST[0][0]
         
         # set JANA_CALIB_CONTEXT to default context for REST version (for Analysis Launch before energy recalibration)
         context = contextREST[0][1]
+        correctTAGM = False
+        correctTAGH = False
         
     else: 
         # otherwise, retrieve context for Analysis Launch from datmon DB
@@ -119,6 +124,10 @@ def getCCDBContext(run, ANALYSISVERSION):
         
         # set JANA_CALIB_CONTEXT for Analysis Launch after energy recalibration to the context from datmon DB
         context = contextListAnalysis[0][1]
+        
+        # check if Analysis Launch version is before energy recalibration for TAGH
+        if ANALYSISVERSION < firstEnergyRecalibAnaTAGH:
+            correctTAGH = False
     
     # override JANA_CALIB_CONTEXT manually when DB is not correct
     if contextOverride != "":
