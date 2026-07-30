@@ -1,3 +1,196 @@
+
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+<title>Submit Reaction - Modernized</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f5f5f7;
+    margin: 0;
+    padding: 20px;
+    color: #333;
+}
+.container {
+    max-width: 1200px;
+    margin: auto;
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+h1, h2, h3 {
+    color: #2c3e50;
+}
+button, input[type=submit], input[type=button] {
+    background-color: #3498db;
+    color: white;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+button:hover, input[type=submit]:hover, input[type=button]:hover {
+    background-color: #2980b9;
+}
+input, select, textarea {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 6px;
+    margin-bottom: 12px;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+th, td {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+}
+th {
+    background-color: #ecf0f1;
+}
+
+/* Keep reaction elements on a single line */
+#DecayLineDecayfPart0_0,
+[id^="DecayLine"] {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Ensure buttons do NOT stretch full width */
+input[type="button"],
+select,
+input[type="checkbox"] {
+    width: auto;       /* important: prevents stretching */
+    display: inline-block;
+    margin: 0 4px;
+}
+
+/* Prevent large selects from dominating layout */
+.selectStyle {
+    font-size: 20px;   /* smaller but still readable */
+    width: auto;
+}
+
+/* Arrow stays inline */
+[id^="DecayLine"] font {
+    white-space: nowrap;
+}
+
+/* ============================
+   Spacing updates (Email field)
+   ============================ */
+#submitter {
+    width: 240px;
+    padding: 4px 8px;
+    font-size: 14px;
+    margin-left: 6px;     /* brings input closer to 'Email:' label */
+}
+
+/* ============================
+   Matching widths for B, T, S, F
+   ============================ */
+
+/* FFlag is a <select>, B/T/S are <input type="number">  
+   We'll give them identical sizing */
+#BFlag, #TFlag, #SFlag, #FFlag {
+    width: 160px;         /* same width for all */
+    padding: 4px 8px;
+    font-size: 14px;
+}
+
+/* ============================
+   Reaction line layout
+   ============================ */
+
+#DecayLineDecayfPart0_0,
+[id^="DecayLine"] {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+}
+
+input[type="button"],
+select,
+input[type="checkbox"] {
+    width: auto;
+    display: inline-block;
+    margin: 0 4px;
+}
+
+/* smaller selects */
+.selectStyle {
+    font-size: 20px;
+    width: auto;
+}
+
+/* arrow stays inline */
+[id^="DecayLine"] font {
+    white-space: nowrap;
+}
+
+/* ============================
+   Dark Mode support (variables)
+   ============================ */
+
+:root {
+    --bg-color: #ffffff;
+    --text-color: #222;
+    --card-bg: #ffffff;
+    --input-bg: #ffffff;
+    --input-text: #222;
+    --button-bg: #3498db;
+    --button-text: #fff;
+}
+
+.dark-mode {
+    --bg-color: #1e1e1e;
+    --text-color: #e0e0e0;
+    --card-bg: #2a2a2a;
+    --input-bg: #333;
+    --input-text: #fff;
+    --button-bg: #2980b9;
+    --button-text: #fff;
+}
+
+/* Apply theme variables */
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+.container {
+    background-color: var(--card-bg);
+}
+
+input, select, textarea {
+    background-color: var(--input-bg);
+    color: var(--input-text);
+}
+
+input[type="button"], button {
+    background-color: var(--button-bg);
+    color: var(--button-text);
+}
+
+</style>
+
+</head>
+<body class="dark-mode">
+<div class='container'>
 <html>
     <head>
         <title>Analysis Reaction Submit Form</title>
@@ -7,7 +200,12 @@
 
 <img align="right" src="./imgs/anaconda_logo.png" width="250px" height="250px">
 
+<button onclick="document.body.classList.toggle('dark-mode')">
+    Toggle Dark Mode
+</button>
+
 Email: <input type="text" id="submitter">
+<br>
 <br>
 Please fill out your reaction below:
 <br>
@@ -21,7 +219,10 @@ Each product comes as a set of three objects:<br>
 <br>
 <br>
 <div id="GlobalFlags">
-B (Beam Bunches):<input id="BFlag" type="number" min="0" max="5" value="1" onchange="MakeConfigLines()">&emsp;T (Extra Charged Tracks):<input id="TFlag" type="number" min="0" max="10" value="3" onchange="MakeConfigLines()">&emsp; S (Extra Showers):<input id="SFlag" type="number" min="0" max="999" value="999" onchange="MakeConfigLines()">&emsp;F (Fit Type):<select id="FFlag" onchange="MakeConfigLines()">
+  B (Beam Bunches):<input id="BFlag" type="number" min="0" max="5" value="1" onchange="MakeConfigLines()">&emsp;T (Extra Charged Tracks):<input id="TFlag" type="number" min="0" max="10" value="3" onchange="MakeConfigLines()">&emsp;
+</div>
+<div id="GlobalFlgs2">
+  S (Extra Showers):<input id="SFlag" type="number" min="0" max="999" value="999" onchange="MakeConfigLines()">&emsp;F (Fit Type):<select id="FFlag" onchange="MakeConfigLines()">
     <option value=0 >None</option>
     <option value=1 >P4 </option>
     <option value=2>Vertex</option>
@@ -33,19 +234,21 @@ B (Beam Bunches):<input id="BFlag" type="number" min="0" max="5" value="1" oncha
 </div>
 <br>
 Initial Particles -----> Final State Particles <input type="button" id="addDecayLineDecayfPart0_0" onclick="AddSelector(0,this);MakeConfigLines()" value="add particle"><input type="button" id="removeDecayLineDecayfPart0_0" onclick="RemoveSelector(0,this);MakeConfigLines()" value="remove particle"><!--addDecayLevel_0-->
-
+<br>
+<br>
 <div id='DecayLevels'>
         <div id='DecayLevel_0'>
         <div id='DecayLineDecayfPart0_0'>
                 &emsp;<select id="iPart1_0" name="iPart1_0" class="selectStyle" onchange="MakeConfigLines()"></select><select id="iPart2_0" name="iPart2_0" class="selectStyle" onchange="MakeConfigLines()"></select><font size='30'>&rarr;</font>
         </div>
         </div>
+	<br>
         <hr>
 </div>
 <hr>
 <br>
 <!--<input type="button" onclick="MakeConfigLines()" value="Make">The line:-->
-<textarea id="output" style="margin: 0px; width: 290px; height: 157px;" readonly>
+<textarea id="output" style="margin: 0px; width: 290px; height: 137px;" readonly>
 </textarea>
 <input type="button" onClick="WriteLinesJSON();GetCurrentConfigFile()" value="Submit Reaction"> to run over <b>
 <font size='4'>
@@ -65,6 +268,7 @@ Initial Particles -----> Final State Particles <input type="button" id="addDecay
 	<option value="2023-01_ver04">2023-01_ver04</option>
     </select>
 </font></b>
+<br>
 <br>
 <textarea id="curconf" style="margin: 0px; width: 406px; height: 450px;" readonly>
 </textarea>
@@ -856,4 +1060,8 @@ function RemoveSelector(level,parent)
 </script>
 </body>
 
+</html>
+
+</div>
+</body>
 </html>
