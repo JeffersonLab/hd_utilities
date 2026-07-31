@@ -134,9 +134,9 @@ if __name__ == "__main__":
     HOSS_DB          = 'HOSS'
     #RCDB_PASS        = ''
     RUNS             = ''
-    RUN_PERIOD       = 'RunPeriod-2025-01'
+    RUN_PERIOD       = 'RunPeriod-2026-03'
     #RCDB_PRODUCTION_SEARCH = "@is_dirc_production"
-    RCDB_PRODUCTION_SEARCH = "@is_dirc_production and event_count>100000000"
+    #RCDB_PRODUCTION_SEARCH = "@is_dirc_production and event_count>100000000"
     #RCDB_PRODUCTION_SEARCH = "@is_primex_production"
     #RCDB_PRODUCTION_SEARCH = "@is_primex_production and event_count>10000000"
     #RCDB_PRODUCTION_SEARCH = "daq_run=='PHYSICS_DIRC' and event_count > 5000000"
@@ -146,10 +146,12 @@ if __name__ == "__main__":
     #RCDB_PRODUCTION_SEARCH = "daq_run=='PHYSICS_SRC' and beam_current > 10. and event_count > 5000000 and solenoid_current > 100 and collimator_diameter != 'Blocking'"
     #RCDB_PRODUCTION_SEARCH = "daq_run=='PHYSICS_DIRC_TRD' and beam_current > 10. and event_count > 5000000 and solenoid_current > 100 and collimator_diameter != 'Blocking'"
     #3RCDB_PRODUCTION_SEARCH = "daq_run=='PHYSICS_DIRC_TRD' and event_count > 5000000"
-    #RCDB_SEARCH_MIN  = 40000
-    #RCDB_SEARCH_MIN  = 41857
-    RCDB_SEARCH_MIN  = 131590
-    RCDB_SEARCH_MAX  = 140000
+    RCDB_PRODUCTION_SEARCH = "(daq_run=='PHYSICS_DIRC_TRD' or daq_run=='PHYSICS_DIRC') and beam_current > 10. and event_count > 5000000 and solenoid_current > 100 and collimator_diameter != 'Blocking'"
+
+    RCDB_SEARCH_MIN  = 140302
+    #RCDB_SEARCH_MAX  = 140302
+    RCDB_SEARCH_MAX  = 150000
+
     FORCE = False
 
 

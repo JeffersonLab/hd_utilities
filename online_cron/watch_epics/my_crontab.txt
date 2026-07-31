@@ -1,3 +1,0 @@
-# Min    Hour    Day    Month    Weekday    Command
-MAILTO=njarvis@jlab.org
-*/5         *      *       *         *       /bin/csh ~/cronjobs/run_watch_epics.csh

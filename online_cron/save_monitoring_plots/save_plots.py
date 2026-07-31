@@ -1,259 +1,76 @@
 #
-# Plan: make a log entry to save the rootspy plots after the first X events of run Y
-#if dictlist['HD:coda:daq:status']['mean'] != 2 :   # daq status - HD:coda:daq:status = 2 for 'go'
-
-# 
-# Use these epics PVs: HD:coda:EventNumber HD:coda:daq:run_number
-# 
-# Have this code run just once, looking at the last minute.
-# Call it repeatedly via cron.
+# Make a log entry to save the rootspy plots after the first X events of run Y
 #
-# Write run number into a file, so that further warnings can be suppressed for a while.
+# Write run number into a file.
 #
 
 import os
-from datetime import datetime,timedelta
-import time
+import subprocess
 
 testing = False
 
 events_required = 50000000 # 50M
 
-sleeptime = 60  #seconds to wait before trying mya again after an outage
-
-# warning message suppression times
-outage_warning_suppression_time = timedelta(minutes=30)
-err_warning_suppression_time = timedelta(minutes=240)
-
-# temp output filenames
-epicsfile = '_epics.txt'             # mystats printout
-runloggedfile = '_runlogged.txt'         # last run for which plots were saved
-warningfile = '_warning.txt'         # warning message text eg if epics reports N/A
-
-# problem logging output filenames
-errfile = '_epics_err_warning.txt'           # time of last mystats error warning
-outagefile = '_epics_outage_warning.txt'     # time of last mystats outage warning
+runloggedfile = '_runlogged.txt'         # records last run for which plots were saved
 
 #list of plots to include
-include_histos = ' -H //BCAL_occupancy -H //CDC_occupancy -H //DIRC_occupancy -H //ECAL_occupancy -H //FCAL_occupancy -H //FDC_occupancy'
-include_histos += ' -H //FDC_P1_pseudo_occupancy  -H //FDC_P2_pseudo_occupancy  -H //FDC_P3_pseudo_occupancy  -H //FDC_P4_pseudo_occupancy -H //PS_occupancy -H //RF_TPOL_occupancy -H //ST_occupancy -H //TAGGER_occupancy -H //TOF_occupancy'
-include_histos += ' -H //HistMacro_Beam -H //HistMacro_Kinematics -H //HistMacro_NumHighLevelObjects -H //HistMacro_OnlineRF_LE -H //HistMacro_PID -H //HistMacro_Trigger -H //HistMacro_Trigger_EnergyCorrelation -H //HistMacro_Vertex'
-include_histos += ' -H //HistMacro_bad_hits -H //HistMacro_fa125_itrig -H //HistMacro_fa125_temp'
+include_histos = (' -H //BCAL_occupancy -H //CDC_occupancy -H //DIRC_occupancy -H //ECAL_occupancy -H //FCAL_occupancy -H //FDC_occupancy'
+                  ' -H //FDC_P1_pseudo_occupancy  -H //FDC_P2_pseudo_occupancy  -H //FDC_P3_pseudo_occupancy  -H //FDC_P4_pseudo_occupancy'
+                  ' -H //PS_occupancy -H //RF_TPOL_occupancy -H //ST_occupancy -H //TAGGER_occupancy -H //TOF_occupancy'
+                  ' -H //HistMacro_Beam -H //HistMacro_Kinematics -H //HistMacro_NumHighLevelObjects -H //HistMacro_OnlineRF'
+                  ' -H //HistMacro_PID -H //HistMacro_Trigger -H //HistMacro_Trigger_EnergyCorrelation -H //HistMacro_Vertex'
+                  ' -H //HistMacro_bad_hits -H //HistMacro_fa125_itrig -H //HistMacro_fa125_temp')
 
 
 #-----------------------------------------------------------------------------------
 
-def run_mystats(epicsfile) :
+
+pvlist = ['HD:coda:daq:status', 'HD:coda:daq:run_number', 'HD:coda:EventNumber']
     
-    pvlist = 'HD:coda:daq:status,HD:coda:daq:run_number,HD:coda:EventNumber'
+# the dictlist is a list of dicts like {pvname : last_recorded_value} with the value set to -1 for errors
+# exit if there are network disconnections
 
-    if os.path.exists(epicsfile):
-        os.remove(epicsfile)
+dictlist = {}
 
-    cmd = "myStats -b -10s -e 0 -u -f " + epicsfile + " -l " + pvlist
+for pv in pvlist:
+    cmd_arr = ["myget", "-c", pv, "-t0", "-w-"]
 
-    os.system(cmd)
-    
-    return
-
-#-----------------------------------------------------------------------------------
-
-def check_output_exists(thisfile):
-    
-    if os.path.exists(thisfile):
-        return True
-    
-    timeformat = "%Y-%m-%d %H:%M:%S"
-
-    time_since_warning = find_time_since_warning(errfile)
-    
-    if time_since_warning > err_warning_suppression_time :
-        issue_warning('no_epics_output')
-        record_time(errfile)
-    else :
+    try:
+        result = subprocess.check_output(cmd_arr)
         if testing:
-            print('EPICS archive access error warning issued recently')
+            print(pv)
+            print(result)
 
-    return False
+    except subprocess.CalledProcessError as e:
+        if testing:
+            print("myget command failed with return code: " + str(e.returncode))
+            if e.output:
+                print(e.output)
+        exit()
 
+    if 'Network disconnection' in result or 'fault' in result:
+        exit()
 
-#-----------------------------------------------------------------------------------
+    # 2026-07-01 10:24:22 1.5
+    result = result.split()[2]
 
-def read_mystats(epicsfile) :
+    dict = {pv : result}
 
-    f = open(epicsfile,'r')
-    lines = f.readlines()
-    f.close()
+    dictlist.update(dict)
 
-    dictlist = {}    
-    # Name     Min   Mean   Max   Sigma
-    
-    for line in lines:
- 
-        things = line.strip().split(" ")
-        pvname = things[0]
-            
-        if things[3] == 'N/A' :
-            max = -1
-        elif things[3] == '<undefined>' :
-            max = -1
-        else :
-            max = things[3]        
-
-        if things[4] == 'N/A' :
-            sigma = -1
-        elif things[4] == '<undefined>' :
-            sigma = -1
-        else :
-            sigma = float(things[4])        
-
-        dict = {pvname : { "max":max, "sigma":sigma}}
-        dictlist.update(dict)
-        
-    return dictlist
-
-
-#-----------------------------------------------------------------------------------    
-
-
-def issue_warning(pv) :
-
-    # See https://logbooks.jlab.org/content/api-authentication
-    # Need this set: export JAVA_HOME=/gapps/Java/jdk/23.0.1/x64/jdk23.0.1/
-    
-    os.putenv('JAVA_HOME','/gapps/Java/jdk/23.0.1/x64/jdk23.0.1/')  # needed to make the log entry
-
-
-    f = open(warningfile,'w')
-    
-    if pv == 'no_epics_output' :
-        title = 'Cron script could not access EPICS archive'
-        f.write(title)
-    else :
-        title = 'DAQ EPICS PVs unavailable in MYA'
-        f.write("The following EPICS PVs were recently unavailable in MYA:\n")
-        f.write(pv)
-
-     
-    import platform
-    f.write("\n\n")
-    
-    f.write("This message was generated by Naomi's save_plots script, running as a cron job on " + platform.node() + "\n")
-    f.close()
-
-    cmd = '/site/ace/certified/apps/bin/logentry -l HDLOG -g Autolog -t "' + title + '" -b ' + warningfile + ' -n njarvis@jlab.org'
-
-
+#Require daq go
+if dictlist['HD:coda:daq:status'] != '2':
     if testing:
-        print(cmd)
-        print('logbook entry deactivated')
-    else :
-        os.system(cmd)
-    return
-
-
-#-----------------------------------------------------------------------------------
-
-def find_time_since_warning(filename) :
-
-    timeformat = "%Y-%m-%d %H:%M:%S"
-
-    if not os.path.exists(filename):
-        time_since_warning = timedelta(days=1000)     # no previous warnings were made 
-    else :
-        lastwarning = read_time(filename)
-        time_since_warning = datetime.now() - datetime.strptime(lastwarning,timeformat)   #this is a timedelta
-    return time_since_warning
-
-#-----------------------------------------------------------------------------------
-
-def record_time(filename) :
-
-    timeformat = "%Y-%m-%d %H:%M:%S"
-    
-    f = open(filename,'w')
-    f.write(datetime.now().strftime(timeformat))
-    f.close()       
-    return
-
-#-----------------------------------------------------------------------------------
-
-def read_time(filename) :
-
-    f = open(filename,'r')
-    time_recorded = f.readline()
-    f.close()
-
-    return time_recorded
-
-
-
-#-----------------------------------------------------------------------------------
-#-----------------------------------------------------------------------------------
-#------ main -----------------------------------------------------------------------
-
-
-run_mystats(epicsfile)
-
-
-allok = check_output_exists(epicsfile)   # this issues a warning if the file is not there
-
-if not allok:
-    exit('not ok')
-
-dictlist = read_mystats(epicsfile)   
-
-# the dictlist is a list of dicts like 
-# eg {'IBCAD00CRCUR6': {'mean': 0.275, 'sigma': 0.641775}}
-# invalid mean or sigma, eg 'N/A', are set to -1
-
-# check for epics outages. 
-
-outages = ""
-outages2 = ""
-
-for dict in dictlist:
-    if float(dictlist[dict]['max']) < 0  : 
-        outages = outages + dict + " "
-    #print(dict, dictlist[dict])
-    
-if outages != "" :
-
-    # make a second attempt at getting good epics data 
-
-    time.sleep(sleeptime)
-
-    run_mystats(epicsfile)
-    allok2 = check_output_exists(epicsfile)   # this issues a warning if the file is not there
-
-    if not allok2:
-        exit('not ok')
-
-    dictlist = read_mystats(epicsfile)   
-
-    for dict in dictlist:
-        if float(dictlist[dict]['max']) < 0  : 
-            outages2 = outages2 + dict + " "
-            
-
-if outages2 != "" :
-
-    time_since_warning = find_time_since_warning(outagefile)
-    
-    if time_since_warning > outage_warning_suppression_time :
-        issue_warning(outages)
-        record_time(outagefile)
-    else :
-        if testing:
-            print('EPICS outage warning issued recently')
+        print('DAQ not running')
     exit()
 
-# no outages were found, so check other data
+current_events = float(dictlist['HD:coda:EventNumber'])
+if current_events < events_required :
+    if testing:
+        print('Insufficient events ' + str(events_required))
+    exit()
 
-#if dictlist['HD:coda:daq:status']['mean'] != 2 :   # daq status - HD:coda:daq:status = 2 for 'go'
-#    if testing:
-#        print('DAQ is not running')
-#    exit()
+current_run = dictlist['HD:coda:daq:run_number']
 
 line = 'xxx'
 if os.path.exists(runloggedfile) :
@@ -261,38 +78,35 @@ if os.path.exists(runloggedfile) :
     line = f.readline()
     f.close()
 
-current_run = dictlist['HD:coda:daq:run_number']['max'] 
-current_events = float(dictlist['HD:coda:EventNumber']['max'])
-
-if current_run == '0':  # daq is not running
-    exit()
-
 if current_run in line :
     if testing:
         print('Already logged plots for current run, ' + current_run)
         exit()
     exit()
 
-if current_events < events_required :
-    if testing:
-        print('Insufficient events ' + str(events_required))
-    exit()
+    
+# See https://logbooks.jlab.org/content/api-authentication
+# Need this set: export JAVA_HOME=/gapps/Java/jdk/23.0.1/x64/jdk23.0.1/
+
+#cmd = '/gapps/RootSpy/dev/Linux_RHEL9-x86_64-gcc11.5.0/bin/RSelog -L HDMONITOR -R ' + current_run + include_histos
+
+cmd_arr = ['/gapps/RootSpy/dev/Linux_RHEL9-x86_64-gcc11.5.0/bin/RSelog', '-L', 'HDMONITOR', '-R', current_run, include_histos]
+
 
 if testing:
-    print('making log entry')
+    print('logentry deactivated')
+    print(cmd_arr)
+    exit()
 
-    # See https://logbooks.jlab.org/content/api-authentication
-    # Need this set: export JAVA_HOME=/gapps/Java/jdk/23.0.1/x64/jdk23.0.1/
     
 os.putenv('JAVA_HOME','/gapps/Java/jdk/23.0.1/x64/jdk23.0.1/')  # needed to make the log entry
 
-cmd = '/gapps/RootSpy/dev/Linux_RHEL9-x86_64-gcc11.5.0/bin/RSelog -L HDMONITOR -R ' + current_run + include_histos
+try:
+    subprocess.check_call(cmd_arr)
 
-if testing:
-    print(cmd)
-    print('logbook entry deactivated')
-else :
-    os.system(cmd)
+except subprocess.CalledProcessError as e:
+    print("RSelog failed with return code: " + str(e.returncode))
+    exit()
 
 f = open(runloggedfile,'w')
 f.write(current_run)
