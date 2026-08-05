@@ -123,6 +123,26 @@ Different types of four-momenta and vertices are distinguished using prefixes.  
 
 Different particles are differentiated using the postfix {\tt P(n)}, where {\tt (n)} is the number of the particle in the ordered list.  Four-momenta and vertices for secondaries originating from particle~{\tt (n)}, such as the two $\gamma$'s from a $\pi^0$, are recorded using {\tt P(n)a} and {\tt P(n)b}, where the ordering follows the same conventions as above, or, in the case of identical daughter particles, no ordering is assumed.  As two examples: in the process $\gamma p \to\pi^+\pi^-J/\psi p; J/\psi\to\mu^+\mu^-$, the raw energy of the $\pi^+$ is given by {\tt REnP4}; and in the process $\gamma p \to \pi^+\pi^-J/\psi p; J/\psi\to\pi^+\pi^-\pi^0$, the y-momentum of a photon from the $\pi^0$ decay, after the kinematic fit, is given by {\tt PyP6b}.
 
+\subsection{Numeric indices for decay products}
+\label{sec:nt:numericindices}
+
+The argument {\tt -numericIndices 1} replaces the {\tt a}/{\tt b} postfixes with plain numbers.  Decay products are numbered consecutively \emph{after} all of the primaries, so the primaries keep exactly the indices they have by default and only the decay products are renamed.  Writing a tree both ways therefore produces the same set of variables under two names, with identical contents.
+
+For example, in the final state $\Lambda\,p\,K^+\pi^+\pi^-\pi^0$ with $\Lambda\to p\pi^-$ and $\pi^0\to\gamma\gamma$, the default indices are
+\begin{verbatim}
+    1 (Lambda)  1a (p)  1b (pi-)  2 (p)  3 (K+)  4 (pi+)  5 (pi-)
+    6 (pi0)  6a (gamma)  6b (gamma)
+\end{verbatim}
+and with {\tt -numericIndices 1} they become
+\begin{verbatim}
+    1 (Lambda)  7 (p)  8 (pi-)  2 (p)  3 (K+)  4 (pi+)  5 (pi-)
+    6 (pi0)  9 (gamma)  10 (gamma)
+\end{verbatim}
+
+With this option every particle in the tree is reachable as {\tt P1}~$\ldots$~{\tt P(N)} for {\tt N} particles in total.  This matters for code that reads the tree by looping over an index range rather than by name --- for example the {\tt FSRootDataReader} classes in {\tt halld\_sim}, which build branch names as {\tt EnP1}~$\ldots$~{\tt EnP(N)} and cannot reach an {\tt a}/{\tt b} postfix at all.  Because the primaries come first, asking such a reader for the first {\tt N} particles selects the primaries and then the decay products in order.
+
+The default remains the {\tt a}/{\tt b} convention, so existing trees and macros are unaffected.  Note that the two conventions cannot be mixed within one tree, and that the mode-level tooling in the {\tt FSRoot} package (for example the {\tt EnP[pi+]} expansions, which are built from the mode code) only ever refers to primaries; those expansions are unchanged by this option.
+
 
 
 

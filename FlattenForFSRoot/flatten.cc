@@ -82,6 +82,11 @@ int main(int argc, char** argv){
   cout << "           -dirc [include PID information from the DIRC if available? 0 or 1] (default: 0)" << endl;
   cout << "           -flattenpi0 [flatten pi0s to just gamma gamma? 0 or 1]   (default: 0)" << endl;
   cout << "           -flatteneta [flatten etas to just gamma gamma? 0 or 1]   (default: 0)" << endl;
+  cout << "           -numericIndices [index decay products numerically? 0 or 1] (default: 0)" << endl;
+  cout << "                   (0: decay products of particle (n) are P(n)a, P(n)b;" << endl;
+  cout << "                    1: decay products are numbered after all primaries," << endl;
+  cout << "                       so primary indices are unchanged and every particle" << endl;
+  cout << "                       is P1..PN -- see Documentation/GlueXFSRootFormat.pdf)" << endl;
   cout << "           -addUnusedNeutrals  [include 4-vectors for unused neutrals? " << endl;
   cout << "                                0 or number to include] (default: 0)" << endl;  
   cout << "           -combos [ if there are multiple combos in an event with the same chi2, then " << endl;
@@ -137,6 +142,7 @@ int main(int argc, char** argv){
   bool gUseDIRC = false;
   bool gFlattenpi0 = false;
   bool gFlatteneta = false;
+  bool gNumericIndices = false;
   int gAddUnusedNeutrals = 0;
   int gCombos = 0;
   bool gMCChecks = true;
@@ -149,6 +155,7 @@ int main(int argc, char** argv){
         ||(argi == "-chi2")||(argi == "-RFDeltaT")||(argi == "-shQuality")||(argi == "-massWindows")
         ||(argi == "-numUnusedTracks")||(argi == "-usePolarization")||(argi == "-numUnusedNeutrals")
         ||(argi == "-mcChecks")||(argi == "-addPID")||(argi == "-dirc")||(argi == "-flattenpi0")||(argi == "-flatteneta")
+        ||(argi == "-numericIndices")
         ||(argi=="-addUnusedNeutrals")||(argi == "-combos")
         ||(argi == "-numNeutralHypos")||(argi == "-safe")||(argi == "-print")){
       flag = argi;
@@ -171,6 +178,7 @@ int main(int argc, char** argv){
     if (flag == "-dirc"){   if( argi == "1") gUseDIRC = true; }
     if (flag == "-flattenpi0"){ if (argi == "1") gFlattenpi0 = true; }
     if (flag == "-flatteneta"){ if (argi == "1") gFlatteneta = true; }
+    if (flag == "-numericIndices"){ if (argi == "1") gNumericIndices = true; }
     if (flag == "-addUnusedNeutrals"){ gAddUnusedNeutrals = atoi(argi); }
     if (flag == "-combos"){ gCombos = atoi(argi); }
     if (flag == "-mcChecks"){ if (argi == "0") gMCChecks = false; }
@@ -213,6 +221,7 @@ int main(int argc, char** argv){
   cout << "  use DIRC?              " << gUseDIRC << endl;
   cout << "  flatten pi0s?          " << gFlattenpi0 << endl;
   cout << "  flatten etas?          " << gFlatteneta << endl;
+  cout << "  numeric decay indices? " << gNumericIndices << endl;
   cout << "  add unused neutrals?   " << gAddUnusedNeutrals << endl;
   cout << "  combos option:         " << gCombos << endl;
   cout << "  MC checks?             " << gMCChecks << endl;
@@ -621,12 +630,22 @@ int main(int argc, char** argv){
   map<TString, int> gMapGlueXNameToParticleIndex;
   {
     int particleIndex = 0;
+    // in the numeric scheme, decay products are numbered sequentially after
+    // all of the primaries, so the primaries keep the indices they have in
+    // the default scheme and only the decay products are renamed
+    int decayIndex = gOrderedParticleNames.size();
     for (unsigned int im = 0; im < gOrderedParticleNames.size(); im++){
     for (unsigned int id = 0; id < gOrderedParticleNames[im].size(); id++){
       TString name = gOrderedParticleNames[im][id];
-      TString fsIndex("");  fsIndex += (im+1);
-      if (id == 1) fsIndex += "a";
-      if (id == 2) fsIndex += "b";
+      TString fsIndex("");
+      if (gNumericIndices && (id > 0)){
+        fsIndex += (++decayIndex);
+      }
+      else{
+        fsIndex += (im+1);
+        if (id == 1) fsIndex += "a";
+        if (id == 2) fsIndex += "b";
+      }
       cout << fsIndex << ". ";
       cout << name << " ";
       gMapGlueXNameToFSIndex[name] = fsIndex;
