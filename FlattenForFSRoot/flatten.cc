@@ -2387,12 +2387,20 @@ double GetAccidentalScalingFactor(int locRunNumber, double locBeamEnergy, bool l
 		istringstream locStringStream(buff);
 
 		//extract it
-		locStringStream >> locHodoscopeHiFactor >> locHodoscopeHiFactorErr >> locHodoscopeLoFactor
-						>> locHodoscopeLoFactorErr >> locMicroscopeFactor >> locMicroscopeFactorErr
+		locStringStream >> locHodoscopeHiFactor >> locHodoscopeHiFactorErr >> locMicroscopeFactor >> locMicroscopeFactorErr
+				>> locHodoscopeLoFactor >> locHodoscopeLoFactorErr 
 						>> locTAGMEnergyBoundHi >> locTAGMEnergyBoundLo;
 
 		//Close the pipe
 		gSystem->ClosePipe(locInputFile);
+
+
+		cout << "for run number " << locRunNumber << endl;
+		cout << "HodoscopeLoFactor is " << locHodoscopeLoFactor << " +/- " << locHodoscopeLoFactorErr << endl;
+		cout << "MicroscopeFactor is  " << locMicroscopeFactor << " +/- " << locMicroscopeFactorErr << endl;
+		cout << "HodoscopeHiFactor is " << locHodoscopeHiFactor << " +/- " << locHodoscopeHiFactorErr << endl;
+
+		cout << "Microscope energies are " << locTAGMEnergyBoundLo << " to " << locTAGMEnergyBoundHi << endl;
 		
 		//save the values to a local cache
 		vector<double> locCachedValues;
