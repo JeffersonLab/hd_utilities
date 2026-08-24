@@ -29,9 +29,10 @@ print = functools.partial(print, flush = True)
 
 class EvioFileErrorType(Enum):
   """Enum for failure modes when getting list of EVIO files."""
-  NO_RCDB_FILES_COUNT = auto()
-  NO_FILES_FOUND      = auto()
-  MISSING_EVIO_FILE   = auto()
+  NO_RCDB_FILES_COUNT  = auto()
+  NO_FILES_FOUND       = auto()
+  MISSING_EVIO_FILE    = auto()
+  UNEXPECTED_EVIO_FILE = auto()
 
 @dataclass
 class EvioFileError:
@@ -44,29 +45,40 @@ def get_evio_file_paths_for_run(
   raw_data_root: str,             # root dir for EVIO files
 ) -> tuple[list[str], list[EvioFileError]]:
   """Gets list of EVIO files for the given RCDB run-info object."""
-  run_number = int(run_info.number)
-  raw_data_dir_run = f"{raw_data_root}/Run{run_number:06d}"
-  evio_files_count = run_info.get_condition_value("evio_files_count")  # get number of evio files for this run; file numbers are in range 0 to evio_files_count - 1
-  rcdb_errors: list[EvioFileError] = []
+  run_number              = int(run_info.number)
+  raw_data_dir_run        = f"{raw_data_root}/Run{run_number:06d}"
+  evio_files_count        = run_info.get_condition_value("evio_files_count")  # get number of evio files for this run; file numbers are in range 0 to evio_files_count - 1
+  evio_pattern            = f"{raw_data_dir_run}/hd_rawdata_{run_number:06d}_???.evio"
+  evio_file_paths_pattern = sorted(glob.glob(evio_pattern))
+  evio_file_paths: list[str]           = []
+  rcdb_errors:     list[EvioFileError] = []
   if evio_files_count is None:
     print(f"WARNING: RCDB does not contain a value for `evio_files_count` for run {run_number}")
     rcdb_errors.append(EvioFileError(errorType = EvioFileErrorType.NO_RCDB_FILES_COUNT))
-    evio_pattern = f"{raw_data_dir_run}/hd_rawdata_{run_number:06d}_???.evio"
-    print(f"Counting files matching '{evio_pattern}' instead")
-    evio_files_count = len(glob.glob(evio_pattern))
-  if evio_files_count is None or evio_files_count == 0:
+    print(f"Using files matching '{evio_pattern}' instead")
+    evio_file_paths = evio_file_paths_pattern
+  else:
+    evio_last_files_excluded = run_info.get_condition_value("evio_last_files_excluded")  # get number of evio files to exclude from the end of the run
+    evio_files_count -= evio_last_files_excluded or 0
+    print(f"Ensuring all {evio_files_count:3d} EVIO files for run {run_number} exist"
+          + (f" (excluding {evio_last_files_excluded} last files)" if evio_last_files_excluded is not None else ""))
+    for evio_file_index in range(evio_files_count):
+      evio_file_path = f"{raw_data_dir_run}/hd_rawdata_{run_number:06d}_{evio_file_index:03d}.evio"
+      if not os.path.isfile(evio_file_path):
+        print(f"WARNING: expected EVIO file '{evio_file_path}' does not exist")
+        rcdb_errors.append(EvioFileError(errorType = EvioFileErrorType.MISSING_EVIO_FILE, detail = evio_file_path))
+      else:
+        evio_file_paths.append(evio_file_path)
+        evio_file_paths_pattern.remove(evio_file_path)  # remove existing files from list found by pattern matching
+    # check consistency with pattern matching
+    if len(evio_file_paths_pattern) > 0:
+      for evio_file_path in evio_file_paths_pattern:
+        print(f"WARNING: unexpected EVIO file '{evio_file_path}'")
+        rcdb_errors.append(EvioFileError(errorType = EvioFileErrorType.UNEXPECTED_EVIO_FILE, detail = evio_file_path))
+  if len(evio_file_paths) == 0:
     print(f"WARNING: could not find any EVIO files for run {run_number}")
     rcdb_errors.append(EvioFileError(errorType = EvioFileErrorType.NO_FILES_FOUND))
     return [], rcdb_errors
-  print(f"Ensuring all {evio_files_count:3d} EVIO files for run {run_number} exist")
-  evio_file_paths: list[str] = []
-  for evio_file_index in range(evio_files_count):
-    evio_file_path = f"{raw_data_dir_run}/hd_rawdata_{run_number:06d}_{evio_file_index:03d}.evio"
-    if not os.path.isfile(evio_file_path):
-      print(f"WARNING: expected EVIO file '{evio_file_path}' does not exist")
-      rcdb_errors.append(EvioFileError(errorType = EvioFileErrorType.MISSING_EVIO_FILE, detail = evio_file_path))
-    else:
-      evio_file_paths.append(evio_file_path)
   return evio_file_paths, rcdb_errors
 
 
@@ -101,12 +113,14 @@ def get_evio_file_paths(
   print("--------------------------------------------------------------------------------------------")
   print("Error summary")
   print("--------------------------------------------------------------------------------------------")
-  print(f"  {error_counts[EvioFileErrorType.NO_RCDB_FILES_COUNT]:5d} runs with no `evio_files_count` value in RCDB")
+  print(f"  {error_counts[EvioFileErrorType.NO_RCDB_FILES_COUNT ]:5d} runs with no `evio_files_count` value in RCDB")
   print(f"          for these runs the number of EVIO files was estimated by counting files in `/mss`")
-  print(f"  {error_counts[EvioFileErrorType.NO_FILES_FOUND     ]:5d} runs with no EVIO files found")
+  print(f"  {error_counts[EvioFileErrorType.NO_FILES_FOUND      ]:5d} runs with no EVIO files found")
   print(f"          for these runs no jobs will be submitted")
-  print(f"  {error_counts[EvioFileErrorType.MISSING_EVIO_FILE  ]:5d} EVIO files not found")
+  print(f"  {error_counts[EvioFileErrorType.MISSING_EVIO_FILE   ]:5d} EVIO files not found")
   print(f"          for these files no jobs will be submitted")
+  print(f"  {error_counts[EvioFileErrorType.UNEXPECTED_EVIO_FILE]:5d} unexpected EVIO files found")
+  print(f"          for these files jobs will be submitted")
   print("============================================================================================")
   return evio_file_paths_per_run
 
