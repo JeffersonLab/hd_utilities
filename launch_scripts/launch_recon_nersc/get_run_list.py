@@ -144,6 +144,16 @@ def main(args: argparse.Namespace) -> None:
   except FileExistsError:
     print(f"WARNING: file './{run_number_list_file}' already exists; skipping write")
 
+  if args.evio_file_list_name is not None:
+    print(f"Writing list of EVIO files to './{args.evio_file_list_name}'")
+    try:
+      with open(f"./{args.evio_file_list_name}", mode = "x") as file:
+        for run_number in sorted(evio_file_paths_per_run.keys()):
+          for evio_file in sorted(evio_file_paths_per_run[run_number]):
+            file.write(f"{evio_file}\n")
+    except FileExistsError:
+      print(f"WARNING: file './{args.evio_file_list_name}' already exists; skipping write")
+
   print("-------------------------------------------------------------------------------")
   elapsed_time_sec = int(time.time() - start_time)
   print(f"Wall time consumed by script: {elapsed_time_sec // 60} min, {elapsed_time_sec % 60} sec")
@@ -153,7 +163,8 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(
     description = "Generates list of runs and files to process for a given run period.",
   )
-  parser.add_argument("launch_env_file",     help = "Path to .env file defining the configuration variables of the reconstruction launch")
-  parser.add_argument("--override-run-list", help = "Path to run-number list file to use instead of RCDB query")
+  parser.add_argument("launch_env_file",       help = "Path to .env file defining the configuration variables of the reconstruction launch")
+  parser.add_argument("--override-run-list",   help = "Path to run-number list file to use instead of RCDB query")
+  parser.add_argument("--evio-file-list-name", help = "If specified, write list of EVIO files to this file")
   args = parser.parse_args()
   main(args)
