@@ -27,7 +27,7 @@ from utilities_dotenv import get_config_dict_from_env_file
 print = functools.partial(print, flush = True)
 
 
-class EvioFilesErrorKind(Enum):
+class EvioFileErrorType(Enum):
   """Enum for failure modes when getting list of EVIO files."""
   NO_RCDB_FILES_COUNT = auto()
   NO_FILES_FOUND      = auto()
