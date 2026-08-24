@@ -94,17 +94,19 @@ def main(args: argparse.Namespace) -> None:
 
   run_numbers: list[int] = read_run_numbers_from_file(run_number_list_file)
   print(f"Calculating resources for '{run_period}' raw data: {len(run_numbers)} run(s) listed in '{run_number_list_file}' and located in '{raw_data_root}'")
-  nmb_files:             dict[int, int  ] = {}  # number of files per run
-  nmb_nodes:             dict[int, int  ] = {}  # number of NERSC nodes required per run
-  fraction_nodes_unused: dict[int, float] = {}  # unused fraction of last NERSC node per run
-  size_gb:               dict[int, float] = {}  # GB per run
+  # collect per-run information
+  nmb_files:             dict[int, int  ]     = {}  # number of files per run
+  nmb_nodes:             dict[int, int  ]     = {}  # number of NERSC nodes required per run
+  fraction_nodes_unused: dict[int, float]     = {}  # unused fraction of last NERSC node per run
+  size_gb:               dict[int, float]     = {}  # GB per run
+  evio_file_paths:       dict[int, list[str]] = {}  # list of EVIO file paths per run
   for run_number in run_numbers:
     (
       nmb_files[run_number],
       nmb_nodes[run_number],
       nmb_remainder_jobs,
       size_gb[run_number],
-      _,
+      evio_file_paths[run_number],
     ) = get_job_size(run_number, raw_data_root, nmb_processes_per_nersc_node)
     fraction_nodes_unused[run_number] = 0.0 if nmb_remainder_jobs == 0 else 1.0 - nmb_remainder_jobs / float(nmb_processes_per_nersc_node)
     print(f"    Run {run_number:6d} = {size_gb[run_number]:6.0f} GB, {nmb_files[run_number]:3d} files, {nmb_nodes[run_number]:3d} nodes, {fraction_nodes_unused[run_number]:5.1%} of last node wasted")
@@ -127,6 +129,15 @@ def main(args: argparse.Namespace) -> None:
 
   print("-------------------------------------------------------------------------------")
   plot_evio_file_size(run_numbers, raw_data_root, swif_workflow)
+  if args.evio_file_list_name is not None:
+    print(f"Writing list of EVIO files to './{args.evio_file_list_name}'")
+    try:
+      with open(f"./{args.evio_file_list_name}", mode = "x") as file:
+        for run_number in sorted(evio_file_paths.keys()):
+          for evio_file in sorted(evio_file_paths[run_number]):
+            file.write(f"{evio_file}\n")
+    except FileExistsError:
+      print(f"WARNING: file './{args.evio_file_list_name}' already exists; skipping write")
 
   print("-------------------------------------------------------------------------------")
   elapsed_time_sec = int(time.time() - start_time)
@@ -140,7 +151,8 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(
     description = "Estimates the size of the raw data for the reconstruction launch and the number of NERSC nodes required to process them.",
   )
-  parser.add_argument("launch_env_file",     help = "Path to .env file defining the configuration variables of the reconstruction launch")
-  parser.add_argument("--override-run-list", help = "Path to run-number list file to use instead the one defined in .env file")
+  parser.add_argument("launch_env_file",       help = "Path to .env file defining the configuration variables of the reconstruction launch")
+  parser.add_argument("--override-run-list",   help = "Path to run-number list file to use instead the one defined in .env file")
+  parser.add_argument("--evio-file-list-name", help = "If specified, write list of EVIO files to this file")
   args = parser.parse_args()
   main(args)
