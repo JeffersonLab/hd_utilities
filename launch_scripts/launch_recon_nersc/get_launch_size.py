@@ -129,15 +129,15 @@ def main(args: argparse.Namespace) -> None:
 
   print("-------------------------------------------------------------------------------")
   plot_evio_file_size(run_numbers, raw_data_root, swif_workflow)
-  if args.evio_file_list_name is not None:
-    print(f"Writing list of EVIO files to './{args.evio_file_list_name}'")
+  if args.evio_path_list_file is not None:
+    print(f"Writing list of EVIO files to './{args.evio_path_list_file}'")
     try:
-      with open(f"./{args.evio_file_list_name}", mode = "x") as file:
+      with open(f"./{args.evio_path_list_file}", mode = "x") as file:
         for run_number in sorted(evio_file_paths.keys()):
           for evio_file in sorted(evio_file_paths[run_number]):
             file.write(f"{evio_file}\n")
     except FileExistsError:
-      print(f"WARNING: file './{args.evio_file_list_name}' already exists; skipping write")
+      print(f"WARNING: file './{args.evio_path_list_file}' already exists; skipping write")
 
   print("-------------------------------------------------------------------------------")
   elapsed_time_sec = int(time.time() - start_time)
@@ -153,6 +153,6 @@ if __name__ == "__main__":
   )
   parser.add_argument("launch_env_file",       help = "Path to .env file defining the configuration variables of the reconstruction launch")
   parser.add_argument("--override-run-list",   help = "Path to run-number list file to use instead the one defined in .env file")
-  parser.add_argument("--evio-file-list-name", help = "If specified, write list of EVIO files to this file")
+  parser.add_argument("--evio-path-list-file", help = "If specified, write list of EVIO files to this file")
   args = parser.parse_args()
   main(args)
