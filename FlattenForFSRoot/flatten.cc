@@ -1333,8 +1333,13 @@ int main(int argc, char** argv){
           outPzPB = p4->Pz();
           outEnPB = p4->E();
 	  // accidental scaling factor
-	  outAccidentalScale = GetAccidentalScalingFactor(outRunNumber,outEnPB,gUseMCParticles);
-        }
+	  if(abs(outRFDeltaT)<2){
+	    // define it to be one for the coherent peak, allows for weighting every entry instead of just rf sideband
+	    outAccidentalScale = 1.0;
+	  } else{
+	    outAccidentalScale = GetAccidentalScalingFactor(outRunNumber,outEnPB,gUseMCParticles);
+	  }
+	}
         if (gUseKinFitVtx){
               x4 = (TLorentzVector*)inBeam__X4_KinFit->At(ic);
           outVxPB = x4->X();
