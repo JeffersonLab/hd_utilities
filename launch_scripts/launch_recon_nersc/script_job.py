@@ -143,14 +143,14 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(
     description = "Main job script that processes all EVIO files of the given run.",
   )
-  parser.add_argument("--run_number",                 required = True,  help = "Run number for this job", type = int)
-  parser.add_argument("--launch_dir",                 required = True,  help = "Path to launch directory containing scripts and config files inside container")
-  parser.add_argument("--jana_config",                required = True,  help = "JANA config file")
-  parser.add_argument("--jana_calib_context",         required = True,  help = "JANA calibration context")
-  parser.add_argument("--jana_geometry_url_override", required = False, help = "Override JANA geometry URL; optional")
-  parser.add_argument("--halld_version_set_xml",      required = True,  help = "GlueX software version set XML file")
-  parser.add_argument("--nmb_processes_per_task",     required = True,  help = "Number of processes per task",            type = int)
-  parser.add_argument("--nmb_threads_per_process",    required = True,  help = "Number of threads per `hd_root` process", type = int)
-  parser.add_argument("--swif_output_root",           required = True,  help = "Root of JLab directory tree, where output files will be copied to")
+  parser.add_argument("--run-number",                 required = True,  help = "Run number for this job", type = int)
+  parser.add_argument("--launch-dir",                 required = True,  help = "Path to launch directory containing scripts and config files inside container")
+  parser.add_argument("--jana-config",                required = True,  help = "JANA config file")
+  parser.add_argument("--jana-calib-context",         required = True,  help = "JANA calibration context")
+  parser.add_argument("--jana-geometry-url-override", required = False, help = "Override JANA geometry URL; optional")
+  parser.add_argument("--halld-version-set-xml",      required = True,  help = "GlueX software version set XML file")
+  parser.add_argument("--nmb-processes-per-task",     required = True,  help = "Number of processes per task",            type = int)
+  parser.add_argument("--nmb-threads-per-process",    required = True,  help = "Number of threads per `hd_root` process", type = int)
+  parser.add_argument("--swif-output-root",           required = True,  help = "Root of JLab directory tree, where output files will be copied to")
   #TODO add --dry_run flag
   main(parser.parse_args())

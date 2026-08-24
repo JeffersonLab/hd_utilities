@@ -100,7 +100,7 @@ if __name__ == "__main__":
     description = "Checks completeness of files in directory, where final reconstruction output is stored at JLab.",
   )
   parser.add_argument("launch_env_file",       help = "Path to .env file defining the configuration variables of the reconstruction launch")
-  parser.add_argument("--override_run_list",   help = "Path to run-number list file to use instead the one defined in .env file")
-  parser.add_argument("--recon_version_label", help = "Reconstruction version label (e.g. `ver02`) to use instead of the one defined in .env file")
+  parser.add_argument("--override-run-list",   help = "Path to run-number list file to use instead the one defined in .env file")
+  parser.add_argument("--recon-version-label", help = "Reconstruction version label (e.g. `ver02`) to use instead of the one defined in .env file")
   args = parser.parse_args()
   main(args)

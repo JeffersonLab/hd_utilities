@@ -154,6 +154,6 @@ if __name__ == "__main__":
     description = "Generates list of runs and files to process for a given run period.",
   )
   parser.add_argument("launch_env_file",     help = "Path to .env file defining the configuration variables of the reconstruction launch")
-  parser.add_argument("--override_run_list", help = "Path to run-number list file to use instead of RCDB query")
+  parser.add_argument("--override-run-list", help = "Path to run-number list file to use instead of RCDB query")
   args = parser.parse_args()
   main(args)

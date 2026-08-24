@@ -111,6 +111,6 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(
     description = "Print the last N lines of the stdout and stderr log files for hd_root processes with non-zero return code.",
   )
-  parser.add_argument("--run_working_dir", required = True,         help = "Working directory of the run")
-  parser.add_argument("--nmb_lines",       type = int, default = 3, help = "Number of lines to print from the end of the log files; default: %(default)i")
+  parser.add_argument("--run-working-dir", required = True,         help = "Working directory of the run")
+  parser.add_argument("--nmb-lines",       type = int, default = 3, help = "Number of lines to print from the end of the log files; default: %(default)i")
   main(parser.parse_args())

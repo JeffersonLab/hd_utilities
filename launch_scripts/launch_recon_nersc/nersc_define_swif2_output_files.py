@@ -85,8 +85,8 @@ if __name__ == "__main__":
     description = "Define the output files that should be transferred back to JLab for the job corresponding to the given run number.",
   )
   parser.add_argument("run_number", type = int, help = "Run number of the job to process")
-  parser.add_argument("--swif_attempt_id", type = int, help = "SWIF attempt ID of the job to process; if not given, the last attempt will be used")
-  parser.add_argument("--nersc_swif_jobs_root_dir", default = "/pscratch/sd/j/jlab/swif/jobs/gxproj4", help = "NERSC root directory for SWIF jobs; default: '%(default)s'")
-  parser.add_argument("--swif_output_root", default = "/lustre/expphy/volatile/halld/offsite_prod/RunPeriod-2021-11/recon/ver05-perl", help = "Root of JLab directory tree, where output files will be copied to; default: '%(default)s'")  #TODO read this value from the jobs .env file
-  parser.add_argument("--transfer_all_files", action = "store_true", help = "If set, do not filter output of failed hd_root processes; default: False")
+  parser.add_argument("--swif-attempt-id", type = int, help = "SWIF attempt ID of the job to process; if not given, the last attempt will be used")
+  parser.add_argument("--nersc-swif-jobs-root-dir", default = "/pscratch/sd/j/jlab/swif/jobs/gxproj4", help = "NERSC root directory for SWIF jobs; default: '%(default)s'")
+  parser.add_argument("--swif-output-root", default = "/lustre/expphy/volatile/halld/offsite_prod/RunPeriod-2021-11/recon/ver05-perl", help = "Root of JLab directory tree, where output files will be copied to; default: '%(default)s'")  #TODO read this value from the jobs .env file
+  parser.add_argument("--transfer-all-files", action = "store_true", help = "If set, do not filter output of failed hd_root processes; default: False")
   main(parser.parse_args())

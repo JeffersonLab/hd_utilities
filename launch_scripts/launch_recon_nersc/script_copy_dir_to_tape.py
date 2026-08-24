@@ -62,6 +62,6 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(
     description = "swif2 job script that copies the full content of the given source directory to the given destination directory using the reaping stage.",
   )
-  parser.add_argument("--src_dir_path",  help = "Path to the source directory, the content of which will be copied to the destination directory")
-  parser.add_argument("--dest_dir_path", help = "Path to the destination directory (usually on tape)")
+  parser.add_argument("--src-dir-path",  help = "Path to the source directory, the content of which will be copied to the destination directory")
+  parser.add_argument("--dest-dir-path", help = "Path to the destination directory (usually on tape)")
   main(parser.parse_args())

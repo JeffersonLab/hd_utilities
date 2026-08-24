@@ -98,7 +98,7 @@ if __name__ == "__main__":
     description = "Submits a swif2 job that copies the full content of the given directory with prepared recon output to tape.",
   )
   parser.add_argument("launch_env_file",           help = "Path to .env file defining the configuration variables of the reconstruction launch")
-  parser.add_argument("--override_recon_src_path", help = "Path of the directory, the content of which will be copied to tape destination directory; default = '{SWIF_OUTPUT_ROOT}/{VER_LABEL}.ready_for_tape'")
-  parser.add_argument("--override_tape_dest_path", help = "Path to the tape destination directory, the reconstructed data will be copied to; default = 'mss:{RECO_DATA_ROOT}/{VER}'")
+  parser.add_argument("--override-recon-src-path", help = "Path of the directory, the content of which will be copied to tape destination directory; default = '{SWIF_OUTPUT_ROOT}/{VER_LABEL}.ready_for_tape'")
+  parser.add_argument("--override-tape-dest-path", help = "Path to the tape destination directory, the reconstructed data will be copied to; default = 'mss:{RECO_DATA_ROOT}/{VER}'")
   args = parser.parse_args()
   main(args)

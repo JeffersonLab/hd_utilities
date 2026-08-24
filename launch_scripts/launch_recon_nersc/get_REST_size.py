@@ -70,6 +70,6 @@ if __name__ == "__main__":
     description = "Calculates the total size of the REST files in the given MSS directory.",
   )
   parser.add_argument("mss_directory",            help = "Path to the MSS directory containing the REST files")
-  parser.add_argument("--exclude_evio_file_list", help = "Path to list with EVIO file paths used to determine the REST files to exclude from the size calculation")
+  parser.add_argument("--exclude-evio-file-list", help = "Path to list with EVIO file paths used to determine the REST files to exclude from the size calculation")
   args = parser.parse_args()
   main(args)
