@@ -88,6 +88,9 @@ def main(args: argparse.Namespace) -> None:
   swif_workflow                =     ensure_dict_value_exists(launch_config, "SWIF_WORKFLOW")
   nmb_processes_per_nersc_node = int(ensure_dict_value_exists(launch_config, "NERSC_NMB_PROCESSES_PER_TASK"))
   print(f"Allocating {nmb_processes_per_nersc_node} hd_root processes per NERSC node")
+  job_wall_time_estimate: int | None = None
+  if "NERSC_JOB_WALL_TIME_ESTIMATE" in launch_config:
+    job_wall_time_estimate = int(ensure_dict_value_exists(launch_config, "NERSC_JOB_WALL_TIME_ESTIMATE"))
 
   run_numbers: list[int] = read_run_numbers_from_file(run_number_list_file)
   print(f"Calculating resources for '{run_period}' raw data: {len(run_numbers)} run(s) listed in '{run_number_list_file}' and located in '{raw_data_root}'")
@@ -118,9 +121,9 @@ def main(args: argparse.Namespace) -> None:
           f"    {total_size_gb:.0f} GB of raw data in {total_nmb_files} EVIO files\n"
           f"    processed by {total_nmb_nodes} NERSC nodes,\n"
           f"    out of which {total_nmb_nodes_unused:.1f} nodes are unused (= {total_nmb_nodes_unused / total_nmb_nodes:.1%} of total nodes)")
-    if args.job_wall_time_estimate is not None:
-      total_node_hours = total_nmb_nodes * args.job_wall_time_estimate / 60.0
-      print(f"    this corresponds to {total_node_hours:.0f} node-hours at an estimated {args.job_wall_time_estimate} minutes of wall time per job")
+    if job_wall_time_estimate is not None:
+      total_node_hours = total_nmb_nodes * job_wall_time_estimate / 60.0
+      print(f"    this corresponds to {total_node_hours:.0f} node-hours at an estimated {job_wall_time_estimate} minutes of wall time per job")
 
   print("-------------------------------------------------------------------------------")
   plot_evio_file_size(run_numbers, raw_data_root, swif_workflow)
@@ -137,8 +140,7 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(
     description = "Estimates the size of the raw data for the reconstruction launch and the number of NERSC nodes required to process them.",
   )
-  parser.add_argument("launch_env_file",                      help = "Path to .env file defining the configuration variables of the reconstruction launch")
-  parser.add_argument("--override_run_list",                  help = "Path to run-number list file to use instead the one defined in .env file")
-  parser.add_argument("--job_wall_time_estimate", type = int, help = "Estimated wall time for job in minutes; if provided, the script will calculate the total node hours required")
+  parser.add_argument("launch_env_file",     help = "Path to .env file defining the configuration variables of the reconstruction launch")
+  parser.add_argument("--override_run_list", help = "Path to run-number list file to use instead the one defined in .env file")
   args = parser.parse_args()
   main(args)
