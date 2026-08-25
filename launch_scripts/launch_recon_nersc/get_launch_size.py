@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import functools
 import math
+import textwrap
 import numpy as np
 import time
 from typing import Sequence
@@ -119,10 +120,12 @@ def main(args: argparse.Namespace) -> None:
   if total_nmb_files == 0:
     print("ERROR: Did not find any EVIO files.")
   else:
-    print(f"Total for {len(run_numbers)} runs:\n"
-          f"    {total_size_gb:.0f} GB of raw data in {total_nmb_files} EVIO files\n"
-          f"    processed by {total_nmb_nodes} NERSC nodes,\n"
-          f"    out of which {total_nmb_nodes_unused:.1f} nodes are unused (= {total_nmb_nodes_unused / total_nmb_nodes:.1%} of total nodes)")
+    print(textwrap.dedent(f"""
+      Total for {len(run_numbers)} runs:
+          {total_size_gb:.0f} GB of raw data in {total_nmb_files} EVIO files
+          processed by {total_nmb_nodes} NERSC nodes,
+          out of which {total_nmb_nodes_unused:.1f} nodes are unused (= {total_nmb_nodes_unused / total_nmb_nodes:.1%} of total nodes)
+    """))
     if job_wall_time_estimate is not None:
       total_node_hours = total_nmb_nodes * job_wall_time_estimate / 60.0
       print(f"    this corresponds to {total_node_hours:.0f} node-hours at an estimated {job_wall_time_estimate} minutes of wall time per job")

@@ -11,6 +11,7 @@ from enum import Enum, auto
 import functools
 import glob
 import os
+import textwrap
 import time
 
 import rcdb
@@ -104,24 +105,26 @@ def get_evio_file_paths(
     for err in rcdb_errors:
       error_counts[err.errorType] += 1
   total_nmb_evio_files = sum(len(file_paths) for file_paths in evio_file_paths_per_run.values())
-  print("============================================================================================")
-  print("Summary")
-  print("--------------------------------------------------------------------------------------------")
-  print(f"            Run period: {run_period}")
-  print(f"        Number of runs: {len(evio_file_paths_per_run)}")
-  print(f"  Number of EVIO files: {total_nmb_evio_files}")
-  print("--------------------------------------------------------------------------------------------")
-  print("Error summary")
-  print("--------------------------------------------------------------------------------------------")
-  print(f"  {error_counts[EvioFileErrorType.NO_RCDB_FILES_COUNT ]:5d} runs with no `evio_files_count` value in RCDB")
-  print(f"          for these runs the number of EVIO files was estimated by counting files in `/mss`")
-  print(f"  {error_counts[EvioFileErrorType.NO_FILES_FOUND      ]:5d} runs with no EVIO files found")
-  print(f"          for these runs no jobs will be submitted")
-  print(f"  {error_counts[EvioFileErrorType.MISSING_EVIO_FILE   ]:5d} EVIO files not found")
-  print(f"          for these files no jobs will be submitted")
-  print(f"  {error_counts[EvioFileErrorType.UNEXPECTED_EVIO_FILE]:5d} unexpected EVIO files found")
-  print(f"          for these files jobs will be submitted")
-  print("============================================================================================")
+  print(textwrap.dedent(f"""
+    ============================================================================================
+    Summary
+    --------------------------------------------------------------------------------------------
+                Run period: {run_period}
+            Number of runs: {len(evio_file_paths_per_run)}
+      Number of EVIO files: {total_nmb_evio_files}
+    --------------------------------------------------------------------------------------------
+    Error summary
+    --------------------------------------------------------------------------------------------
+      {error_counts[EvioFileErrorType.NO_RCDB_FILES_COUNT ]:5d} runs with no `evio_files_count` value in RCDB
+              for these runs the number of EVIO files was estimated by counting files in `/mss`
+      {error_counts[EvioFileErrorType.NO_FILES_FOUND      ]:5d} runs with no EVIO files found
+              for these runs no jobs will be submitted
+      {error_counts[EvioFileErrorType.MISSING_EVIO_FILE   ]:5d} EVIO files not found
+              for these files no jobs will be submitted
+      {error_counts[EvioFileErrorType.UNEXPECTED_EVIO_FILE]:5d} unexpected EVIO files found
+              for these files jobs will be submitted
+    ============================================================================================
+    """))
   return evio_file_paths_per_run
 
 
