@@ -192,6 +192,23 @@ input[type="button"], button {
 
 /* small tri-state indicator badge */
 .tri-indicator { display:none; }
+.tri-select {
+    border-width: 2px;
+    border-style: solid;
+    border-radius: 6px;
+    box-sizing: border-box;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+.tri-select.missing {
+    border-color: #d9534f;
+    box-shadow: inset 0 0 0 1px rgba(217, 83, 79, 0.45);
+    background-color: rgba(217, 83, 79, 0.08);
+}
+.tri-select.mass-constrained {
+    border-color: #8e44ad;
+    box-shadow: inset 0 0 0 1px rgba(142, 68, 173, 0.45);
+    background-color: rgba(142, 68, 173, 0.08);
+}
 
 /* context menu for tri-state */
 #triMenu {
@@ -253,13 +270,13 @@ Select the initial particles and final state particles from the dropdowns.
 <br>
 Right click on a final state particle to:
 <ul>
-    <li>Set as missing (m)</li>
-    <li>Disable the mass constraint (M)</li>
+    <li style="color:#d9534f;">Set as missing (m)</li>
+    <li style="color:#8e44ad;">Disable the mass constraint (M)</li>
     <li>Add/remove a decay line for that particle</li>
 </ul>
 <br>
 <div id="GlobalFlags">
-  B (Beam Bunches):<input id="BFlag" type="number" min="0" max="5" value="1" onchange="MakeConfigLines()">&emsp;T (Extra Charged Tracks):<input id="TFlag" type="number" min="0" max="10" value="3" onchange="MakeConfigLines()">&emsp;
+  B (Beam Bunches):<input id="BFlag" type="number" min="0" max="5" value="4" onchange="MakeConfigLines()">&emsp;T (Extra Charged Tracks):<input id="TFlag" type="number" min="0" max="10" value="3" onchange="MakeConfigLines()">&emsp;
 </div>
 <div id="GlobalFlgs2">
   S (Extra Showers):<input id="SFlag" type="number" min="0" max="999" value="999" onchange="MakeConfigLines()">&emsp;F (Fit Type):<select id="FFlag" onchange="MakeConfigLines()">
@@ -269,7 +286,7 @@ Right click on a final state particle to:
     <option value=3>Spacetime</option>
     <option value=4 selected>P4 and Vertex</option>
     <option value=5 >P4 and Spacetime</option>
-    </select>&emsp;U (save unused tracks):<input id="UFlag" type="checkbox" onchange="MakeConfigLines()">
+    </select>&emsp;U (save unused particles):<input id="UFlag" type="checkbox" onchange="MakeConfigLines()">
 
 </div>
 <br>
@@ -513,6 +530,27 @@ function hideTriMenu()
     if(menu) menu.style.display = 'none';
     triMenuTarget = null;
 }
+function updateTriBadge(select)
+{
+    if(!select) return;
+    var state = select.getAttribute('data-tri') || '';
+    select.classList.remove('missing', 'mass-constrained');
+    select.classList.remove('tri-select');
+    if(state === 'm' || state === 'M') {
+        select.classList.add('tri-select');
+        select.classList.toggle('missing', state === 'm');
+        select.classList.toggle('mass-constrained', state === 'M');
+        select.title = state === 'm' ? 'Missing particle' : 'Mass constraint disabled';
+    } else {
+        select.title = '';
+    }
+}
+function applyTriIndicators()
+{
+    document.querySelectorAll('select[data-tri]').forEach(function(select){
+        updateTriBadge(select);
+    });
+}
 function setTriState(select, state)
 {
     if(!select) return;
@@ -525,6 +563,7 @@ function setTriState(select, state)
         if(cur === state) select.setAttribute('data-tri', '');
         else select.setAttribute('data-tri', state);
     }
+    updateTriBadge(select);
     MakeConfigLines();
     hideTriMenu();
 }
@@ -604,6 +643,7 @@ function RemoveSelector(level,parent)
             populateParticleSelector(newSelector.id,false);
                     // bind right-click on the select to open tri-state menu
                     newSelector.addEventListener('contextmenu', function(e){ showTriMenu(e,this); });
+                    updateTriBadge(newSelector);
 
 
            // FinalCount++;
@@ -869,6 +909,7 @@ function RemoveSelector(level,parent)
 
         
         ConfigLines+="\n"
+        applyTriIndicators();
 
         var BFlag_val=document.getElementById("BFlag").value
         var FFlag_val=document.getElementById("FFlag").value
