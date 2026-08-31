@@ -11,6 +11,7 @@
 #include "TIterator.h"
 #include "TSystem.h"
 #include "TObjString.h"
+
 using namespace std;
 
 
@@ -45,8 +46,8 @@ int FSMCExtras(int numThrown, int pids[]);
 int BaryonNumber(int fsCode1, int fsCode2, int mcExtras = 0);
 int Charge(int fsCode1, int fsCode2, int mcExtras = 0);
 bool GetPolarizationAngle(int runNumber, int& polarizationAngle);
-
-
+double GetAccidentalScalingFactor(int locRunNumber, double locBeamEnergy, bool locIsMC);
+map<int, vector<double>> scalingFactorCache; 
 
 // **************************************
 //   MAIN
@@ -816,8 +817,7 @@ int main(int argc, char** argv){
       if (gUseParticles && gUseKinFit) gInTree->SetBranchAddress("NDF_KinFit", inNDF_KinFit);
   Float_t inEnergy_Unused[MAXCOMBOS] = {};
       if (gUseParticles) gInTree->SetBranchAddress("Energy_UnusedShowers", inEnergy_Unused);
-
-
+ 
         //   *** Combo Beam Particles (indexed by combo) ***
 
   Int_t inBeamIndex[MAXCOMBOS] = {};
@@ -946,7 +946,8 @@ int main(int argc, char** argv){
   double outPzPB;             if (gUseParticles && gUseKinFit)
                                                  gOutTree->Branch("PzPB",            &outPzPB);
   double outEnPB;             if (gUseParticles && gUseKinFit)
-                                                 gOutTree->Branch("EnPB",            &outEnPB);
+				                 gOutTree->Branch("EnPB",            &outEnPB);
+  double outAccidentalScale;  if(gUseParticles)  gOutTree->Branch("AccidentalScale", &outAccidentalScale);
   double outVxPB;             if (gUseParticles && gUseKinFitVtx)
                                                  gOutTree->Branch("VxPB",            &outVxPB);
   double outVyPB;             if (gUseParticles && gUseKinFitVtx)
@@ -1331,7 +1332,14 @@ int main(int argc, char** argv){
           outPyPB = p4->Py();
           outPzPB = p4->Pz();
           outEnPB = p4->E();
-        }
+	  // accidental scaling factor
+	  if(abs(outRFDeltaT)<2){
+	    // define it to be one for the coherent peak, allows for weighting every entry instead of just rf sideband
+	    outAccidentalScale = 1.0;
+	  } else{
+	    outAccidentalScale = GetAccidentalScalingFactor(outRunNumber,outEnPB,gUseMCParticles);
+	  }
+	}
         if (gUseKinFitVtx){
               x4 = (TLorentzVector*)inBeam__X4_KinFit->At(ic);
           outVxPB = x4->X();
@@ -2302,3 +2310,123 @@ bool GetPolarizationAngle(int runNumber, int& polarizationAngle)
 
   return true;
 }
+
+
+
+
+// copied from DAnalysisUtilitis.cc to add accidental scale factors while avoiding dependency on gluex_root_analysis 
+double GetAccidentalScalingFactor(int locRunNumber, double locBeamEnergy, bool locIsMC)
+{
+	//CCDB environment must be setup!!
+	double locHodoscopeHiFactor = -1.0;
+	double locHodoscopeHiFactorErr = -1.0;
+	double locHodoscopeLoFactor = -1.0;
+	double locHodoscopeLoFactorErr = -1.0;
+	double locMicroscopeFactor = -1.0;
+	double locMicroscopeFactorErr = -1.0;
+	double locTAGMEnergyBoundHi = -1.0;
+	double locTAGMEnergyBoundLo = -1.0;
+
+	// check to see if we already loaded the data for this run
+	// CCDB access is SLOW, so cache when you can
+	if(scalingFactorCache.count(locRunNumber) > 0) {
+		// 	set the values from the cache
+		vector<double> &locCachedValues = scalingFactorCache[locRunNumber];
+		locHodoscopeHiFactor = locCachedValues[0];
+		locHodoscopeHiFactorErr = locCachedValues[1];
+		locHodoscopeLoFactor = locCachedValues[2];
+		locHodoscopeLoFactorErr = locCachedValues[3];
+		locMicroscopeFactor = locCachedValues[4];
+		locMicroscopeFactorErr = locCachedValues[5];
+		locTAGMEnergyBoundHi = locCachedValues[6];
+		locTAGMEnergyBoundLo = locCachedValues[7];
+	} else {
+
+		// Guess we have to go to the CCDB...
+		//Pipe the current constant into this function
+		ostringstream locCommandStream;
+		if (locIsMC)
+		  locCommandStream << "ccdb dump ANALYSIS/accidental_scaling_factor -v mc -r " << locRunNumber;
+		else
+		  locCommandStream << "ccdb dump ANALYSIS/accidental_scaling_factor -r " << locRunNumber;
+		FILE* locInputFile = gSystem->OpenPipe(locCommandStream.str().c_str(), "r");
+		if(locInputFile == NULL) {
+		        cerr << "Could not load ANALYSIS/accidental_scaling_factor from CCDB !" << endl;
+			gSystem->Exit(1);        // make sure we don't fail silently
+			return -1.0;    // sanity check, this shouldn't be executed!
+		}
+
+		//get the first line
+		char buff[1024]; // I HATE char buffers
+		if(fgets(buff, sizeof(buff), locInputFile) == NULL)
+		{
+			gSystem->ClosePipe(locInputFile);
+			cerr << "Could not parse ANALYSIS/accidental_scaling_factor from CCDB !" << endl;
+			cout << "buff is " << buff << endl;
+			gSystem->Exit(1);        // make sure we don't fail silently
+			return -1.0;    // sanity check, this shouldn't be executed!
+		}
+
+		//get the second line (where the # is)
+		if(fgets(buff, sizeof(buff), locInputFile) == NULL)
+		{
+			gSystem->ClosePipe(locInputFile);
+			cerr << "Could not parse ANALYSIS/accidental_scaling_factor from CCDB !" << endl;
+			cout << "buff is " << buff << endl;
+			gSystem->Exit(1);        // make sure we don't fail silently
+			return -1.0;    // sanity check, this shouldn't be executed!
+		}
+        
+        // catch some CCDB error conditions
+        if(strncmp(buff, "Cannot", 6) == 0) 
+        {
+            // no assignment for this run
+            //vector<double> locCachedValues = { -1., -1., -1., -1., -1., -1., -1., -1. };
+            //scalingFactorCache[locRunNumber] = locCachedValues;   // give up for this run
+			gSystem->ClosePipe(locInputFile);
+			cerr << "No data available for ANALYSIS/accidental_scaling_factor, run " << locRunNumber << " from CCDB !" << endl;
+			gSystem->Exit(1);        // make sure we don't fail silently
+			return -1.0;    // sanity check, this shouldn't be executed!
+        }
+
+		istringstream locStringStream(buff);
+
+		//extract it
+		locStringStream >> locHodoscopeHiFactor >> locHodoscopeHiFactorErr >> locMicroscopeFactor >> locMicroscopeFactorErr
+				>> locHodoscopeLoFactor >> locHodoscopeLoFactorErr 
+						>> locTAGMEnergyBoundHi >> locTAGMEnergyBoundLo;
+
+		//Close the pipe
+		gSystem->ClosePipe(locInputFile);
+
+
+		cout << "for run number " << locRunNumber << endl;
+		cout << "HodoscopeLoFactor is " << locHodoscopeLoFactor << " +/- " << locHodoscopeLoFactorErr << endl;
+		cout << "MicroscopeFactor is  " << locMicroscopeFactor << " +/- " << locMicroscopeFactorErr << endl;
+		cout << "HodoscopeHiFactor is " << locHodoscopeHiFactor << " +/- " << locHodoscopeHiFactorErr << endl;
+
+		cout << "Microscope energies are " << locTAGMEnergyBoundLo << " to " << locTAGMEnergyBoundHi << endl;
+		
+		//save the values to a local cache
+		vector<double> locCachedValues;
+		locCachedValues.push_back(locHodoscopeHiFactor);
+		locCachedValues.push_back(locHodoscopeHiFactorErr);
+		locCachedValues.push_back(locHodoscopeLoFactor);
+		locCachedValues.push_back(locHodoscopeLoFactorErr);
+		locCachedValues.push_back(locMicroscopeFactor);
+		locCachedValues.push_back(locMicroscopeFactorErr);
+		locCachedValues.push_back(locTAGMEnergyBoundHi);
+		locCachedValues.push_back(locTAGMEnergyBoundLo);
+		
+		scalingFactorCache[locRunNumber] = locCachedValues;
+	}
+
+	if(locBeamEnergy > locTAGMEnergyBoundHi)
+		return locHodoscopeHiFactor;
+	else if(locBeamEnergy > locTAGMEnergyBoundLo)
+		return locMicroscopeFactor;
+	else
+		return locHodoscopeLoFactor;
+}
+
+
