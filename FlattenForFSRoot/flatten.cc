@@ -91,6 +91,7 @@ int main(int argc, char** argv){
   cout << "                      2: keep all combos and suppress warnings ]" << endl;
   cout << "           -mcChecks  [check for baryon number violation, etc.," << endl;
   cout << "                       when parsing truth information?  0 or 1] (default: 1)" << endl;
+  cout << "           -noCCDB  [do not use CCDB to get accidental scaling factor? 0 or 1] (default: 0)" << endl;
   cout << "           -safe  [check array sizes?  0 or 1]          (default: 1)" << endl;
   cout << "           -print [print to screen: " << endl;
   cout << "                   -1 (less); 0 (regular); 1 (more); 2 (even more)]    (default: 0)" << endl;
@@ -138,6 +139,7 @@ int main(int argc, char** argv){
   bool gUseDIRC = false;
   bool gFlattenpi0 = false;
   bool gFlatteneta = false;
+  bool noCCDB = false;
   int gAddUnusedNeutrals = 0;
   int gCombos = 0;
   bool gMCChecks = true;
@@ -149,7 +151,7 @@ int main(int argc, char** argv){
     if ((argi == "-in")||(argi == "-out")||(argi == "-mc")||(argi == "-mctag")
         ||(argi == "-chi2")||(argi == "-RFDeltaT")||(argi == "-shQuality")||(argi == "-massWindows")
         ||(argi == "-numUnusedTracks")||(argi == "-usePolarization")||(argi == "-numUnusedNeutrals")
-        ||(argi == "-mcChecks")||(argi == "-addPID")||(argi == "-dirc")||(argi == "-flattenpi0")||(argi == "-flatteneta")
+        ||(argi == "-mcChecks")||(argi == "-noCCDB")||(argi == "-addPID")||(argi == "-dirc")||(argi == "-flattenpi0")||(argi == "-flatteneta")
         ||(argi=="-addUnusedNeutrals")||(argi == "-combos")
         ||(argi == "-numNeutralHypos")||(argi == "-safe")||(argi == "-print")){
       flag = argi;
@@ -175,6 +177,7 @@ int main(int argc, char** argv){
     if (flag == "-addUnusedNeutrals"){ gAddUnusedNeutrals = atoi(argi); }
     if (flag == "-combos"){ gCombos = atoi(argi); }
     if (flag == "-mcChecks"){ if (argi == "0") gMCChecks = false; }
+    if (flag == "-noCCDB"){ if (argi == "1") noCCDB = true; }
     if (flag == "-safe"){ if (argi == "0") gSafe = false; }
     if (flag == "-print"){ gPrint = atoi(argi); }
   }
@@ -217,6 +220,7 @@ int main(int argc, char** argv){
   cout << "  add unused neutrals?   " << gAddUnusedNeutrals << endl;
   cout << "  combos option:         " << gCombos << endl;
   cout << "  MC checks?             " << gMCChecks << endl;
+  cout << "  use CCDB?               " << !noCCDB << endl;
   cout << "  safe mode?             " << gSafe << endl;
   cout << endl;
   if ((gInFileNames.size() == 0) || (gOutFileName == "")){
@@ -1332,13 +1336,14 @@ int main(int argc, char** argv){
           outPyPB = p4->Py();
           outPzPB = p4->Pz();
           outEnPB = p4->E();
-	  // accidental scaling factor
-	  if(abs(outRFDeltaT)<2){
-	    // define it to be one for the coherent peak, allows for weighting every entry instead of just rf sideband
-	    outAccidentalScale = 1.0;
-	  } else{
-	    outAccidentalScale = GetAccidentalScalingFactor(outRunNumber,outEnPB,gUseMCParticles);
-	  }
+    // accidental scaling factor
+    if(gUseMCInfo || abs(outRFDeltaT)<2 || noCCDB){
+      // define it to be one for Monte Carlo and for the coherent peak;
+      // also define it to be one if no CCDB access, since we can't get the scaling factor
+      outAccidentalScale = 1.0;
+    } else{
+      outAccidentalScale = GetAccidentalScalingFactor(outRunNumber,outEnPB,gUseMCParticles);
+    }
 	}
         if (gUseKinFitVtx){
               x4 = (TLorentzVector*)inBeam__X4_KinFit->At(ic);
