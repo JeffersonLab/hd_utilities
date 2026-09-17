@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 from dataclasses import dataclass
 from enum import Enum, auto
 import functools
@@ -96,19 +97,19 @@ def get_evio_file_paths(
   """Gets the list of EVIO files for each run in the given list of runs, and also tallies any errors encountered in the process."""
   print(f"Searching for raw-data .evio files in '{raw_data_root}'")
   evio_file_paths_per_run: dict[int, list[str]] = {}
-  error_counts: dict[EvioFileErrorType, int] = {errorType : 0 for errorType in EvioFileErrorType}
+  rcdb_errors:             list[EvioFileError]  = []
   for run_number in run_list:
     # get run information from RCDB
     run_info = db.get_run(run_number)
     # get list of evio files for this run, and any errors encountered in the process
-    evio_file_paths: list[str]
-    rcdb_errors:     list[EvioFileError]
-    evio_file_paths, rcdb_errors = get_evio_file_paths_for_run(run_info, raw_data_root)
+    evio_file_paths:    list[str]           = []
+    rcdb_errors_in_run: list[EvioFileError] = []
+    evio_file_paths, rcdb_errors_in_run = get_evio_file_paths_for_run(run_info, raw_data_root)
     evio_file_paths_per_run[run_number] = evio_file_paths
-    # tally any errors returned for this run
-    for err in rcdb_errors:
-      error_counts[err.errorType] += 1
+    rcdb_errors += rcdb_errors_in_run
   total_nmb_evio_files = sum(len(file_paths) for file_paths in evio_file_paths_per_run.values())
+  # tally all errors
+  error_counts = Counter((err.errorType for err in rcdb_errors))
   print(textwrap.dedent(f"""
     ============================================================================================
     Summary
