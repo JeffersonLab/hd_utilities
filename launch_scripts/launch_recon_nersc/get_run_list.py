@@ -173,7 +173,7 @@ def main(args: argparse.Namespace) -> None:
     run_period                   = run_period,
     run_list                     = run_list,
     raw_data_root                = raw_data_root,
-    missing_evio_files_list_file = f"./{run_number_list_file}.missing",
+    missing_evio_files_list_file = f"./missing_{evio_path_list_file}",
   )
   print(f"Writing list of run numbers to './{run_number_list_file}'")
   try:
