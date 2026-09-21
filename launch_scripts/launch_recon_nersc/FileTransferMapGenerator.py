@@ -101,7 +101,12 @@ class FileTransferMapGenerator:
     self._evio_file_names:      list[str]                  = []  # EVIO file names processed by the job
     self._failed_evio_files:    list[str]                  = []  # paths of EVIO files that are missing or for which hd_root failed
     self._missing_items:        defaultdict[str, set[str]] = defaultdict(set)  # missing items by item type for reporting
-    self._file_transfer_map:    defaultdict[str, set[str]] = defaultdict(set)  # mapping of relative local file paths to absolute destination file paths for file transfer; log files may have multiple destination paths
+    self._file_transfer_map:    defaultdict[str, set[str]] = defaultdict(set)  # mapping of relative local file paths to absolute destination file paths; log files may have multiple destination paths
+
+  @property
+  def file_transfer_map(self) -> dict[str, set[str]]:
+    """Returns mapping of relative local file paths to absolute destination file paths; log files may have multiple destination paths"""
+    return dict(self._file_transfer_map)
 
   class InWorkDirJob:
     """Context manager for changing the current directory to the job working directory."""
@@ -295,6 +300,27 @@ class FileTransferMapGenerator:
         dest_file_name = f"{file_base_name}_{self.run_number:06d}_{evio_file_index:03d}.{file_type}"  # fix names of evio files and make file names of non-evio files unique
         dest_file_path = f"{dest_dir_path}/{dest_subdir_name}/{self.run_number:06d}/{dest_file_name}"
         self._file_transfer_map[local_file_path].add(f"{dest_file_path}")
+
+  def print_missing_items_summary(self) -> None:
+    """Prints a summary of missing items by item type."""
+    if len(self._missing_items) == 0:
+      print("Found no missing items; all expected files are present")
+    else:
+      print(f"Summary of missing items for run {self.run_number}:")
+      for item_type, missing_items in sorted(self._missing_items.items()):
+        print(f"{len(missing_items)} {item_type} missing:")
+        for missing_item in sorted(missing_items):
+          print(f"  {missing_item}")
+
+  def print_summary_failed_evio_files(self) -> None:
+    """Prints a summary of failed EVIO files."""
+    nmb_failed_evio_files = len(self._failed_evio_files)
+    if nmb_failed_evio_files == 0:
+      print("Found no EVIO files, that are missing or for which hd_root has a non-zero return code")
+    else:
+      print(f"{nmb_failed_evio_files} out of {len(self._evio_file_names)} EVIO file(s) {'are' if nmb_failed_evio_files != 1 else 'is'} missing or have a non-zero hd_root return code:")
+    for failed_evio_file in sorted(self._failed_evio_files):
+      print(f"  {failed_evio_file}")
 
 
 def main() -> None:
