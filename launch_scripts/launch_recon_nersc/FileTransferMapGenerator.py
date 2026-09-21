@@ -85,18 +85,18 @@ class FileTransferMapGenerator:
     work_dir_job_path:            str,  # path to working directory of job; assuming directory structure: <work_dir_job_path>/RUN<run number>/TASK<task index>/FILE<file number>
     nmb_tasks:                    int,  # number of tasks in the job
     nmb_processes_per_task:       int,  # number of processes per task used in the reconstruction launch
-    dest_dir_hd_root_output_path: str,  # path of directory, to which the output files of hd_root processes with return code 0 will be copied
-    dest_dir_log_files_path:      str,  # path of directory, to which the log files of hd_root processes with return code 0 will be copied
-    dest_dir_failed_hd_root_path: str,  # path of directory, to which any log and output files of hd_root processes with non-zero return code will be copied for further investigation
+    hd_root_output_dest_dir_path: str,  # path of directory, to which the output files of hd_root processes with return code 0 will be copied
+    log_files_dest_dir_path:      str,  # path of directory, to which the log files of hd_root processes with return code 0 will be copied
+    failed_hd_root_dest_dir_path: str,  # path of directory, to which any log and output files of hd_root processes with non-zero return code will be copied for further investigation
   ) -> None:
     self.job_id                       = job_id
     self.run_number                   = run_number
     self.work_dir_job_path            = work_dir_job_path
     self.nmb_tasks                    = nmb_tasks
     self.nmb_processes_per_task       = nmb_processes_per_task
-    self.dest_dir_hd_root_output_path = dest_dir_hd_root_output_path
-    self.dest_dir_log_files_path      = dest_dir_log_files_path
-    self.dest_dir_failed_hd_root_path = dest_dir_failed_hd_root_path
+    self.hd_root_output_dest_dir_path = hd_root_output_dest_dir_path
+    self.log_files_dest_dir_path      = log_files_dest_dir_path
+    self.failed_hd_root_dest_dir_path = failed_hd_root_dest_dir_path
     self._run_dir_name                = f"RUN{self.run_number:06d}"  # directory containing the SWIF output for the run
     self._evio_file_names:      list[str]                  = []  # EVIO file names processed by the job
     self._failed_evio_files:    list[str]                  = []  # paths of EVIO files that are missing or for which hd_root failed
@@ -185,25 +185,29 @@ class FileTransferMapGenerator:
     # if not, copy log and output files into separate directory for further investigation
     hd_root_rc_file_path = f"{file_dir_path}/hd_root.rc"
     hd_root_return_code = get_hd_root_return_code(hd_root_rc_file_path)
-    if hd_root_return_code != 0:
-      dest_dir_failed_file_path = f"{self.dest_dir_failed_hd_root_path}/{hd_root_return_code}/{self.run_number:06d}_{evio_file_index:03d}"  #TODO should this contain a job-unique identifier to prevent overwriting?
+    if hd_root_return_code is None or hd_root_return_code != 0:
+      failed_file_dest_dir_path = f"{self.failed_hd_root_dest_dir_path}/{hd_root_return_code}/{self.run_number:06d}_{evio_file_index:03d}"  #TODO shouldn't this contain a job-unique identifier to prevent overwriting?
       if hd_root_return_code is None:
-        print(f"WARNING: could not read hd_root return-code file at {hd_root_rc_file_path}; tagging EVIO file as failed and moving output files to '{dest_dir_failed_file_path}'")
+        print(f"WARNING: could not read hd_root return-code file at {hd_root_rc_file_path}", end = "")
         self._missing_items["log file(s)"].add(hd_root_rc_file_path)
       else:
-        print(f"WARNING: hd_root return code for run {self.run_number} and EVIO file number {evio_file_index} is {hd_root_return_code}; tagging EVIO file as failed and moving output files to '{dest_dir_failed_file_path}'")
+        print(f"WARNING: hd_root return code for run {self.run_number} and EVIO file number {evio_file_index} is {hd_root_return_code}", end = "")
+      print(f"; tagging EVIO file as failed and moving output files to '{failed_file_dest_dir_path}'")
       self._failed_evio_files.append(evio_file_name)
       # copy job and task log files
-      self._process_job_log_files (               dest_dir_failed_file_path)
-      self._process_task_log_files(task_dir_path, dest_dir_failed_file_path)
-      self._process_hd_root_output_files(file_dir_path, dest_dir_failed_file_path, evio_file_index, copy_all_files = True)
+      self._process_job_log_files (               failed_file_dest_dir_path)
+      self._process_task_log_files(task_dir_path, failed_file_dest_dir_path)
+      # copy all files in file dir
+      self._process_hd_root_output_files(file_dir_path, failed_file_dest_dir_path, evio_file_index, copy_all_files = True)
       return
     # process output and log files of successful hd_root processes
-    job_info_dest_dir_path = f"{self.dest_dir_log_files_path}/job_info/{self.run_number:06d}/job_info_{self.run_number:06d}_{evio_file_index:03d}"  # target directory for all log files
+    job_info_dest_dir_path = f"{self.log_files_dest_dir_path}/job_info/{self.run_number:06d}/job_info_{self.run_number:06d}_{evio_file_index:03d}"  # target directory for all log files
+    # copy job and task log files
     self._process_job_log_files    (               job_info_dest_dir_path)
     self._process_task_log_files   (task_dir_path, job_info_dest_dir_path)
+    # copy hd_root log and output files
     self._process_hd_root_log_files(file_dir_path, job_info_dest_dir_path)
-    self._process_hd_root_output_files(file_dir_path, self.dest_dir_hd_root_output_path, evio_file_index, copy_all_files = False)
+    self._process_hd_root_output_files(file_dir_path, self.hd_root_output_dest_dir_path, evio_file_index, copy_all_files = False)
 
   def _process_job_log_files(
     self,
@@ -301,9 +305,9 @@ def main() -> None:
     work_dir_job_path            = "./test/test_work_dir_job2",
     nmb_tasks                    = 3,
     nmb_processes_per_task       = 8,
-    dest_dir_hd_root_output_path = "./test/test_work_dir_job2_dest/hd_root_output",
-    dest_dir_log_files_path      = "./test/test_work_dir_job2_dest/log_files",
-    dest_dir_failed_hd_root_path = "./test/test_work_dir_job2_dest/failed_hd_root",
+    hd_root_output_dest_dir_path = "./test/test_work_dir_job2_dest/hd_root_output",
+    log_files_dest_dir_path      = "./test/test_work_dir_job2_dest/log_files",
+    failed_hd_root_dest_dir_path = "./test/test_work_dir_job2_dest/failed_hd_root",
   )
   file_transfer_map_gen.process_work_dir()
   print("-------------------------------------------------------------------------------")
