@@ -11,7 +11,7 @@ from collections import defaultdict
 import functools
 import glob
 import os
-import shutil
+import subprocess
 import time
 
 from utilities import get_hd_root_return_code
@@ -323,9 +323,46 @@ class FileTransferMapGenerator:
       print(f"  {failed_evio_file}")
 
 
+def define_swif2_output_files(
+  job_id:                       int,  # Slurm ID of the job
+  run_number:                   int,  # run number of the job
+  work_dir_job_path:            str,  # path to working directory of job; assuming directory structure: <work_dir_job_path>/RUN<run number>/TASK<task index>/FILE<file number>
+  nmb_tasks:                    int,  # number of tasks in the job
+  nmb_processes_per_task:       int,  # number of processes per task used in the reconstruction launch
+  hd_root_output_dest_dir_path: str,  # path of directory, to which the output files of hd_root processes with return code 0 will be copied
+  log_files_dest_dir_path:      str,  # path of directory, to which the log files of hd_root processes with return code 0 will be copied
+  failed_hd_root_dest_dir_path: str,  # path of directory, to which any log and output files of hd_root processes with non-zero return code will be copied for further investigation
+) -> None:
+  """Registers all output files with swif2 for transfer back to JLab."""
+  file_transfer_map_gen = FileTransferMapGenerator(
+    job_id                       = job_id,
+    run_number                   = run_number,
+    work_dir_job_path            = work_dir_job_path,
+    nmb_tasks                    = nmb_tasks,
+    nmb_processes_per_task       = nmb_processes_per_task,
+    hd_root_output_dest_dir_path = hd_root_output_dest_dir_path,
+    log_files_dest_dir_path      = log_files_dest_dir_path,
+    failed_hd_root_dest_dir_path = failed_hd_root_dest_dir_path,
+  )
+  file_transfer_map_gen.process_work_dir()
+  print("-------------------------------------------------------------------------------")
+  file_transfer_map_gen.print_missing_items_summary()
+  print("-------------------------------------------------------------------------------")
+  file_transfer_map_gen.print_summary_failed_evio_files()
+  print("-------------------------------------------------------------------------------")
+  file_transfer_map: dict[str, set[str]] = file_transfer_map_gen.file_transfer_map
+  nmb_transfers = sum(len(dest_file_paths) for dest_file_paths in file_transfer_map.values())
+  print(f"Defining {nmb_transfers} transfers to JLab")
+  for local_file_path, dest_file_paths in sorted(file_transfer_map.items()):
+    for dest_file_path in sorted(dest_file_paths):
+      cmd = f"./.swif/swif2 output '{local_file_path}' '{dest_file_path}'"  #TODO for some reason, swif2 is not in path
+      print(cmd)
+      subprocess.run(cmd, shell = True, check = False)
+
+
 def main() -> None:
   start_time = time.time()
-  file_transfer_map_gen = FileTransferMapGenerator(
+  define_swif2_output_files(
     job_id                       = 53624465,
     run_number                   = 101156,
     work_dir_job_path            = "./test/test_work_dir_job2",
@@ -335,42 +372,6 @@ def main() -> None:
     log_files_dest_dir_path      = "./test/test_work_dir_job2_dest/log_files",
     failed_hd_root_dest_dir_path = "./test/test_work_dir_job2_dest/failed_hd_root",
   )
-  file_transfer_map_gen.process_work_dir()
-  print("-------------------------------------------------------------------------------")
-  # print file transfer map
-  for src_file_path, dest_file_paths in file_transfer_map_gen._file_transfer_map.items():
-    src_file_path = f"{file_transfer_map_gen.work_dir_job_path}/{src_file_path}"
-    dest_file_paths = sorted(list(dest_file_paths))
-    print(f"Copying '{src_file_path}' to '{dest_file_paths[0]}'")
-    if len(dest_file_paths) > 1:
-      for dest_file_path in dest_file_paths[1:]:
-        print(f"        and to '{dest_file_path}'")
-    for dest_file_path in dest_file_paths:
-      file_dest_dir_path = os.path.dirname(dest_file_path)
-      if not os.path.isdir(file_dest_dir_path):
-        print(f"Creating directory '{file_dest_dir_path}'")
-        os.makedirs(file_dest_dir_path, exist_ok = True)
-      shutil.copy2(src_file_path, dest_file_path)
-  print("-------------------------------------------------------------------------------")
-  # print summary of missing items by item type
-  missing_items = file_transfer_map_gen._missing_items
-  if len(missing_items) == 0:
-    print("Found no missing items; all expected files are present")
-  else:
-    print(f"Summary of missing items for run {file_transfer_map_gen.run_number}:")
-    for item_type, missing_items in sorted(missing_items.items()):
-      print(f"{len(missing_items)} {item_type} missing:")
-      for missing_item in sorted(missing_items):
-        print(f"  {missing_item}")
-  print("-------------------------------------------------------------------------------")
-  # print summary of failed EVIO files
-  nmb_failed_evio_files = len(file_transfer_map_gen._failed_evio_files)
-  if nmb_failed_evio_files == 0:
-    print("Found no EVIO files, that are missing or for which hd_root has a non-zero return code")
-  else:
-    print(f"{nmb_failed_evio_files} out of {len(file_transfer_map_gen._evio_file_names)} EVIO file(s) {'are' if nmb_failed_evio_files != 1 else 'is'} missing or have a non-zero hd_root return code:")
-    for failed_evio_file in sorted(file_transfer_map_gen._failed_evio_files):
-      print(f"  {failed_evio_file}")
   print("-------------------------------------------------------------------------------")
   elapsed_time_sec = int(time.time() - start_time)
   print(f"Wall time consumed by script: {elapsed_time_sec // 60} min, {elapsed_time_sec % 60} sec")
