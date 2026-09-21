@@ -73,7 +73,7 @@ def main(args: argparse.Namespace) -> None:
   else:
     # define output files for swif2
     os.environ["SWIF_JOB_STAGE_DIR"] = os.path.abspath(os.getcwd())  # needed by `./.swif/swif2` command
-    define_swif2_output_files(args.run_number, args.swif_output_root, args.transfer_all_files)
+    define_swif2_output_files(args.run_number, args.swif_output_root, filter_failed_processes = not args.transfer_all_files)
 
   print("-------------------------------------------------------------------------------")
   elapsed_time_sec = int(time.time() - start_time)

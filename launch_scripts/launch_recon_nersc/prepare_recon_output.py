@@ -358,7 +358,7 @@ def main(args: argparse.Namespace) -> None:
   failed_hd_root_dir = os.path.abspath(args.override_failed_hd_root_dir or f"{target_base_dir}/{ver_label}.failed_evio_files_by_hd_root_return_code")
   print(f"Using target directory '{target_dir}' for hd_root output files with return code 0")
   print(f"Using target directory '{failed_hd_root_dir}' for hd_root output files with non-zero return code")
-  
+
   total_nmb_evio_files = 0
   failed_evio_files:    list[str]                        = []  # paths of EVIO files for which hd_root failed
   missing_items_runs:   list[defaultdict[str, set[str]]] = []  # missing items for each run by item type for reporting at the end of the script

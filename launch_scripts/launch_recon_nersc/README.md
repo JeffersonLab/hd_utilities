@@ -1,6 +1,6 @@
 # Launch scripts for submitting large-scale reconstruction jobs at NERSC
 
- See more detailed documentation here: <https://halldweb.jlab.org/wiki/index.php/HOWTO_Execute_a_Launch_using_NERSC>.
+See more detailed documentation here: <https://halldweb.jlab.org/wiki/index.php/HOWTO_Execute_a_Launch_using_NERSC>.
 
 ## Call hierarchy of scripts
 

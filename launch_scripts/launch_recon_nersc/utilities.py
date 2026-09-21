@@ -116,11 +116,11 @@ def get_hd_root_return_code(hd_root_rc_file_path: str) -> int | None:
 
 
 def get_file_transfer_paths(
-  run_number:         int,
-  swif_output_root:   str,
-  transfer_all_files: bool = False,  # if True, do not filter out any files
+  run_number:              int,
+  swif_output_root:        str,
+  filter_failed_processes: bool = True,  # if True, do do not copy output files from failed `hd_root` processes
 ) -> list[tuple[str, str]]:
-  """Gets list of local relative paths w.r.t. current directory and absolute remote destination paths of all output files that should be transferred back to JLab."""
+  """Constructs a list of the local relative paths of all output files in current directory that should be transferred back to JLab and the corresponding absolute remote destination paths."""
   # this function assumes that the current directory is the working directory of the job
   # first greedily collect all potential output items, then filter out directories and files that should not be transferred back to JLab
   relative_output_paths: list[str] = []
@@ -133,7 +133,7 @@ def get_file_transfer_paths(
     # loop over file dirs
     file_dirs: list[str] = sorted(glob.glob(f"{task_dir}/FILE???"))
     for file_dir in file_dirs:
-      if not transfer_all_files:
+      if filter_failed_processes:
         hd_root_return_code = get_hd_root_return_code(f"{file_dir}/hd_root.rc")
         if hd_root_return_code is None or hd_root_return_code != 0:
           # do not copy hd_root output files for failed hd_root processes; but try to recover debug info
@@ -157,12 +157,12 @@ def get_file_transfer_paths(
 
 
 def define_swif2_output_files(
-  run_number:         int,
-  swif_output_root:   str,
-  transfer_all_files: bool = False,  # if True, do not filter out any files
+  run_number:              int,
+  swif_output_root:        str,
+  filter_failed_processes: bool = True,  # if True, do do not copy output files from failed `hd_root` processes
 ) -> None:
   """Registers all output files with swif2 for transfer back to JLab."""
-  file_transfer_paths: list[tuple[str, str]] = get_file_transfer_paths(run_number, swif_output_root, transfer_all_files)
+  file_transfer_paths: list[tuple[str, str]] = get_file_transfer_paths(run_number, swif_output_root, filter_failed_processes)
   print(f"Defining {len(file_transfer_paths)} output files for transfer back to JLab")
   for local_output_file_path, remote_output_file_path in file_transfer_paths:
     output_cmd = f"./.swif/swif2 output '{local_output_file_path}' '{remote_output_file_path}'"  #TODO for some reason, swif2 is not in path
