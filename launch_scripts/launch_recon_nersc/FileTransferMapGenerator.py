@@ -196,27 +196,14 @@ class FileTransferMapGenerator:
       # copy job and task log files
       self._process_job_log_files (               dest_dir_failed_file_path)
       self._process_task_log_files(task_dir_path, dest_dir_failed_file_path)
-      # copy all files in file directory
-      for local_file_path in sorted(glob.glob(f"{file_dir_path}/*")):
-        dest_file_path = f"{dest_dir_failed_file_path}/{os.path.basename(local_file_path)}"
-        self._file_transfer_map[local_file_path].add(dest_file_path)
+      self._process_hd_root_output_files(file_dir_path, dest_dir_failed_file_path, evio_file_index, copy_all_files = True)
       return
     # process output and log files of successful hd_root processes
     job_info_dest_dir_path = f"{self.dest_dir_log_files_path}/job_info/{self.run_number:06d}/job_info_{self.run_number:06d}_{evio_file_index:03d}"  # target directory for all log files
     self._process_job_log_files    (               job_info_dest_dir_path)
     self._process_task_log_files   (task_dir_path, job_info_dest_dir_path)
     self._process_hd_root_log_files(file_dir_path, job_info_dest_dir_path)
-    #TODO move code to separate function
-    for dest_subdir_name, (file_base_name, file_type) in RECON_SUBDIR_BASENAME_MAP.items():
-      file_name = f"hd_rawdata_{self.run_number:06d}_{evio_file_index:03d}.{file_base_name}.{file_type}" if file_type == "evio" else f"{file_base_name}.{file_type}"
-      local_file_path = f"{file_dir_path}/{file_name}"
-      if not os.path.isfile(local_file_path):
-        print(f"WARNING: expected hd_root output file '{local_file_path}' is missing; ignoring this file")
-        self._missing_items[f"{file_base_name} file(s)"].add(local_file_path)
-        continue
-      dest_file_name = f"{file_base_name}_{self.run_number:06d}_{evio_file_index:03d}.{file_type}"  # fix names of evio files and make file names of non-evio files unique
-      dest_file_path = f"{self.dest_dir_hd_root_output_path}/{dest_subdir_name}/{self.run_number:06d}/{dest_file_name}"
-      self._file_transfer_map[local_file_path].add(f"{dest_file_path}")
+    self._process_hd_root_output_files(file_dir_path, self.dest_dir_hd_root_output_path, evio_file_index, copy_all_files = False)
 
   def _process_job_log_files(
     self,
@@ -279,6 +266,32 @@ class FileTransferMapGenerator:
         continue
       self._file_transfer_map[log_file_path].add(f"{dest_dir_path}/{log_file_name}")
 
+  def _process_hd_root_output_files(
+    self,
+    file_dir_path:   str,
+    dest_dir_path:   str,
+    evio_file_index: int,
+    copy_all_files:  bool,
+  ) -> None:
+    """Processes hd_root output files in the given file directory and appends to the file transfer map."""
+    if copy_all_files:
+      # copy all files in file directory
+      for local_file_path in sorted(glob.glob(f"{file_dir_path}/*")):
+        dest_file_path = f"{dest_dir_path}/{os.path.basename(local_file_path)}"
+        self._file_transfer_map[local_file_path].add(dest_file_path)
+    else:
+      # copy only expected files
+      for dest_subdir_name, (file_base_name, file_type) in RECON_SUBDIR_BASENAME_MAP.items():
+        file_name = f"hd_rawdata_{self.run_number:06d}_{evio_file_index:03d}.{file_base_name}.{file_type}" if file_type == "evio" else f"{file_base_name}.{file_type}"
+        local_file_path = f"{file_dir_path}/{file_name}"
+        if not os.path.isfile(local_file_path):
+          print(f"WARNING: expected hd_root output file '{local_file_path}' is missing; ignoring this file")
+          self._missing_items[f"{file_base_name} file(s)"].add(local_file_path)
+          continue
+        dest_file_name = f"{file_base_name}_{self.run_number:06d}_{evio_file_index:03d}.{file_type}"  # fix names of evio files and make file names of non-evio files unique
+        dest_file_path = f"{dest_dir_path}/{dest_subdir_name}/{self.run_number:06d}/{dest_file_name}"
+        self._file_transfer_map[local_file_path].add(f"{dest_file_path}")
+
 
 def main() -> None:
   start_time = time.time()
@@ -297,7 +310,7 @@ def main() -> None:
   # print file transfer map
   for src_file_path, dest_file_paths in file_transfer_map_gen._file_transfer_map.items():
     src_file_path = f"{file_transfer_map_gen.work_dir_job_path}/{src_file_path}"
-    dest_file_paths = list(dest_file_paths)
+    dest_file_paths = sorted(list(dest_file_paths))
     print(f"Copying '{src_file_path}' to '{dest_file_paths[0]}'")
     if len(dest_file_paths) > 1:
       for dest_file_path in dest_file_paths[1:]:
