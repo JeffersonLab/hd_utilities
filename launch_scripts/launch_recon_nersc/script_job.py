@@ -24,6 +24,7 @@ import argparse
 import functools
 import glob
 import os
+import pickle
 import subprocess
 import sys
 import time
@@ -45,6 +46,14 @@ def main(args: argparse.Namespace) -> None:
   print_python_env()
   print_command_line_arguments(args)
 
+  # save command-line arguments to a file for later reference
+  with open(f"job_{args.run_number:06d}_args.pkl", "wb") as args_file:
+    pickle.dump(args, args_file)
+
+  # save command-line arguments to a file for later reference
+  with open(f"job_{args.run_number:06d}_args.pkl", "wb") as args_file:
+    pickle.dump(args, args_file)
+
   # gather information about job environment and write it to files
   run_label = f"{args.run_number:06d}"
   write_env_to_file(f"job_{run_label}.env")
@@ -61,7 +70,7 @@ def main(args: argparse.Namespace) -> None:
   # get job working directory and list of input raw-data files
   work_dir_job = os.getcwd()  # working directory of job as created by swif2, i.e. `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}; (identical to `${SWIF_JOB_STAGE_DIR}` and `${SWIF_JOB_WORK_DIR}`)
   print(f"Job script is running in directory: '{work_dir_job}'")
-  evio_file_names: list[str] = sorted(glob.glob("hd_rawdata_??????_???.evio"))  # list of raw-data file names in working directory of job
+  evio_file_names: list[str] = sorted(glob.glob(f"hd_rawdata_{run_label}_???.evio"))  # list of raw-data file names in working directory of job
   #TODO filter bad files if list is available?
   print(f"Found {len(evio_file_names)} EVIO files that will be processed by this job:")
   for index, evio_file_name in enumerate(evio_file_names):
