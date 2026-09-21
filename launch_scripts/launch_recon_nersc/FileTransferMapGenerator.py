@@ -47,30 +47,18 @@ print = functools.partial(print, flush = True)
 #   "tree_TPOL" :              ("tree_TPOL",              "root"),
 #   "tree_TS_scaler" :         ("tree_TS_scaler",         "root"),
 # }
-# # 2021-11_ver05
-# RECON_SUBDIR_BASENAME_MAP: dict[str, tuple[str, str]] = {
-#   # EVIO files
-#   "ps" :               ("ps",               "evio"),
-#   # HDDM files
-#   "converted_random" : ("converted_random", "hddm"),
-#   "REST" :             ("dana_rest",        "hddm"),
-#   # ROOT files
-#   "hists" :            ("hd_root",          "root"),
-#   "tree_PSFlux" :      ("tree_PSFlux",      "root"),
-#   "tree_TPOL" :        ("tree_TPOL",        "root"),
-#   "tree_TS_scaler" :   ("tree_TS_scaler",   "root"),
-# }
-# test
+# 2021-11_ver05
 RECON_SUBDIR_BASENAME_MAP: dict[str, tuple[str, str]] = {
+  # EVIO files
+  "ps" :               ("ps",               "evio"),
+  # HDDM files
+  "converted_random" : ("converted_random", "hddm"),
+  "REST" :             ("dana_rest",        "hddm"),
   # ROOT files
-  "hists" :                  ("hd_root",                "root"),
-  "tree_bcal_hadronic_eff" : ("tree_bcal_hadronic_eff", "root"),
-  "tree_fcal_hadronic_eff" : ("tree_fcal_hadronic_eff", "root"),
-  "tree_PSFlux" :            ("tree_PSFlux",            "root"),
-  "tree_sc_eff" :            ("tree_sc_eff",            "root"),
-  "tree_tof_eff" :           ("tree_tof_eff",           "root"),
-  "tree_TPOL" :              ("tree_TPOL",              "root"),
-  "tree_TS_scaler" :         ("tree_TS_scaler",         "root"),
+  "hists" :            ("hd_root",          "root"),
+  "tree_PSFlux" :      ("tree_PSFlux",      "root"),
+  "tree_TPOL" :        ("tree_TPOL",        "root"),
+  "tree_TS_scaler" :   ("tree_TS_scaler",   "root"),
 }
 
 
@@ -360,8 +348,20 @@ def define_swif2_output_files(
       subprocess.run(cmd, shell = True, check = False)
 
 
-def main() -> None:
+def test() -> None:
   start_time = time.time()
+  global RECON_SUBDIR_BASENAME_MAP
+  RECON_SUBDIR_BASENAME_MAP = {
+    # ROOT files
+    "hists" :                  ("hd_root",                "root"),
+    "tree_bcal_hadronic_eff" : ("tree_bcal_hadronic_eff", "root"),
+    "tree_fcal_hadronic_eff" : ("tree_fcal_hadronic_eff", "root"),
+    "tree_PSFlux" :            ("tree_PSFlux",            "root"),
+    "tree_sc_eff" :            ("tree_sc_eff",            "root"),
+    "tree_tof_eff" :           ("tree_tof_eff",           "root"),
+    "tree_TPOL" :              ("tree_TPOL",              "root"),
+    "tree_TS_scaler" :         ("tree_TS_scaler",         "root"),
+  }
   define_swif2_output_files(
     job_id                       = 53624465,
     run_number                   = 101156,
@@ -378,4 +378,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-  main()
+  test()
