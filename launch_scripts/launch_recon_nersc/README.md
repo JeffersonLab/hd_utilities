@@ -1,4 +1,4 @@
-# Launch scripts for submitting large-scale reconstruction jobs at NERSC
+# Launch scripts for submitting large-scale Hall-D reconstruction jobs at NERSC
 
 See more detailed documentation here: <https://halldweb.jlab.org/wiki/index.php/HOWTO_Execute_a_Launch_using_NERSC>.
 
@@ -12,15 +12,17 @@ See more detailed documentation here: <https://halldweb.jlab.org/wiki/index.php/
   |
  1|-> submit_job_for_RUN<run number>.sh  <--  submits job
       |
-     2|-> swif2 add-job (submits job to JLab Farm queue) + sbatch (submits job to NERSC queue)
+     2|-> swif2 add-job (submits job to JLab Farm queue) -sbatch (submits job to NERSC queue)
           |
          3|-> @NERSC: script_job_wrapper.sh  <--  sets up Python environment
               |
-             4|-> @NERSC: script_job.py  <--  actual job script
-                   |
-                  5|-> @NERSC: srun shifter script_task.sh  <-- runs task script run in a container on several NERSC nodes
-                        |
-                       6|-> @NERSC: hd_root <-- processes data
+             4|-> @NERSC: script_job.py  <--  job script; prepares work directories and starts tasks
+                  |
+                 5|-> @NERSC: srun shifter script_task.sh  <-- runs task script in a container on several NERSC nodes
+                      |
+                     6|-> @NERSC: script_task.sh <-- task script; runs multiple hd_root processes in parallel on a node
+                          |
+                         7|-> @NERSC: hd_root <-- processes data
 ```
 
 ## Used resources
@@ -44,9 +46,9 @@ See more detailed documentation here: <https://halldweb.jlab.org/wiki/index.php/
 * `/global/cfs/cdirs/m3120/launch.<run period>_<batch>` directory on NERSC Community File System that contains job scripts and JANA config file(s). Is mapped to `/launch.<run period>_<batch>` inside the job container.
 * `/pscratch/sd/j/jlab/swif` directory on NERSC Scratch Space that serves as root directory for job output (= swif2 site path). Has a quota of 500 TB.
   * `/pscratch/sd/j/jlab/swif/input` directory where swif2 copies all input files to, using catalog IDs as file names.
-  * `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}` top-level working directory the job and the container task wakes up in (identical to `${SWIF_JOB_STAGE_DIR}` and `${SWIF_JOB_WORK_DIR}`); the content of this directory is copied back to job output directory at JLab by swif2.
-    * `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}/RUN??????/TASK???` top-level working directory of the container task, where `???` is the 3-digit `${SLURM_PROCID}`.
-      * `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}/RUN??????/TASK???/FILE???` top-level working directory of the `hd_root` process that processes the EVIO file with the 3-digit file number `???`.
+  * `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}` working directory the job and the container task wakes up in (identical to `${SWIF_JOB_STAGE_DIR}` and `${SWIF_JOB_WORK_DIR}`); the content of this directory is copied back to the job output directory at JLab by swif2.
+    * `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}/RUN??????/TASK???` working directory of the container task, where `???` is the 3-digit `${SLURM_PROCID}`.
+      * `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}/RUN??????/TASK???/FILE???` working directory of the `hd_root` process that processes the EVIO file with the 3-digit file number `???`.
 
 ### Container image
 

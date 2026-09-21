@@ -63,7 +63,7 @@ def main(args: argparse.Namespace) -> None:
       sys.exit(1)
   else:
     if len(swif_attempt_dirs) > 1:
-      print(f"WARNING: Multiple directories with swif attempts found in '{run_working_dir}': {swif_attempt_dirs}; using the last one")
+      print(f"WARNING: Multiple directories with swif attempts found in '{run_working_dir}': {swif_attempt_dirs}; using the  one with the higher swif attempt ID")
     os.chdir(swif_attempt_dirs[-1])
   print(f"Processing swif attempt directory '{os.getcwd()}'")
 
