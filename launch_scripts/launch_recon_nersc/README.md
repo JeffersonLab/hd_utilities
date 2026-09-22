@@ -4,7 +4,7 @@ See more detailed documentation here: <https://halldweb.jlab.org/wiki/index.php/
 
 ## Call hierarchy of scripts
 
-```bash
+```
 > submit_launch.py + environment file (example: launch.env)
   * Copies job scripts and JANA config to NERSC
   * Creates and runs swif2 workflow at JLab Farm
@@ -33,20 +33,22 @@ See more detailed documentation here: <https://halldweb.jlab.org/wiki/index.php/
 
 #### JLab Farm
 
-* `~gxproj4/NERSC/<start date>.recon.<run period>_<batch>/launch.<run period>_<batch>` directory with production scripts; where `batch=ver<recon version>_<site>`, e.g. `launch_ver03-perl`.
+* `~gxproj4/NERSC/<start date>.recon.<run period>_<recon version>-perl/launch.<run period>_<recon version>-perl` directory with production scripts, e.g. `~gxproj4/NERSC/2026-05-31.recon.2021-11_ver05-perl/launch.2021-11_ver05-perl`.
 * `/mss/halld/RunPeriod-<run period>/rawdata/Run<run number>` directory with input `.evio` files for given run number, e.g. `/mss/halld/RunPeriod-2025-01/rawdata/Run132313`.
-* `/lustre/expphy/volatile/halld/offsite_prod/RunPeriod-<run period>/recon/<version>/RUN<6-digit run number>/TASK<3-digit file number>` output directory for given run and NERSC task index.
-* Inside the container, the `/group/halld/` tree is mounted via CVMFS
-  * `/group/halld/Software/builds/Linux_Alma9-x86_64-gcc11.5.0-cntr/${HALLD_RECON_VERSION}/Linux_Alma9-x86_64-gcc11.5.0-cntr/setenv.sh`
+* `/mss/halld/RunPeriod-<run period>/recon/<recon version>` final destination directory for all production output; each output type is collected in a separate subdirectory: `<output type>/??????/<output file>`, where `??????` is the 6-digit run number
+* `/lustre/expphy/volatile/halld/offsite_prod/RunPeriod-<run period>/recon/` directory used for temporary storage of NERSC output for postprocessing
+* Inside the software container that is run at NERSC, the `/group/halld/` tree is mounted via CVMFS; the following directories and files are used
+  * `/group/halld/Software/build_scripts/gluex_env_boot_jlab.sh`
+  * `/group/halld/www/halldweb/html/halld_versions`
   * `/group/halld/www/halldweb/html/dist/{ccdb,rcdb}.sqlite`
   * `/group/halld/www/halldweb/html/resources`
 
 #### NERSC
 
-* `/global/cfs/cdirs/m3120/launch.<run period>_<batch>` directory on NERSC Community File System that contains job scripts and JANA config file(s). Is mapped to `/launch.<run period>_<batch>` inside the job container.
+* `/global/cfs/cdirs/m3120/launch.<run period>_<recon version>-perl` directory on NERSC Community File System that contains job scripts and JANA config file(s). Is mapped to `/launch.<run period>_<recon version>-perl` inside the job container.
 * `/pscratch/sd/j/jlab/swif` directory on NERSC Scratch Space that serves as root directory for job output (= swif2 site path). Has a quota of 500 TB.
   * `/pscratch/sd/j/jlab/swif/input` directory where swif2 copies all input files to, using catalog IDs as file names.
-  * `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}` working directory the job and the container task wakes up in (identical to `${SWIF_JOB_STAGE_DIR}` and `${SWIF_JOB_WORK_DIR}`); the content of this directory is copied back to the job output directory at JLab by swif2.
+  * `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}` working directory the job and the container task wakes up in (identical to `${SWIF_JOB_STAGE_DIR}` and `${SWIF_JOB_WORK_DIR}`); the content of this directory is copied back to the three job output directories at JLab by swif2: for successful `hd_root` processes, output and log files are copied to separate directories; all files of failed `hd_root` processes are copied to another directory
     * `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}/RUN??????/TASK???` working directory of the container task, where `???` is the 3-digit `${SLURM_PROCID}`.
       * `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}/RUN??????/TASK???/FILE???` working directory of the `hd_root` process that processes the EVIO file with the 3-digit file number `???`.
 
