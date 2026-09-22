@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """Generates list of runs and files to process for a given run period."""
-# if GlueX environment is not set up, use `PYTHONPATH="/group/halld/Software/builds/Linux_Alma9-x86_64-gcc11.5.0/rcdb/rcdb_0.09.01/python:${PYTHONPATH}" ./get_run_list.py`
+# if GlueX environment is not set up, use `PYTHONPATH="/group/halld/Software/builds/Linux_Alma9-x86_64-gcc11.5.0/rcdb/rcdb_2.4.0/python:${PYTHONPATH}" ./get_run_list.py`
 
 from __future__ import annotations
 

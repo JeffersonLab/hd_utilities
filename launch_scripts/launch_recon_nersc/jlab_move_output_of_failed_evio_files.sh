@@ -5,7 +5,7 @@
 
 
 JOB_OUTPUT_BASEDIR=/lustre24/expphy/volatile/halld/recon/RunPeriod-2022-05/ver02
-DESTINATION_BASEDIR=/lustre24/expphy/volatile/halld/recon/RunPeriod-2022-05/ver02.failed_evio_files_by_hd_root_return_code
+DESTINATION_BASEDIR=/lustre24/expphy/volatile/halld/recon/RunPeriod-2022-05/ver02.failed_evio_files_by_return_code
 
 # loop over all `hd_root` log files
 for HD_ROOT_LOG_FILE_PATH in "${JOB_OUTPUT_BASEDIR}"/log/*/stdout.*.out
