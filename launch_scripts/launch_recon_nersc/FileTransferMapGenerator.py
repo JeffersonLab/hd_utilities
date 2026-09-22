@@ -68,24 +68,24 @@ class FileTransferMapGenerator:
 
   def __init__(
     self,
-    job_id:                       int,  # Slurm ID of the job
-    run_number:                   int,  # run number of the job
-    work_dir_job_path:            str,  # path to working directory of job; assuming directory structure: <work_dir_job_path>/RUN<run number>/TASK<task index>/FILE<file number>
-    nmb_tasks:                    int,  # number of tasks in the job
-    nmb_processes_per_task:       int,  # number of processes per task used in the reconstruction launch
-    hd_root_output_dest_dir_path: str,  # path of directory, to which the output files of hd_root processes with return code 0 will be copied
-    log_files_dest_dir_path:      str,  # path of directory, to which the log files of hd_root processes with return code 0 will be copied
-    failed_hd_root_dest_dir_path: str,  # path of directory, to which any log and output files of hd_root processes with non-zero return code will be copied for further investigation
+    job_id:                              int,  # Slurm ID of the job
+    run_number:                          int,  # run number of the job
+    work_dir_job_path:                   str,  # path to working directory of job; assuming directory structure: <work_dir_job_path>/RUN<run number>/TASK<task index>/FILE<file number>
+    nmb_tasks:                           int,  # number of tasks in the job
+    nmb_processes_per_task:              int,  # number of processes per task used in the reconstruction launch
+    hd_root_output_dest_dir_path:        str,  # path of directory, to which the output files of hd_root processes with return code 0 will be copied
+    log_files_dest_dir_path:             str,  # path of directory, to which the log files of hd_root processes with return code 0 will be copied
+    failed_hd_root_output_dest_dir_path: str,  # path of directory, to which any log and output files of hd_root processes with non-zero return code will be copied for further investigation
   ) -> None:
-    self.job_id                       = job_id
-    self.run_number                   = run_number
-    self.work_dir_job_path            = work_dir_job_path
-    self.nmb_tasks                    = nmb_tasks
-    self.nmb_processes_per_task       = nmb_processes_per_task
-    self.hd_root_output_dest_dir_path = hd_root_output_dest_dir_path
-    self.log_files_dest_dir_path      = log_files_dest_dir_path
-    self.failed_hd_root_dest_dir_path = failed_hd_root_dest_dir_path
-    self._run_dir_name                = f"RUN{self.run_number:06d}"  # directory containing the SWIF output for the run
+    self.job_id                              = job_id
+    self.run_number                          = run_number
+    self.work_dir_job_path                   = work_dir_job_path
+    self.nmb_tasks                           = nmb_tasks
+    self.nmb_processes_per_task              = nmb_processes_per_task
+    self.hd_root_output_dest_dir_path        = hd_root_output_dest_dir_path
+    self.log_files_dest_dir_path             = log_files_dest_dir_path
+    self.failed_hd_root_output_dest_dir_path = failed_hd_root_output_dest_dir_path
+    self._run_dir_name                       = f"RUN{self.run_number:06d}"  # directory containing the SWIF output for the run
     self._evio_file_names:      list[str]                  = []  # EVIO file names processed by the job
     self._failed_evio_files:    list[str]                  = []  # paths of EVIO files that are missing or for which hd_root failed
     self._missing_items:        defaultdict[str, set[str]] = defaultdict(set)  # missing items by item type for reporting
@@ -179,7 +179,7 @@ class FileTransferMapGenerator:
     hd_root_rc_file_path = f"{file_dir_path}/hd_root.rc"
     hd_root_return_code = get_hd_root_return_code(hd_root_rc_file_path)
     if hd_root_return_code is None or hd_root_return_code != 0:
-      failed_file_dest_dir_path = f"{self.failed_hd_root_dest_dir_path}/{hd_root_return_code}/{self.run_number:06d}_{evio_file_index:03d}"  #TODO shouldn't this contain a job-unique identifier to prevent overwriting?
+      failed_file_dest_dir_path = f"{self.failed_hd_root_output_dest_dir_path}/{hd_root_return_code}/{self.run_number:06d}_{evio_file_index:03d}/{self.job_id}"
       if hd_root_return_code is None:
         print(f"WARNING: could not read hd_root return-code file at {hd_root_rc_file_path}", end = "")
         self._missing_items["log file(s)"].add(hd_root_rc_file_path)
@@ -312,25 +312,25 @@ class FileTransferMapGenerator:
 
 
 def define_swif2_output_files(
-  job_id:                       int,  # Slurm ID of the job
-  run_number:                   int,  # run number of the job
-  work_dir_job_path:            str,  # path to working directory of job; assuming directory structure: <work_dir_job_path>/RUN<run number>/TASK<task index>/FILE<file number>
-  nmb_tasks:                    int,  # number of tasks in the job
-  nmb_processes_per_task:       int,  # number of processes per task used in the reconstruction launch
-  hd_root_output_dest_dir_path: str,  # path of directory, to which the output files of hd_root processes with return code 0 will be copied
-  log_files_dest_dir_path:      str,  # path of directory, to which the log files of hd_root processes with return code 0 will be copied
-  failed_hd_root_dest_dir_path: str,  # path of directory, to which any log and output files of hd_root processes with non-zero return code will be copied for further investigation
+  job_id:                              int,  # Slurm ID of the job
+  run_number:                          int,  # run number of the job
+  work_dir_job_path:                   str,  # path to working directory of job; assuming directory structure: <work_dir_job_path>/RUN<run number>/TASK<task index>/FILE<file number>
+  nmb_tasks:                           int,  # number of tasks in the job
+  nmb_processes_per_task:              int,  # number of processes per task used in the reconstruction launch
+  hd_root_output_dest_dir_path:        str,  # path of directory, to which the output files of hd_root processes with return code 0 will be copied
+  log_files_dest_dir_path:             str,  # path of directory, to which the log files of hd_root processes with return code 0 will be copied
+  failed_hd_root_output_dest_dir_path: str,  # path of directory, to which any log and output files of hd_root processes with non-zero return code will be copied for further investigation
 ) -> None:
   """Registers all output files with swif2 for transfer back to JLab."""
   file_transfer_map_gen = FileTransferMapGenerator(
-    job_id                       = job_id,
-    run_number                   = run_number,
-    work_dir_job_path            = work_dir_job_path,
-    nmb_tasks                    = nmb_tasks,
-    nmb_processes_per_task       = nmb_processes_per_task,
-    hd_root_output_dest_dir_path = hd_root_output_dest_dir_path,
-    log_files_dest_dir_path      = log_files_dest_dir_path,
-    failed_hd_root_dest_dir_path = failed_hd_root_dest_dir_path,
+    job_id                              = job_id,
+    run_number                          = run_number,
+    work_dir_job_path                   = work_dir_job_path,
+    nmb_tasks                           = nmb_tasks,
+    nmb_processes_per_task              = nmb_processes_per_task,
+    hd_root_output_dest_dir_path        = hd_root_output_dest_dir_path,
+    log_files_dest_dir_path             = log_files_dest_dir_path,
+    failed_hd_root_output_dest_dir_path = failed_hd_root_output_dest_dir_path,
   )
   file_transfer_map_gen.process_work_dir()
   print("-------------------------------------------------------------------------------")
@@ -363,14 +363,14 @@ def test() -> None:
     "tree_TS_scaler" :         ("tree_TS_scaler",         "root"),
   }
   define_swif2_output_files(
-    job_id                       = 53624465,
-    run_number                   = 101156,
-    work_dir_job_path            = "./test/test_work_dir_job2",
-    nmb_tasks                    = 3,
-    nmb_processes_per_task       = 8,
-    hd_root_output_dest_dir_path = "./test/test_work_dir_job2_dest/hd_root_output",
-    log_files_dest_dir_path      = "./test/test_work_dir_job2_dest/log_files",
-    failed_hd_root_dest_dir_path = "./test/test_work_dir_job2_dest/failed_hd_root",
+    job_id                              = 53624465,
+    run_number                          = 101156,
+    work_dir_job_path                   = "./test/test_work_dir_job2",
+    nmb_tasks                           = 3,
+    nmb_processes_per_task              = 8,
+    hd_root_output_dest_dir_path        = "./test/test_work_dir_job2_dest/hd_root_output",
+    log_files_dest_dir_path             = "./test/test_work_dir_job2_dest/log_files",
+    failed_hd_root_output_dest_dir_path = "./test/test_work_dir_job2_dest/failed_hd_root",
   )
   print("-------------------------------------------------------------------------------")
   elapsed_time_sec = int(time.time() - start_time)
