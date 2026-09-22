@@ -24,13 +24,12 @@ import argparse
 import functools
 import glob
 import os
+import pickle
 import sys
 import time
 
-from utilities import (
-  define_swif2_output_files,
-  print_command_line_arguments,
-)
+from FileTransferMapGenerator import define_swif2_output_files
+from utilities import print_command_line_arguments
 
 
 # always flush print() to reduce garbling of log files due to buffering
@@ -42,12 +41,12 @@ def main(args: argparse.Namespace) -> None:
   print_command_line_arguments(args)
 
   # cd into run working directory
-  run_working_dir = f"{args.nersc_swif_jobs_root_dir}/GlueX_recon_{args.run_number:06d}"
-  os.chdir(run_working_dir)
+  work_dir_job_path = f"{args.nersc_swif_jobs_root_dir}/GlueX_recon_{args.run_number:06d}"
+  os.chdir(work_dir_job_path)
   # find attempt subdirectory to process and cd into it
   swif_attempt_dirs = [entry for entry in sorted(glob.glob("*")) if os.path.isdir(entry)]
   if len(swif_attempt_dirs) == 0:
-    print(f"WARNING: No directories with swif attempts found in '{run_working_dir}'")
+    print(f"WARNING: No directories with swif attempts found in '{work_dir_job_path}'")
     sys.exit(1)
   if args.swif_attempt_id is not None:
     # find matching swif attempt dir
@@ -59,21 +58,37 @@ def main(args: argparse.Namespace) -> None:
         os.chdir(swif_attempt_dir)
         break
     if not found_matching_swif_attempt_dir:
-      print(f"WARNING: No matching swif attempt directory for ID {args.swif_attempt_id} found in '{run_working_dir}'")
+      print(f"WARNING: No matching swif attempt directory for ID {args.swif_attempt_id} found in '{work_dir_job_path}'")
       sys.exit(1)
   else:
     if len(swif_attempt_dirs) > 1:
-      print(f"WARNING: Multiple directories with swif attempts found in '{run_working_dir}': {swif_attempt_dirs}; using the  one with the higher swif attempt ID")
+      print(f"WARNING: Multiple directories with swif attempts found in '{work_dir_job_path}': {swif_attempt_dirs}; using the  one with the higher swif attempt ID")
     os.chdir(swif_attempt_dirs[-1])
   print(f"Processing swif attempt directory '{os.getcwd()}'")
 
   # protect against accidentally appending files to existing `__swif_outfiles__` file
   if os.path.exists(f"./__swif_outfiles__"):
-    raise RuntimeError(f"'__swif_outfiles__' already exists in '{run_working_dir}'; remove it before running this script")
+    raise RuntimeError(f"'__swif_outfiles__' already exists in '{work_dir_job_path}'; remove it before running this script")
   else:
+    # load arguments of script_job.py
+    script_job_args = None
+    with open(f"job_{args.run_number:06d}_args.pkl", "rb") as args_file:
+      script_job_args = pickle.load(args_file)
+    assert script_job_args is not None, "Failed to load script job arguments from pickle file"
+    assert args.run_number == script_job_args.run_number, "Mismatch between provided run number and run number used in job script"
     # define output files for swif2
     os.environ["SWIF_JOB_STAGE_DIR"] = os.path.abspath(os.getcwd())  # needed by `./.swif/swif2` command
-    define_swif2_output_files(args.run_number, args.swif_output_root, filter_failed_processes = not args.transfer_all_files)
+    print("-------------------------------------------------------------------------------")
+    define_swif2_output_files(
+      job_id                              = script_job_args.job_id,
+      run_number                          = script_job_args.run_number,
+      work_dir_job_path                   = work_dir_job_path,
+      nmb_tasks                           = script_job_args.nmb_tasks,
+      nmb_processes_per_task              = script_job_args.nmb_processes_per_task,
+      hd_root_output_dest_dir_path        = script_job_args.swif_hd_root_output_dest_dir,
+      log_files_dest_dir_path             = script_job_args.swif_log_files_output_dest_dir,
+      failed_hd_root_output_dest_dir_path = script_job_args.swif_failed_hd_root_output_dest_dir,
+    )
 
   print("-------------------------------------------------------------------------------")
   elapsed_time_sec = int(time.time() - start_time)
@@ -85,8 +100,6 @@ if __name__ == "__main__":
     description = "Define the output files that should be transferred back to JLab for the job corresponding to the given run number.",
   )
   parser.add_argument("run_number", type = int, help = "Run number of the job to process")
-  parser.add_argument("--swif-attempt-id", type = int, help = "SWIF attempt ID of the job to process; if not given, the last attempt will be used")
-  parser.add_argument("--nersc-swif-jobs-root-dir", default = "/pscratch/sd/j/jlab/swif/jobs/gxproj4", help = "NERSC root directory for SWIF jobs; default: '%(default)s'")
-  parser.add_argument("--swif-output-root", default = "/lustre/expphy/volatile/halld/offsite_prod/RunPeriod-2021-11/recon/ver05-perl", help = "Root of JLab directory tree, where output files will be copied to; default: '%(default)s'")  #TODO read this value from the jobs .env file
-  parser.add_argument("--transfer-all-files", action = "store_true", help = "If set, do not filter output of failed hd_root processes; default: False")
+  parser.add_argument("--swif-attempt-id", type = int, help = "SWIF attempt ID of the job to process; if not given, the highest attempt ID will be used")
+  parser.add_argument("--nersc-swif-jobs-root-dir", default = "/pscratch/sd/j/jlab/swif/jobs/gxproj4", help = "NERSC root directory for SWIF jobs; default: '%(default)s'")  #TODO pass from .env file
   main(parser.parse_args())

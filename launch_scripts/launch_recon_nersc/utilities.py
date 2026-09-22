@@ -9,7 +9,6 @@ import os
 from pathlib import Path
 import re
 import shlex
-import subprocess
 import sys
 from typing import TypeVar
 import zlib
@@ -154,20 +153,6 @@ def get_file_transfer_paths(
       continue
     file_transfer_paths.append((relative_output_path, f"{swif_output_root}/{relative_output_path}"))
   return file_transfer_paths
-
-
-def define_swif2_output_files(
-  run_number:              int,
-  swif_output_root:        str,
-  filter_failed_processes: bool = True,  # if True, do do not copy output files from failed `hd_root` processes
-) -> None:
-  """Registers all output files with swif2 for transfer back to JLab."""
-  file_transfer_paths: list[tuple[str, str]] = get_file_transfer_paths(run_number, swif_output_root, filter_failed_processes)
-  print(f"Defining {len(file_transfer_paths)} output files for transfer back to JLab")
-  for local_output_file_path, remote_output_file_path in file_transfer_paths:
-    output_cmd = f"./.swif/swif2 output '{local_output_file_path}' '{remote_output_file_path}'"  #TODO for some reason, swif2 is not in path
-    print(output_cmd)
-    subprocess.run(output_cmd, shell = True, check = False)
 
 
 def get_file_number_from_evio_file_name(evio_file_path: str) -> int | None:

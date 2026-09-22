@@ -94,23 +94,25 @@ def main(args: argparse.Namespace) -> None:
 
   # read run numbers from file and submit one swif2 job each run
   print("-------------------------------------------------------------------------------")
-  run_period                    =     ensure_dict_value_exists(launch_config, "RUN_PERIOD")
-  run_number_list_file          =     ensure_dict_value_exists(launch_config, "RUN_NUMBER_LIST_FILE") if args.override_run_list is None else args.override_run_list
-  raw_data_root                 =     ensure_dict_value_exists(launch_config, "RAW_DATA_ROOT")
-  nersc_nmb_processes_per_task  = int(ensure_dict_value_exists(launch_config, "NERSC_NMB_PROCESSES_PER_TASK"))
-  nersc_project                 =     ensure_dict_value_exists(launch_config, "NERSC_PROJECT")
-  nersc_node_type               =     ensure_dict_value_exists(launch_config, "NERSC_NODE_TYPE")
-  nersc_qos                     =     ensure_dict_value_exists(launch_config, "NERSC_QOS")
-  nersc_max_wall_time           =     ensure_dict_value_exists(launch_config, "NERSC_MAX_WALL_TIME")
-  nersc_max_threads_per_task    =     ensure_dict_value_exists(launch_config, "NERSC_MAX_THREADS_PER_TASK")
-  nersc_launch_dir              =     ensure_dict_value_exists(launch_config, "NERSC_LAUNCH_DIR")
-  nersc_launch_dir_container    =     ensure_dict_value_exists(launch_config, "NERSC_LAUNCH_DIR_CONTAINER")
-  jana_config                   =     ensure_dict_value_exists(launch_config, "JANA_CONFIG")
-  jana_calib_context            =     ensure_dict_value_exists(launch_config, "JANA_CALIB_CONTEXT")
-  halld_version_set_xml         =     ensure_dict_value_exists(launch_config, "HALLD_VERSION_SET_XML")
-  nersc_nmb_processes_per_task  = int(ensure_dict_value_exists(launch_config, "NERSC_NMB_PROCESSES_PER_TASK"))
-  nersc_nmb_threads_per_process = int(ensure_dict_value_exists(launch_config, "NERSC_NMB_THREADS_PER_PROCESS"))
-  swif_output_root              =     ensure_dict_value_exists(launch_config, "SWIF_OUTPUT_ROOT")
+  run_period                          =     ensure_dict_value_exists(launch_config, "RUN_PERIOD")
+  run_number_list_file                =     ensure_dict_value_exists(launch_config, "RUN_NUMBER_LIST_FILE") if args.override_run_list is None else args.override_run_list
+  raw_data_root                       =     ensure_dict_value_exists(launch_config, "RAW_DATA_ROOT")
+  nersc_nmb_processes_per_task        = int(ensure_dict_value_exists(launch_config, "NERSC_NMB_PROCESSES_PER_TASK"))
+  nersc_project                       =     ensure_dict_value_exists(launch_config, "NERSC_PROJECT")
+  nersc_node_type                     =     ensure_dict_value_exists(launch_config, "NERSC_NODE_TYPE")
+  nersc_qos                           =     ensure_dict_value_exists(launch_config, "NERSC_QOS")
+  nersc_max_wall_time                 =     ensure_dict_value_exists(launch_config, "NERSC_MAX_WALL_TIME")
+  nersc_max_threads_per_task          =     ensure_dict_value_exists(launch_config, "NERSC_MAX_THREADS_PER_TASK")
+  nersc_launch_dir                    =     ensure_dict_value_exists(launch_config, "NERSC_LAUNCH_DIR")
+  nersc_launch_dir_container          =     ensure_dict_value_exists(launch_config, "NERSC_LAUNCH_DIR_CONTAINER")
+  jana_config                         =     ensure_dict_value_exists(launch_config, "JANA_CONFIG")
+  jana_calib_context                  =     ensure_dict_value_exists(launch_config, "JANA_CALIB_CONTEXT")
+  halld_version_set_xml               =     ensure_dict_value_exists(launch_config, "HALLD_VERSION_SET_XML")
+  nersc_nmb_processes_per_task        = int(ensure_dict_value_exists(launch_config, "NERSC_NMB_PROCESSES_PER_TASK"))
+  nersc_nmb_threads_per_process       = int(ensure_dict_value_exists(launch_config, "NERSC_NMB_THREADS_PER_PROCESS"))
+  swif_hd_root_output_dest_dir        =     ensure_dict_value_exists(launch_config, "SWIF_HD_ROOT_OUTPUT_DEST_DIR")
+  swif_log_files_output_dest_dir      =     ensure_dict_value_exists(launch_config, "SWIF_LOG_FILES_OUTPUT_DEST_DIR")
+  swif_failed_hd_root_output_dest_dir =     ensure_dict_value_exists(launch_config, "SWIF_FAILED_HD_ROOT_OUTPUT_DEST_DIR")
   run_numbers: list[int] = read_run_numbers_from_file(run_number_list_file)
   print(f"Submitting a swif2 job for each of the {len(run_numbers)} run(s) of run period '{run_period}'")
   for run_counter, run_number in enumerate(run_numbers):
@@ -178,7 +180,9 @@ def main(args: argparse.Namespace) -> None:
           f"--halld_version_set_xml={halld_version_set_xml}",
           f"--nmb_processes_per_task={nersc_nmb_processes_per_task}",
           f"--nmb_threads_per_process={nersc_nmb_threads_per_process}",
-          f"--swif_output_root={swif_output_root}",
+          f"--swif-hd-root-output-root={swif_hd_root_output_dest_dir}",
+          f"--swif-log-files-output-root={swif_log_files_output_dest_dir}",
+          f"--swif-failed-hd-root-output-root={swif_failed_hd_root_output_dest_dir}",
     ]
     # handle optional arguments of the job script
     jana_geometry_url_override = launch_config.get("JANA_GEOMETRY_URL_OVERRIDE")

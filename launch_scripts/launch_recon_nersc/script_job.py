@@ -29,8 +29,8 @@ import subprocess
 import sys
 import time
 
+from FileTransferMapGenerator import define_swif2_output_files
 from utilities import (
-  define_swif2_output_files,
   print_command_line_arguments,
   print_python_env,
   write_env_to_file,
@@ -43,19 +43,27 @@ print = functools.partial(print, flush = True)
 
 def main(args: argparse.Namespace) -> None:
   start_time = time.time()
+  job_id = os.getenv("SLURM_JOBID")
+  assert job_id is not None, "Error: environment variable 'SLURM_JOBID' is required but not set"
+  job_id = int(job_id)
+  print(f"This job has Slurm ID {job_id}")
   print_python_env()
   print_command_line_arguments(args)
+  run_label = f"{args.run_number:06d}"
+
+  # get number of tasks
+  nmb_tasks = os.getenv("SLURM_NTASKS")  # number of tasks allocated for this job = number of nodes
+  assert nmb_tasks is not None, "Error: environment variable 'SLURM_NTASKS' is required but not set"
+  nmb_tasks = int(nmb_tasks)
+  print(f"Number of tasks allocated for this job: {nmb_tasks}")
 
   # save command-line arguments to a file for later reference
-  with open(f"job_{args.run_number:06d}_args.pkl", "wb") as args_file:
-    pickle.dump(args, args_file)
-
-  # save command-line arguments to a file for later reference
-  with open(f"job_{args.run_number:06d}_args.pkl", "wb") as args_file:
+  args.job_id    = job_id     # add Slurm job ID to command-line arguments for later use
+  args.nmb_tasks = nmb_tasks  # add number of tasks to command-line arguments for later use
+  with open(f"job_{run_label}_args.pkl", "wb") as args_file:
     pickle.dump(args, args_file)
 
   # gather information about job environment and write it to files
-  run_label = f"{args.run_number:06d}"
   write_env_to_file(f"job_{run_label}.env")
   for log_file_suffix, log_cmd in (
     ("hostname",  "hostnamectl"),
@@ -68,26 +76,23 @@ def main(args: argparse.Namespace) -> None:
       subprocess.run(log_cmd, shell = True, check = False, stdout = log_file, stderr = subprocess.STDOUT)
 
   # get job working directory and list of input raw-data files
-  work_dir_job = os.getcwd()  # working directory of job as created by swif2, i.e. `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}; (identical to `${SWIF_JOB_STAGE_DIR}` and `${SWIF_JOB_WORK_DIR}`)
-  print(f"Job script is running in directory: '{work_dir_job}'")
+  work_dir_job_path = os.getcwd()  # working directory of job as created by swif2, i.e. `/pscratch/sd/j/jlab/swif/jobs/gxproj4/${SLURM_JOB_NAME}/${SWIF_JOB_ATTEMPT_ID}; (identical to `${SWIF_JOB_STAGE_DIR}` and `${SWIF_JOB_WORK_DIR}`)
+  print(f"Job script is running in directory: '{work_dir_job_path}'")
   evio_file_names: list[str] = sorted(glob.glob(f"hd_rawdata_{run_label}_???.evio"))  # list of raw-data file names in working directory of job
   #TODO filter bad files if list is available?
   print(f"Found {len(evio_file_names)} EVIO files that will be processed by this job:")
   for index, evio_file_name in enumerate(evio_file_names):
     print(f"  {index:4d}: '{evio_file_name}'")
-  nmb_tasks = os.getenv("SLURM_NTASKS")  # number of tasks allocated for this job = number of nodes
-  assert nmb_tasks is not None, "Error: environment variable 'SLURM_NTASKS' is required but not set"
-  print(f"Number of tasks allocated for this job: {nmb_tasks}")
 
   # ensure that nmb_tasks is consistent with number of evio files and nmb_processes_per_task
   expected_nmb_tasks = (len(evio_file_names) + args.nmb_processes_per_task - 1) // args.nmb_processes_per_task
-  if expected_nmb_tasks != int(nmb_tasks):
+  if expected_nmb_tasks != nmb_tasks:
     print(f"Error: mismatch of number of tasks = {expected_nmb_tasks} needed for {len(evio_file_names)} EVIO files and number of allocated Slurm tasks = {nmb_tasks}")
     sys.exit(101)
 
   # loop over tasks, create task directories, and assign args.nmb_processes_per_task EVIO files to each task by linking them into the task's directory
   #TODO move chopping of EVIO file list into separate function
-  for task_index in range(int(nmb_tasks)):
+  for task_index in range(nmb_tasks):
     work_dir_task = f"RUN{run_label}/TASK{task_index:03d}"
     print(f"Creating working directory for task {task_index}: '{work_dir_task}'")
     os.makedirs(work_dir_task, exist_ok = True)
@@ -138,9 +143,16 @@ def main(args: argparse.Namespace) -> None:
   # returned.
 
   print("-------------------------------------------------------------------------------")
-  #TODO move part of post-processing of output files here
-  #     leave only processing of the log files to the script run at JLab
-  define_swif2_output_files(args.run_number, args.swif_output_root)
+  define_swif2_output_files(
+    job_id                              = job_id,
+    run_number                          = args.run_number,
+    work_dir_job_path                   = work_dir_job_path,
+    nmb_tasks                           = nmb_tasks,
+    nmb_processes_per_task              = args.nmb_processes_per_task,
+    hd_root_output_dest_dir_path        = args.swif_hd_root_output_dest_dir,
+    log_files_dest_dir_path             = args.swif_log_files_output_dest_dir,
+    failed_hd_root_output_dest_dir_path = args.swif_failed_hd_root_output_dest_dir,
+  )
 
   print("-------------------------------------------------------------------------------")
   elapsed_time_sec = int(time.time() - start_time)
@@ -152,14 +164,15 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(
     description = "Main job script that processes all EVIO files of the given run.",
   )
-  parser.add_argument("--run-number",                 required = True,  help = "Run number for this job", type = int)
-  parser.add_argument("--launch-dir",                 required = True,  help = "Path to launch directory containing scripts and config files inside container")
-  parser.add_argument("--jana-config",                required = True,  help = "JANA config file")
-  parser.add_argument("--jana-calib-context",         required = True,  help = "JANA calibration context")
-  parser.add_argument("--jana-geometry-url-override", required = False, help = "Override JANA geometry URL; optional")
-  parser.add_argument("--halld-version-set-xml",      required = True,  help = "GlueX software version set XML file")
-  parser.add_argument("--nmb-processes-per-task",     required = True,  help = "Number of processes per task",            type = int)
-  parser.add_argument("--nmb-threads-per-process",    required = True,  help = "Number of threads per `hd_root` process", type = int)
-  parser.add_argument("--swif-output-root",           required = True,  help = "Root of JLab directory tree, where output files will be copied to")
-  #TODO add --dry_run flag
+  parser.add_argument("--run-number",                      required = True,  help = "Run number for this job", type = int)
+  parser.add_argument("--launch-dir",                      required = True,  help = "Path to launch directory containing scripts and config files inside container")
+  parser.add_argument("--jana-config",                     required = True,  help = "JANA config file")
+  parser.add_argument("--jana-calib-context",              required = True,  help = "JANA calibration context")
+  parser.add_argument("--jana-geometry-url-override",      required = False, help = "Override JANA geometry URL; optional")
+  parser.add_argument("--halld-version-set-xml",           required = True,  help = "GlueX software version set XML file")
+  parser.add_argument("--nmb-processes-per-task",          required = True,  help = "Number of processes per task",            type = int)
+  parser.add_argument("--nmb-threads-per-process",         required = True,  help = "Number of threads per `hd_root` process", type = int)
+  parser.add_argument("--swif-hd-root-output-root",        required = True,  help = "JLab directory, where output files of successful hd_root processes will be copied to")
+  parser.add_argument("--swif-log-files-output-root",      required = True,  help = "JLab directory, where log files of successful hd_root processes will be copied to")
+  parser.add_argument("--swif-failed-hd-root-output-root", required = True,  help = "JLab directory, where all files of failed hd_root processes will be copied to")
   main(parser.parse_args())
