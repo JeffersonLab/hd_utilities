@@ -204,7 +204,7 @@ else:
         if run == 0 : 
             exit('RCDB cannot provide a start time for run 0.')
         else : 
-            db = rcdb.RCDBProvider("mysql://rcdb@hallddb/rcdb")
+            db = rcdb.RCDBProvider("mysql://rcdb@hallddb/rcdb2")
             intrun = int(run)
             runs = db.select_runs("", intrun, intrun)
     

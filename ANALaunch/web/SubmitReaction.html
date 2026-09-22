@@ -1,59 +1,331 @@
+
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+<title>Submit Reaction Form</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f5f5f7;
+    margin: 0;
+    padding: 20px;
+    color: #333;
+}
+.container {
+    max-width: 1200px;
+    margin: auto;
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+h1, h2, h3 {
+    color: #2c3e50;
+}
+button, input[type=submit], input[type=button] {
+    background-color: #3498db;
+    color: white;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+button:hover, input[type=submit]:hover, input[type=button]:hover {
+    background-color: #2980b9;
+}
+input, select, textarea {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 6px;
+    margin-bottom: 12px;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+th, td {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+}
+th {
+    background-color: #ecf0f1;
+}
+
+/* Keep reaction elements on a single line */
+#DecayLineDecayfPart0_0,
+[id^="DecayLine"] {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+/* Ensure buttons do NOT stretch full width */
+input[type="button"],
+select,
+input[type="checkbox"] {
+    width: auto;       /* important: prevents stretching */
+    display: inline-block;
+    margin: 0 4px;
+}
+
+/* Prevent large selects from dominating layout */
+.selectStyle {
+    font-size: 20px;   /* smaller but still readable */
+    width: auto;
+}
+
+/* Arrow stays inline */
+[id^="DecayLine"] font {
+    white-space: nowrap;
+}
+
+/* ============================
+   Spacing updates (Email field)
+   ============================ */
+#submitter {
+    width: 240px;
+    padding: 4px 8px;
+    font-size: 14px;
+    margin-left: 6px;     /* brings input closer to 'Email:' label */
+}
+
+/* ============================
+   Matching widths for B, T, S, F
+   ============================ */
+
+/* FFlag is a <select>, B/T/S are <input type="number">  
+   We'll give them identical sizing */
+#BFlag, #TFlag, #SFlag, #FFlag {
+    width: 160px;         /* same width for all */
+    padding: 4px 8px;
+    font-size: 14px;
+}
+
+/* ============================
+   Reaction line layout
+   ============================ */
+
+#DecayLineDecayfPart0_0,
+[id^="DecayLine"] {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+input[type="button"],
+select,
+input[type="checkbox"] {
+    width: auto;
+    display: inline-block;
+    margin: 0 4px;
+}
+
+/* smaller selects */
+.selectStyle {
+    font-size: 20px;
+    width: auto;
+}
+
+/* arrow stays inline */
+[id^="DecayLine"] font {
+    white-space: nowrap;
+}
+
+/* ============================
+   Dark Mode support (variables)
+   ============================ */
+
+:root {
+    --bg-color: #ffffff;
+    --text-color: #222;
+    --card-bg: #ffffff;
+    --input-bg: #ffffff;
+    --input-text: #222;
+    --button-bg: #3498db;
+    --button-text: #fff;
+}
+
+.dark-mode {
+    --bg-color: #1e1e1e;
+    --text-color: #e0e0e0;
+    --card-bg: #2a2a2a;
+    --input-bg: #333;
+    --input-text: #fff;
+    --button-bg: #2980b9;
+    --button-text: #fff;
+}
+
+/* Apply theme variables */
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+.container {
+    background-color: var(--card-bg);
+}
+
+input, select, textarea {
+    background-color: var(--input-bg);
+    color: var(--input-text);
+}
+
+input[type="button"], button {
+    background-color: var(--button-bg);
+    color: var(--button-text);
+}
+
+/* small tri-state indicator badge */
+.tri-indicator { display:none; }
+.tri-select {
+    border-width: 2px;
+    border-style: solid;
+    border-radius: 6px;
+    box-sizing: border-box;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+.tri-select.missing {
+    border-color: #d9534f;
+    box-shadow: inset 0 0 0 1px rgba(217, 83, 79, 0.45);
+    background-color: rgba(217, 83, 79, 0.08);
+}
+.tri-select.mass-constrained {
+    border-color: #8e44ad;
+    box-shadow: inset 0 0 0 1px rgba(142, 68, 173, 0.45);
+    background-color: rgba(142, 68, 173, 0.08);
+}
+
+/* context menu for tri-state */
+#triMenu {
+    position: fixed;
+    display: none;
+    background: var(--card-bg);
+    border: 1px solid #999;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    padding: 6px;
+    border-radius: 6px;
+    z-index: 9999;
+}
+#triMenu button {
+    display: block;
+    width: 100%;
+    margin: 4px 0;
+    text-align: left;
+    background: transparent;
+    color: var(--input-text);
+    border: none;
+    padding: 6px 8px;
+    cursor: pointer;
+}
+#triMenu button:hover { background: rgba(0,0,0,0.06); }
+
+/* active state for tri toggles */
+#triMenu button.active { font-weight: 700; background: rgba(0,0,0,0.08); }
+#triMenu button.active::after { content: ' ✓'; float: right; color: var(--button-bg); font-weight: 700; font-size: 1em; }
+
+</style>
+
+</head>
+<body class="dark-mode">
+<div class='container'>
 <html>
     <head>
-        <title>Analysisssss Reaction Submit Form by Thomas Britton</title>
+        <title>Analysis Reaction Submit Form</title>
     </head>
 <body>
         <script src="../data_monitoring/js_utilities/jquery-3.3.1.min.js" type="text/javascript"></script>
 
 <img align="right" src="./imgs/anaconda_logo.png" width="250px" height="250px">
 
+<button onclick="document.body.classList.toggle('dark-mode')">
+    Toggle Dark Mode
+</button>
+
 Email: <input type="text" id="submitter">
 <br>
-Please fill out your reaction below:
+<br>
+Please fill out your reaction below.
 <br>
 <br>
-Use add/remove particle to add/remove a partical from the products side of the reaction.
+Use add/remove particle to add/remove a particle from the products side of the reaction.
 <br>
-Each product comes as a set of three objects:<br>
-1) the main selector where you can select the product.<br>
-2) a tri-state button to let you flag the particle as "m" (missing) or "M" (NOT Mass constrained) as desired.
-<br>3) a checkbox to indicate the product decays
 <br>
+Select the initial particles and final state particles from the dropdowns.
+<br>
+<br>
+Right click on a final state particle to:
+<ul>
+    <li style="color:#d9534f;">Set as missing (m)</li>
+    <li style="color:#8e44ad;">Disable the mass constraint (M)</li>
+    <li>Add/remove a decay line for that particle</li>
+</ul>
 <br>
 <div id="GlobalFlags">
-B (Beam Bunches):<input id="BFlag" type="number" min="0" max="5" value="1" onchange="MakeConfigLines()">&emsp;T (Extra Charged Tracks):<input id="TFlag" type="number" min="0" max="10" value="3" onchange="MakeConfigLines()">&emsp;F (Fit Type):<select id="FFlag" onchange="MakeConfigLines()">
+  B (Beam Bunches):<input id="BFlag" type="number" min="0" max="5" value="4" onchange="MakeConfigLines()">&emsp;T (Extra Charged Tracks):<input id="TFlag" type="number" min="0" max="10" value="3" onchange="MakeConfigLines()">&emsp;
+</div>
+<div id="GlobalFlgs2">
+  S (Extra Showers):<input id="SFlag" type="number" min="0" max="999" value="999" onchange="MakeConfigLines()">&emsp;F (Fit Type):<select id="FFlag" onchange="MakeConfigLines()">
     <option value=0 >None</option>
     <option value=1 >P4 </option>
     <option value=2>Vertex</option>
     <option value=3>Spacetime</option>
     <option value=4 selected>P4 and Vertex</option>
     <option value=5 >P4 and Spacetime</option>
-    </select>&emsp;U (unused tracks):<input id="UFlag" type="checkbox" onchange="MakeConfigLines()">
+    </select>&emsp;U (save unused particles):<input id="UFlag" type="checkbox" onchange="MakeConfigLines()">
 
 </div>
 <br>
 Initial Particles -----> Final State Particles <input type="button" id="addDecayLineDecayfPart0_0" onclick="AddSelector(0,this);MakeConfigLines()" value="add particle"><input type="button" id="removeDecayLineDecayfPart0_0" onclick="RemoveSelector(0,this);MakeConfigLines()" value="remove particle"><!--addDecayLevel_0-->
-
+<br>
+<br>
 <div id='DecayLevels'>
         <div id='DecayLevel_0'>
         <div id='DecayLineDecayfPart0_0'>
                 &emsp;<select id="iPart1_0" name="iPart1_0" class="selectStyle" onchange="MakeConfigLines()"></select><select id="iPart2_0" name="iPart2_0" class="selectStyle" onchange="MakeConfigLines()"></select><font size='30'>&rarr;</font>
         </div>
         </div>
+	<br>
         <hr>
 </div>
 <hr>
 <br>
 <!--<input type="button" onclick="MakeConfigLines()" value="Make">The line:-->
-<textarea id="output" style="margin: 0px; width: 290px; height: 157px;" readonly>
+<textarea id="output" style="margin: 0px; width: 290px; height: 137px;" readonly>
 </textarea>
 <input type="button" onClick="WriteLinesJSON();GetCurrentConfigFile()" value="Submit Reaction"> to run over <b>
 <font size='4'>
     <select id="dataSet" onchange="UpdatePreview()">
-        <option value="2017-01_ver03" selected >2017-01_ver03</option>
+        <!-- <option value="2017-01_ver03" selected >2017-01_ver03</option> -->
+        <!-- <option value="2017-01_ver04" >2017-01_ver04</option> -->
+	<option value="2017-01_ver05" >2017-01_ver05</option>
         <option value="2018-01_ver02" >2018-01_ver02</option>
+        <option value="2018-08_ver02" >2018-08_ver02</option>
+        <!-- <option value="2017-01_bggen" >2017-01_bggen</option> -->
+        <!-- <option value="2018-01_bggen" >2018-01_bggen</option> -->
+	<!-- <option value="2018-08_bggen" >2018-08_bggen</option> -->
+	<!-- <option value="2017-01_special">2017-01_special</option> -->
+	<option value="2019-11_ver01">2019-11_ver01</option>
+	<!-- <option value="2021-11_ver01">2021-11_ver01</option> -->
+	<option value="2022-08_ver01">2022-08_ver01</option>
+	<option value="2023-01_ver04">2023-01_ver04</option>
     </select>
 </font></b>
+<br>
 <br>
 <textarea id="curconf" style="margin: 0px; width: 406px; height: 450px;" readonly>
 </textarea>
@@ -121,18 +393,20 @@ Initial Particles -----> Final State Particles <input type="button" id="addDecay
     // PartArray.push({Particle:'He3', geantID: 49 , pdgID: 49, sortID: 1049}); -->
     // PartArray.push({Particle:'Pb208', geantID: 111 , pdgID: 1000822080, sortID: 1111}); -->
 
-    PartArray.push({Particle:'J/Ψ', geantID: 83, pdgID: 443, sortID: 83});
-    // PartArray.push({Particle:'eta_c', geantID: 84, pdgID: 441, sortID: 84}); -->
-    // PartArray.push({Particle:'chi_c0', geantID: 85, pdgID: 10441, sortID: 85}); -->
-    // PartArray.push({Particle:'chi_c1', geantID: 86, pdgID: 20443, sortID: 86}); -->
-    // PartArray.push({Particle:'chi_c2', geantID: 87, pdgID: 445, sortID: 87}); -->
+    PartArray.push({Particle:'J/Ψ', geantID: 183, pdgID: 443, sortID: 183});
+    // PartArray.push({Particle:'eta_c', geantID: 184, pdgID: 441, sortID: 184}); -->
+    // PartArray.push({Particle:'chi_c0', geantID: 185, pdgID: 10441, sortID: 185}); -->
+    // PartArray.push({Particle:'chi_c1', geantID: 186, pdgID: 20443, sortID: 186}); -->
+    // PartArray.push({Particle:'chi_c2', geantID: 187, pdgID: 445, sortID: 187}); -->
 
-    PartArray.push({Particle:'D0', geantID: 89, pdgID: 421, sortID: 89});
-    PartArray.push({Particle:'D+', geantID: 90, pdgID: 411, sortID: 90});
-    PartArray.push({Particle:'D*0', geantID: 91, pdgID: 423, sortID: 91});
-    PartArray.push({Particle:'D*+', geantID: 92, pdgID: 413, sortID: 92});
-    PartArray.push({Particle:'Λc', geantID: 93, pdgID: 4122, sortID: 93});
-    PartArray.push({Particle:'D0 bar', geantID: 94, pdgID: -421, sortID: 94});
+    PartArray.push({Particle:'D0', geantID: 189, pdgID: 421, sortID: 189});
+    PartArray.push({Particle:'D+', geantID: 190, pdgID: 411, sortID: 190});
+    PartArray.push({Particle:'D-', geantID: 195, pdgID: -411, sortID: 195});
+    PartArray.push({Particle:'D*0', geantID: 191, pdgID: 423, sortID: 191});
+    PartArray.push({Particle:'D*+', geantID: 192, pdgID: 413, sortID: 192});
+    PartArray.push({Particle:'D*-', geantID: 196, pdgID: -413, sortID: 196});
+    PartArray.push({Particle:'Λc', geantID: 193, pdgID: 4122, sortID: 1193});
+    PartArray.push({Particle:'D0 bar', geantID: 194, pdgID: -421, sortID: 194});
 
 
     var DefDecayArray=[];
@@ -140,9 +414,9 @@ Initial Particles -----> Final State Particles <input type="button" id="addDecay
      DefDecayArray.push({Parent:16, Decay: "16__8_9"});
      DefDecayArray.push({Parent:17, Decay: "17__1_1"});
      DefDecayArray.push({Parent:35, Decay: "35__8_9_17"});
-     DefDecayArray.push({Parent:89, Decay: "89__8_12"});
-     DefDecayArray.push({Parent:94, Decay: "94__9_11"});
-     DefDecayArray.push({Parent:89, Decay: "89__2_3"});
+     DefDecayArray.push({Parent:189, Decay: "189__8_12"});
+     DefDecayArray.push({Parent:194, Decay: "194__9_11"});
+     DefDecayArray.push({Parent:183, Decay: "183__2_3"});
 
      DefDecayArray.push({Parent:18, Decay: "18__9_14"});
      DefDecayArray.push({Parent:26, Decay: "26__8_15"});
@@ -152,9 +426,19 @@ Initial Particles -----> Final State Particles <input type="button" id="addDecay
      DefDecayArray.push({Parent:22, Decay: "22__7_18"});
      DefDecayArray.push({Parent:23, Decay: "23__9_18"});
      DefDecayArray.push({Parent:24, Decay: "24__12_18"});
-     DefDecayArray.push({Parent:93, Decay: "93__8_12_14"});
+     DefDecayArray.push({Parent:193, Decay: "193__8_12_14"});
+     DefDecayArray.push({Parent:193, Decay: "191__189_7"});
+     DefDecayArray.push({Parent:193, Decay: "192__189_8"});
+     DefDecayArray.push({Parent:193, Decay: "196__189_9"});
 
-    $(document).ready(function(){populateParticleSelector("iPart1_0",true);populateParticleSelector("iPart2_0",true);MakeConfigLines();GetCurrentConfigFile();});
+    $(document).ready(function(){
+        populateParticleSelector("iPart1_0",true);
+        populateParticleSelector("iPart2_0",true);
+        // initial product selectors should not open the tri-state menu (no contextmenu binding)
+        AddSelector(0,document.getElementById("addDecayLineDecayfPart0_0"));
+        MakeConfigLines();
+        GetCurrentConfigFile();
+    });
     function populateParticleSelector(id,trunc)
     {
         var selector=document.getElementById(id);
@@ -165,7 +449,7 @@ Initial Particles -----> Final State Particles <input type="button" id="addDecay
             for(var i=0;i<PartArray.length;i++ )
             {
                 if(trunc && i>1)
-                {
+		{
                     continue;
                 }
                 var newoption = document.createElement("option");
@@ -176,6 +460,10 @@ Initial Particles -----> Final State Particles <input type="button" id="addDecay
                 {
                     newoption.selected=true;
                 }
+	        if(id=="fPart01_0" && i==1)
+	        {
+	            newoption.selected=true;
+	        }
                 if(id=="iPart2_0" && i==1)
                 {
                     newoption.selected=true;
@@ -217,22 +505,115 @@ function toggleTri(thisbutton)
         thisbutton.value="M"
     }
 }
+// --- Tri-state context menu implementation ---
+var triMenuTarget = null;
+function showTriMenu(e, select)
+{
+    e.preventDefault();
+    triMenuTarget = select;
+    var menu = document.getElementById('triMenu');
+    menu.style.left = (e.clientX + 2) + 'px';
+    menu.style.top = (e.clientY + 2) + 'px';
+    // mark which tri toggles are currently active for this select
+    try{
+        var cur = select.getAttribute('data-tri') || '';
+        var triButtons = menu.querySelectorAll('button[data-tri]');
+        triButtons.forEach(function(b){
+            if(b.dataset.tri === cur) b.classList.add('active'); else b.classList.remove('active');
+        });
+    } catch(e){}
+    menu.style.display = 'block';
+}
+function hideTriMenu()
+{
+    var menu = document.getElementById('triMenu');
+    if(menu) menu.style.display = 'none';
+    triMenuTarget = null;
+}
+function updateTriBadge(select)
+{
+    if(!select) return;
+    var state = select.getAttribute('data-tri') || '';
+    select.classList.remove('missing', 'mass-constrained');
+    select.classList.remove('tri-select');
+    if(state === 'm' || state === 'M') {
+        select.classList.add('tri-select');
+        select.classList.toggle('missing', state === 'm');
+        select.classList.toggle('mass-constrained', state === 'M');
+        select.title = state === 'm' ? 'Missing particle' : 'Mass constraint disabled';
+    } else {
+        select.title = '';
+    }
+}
+function applyTriIndicators()
+{
+    document.querySelectorAll('select[data-tri]').forEach(function(select){
+        updateTriBadge(select);
+    });
+}
+function setTriState(select, state)
+{
+    if(!select) return;
+    var cur = select.getAttribute('data-tri') || '';
+    if(state === '') {
+        // explicit clear (not currently used)
+        select.setAttribute('data-tri', '');
+    } else {
+        // toggle: if already set, clear; otherwise set
+        if(cur === state) select.setAttribute('data-tri', '');
+        else select.setAttribute('data-tri', state);
+    }
+    updateTriBadge(select);
+    MakeConfigLines();
+    hideTriMenu();
+}
+function toggleDecayForTarget()
+{
+    if(!triMenuTarget) return;
+    var sel = triMenuTarget;
+    var selLevel = sel.id.split("_")[1];
+    var marker = sel.id.split("fPart")[1].split("_")[0];
+    // construct the fake checkbox id used by add/remove helpers
+    var fakeId = "DecayfPart" + marker + "_" + selLevel;
+    // check if decay line exists (next level)
+    var nextLevel = parseInt(selLevel,10)+1;
+    var decayLineId = "DecayLineDecayfPart" + marker + "_" + nextLevel;
+    var existing = document.getElementById(decayLineId);
+    if(existing && existing.innerHTML && existing.innerHTML.trim() !== "")
+    {
+        // remove
+        try { removeDecayLine(fakeId); } catch(e) {}
+    }
+    else
+    {
+        // add
+        try { addDecayLine(fakeId); } catch(e) {}
+    }
+    MakeConfigLines();
+    hideTriMenu();
+}
+document.addEventListener('click', function(e){ if(!e.target.closest || !e.target.closest('#triMenu')) hideTriMenu(); });
 function RemoveSelector(level,parent)
     {
         var theDecLine=document.getElementById(parent.id.split("remove")[1])
         console.log(level);
         console.log(theDecLine.lastChild)
-
-        if(theDecLine.lastChild.tagName=="INPUT")
+        // remove the last select appended to this decay line
+        var children = theDecLine.children;
+        if(children.length>0)
         {
-            if(theDecLine.lastChild.checked)
+            var last = children[children.length-1];
+            if(last && last.tagName=="SELECT")
             {
-                removeDecayLine(theDecLine.lastChild.id)
+                // if this selector had a decay line below, remove it
+                try{
+                    var selLevel = last.id.split("_")[1];
+                    var marker = last.id.split("fPart")[1].split("_")[0];
+                    var fakeId = "DecayfPart"+marker+"_"+selLevel;
+                    removeDecayLine(fakeId);
+                } catch(e){}
+                theDecLine.removeChild(last);
             }
-
-            theDecLine.removeChild(theDecLine.lastChild)
-            theDecLine.removeChild(theDecLine.lastChild)
-            theDecLine.removeChild(theDecLine.lastChild)
         }
         
     }
@@ -260,25 +641,9 @@ function RemoveSelector(level,parent)
             newSelector.onchange=function(){UpdateText(this);MakeConfigLines()}
             document.getElementById(lineToAddTo).appendChild(newSelector);
             populateParticleSelector(newSelector.id,false);
-
-            var newTriCheckbox=document.createElement("input");
-            newTriCheckbox.type="button";
-            newTriCheckbox.id="fPart"+parent.id.split("_")[0].split("fPart")[1]+partcount.toString()+"mM"+"_"+level.toString();
-            //newTriCheckbox.class="tristate";
-            newTriCheckbox.value=""
-            newTriCheckbox.setAttribute("state",0)
-            newTriCheckbox.onclick=function(){toggleTri(this);MakeConfigLines()}
-            //newTriCheckbox.indeterminate="1";
-            
-
-            document.getElementById(lineToAddTo).appendChild(newTriCheckbox);//"DecayLevel_"+level.toString()
-
-            var newDecay_checkbox=document.createElement("input");
-            newDecay_checkbox.type="checkbox";
-            newDecay_checkbox.id="DecayfPart"+parent.id.split("_")[0].split("fPart")[1]+partcount.toString()+"_"+level.toString();
-            newDecay_checkbox.onclick=function(){ModifyDecayLine(this.id);MakeConfigLines()};
-
-            document.getElementById(lineToAddTo).appendChild(newDecay_checkbox);//"DecayLevel_"+level.toString()
+                    // bind right-click on the select to open tri-state menu
+                    newSelector.addEventListener('contextmenu', function(e){ showTriMenu(e,this); });
+                    updateTriBadge(newSelector);
 
 
            // FinalCount++;
@@ -315,15 +680,26 @@ function RemoveSelector(level,parent)
     function ModifyDecayLine(id)
     {
         var theCheckbox=document.getElementById(id)
-        if(theCheckbox.checked)
+        if(theCheckbox && theCheckbox.checked!==undefined)
         {
-            //console.log("checked")
-            addDecayLine(id);
+            if(theCheckbox.checked)
+                addDecayLine(id);
+            else
+                removeDecayLine(id);
+            return;
         }
-        else{
-            //console.log("unchecked")
-            removeDecayLine(id);
-        }
+        // if checkbox no longer exists, toggle based on presence of decay lines
+        try{
+            var selLevel = id.split("_")[1];
+            var marker = id.split("fPart")[1].split("_")[0];
+            var nextLevel = parseInt(selLevel,10)+1;
+            var decayLineId = "DecayLineDecayfPart" + marker + "_" + nextLevel;
+            var existing = document.getElementById(decayLineId);
+            if(existing && existing.innerHTML && existing.innerHTML.trim()!="")
+                removeDecayLine(id);
+            else
+                addDecayLine(id);
+        } catch(e){}
         
     }
     function addDecayLine(id)
@@ -418,12 +794,12 @@ function RemoveSelector(level,parent)
                     {
                         if(ThisDecay[j].tagName == "SELECT")
                         {
-                            if(ThisDecay[j+1].value=="m" && passedArrow)
+                            var tri = ThisDecay[j].getAttribute ? (ThisDecay[j].getAttribute('data-tri')||"") : "";
+                            if(tri=="m" && passedArrow)
                             {
-                                //LineToAdd+="m"
                                 littlem.push("m"+getSelectedGeantID(ThisDecay[j]))
                             }
-                            else if(ThisDecay[j+1].value=="M" && passedArrow)
+                            else if(tri=="M" && passedArrow && !(MassConstrain.includes(getSelectedGeantID(ThisDecay[j]))))
                             {
                                 MassConstrain.push(getSelectedGeantID(ThisDecay[j]))
                             }
@@ -487,12 +863,12 @@ function RemoveSelector(level,parent)
                                 else{
                                     if(ThisDecay[k].tagName == "SELECT")
                                     {
-                                        if(ThisDecay[k+1].value=="m" && passedArrow)
+                                        var tri = ThisDecay[k].getAttribute ? (ThisDecay[k].getAttribute('data-tri')||"") : "";
+                                        if(tri=="m" && passedArrow)
                                         {
                                             littlem.push("m"+getSelectedGeantID(ThisDecay[k]))
-                                            //LineToAdd+="m"
                                         }
-                                        else if(ThisDecay[k+1].value=="M" && passedArrow)
+                                        else if(tri=="M" && passedArrow && !(MassConstrain.includes(getSelectedGeantID(ThisDecay[k]))))
                                         {
                                             MassConstrain.push(getSelectedGeantID(ThisDecay[k]))
                                         }
@@ -533,12 +909,14 @@ function RemoveSelector(level,parent)
 
         
         ConfigLines+="\n"
+        applyTriIndicators();
 
         var BFlag_val=document.getElementById("BFlag").value
         var FFlag_val=document.getElementById("FFlag").value
         var TFlag_val=document.getElementById("TFlag").value
+        var SFlag_val=document.getElementById("SFlag").value
 
-        if(BFlag_val != "1" || FFlag_val != "4" || TFlag_val != "3" || document.getElementById("UFlag").checked || MassConstrain.length!=0)
+        if(BFlag_val != "1" || FFlag_val != "4" || TFlag_val != "3" || SFlag_val != "999" || document.getElementById("UFlag").checked || MassConstrain.length!=0)
         {
             ConfigLines+="Reaction1"+":Flags "
             if(BFlag_val != "1")
@@ -561,7 +939,15 @@ function RemoveSelector(level,parent)
             {
                 ConfigLines+="T"+TFlag_val;
             }
-            if((BFlag_val != "1" || FFlag_val != "4" || TFlag_val != "3") && document.getElementById("UFlag").checked)
+            if((BFlag_val != "1" || FFlag_val != "4" || TFlag_val != "3") && SFlag_val != "999")
+            {
+                ConfigLines+="_"
+            }
+            if(SFlag_val != "999")
+            {
+                ConfigLines+="S"+SFlag_val;
+            }
+            if((BFlag_val != "1" || FFlag_val != "4" || TFlag_val != "3" || SFlag_val != "999") && document.getElementById("UFlag").checked)
             {
                 ConfigLines+="_"
             }
@@ -569,7 +955,7 @@ function RemoveSelector(level,parent)
             {
                 ConfigLines+="U1"
             }
-            if((BFlag_val != "1" || FFlag_val != "4" || TFlag_val != "3" || document.getElementById("UFlag").checked) && MassConstrain.length!=0)
+            if((BFlag_val != "1" || FFlag_val != "4" || TFlag_val != "3" || SFlag_val != "999" || document.getElementById("UFlag").checked) && MassConstrain.length!=0)
             {
                 ConfigLines+="_"
             }
@@ -700,6 +1086,7 @@ function RemoveSelector(level,parent)
         var FSTR="4";
         var TSTR="3";
         var USTR="0";
+        var SSTR="999";
         for(var i=0;i<AllLines.length;i++)
         {
             var splitLine=AllLines[i].split(" ");
@@ -732,6 +1119,10 @@ function RemoveSelector(level,parent)
                     {
                         USTR=flagparts[1]
                     }
+                    else if(flagparts[0]=="S")
+                    {
+                        SSTR=FlagsArray[j].split("S")[1]
+                    }
                 }
 
             }
@@ -744,7 +1135,7 @@ function RemoveSelector(level,parent)
                 
             }
         }
-        var jsonOBJ={Name: blame,Reaction: ReactionSTR, Decays: DecayArray, B: BSTR, F: FSTR, T:TSTR, U:USTR, Marray: MassConstrain}
+        var jsonOBJ={Name: blame,Reaction: ReactionSTR, Decays: DecayArray, B: BSTR, F: FSTR, S:SSTR, T:TSTR, U:USTR, Marray: MassConstrain}
 
         var JSONSTR=JSON.stringify(jsonOBJ);
         console.log(jsonOBJ)
@@ -777,19 +1168,11 @@ function RemoveSelector(level,parent)
             return false;
         }
 
-        var mButtons=document.querySelectorAll('[id*='+'"'+"mM"+'"]')
-        var mCount=0;
-        for(var i=0; i<mButtons.length;i++)
+        var mSelects = document.querySelectorAll('select[data-tri="m"]');
+        if(mSelects.length>1)
         {
-            if(mButtons[i].value=="m")
-            {
-                mCount++;
-            }
-            if(mCount>1)
-            {
-                alert("MORE THAN 1 MISSING PARTICLES REQUESTED. LINE WILL NOT BE SUBMITTED.")
-                return false;
-            }
+            alert("MORE THAN 1 MISSING PARTICLES REQUESTED. LINE WILL NOT BE SUBMITTED.")
+            return false;
         }
 
         return true;
@@ -820,6 +1203,16 @@ function RemoveSelector(level,parent)
       return ""
   }
 </script>
+<!-- Tri-state context menu -->
+<div id="triMenu" role="menu">
+    <button type="button" data-tri="m" onclick="setTriState(triMenuTarget,'m')">Missing (m)</button>
+    <button type="button" data-tri="M" onclick="setTriState(triMenuTarget,'M')">Not mass constrained (M)</button>
+    <button type="button" onclick="toggleDecayForTarget()">Toggle Decay</button>
+</div>
 </body>
 
+</html>
+
+</div>
+</body>
 </html>

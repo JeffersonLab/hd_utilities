@@ -24,6 +24,8 @@ translateDict =	{
   "1": "g",
   "2": "ep",
   "3": "em",
+  "5": "mup",
+  "6": "mum",
   "7": "pi0",
   "8": "pip",
   "9": "pim",
@@ -38,14 +40,26 @@ translateDict =	{
   "18": "lamb",
   "19": "sigp",
   "20": "sig0",
-  "22": "Xi0",
-  "23": "Xim",
+  "21": "sigm",
+  "22": "xi0",
+  "23": "xim",
   "24": "omegam",
   "25": "antin",
   "26": "antilamb",
+  "27": "antisigm",
+  "28": "antisig0",
+  "29": "antisigp",
   "30": "antiXi0",
   "31": "antiXiPlus",
-  "35": "ks"
+  "35": "etapr",
+  "183": "jpsi",
+  "190": "dp",
+  "191": "ds0",
+  "192": "dsp",
+  "193": "lambc",
+  "194": "antid0",
+  "195": "dm",
+  "196": "dsm"
 }
 
 def TranslateID(id):
@@ -173,13 +187,14 @@ def main(argv):
     #configF.write("\n\nNTHREADS "+str(numThread)+"\n\n")
     print("COMBO:MAX_NEUTRALS 15")
     #configF.write("COMBO:MAX_NEUTRALS 15\n\n")
-    print("JANA:BATCH_MODE 1")
+    print("jana:global_loglevel FATAL\n")
 
-   #print("REST:DATAVERSIONSTRING recon_"+restnameSTR)
-   #print("ANALYSIS:DATAVERSIONSTRING analysis_"+ananameSTR)
+    print("REST:DATAVERSIONSTRING recon_RunPeriod-"+dataset)
+    print("ANALYSIS:DATAVERSIONSTRING analysis_"+ananameSTR)
+    print("REST:JANACALIBCONTEXT calibtime=")
+    print("jana:calib_context calibtime=")
     #configF.write("REST:DATAVERSIONSTRING recon_"+restnameSTR+"\n")
     #configF.write("ANALYSIS:DATAVERSIONSTRING analysis_"+ananameSTR)
-
     
     #Make an array of files to include in a seperate function.  Do below only for those files in that array.  Not directory
     FilesToUse=FilterFiles(Files)
