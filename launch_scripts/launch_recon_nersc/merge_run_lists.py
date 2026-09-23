@@ -25,11 +25,8 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(
     description = "Merges multiple run-list files into a single run-list file with unique run numbers.",
   )
-  parser.add_argument("merged_list_path", help = "Path of merged run-list file")
-  parser.add_argument(
-    "list_file_paths",
-    nargs = "+",
-    help = "Paths of run-list files to merge",
+  parser.add_argument("merged-list-path",             help = "Path of merged run-list file")
+  parser.add_argument("list-file-paths", nargs = "+", help = "Paths of run-list files to merge",
   )
   args = parser.parse_args()
   if len(args.list_file_paths) < 2:
