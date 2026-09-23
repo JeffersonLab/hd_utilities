@@ -47,18 +47,46 @@ print = functools.partial(print, flush = True)
 #   "tree_TPOL" :              ("tree_TPOL",              "root"),
 #   "tree_TS_scaler" :         ("tree_TS_scaler",         "root"),
 # }
-# 2021-11_ver05
+# # 2021-11_ver05
+# RECON_SUBDIR_BASENAME_MAP: dict[str, tuple[str, str]] = {
+#   # EVIO files
+#   "ps" :               ("ps",               "evio"),
+#   # HDDM files
+#   "converted_random" : ("converted_random", "hddm"),
+#   "REST" :             ("dana_rest",        "hddm"),
+#   # ROOT files
+#   "hists" :            ("hd_root",          "root"),
+#   "tree_PSFlux" :      ("tree_PSFlux",      "root"),
+#   "tree_TPOL" :        ("tree_TPOL",        "root"),
+#   "tree_TS_scaler" :   ("tree_TS_scaler",   "root"),
+# }
+# 2025-01_ver04  #TODO update
 RECON_SUBDIR_BASENAME_MAP: dict[str, tuple[str, str]] = {
   # EVIO files
-  "ps" :               ("ps",               "evio"),
+  "BCAL-LED" :               ("BCAL-LED",               "evio"),
+  "ctof" :                   ("ctof",                   "evio"),
+  "DIRC-LED" :               ("DIRC-LED",               "evio"),
+  "ECAL-LED" :               ("ECAL-LED",               "evio"),
+  "epem_selection" :         ("epem_selection",         "evio"),
+  "FCAL-LED" :               ("FCAL-LED",               "evio"),
+  "npp_2g" :                 ("npp_2g",                 "evio"),
+  "npp_2pi0" :               ("npp_2pi0",               "evio"),
+  "omega" :                  ("omega",                  "evio"),
+  "pippim_selection" :       ("pippim_selection",       "evio"),
+  "ps" :                     ("ps",                     "evio"),
+  "random" :                 ("random",                 "evio"),
+  "sync" :                   ("sync",                   "evio"),
   # HDDM files
-  "converted_random" : ("converted_random", "hddm"),
-  "REST" :             ("dana_rest",        "hddm"),
+  "converted_random" :       ("converted_random",       "hddm"),
+  "REST" :                   ("dana_rest",              "hddm"),
   # ROOT files
-  "hists" :            ("hd_root",          "root"),
-  "tree_PSFlux" :      ("tree_PSFlux",      "root"),
-  "tree_TPOL" :        ("tree_TPOL",        "root"),
-  "tree_TS_scaler" :   ("tree_TS_scaler",   "root"),
+  "p3pi_excl_skim" :         ("p3pi_excl_skim",         "root"),
+  "hists" :                  ("hd_root",                "root"),
+  "tree_bcal_hadronic_eff" : ("tree_bcal_hadronic_eff", "root"),
+  "tree_fcal_hadronic_eff" : ("tree_fcal_hadronic_eff", "root"),
+  "tree_PSFlux" :            ("tree_PSFlux",            "root"),
+  "tree_TPOL" :              ("tree_TPOL",              "root"),
+  "tree_trackeff" :          ("tree_trackeff",          "root"),
 }
 
 
