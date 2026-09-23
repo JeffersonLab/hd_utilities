@@ -116,7 +116,7 @@ def main(args: argparse.Namespace) -> None:
   total_nmb_nodes        = sum(nmb_nodes.values())
   total_nmb_nodes_unused = sum(fraction_nodes_unused.values())
   total_size_gb          = sum(size_gb.values())
-  print("-------------------------------------------------------------------------------")
+  print("===============================================================================")
   if total_nmb_files == 0:
     print("ERROR: Did not find any EVIO files.")
   else:
@@ -125,15 +125,15 @@ def main(args: argparse.Namespace) -> None:
           {total_size_gb:.0f} GB of raw data in {total_nmb_files} EVIO files
           processed by {total_nmb_nodes} NERSC nodes,
           out of which {total_nmb_nodes_unused:.1f} nodes are unused (= {total_nmb_nodes_unused / total_nmb_nodes:.1%} of total nodes)
-    """))
+    """).strip())
     if job_wall_time_estimate is not None:
       total_node_hours = total_nmb_nodes * job_wall_time_estimate / 60.0
       print(f"    this corresponds to {total_node_hours:.0f} node-hours at an estimated {job_wall_time_estimate} minutes of wall time per job")
 
-  print("-------------------------------------------------------------------------------")
+  print("===============================================================================")
   plot_evio_file_size(run_numbers, raw_data_root, swif_workflow)
   if args.evio_path_list_file is not None:
-    print(f"Writing list of EVIO files to './{args.evio_path_list_file}'")
+    print(f"Writing list of EVIO file paths to './{args.evio_path_list_file}'")
     try:
       with open(f"./{args.evio_path_list_file}", mode = "x") as file:
         for run_number in sorted(evio_file_paths.keys()):

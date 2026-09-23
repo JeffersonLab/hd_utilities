@@ -132,7 +132,7 @@ def get_evio_file_paths(
       {evio_file_status_counts[EvioFileStatusType.UNEXPECTED_EVIO_FILE]:5d} unexpected EVIO files found
               for these files jobs will be submitted
     ============================================================================================
-  """))
+  """).strip())
   # write list with missing EVIO files to a file
   missing_evio_files = sorted(tuple(err.filePath or "" for err in evio_file_statuses if err.statusType == EvioFileStatusType.MISSING_EVIO_FILE))
   if missing_evio_files:
