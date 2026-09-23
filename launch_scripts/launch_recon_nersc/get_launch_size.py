@@ -154,8 +154,8 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(
     description = "Estimates the size of the raw data for the reconstruction launch and the number of NERSC nodes required to process them.",
   )
-  parser.add_argument("launch-env-file", dest = "launch_env_file", help = "Path to .env file defining the configuration variables of the reconstruction launch")
-  parser.add_argument("--override-run-list",                       help = "Path to run-number list file to use instead the one defined in .env file")
-  parser.add_argument("--evio-path-list-file",                     help = "If specified, write list of EVIO files to this file")
+  parser.add_argument(metavar = "launch-env-file", dest = "launch_env_file", help = "Path to .env file defining the configuration variables of the reconstruction launch")
+  parser.add_argument("--override-run-list",                                 help = "Path to run-number list file to use instead the one defined in .env file")
+  parser.add_argument("--evio-path-list-file",                               help = "If specified, write list of EVIO files to this file")
   args = parser.parse_args()
   main(args)

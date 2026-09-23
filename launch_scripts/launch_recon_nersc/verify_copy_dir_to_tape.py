@@ -106,9 +106,9 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(
     description = "Verifies that content of a directory with prepared recon output was successfully copied to tape.",
   )
-  parser.add_argument("launch-env-file",         dest = "launch_env_file", help = "Path to .env file defining the configuration variables of the reconstruction launch")
-  parser.add_argument("--verify-file-content",   action = "store_true",    help = "Verify the content of files after copying by comparing their CRC32 checksums; default: false")
-  parser.add_argument("--delete-verified-files", action = "store_true",    help = "Delete verified files from source path after verification; default: false")
-  parser.add_argument("--recon-src-path",                                  help = "Path to first-level subdirectory in the prepared reconstruction directory, the content of which will be verified")
+  parser.add_argument(metavar = "launch-env-file", dest = "launch_env_file", help = "Path to .env file defining the configuration variables of the reconstruction launch")
+  parser.add_argument("--verify-file-content",     action = "store_true",    help = "Verify the content of files after copying by comparing their CRC32 checksums; default: false")
+  parser.add_argument("--delete-verified-files",   action = "store_true",    help = "Delete verified files from source path after verification; default: false")
+  parser.add_argument("--recon-src-path",                                    help = "Path to first-level subdirectory in the prepared reconstruction directory, the content of which will be verified")
   args = parser.parse_args()
   main(args)

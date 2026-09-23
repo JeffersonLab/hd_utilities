@@ -215,8 +215,8 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(
     description = "Submits reconstruction jobs to run at NERSC using swif2.",
   )
-  parser.add_argument("launch-env-file", dest = "launch_env_file", help = "Path to .env file defining the configuration variables of the reconstruction launch")
-  parser.add_argument("--override-run-list",                       help = "Path to run-number list file to use instead the one defined in .env file")
-  parser.add_argument("--dry-run",       action = "store_true",    help = "Preview commands without performing them; default: false")
+  parser.add_argument(metavar = "launch-env-file", dest = "launch_env_file", help = "Path to .env file defining the configuration variables of the reconstruction launch")
+  parser.add_argument("--override-run-list",                                 help = "Path to run-number list file to use instead the one defined in .env file")
+  parser.add_argument("--dry-run",                 action = "store_true",    help = "Preview commands without performing them; default: false")
   args = parser.parse_args()
   main(args)
