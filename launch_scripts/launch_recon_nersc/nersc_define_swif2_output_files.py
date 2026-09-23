@@ -99,7 +99,7 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(
     description = "Define the output files that should be transferred back to JLab for the job corresponding to the given run number.",
   )
-  parser.add_argument("run-number",                 type = int,                                        help = "Run number of the job to process")
-  parser.add_argument("--swif-attempt-id",          type = int,                                        help = "SWIF attempt ID of the job to process; if not given, the highest attempt ID will be used")
-  parser.add_argument("--nersc-swif-jobs-root-dir", default = "/pscratch/sd/j/jlab/swif/jobs/gxproj4", help = "NERSC root directory for SWIF jobs; default: '%(default)s'")  #TODO pass from .env file
+  parser.add_argument("run-number", dest = "run_number", type = int,                                        help = "Run number of the job to process")
+  parser.add_argument("--swif-attempt-id",               type = int,                                        help = "SWIF attempt ID of the job to process; if not given, the highest attempt ID will be used")
+  parser.add_argument("--nersc-swif-jobs-root-dir",      default = "/pscratch/sd/j/jlab/swif/jobs/gxproj4", help = "NERSC root directory for SWIF jobs; default: '%(default)s'")  #TODO pass from .env file
   main(parser.parse_args())
