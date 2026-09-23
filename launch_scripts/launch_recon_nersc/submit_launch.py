@@ -173,16 +173,16 @@ def main(args: argparse.Namespace) -> None:
         f"{nersc_launch_dir}/script_job_wrapper.sh",  # sets up Python environment and runs the actual job script `script_job.py` with the given arguments
           nersc_launch_dir,  # NERSC directory that contains `script_job.py`
           # arguments passed to `script_job.py`
-          f"--run_number={run_number}",
-          f"--launch_dir={nersc_launch_dir_container}",  # path of launch directory inside container
-          f"--jana_config={nersc_launch_dir_container}/{jana_config}",  # path of JANA config file inside container
-          f"--jana_calib_context={jana_calib_context}",
-          f"--halld_version_set_xml={halld_version_set_xml}",
-          f"--nmb_processes_per_task={nersc_nmb_processes_per_task}",
-          f"--nmb_threads_per_process={nersc_nmb_threads_per_process}",
-          f"--swif-hd-root-output-root={swif_hd_root_output_dest_dir}",
-          f"--swif-log-files-output-root={swif_log_files_output_dest_dir}",
-          f"--swif-failed-hd-root-output-root={swif_failed_hd_root_output_dest_dir}",
+          f"--run-number={run_number}",
+          f"--launch-dir={nersc_launch_dir_container}",  # path of launch directory inside container
+          f"--jana-config={nersc_launch_dir_container}/{jana_config}",  # path of JANA config file inside container
+          f"--jana-calib-context={jana_calib_context}",
+          f"--halld-version-set-xml={halld_version_set_xml}",
+          f"--nmb-processes-per-task={nersc_nmb_processes_per_task}",
+          f"--nmb-threads-per-process={nersc_nmb_threads_per_process}",
+          f"--swif-hd-root-output-dest-dir={swif_hd_root_output_dest_dir}",
+          f"--swif-log-files-output-dest-dir={swif_log_files_output_dest_dir}",
+          f"--swif-failed-hd-root-output-dest-dir={swif_failed_hd_root_output_dest_dir}",
     ]
     # handle optional arguments of the job script
     jana_geometry_url_override = launch_config.get("JANA_GEOMETRY_URL_OVERRIDE")
