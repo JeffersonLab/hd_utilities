@@ -11,7 +11,7 @@ import subprocess
 import sys
 import time
 
-from prepare_recon_output import RECON_SUBDIR_BASENAME_MAP
+from prepare_recon_output import RECON_SUBDIR_BASENAME_MAP  #TODO fix
 from utilities import (
   ensure_dict_value_exists,
   print_command_line_arguments,
@@ -31,7 +31,7 @@ def main(args: argparse.Namespace) -> None:
   ver              = ensure_dict_value_exists(launch_config, "VER")
   ver_label        = ensure_dict_value_exists(launch_config, "VER_LABEL")
   reco_data_root   = ensure_dict_value_exists(launch_config, "RECO_DATA_ROOT")
-  swif_output_root = ensure_dict_value_exists(launch_config, "SWIF_OUTPUT_ROOT")
+  swif_output_root = ensure_dict_value_exists(launch_config, "SWIF_OUTPUT_ROOT")  #TODO deprecated
 
   recon_src_path = os.path.abspath(args.override_recon_src_path or f"{os.path.dirname(swif_output_root)}/{ver_label}.ready_for_tape")
   tape_dest_path = args.override_tape_dest_path or f"mss:{reco_data_root}/{ver}"
