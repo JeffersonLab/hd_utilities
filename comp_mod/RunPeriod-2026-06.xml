@@ -1,65 +1,70 @@
 <!--
 
-Spring 2026: GlueX-LE
+Summer 2026: GlueX-II 
 
 =====================================================================
 triggerRate
 
-45kHz
+70kHz
 
 =====================================================================
 runningTimeOnFloor
 
-Total number of days: 31 days
+Total number of days: 36
 
 =====================================================================
 runningEfficiency
 
-Total running efficiency: 72%
+Total running efficiency: 55%
 
 =====================================================================
 eventsize
 
 Running hdevio_scan on a raw data file gives:
 
-hdevio_scan /cache/halld/RunPeriod-2025-01/rawdata/Run133201/hd_rawdata_133201_001.evio 
-No run number given, trying to extract from filename: /cache/halld/RunPeriod-2025-01/rawdata/Run133201/hd_rawdata_133201_001.evio
-Processing file 1/1 : /cache/halld/RunPeriod-2025-01/rawdata/Run133201/hd_rawdata_133201_001.evio
+hdevio_scan /cache/halld/RunPeriod-2026-06/rawdata/Run150465/hd_rawdata_150465_014.evio
+No run number given, trying to extract from filename: /cache/halld/RunPeriod-2026-06/rawdata/Run150465/hd_rawdata_150465_014.evio
+Processing file 1/1 : /cache/halld/RunPeriod-2026-06/rawdata/Run150465/hd_rawdata_150465_014.evio
 Mapping EVIO file ...
 
 
-EVIO Statistics for /cache/halld/RunPeriod-2025-01/rawdata/Run133201/hd_rawdata_133201_001.evio :
+EVIO Statistics for /cache/halld/RunPeriod-2026-06/rawdata/Run150465/hd_rawdata_150465_014.evio :
 
-    Nblocks: 300
-    Nevents: 66948
+    Nblocks: 301
+    Nevents: 36944
     Nerrors: 0
 Nbad_blocks: 0
 Nbad_events: 0
 
 EVIO file size: 19073 MB
-EVIO block map size: 3159 kB
-first event: 41
-last event: 5355600
+EVIO block map size: 1752 kB
+first event: 20656481
+last event: 23611560
 
              block levels = 40
-         events per block = 1,221-
+         events per block = 1,121-
                     Nsync = 0
-                Nprestart = 1
-                      Ngo = 1
+                Nprestart = 0
+                      Ngo = 0
                    Npause = 0
                      Nend = 0
-                   Nepics = 0
+                   Nepics = 4
                      Nbor = 1
-                 Nphysics = 2677800
+                 Nphysics = 1477560
                  Nunknown = 0
  blocks with unknown tags = 0
 
-which gives for the avg. event size: 19073/2677800 = 0.0071 MB/event or 7.1kB
+hdevio_scan /cache/halld/RunPeriod-2025-01/rawdata/Run133298/hd_rawdata_133298_004.evio
+No run number given, trying to extract from filename: /cache/halld/RunPeriod-2025-01/rawdata/Run133298/hd_rawdata_133298_004.evio
+Processing file 1/1 : /cache/halld/RunPeriod-2025-01/rawdata/Run133298/hd_rawdata_133298_004.evio
+Mapping EVIO file ...
+
+which gives for the avg. event size: 19073/1477560 = 0.0129 MB/event or 12.9kB
 
 =====================================================================
 eventsPerRun
 
-Number of events (in millions) in a production run: average 200M
+Number of events (in millions) in a production run: average 400M
 
 =====================================================================
 RESTfraction
@@ -264,11 +269,11 @@ here:  https://halldweb.jlab.org/wiki/index.php/GlueX-II_and_DIRC_ERR )
 
 -->
 <compMod>
-<parameter name="triggerRate" value="45e3" units="Hz"/>
-<parameter name="runningTimeOnFloor" value="31.0" units="days"/>
-<parameter name="runningEfficiency" value="0.70"/>
-<parameter name="eventsize" value="7.1" units="kB"/>
-<parameter name="eventsPerRun" value="200" units="Mevent"/>
+<parameter name="triggerRate" value="70e3" units="Hz"/>
+<parameter name="runningTimeOnFloor" value="36.0" units="days"/>
+<parameter name="runningEfficiency" value="0.5"/>
+<parameter name="eventsize" value="12.9" units="kB"/>
+<parameter name="eventsPerRun" value="400" units="Mevent"/>
 <parameter name="compressionFactor" value="1.0"/>
 <parameter name="RESTfraction" value="0.33"/>
 
