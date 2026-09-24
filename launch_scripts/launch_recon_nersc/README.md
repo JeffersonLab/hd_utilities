@@ -60,4 +60,4 @@ See more detailed documentation here: <https://halldweb.jlab.org/wiki/index.php/
 
 * `2f299200-6b58-4f81-bacd-b947873986db` `NERSC DTN jlab Collab`, for data inbound to and outbound from NERSC.
 * `086540a1-9598-445e-8637-ac2f3997874f` `JLAB#SWIF`, for data outbound from JLab.
-* `B0fca1ad-f485-4a00-8fcd-bca0b93a2a1c` `jlab#gw1`, for data inbound to JLab.
+* `b0fca1ad-f485-4a00-8fcd-bca0b93a2a1c` `jlab#gw1`, for data inbound to JLab.
