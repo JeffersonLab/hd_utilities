@@ -1,0 +1,49 @@
+Scripts to model the many HVB trips in the summer 2026 run
+
+hists: directory linked to the latest data_monitoring version directory of rootfiles containing CDC_Efficiency and CDC_expert_2
+
+getpedestals.py loops through the run period's collection of root files
+               fits the pedestal for each straw and adds it to an array
+	       finally draws graphs of pedestal vs run and saves them in pedestals/<n>.png and text into pedestals/ped_<n>.txt
+
+
+dump_eff.C dumps the efficiency vs straw data from one run into eff.txt
+get_all_eff.py runs dump_eff for all runs in the hists directory and saves files into eff_from_histo
+               also combines these for ranges where they dont change but that is no longer needed
+
+
+
+straw_eff.sh <n>  writes file of run efficiency data for one straw into straw_eff_per_run/eff_<n> 
+                  calls rplot.py and writes graph into straw_eff_per_run/eff_<n>.png
+                  calls round_efficiency.py, prints results to stdout
+
+
+suppress_trips.py writes out efficiency files with tripped hvbs at 0
+                  and with inefficient straws as specified
+		  prints a list of straws with efficiency less than specified value
+
+
+
+rplot.py <n> reads the efficiency data and plots the graph
+
+
+
+
+round_efficiency.py <filename> <scalefactor> reads in straw data from straw_eff_per_run/eff_<n> scales it up by defined scalefactor
+		    and prints run ranges for efficiency data that are not 1 but 0.95, 0.9 etc   and 0.
+
+
+update_wiregains.py reads in one hard-coded wiregains file for the run period, loops through the efficiency files
+         	    and writes out wire gain files with straw gain set to 0 if the straw efficiency is 0
+
+
+
+
+Iterative process is to set the print threshold in suppress_trips.py
+run it and inspect the list of bad straws
+look at the pedestal plot
+run straw_eff.sh and copy data into suppress_trips.py
+
+gradually reduce the reporting threshold in suppress_trips.py
+
+when finished with efficiency, run update_wiregains.py
