@@ -41,12 +41,12 @@ def main(args: argparse.Namespace) -> None:
   print_command_line_arguments(args)
 
   # cd into run working directory
-  work_dir_job_path = f"{args.nersc_swif_jobs_root_dir}/GlueX_recon_{args.run_number:06d}"
-  os.chdir(work_dir_job_path)
+  work_dir_swif_job_path = f"{args.nersc_swif_jobs_root_dir}/GlueX_recon_{args.run_number:06d}"
+  os.chdir(work_dir_swif_job_path)
   # find attempt subdirectory to process and cd into it
   swif_attempt_dirs = [entry for entry in sorted(glob.glob("*")) if os.path.isdir(entry)]
   if len(swif_attempt_dirs) == 0:
-    print(f"WARNING: No directories with swif attempts found in '{work_dir_job_path}'")
+    print(f"WARNING: No directories with swif attempts found in '{work_dir_swif_job_path}'")
     sys.exit(1)
   if args.swif_attempt_id is not None:
     # find matching swif attempt dir
@@ -58,17 +58,18 @@ def main(args: argparse.Namespace) -> None:
         os.chdir(swif_attempt_dir)
         break
     if not found_matching_swif_attempt_dir:
-      print(f"WARNING: No matching swif attempt directory for ID {args.swif_attempt_id} found in '{work_dir_job_path}'")
+      print(f"WARNING: No matching swif attempt directory for ID {args.swif_attempt_id} found in '{work_dir_swif_job_path}'")
       sys.exit(1)
   else:
     if len(swif_attempt_dirs) > 1:
-      print(f"WARNING: Multiple directories with swif attempts found in '{work_dir_job_path}': {swif_attempt_dirs}; using the  one with the higher swif attempt ID")
+      print(f"WARNING: Multiple directories with swif attempts found in '{work_dir_swif_job_path}': {swif_attempt_dirs}; using the  one with the higher swif attempt ID")
     os.chdir(swif_attempt_dirs[-1])
-  print(f"Processing swif attempt directory '{os.getcwd()}'")
+  work_dir_swif_attempt_path = os.path.abspath(os.getcwd())
+  print(f"Processing swif attempt directory '{work_dir_swif_attempt_path}'")
 
   # protect against accidentally appending files to existing `__swif_outfiles__` file
   if os.path.exists(f"./__swif_outfiles__"):
-    raise RuntimeError(f"'__swif_outfiles__' already exists in '{work_dir_job_path}'; remove it before running this script")
+    raise RuntimeError(f"'__swif_outfiles__' already exists in '{work_dir_swif_attempt_path}'; remove it before running this script")
   else:
     # load arguments of script_job.py
     script_job_args = None
@@ -77,12 +78,12 @@ def main(args: argparse.Namespace) -> None:
     assert script_job_args is not None, "Failed to load script job arguments from pickle file"
     assert args.run_number == script_job_args.run_number, "Mismatch between provided run number and run number used in job script"
     # define output files for swif2
-    os.environ["SWIF_JOB_STAGE_DIR"] = os.path.abspath(os.getcwd())  # needed by `./.swif/swif2` command
+    os.environ["SWIF_JOB_STAGE_DIR"] = work_dir_swif_attempt_path  # needed by `./.swif/swif2` command
     print("-------------------------------------------------------------------------------")
     define_swif2_output_files(
       job_id                              = script_job_args.job_id,
       run_number                          = script_job_args.run_number,
-      work_dir_job_path                   = work_dir_job_path,
+      work_dir_job_path                   = work_dir_swif_attempt_path,
       nmb_tasks                           = script_job_args.nmb_tasks,
       nmb_processes_per_task              = script_job_args.nmb_processes_per_task,
       hd_root_output_dest_dir_path        = script_job_args.swif_hd_root_output_dest_dir,
