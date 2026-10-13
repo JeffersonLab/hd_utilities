@@ -93,17 +93,17 @@ def getCCDBContext(run, ANALYSISVERSION):
         runPeriod = "RunPeriod-2019-11"
         # temporary override for context until batch-dependent values are accessible
         contextOverride = "variation=default calibtime=2021-04-23-00-00-01"
-    elif begin_run < 109999:
+    elif run < 109999:
         runPeriod = "RunPeriod-2022-05"
-    elif begin_run < 119999:
+    elif run < 119999:
         runPeriod = "RunPeriod-2022-08"
-    elif begin_run < 129999:
+    elif run < 129999:
         runPeriod = "RunPeriod-2023-01"
-    elif begin_run < 139999:
+    elif run < 139999:
         runPeriod = "RunPeriod-2025-01"
-    elif begin_run < 149999:
+    elif run < 149999:
         runPeriod = "RunPeriod-2026-03"
-    elif begin_run < 159999:
+    elif run < 159999:
         runPeriod = "RunPeriod-2026-06"
     
     if ANALYSISVERSION < firstEnergyRecalibAnaTAGM: 
@@ -552,7 +552,7 @@ def main():
         OUTPUT_FILENAME += "_%s" % RCDB_POLARIZATION
     if RCDB_POL_ANGLE != "":
         OUTPUT_FILENAME += "_%s" % RCDB_POL_ANGLE
-    OUTPUT_FILENAME += "_%d_%d_ana%d.root" % (BEGINRUN, ENDRUN, ANALYSISVERSION)
+    OUTPUT_FILENAME += "_%d_%d_ana%02d.root" % (BEGINRUN, ENDRUN, ANALYSISVERSION)
     
     fout = TFile(OUTPUT_FILENAME, "recreate")
     if UNIFORM:

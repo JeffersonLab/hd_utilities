@@ -3,51 +3,40 @@ Python script for creating histograms of tagged and untagged PS flux: Justin Ste
 The tagged and untagged pair spectrometer flux and acceptance are stored in CCDB.  The command to obtain histograms of the flux is:
 
 ```
-python plot_flux_ccdb.py --begin-run beginRun --end-run endRun --num-bins 100 --energy-min 6.0 --energy-max 12.0 --rest-ver 3
+python plot_flux_ccdb.py --begin-run beginRun --end-run endRun --num-bins 100 --energy-min 6.0 --energy-max 12.0 --ana-ver analysisLaunchVersion
 ```
 
 See below for notes on python version if you get an error with this command.
 
 ## Command line options:
 
-If you run the script without any arguments you'll receive this message with a list of required and optional arguments
+The begin-run, end-run, and ana-ver options are required. The script accepts these options:
 
 ```
-Usage: plot_flux_ccdb.py --begin-run beginRun --end-run endRun
-
-Options:
-  -b BEGIN_RUN, --begin-run=BEGIN_RUN
-                        Starting run for output
-  -e END_RUN, --end-run=END_RUN
-                        Ending run for output
-  -p POL, --pol=POL     Polarization in RCDB
-  -a ANGLE, --angle=ANGLE
-                        Polarization angle in RCDB
-  -n NBINS, --num-bins=NBINS
-                        Number of histogram bins
-  -m EMIN, --energy-min=EMIN
-                        Minimum energy for flux histogram
-  -x EMAX, --energy-max=EMAX
-                        Maximum energy for flux histogram
-  -q RCDB, --rcdb-query='query'
-                        RCDB query for run selection
-  -t CALIBTIME, --calib-time='T-M-D-h-min-s'
-                        CCDB calibtime
-  -u UNIFORM, --uniform=UNIFORM
-                        Uniform option
-  -r REST_VER, --rest-ver=REST_VER
-                        REST version option
+-v, --ana-ver           Analysis Launch version (required)
+-b, --begin-run         Starting run for output
+-e, --end-run           Ending run for output
+-p, --pol               Polarization in RCDB
+-a, --angle             Polarization angle in RCDB
+-n, --num-bins          Number of histogram bins
+-m, --energy-min        Minimum energy for flux histogram
+-x, --energy-max        Maximum energy for flux histogram
+-q, --rcdb-query        RCDB query for run selection
+-t, --calib-time        CCDB calibration time (Y-M-D-h-min-s)
+-u, --uniform           Uniform option
+-l, --target-length     Target length in cm
 ```
 
-Here beginRun is the beginning of your run range and endRun is the end of your run range.  For example for RunPeriod-2016-02 "golden period" beginRun=11366 and endRun=11555.  
+Here beginRun is the beginning of your run range and endRun is the end of your run range. For example, for the RunPeriod-2017-01, beginRun=30274 and endRun=31057.
 
-You must also match the REST production version you're analysing by setting the --rest-ver option to the REST version listed on the corresponding TTree in the analysis launch.  See examples at
+You must specify `--ana-ver` with the version of the Analysis Launch used for your analysis. This version must match the launch whose TAGM/TAGH energy calibration you need: the script uses it to select the corresponding CCDB context and energy-calibration timestamp. Using a different launch version can therefore give flux histograms with TAGM/TAGH energies that do not match your analysis. Do not pass the REST production version here; the tool obtains the associated REST context from the selected Analysis Launch version. See the corresponding Analysis Launch page for the version:
 
 https://halldweb.jlab.org/wiki-private/index.php/Spring_2016_Analysis_Launch  
 https://halldweb.jlab.org/wiki-private/index.php/Spring_2017_Analysis_Launch  
 https://halldweb.jlab.org/wiki-private/index.php/Spring_2018_Analysis_Launch  
 https://halldweb.jlab.org/wiki-private/index.php/Fall_2018_Analysis_Launch  
 https://halldweb.jlab.org/wiki-private/index.php/Spring_2020_Analysis_Launch
+https://halldweb.jlab.org/wiki-private/index.php/Spring_2023_Analysis_Launch
 
 ## Prerequisites:
 
@@ -59,10 +48,10 @@ RCDB_HOME
 
 CCDB_HOME
 
-and for simplicity you can use the standard build_scripts procedure to set these for you or one of the nightly builds with this command (with the date replaced)
+and for simplicity you can use the standard build_scripts procedure to setup your environment
 
 ```
-source /group/halld/Software/build_scripts/gluex_env_nightly.csh 2022-02-18
+source /group/halld/Software/build_scripts/gluex_env_jlab.csh
 ```
 
 The location of the plot_flux_ccdb.py script will then be located at $HD_UTILITIES_HOME/psflux/plot_flux_ccdb.py in your environment.
@@ -80,11 +69,3 @@ python2.7 $HD_UTILITIES_HOME/psflux/plot_flux_ccdb.py ...
 or 
 
 python3.6 $HD_UTILITIES_HOME/psflux/plot_flux_ccdb.py ...
-
-## The flux values in the MySQL CCDB are from:
-
-RunPeriod-2019-11: REST ver01 production  
-RunPeriod-2018-08: REST ver02 production  
-RunPeriod-2018-01: REST ver02 production   
-RunPeriod-2017-01: REST ver03 production  
-RunPeriod-2016-02: REST ver06 production  
