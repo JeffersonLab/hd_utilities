@@ -257,18 +257,40 @@ def check_tagger_scalers(taggername, dictlist, frac_change):
     ids_unordered = []  # counter id extracted from pv
     
     for dict in dictlist:
+
+        if not 'scaler_t1' in dict:
+            continue
+
+        if not taggername in dict:
+            continue
         
         mean = dictlist[dict]['mean']
         sigma = dictlist[dict]['sigma']
+
+        # TAGH:T:1:scaler_t1
         
         if dict[:4] == taggername and mean > 0 and sigma == 0:
-            db = find_deadband(dict, mean)
-            if TESTING:
-                print(dict + ' frac_change x mean: ' +  str(round(frac_change*mean, 0)) + ' db: ' + str(db))
-            if (db) :
-                if frac_change*mean > 2*db: 
-                    id = int(dict.split(":")[2])
-                    ids_unordered.append(id)
+
+            counter_on = True
+            
+            # if TAGH, check that counter is on using imon
+            if taggername == "TAGH": 
+                pv_imon = "TAGH:hv:" + dict.split(":")[2] + ":imon"
+                imon_mean = dictlist[pv_imon]['mean']
+
+                if imon_mean < 50:
+                    counter_on = False
+                    
+            # compare expected change with deadband
+
+            if counter_on:
+                db = find_deadband(dict, mean)
+                if TESTING:
+                    print(dict + ' frac_change x mean: ' +  str(round(frac_change*mean, 0)) + ' db: ' + str(db))
+                if (db) :
+                    if frac_change*mean > 2*db: 
+                        id = int(dict.split(":")[2])
+                        ids_unordered.append(id)
                     
     if len(ids_unordered) == 0:
         return leaders
@@ -431,6 +453,8 @@ def issue_warnings(title, message, time_now, epicsfile) :
 #-- main ---------------------------------------------------------------------------
 
 def main() :
+
+    global TESTING  # global so that it can be modified later in this function
 
     if MIN_BEAM_CURRENT < 10:
         print('Minimum beam current required is ' + str(MIN_BEAM_CURRENT))

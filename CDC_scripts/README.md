@@ -1,5 +1,8 @@
 This directory contains scripts useful for extracting the hit thresholds from configuration files, calculating the correction to Garfield's drift time tables due to the magnetic field, estimating the time to distance calibration parameters from EPICS data, checking the monitoring histograms, and identifying quiet\/noisy channels.
 
+The directory trip\_modelling contains scripts for generating files to fill the wire\_gains and wire\_mc\_efficiency CCDB tables for a run period with many HVB trips (summer 2026).
+
+
 # Finding the hit thresholds 
 
 This requires the run configuration files, either in the RunLog tar file stored on tape with the evio files, or on the gluons, in /gluex/CALIB/ALL/fadc125/.  Their filenames follow the pattern roccdc1something.cnf.

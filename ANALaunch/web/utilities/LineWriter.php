@@ -1,4 +1,10 @@
 <?php
+
+if(!isset($_SERVER['PHP_AUTH_USER'])){
+    echo "Unauthorized user";
+    exit;
+}
+
 echo $_GET["jstr"];
 echo $_GET["dataset"];
 $file='';
@@ -11,6 +17,7 @@ $Decays=$jsonOBJ["Decays"];
 $B=$jsonOBJ["B"];
 $F=$jsonOBJ["F"];
 $T=$jsonOBJ["T"];
+$S=$jsonOBJ["S"];
 $U=$jsonOBJ["U"];
 $Mlist=$jsonOBJ["Marray"];
 
@@ -53,6 +60,13 @@ if(file_exists("/u/group/halld/www/halldweb/data/webdata/analysis/newlines/" . $
         $newlT=false;
     }
 
+    if(intval($S)<intval($json_fromF["S"]))
+    {
+        $S=$json_fromF["S"];
+        $jsonOBJ["S"]=$S;
+        $newlS=false;
+    }
+
     if(intval($U)<intval($json_fromF["U"]))
     {
         $U=$json_fromF["U"];
@@ -63,7 +77,7 @@ if(file_exists("/u/group/halld/www/halldweb/data/webdata/analysis/newlines/" . $
     
 
 }
-if($newlB || $newlT || $newlU)
+if($newlB || $newlT || $newlS || $newlU)
 {
     echo "<br>" . $file;
     $fp = fopen('/u/group/halld/www/halldweb/data/webdata/analysis/newlines/' . $_GET["dataset"] . '/' . $file . '.json','w') or die('Cannot open file:  '.$file);

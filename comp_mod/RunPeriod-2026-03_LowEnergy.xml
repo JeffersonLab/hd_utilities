@@ -5,17 +5,17 @@ Spring 2026: GlueX-LE
 =====================================================================
 triggerRate
 
-70kHz
+45kHz
 
 =====================================================================
 runningTimeOnFloor
 
-Total number of days: 22 PAC days = 44days
+Total number of days: 31 days
 
 =====================================================================
 runningEfficiency
 
-Total running efficiency: 50%
+Total running efficiency: 72%
 
 =====================================================================
 eventsize
@@ -59,7 +59,7 @@ which gives for the avg. event size: 19073/2677800 = 0.0071 MB/event or 7.1kB
 =====================================================================
 eventsPerRun
 
-Number of events (in millions) in a production run: average 400M
+Number of events (in millions) in a production run: average 200M
 
 =====================================================================
 RESTfraction
@@ -264,11 +264,11 @@ here:  https://halldweb.jlab.org/wiki/index.php/GlueX-II_and_DIRC_ERR )
 
 -->
 <compMod>
-<parameter name="triggerRate" value="70e3" units="Hz"/>
-<parameter name="runningTimeOnFloor" value="44.0" units="days"/>
-<parameter name="runningEfficiency" value="0.50"/>
+<parameter name="triggerRate" value="45e3" units="Hz"/>
+<parameter name="runningTimeOnFloor" value="31.0" units="days"/>
+<parameter name="runningEfficiency" value="0.70"/>
 <parameter name="eventsize" value="7.1" units="kB"/>
-<parameter name="eventsPerRun" value="400" units="Mevent"/>
+<parameter name="eventsPerRun" value="200" units="Mevent"/>
 <parameter name="compressionFactor" value="1.0"/>
 <parameter name="RESTfraction" value="0.33"/>
 
