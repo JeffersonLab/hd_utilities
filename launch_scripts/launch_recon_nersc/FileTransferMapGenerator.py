@@ -60,27 +60,56 @@ print = functools.partial(print, flush = True)
 #   "tree_TPOL" :        ("tree_TPOL",        "root"),
 #   "tree_TS_scaler" :   ("tree_TS_scaler",   "root"),
 # }
-# 2025-01_ver04  #TODO update
+# # 2025-01_ver04  #TODO update
+# RECON_SUBDIR_BASENAME_MAP: dict[str, tuple[str, str]] = {
+#   # EVIO files
+#   "BCAL-LED" :               ("BCAL-LED",               "evio"),
+#   "ctof" :                   ("ctof",                   "evio"),
+#   "DIRC-LED" :               ("DIRC-LED",               "evio"),
+#   "ECAL-LED" :               ("ECAL-LED",               "evio"),
+#   "epem_selection" :         ("epem_selection",         "evio"),
+#   "FCAL-LED" :               ("FCAL-LED",               "evio"),
+#   "npp_2g" :                 ("npp_2g",                 "evio"),
+#   "npp_2pi0" :               ("npp_2pi0",               "evio"),
+#   "omega" :                  ("omega",                  "evio"),
+#   "pippim_selection" :       ("pippim_selection",       "evio"),
+#   "ps" :                     ("ps",                     "evio"),
+#   "random" :                 ("random",                 "evio"),
+#   "sync" :                   ("sync",                   "evio"),
+#   # HDDM files
+#   "converted_random" :       ("converted_random",       "hddm"),
+#   "REST" :                   ("dana_rest",              "hddm"),
+#   # ROOT files
+#   "p3pi_excl_skim" :         ("p3pi_excl_skim",         "root"),
+#   "hists" :                  ("hd_root",                "root"),
+#   "tree_bcal_hadronic_eff" : ("tree_bcal_hadronic_eff", "root"),
+#   "tree_fcal_hadronic_eff" : ("tree_fcal_hadronic_eff", "root"),
+#   "tree_PSFlux" :            ("tree_PSFlux",            "root"),
+#   "tree_TPOL" :              ("tree_TPOL",              "root"),
+#   "tree_trackeff" :          ("tree_trackeff",          "root"),
+# }
+# 2026-03_ver01
 RECON_SUBDIR_BASENAME_MAP: dict[str, tuple[str, str]] = {
   # EVIO files
   "BCAL-LED" :               ("BCAL-LED",               "evio"),
-  "ctof" :                   ("ctof",                   "evio"),
+  # "ctof" :                   ("ctof",                   "evio"),
   "DIRC-LED" :               ("DIRC-LED",               "evio"),
   "ECAL-LED" :               ("ECAL-LED",               "evio"),
-  "epem_selection" :         ("epem_selection",         "evio"),
+  # "epem_selection" :         ("epem_selection",         "evio"),
   "FCAL-LED" :               ("FCAL-LED",               "evio"),
-  "npp_2g" :                 ("npp_2g",                 "evio"),
-  "npp_2pi0" :               ("npp_2pi0",               "evio"),
-  "omega" :                  ("omega",                  "evio"),
-  "pippim_selection" :       ("pippim_selection",       "evio"),
-  "ps" :                     ("ps",                     "evio"),
+  # "npp_2g" :                 ("npp_2g",                 "evio"),
+  # "npp_2pi0" :               ("npp_2pi0",               "evio"),
+  # "omega" :                  ("omega",                  "evio"),
+  "pi0bcalskim" :            ("pi0bcalskim",            "evio"),
+  # "pippim_selection" :       ("pippim_selection",       "evio"),
+  # "ps" :                     ("ps",                     "evio"),
   "random" :                 ("random",                 "evio"),
   "sync" :                   ("sync",                   "evio"),
   # HDDM files
   "converted_random" :       ("converted_random",       "hddm"),
   "REST" :                   ("dana_rest",              "hddm"),
   # ROOT files
-  "p3pi_excl_skim" :         ("p3pi_excl_skim",         "root"),
+  # "p3pi_excl_skim" :         ("p3pi_excl_skim",         "root"),
   "hists" :                  ("hd_root",                "root"),
   "tree_bcal_hadronic_eff" : ("tree_bcal_hadronic_eff", "root"),
   "tree_fcal_hadronic_eff" : ("tree_fcal_hadronic_eff", "root"),
@@ -114,10 +143,10 @@ class FileTransferMapGenerator:
     self.log_files_dest_dir_path             = log_files_dest_dir_path
     self.failed_hd_root_output_dest_dir_path = failed_hd_root_output_dest_dir_path
     self._run_dir_name                       = f"RUN{self.run_number:06d}"  # directory containing the SWIF output for the run
-    self._evio_file_names:      list[str]                  = []  # EVIO file names processed by the job
-    self._failed_evio_files:    list[str]                  = []  # paths of EVIO files that are missing or for which hd_root failed
-    self._missing_items:        defaultdict[str, set[str]] = defaultdict(set)  # missing items by item type for reporting
-    self._file_transfer_map:    defaultdict[str, set[str]] = defaultdict(set)  # mapping of relative local file paths to absolute destination file paths; log files may have multiple destination paths
+    self._evio_file_names:   list[str]                  = []                # EVIO file names processed by the job
+    self._failed_evio_files: list[str]                  = []                # paths of EVIO files that are missing or for which hd_root failed
+    self._missing_items:     defaultdict[str, set[str]] = defaultdict(set)  # missing items by item type for reporting
+    self._file_transfer_map: defaultdict[str, set[str]] = defaultdict(set)  # mapping of relative local file paths to absolute destination file paths; log files may have multiple destination paths
 
   @property
   def file_transfer_map(self) -> dict[str, set[str]]:
