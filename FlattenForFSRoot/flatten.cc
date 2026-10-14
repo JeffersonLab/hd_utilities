@@ -1016,7 +1016,7 @@ int main(int argc, char** argv){
   double outTkDEDXChi2[MAXPARTICLES]={}, outTkDEDXNDF[MAXPARTICLES]={};
   double outTkDEDXCDC[MAXPARTICLES]={}, outTkDEDXFDC[MAXPARTICLES]={};
   double outTkTOFBeta[MAXPARTICLES]={}, outTkTOFChi2[MAXPARTICLES]={};
-  double outTkTimeDetector[MAXPARTICLES]={}, outShDetector[MAXPARTICLES]={};
+  int outTkTimeDetector[MAXPARTICLES]={}, outShDetector[MAXPARTICLES]={};
   double outTkDeltaT[MAXPARTICLES]={}, outShDeltaT[MAXPARTICLES]={};
   double outTkRDeltaT[MAXPARTICLES]={}, outShRDeltaT[MAXPARTICLES]={};
   double outShQuality[MAXPARTICLES]={};
