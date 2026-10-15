@@ -17,4 +17,4 @@ echo "NERSC Community File System (CFS) Storage Space used"
 du -hs "${NERSC_PROJECT_DIR}"
 echo
 echo "Quota for user 'jlab'"
-myquota --full-path --limit --common --hpss --user jlab
+myquota --full-path --limit --hpss --user jlab "${NERSC_PROJECT_DIR}"

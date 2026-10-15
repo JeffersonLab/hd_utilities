@@ -131,6 +131,7 @@ def main(args: argparse.Namespace) -> None:
       print(f"    this corresponds to {total_node_hours:.0f} node-hours at an estimated {job_wall_time_estimate} minutes of wall time per job")
 
   print("===============================================================================")
+  #TODO make plotting optional
   plot_evio_file_size(run_numbers, raw_data_root, swif_workflow)
   if args.evio_path_list_file is not None:
     print(f"Writing list of EVIO file paths to './{args.evio_path_list_file}'")
