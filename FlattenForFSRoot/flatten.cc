@@ -724,7 +724,8 @@ int main(int argc, char** argv){
       if (gUseParticles) gInTree->SetBranchAddress("NumUnusedTracks", &inNumUnusedTracks,&brNumUnusedTracks);
   Bool_t inIsThrownTopology = false;
       if (gUseParticles&&gUseMCParticles) gInTree->SetBranchAddress("IsThrownTopology", &inIsThrownTopology);
-
+  UInt_t inL1TriggerBits = 0;
+      gInTree->SetBranchAddress("L1TriggerBits", &inL1TriggerBits);
 
         //   *** Beam Particles (indexed using ComboBeam__BeamIndex) ***
 
@@ -927,6 +928,7 @@ int main(int argc, char** argv){
 
   double outRunNumber;                           gOutTree->Branch("Run",             &outRunNumber);
   double outEventNumber;                         gOutTree->Branch("Event",           &outEventNumber);
+  double outL1TriggerBits;                       gOutTree->Branch("L1TriggerBits",   &outL1TriggerBits);
   double outChi2;             if (gUseParticles && gUseKinFit)
                                                  gOutTree->Branch("Chi2",            &outChi2);
   double outChi2DOF;          if (gUseParticles && gUseKinFit)
@@ -1292,6 +1294,7 @@ int main(int argc, char** argv){
       TLorentzVector *p4, *p4a, *p4b, *x4, *x4a, *x4b;
       outRunNumber       = inRunNumber;
       outEventNumber     = inEventNumber;
+      outL1TriggerBits = inL1TriggerBits;
       if(gUsePolarization) {
         if(!triedPolarizationInitialize) {
           GetPolarizationAngle(inRunNumber, currPol);
@@ -1693,9 +1696,9 @@ int main(int argc, char** argv){
       }
 
 
-        // fill the tree
+        // fill the tree if there is a valid physics trigger
 
-      gOutTree->Fill();
+      if (inL1TriggerBits != 0) gOutTree->Fill();
 
     }
 
