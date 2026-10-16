@@ -135,6 +135,7 @@ int main(int argc, char** argv){
   bool gSafe = true;
   bool gUsePolarization = false;
   bool gAddPID = true;
+  bool gAddDeltaT = true;
   bool gUseDIRC = false;
   bool gFlattenpi0 = false;
   bool gFlatteneta = false;
@@ -151,7 +152,7 @@ int main(int argc, char** argv){
         ||(argi == "-numUnusedTracks")||(argi == "-usePolarization")||(argi == "-numUnusedNeutrals")
         ||(argi == "-mcChecks")||(argi == "-addPID")||(argi == "-dirc")||(argi == "-flattenpi0")||(argi == "-flatteneta")
         ||(argi=="-addUnusedNeutrals")||(argi == "-combos")
-        ||(argi == "-numNeutralHypos")||(argi == "-safe")||(argi == "-print")){
+        ||(argi == "-numNeutralHypos")||(argi == "-safe")||(argi == "-print")||(argi == "-addDeltaT")){
       flag = argi;
       continue;
     }
@@ -169,6 +170,7 @@ int main(int argc, char** argv){
     if (flag == "-numNeutralHypos"){ gNumNeutralHyposCut = atoi(argi); }
     if (flag == "-usePolarization"){ if (argi == "1") gUsePolarization = true; }
     if (flag == "-addPID"){ if (argi == "0") gAddPID = false; }
+    if (flag == "-addDeltaT"){ if (argi == "0") gAddDeltaT = false; }
     if (flag == "-dirc"){   if( argi == "1") gUseDIRC = true; }
     if (flag == "-flattenpi0"){ if (argi == "1") gFlattenpi0 = true; }
     if (flag == "-flatteneta"){ if (argi == "1") gFlatteneta = true; }
@@ -210,6 +212,7 @@ int main(int argc, char** argv){
   cout << "  numUnusedNeutrals cut: " << gNumUnusedNeutralsCut << endl;
   cout << "  numNeutralHypos cut:   " << gNumNeutralHyposCut << endl;
   cout << "  use polarization?      " << gUsePolarization << endl;
+  cout << "  use DeltaT?            " << gAddDeltaT << endl;
   cout << "  use PID?               " << gAddPID << endl;
   cout << "  use DIRC?              " << gUseDIRC << endl;
   cout << "  flatten pi0s?          " << gFlattenpi0 << endl;
@@ -757,7 +760,7 @@ int main(int argc, char** argv){
       if (gUseParticles && gAddPID) gInTree->SetBranchAddress("ChargedHypo__dEdx_CDC", inChargedHypo__dEdx_CDC);
   Float_t inChargedHypo__dEdx_FDC[MAXTRACKS] = {};
       if (gUseParticles && gAddPID) gInTree->SetBranchAddress("ChargedHypo__dEdx_FDC", inChargedHypo__dEdx_FDC);
-
+  
   Float_t inChargedHypo__Lpi_DIRC[MAXTRACKS] = {};
   Float_t inChargedHypo__Lele_DIRC[MAXTRACKS] = {};
   Float_t inChargedHypo__Lk_DIRC[MAXTRACKS] = {};
@@ -765,8 +768,6 @@ int main(int argc, char** argv){
   Int_t   inChargedHypo__NumPhotons_DIRC[MAXTRACKS] = {};
   Float_t inChargedHypo__x_DIRC[MAXTRACKS] = {};
   Float_t inChargedHypo__y_DIRC[MAXTRACKS] = {};
-
-
 
   if (gUseParticles && gUseDIRC){
     // this one is a test case to see if the DIRC info is included in the tree
@@ -786,6 +787,16 @@ int main(int argc, char** argv){
     }
   }
 
+  Float_t inChargedHypo__Energy_BCAL[MAXTRACKS] = {};
+  Float_t inChargedHypo__Energy_FCAL[MAXTRACKS] = {};
+  Float_t inChargedHypo__dEdx_TOF[MAXTRACKS] = {};
+  Float_t inChargedHypo__dEdx_ST[MAXTRACKS] = {};
+  if (gUseParticles && gAddDeltaT){
+    gInTree->SetBranchAddress("ChargedHypo__Energy_BCAL", inChargedHypo__Energy_BCAL);
+    gInTree->SetBranchAddress("ChargedHypo__Energy_FCAL", inChargedHypo__Energy_FCAL);
+    gInTree->SetBranchAddress("ChargedHypo__dEdx_TOF", inChargedHypo__dEdx_TOF);
+    gInTree->SetBranchAddress("ChargedHypo__dEdx_ST", inChargedHypo__dEdx_ST);
+  }
 
         //   *** Neutral Particle Hypotheses (indexed using <particleName>__NeutralIndex) ***
 
@@ -800,6 +811,12 @@ int main(int argc, char** argv){
   Float_t inNeutralHypo__ShowerQuality[MAXNEUTRALS] = {};
       if (gUseParticles) gInTree->SetBranchAddress("NeutralHypo__ShowerQuality", inNeutralHypo__ShowerQuality);
 
+  Float_t inNeutralHypo__Energy_BCAL[MAXTRACKS] = {};
+  Float_t inNeutralHypo__Energy_FCAL[MAXTRACKS] = {};
+  if (gUseParticles && gAddDeltaT){
+    gInTree->SetBranchAddress("NeutralHypo__Energy_BCAL", inNeutralHypo__Energy_BCAL);
+    gInTree->SetBranchAddress("NeutralHypo__Energy_FCAL", inNeutralHypo__Energy_FCAL);
+  }
 
         // ************************************
         // ***** 4C. COMBO-DEPENDENT DATA *****
@@ -999,6 +1016,9 @@ int main(int argc, char** argv){
   double outTkDEDXChi2[MAXPARTICLES]={}, outTkDEDXNDF[MAXPARTICLES]={};
   double outTkDEDXCDC[MAXPARTICLES]={}, outTkDEDXFDC[MAXPARTICLES]={};
   double outTkTOFBeta[MAXPARTICLES]={}, outTkTOFChi2[MAXPARTICLES]={};
+  int outTkTimeDetector[MAXPARTICLES]={}, outShDetector[MAXPARTICLES]={};
+  double outTkDeltaT[MAXPARTICLES]={}, outShDeltaT[MAXPARTICLES]={};
+  double outTkRDeltaT[MAXPARTICLES]={}, outShRDeltaT[MAXPARTICLES]={};
   double outShQuality[MAXPARTICLES]={};
   double outLpiDIRC[MAXPARTICLES]={};
   double outLpDIRC[MAXPARTICLES]={};
@@ -1046,6 +1066,20 @@ int main(int argc, char** argv){
           TString vTkDEDXNDF("TkDEDXNDFP");   vTkDEDXNDF  += fsIndex; gOutTree->Branch(vTkDEDXNDF, &outTkDEDXNDF [pIndex]);
           TString vTkDEDXCDC("TkDEDXCDCP");   vTkDEDXCDC  += fsIndex; gOutTree->Branch(vTkDEDXCDC, &outTkDEDXCDC [pIndex]);
           TString vTkDEDXFDC("TkDEDXFDCP");   vTkDEDXFDC  += fsIndex; gOutTree->Branch(vTkDEDXFDC, &outTkDEDXFDC [pIndex]);
+        }
+        if (gAddDeltaT && GlueXParticleClass(name) == "Charged"){
+          TString vTkTimeDetector ("TkTimeDetectorP");  vTkTimeDetector  += fsIndex; gOutTree->Branch(vTkTimeDetector, &outTkTimeDetector[pIndex]);
+          if(gUseKinFit){
+            TString vTkDeltaT("TkDeltaTP"); vTkDeltaT += fsIndex; gOutTree->Branch(vTkDeltaT, &outTkDeltaT[pIndex]);
+          }
+          TString vTkRDeltaT("TkRDeltaTP"); vTkRDeltaT += fsIndex; gOutTree->Branch(vTkRDeltaT, &outTkRDeltaT[pIndex]);
+        }
+        if (gAddDeltaT && GlueXParticleClass(name) == "Neutral"){
+          TString vShDetector ("ShDetectorP");  vShDetector  += fsIndex; gOutTree->Branch(vShDetector, &outShDetector[pIndex]);
+          if(gUseKinFit){
+            TString vShDeltaT("ShDeltaTP"); vShDeltaT += fsIndex; gOutTree->Branch(vShDeltaT, &outShDeltaT[pIndex]);
+          }
+          TString vShRDeltaT("ShRDeltaTP"); vShRDeltaT += fsIndex; gOutTree->Branch(vShRDeltaT, &outShRDeltaT[pIndex]);
         }
         if(gUseDIRC && GlueXParticleClass(name)=="Charged"){
           TString vLpiDIRC("TkLpiDIRCP");        vLpiDIRC    += fsIndex; gOutTree->Branch(vLpiDIRC,   &outLpiDIRC[pIndex]);
@@ -1395,6 +1429,9 @@ int main(int argc, char** argv){
               outVx[pIndex] = x4->X();
               outVy[pIndex] = x4->Y();
               outVz[pIndex] = x4->Z();
+              if (gAddDeltaT){
+                outTkDeltaT[pIndex] = x4->T() - (outRFTime + (x4->Z() - inTargetCenterZ)/29.9792458);
+              }
           }
           if (gUseParticles){
             p4 = (TLorentzVector*)inChargedHypo__P4_Measured->At(inChargedIndex[pIndex][ic]);
@@ -1408,6 +1445,13 @@ int main(int argc, char** argv){
               outRVx[pIndex] = x4->X();
               outRVy[pIndex] = x4->Y();
               outRVz[pIndex] = x4->Z();
+            if (gAddDeltaT){
+              outTkRDeltaT[pIndex] = x4->T() - (outRFTime + (x4->Z() - inTargetCenterZ)/29.9792458);
+              if(inChargedHypo__Energy_BCAL[inChargedIndex[pIndex][ic]] > 0) outTkTimeDetector[pIndex] = 4;
+              if(inChargedHypo__dEdx_TOF[inChargedIndex[pIndex][ic]] > 0) outTkTimeDetector[pIndex] = 8;
+              if(inChargedHypo__Energy_FCAL[inChargedIndex[pIndex][ic]] > 0) outTkTimeDetector[pIndex] = 32;
+              if(inChargedHypo__dEdx_ST[inChargedIndex[pIndex][ic]] > 0) outTkTimeDetector[pIndex] = 256;
+            }
             if (gAddPID){
               outTkTOFBeta[pIndex] = inBeta_Timing[pIndex][ic];
               outTkTOFChi2[pIndex] = inChiSq_Timing[pIndex][ic];
@@ -1454,6 +1498,9 @@ int main(int argc, char** argv){
               outVx[pIndex] = x4->X();
               outVy[pIndex] = x4->Y();
               outVz[pIndex] = x4->Z();
+              if (gAddDeltaT){
+                outShDeltaT[pIndex] = x4->T() - (outRFTime + (x4->Z() - inTargetCenterZ)/29.9792458);
+              }
           }
           if (gUseParticles){
             p4 = (TLorentzVector*)inNeutralHypo__P4_Measured->At(inNeutralIndex[pIndex][ic]);
@@ -1465,6 +1512,11 @@ int main(int argc, char** argv){
               outRVx[pIndex] = x4->X();
               outRVy[pIndex] = x4->Y();
               outRVz[pIndex] = x4->Z();
+            if (gAddDeltaT){
+              outShRDeltaT[pIndex] = x4->T() - (outRFTime + (x4->Z() - inTargetCenterZ)/29.9792458);
+              if(inNeutralHypo__Energy_BCAL[inNeutralIndex[pIndex][ic]] > 0) outShDetector[pIndex] = 4;
+              if(inNeutralHypo__Energy_FCAL[inNeutralIndex[pIndex][ic]] > 0) outShDetector[pIndex] = 32;
+            }
             outShQuality[pIndex] = inNeutralHypo__ShowerQuality[(inNeutralIndex[pIndex][ic])];
             if (outShQuality[pIndex] < gShQualityCut) cutDueToParticleInfo = true;
             vUsedNeutralIndices.push_back(inNeutralIndex[pIndex][ic]);
@@ -2428,5 +2480,4 @@ double GetAccidentalScalingFactor(int locRunNumber, double locBeamEnergy, bool l
 	else
 		return locHodoscopeLoFactor;
 }
-
 
