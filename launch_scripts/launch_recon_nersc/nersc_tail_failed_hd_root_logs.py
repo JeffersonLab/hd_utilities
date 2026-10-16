@@ -65,7 +65,8 @@ def main(args: argparse.Namespace) -> None:
   # find `hd_root.rc` files with hd_root return codes
   hd_root_rc_files:        list[str] = []
   hd_root_failed_rc_files: list[str] = []
-  for task_dir in sorted(glob.glob(f"{args.run_working_dir}/RUN??????/TASK???")):
+  run_working_dir = os.path.realpath(os.path.expanduser(args.run_working_dir))
+  for task_dir in sorted(glob.glob(f"{run_working_dir}/RUN??????/TASK???")):
     if not os.path.isdir(task_dir):
       print(f"WARNING: expected '{task_dir}' to be a directory; skipping it")
       continue
@@ -82,7 +83,7 @@ def main(args: argparse.Namespace) -> None:
 
   # process existing hd_root.rc files and identify failed hd_root processes with non-zero return code
   if len(hd_root_rc_files) == 0:
-    print(f"WARNING: No hd_root return code files found in '{args.run_working_dir}'")
+    print(f"WARNING: No hd_root return code files found in '{run_working_dir}'")
   for hd_root_rc_file in hd_root_rc_files:
     hd_root_return_code = get_hd_root_return_code(hd_root_rc_file)
     print(f"Found hd_root return code {hd_root_return_code:3d} in '{hd_root_rc_file}'")
