@@ -168,3 +168,36 @@ def get_file_number_from_evio_file_name(evio_file_path: str) -> int | None:
   except ValueError:
     print(f"WARNING: could not extract 3-digit file number YYY from EVIO file name '{evio_file_path}' assuming file name pattern 'hd_rawdata_XXXXXX_YYY*'")
     return None
+
+
+def get_nersc_swif_attempt_dir_path(
+  nersc_swif_jobs_root_dir: str,
+  run_number:               int,
+  swif_attempt_id:          int | None = None,
+) -> str | None:
+  """Returns the path to the swif attempt directory for the given run
+  number and swif attempt ID, or None if not found. In case
+  `swif_attempt_id` is None, returns the directory with the highest
+  swif attempt ID."""
+  swif_job_dir_path = os.path.realpath(os.path.expanduser(f"{nersc_swif_jobs_root_dir}/GlueX_recon_{run_number:06d}"))
+  # find attempt subdirectory
+  swif_attempt_dir_paths = [entry for entry in sorted(glob.glob(f"{swif_job_dir_path}/*")) if os.path.isdir(entry)]
+  if len(swif_attempt_dir_paths) == 0:
+    print(f"WARNING: No directories with swif attempts found in '{swif_job_dir_path}'")
+    return None
+  if swif_attempt_id is not None:
+    # find matching swif attempt dir
+    found_matching_swif_attempt_dir = False
+    for swif_attempt_dir_path in swif_attempt_dir_paths:
+      if os.path.basename(swif_attempt_dir_path) == str(swif_attempt_id):
+        found_matching_swif_attempt_dir = True
+        print(f"Found directory '{swif_attempt_dir_path}' for swif attempt ID {swif_attempt_id}")
+        return swif_attempt_dir_path
+    if not found_matching_swif_attempt_dir:
+      print(f"WARNING: No matching swif attempt directory for ID {swif_attempt_id} found in '{swif_job_dir_path}'")
+      return None
+  else:
+    if len(swif_attempt_dir_paths) > 1:
+      print(f"WARNING: Multiple directories with swif attempts found in '{swif_job_dir_path}': "
+            f"{swif_attempt_dir_paths}; using the one with the highest swif attempt ID")
+    return swif_attempt_dir_paths[-1]
