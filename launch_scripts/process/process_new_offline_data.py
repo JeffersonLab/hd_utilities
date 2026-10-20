@@ -13,9 +13,12 @@
 #  3. the directory to store the PNG files (and other associated processing files)
 #
 
-import sys,os,errno
+import sys,os,errno,atexit
 from os import listdir
 from os.path import isfile, join, isdir
+import shutil
+import tarfile
+import tempfile
 from optparse import OptionParser
 import multiprocessing
 import logging
@@ -73,6 +76,7 @@ class ProcessMonDataConfig:
         #self.ROOTFILE_DIR = "ROOT" # OLD     # monitoring ROOT files are stored in INPUT_DIRECTORY/REVISION/ROOTFILE_DIR
         self.ROOTFILE_DIR = "hists"     # monitoring ROOT files are stored in INPUT_DIRECTORY/REVISION/ROOTFILE_DIR
         #self.ROOTFILE_DIR = "monitoring_hists"     # for bggen
+        self.MC_ROOTFILE_CACHE_DIRECTORY = None
         self.OUTPUT_DIRECTORY = None   # base directory to store output files
         self.MERGED_ROOTFILE_OUTPUT_DIRECTORY = None  # optional directory to save merged files in
 
@@ -216,6 +220,14 @@ class ProcessMonDataConfig:
             logging.error("Creating directory " + self.OUTPUT_DIRECTORY + " ... ")
             os.system("mkdir -m"+self.NEWDIR_MODE+" -p " + self.OUTPUT_DIRECTORY)  ## need error checks
 
+        if self.REVISION == "mc":
+            scratch_base = join("/scratch", os.environ["USER"])
+            os.makedirs(scratch_base, exist_ok=True)
+            self.MC_ROOTFILE_CACHE_DIRECTORY = tempfile.mkdtemp(
+                prefix="process_new_offline_data_", dir=scratch_base)
+            atexit.register(self.CleanupMCRootFiles)
+            self.ExtractMCRootFiles()
+
         # see if there are libraries to load
         LIBDIR = os.getenv("MONITORING_LIBDIR", join(os.getcwd(),"lib"))    
         if isdir(LIBDIR):
@@ -227,23 +239,93 @@ class ProcessMonDataConfig:
                     logging.info("Error processing "+macro)
         
 
+    def CleanupMCRootFiles(self):
+        if self.MC_ROOTFILE_CACHE_DIRECTORY and os.path.isdir(
+                self.MC_ROOTFILE_CACHE_DIRECTORY):
+            try:
+                shutil.rmtree(self.MC_ROOTFILE_CACHE_DIRECTORY)
+            except OSError:
+                logging.exception("Could not remove temporary MC ROOT directory %s",
+                                  self.MC_ROOTFILE_CACHE_DIRECTORY)
+
+
+    def ExtractMCRootFiles(self):
+        """
+        Extract ROOT files from MC monitoring archives before run discovery.
+        """
+        archive_directory = join(self.INPUT_DIRECTORY, self.ROOTFILE_DIR)
+        if not os.path.isdir(archive_directory):
+            raise OSError("MC monitoring input directory does not exist: " +
+                          archive_directory)
+        tar_files = [f for f in listdir(archive_directory)
+                     if isfile(join(archive_directory, f)) and f.endswith(".root.tar")]
+        if self.RUN_NUMBER is not None:
+            requested_prefix = "hd_root_bggen_%06d" % self.RUN_NUMBER
+            tar_files = [f for f in tar_files
+                         if f.startswith(requested_prefix) and
+                         (f[len(requested_prefix):] == ".root.tar" or
+                          f[len(requested_prefix):].startswith("_"))]
+
+        for tar_filename in sorted(tar_files):
+            archive_path = join(archive_directory, tar_filename)
+            try:
+                with tarfile.open(archive_path, "r:*") as archive:
+                    root_members = [member for member in archive.getmembers()
+                                    if member.isfile() and
+                                    os.path.basename(member.name).endswith(".root") and
+                                    (self.RUN_NUMBER is None or
+                                     (os.path.basename(member.name)[
+                                         :len(requested_prefix)] == requested_prefix and
+                                      os.path.basename(member.name)[
+                                          len(requested_prefix):].startswith(("_", ".root"))))]
+                    if not root_members:
+                        raise ValueError("archive contains no ROOT files")
+
+                    for member in root_members:
+                        root_filename = os.path.basename(member.name)
+                        source = archive.extractfile(member)
+                        if source is None:
+                            raise tarfile.ExtractError(
+                                "could not read ROOT file " + member.name)
+
+                        fd, temporary_path = tempfile.mkstemp(
+                            prefix=".root-extract-", dir=self.MC_ROOTFILE_CACHE_DIRECTORY)
+                        try:
+                            with source, os.fdopen(fd, "wb") as destination:
+                                shutil.copyfileobj(source, destination)
+                            os.chmod(temporary_path, member.mode & 0o777)
+                            os.replace(temporary_path,
+                                       join(self.MC_ROOTFILE_CACHE_DIRECTORY, root_filename))
+                        finally:
+                            if os.path.exists(temporary_path):
+                                os.remove(temporary_path)
+            except (tarfile.TarError, OSError, ValueError) as error:
+                logging.error("Could not extract MC ROOT archive %s: %s",
+                              archive_path, error)
+                raise
+
+
     def BuildListOfProcessedRunsOnDisk(self):
         """
         Outputs list of runs that the batch jobs have finished processing
         """
         rundirs_on_disk = []
         if self.REVISION == "mc":
-            # the monitoring ROOT files are all stored in one directory
-            monitoring_files = [ f for f in listdir(join(self.INPUT_DIRECTORY,self.ROOTFILE_DIR)) 
-                                 if (isfile(join(self.INPUT_DIRECTORY,self.ROOTFILE_DIR,f))and(f[-5:]=='.root')) ]
+            rootfilespath = join(self.INPUT_DIRECTORY, self.ROOTFILE_DIR)
+            monitoring_files = [f for f in listdir(rootfilespath)
+                                if isfile(join(rootfilespath, f)) and f.endswith(".root")]
+            monitoring_files.extend(
+                f for f in listdir(self.MC_ROOTFILE_CACHE_DIRECTORY)
+                if isfile(join(self.MC_ROOTFILE_CACHE_DIRECTORY, f)) and f.endswith(".root"))
             for fname in monitoring_files:
                 tokens = fname[:-5].split('_')
-                if len(tokens) < 3:
+                if len(tokens) < 4 or tokens[:3] != ["hd", "root", "bggen"]:
                     continue
                 try:
                     runnum = int(tokens[3])
                 except ValueError:
                     logging.error("skipping file " + fname + " ...")
+                    continue
                 if tokens[3] not in rundirs_on_disk:
                     rundirs_on_disk.append(tokens[3])
                 
@@ -276,7 +358,8 @@ class ProcessMonDataConfig:
             return
 
         if self.REVISION == "mc":
-            rootfilespath = join(self.INPUT_DIRECTORY,self.ROOTFILE_DIR)
+            rootfilespaths = [join(self.INPUT_DIRECTORY, self.ROOTFILE_DIR),
+                              self.MC_ROOTFILE_CACHE_DIRECTORY]
         else:
             rootfilespath = join(self.INPUT_DIRECTORY,self.REVISION,self.ROOTFILE_DIR)  # base directory where the ROOT files are stored
 
@@ -288,9 +371,11 @@ class ProcessMonDataConfig:
             # for MC monitoring files, since they are all in one directory, only keep files that have the correct run
             #root_files = [ f for f in root_files if rundir==f[8:14] ]
             #print "checking rundir %s"%(rundir)
-            root_files = [ join(rootfilespath,f) for f in listdir(rootfilespath) 
-                           #if (isfile(join(rootfilespath,f))and(f[-5:]=='.root')and(rundir==f[8:14])) ]
-                           if (isfile(join(rootfilespath,f))and(f[-5:]=='.root')and(rundir==f[14:20])) ] 
+            root_files = [join(path, f) for path in rootfilespaths for f in listdir(path)
+                          if isfile(join(path, f)) and f.endswith(".root")
+                          and f.startswith("hd_root_bggen_")
+                          and rundir == f[14:20]
+                          and (f[20:] == ".root" or f[20:].startswith("_"))]
             #for  f in listdir(rootfilespath):
             #    print "%s  %s  %s"%(join(rootfilespath,f),f[-5:],f[8:14])
         else:
@@ -299,7 +384,7 @@ class ProcessMonDataConfig:
                            if (isfile(join(rootfilespath,rundir,f))and(f[-5:]=='.root')) ]
 
         if self.VERBOSE>2:
-            print("Looking for ROOT files in "+join(rootfilespath,rundir))
+            print("Looking for ROOT files for run "+rundir)
             print("  found = "+str(root_files))
 
         for filepath in sorted(root_files):
@@ -318,8 +403,14 @@ class ProcessMonDataConfig:
                 #logging.error("invalid filename = " + fname + ", skipping ...")  # should be summed files, 
                 continue
             try:
-                file_runnum = int(fname_fields[2]) #for bggen +1
-                filenum = int(fname_fields[3]) # for bggen +1
+                if self.REVISION == "mc":
+                    if len(fname_fields) < 4 or fname_fields[2] != "bggen":
+                        continue
+                    file_runnum = int(fname_fields[3])
+                    filenum = int(fname_fields[4]) if len(fname_fields) > 4 else -1
+                else:
+                    file_runnum = int(fname_fields[2])
+                    filenum = int(fname_fields[3])
                 # HACK - only save 100 files for now (MC)
                 #if filenum > 100:
                 #    continue
