@@ -9,7 +9,7 @@ import dotenv
 
 from utilities import (
   ensure_dict_value_exists,
-  get_evio_file_paths_for_run,
+  get_raw_data_evio_file_paths_for_run,
 )
 
 
@@ -17,11 +17,11 @@ from utilities import (
 print = functools.partial(print, flush = True)
 
 
-def get_config_dict_from_env_file(env_file: str) -> dict[str, str | None]:
+def get_config_dict_from_env_file(env_file_path: str) -> dict[str, str | None]:
   """Loads a .env file with the production parameters and returns its contents as a dictionary."""
-  print(f"Reading production parameters from .env file '{env_file}'")
-  config: dict[str, str | None] = dotenv.dotenv_values(env_file)
-  assert config, f"Failed to load .env file from '{env_file}'"
+  print(f"Reading production parameters from .env file '{env_file_path}'")
+  config: dict[str, str | None] = dotenv.dotenv_values(env_file_path)
+  assert config, f"Failed to load .env file from '{env_file_path}'"
   if "NERSC_NMB_PROCESSES_PER_TASK" in config and config["NERSC_NMB_PROCESSES_PER_TASK"] is not None:
     # NERSC_NMB_PROCESSES_PER_TASK is actually an expression of the form `$(echo "256 / 32" | bc)` that needs to evaluated
     nersc_nmb_processes_per_task = config["NERSC_NMB_PROCESSES_PER_TASK"][2:-1]  # remove the leading `$(` and trailing `)` to get the inner expression
@@ -52,11 +52,11 @@ def get_file_crc32_from_mss_stub(mss_file_path: str) -> str:
 
 def get_job_size(
   run_number:             int,
-  raw_data_root:          str,
+  raw_data_root_dir_path: str,
   nmb_processes_per_task: int,
 ) -> tuple[int, int, int, float, list[str]]:
   """Calculates the number of files, number of tasks required, number of processes in last task, total raw-data size in GB, and list of EVIO file paths for the given run."""
-  evio_file_paths = get_evio_file_paths_for_run(run_number, raw_data_root)
+  evio_file_paths, _ = get_raw_data_evio_file_paths_for_run(run_number, raw_data_root_dir_path)
   nmb_files = len(evio_file_paths)
   nmb_tasks = (nmb_files + nmb_processes_per_task - 1) // nmb_processes_per_task
   nmb_remainder_processes = nmb_files % nmb_processes_per_task  # number of processes on last

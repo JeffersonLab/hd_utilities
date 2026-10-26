@@ -34,13 +34,13 @@ def print_command_line_arguments(args: argparse.Namespace) -> None:
   print("-------------------------------------------------------------------------------")
 
 
-def write_env_to_file(output_file_name: str = "./env") -> None:
+def write_env_to_file(output_file_path: str = "./env") -> None:
   """Writes environment variables in alphabetical order into given file."""
-  with open(output_file_name, "w", encoding = "utf-8") as file:
+  with open(output_file_path, "w", encoding = "utf-8") as file:
     for env_var_name in sorted(os.environ.keys()):
       env_var_value = os.environ[env_var_name]
       file.write(f"{env_var_name}={shlex.quote(env_var_value)}\n")  # ensure bash-safe quoting of the value
-  print(f"Wrote environment variables to '{output_file_name}'")
+  print(f"Wrote environment variables to '{output_file_path}'")
 
 
 def print_python_env() -> None:
@@ -79,23 +79,23 @@ def get_file_crc32(
   return f"{crc & 0xffffffff:x}"  # convert to 32 bit unsigned integer and format as hexadecimal string, no leading zeros
 
 
-def get_evio_file_paths_for_run(
-  run_number:    int,
-  raw_data_root: str,
-) -> list[str]:
-  """Gets the list of EVIO file paths for the given run number and raw data root directory."""
-  evio_run_dir = f"{raw_data_root}/Run{run_number:06d}"
-  evio_file_paths: list[str] = sorted(glob.glob(f"{evio_run_dir}/hd_rawdata_{run_number:06d}_???.evio"))
-  return evio_file_paths
+def get_raw_data_evio_file_paths_for_run(
+  run_number:         int,
+  raw_data_root_path: str,
+) -> tuple[list[str], str]:
+  """Returns the list of EVIO file paths and the path of the run directory for the given run number and raw data root directory."""
+  evio_run_dir_path = f"{raw_data_root_path}/Run{run_number:06d}"
+  evio_file_paths: list[str] = sorted(glob.glob(f"{evio_run_dir_path}/hd_rawdata_{run_number:06d}_???.evio"))
+  return evio_file_paths, evio_run_dir_path
 
 
-def read_run_numbers_from_file(run_number_list_file: str) -> list[int]:
+def read_run_numbers_from_file(run_number_list_file_path: str) -> list[int]:
   """Reads a list of run numbers from the given file. The file is expected to contain one run number per line, and may contain blank lines which are ignored."""
-  print(f"Reading list of run numbers from file '{run_number_list_file}'")
+  print(f"Reading list of run numbers from file '{run_number_list_file_path}'")
   run_numbers: list[int] = []
-  with open(run_number_list_file) as file:
+  with open(run_number_list_file_path) as file:
     run_numbers = [int(line.strip()) for line in file if line.strip()]  # skip blank lines
-  print(f"Read {len(run_numbers)} run number(s) from file '{run_number_list_file}'")
+  print(f"Read {len(run_numbers)} run number(s) from file '{run_number_list_file_path}'")
   return run_numbers
 
 
@@ -116,7 +116,7 @@ def get_hd_root_return_code(hd_root_rc_file_path: str) -> int | None:
 
 def get_file_transfer_paths(
   run_number:              int,
-  swif_output_root:        str,
+  swif_output_root_path:   str,
   filter_failed_processes: bool = True,  # if True, do do not copy output files from failed `hd_root` processes
 ) -> list[tuple[str, str]]:
   """Constructs a list of the local relative paths of all output files in current directory that should be transferred back to JLab and the corresponding absolute remote destination paths."""
@@ -151,7 +151,7 @@ def get_file_transfer_paths(
       continue
     if re.fullmatch(r"hd_rawdata_\d{6}_\d{3}\.evio", output_file_name):  # skip raw-data files that match hd_rawdata_XXXXXX_YYY.evio, with 6-digit run number XXXXXX and 3-digit file number YYY
       continue
-    file_transfer_paths.append((relative_output_path, f"{swif_output_root}/{relative_output_path}"))
+    file_transfer_paths.append((relative_output_path, f"{swif_output_root_path}/{relative_output_path}"))
   return file_transfer_paths
 
 
@@ -171,15 +171,15 @@ def get_file_number_from_evio_file_name(evio_file_path: str) -> int | None:
 
 
 def get_nersc_swif_attempt_dir_path(
-  nersc_swif_jobs_root_dir: str,
-  run_number:               int,
-  swif_attempt_id:          int | None = None,
+  nersc_swif_jobs_root_dir_path: str,
+  run_number:                    int,
+  swif_attempt_id:               int | None = None,
 ) -> str | None:
   """Returns the path to the swif attempt directory for the given run
   number and swif attempt ID, or None if not found. In case
   `swif_attempt_id` is None, returns the directory with the highest
   swif attempt ID."""
-  swif_job_dir_path = os.path.realpath(os.path.expanduser(f"{nersc_swif_jobs_root_dir}/GlueX_recon_{run_number:06d}"))
+  swif_job_dir_path = os.path.realpath(os.path.expanduser(f"{nersc_swif_jobs_root_dir_path}/GlueX_recon_{run_number:06d}"))
   # find attempt subdirectory
   swif_attempt_dir_paths = [entry for entry in sorted(glob.glob(f"{swif_job_dir_path}/*")) if os.path.isdir(entry)]
   if len(swif_attempt_dir_paths) == 0:

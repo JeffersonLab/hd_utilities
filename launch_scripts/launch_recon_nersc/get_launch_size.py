@@ -19,7 +19,7 @@ import ROOT
 
 from utilities import (
   ensure_dict_value_exists,
-  get_evio_file_paths_for_run,
+  get_raw_data_evio_file_paths_for_run,
   print_command_line_arguments,
   read_run_numbers_from_file,
 )
@@ -35,9 +35,9 @@ print = functools.partial(print, flush = True)
 
 
 def plot_evio_file_size(
-  run_numbers:   Sequence[int],
-  raw_data_root: str,
-  swif_workflow: str,
+  run_numbers:            Sequence[int],
+  raw_data_root_dir_path: str,  # path to root dir for EVIO files
+  swif_workflow:          str,
 ) -> None:
   """Plots the distribution of EVIO file sizes for the given run numbers."""
   print(f"Plotting EVIO file size distribution for {len(run_numbers)} runs...")
@@ -46,7 +46,7 @@ def plot_evio_file_size(
     [
       float(get_file_size_from_mss_stub(evio_file_path)) / 1024**3
       for run_number in run_numbers
-      for evio_file_path in get_evio_file_paths_for_run(run_number, raw_data_root)
+      for evio_file_path in get_raw_data_evio_file_paths_for_run(run_number, raw_data_root_dir_path)[0]
     ],
     dtype = float,
   )
@@ -84,8 +84,8 @@ def main(args: argparse.Namespace) -> None:
   print_command_line_arguments(args)
   launch_config: dict[str, str | None] = get_config_dict_from_env_file(args.launch_env_file)
   run_period                   =     ensure_dict_value_exists(launch_config, "RUN_PERIOD")
-  run_number_list_file         =     ensure_dict_value_exists(launch_config, "RUN_NUMBER_LIST_FILE") if args.override_run_list is None else args.override_run_list
-  raw_data_root                =     ensure_dict_value_exists(launch_config, "RAW_DATA_ROOT")
+  run_number_list_file_path    =     ensure_dict_value_exists(launch_config, "RUN_NUMBER_LIST_FILE") if args.override_run_list is None else args.override_run_list
+  raw_data_root_dir_path       =     ensure_dict_value_exists(launch_config, "RAW_DATA_ROOT")
   swif_workflow                =     ensure_dict_value_exists(launch_config, "SWIF_WORKFLOW")
   nmb_processes_per_nersc_node = int(ensure_dict_value_exists(launch_config, "NERSC_NMB_PROCESSES_PER_TASK"))
   print(f"Allocating {nmb_processes_per_nersc_node} hd_root processes per NERSC node")
@@ -93,8 +93,8 @@ def main(args: argparse.Namespace) -> None:
   if "NERSC_JOB_WALL_TIME_ESTIMATE" in launch_config:
     job_wall_time_estimate = int(ensure_dict_value_exists(launch_config, "NERSC_JOB_WALL_TIME_ESTIMATE"))
 
-  run_numbers: list[int] = read_run_numbers_from_file(run_number_list_file)
-  print(f"Calculating resources for '{run_period}' raw data: {len(run_numbers)} run(s) listed in '{run_number_list_file}' and located in '{raw_data_root}'")
+  run_numbers: list[int] = read_run_numbers_from_file(run_number_list_file_path)
+  print(f"Calculating resources for '{run_period}' raw data: {len(run_numbers)} run(s) listed in '{run_number_list_file_path}' and located in '{raw_data_root_dir_path}'")
   # collect per-run information
   nmb_files:             dict[int, int  ]     = {}  # number of files per run
   nmb_nodes:             dict[int, int  ]     = {}  # number of NERSC nodes required per run
@@ -108,7 +108,7 @@ def main(args: argparse.Namespace) -> None:
       nmb_remainder_jobs,
       size_gb[run_number],
       evio_file_paths[run_number],
-    ) = get_job_size(run_number, raw_data_root, nmb_processes_per_nersc_node)
+    ) = get_job_size(run_number, raw_data_root_dir_path, nmb_processes_per_nersc_node)
     fraction_nodes_unused[run_number] = 0.0 if nmb_remainder_jobs == 0 else 1.0 - nmb_remainder_jobs / float(nmb_processes_per_nersc_node)
     print(f"    Run {run_number:6d} = {size_gb[run_number]:6.0f} GB, {nmb_files[run_number]:3d} files, {nmb_nodes[run_number]:3d} nodes, {fraction_nodes_unused[run_number]:5.1%} of last node wasted")
   # compute totals
@@ -132,7 +132,7 @@ def main(args: argparse.Namespace) -> None:
 
   print("===============================================================================")
   #TODO make plotting optional
-  plot_evio_file_size(run_numbers, raw_data_root, swif_workflow)
+  plot_evio_file_size(run_numbers, raw_data_root_dir_path, swif_workflow)
   if args.evio_path_list_file is not None:
     print(f"Writing list of EVIO file paths to './{args.evio_path_list_file}'")
     try:

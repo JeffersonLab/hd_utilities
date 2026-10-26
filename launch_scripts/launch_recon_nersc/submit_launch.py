@@ -29,7 +29,7 @@ from typing import Any
 
 from utilities import (
   ensure_dict_value_exists,
-  get_evio_file_paths_for_run,
+  get_raw_data_evio_file_paths_for_run,
   print_command_line_arguments,
   read_run_numbers_from_file,
 )
@@ -94,26 +94,26 @@ def main(args: argparse.Namespace) -> None:
 
   # read run numbers from file and submit one swif2 job each run
   print("-------------------------------------------------------------------------------")
-  run_period                          =     ensure_dict_value_exists(launch_config, "RUN_PERIOD")
-  run_number_list_file                =     ensure_dict_value_exists(launch_config, "RUN_NUMBER_LIST_FILE") if args.override_run_list is None else args.override_run_list
-  raw_data_root                       =     ensure_dict_value_exists(launch_config, "RAW_DATA_ROOT")
-  nersc_nmb_processes_per_task        = int(ensure_dict_value_exists(launch_config, "NERSC_NMB_PROCESSES_PER_TASK"))
-  nersc_project                       =     ensure_dict_value_exists(launch_config, "NERSC_PROJECT")
-  nersc_node_type                     =     ensure_dict_value_exists(launch_config, "NERSC_NODE_TYPE")
-  nersc_qos                           =     ensure_dict_value_exists(launch_config, "NERSC_QOS")
-  nersc_max_wall_time                 =     ensure_dict_value_exists(launch_config, "NERSC_MAX_WALL_TIME")
-  nersc_max_threads_per_task          =     ensure_dict_value_exists(launch_config, "NERSC_MAX_THREADS_PER_TASK")
-  nersc_launch_dir                    =     ensure_dict_value_exists(launch_config, "NERSC_LAUNCH_DIR")
-  nersc_launch_dir_container          =     ensure_dict_value_exists(launch_config, "NERSC_LAUNCH_DIR_CONTAINER")
-  jana_config                         =     ensure_dict_value_exists(launch_config, "JANA_CONFIG")
-  jana_calib_context                  =     ensure_dict_value_exists(launch_config, "JANA_CALIB_CONTEXT")
-  halld_version_set_xml               =     ensure_dict_value_exists(launch_config, "HALLD_VERSION_SET_XML")
-  nersc_nmb_processes_per_task        = int(ensure_dict_value_exists(launch_config, "NERSC_NMB_PROCESSES_PER_TASK"))
-  nersc_nmb_threads_per_process       = int(ensure_dict_value_exists(launch_config, "NERSC_NMB_THREADS_PER_PROCESS"))
-  swif_hd_root_output_dest_dir        =     ensure_dict_value_exists(launch_config, "SWIF_HD_ROOT_OUTPUT_DEST_DIR")
-  swif_log_files_output_dest_dir      =     ensure_dict_value_exists(launch_config, "SWIF_LOG_FILES_OUTPUT_DEST_DIR")
-  swif_failed_hd_root_output_dest_dir =     ensure_dict_value_exists(launch_config, "SWIF_FAILED_HD_ROOT_OUTPUT_DEST_DIR")
-  run_numbers: list[int] = read_run_numbers_from_file(run_number_list_file)
+  run_period                               =     ensure_dict_value_exists(launch_config, "RUN_PERIOD")
+  run_number_list_file_path                =     ensure_dict_value_exists(launch_config, "RUN_NUMBER_LIST_FILE") if args.override_run_list is None else args.override_run_list
+  raw_data_root_dir_path                   =     ensure_dict_value_exists(launch_config, "RAW_DATA_ROOT")
+  nersc_nmb_processes_per_task             = int(ensure_dict_value_exists(launch_config, "NERSC_NMB_PROCESSES_PER_TASK"))
+  nersc_project                            =     ensure_dict_value_exists(launch_config, "NERSC_PROJECT")
+  nersc_node_type                          =     ensure_dict_value_exists(launch_config, "NERSC_NODE_TYPE")
+  nersc_qos                                =     ensure_dict_value_exists(launch_config, "NERSC_QOS")
+  nersc_max_wall_time                      =     ensure_dict_value_exists(launch_config, "NERSC_MAX_WALL_TIME")
+  nersc_max_threads_per_task               =     ensure_dict_value_exists(launch_config, "NERSC_MAX_THREADS_PER_TASK")
+  nersc_launch_dir_path                    =     ensure_dict_value_exists(launch_config, "NERSC_LAUNCH_DIR")
+  nersc_launch_dir_path_container          =     ensure_dict_value_exists(launch_config, "NERSC_LAUNCH_DIR_CONTAINER")
+  jana_config_file_name                    =     ensure_dict_value_exists(launch_config, "JANA_CONFIG")
+  jana_calib_context                       =     ensure_dict_value_exists(launch_config, "JANA_CALIB_CONTEXT")
+  halld_version_set_xml_file_name          =     ensure_dict_value_exists(launch_config, "HALLD_VERSION_SET_XML")
+  nersc_nmb_processes_per_task             = int(ensure_dict_value_exists(launch_config, "NERSC_NMB_PROCESSES_PER_TASK"))
+  nersc_nmb_threads_per_process            = int(ensure_dict_value_exists(launch_config, "NERSC_NMB_THREADS_PER_PROCESS"))
+  swif_hd_root_output_dest_dir_path        =     ensure_dict_value_exists(launch_config, "SWIF_HD_ROOT_OUTPUT_DEST_DIR")
+  swif_log_files_output_dest_dir_path      =     ensure_dict_value_exists(launch_config, "SWIF_LOG_FILES_OUTPUT_DEST_DIR")
+  swif_failed_hd_root_output_dest_dir_path =     ensure_dict_value_exists(launch_config, "SWIF_FAILED_HD_ROOT_OUTPUT_DEST_DIR")
+  run_numbers: list[int] = read_run_numbers_from_file(run_number_list_file_path)
   print(f"Submitting a swif2 job for each of the {len(run_numbers)} run(s) of run period '{run_period}'")
   for run_counter, run_number in enumerate(run_numbers):
     #TODO limit run umbers to [RUN_NUMBER_MIN, RUN_NUMBER_MAX] from config file
@@ -133,9 +133,9 @@ def main(args: argparse.Namespace) -> None:
     # chunks of size `${NERSC_NMB_PROCESSES_PER_TASK}` that will be
     # processed by individual NERSC tasks, defining the input and output
     # files for each task.
-    evio_file_paths = get_evio_file_paths_for_run(run_number, raw_data_root)
+    evio_file_paths, evio_run_dir_path = get_raw_data_evio_file_paths_for_run(run_number, raw_data_root_dir_path)
     nmb_evio_files = len(evio_file_paths)
-    assert nmb_evio_files > 0, print(f"No EVIO files found for run {run_number} in '{raw_data_root}'; aborting")
+    assert nmb_evio_files > 0, print(f"No EVIO files found for run {run_number} in '{evio_run_dir_path}'; aborting")
     for evio_file_path in evio_file_paths:
       # construct the swif2 input line for the given file, e.g. `-input file1.evio mss:/mss/some_path/file1.evio -input file2.evio mss:/mss/some_path/file2.evio ...`
       # `mss:/` takes files directly from tape, bypassing JLab file systems; this is the most efficient way to transfer files to NERSC
@@ -165,24 +165,24 @@ def main(args: argparse.Namespace) -> None:
         #  "--cpus-per-task=1",
         #  "--exclusive",  # allocated nodes cannot be shared with other jobs/users  #TODO clarify whether this is beneficial or not; swif2 also has `-exclusive` option that can be set when creating the workflow; is it redundant to set it in both places?
         f"--image={nersc_container_image}",
-        f"--volume={nersc_launch_dir}:{nersc_launch_dir_container}",  # map `${NERSC_LAUNCH_DIR}` on host to `${NERSC_LAUNCH_DIR_CONTAINER}` in container
+        f"--volume={nersc_launch_dir_path}:{nersc_launch_dir_path_container}",  # map `${NERSC_LAUNCH_DIR}` on host to `${NERSC_LAUNCH_DIR_CONTAINER}` in container
          "--module=cvmfs",  # enable CVMFS in the container so it can access the `/group/halld` tree
         f"--output=job_{run_number:06d}_%j.out",  # write stdout and stderr of job to file named `job_<run number>_<job id>.out` into working directory of job
         "::",
         # job script to run at NERSC
-        f"{nersc_launch_dir}/script_job_wrapper.sh",  # sets up Python environment and runs the actual job script `script_job.py` with the given arguments
-          nersc_launch_dir,  # NERSC directory that contains `script_job.py`
+        f"{nersc_launch_dir_path}/script_job_wrapper.sh",  # sets up Python environment and runs the actual job script `script_job.py` with the given arguments
+          nersc_launch_dir_path,  # NERSC directory that contains `script_job.py`
           # arguments passed to `script_job.py`
           f"--run-number={run_number}",
-          f"--launch-dir={nersc_launch_dir_container}",  # path of launch directory inside container
-          f"--jana-config={nersc_launch_dir_container}/{jana_config}",  # path of JANA config file inside container
+          f"--launch-dir={nersc_launch_dir_path_container}",  # path of launch directory inside container
+          f"--jana-config={nersc_launch_dir_path_container}/{jana_config_file_name}",  # path of JANA config file inside container
           f"--jana-calib-context={jana_calib_context}",
-          f"--halld-version-set-xml={halld_version_set_xml}",
+          f"--halld-version-set-xml={halld_version_set_xml_file_name}",
           f"--nmb-processes-per-task={nersc_nmb_processes_per_task}",
           f"--nmb-threads-per-process={nersc_nmb_threads_per_process}",
-          f"--swif-hd-root-output-dest-dir={swif_hd_root_output_dest_dir}",
-          f"--swif-log-files-output-dest-dir={swif_log_files_output_dest_dir}",
-          f"--swif-failed-hd-root-output-dest-dir={swif_failed_hd_root_output_dest_dir}",
+          f"--swif-hd-root-output-dest-dir={swif_hd_root_output_dest_dir_path}",
+          f"--swif-log-files-output-dest-dir={swif_log_files_output_dest_dir_path}",
+          f"--swif-failed-hd-root-output-dest-dir={swif_failed_hd_root_output_dest_dir_path}",
     ]
     # handle optional arguments of the job script
     jana_geometry_url_override = launch_config.get("JANA_GEOMETRY_URL_OVERRIDE")
