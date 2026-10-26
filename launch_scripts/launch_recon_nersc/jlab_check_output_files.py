@@ -1,94 +1,114 @@
 #!/usr/bin/env python3
 
 """
-Checks completeness of files in directory, where final reconstruction output is stored.
+Checks completeness of reconstruction output files written to JLab tape.
 """
 
 from __future__ import annotations
 
 import argparse
-import glob
+from collections import Counter
+from dataclasses import dataclass
+from enum import Enum, auto
+import functools
 import os
-import re
+import textwrap
 import time
 
+from FileTransferMapGenerator import RECON_SUBDIR_BASENAME_MAP
 from utilities import (
   ensure_dict_value_exists,
+  get_file_number_from_evio_file_name,
+  get_raw_data_evio_file_paths_for_run,
   print_command_line_arguments,
   read_run_numbers_from_file,
 )
 from utilities_dotenv import get_config_dict_from_env_file
 
 
-# subdirectory names and the file names they contain, i.e. subdir name -> (file base name, file type)
-RECON_SUBDIR_INFO: dict[str, tuple[str, str]] = {
-  "BCAL-LED" :               ("BCAL-LED",               "evio"),
-  # "CCAL-LED" :               ("CCAL-LED",               "evio"),  # most runs missing
-  "converted_random" :       ("converted_random",       "hddm"),  # some runs missing?
-  "cpp_2c_skim" :            ("cpp_2c",                 "evio"),
-  # "DIRC-LED" :               ("DIRC-LED",               "evio"),  # most runs missing
-  "FCAL-LED" :               ("FCAL-LED",               "evio"),
-  "hists" :                  ("hd_root",                "root"),
-  "job_info" :               ("job_info",               "tgz" ),
-  "npp_2g_skim" :            ("npp_2g",                 "evio"),
-  "npp_2pi0_skim" :          ("npp_2pi0",               "evio"),
-  "random" :                 ("random",                 "evio"),
-  "REST" :                   ("dana_rest",              "hddm"),
-  "sync" :                   ("sync",                   "evio"),
-  "tree_bcal_hadronic_eff" : ("tree_bcal_hadronic_eff", "root"),
-  "tree_fcal_hadronic_eff" : ("tree_fcal_hadronic_eff", "root"),
-  "tree_PSFlux" :            ("tree_PSFlux",            "root"),
-  "tree_tof_eff" :           ("tree_tof_eff",           "root"),
-  "tree_TPOL" :              ("tree_TPOL",              "root"),
-  "tree_TS_scaler" :         ("tree_TS_scaler",         "root"),
-}
+# always flush print() to reduce garbling of log files due to buffering
+print = functools.partial(print, flush = True)
+
+
+class FileStatusType(Enum):
+  """Enum for non-standard situations when getting EVIO file."""
+  NO_EVIO_FILES = auto()
+  FILE_MISSING  = auto()
+
+@dataclass
+class FileErrorInfo:
+  """Class holding information about a missing output file."""
+  status:         FileStatusType
+  path:           str
+  base_name:      str
+  evio_file_path: str | None = None
 
 
 def main(args: argparse.Namespace) -> None:
   start_time = time.time()
   print_command_line_arguments(args)
   launch_config: dict[str, str | None] = get_config_dict_from_env_file(args.launch_env_file)
-  run_period           = ensure_dict_value_exists(launch_config, "RUN_PERIOD")  # e.g. 2022-05
-  recon_version_label  = args.recon_version_label if args.recon_version_label else ensure_dict_value_exists(launch_config, "VER")  # e.g. ver02
-  run_number_list_file = args.override_run_list if args.override_run_list else ensure_dict_value_exists(launch_config, "RUN_NUMBER_LIST_FILE")
-  #TODO turn this into command-line arguments with defaults from .env file
-  recon_data_root_dir  = f"/mss/halld/RunPeriod-{run_period}/recon/{recon_version_label}"
-  raw_data_root_dir    = f"/mss/halld/RunPeriod-2022-05/rawdata"
+  run_number_list_file_path = ensure_dict_value_exists(launch_config, "RUN_NUMBER_LIST_FILE") if args.override_run_list is None else args.override_run_list
+  raw_data_root_dir_path    = ensure_dict_value_exists(launch_config, "RAW_DATA_ROOT")
+  reco_data_dest_dir_path   = ensure_dict_value_exists(launch_config, "SWIF_HD_ROOT_OUTPUT_DEST_DIR")
+  swif_workflow             = ensure_dict_value_exists(launch_config, "SWIF_WORKFLOW")
 
-  run_numbers_from_list: list[int] = read_run_numbers_from_file(run_number_list_file)
+  run_numbers_from_list: list[int] = read_run_numbers_from_file(run_number_list_file_path)
+  errors: list[FileErrorInfo] = []
+  nmb_evio_files_found = 0
+  for run_number in run_numbers_from_list:
+    print()
+    #TODO respect RCDB file count and exclusions
+    evio_file_paths, evio_run_dir_path = get_raw_data_evio_file_paths_for_run(run_number, raw_data_root_dir_path)
+    if not evio_file_paths:
+      print(f"ERROR: no EVIO files found in '{evio_run_dir_path}'. Skipping.")
+      errors.append(FileErrorInfo(status = FileStatusType.NO_EVIO_FILES, path = evio_run_dir_path, base_name = ""))
+      continue
+    print(f"Checking output files for {len(evio_file_paths)} EVIO files in '{evio_run_dir_path}'")
+    nmb_evio_files_found += len(evio_file_paths)
+    for evio_file_path in evio_file_paths:
+      evio_file_number = get_file_number_from_evio_file_name(evio_file_path)
+      for recon_subdir, (recon_file_base_name, recon_file_type) in RECON_SUBDIR_BASENAME_MAP.items():
+        recon_file_path = f"{reco_data_dest_dir_path}/{recon_subdir}/{run_number:06d}/{recon_file_base_name}_{run_number:06d}_{evio_file_number:03d}.{recon_file_type}"
+        if not os.path.isfile(recon_file_path):
+          print(f"  ERROR: missing recon file: {recon_file_path}")
+          errors.append(FileErrorInfo(status = FileStatusType.FILE_MISSING, path = recon_file_path, base_name = recon_file_base_name, evio_file_path = evio_file_path))
+      #TODO check completeness of log files
 
-  run_dir_name_pattern = re.compile(r"^\d{6}$")  # 6-digit run number
-  for recon_subdir, (recon_file_base_name, recon_file_type) in RECON_SUBDIR_INFO.items():
-    # get run numbers in recon subdir
-    run_numbers_from_subdirs: list[int] = []
-    for item in sorted(glob.glob(f"{recon_data_root_dir}/{recon_subdir}/*")):  # loop over all items in the recon subdir
-      item_name = os.path.basename(item)
-      if os.path.isdir(item) and run_dir_name_pattern.match(item_name):  # filter for directories with 6-digit names
-        run_numbers_from_subdirs.append(int(item_name))
-    run_numbers_from_subdirs.sort()
-    # check that the run numbers from the list file match the run numbers from the recon subdir
-    if run_numbers_from_subdirs != run_numbers_from_list:
-      print(f"ERROR: recon subdir '{recon_subdir}' contains run numbers, which do not match the run numbers from the list file")
-      missing_in_recon_dir = sorted(set(run_numbers_from_list) - set(run_numbers_from_subdirs))
-      if missing_in_recon_dir:
-        print(f"    Missing run numbers in '{recon_subdir}': {missing_in_recon_dir}")
-      missing_in_list_file = sorted(set(run_numbers_from_subdirs) - set(run_numbers_from_list))
-      if missing_in_list_file:
-        print(f"    Extra run numbers in '{recon_subdir}': {missing_in_list_file}")
-    else:
-      print(f"SUCCESS: recon subdir '{recon_subdir}' contains the expected run numbers from the list file")
-    # check that run subdirs contain the expected files
-    for run_number in run_numbers_from_subdirs:
-      recon_data_run_dir = f"{recon_data_root_dir}/{recon_subdir}/{run_number:06d}"
-      raw_data_run_dir = f"{raw_data_root_dir}/Run{run_number:06d}"
-      evio_files: list[str] = sorted(glob.glob(f"{raw_data_run_dir}/hd_rawdata_{run_number:06d}_???.evio"))
-      for evio_file in evio_files:
-        file_labels = os.path.splitext(os.path.basename(evio_file))[0].split("_")[-2:]  # e.g. "hd_rawdata_123456_000.evio" -> [123456, 000]
-        file_label = "_".join(file_labels)
-        recon_file_name = f"{recon_file_base_name}_{file_label}.{recon_file_type}"
-        expected_recon_file = f"{recon_data_run_dir}/{recon_file_name}"
-        if not os.path.isfile(expected_recon_file):
-          print(f"ERROR: expected recon file '{expected_recon_file}' does not exist")
+  # tally all errors
+  error_counts = Counter(((err.status, err.base_name) for err in errors))
+  print(textwrap.dedent(f"""
+    ============================================================================================
+    Summary
+    --------------------------------------------------------------------------------------------
+  """).strip())
+  print(f"  {error_counts[(FileStatusType.NO_EVIO_FILES, '')]:5d} run(s) with no EVIO files found")
+  for recon_subdir, (recon_file_base_name, recon_file_type) in RECON_SUBDIR_BASENAME_MAP.items():
+    print(f"  {error_counts[(FileStatusType.FILE_MISSING, recon_file_base_name)]:5d} missing '{recon_file_base_name}' output file(s)")
+  print("============================================================================================")
+
+  #TODO write out lists for all missing files by type; excluding failed EVIO files?
+  # write list of EVIO files that need to be reproduced
+  required_output_base_names = {"dana_rest", "hd_root"}  # if any of these output files is missing, the EVIO file is flagged as failed  #TODO test that all files are missing
+  failed_evio_file_paths = set()
+  for err in errors:
+    if err.status == FileStatusType.FILE_MISSING and err.base_name in required_output_base_names:
+      failed_evio_file_paths.add(err.evio_file_path)
+  if len(failed_evio_file_paths) == 0:
+    print(f"All {nmb_evio_files_found} found EVIO files were processed successfully")
+  else:
+    print(f"{len(failed_evio_file_paths)} out of {nmb_evio_files_found} EVIO file(s) failed processing; missing {required_output_base_names} files:")
+    for failed_evio_file_path in sorted(failed_evio_file_paths):
+      print(f"  {failed_evio_file_path}")
+    #TODO: add command-line argument to override file path
+    failed_evio_list_file_path = f"./{swif_workflow}.failed_evio_files.list"  #TODO improve naming
+    print(f"Writing list of failed EVIO files to '{failed_evio_list_file_path}'")
+    try:
+      with open(failed_evio_list_file_path, mode = "x") as file:
+        for failed_evio_file_path in sorted(failed_evio_file_paths):
+          file.write(f"{failed_evio_file_path}\n")
+    except FileExistsError:
+      print(f"WARNING: file '{failed_evio_list_file_path}' already exists; skipping write")
 
   print("-------------------------------------------------------------------------------")
   elapsed_time_sec = int(time.time() - start_time)
@@ -97,10 +117,9 @@ def main(args: argparse.Namespace) -> None:
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(
-    description = "Checks completeness of files in directory, where final reconstruction output is stored at JLab.",
+    description = "Checks completeness of reconstruction output files written to JLab tape.",
   )
   parser.add_argument(metavar = "launch-env-file", dest = "launch_env_file", help = "Path to .env file defining the configuration variables of the reconstruction launch")
   parser.add_argument("--override-run-list",                                 help = "Path to run-number list file to use instead the one defined in .env file")
-  parser.add_argument("--recon-version-label",                               help = "Reconstruction version label (e.g. `ver02`) to use instead of the one defined in .env file")
   args = parser.parse_args()
   main(args)
