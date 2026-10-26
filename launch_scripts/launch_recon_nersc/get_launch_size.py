@@ -3,6 +3,8 @@
 """
 Estimates the size of the raw data for the reconstruction launch and
 the number of NERSC nodes required to process them.
+
+NOTE Requires ROOT to be setup for plotting.
 """
 
 from __future__ import annotations

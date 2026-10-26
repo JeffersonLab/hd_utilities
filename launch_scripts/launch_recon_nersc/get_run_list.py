@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
-"""Generates list of runs and files to process for a given run period."""
+"""
+Generates list of runs and files to process for a given run period.
+"""
 # if GlueX environment is not set up, use `PYTHONPATH="/group/halld/Software/builds/Linux_Alma9-x86_64-gcc11.5.0/rcdb/rcdb_2.4.0/python:${PYTHONPATH}" ./get_run_list.py`
 
 from __future__ import annotations
@@ -52,7 +54,7 @@ def get_evio_file_paths_for_run(
   run_number            = int(run_info.number)
   raw_data_dir_path_run = f"{raw_data_root_dir_path}/Run{run_number:06d}"
   evio_files_count      = run_info.get_condition_value("evio_files_count")  # get number of evio files for this run; EVIO file numbers are in range [0, evio_files_count - 1]
-  raw_data_evio_file_paths, evio_run_dir_path = get_raw_data_evio_file_paths_for_run(run_info, raw_data_root_dir_path)
+  raw_data_evio_file_paths, evio_run_dir_path = get_raw_data_evio_file_paths_for_run(run_number, raw_data_root_dir_path)
   evio_file_paths:    list[str]            = []
   evio_file_statuses: list[EvioFileStatus] = []
   if evio_files_count is None:
