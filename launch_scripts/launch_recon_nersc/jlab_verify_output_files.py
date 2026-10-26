@@ -88,7 +88,7 @@ def main(args: argparse.Namespace) -> None:
           ))
       if all_output_files_missing:
         # case 1: only report failed EVIO file
-        print(f"  ERROR: EVIO file '{evio_file_path}' failed; all output files are missing")
+        print(f"  File {evio_file_number:03d}: ERROR: EVIO file '{evio_file_path}' failed; all output files are missing")
         errors.append(FileErrorInfo(
           error     = FileErrorType.FAILED_EVIO_FILE,
           path      = evio_file_path,
@@ -97,7 +97,7 @@ def main(args: argparse.Namespace) -> None:
       else:
         # case 2: report missing output files for the EVIO file
         for error_info in errors_for_evio_file:
-          print(f"  ERROR: missing recon file '{error_info.path}'")
+          print(f"  File {evio_file_number:03d}: ERROR: missing recon file '{error_info.path}'")
         errors += errors_for_evio_file
         # check for missing log files corresponding to the EVIO file  #TODO this is slow; make it optional
         log_file_dir_path = f"{log_files_dest_dir_path}/job_info/{run_number:06d}/job_info_{run_number:06d}_{evio_file_number:03d}"
@@ -117,7 +117,7 @@ def main(args: argparse.Namespace) -> None:
           f"srun_{run_number:06d}.rc",
           f"task_{run_number:06d}_*.out",
         )
-        # check whether at least 1 file matching each pattern exists
+        # check whether at least 1 file matching each log-file pattern exists
         #NOTE this does not ensure that there is exactly
         #     1 `job_<run number>_<slurm ID>.out` file; also the
         #     number of `task_<run number>_<task ID>.out` files is not
@@ -126,7 +126,7 @@ def main(args: argparse.Namespace) -> None:
           log_file_path_pattern = f"{log_file_dir_path}/{log_file_name_pattern}"
           matching_log_files = glob.glob(log_file_path_pattern)
           if not matching_log_files:
-            print(f"  ERROR: missing log file(s) matching pattern '{log_file_path_pattern}'")
+            print(f"  File {evio_file_number:03d}: ERROR: missing log file(s) matching pattern '{log_file_path_pattern}'")
             errors.append(FileErrorInfo(
               error     = FileErrorType.LOG_FILE_MISSING,
               path      = log_file_path_pattern,
@@ -147,7 +147,7 @@ def main(args: argparse.Namespace) -> None:
   print(f"  {error_counts[(FileErrorType.LOG_FILE_MISSING, None)]:5d} missing log file(s)")
   print("============================================================================================")
 
-  failed_evio_file_paths = set(err.path for err in errors if err.error == FileErrorType.FAILED_EVIO_FILE)
+  failed_evio_file_paths = set(error.path for error in errors if error.error == FileErrorType.FAILED_EVIO_FILE)
   if len(failed_evio_file_paths) == 0:
     print(f"All {nmb_evio_files_found} found EVIO files were processed successfully")
   else:
@@ -165,7 +165,21 @@ def main(args: argparse.Namespace) -> None:
     except FileExistsError:
       print(f"WARNING: file '{failed_evio_list_file_path}' already exists; skipping write")
 
-  #TODO write lists of missing output files
+  # write a list for each kind of missing recon file
+  for recon_file_base_name, _ in RECON_SUBDIR_BASENAME_MAP.values():
+    missing_recon_file_paths = set(
+      error.path for error in errors
+      if error.error == FileErrorType.RECON_FILE_MISSING and error.base_name == recon_file_base_name
+    )
+    if missing_recon_file_paths:
+      missing_recon_file_list_file_path = f"./missing_recon_files.{launch_name}.{recon_file_base_name}.list"
+      print(f"Writing {len(missing_recon_file_paths)} missing '{recon_file_base_name}' recon file(s) to '{missing_recon_file_list_file_path}':")
+      try:
+        with open(missing_recon_file_list_file_path, mode = "x") as file:
+          for missing_recon_file_path in sorted(missing_recon_file_paths):
+            file.write(f"{missing_recon_file_path}\n")
+      except FileExistsError:
+        print(f"WARNING: file '{missing_recon_file_list_file_path}' already exists; skipping write")
 
   print("-------------------------------------------------------------------------------")
   elapsed_time_sec = int(time.time() - start_time)
