@@ -11,6 +11,7 @@ from collections import Counter
 from dataclasses import dataclass
 from enum import Enum, auto
 import functools
+import glob
 import os
 import textwrap
 import time
@@ -32,9 +33,10 @@ print = functools.partial(print, flush = True)
 
 class FileErrorType(Enum):
   """Enum for errors encountered when verifying output files."""
-  NO_EVIO_FILES    = auto()  # no EVIO files found for the run
-  FAILED_EVIO_FILE = auto()  # EVIO file failed processing
-  FILE_MISSING     = auto()  # expected output file is missing
+  NO_EVIO_FILES      = auto()  # no EVIO files found for the run
+  FAILED_EVIO_FILE   = auto()  # EVIO file failed processing
+  RECON_FILE_MISSING = auto()  # expected recon file is missing
+  LOG_FILE_MISSING   = auto()  # expected log file is missing
 
 @dataclass
 class FileErrorInfo:
@@ -48,10 +50,11 @@ def main(args: argparse.Namespace) -> None:
   start_time = time.time()
   print_command_line_arguments(args)
   launch_config: dict[str, str | None] = get_config_dict_from_env_file(args.launch_env_file)
+  launch_name               = ensure_dict_value_exists(launch_config, "LAUNCH_NAME")
   run_number_list_file_path = ensure_dict_value_exists(launch_config, "RUN_NUMBER_LIST_FILE") if args.override_run_list is None else args.override_run_list
   raw_data_root_dir_path    = ensure_dict_value_exists(launch_config, "RAW_DATA_ROOT")
   reco_data_dest_dir_path   = ensure_dict_value_exists(launch_config, "SWIF_HD_ROOT_OUTPUT_DEST_DIR")
-  launch_name               = ensure_dict_value_exists(launch_config, "LAUNCH_NAME")
+  log_files_dest_dir_path   = ensure_dict_value_exists(launch_config, "SWIF_LOG_FILES_OUTPUT_DEST_DIR")
 
   run_numbers_from_list: list[int] = read_run_numbers_from_file(run_number_list_file_path)
   nmb_evio_files_found = 0
@@ -79,7 +82,7 @@ def main(args: argparse.Namespace) -> None:
           all_output_files_missing = False
         else:
           errors_for_evio_file.append(FileErrorInfo(
-            error     = FileErrorType.FILE_MISSING,
+            error     = FileErrorType.RECON_FILE_MISSING,
             path      = recon_file_path,
             base_name = recon_file_base_name,
           ))
@@ -96,7 +99,39 @@ def main(args: argparse.Namespace) -> None:
         for error_info in errors_for_evio_file:
           print(f"  ERROR: missing recon file '{error_info.path}'")
         errors += errors_for_evio_file
-      #TODO check completeness of log files
+        # check for missing log files corresponding to the EVIO file  #TODO this is slow; make it optional
+        log_file_dir_path = f"{log_files_dest_dir_path}/job_info/{run_number:06d}/job_info_{run_number:06d}_{evio_file_number:03d}"
+        expected_log_file_name_patterns = (
+          "hd_root.err",
+          "hd_root.out",
+          "hd_root.rc",
+          f"job_{run_number:06d}_*.out",
+          f"job_{run_number:06d}.env",
+          f"job_{run_number:06d}.hostname",
+          f"job_{run_number:06d}.mounts",
+          "node.cpuinfo",
+          "node.env",
+          "node.hostname",
+          "node.mounts",
+          "node.top",
+          f"srun_{run_number:06d}.rc",
+          f"task_{run_number:06d}_*.out",
+        )
+        # check whether at least 1 file matching each pattern exists
+        #NOTE this does not ensure that there is exactly
+        #     1 `job_<run number>_<slurm ID>.out` file; also the
+        #     number of `task_<run number>_<task ID>.out` files is not
+        #     verified beyond ensuring that there is at least 1
+        for log_file_name_pattern in expected_log_file_name_patterns:
+          log_file_path_pattern = f"{log_file_dir_path}/{log_file_name_pattern}"
+          matching_log_files = glob.glob(log_file_path_pattern)
+          if not matching_log_files:
+            print(f"  ERROR: missing log file(s) matching pattern '{log_file_path_pattern}'")
+            errors.append(FileErrorInfo(
+              error     = FileErrorType.LOG_FILE_MISSING,
+              path      = log_file_path_pattern,
+              base_name = None,
+            ))
 
   # tally all errors
   error_counts = Counter(((err.error, err.base_name) for err in errors))
@@ -108,7 +143,8 @@ def main(args: argparse.Namespace) -> None:
   print(f"  {error_counts[(FileErrorType.NO_EVIO_FILES,    None)]:5d} run(s) with no EVIO files found")
   print(f"  {error_counts[(FileErrorType.FAILED_EVIO_FILE, None)]:5d} EVIO file(s) failed and produced no output files")
   for recon_subdir, (recon_file_base_name, recon_file_type) in RECON_SUBDIR_BASENAME_MAP.items():
-    print(f"  {error_counts[(FileErrorType.FILE_MISSING, recon_file_base_name)]:5d} missing '{recon_file_base_name}' output file(s)")
+    print(f"  {error_counts[(FileErrorType.RECON_FILE_MISSING, recon_file_base_name)]:5d} missing '{recon_file_base_name}' output file(s)")
+  print(f"  {error_counts[(FileErrorType.LOG_FILE_MISSING, None)]:5d} missing log file(s)")
   print("============================================================================================")
 
   failed_evio_file_paths = set(err.path for err in errors if err.error == FileErrorType.FAILED_EVIO_FILE)
