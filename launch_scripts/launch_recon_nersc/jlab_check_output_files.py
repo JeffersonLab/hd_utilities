@@ -30,18 +30,18 @@ from utilities_dotenv import get_config_dict_from_env_file
 print = functools.partial(print, flush = True)
 
 
-class FileStatusType(Enum):
-  """Enum for non-standard situations when getting EVIO file."""
-  NO_EVIO_FILES = auto()
-  FILE_MISSING  = auto()
+class FileErrorType(Enum):
+  """Enum for errors encountered when verifying output files."""
+  NO_EVIO_FILES    = auto()  # no EVIO files found for the run
+  FAILED_EVIO_FILE = auto()  # EVIO file failed processing
+  FILE_MISSING     = auto()  # expected output file is missing
 
 @dataclass
 class FileErrorInfo:
-  """Class holding information about a missing output file."""
-  status:         FileStatusType
-  path:           str
-  base_name:      str
-  evio_file_path: str | None = None
+  """Class holding information about an error encountered when verifying output files."""
+  error:     FileErrorType
+  path:      str         # full path of the file or directory associated with the error
+  base_name: str | None  # base name of the output file associated with the error, if applicable
 
 
 def main(args: argparse.Namespace) -> None:
@@ -51,64 +51,85 @@ def main(args: argparse.Namespace) -> None:
   run_number_list_file_path = ensure_dict_value_exists(launch_config, "RUN_NUMBER_LIST_FILE") if args.override_run_list is None else args.override_run_list
   raw_data_root_dir_path    = ensure_dict_value_exists(launch_config, "RAW_DATA_ROOT")
   reco_data_dest_dir_path   = ensure_dict_value_exists(launch_config, "SWIF_HD_ROOT_OUTPUT_DEST_DIR")
-  swif_workflow             = ensure_dict_value_exists(launch_config, "SWIF_WORKFLOW")
+  launch_name               = ensure_dict_value_exists(launch_config, "LAUNCH_NAME")
 
   run_numbers_from_list: list[int] = read_run_numbers_from_file(run_number_list_file_path)
-  errors: list[FileErrorInfo] = []
   nmb_evio_files_found = 0
+  errors: list[FileErrorInfo] = []
   for run_number in run_numbers_from_list:
     print()
     #TODO respect RCDB file count and exclusions
     evio_file_paths, evio_run_dir_path = get_raw_data_evio_file_paths_for_run(run_number, raw_data_root_dir_path)
     if not evio_file_paths:
-      print(f"ERROR: no EVIO files found in '{evio_run_dir_path}'. Skipping.")
-      errors.append(FileErrorInfo(status = FileStatusType.NO_EVIO_FILES, path = evio_run_dir_path, base_name = ""))
+      print(f"Run {run_number}: ERROR: no EVIO files found in '{evio_run_dir_path}'. Skipping.")
+      errors.append(FileErrorInfo(error = FileErrorType.NO_EVIO_FILES, path = evio_run_dir_path, base_name = None))
       continue
-    print(f"Checking output files for {len(evio_file_paths)} EVIO files in '{evio_run_dir_path}'")
+    print(f"Run {run_number}: verifying output files for {len(evio_file_paths)} EVIO files in '{evio_run_dir_path}'")
     nmb_evio_files_found += len(evio_file_paths)
     for evio_file_path in evio_file_paths:
       evio_file_number = get_file_number_from_evio_file_name(evio_file_path)
+      all_output_files_missing = True
+      errors_for_evio_file: list[FileErrorInfo] = []
+      # distinguish two error cases:
+      # case 1: all output files are missing for the EVIO file because the corresponding `hd_root` process failed
+      # case 2: only some output files are missing for the EVIO file
       for recon_subdir, (recon_file_base_name, recon_file_type) in RECON_SUBDIR_BASENAME_MAP.items():
         recon_file_path = f"{reco_data_dest_dir_path}/{recon_subdir}/{run_number:06d}/{recon_file_base_name}_{run_number:06d}_{evio_file_number:03d}.{recon_file_type}"
-        if not os.path.isfile(recon_file_path):
-          print(f"  ERROR: missing recon file: {recon_file_path}")
-          errors.append(FileErrorInfo(status = FileStatusType.FILE_MISSING, path = recon_file_path, base_name = recon_file_base_name, evio_file_path = evio_file_path))
+        if os.path.isfile(recon_file_path):
+          all_output_files_missing = False
+        else:
+          errors_for_evio_file.append(FileErrorInfo(
+            error     = FileErrorType.FILE_MISSING,
+            path      = recon_file_path,
+            base_name = recon_file_base_name,
+          ))
+      if all_output_files_missing:
+        # case 1: only report failed EVIO file
+        print(f"  ERROR: EVIO file '{evio_file_path}' failed; all output files are missing")
+        errors.append(FileErrorInfo(
+          error     = FileErrorType.FAILED_EVIO_FILE,
+          path      = evio_file_path,
+          base_name = None,
+        ))
+      else:
+        # case 2: report missing output files for the EVIO file
+        for error_info in errors_for_evio_file:
+          print(f"  ERROR: missing recon file '{error_info.path}'")
+        errors += errors_for_evio_file
       #TODO check completeness of log files
 
   # tally all errors
-  error_counts = Counter(((err.status, err.base_name) for err in errors))
+  error_counts = Counter(((err.error, err.base_name) for err in errors))
   print(textwrap.dedent(f"""
     ============================================================================================
     Summary
     --------------------------------------------------------------------------------------------
   """).strip())
-  print(f"  {error_counts[(FileStatusType.NO_EVIO_FILES, '')]:5d} run(s) with no EVIO files found")
+  print(f"  {error_counts[(FileErrorType.NO_EVIO_FILES,    None)]:5d} run(s) with no EVIO files found")
+  print(f"  {error_counts[(FileErrorType.FAILED_EVIO_FILE, None)]:5d} EVIO file(s) failed and produced no output files")
   for recon_subdir, (recon_file_base_name, recon_file_type) in RECON_SUBDIR_BASENAME_MAP.items():
-    print(f"  {error_counts[(FileStatusType.FILE_MISSING, recon_file_base_name)]:5d} missing '{recon_file_base_name}' output file(s)")
+    print(f"  {error_counts[(FileErrorType.FILE_MISSING, recon_file_base_name)]:5d} missing '{recon_file_base_name}' output file(s)")
   print("============================================================================================")
 
-  #TODO write out lists for all missing files by type; excluding failed EVIO files?
-  # write list of EVIO files that need to be reproduced
-  required_output_base_names = {"dana_rest", "hd_root"}  # if any of these output files is missing, the EVIO file is flagged as failed  #TODO test that all files are missing
-  failed_evio_file_paths = set()
-  for err in errors:
-    if err.status == FileStatusType.FILE_MISSING and err.base_name in required_output_base_names:
-      failed_evio_file_paths.add(err.evio_file_path)
+  failed_evio_file_paths = set(err.path for err in errors if err.error == FileErrorType.FAILED_EVIO_FILE)
   if len(failed_evio_file_paths) == 0:
     print(f"All {nmb_evio_files_found} found EVIO files were processed successfully")
   else:
-    print(f"{len(failed_evio_file_paths)} out of {nmb_evio_files_found} EVIO file(s) failed processing; missing {required_output_base_names} files:")
+    # write list of failed EVIO files that need to be reproduced
+    print(f"{len(failed_evio_file_paths)} out of {nmb_evio_files_found} EVIO file(s) failed processing:")
     for failed_evio_file_path in sorted(failed_evio_file_paths):
       print(f"  {failed_evio_file_path}")
-    #TODO: add command-line argument to override file path
-    failed_evio_list_file_path = f"./{swif_workflow}.failed_evio_files.list"  #TODO improve naming
-    print(f"Writing list of failed EVIO files to '{failed_evio_list_file_path}'")
+    #TODO add command-line argument to override file path
+    failed_evio_list_file_path = f"./failed_evio_files.{launch_name}.list"
+    print(f"\nWriting list of failed EVIO files to '{failed_evio_list_file_path}'")
     try:
       with open(failed_evio_list_file_path, mode = "x") as file:
         for failed_evio_file_path in sorted(failed_evio_file_paths):
           file.write(f"{failed_evio_file_path}\n")
     except FileExistsError:
       print(f"WARNING: file '{failed_evio_list_file_path}' already exists; skipping write")
+
+  #TODO write lists of missing output files
 
   print("-------------------------------------------------------------------------------")
   elapsed_time_sec = int(time.time() - start_time)
