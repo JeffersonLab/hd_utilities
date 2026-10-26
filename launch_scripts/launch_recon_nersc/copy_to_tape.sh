@@ -7,8 +7,8 @@
 
 
 LAUNCH_ENV_FILE="${1}"  # path to .env file defining the configuration variables of the reconstruction launch (required argument)
-source utilities.sh
-source_config_file "${LAUNCH_ENV_FILE}"
+source utilities.sh || { echo "ERROR: Failed to source utilities.sh"; exit 1; }
+source_config_file "${LAUNCH_ENV_FILE}" || { echo "ERROR: Failed to source config file"; exit 1; }
 
 RECON_SRC_DIR="ver05-perl.ready_for_tape.1/REST"
 RECON_SRC_PATH="/lustre24/expphy/volatile/halld/offsite_prod/RunPeriod-2021-11/recon/${RECON_SRC_DIR}"  # absolute path to the prepared reconstruction directory, the content of which will be copied to tape

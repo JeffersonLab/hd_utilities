@@ -4,8 +4,8 @@
 
 
 LAUNCH_ENV_FILE="${1}"  # path to .env file defining the configuration variables of the reconstruction launch (required argument)
-source utilities.sh
-source_config_file "${LAUNCH_ENV_FILE}"
+source utilities.sh || { echo "ERROR: Failed to source utilities.sh"; exit 1; }
+source_config_file "${LAUNCH_ENV_FILE}" || { echo "ERROR: Failed to source config file"; exit 1; }
 
 echo "NERSC Scratch Storage Space used by swif2"
 echo "swif2 input files:"

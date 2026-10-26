@@ -6,12 +6,12 @@ source_config_file() {
   local LAUNCH_ENV_FILE="${1}"
   if [ -z "${LAUNCH_ENV_FILE}" ]
   then
-    echo "You must provide the configuration .env file as the first argument."
+    echo "ERROR: You must provide the configuration .env file as the first argument."
     exit 1
   fi
   if [ ! -f "${LAUNCH_ENV_FILE}" ]
   then
-    echo "The provided configuration .env file '${LAUNCH_ENV_FILE}' does not exist."
+    echo "ERROR: The provided configuration .env file '${LAUNCH_ENV_FILE}' does not exist."
     exit 1
   fi
   echo "Reading production parameters from .env file '${LAUNCH_ENV_FILE}'"

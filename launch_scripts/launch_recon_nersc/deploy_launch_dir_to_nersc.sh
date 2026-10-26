@@ -5,13 +5,8 @@
 
 THIS_SCRIPT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"  # get the directory of this script
 LAUNCH_ENV_FILE="${1}"  # path to .env file defining the configuration variables of the reconstruction launch
-if [ -z "${LAUNCH_ENV_FILE}" ]
-then
-  echo "You must provide the configuration .env file as the first argument."
-  exit 1
-fi
-echo "Reading production parameters from .env file '${LAUNCH_ENV_FILE}'"
-source "${LAUNCH_ENV_FILE}"
+source utilities.sh || { echo "ERROR: Failed to source utilities.sh"; exit 1; }
+source_config_file "${LAUNCH_ENV_FILE}" || { echo "ERROR: Failed to source config file"; exit 1; }
 
 DEST="${NERSC_HOST}:${NERSC_LAUNCH_DIR}"
 echo "Copying launch scripts and config files from '${THIS_SCRIPT_DIR}' to '${DEST}'"

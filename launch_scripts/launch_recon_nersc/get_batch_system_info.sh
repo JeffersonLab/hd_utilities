@@ -4,8 +4,8 @@
 
 THIS_SCRIPT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"  # get the directory of this script
 LAUNCH_ENV_FILE="${1}"  # path to .env file defining the configuration variables of the reconstruction launch (required argument)
-source utilities.sh
-source_config_file "${LAUNCH_ENV_FILE}"
+source utilities.sh || { echo "ERROR: Failed to source utilities.sh"; exit 1; }
+source_config_file "${LAUNCH_ENV_FILE}" || { echo "ERROR: Failed to source config file"; exit 1; }
 
 echo "Using launch scripts from git commit hash: $(cat "${THIS_SCRIPT_DIR}/DEPLOYED_HD_UTILITIES_GIT_HASH" || true)"
 
