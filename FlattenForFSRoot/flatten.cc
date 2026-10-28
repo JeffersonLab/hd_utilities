@@ -89,6 +89,7 @@ int main(int argc, char** argv){
   cout << "                      0: keep all combos and print warnings (default) " << endl;  
   cout << "                      1: keep only one combo in the output tree" << endl;
   cout << "                      2: keep all combos and suppress warnings ]" << endl;
+  cout << "           -bypassTrigger [keep reconstructed events regardless of trigger bits? 0 or 1 (default: 0)]" << endl;
   cout << "           -mcChecks  [check for baryon number violation, etc.," << endl;
   cout << "                       when parsing truth information?  0 or 1] (default: 1)" << endl;
   cout << "           -useCCDB  [use CCDB to get accidental scaling factor? 0 or 1] (default: 1)" << endl;
@@ -141,6 +142,7 @@ int main(int argc, char** argv){
   bool gFlattenpi0 = false;
   bool gFlatteneta = false;
   bool useCCDB = true;
+  bool gBypassTrigger = false;
   int gAddUnusedNeutrals = 0;
   int gCombos = 0;
   bool gMCChecks = true;
@@ -153,7 +155,7 @@ int main(int argc, char** argv){
         ||(argi == "-chi2")||(argi == "-RFDeltaT")||(argi == "-shQuality")||(argi == "-massWindows")
         ||(argi == "-numUnusedTracks")||(argi == "-usePolarization")||(argi == "-numUnusedNeutrals")
         ||(argi == "-mcChecks")||(argi == "-useCCDB")||(argi == "-addPID")||(argi == "-dirc")||(argi == "-flattenpi0")||(argi == "-flatteneta")
-        ||(argi=="-addUnusedNeutrals")||(argi == "-combos")
+        ||(argi == "-bypassTrigger")||(argi=="-addUnusedNeutrals")||(argi == "-combos")
         ||(argi == "-numNeutralHypos")||(argi == "-safe")||(argi == "-print")||(argi == "-addDeltaT")){
       flag = argi;
       continue;
@@ -181,6 +183,7 @@ int main(int argc, char** argv){
     if (flag == "-mcChecks"){ if (argi == "0") gMCChecks = false; }
     if (flag == "-useCCDB"){ if (argi == "0") useCCDB = false; }
     if (flag == "-safe"){ if (argi == "0") gSafe = false; }
+    if (flag == "-bypassTrigger"){ if (argi == "1") gBypassTrigger = true; }
     if (flag == "-print"){ gPrint = atoi(argi); }
   }
   if (gMCTag == "none") gMCTag = "";
@@ -222,6 +225,7 @@ int main(int argc, char** argv){
   cout << "  flatten etas?          " << gFlatteneta << endl;
   cout << "  add unused neutrals?   " << gAddUnusedNeutrals << endl;
   cout << "  combos option:         " << gCombos << endl;
+  cout << "  bypass trigger?        " << gBypassTrigger << endl;
   cout << "  MC checks?             " << gMCChecks << endl;
   cout << "  use CCDB?              " << useCCDB << endl;
   cout << "  safe mode?             " << gSafe << endl;
@@ -727,8 +731,43 @@ int main(int argc, char** argv){
       if (gUseParticles) gInTree->SetBranchAddress("NumUnusedTracks", &inNumUnusedTracks,&brNumUnusedTracks);
   Bool_t inIsThrownTopology = false;
       if (gUseParticles&&gUseMCParticles) gInTree->SetBranchAddress("IsThrownTopology", &inIsThrownTopology);
-  UInt_t inL1TriggerBits = 0;
-      gInTree->SetBranchAddress("L1TriggerBits", &inL1TriggerBits);
+   UInt_t inL1TriggerBits = 0;
+
+   // some analysis version don't have trigger bits/energies defined, so we have to be careful
+  const bool hasL1TriggerBits = gInTree->GetBranch("L1TriggerBits") != nullptr;
+      if (hasL1TriggerBits && gInTree->SetBranchAddress("L1TriggerBits", &inL1TriggerBits) < 0){
+        cerr << "ERROR: could not bind input branch L1TriggerBits" << endl;
+        return 1;
+      }
+  Double_t inL1BCALEnergy = 0.0;
+  const bool hasL1BCALEnergy = gInTree->GetBranch("L1BCALEnergy") != nullptr;
+      if (hasL1BCALEnergy && gInTree->SetBranchAddress("L1BCALEnergy", &inL1BCALEnergy) < 0){
+        cerr << "ERROR: could not bind input branch L1BCALEnergy" << endl;
+        return 1;
+      }
+  Double_t inL1FCALEnergy = 0.0;
+  const bool hasL1FCALEnergy = gInTree->GetBranch("L1FCALEnergy") != nullptr;
+      if (hasL1FCALEnergy && gInTree->SetBranchAddress("L1FCALEnergy", &inL1FCALEnergy) < 0){
+        cerr << "ERROR: could not bind input branch L1FCALEnergy" << endl;
+        return 1;
+      }
+  Double_t inL1FCAL2Energy = 0.0;
+  const bool hasL1FCAL2Energy = gInTree->GetBranch("L1FCAL2Energy") != nullptr;
+      if (hasL1FCAL2Energy && gInTree->SetBranchAddress("L1FCAL2Energy", &inL1FCAL2Energy) < 0){
+        cerr << "ERROR: could not bind input branch L1FCAL2Energy" << endl;
+        return 1;
+      }
+  Double_t inL1ECALEnergy = 0.0;
+  const bool hasL1ECALEnergy = gInTree->GetBranch("L1ECALEnergy") != nullptr;
+      if (hasL1ECALEnergy && gInTree->SetBranchAddress("L1ECALEnergy", &inL1ECALEnergy) < 0){
+        cerr << "ERROR: could not bind input branch L1ECALEnergy" << endl;
+        return 1;
+      }
+  if (gUseParticles && !hasL1TriggerBits && !gBypassTrigger)
+    cerr << "WARNING: L1TriggerBits is absent; reconstructed events will not be trigger-filtered" << endl;
+  if (!hasL1BCALEnergy || !hasL1FCALEnergy || !hasL1ECALEnergy || !hasL1FCAL2Energy)
+    cerr << "WARNING: one or more L1 calorimeter energy branches are absent; corresponding output branches will be omitted" << endl;
+
 
         //   *** Beam Particles (indexed using ComboBeam__BeamIndex) ***
 
@@ -945,7 +984,11 @@ int main(int argc, char** argv){
 
   double outRunNumber;                           gOutTree->Branch("Run",             &outRunNumber);
   double outEventNumber;                         gOutTree->Branch("Event",           &outEventNumber);
-  double outL1TriggerBits;                       gOutTree->Branch("L1TriggerBits",   &outL1TriggerBits);
+  UInt_t outL1TriggerBits; if (hasL1TriggerBits) gOutTree->Branch("L1TriggerBits", &outL1TriggerBits);
+  double outL1BCALEnergy;  if (hasL1BCALEnergy)  gOutTree->Branch("L1BCALEnergy",  &outL1BCALEnergy);
+  double outL1FCALEnergy;  if (hasL1FCALEnergy)  gOutTree->Branch("L1FCALEnergy",  &outL1FCALEnergy);
+  double outL1ECALEnergy;  if (hasL1ECALEnergy)  gOutTree->Branch("L1ECALEnergy",  &outL1ECALEnergy);
+  double outL1FCAL2Energy; if (hasL1FCAL2Energy) gOutTree->Branch("L1FCAL2Energy", &outL1FCAL2Energy);
   double outChi2;             if (gUseParticles && gUseKinFit)
                                                  gOutTree->Branch("Chi2",            &outChi2);
   double outChi2DOF;          if (gUseParticles && gUseKinFit)
@@ -1328,7 +1371,11 @@ int main(int argc, char** argv){
       TLorentzVector *p4, *p4a, *p4b, *x4, *x4a, *x4b;
       outRunNumber       = inRunNumber;
       outEventNumber     = inEventNumber;
-      outL1TriggerBits = inL1TriggerBits;
+      if (hasL1TriggerBits) outL1TriggerBits = inL1TriggerBits;
+      if (hasL1BCALEnergy) outL1BCALEnergy = inL1BCALEnergy;
+      if (hasL1FCALEnergy) outL1FCALEnergy = inL1FCALEnergy;
+      if (hasL1ECALEnergy) outL1ECALEnergy = inL1ECALEnergy;
+      if (hasL1FCAL2Energy) outL1FCAL2Energy = inL1FCAL2Energy;
       if(gUsePolarization) {
         if(!triedPolarizationInitialize) {
           GetPolarizationAngle(inRunNumber, currPol);
@@ -1748,9 +1795,8 @@ int main(int argc, char** argv){
       }
 
 
-        // fill the tree if there is a valid physics trigger
-
-      if (inL1TriggerBits != 0) gOutTree->Fill();
+        // fill the tree if using thrown, no trigger bits, event passes trigger, or bypassing trigger
+      if (!gUseParticles || !hasL1TriggerBits || inL1TriggerBits != 0 || gBypassTrigger) gOutTree->Fill();
 
     }
 
