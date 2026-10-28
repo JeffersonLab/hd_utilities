@@ -33,3 +33,6 @@ do
     mv --verbose "${JOB_OUTPUT_BASEDIR}"/*/"${RUN_NUMBER}"/*"${EVIO_FILE_LABEL}"* "${DEST_PATH}"
   fi
 done
+
+echo "Deleting empty directories in '${JOB_OUTPUT_BASEDIR}/log'"
+find "${JOB_OUTPUT_BASEDIR}/log" -type d -empty -delete

@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 
+#TODO move this to a Python script
 # Moves output of failed EVIO files from reconstruction jobs that ran
 # at the JLab Farm to a separate directory for later inspection.
 
 
-JOB_OUTPUT_BASEDIR=/lustre24/expphy/volatile/halld/recon/RunPeriod-2022-05/ver02
+JOB_OUTPUT_BASEDIR="/volatile/halld/recon/RunPeriod-2026-03/ver01"  #TODO make this a command-line argument
 
-# loop over all `hd_root` log files and copy them to a separate directories
+# loop over all `hd_root` log files and copy them to `job_info` directories
 for HD_ROOT_LOG_FILE_PATH in "${JOB_OUTPUT_BASEDIR}"/log/*/stdout.*.out
 do
   echo "Processing log file ${HD_ROOT_LOG_FILE_PATH}"
