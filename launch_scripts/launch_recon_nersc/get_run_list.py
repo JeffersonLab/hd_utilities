@@ -12,7 +12,6 @@ from collections import Counter
 from dataclasses import dataclass
 from enum import Enum, auto
 import functools
-import glob
 import os
 import textwrap
 import time

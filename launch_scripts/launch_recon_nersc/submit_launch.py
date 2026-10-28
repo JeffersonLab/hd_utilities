@@ -25,34 +25,19 @@ import stat
 import subprocess
 import sys
 import time
-from typing import Any
 
 from utilities import (
   ensure_dict_value_exists,
   get_raw_data_evio_file_paths_for_run,
   print_command_line_arguments,
   read_run_numbers_from_file,
+  run_shell_cmd,
 )
 from utilities_dotenv import get_config_dict_from_env_file
 
 
 # always flush print() to reduce garbling of log files due to buffering
 print = functools.partial(print, flush = True)
-
-
-def run_shell_cmd(
-  cmd:              str,
-  echo_cmd:         bool = True,   # whether to print the command before executing it
-  dry_run:          bool = False,  # if True, only print the command without executing it
-  check:            bool = True,   # whether to raise an exception if the command returns a non-zero exit code
-  **kwargs_for_run: Any,           # additional keyword arguments forwarded to subprocess.run()
-) -> bool:
-  """Runs the given command using subprocess.run() and returns True if the command succeeds."""
-  if echo_cmd or dry_run:
-    print(f"+ {cmd}")
-  if dry_run:
-    return True
-  return subprocess.run(cmd, shell = True, check = check, **kwargs_for_run).returncode == 0
 
 
 def main(args: argparse.Namespace) -> None:

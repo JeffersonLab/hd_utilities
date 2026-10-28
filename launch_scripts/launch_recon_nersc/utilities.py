@@ -9,13 +9,35 @@ import os
 from pathlib import Path
 import re
 import shlex
+import subprocess
 import sys
-from typing import TypeVar
+from typing import (
+  Any,
+  TypeVar,
+)
 import zlib
 
 
 # always flush print() to reduce garbling of log files due to buffering
 print = functools.partial(print, flush = True)
+
+
+def run_shell_cmd(
+  cmd:              str | list[str],
+  echo_cmd:         bool = True,   # whether to print the command before executing it
+  dry_run:          bool = False,  # if True, only print the command without executing it
+  check:            bool = True,   # whether to raise an exception if the command returns a non-zero exit code
+  **kwargs_for_run: Any,           # additional keyword arguments forwarded to subprocess.run()
+) -> bool:
+  """Runs the given command using subprocess.run() and returns True if the command succeeds."""
+  if echo_cmd or dry_run:
+    if isinstance(cmd, list):
+      print(f"+ {' '.join(shlex.quote(arg) for arg in cmd)}")
+    else:
+      print(f"+ {cmd}")
+  if dry_run:
+    return True
+  return subprocess.run(cmd, shell = True, check = check, **kwargs_for_run).returncode == 0
 
 
 def print_command_line_arguments(args: argparse.Namespace) -> None:
