@@ -15,12 +15,10 @@ import time
 
 from script_job_copy_dir_to_tape import get_transfer_file_paths
 from utilities import (
-  ensure_dict_value_exists,
   get_file_crc32,
   print_command_line_arguments,
 )
 from utilities_dotenv import (
-  get_config_dict_from_env_file,
   get_file_crc32_from_mss_stub,
   get_file_size_from_mss_stub,
 )
@@ -35,9 +33,6 @@ class FileErrorType(Enum):
   MISSING     = auto()  # expected file is missing on tape
   WRONG_SIZE  = auto()  # file on tape has wrong size
   WRONG_CRC32 = auto()  # file on tape has wrong CRC32 checksum
-
-  def FAILED_EVIO_FILE(self):
-      raise NotImplementedError
 
 @dataclass
 class FileErrorInfo:
@@ -108,12 +103,12 @@ def main(args: argparse.Namespace) -> None:
   print("===============================================================================")
 
 
-  for error, label in (
+  for error_type, label in (
     (FileErrorType.MISSING,     "files missing on tape:"),
     (FileErrorType.WRONG_SIZE,  "files with incorrect size on tape:"),
     (FileErrorType.WRONG_CRC32, "files with incorrect CRC32 checksum on tape:"),
   ):
-    error_file_paths = [err.path for err in errors if err.error == error]
+    error_file_paths = [error.path for error in errors if error.error == error_type]
     if error_file_paths:
       print(f"{len(error_file_paths)} {label}:")
       for error_file_path in error_file_paths:
