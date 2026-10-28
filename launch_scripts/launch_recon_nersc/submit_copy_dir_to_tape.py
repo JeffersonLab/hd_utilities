@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Submits a swif2 job that copies the full content of a directory with prepared recon output to tape."""
+"""Submits a swif2 job that copies the full content of a directory to tape."""
 
 from __future__ import annotations
 
@@ -81,7 +81,7 @@ def main(args: argparse.Namespace) -> None:
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(
-    description = "Submits a swif2 job that copies the full content of the given directory with prepared recon output to tape.",
+    description = "Submits a swif2 job that copies the full content of the given directory to tape.",
   )
   parser.add_argument(metavar = "launch-env-file", dest = "launch_env_file", help = "Path to .env file defining the configuration variables of the reconstruction launch")
   parser.add_argument("--override-src-dir-path",                             help = "Path of the directory, the content of which will be copied to the tape destination directory; default = '{SWIF_LOG_FILES_OUTPUT_DEST_DIR}'")
