@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 
-"""Verifies that content of a directory with prepared recon output was successfully copied to tape."""
+"""Verifies that content of a directory was successfully copied to tape."""
 
 from __future__ import annotations
 
 import argparse
+from collections import Counter
+from dataclasses import dataclass
+from enum import Enum, auto
 import functools
 import os
+import textwrap
 import time
 
 from script_job_copy_dir_to_tape import get_transfer_file_paths
@@ -26,89 +30,110 @@ from utilities_dotenv import (
 print = functools.partial(print, flush = True)
 
 
+class FileErrorType(Enum):
+  """Enum for errors encountered when verifying files on tape."""
+  MISSING     = auto()  # expected file is missing on tape
+  WRONG_SIZE  = auto()  # file on tape has wrong size
+  WRONG_CRC32 = auto()  # file on tape has wrong CRC32 checksum
+
+  def FAILED_EVIO_FILE(self):
+      raise NotImplementedError
+
+@dataclass
+class FileErrorInfo:
+  """Class holding information about an error encountered when verifying files on tape."""
+  error:     FileErrorType
+  path:      str  # full destination path on tape of the file associated with the error
+
+
 def main(args: argparse.Namespace) -> None:
   start_time = time.time()
   print_command_line_arguments(args)
   launch_config: dict[str, str | None] = get_config_dict_from_env_file(args.launch_env_file)
-  ver            = ensure_dict_value_exists(launch_config, "VER")
-  reco_data_root = ensure_dict_value_exists(launch_config, "RECO_DATA_ROOT")
+  ver                     = ensure_dict_value_exists(launch_config, "VER")
+  reco_data_root_dir_path = ensure_dict_value_exists(launch_config, "RECO_DATA_ROOT")
 
-  recon_src_path    = os.path.abspath(args.recon_src_path)
-  recon_subdir_name = os.path.basename(recon_src_path)
-  # tape_dest_path    = "/volatile/halld/home/bgrube/test_copy_dir_to_tape"
-  # tape_dest_path    = "/mss/halld/home/bgrube/test/test_copy_dir_to_tape"
-  tape_dest_path    = f"{reco_data_root}/{ver}/{recon_subdir_name}"
-  print(f"Building list of files to verify in '{recon_src_path}' and corresponding paths on tape in '{tape_dest_path}'")
-  file_transfer_paths: list[tuple[str, str]] = get_transfer_file_paths(recon_src_path, tape_dest_path, do_overwrite = True)
+  src_dir_path       = os.path.abspath(args.src_dir_path)
+  src_subdir_name    = os.path.basename(src_dir_path)
+  tape_dest_dir_path = f"{reco_data_root_dir_path}/{ver}/{src_subdir_name}"
+  print(f"Building list of files in '{src_dir_path}' and corresponding tape files in '{tape_dest_dir_path}' to verify")
+  file_transfer_paths: list[tuple[str, str]] = get_transfer_file_paths(src_dir_path, tape_dest_dir_path, do_overwrite = True)
   if len(file_transfer_paths) == 0:
-    print(f"Found no files that were transferred from '{recon_src_path}' to '{tape_dest_path}'")
+    print(f"Found no files in '{src_dir_path}'")
     return
-  print(f"Verifying that all {len(file_transfer_paths)} files in '{recon_src_path}' were successfully copied to '{tape_dest_path}'")
-  files_missing:     list[str] = []
-  files_wrong_size:  list[str] = []
-  files_wrong_crc32: list[str] = []
+  print(f"Verifying that all {len(file_transfer_paths)} files in '{src_dir_path}' were successfully copied to '{tape_dest_dir_path}'")
   nmb_file_transfers = len(file_transfer_paths)
   max_nmb_digits     = len(str(nmb_file_transfers))
+  errors: list[FileErrorInfo] = []
   for file_index, (src_file_path, dest_file_path) in enumerate(file_transfer_paths):
     print(f"Checking file [{file_index + 1:{max_nmb_digits}d}/{nmb_file_transfers:{max_nmb_digits}d}]: '{src_file_path}' -> '{dest_file_path}'")
     # check if file exists at destination path
     if not os.path.isfile(dest_file_path):
       print(f"ERROR: file '{dest_file_path}' does not exist")
-      files_missing.append(dest_file_path)
+      errors.append(FileErrorInfo(error = FileErrorType.MISSING, path = dest_file_path))
       continue
     # check if file size at destination path matches the size of the source file
     src_file_size  = os.path.getsize(src_file_path)
     dest_file_size = (
-        get_file_size_from_mss_stub(dest_file_path) if dest_file_path.startswith("/mss")
-        else os.path.getsize(dest_file_path)
-      )
+      get_file_size_from_mss_stub(dest_file_path) if dest_file_path.startswith("/mss")
+      else os.path.getsize(dest_file_path)
+    )
     if src_file_size != dest_file_size:
       print(f"ERROR: file '{dest_file_path}' has size {dest_file_size} bytes, but expected {src_file_size} bytes based on source file '{src_file_path}'")
-      files_wrong_size.append(dest_file_path)
+      errors.append(FileErrorInfo(error = FileErrorType.WRONG_SIZE, path = dest_file_path))
       continue
     if args.verify_file_content:
       # check if file at destination path matches the CRC32 checksum of the source file
       src_file_crc32  = get_file_crc32(src_file_path)
       dest_file_crc32 = (
-          get_file_crc32_from_mss_stub(dest_file_path) if dest_file_path.startswith("/mss")
-          else get_file_crc32(dest_file_path)
-        )
+        get_file_crc32_from_mss_stub(dest_file_path) if dest_file_path.startswith("/mss")
+        else get_file_crc32(dest_file_path)
+      )
       if src_file_crc32 != dest_file_crc32:
         print(f"ERROR: file '{dest_file_path}' has CRC32 {dest_file_crc32}, but expected {src_file_crc32} based on source file '{src_file_path}'")
-        files_wrong_crc32.append(dest_file_path)
+        errors.append(FileErrorInfo(error = FileErrorType.WRONG_CRC32, path = dest_file_path))
         continue
     # file exists and has correct size (and CRC32, if enabled); assume it was successfully copied to tape
     if args.delete_verified_files:
       print(f"Deleting verified file '{src_file_path}'")
       os.remove(src_file_path)
 
+  # tally all errors
+  error_counts = Counter((error.error for error in errors))
+  print(textwrap.dedent(f"""
+    ===============================================================================
+    Summary
+    -------------------------------------------------------------------------------
+  """).strip())
+  print(f"  {error_counts[FileErrorType.MISSING]:5d} missing file(s)")
+  print(f"  {error_counts[FileErrorType.WRONG_SIZE]:5d} file(s) with wrong size")
+  print(f"  {error_counts[FileErrorType.WRONG_CRC32]:5d} file(s) with wrong CRC32")
+  print("===============================================================================")
+
+
+  for error, label in (
+    (FileErrorType.MISSING,     "files missing on tape:"),
+    (FileErrorType.WRONG_SIZE,  "files with incorrect size on tape:"),
+    (FileErrorType.WRONG_CRC32, "files with incorrect CRC32 checksum on tape:"),
+  ):
+    error_file_paths = [err.path for err in errors if err.error == error]
+    if error_file_paths:
+      print(f"{len(error_file_paths)} {label}:")
+      for error_file_path in error_file_paths:
+        print(f"  {error_file_path}")
+
   print("-------------------------------------------------------------------------------")
-  if len(files_missing) == 0 and len(files_wrong_size) == 0 and len(files_wrong_crc32) == 0:
-    print("All files were successfully copied to tape!")
-  else:
-    if len(files_missing) > 0:
-      print(f"{len(files_missing)} files are missing on tape:")
-      for missing_file in files_missing:
-        print(f"  {missing_file}")
-    if len(files_wrong_size) > 0:
-      print(f"{len(files_wrong_size)} files have incorrect size on tape:")
-      for wrong_size_file in files_wrong_size:
-        print(f"  {wrong_size_file}")
-    if len(files_wrong_crc32) > 0:
-      print(f"{len(files_wrong_crc32)} files have incorrect CRC32 checksum on tape:")
-      for wrong_crc32_file in files_wrong_crc32:
-        print(f"  {wrong_crc32_file}")
   elapsed_time_sec = int(time.time() - start_time)
   print(f"Wall time consumed by script: {elapsed_time_sec // 60} min, {elapsed_time_sec % 60} sec")
 
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(
-    description = "Verifies that content of a directory with prepared recon output was successfully copied to tape.",
+    description = "Verifies that content of a directory was successfully copied to tape.",
   )
   parser.add_argument(metavar = "launch-env-file", dest = "launch_env_file", help = "Path to .env file defining the configuration variables of the reconstruction launch")
-  parser.add_argument("--verify-file-content",     action = "store_true",    help = "Verify the content of files after copying by comparing their CRC32 checksums; default: false")
+  parser.add_argument("--verify-file-content",     action = "store_true",    help = "Verify the content of files after copying by comparing their CRC32 checksums (slow!); default: false")
   parser.add_argument("--delete-verified-files",   action = "store_true",    help = "Delete verified files from source path after verification; default: false")
-  parser.add_argument("--recon-src-path",                                    help = "Path to first-level subdirectory in the prepared reconstruction directory, the content of which will be verified")
+  parser.add_argument("--src-dir-path",                                      help = "Path to directory, the content of which will be verified")
   args = parser.parse_args()
   main(args)
