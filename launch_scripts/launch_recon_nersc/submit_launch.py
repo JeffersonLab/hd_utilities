@@ -43,17 +43,10 @@ print = functools.partial(print, flush = True)
 
 def main(args: argparse.Namespace) -> None:
   start_time = time.time()
-  print_command_line_arguments(args)
-  launch_config: dict[str, str | None] = get_config_dict_from_env_file(args.launch_env_file)
-
-  # print git hash  #TODO move to separate utility function and use in all scripts
-  this_script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))  # get the directory of this script
-  if os.path.isfile(f"{this_script_dir}/DEPLOYED_HD_UTILITIES_GIT_HASH"):
-    git_hash = open(f"{this_script_dir}/DEPLOYED_HD_UTILITIES_GIT_HASH", "r", encoding = "utf-8").read().strip()
-    print(f"Using launch scripts in '{this_script_dir}' with git commit hash: {git_hash}")
-
+  this_script_dir = print_command_line_arguments(args)
   if args.dry_run:
     print("DRY RUN mode enabled: no external commands will be executed")
+  launch_config: dict[str, str | None] = get_config_dict_from_env_file(args.launch_env_file)
 
   # copy scripts and config files to NERSC
   run_shell_cmd(f"{this_script_dir}/deploy_launch_dir_to_nersc.sh {args.launch_env_file}", dry_run = args.dry_run)

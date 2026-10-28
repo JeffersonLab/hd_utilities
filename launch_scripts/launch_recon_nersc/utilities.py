@@ -40,20 +40,21 @@ def run_shell_cmd(
   return subprocess.run(cmd, shell = True, check = check, **kwargs_for_run).returncode == 0
 
 
-def print_command_line_arguments(args: argparse.Namespace) -> None:
-  """Prints all command-line arguments and their values and the git hash."""
+def print_command_line_arguments(args: argparse.Namespace) -> str:
+  """Prints all command-line arguments, their values, and the git hash and returns the directory of this script."""
   this_script_file_name = os.path.basename(sys.argv[0])  # get file name of script that was launched
   print("-------------------------------------------------------------------------------")
   print(f"Running script {this_script_file_name} with arguments:")
   max_arg_name_length = max(len(arg_name) for arg_name in vars(args).keys())
   for arg_name, arg_value in sorted(vars(args).items()):  # sort keys for stable, tidy output
     print(f"{arg_name:>{max_arg_name_length + 2}} : {arg_value}")
-  this_script_dir = os.path.dirname(os.path.abspath(__file__))  #TODO why not use `sys.argv[0]` here?
+  this_script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))  # directory of the script that was launched by the OS
   if os.path.isfile(f"{this_script_dir}/DEPLOYED_HD_UTILITIES_GIT_HASH"):
     deployed_git_hash = open(f"{this_script_dir}/DEPLOYED_HD_UTILITIES_GIT_HASH", "r", encoding = "utf-8").read().strip()
-    print(f"Using launch scripts from git commit hash: {deployed_git_hash}")
+    print(f"Using launch scripts in '{this_script_dir}' from git commit hash: {deployed_git_hash}")
   #TODO add case where the script is run from the git repo
   print("-------------------------------------------------------------------------------")
+  return this_script_dir
 
 
 def write_env_to_file(output_file_path: str = "./env") -> None:
