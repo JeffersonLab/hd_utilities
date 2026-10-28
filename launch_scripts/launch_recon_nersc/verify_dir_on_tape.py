@@ -49,19 +49,15 @@ class FileErrorInfo:
 def main(args: argparse.Namespace) -> None:
   start_time = time.time()
   print_command_line_arguments(args)
-  launch_config: dict[str, str | None] = get_config_dict_from_env_file(args.launch_env_file)
-  ver                     = ensure_dict_value_exists(launch_config, "VER")
-  reco_data_root_dir_path = ensure_dict_value_exists(launch_config, "RECO_DATA_ROOT")
 
-  src_dir_path       = os.path.abspath(args.src_dir_path)
-  src_subdir_name    = os.path.basename(src_dir_path)
-  tape_dest_dir_path = f"{reco_data_root_dir_path}/{ver}/{src_subdir_name}"
-  print(f"Building list of files in '{src_dir_path}' and corresponding tape files in '{tape_dest_dir_path}' to verify")
-  file_transfer_paths: list[tuple[str, str]] = get_transfer_file_paths(src_dir_path, tape_dest_dir_path, do_overwrite = True)
+  src_dir_path  = os.path.abspath(args.src_dir_path)
+  dest_dir_path = args.dest_dir_path
+  print(f"Building list of files in '{src_dir_path}' and corresponding tape files in '{dest_dir_path}' to verify")
+  file_transfer_paths: list[tuple[str, str]] = get_transfer_file_paths(src_dir_path, dest_dir_path, do_overwrite = True)
   if len(file_transfer_paths) == 0:
     print(f"Found no files in '{src_dir_path}'")
     return
-  print(f"Verifying that all {len(file_transfer_paths)} files in '{src_dir_path}' were successfully copied to '{tape_dest_dir_path}'")
+  print(f"Verifying that all {len(file_transfer_paths)} files in '{src_dir_path}' were successfully copied to '{dest_dir_path}'")
   nmb_file_transfers = len(file_transfer_paths)
   max_nmb_digits     = len(str(nmb_file_transfers))
   errors: list[FileErrorInfo] = []
@@ -107,7 +103,8 @@ def main(args: argparse.Namespace) -> None:
   """).strip())
   print(f"  {error_counts[FileErrorType.MISSING]:5d} missing file(s)")
   print(f"  {error_counts[FileErrorType.WRONG_SIZE]:5d} file(s) with wrong size")
-  print(f"  {error_counts[FileErrorType.WRONG_CRC32]:5d} file(s) with wrong CRC32")
+  if args.verify_file_content:
+    print(f"  {error_counts[FileErrorType.WRONG_CRC32]:5d} file(s) with wrong CRC32")
   print("===============================================================================")
 
 
@@ -121,8 +118,8 @@ def main(args: argparse.Namespace) -> None:
       print(f"{len(error_file_paths)} {label}:")
       for error_file_path in error_file_paths:
         print(f"  {error_file_path}")
+      print("-------------------------------------------------------------------------------")
 
-  print("-------------------------------------------------------------------------------")
   elapsed_time_sec = int(time.time() - start_time)
   print(f"Wall time consumed by script: {elapsed_time_sec // 60} min, {elapsed_time_sec % 60} sec")
 
@@ -131,9 +128,9 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(
     description = "Verifies that content of a directory was successfully copied to tape.",
   )
-  parser.add_argument(metavar = "launch-env-file", dest = "launch_env_file", help = "Path to .env file defining the configuration variables of the reconstruction launch")
+  parser.add_argument("--src-dir-path",            required = True,          help = "Path to source directory")
+  parser.add_argument("--dest-dir-path",           required = True,          help = "Path to destination directory, the content of which will be verified against the source directory")
   parser.add_argument("--verify-file-content",     action = "store_true",    help = "Verify the content of files after copying by comparing their CRC32 checksums (slow!); default: false")
   parser.add_argument("--delete-verified-files",   action = "store_true",    help = "Delete verified files from source path after verification; default: false")
-  parser.add_argument("--src-dir-path",                                      help = "Path to directory, the content of which will be verified")
   args = parser.parse_args()
   main(args)
