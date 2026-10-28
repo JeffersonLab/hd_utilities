@@ -134,18 +134,18 @@ def main(args: argparse.Namespace) -> None:
             ))
 
   # tally all errors
-  error_counts = Counter(((err.error, err.base_name) for err in errors))
+  error_counts = Counter(((error.error, error.base_name) for error in errors))
   print(textwrap.dedent(f"""
-    ============================================================================================
+    ===============================================================================
     Summary
-    --------------------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
   """).strip())
   print(f"  {error_counts[(FileErrorType.NO_EVIO_FILES,    None)]:5d} run(s) with no EVIO files found")
   print(f"  {error_counts[(FileErrorType.FAILED_EVIO_FILE, None)]:5d} EVIO file(s) failed and produced no output files")
   for recon_subdir, (recon_file_base_name, recon_file_type) in RECON_SUBDIR_BASENAME_MAP.items():
     print(f"  {error_counts[(FileErrorType.RECON_FILE_MISSING, recon_file_base_name)]:5d} missing '{recon_file_base_name}' output file(s)")
   print(f"  {error_counts[(FileErrorType.LOG_FILE_MISSING, None)]:5d} missing log file(s)")
-  print("============================================================================================")
+  print("===============================================================================")
 
   failed_evio_file_paths = set(error.path for error in errors if error.error == FileErrorType.FAILED_EVIO_FILE)
   if len(failed_evio_file_paths) == 0:

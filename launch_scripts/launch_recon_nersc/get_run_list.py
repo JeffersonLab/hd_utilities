@@ -113,15 +113,15 @@ def get_evio_file_paths(
     evio_file_statuses += evio_file_statuses_in_run
   total_nmb_evio_files = sum(len(file_paths) for file_paths in evio_file_paths_per_run.values())
   # tally all non-standard file statuses
-  evio_file_status_counts = Counter((err.status for err in evio_file_statuses))
+  evio_file_status_counts = Counter((status.status for status in evio_file_statuses))
   print(textwrap.dedent(f"""
-    ============================================================================================
+    ===============================================================================
     Summary
-    --------------------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
                 Run period: {run_period}
             Number of runs: {len(evio_file_paths_per_run)}
       Number of EVIO files: {total_nmb_evio_files}
-    --------------------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
       {evio_file_status_counts[EvioFileStatusType.NO_RCDB_FILES_COUNT ]:5d} runs with no `evio_files_count` value in RCDB
               for these runs the number of EVIO files was estimated by counting files in `/mss`
       {evio_file_status_counts[EvioFileStatusType.NO_FILES_FOUND      ]:5d} runs with no EVIO files found
@@ -132,10 +132,10 @@ def get_evio_file_paths(
               for these files no jobs will be submitted
       {evio_file_status_counts[EvioFileStatusType.UNEXPECTED_EVIO_FILE]:5d} unexpected EVIO files found
               for these files jobs will be submitted
-    ============================================================================================
+    ===============================================================================
   """).strip())
   # write list with missing EVIO files to a file
-  missing_evio_files = sorted(tuple(err.path or "" for err in evio_file_statuses if err.status == EvioFileStatusType.MISSING_EVIO_FILE))
+  missing_evio_files = sorted(tuple(status.path or "" for status in evio_file_statuses if status.status == EvioFileStatusType.MISSING_EVIO_FILE))
   if missing_evio_files:
     print(f"Writing list of missing EVIO files to '{missing_evio_files_list_file_path}'")
     try:
