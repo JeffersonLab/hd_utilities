@@ -7,14 +7,14 @@ from __future__ import annotations
 import argparse
 import functools
 import os
-import subprocess
-import sys
 import time
 
-from prepare_recon_output import RECON_SUBDIR_BASENAME_MAP  #TODO fix
+from FileTransferMapGenerator import RECON_SUBDIR_BASENAME_MAP
 from utilities import (
   ensure_dict_value_exists,
+  ensure_swif_workflow_exists,
   print_command_line_arguments,
+  run_shell_cmd,
 )
 from utilities_dotenv import get_config_dict_from_env_file
 
@@ -25,67 +25,53 @@ print = functools.partial(print, flush = True)
 
 def main(args: argparse.Namespace) -> None:
   start_time = time.time()
-  print_command_line_arguments(args)
+  this_script_dir = print_command_line_arguments(args)
+  if args.dry_run:
+    print("DRY RUN mode enabled: no external commands will be executed")
   launch_config: dict[str, str | None] = get_config_dict_from_env_file(args.launch_env_file)
-  run_period       = ensure_dict_value_exists(launch_config, "RUN_PERIOD")
-  ver              = ensure_dict_value_exists(launch_config, "VER")
-  ver_label        = ensure_dict_value_exists(launch_config, "VER_LABEL")
-  reco_data_root   = ensure_dict_value_exists(launch_config, "RECO_DATA_ROOT")
-  swif_output_root = ensure_dict_value_exists(launch_config, "SWIF_OUTPUT_ROOT")  #TODO deprecated
+  run_period              = ensure_dict_value_exists(launch_config, "RUN_PERIOD")
+  ver                     = ensure_dict_value_exists(launch_config, "VER")
+  ver_label               = ensure_dict_value_exists(launch_config, "VER_LABEL")
+  production_user         = ensure_dict_value_exists(launch_config, "PRODUCTION_USER")
+  log_files_dir_path      = ensure_dict_value_exists(launch_config, "SWIF_LOG_FILES_OUTPUT_DEST_DIR")
+  reco_data_root_dir_path = ensure_dict_value_exists(launch_config, "RECO_DATA_ROOT")
 
-  recon_src_path = os.path.abspath(args.override_recon_src_path or f"{os.path.dirname(swif_output_root)}/{ver_label}.ready_for_tape")
-  tape_dest_path = args.override_tape_dest_path or f"mss:{reco_data_root}/{ver}"
+  src_dir_path = os.path.abspath(args.override_src_dir_path or log_files_dir_path)
+  tape_dest_path = args.override_tape_dest_path or f"mss:{reco_data_root_dir_path}/{ver}"
   swif_workflow  = f"copy_{run_period}_{ver_label}_NERSC-multi"
-  print(f"Submitting jobs that copy the content of directory '{recon_src_path}' into the destination directory '{tape_dest_path}' using swif2 workflow '{swif_workflow}'")
-  # recon_dir_size_TB = get_directory_size(recon_src_path) / 1024**4  #TODO this takes a looong time
-  # print(f"Data volume to copy: {recon_dir_size_TB:.3f} TB")
+  print(f"Submitting jobs that copy the content of directory '{src_dir_path}' into the destination directory '{tape_dest_path}' using swif2 workflow '{swif_workflow}'")
 
-  # create swif2 workflow
-  #TODO use run_shell_cmd from submit_launch.py
-  workflow_status = subprocess.run(["swif2", "status", swif_workflow], stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL, check = False)
-  if workflow_status.returncode == 0:
-    print(f"Workflow '{swif_workflow}' already exists; pausing workflow")
-    subprocess.run(["swif2", "pause", swif_workflow], check = True)  # pausing workflow to allow inspection of submitted jobs before resuming
-  else:
-    print(f"Creating swif2 workflow '{swif_workflow}'")
-    subprocess.run(["swif2", "create", swif_workflow], check = True)
+  # create swif2 workflow if it does not exist yet
+  ensure_swif_workflow_exists(swif_workflow, dry_run = args.dry_run)
 
   # submit swif2 job that copies the directory structure with all files to tape
-  this_script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-  recon_dir_name  = os.path.basename(recon_src_path)
-  # submit a separate job for each subdirectory in the recon directory to limit number of files per job to less than about 10k  #TODO Chris is working on extending swif2 to handle larger numbers of files per job
-  subdir_names = list(RECON_SUBDIR_BASENAME_MAP.keys()) + ["job_info"]
-  index_subdir = 0
-  for subdir_name in subdir_names:
-    index_subdir += 1
-    print (f"Submitting copy job for subdirectory [{index_subdir}/{len(subdir_names)}]: '{subdir_name}'")
-    job_name = f"GlueX_copy_{run_period}_{recon_dir_name}_{subdir_name}"
-    swif2_cmd: list[str] = [
-      "swif2",
-      "add-job",
-      "-workflow",  swif_workflow,  # swif2 workflow name
-      "-name",      job_name,       # swif2 job name
-      "-account",   "halld-pro",
-      "-partition", "production",
-      # "-account",   "halld",
-      # "-partition", "priority",
-      "-cores",     "1",
-      "-disk",      "1GB",
-      "-ram",       "1GB",
-      "-time",      "12h", # wall time of job is defined by the time it takes to create the list of output files; the copying is done in the `reaping` stage, which does not have a time limit
-      "-stdout",    f"{this_script_dir}/{job_name}.out",
-      "-stderr",    f"{this_script_dir}/{job_name}.err",
-      "-shell",     "/bin/bash",  # ensure that the job runs in bash
-      f'PYTHONPATH="{this_script_dir}:${{PYTHONPATH}}" {this_script_dir}/script_copy_dir_to_tape.py --src_dir_path="{recon_src_path}/{subdir_name}" --dest_dir_path="{tape_dest_path}/{subdir_name}"',
-    ]
-    print(f"Submitting job: {' '.join(swif2_cmd)}")
-    swif2_result = subprocess.run(swif2_cmd, check = False)
-    print(f"`swif2` finished with return code {swif2_result.returncode:d}")
+  recon_dir_name  = os.path.basename(src_dir_path)
+  swif_job_name = f"GlueX_copy_{run_period}.{recon_dir_name}"
+  swif2_cmd: list[str] = [
+    "swif2",
+    "add-job",
+    "-workflow",  swif_workflow,
+    "-name",      swif_job_name,
+    "-account",   "halld-pro",
+    "-partition", "production",
+    # "-account",   "halld",
+    # "-partition", "priority",
+    "-cores",     "1",
+    "-disk",      "1GB",
+    "-ram",       "1GB",
+    "-time",      "2h",  # wall time of job is defined by the time it takes to create the list of output files; the copying is done in the `reaping` stage, which does not have a time limit
+    "-stdout",    f"/farm_out/{production_user}/{swif_workflow}/{swif_job_name}.out",
+    "-stderr",    f"/farm_out/{production_user}/{swif_workflow}/{swif_job_name}.err",
+    "-shell",     "/bin/bash",  # ensure that the job runs in bash
+    f'PYTHONPATH="{this_script_dir}:${{PYTHONPATH}}" {this_script_dir}/script_copy_dir_to_tape.py --src_dir_path="{src_dir_path}" --dest_dir_path="{tape_dest_path}"',
+  ]
+  print(f"Submitting swif2 copy job '{swif_job_name}' for directory '{src_dir_path}'")
+  run_shell_cmd(swif2_cmd, dry_run = args.dry_run)
 
   print("-------------------------------------------------------------------------------")
   print(f"Status of swif2 workflow '{swif_workflow}' after submitting all jobs; view jobs at https://scicomp.jlab.org/scicomp/swif/active")
-  subprocess.run(["swif2", "list"], check = True)
-  subprocess.run(["swif2", "status", swif_workflow], check = True)
+  run_shell_cmd("swif2 list", dry_run = args.dry_run)
+  run_shell_cmd(f"swif2 status {swif_workflow}", dry_run = args.dry_run)
   print(f"Run 'swif2 run {swif_workflow}' to (re)start the paused workflow")
 
   print("-------------------------------------------------------------------------------")
@@ -98,7 +84,8 @@ if __name__ == "__main__":
     description = "Submits a swif2 job that copies the full content of the given directory with prepared recon output to tape.",
   )
   parser.add_argument(metavar = "launch-env-file", dest = "launch_env_file", help = "Path to .env file defining the configuration variables of the reconstruction launch")
-  parser.add_argument("--override-recon-src-path",                           help = "Path of the directory, the content of which will be copied to tape destination directory; default = '{SWIF_OUTPUT_ROOT}/{VER_LABEL}.ready_for_tape'")
+  parser.add_argument("--override-src-dir-path",                             help = "Path of the directory, the content of which will be copied to the tape destination directory; default = '{SWIF_LOG_FILES_OUTPUT_DEST_DIR}'")
   parser.add_argument("--override-tape-dest-path",                           help = "Path to the tape destination directory, the reconstructed data will be copied to; default = 'mss:{RECO_DATA_ROOT}/{VER}'")
+  parser.add_argument("--dry-run",                 action = "store_true",    help = "Preview job submission without performing it; default: false")
   args = parser.parse_args()
   main(args)
