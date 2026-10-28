@@ -28,6 +28,7 @@ import time
 
 from utilities import (
   ensure_dict_value_exists,
+  ensure_swif_workflow_exists,
   get_raw_data_evio_file_paths_for_run,
   print_command_line_arguments,
   read_run_numbers_from_file,
@@ -66,16 +67,11 @@ def main(args: argparse.Namespace) -> None:
     print(f"Container image '{nersc_container_image}' does not exist in NERSC `shifter` repository; aborting")
     sys.exit(1)
 
-  swif_workflow            = ensure_dict_value_exists(launch_config, "SWIF_WORKFLOW")
-  swif_site                = ensure_dict_value_exists(launch_config, "SWIF_SITE")
-  swif_max_concurrent_jobs = ensure_dict_value_exists(launch_config, "SWIF_MAX_CONCURRENT_JOBS")
-  #TODO move this code into a separate function and reuse in submit_launch.py
-  if run_shell_cmd(f'swif2 status "{swif_workflow}"', check = False, stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL, dry_run = args.dry_run):
-    print(f"Workflow '{swif_workflow}' already exists; pausing workflow")
-    run_shell_cmd(f'swif2 pause "{swif_workflow}"', dry_run = args.dry_run)  # pausing workflow to allow inspection of submitted jobs before resuming
-  else:
-    print(f"Creating swif2 workflow '{swif_workflow}' at site '{swif_site}' with {swif_max_concurrent_jobs} max concurrent jobs")
-    run_shell_cmd(f"swif2 create {swif_workflow} -site {swif_site} -max-concurrent {swif_max_concurrent_jobs}", dry_run = args.dry_run)
+  # create swif2 workflow if it does not exist yet
+  swif_workflow            =     ensure_dict_value_exists(launch_config, "SWIF_WORKFLOW")
+  swif_site                =     ensure_dict_value_exists(launch_config, "SWIF_SITE")
+  swif_max_concurrent_jobs = int(ensure_dict_value_exists(launch_config, "SWIF_MAX_CONCURRENT_JOBS"))
+  ensure_swif_workflow_exists(swif_workflow, swif_site, swif_max_concurrent_jobs, dry_run = args.dry_run)
 
   # read run numbers from file and submit one swif2 job each run
   print("-------------------------------------------------------------------------------")

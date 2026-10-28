@@ -223,3 +223,27 @@ def get_nersc_swif_attempt_dir_path(
       print(f"WARNING: Multiple directories with swif attempts found in '{swif_job_dir_path}': "
             f"{swif_attempt_dir_paths}; using the one with the highest swif attempt ID")
     return swif_attempt_dir_paths[-1]
+
+
+def ensure_swif_workflow_exists(
+  swif_workflow:            str,
+  swif_site:                str | None = None,  # run `swif2 show-sites` for list of site names
+  swif_max_concurrent_jobs: int | None = None,
+  dry_run:                  bool       = False,
+) -> None:
+  """Ensures that the given swif2 workflow exists. If it exists it is paused, if it does not exist, it is created."""
+  if run_shell_cmd(f'swif2 status "{swif_workflow}"', check = False, stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL):
+    print(f"Workflow '{swif_workflow}' already exists; pausing workflow")
+    run_shell_cmd(f'swif2 pause "{swif_workflow}"', dry_run = dry_run)  # pausing workflow to allow inspection of submitted jobs before resuming
+  else:
+    print(
+      f"Creating swif2 workflow '{swif_workflow}' at "
+      + ("default site " if swif_site is None else f"site '{swif_site}' ")
+      + f"with {swif_max_concurrent_jobs or 'default'} max concurrent jobs"
+    )
+    run_shell_cmd(
+      f"swif2 create {swif_workflow}"
+      + ("" if swif_max_concurrent_jobs is None else f" -max-concurrent {swif_max_concurrent_jobs}")
+      + ("" if swif_site is None else f" -site {swif_site}"),
+      dry_run = dry_run
+    )
