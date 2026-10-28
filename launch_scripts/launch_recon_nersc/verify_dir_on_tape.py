@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Verifies that content of a directory was successfully copied to tape."""
+"""Verifies that content of a directory was successfully copied to the given destination."""
 
 from __future__ import annotations
 
@@ -29,16 +29,16 @@ print = functools.partial(print, flush = True)
 
 
 class FileErrorType(Enum):
-  """Enum for errors encountered when verifying files on tape."""
-  MISSING     = auto()  # expected file is missing on tape
-  WRONG_SIZE  = auto()  # file on tape has wrong size
-  WRONG_CRC32 = auto()  # file on tape has wrong CRC32 checksum
+  """Enum for errors encountered when verifying files at the destination."""
+  MISSING     = auto()  # expected file is missing at the destination
+  WRONG_SIZE  = auto()  # file at the destination has wrong size
+  WRONG_CRC32 = auto()  # file at the destination has wrong CRC32 checksum
 
 @dataclass
 class FileErrorInfo:
-  """Class holding information about an error encountered when verifying files on tape."""
+  """Class holding information about an error encountered when verifying files at the destination."""
   error:     FileErrorType
-  path:      str  # full destination path on tape of the file associated with the error
+  path:      str  # full destination path of the file associated with the error
 
 
 def main(args: argparse.Namespace) -> None:
@@ -47,7 +47,7 @@ def main(args: argparse.Namespace) -> None:
 
   src_dir_path  = os.path.abspath(args.src_dir_path)
   dest_dir_path = args.dest_dir_path
-  print(f"Building list of files in '{src_dir_path}' and corresponding tape files in '{dest_dir_path}' to verify")
+  print(f"Building list of source files in '{src_dir_path}' and corresponding destination files in '{dest_dir_path}' to verify")
   file_transfer_paths: list[tuple[str, str]] = get_transfer_file_paths(src_dir_path, dest_dir_path, do_overwrite = True)
   if len(file_transfer_paths) == 0:
     print(f"Found no files in '{src_dir_path}'")
@@ -84,7 +84,7 @@ def main(args: argparse.Namespace) -> None:
         print(f"ERROR: file '{dest_file_path}' has CRC32 {dest_file_crc32}, but expected {src_file_crc32} based on source file '{src_file_path}'")
         errors.append(FileErrorInfo(error = FileErrorType.WRONG_CRC32, path = dest_file_path))
         continue
-    # file exists and has correct size (and CRC32, if enabled); assume it was successfully copied to tape
+    # file exists and has correct size (and CRC32, if enabled); assume it was successfully copied to destination
     if args.delete_verified_files:
       print(f"Deleting verified file '{src_file_path}'")
       os.remove(src_file_path)
@@ -104,9 +104,9 @@ def main(args: argparse.Namespace) -> None:
 
 
   for error_type, label in (
-    (FileErrorType.MISSING,     "files missing on tape:"),
-    (FileErrorType.WRONG_SIZE,  "files with incorrect size on tape:"),
-    (FileErrorType.WRONG_CRC32, "files with incorrect CRC32 checksum on tape:"),
+    (FileErrorType.MISSING,     "files missing at destination:"),
+    (FileErrorType.WRONG_SIZE,  "files with incorrect size at destination:"),
+    (FileErrorType.WRONG_CRC32, "files with incorrect CRC32 checksum at destination:"),
   ):
     error_file_paths = [error.path for error in errors if error.error == error_type]
     if error_file_paths:
@@ -121,7 +121,7 @@ def main(args: argparse.Namespace) -> None:
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(
-    description = "Verifies that content of a directory was successfully copied to tape.",
+    description = "Verifies that content of a directory was successfully copied to the given destination.",
   )
   parser.add_argument("--src-dir-path",            required = True,          help = "Path to source directory")
   parser.add_argument("--dest-dir-path",           required = True,          help = "Path to destination directory, the content of which will be verified against the source directory")
