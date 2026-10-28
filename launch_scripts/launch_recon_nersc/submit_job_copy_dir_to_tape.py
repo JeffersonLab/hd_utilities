@@ -63,7 +63,7 @@ def main(args: argparse.Namespace) -> None:
     "-stdout",    f'"/farm_out/{production_user}/{swif_workflow}/{swif_job_name}.out"',
     "-stderr",    f'"/farm_out/{production_user}/{swif_workflow}/{swif_job_name}.err"',
     "-shell",     "/bin/bash",  # ensure that the job runs in bash
-    f'PYTHONPATH="{this_script_dir}:${{PYTHONPATH}}" "{this_script_dir}"/script_copy_dir_to_tape.py --src_dir_path="{src_dir_path}" --dest_dir_path="{tape_dest_path}"',
+    f'PYTHONPATH="{this_script_dir}:${{PYTHONPATH}}" "{this_script_dir}"/script_job_copy_dir_to_tape.py --src-dir-path="{src_dir_path}" --dest-dir-path="{tape_dest_path}"',
   ]
   print(f"Submitting swif2 copy job '{swif_job_name}' for directory '{src_dir_path}'")
   run_shell_cmd(' '.join(swif2_cmd), dry_run = args.dry_run)  #TODO if swif2_cmd is passed as array, swif2 exits with return code 13 and `ERROR You didn't specify any command.`
