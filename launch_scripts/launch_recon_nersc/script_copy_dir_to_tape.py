@@ -18,7 +18,7 @@ def get_transfer_file_paths(
   dest_dir_path: str,  # path to the destination directory
   do_overwrite:  bool = False,  # if True, files that already exist will still be included in the list of files to transfer; if False, these files will be skipped
 ) -> list[tuple[str, str]]:  # list of pairs of absolute local file paths and absolute destination file paths
-  """Builds list of all files with local absolute paths and absolute destination paths."""
+  """Builds list of absolute source paths and absolute destination paths for all files in the source directory."""
   # go into the directory to copy and get list of all files with relative paths in that directory
   os.chdir(src_dir_path)
   relative_file_paths: list[str] = sorted([path for path in glob.glob("**/*", recursive = True) if os.path.isfile(path)])
@@ -38,13 +38,13 @@ def define_swif2_output_files(
   src_dir_path:  str,  # path to the source directory, the content of which will be copied to the destination directory
   dest_dir_path: str,  # path to the destination directory
 ) -> None:
-  """Registers files with swif2 for transfer back to tape."""
+  """Loops over files in `src_dir_path` and registers them with swif2 for transfer to `dest_dir_path`."""
   file_transfer_paths: list[tuple[str, str]] = get_transfer_file_paths(src_dir_path, dest_dir_path)
   print(f"Transferring {len(file_transfer_paths)} files from '{src_dir_path}' to '{dest_dir_path}'")
   for src_file_path, dest_file_path in file_transfer_paths:
-    output_cmd = f"swif2 output '{src_file_path}' '{dest_file_path}'"
-    print(output_cmd)
-    subprocess.run(output_cmd, shell = True, check = False)
+    cmd = f"swif2 output '{src_file_path}' '{dest_file_path}'"
+    print(cmd)
+    subprocess.run(cmd, shell = True, check = False)
 
 
 def main(args: argparse.Namespace) -> None:
