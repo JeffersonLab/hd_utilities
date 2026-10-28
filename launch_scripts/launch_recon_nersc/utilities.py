@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 import shlex
 import subprocess
+import time
 import sys
 from typing import (
   Any,
@@ -235,7 +236,8 @@ def ensure_swif_workflow_exists(
   """Ensures that the given swif2 workflow exists. If it exists it is paused, if it does not exist, it is created."""
   if run_shell_cmd(f'swif2 status "{swif_workflow}"', check = False, stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL):
     print(f"Workflow '{swif_workflow}' already exists; pausing workflow")
-    run_shell_cmd(f'swif2 pause "{swif_workflow}"', dry_run = dry_run)  # pausing workflow to allow inspection of submitted jobs before resuming
+    run_shell_cmd(f'swif2 pause "{swif_workflow}"', dry_run = dry_run)  # pause workflow to allow inspection of submitted jobs before resuming
+    time.sleep(2)  # wait a bit to ensure the workflow is really paused before proceeding
   else:
     print(
       f"Creating swif2 workflow '{swif_workflow}' at "
