@@ -60,13 +60,13 @@ def main(args: argparse.Namespace) -> None:
     "-disk",      "1GB",
     "-ram",       "1GB",
     "-time",      "2h",  # wall time of job is defined by the time it takes to create the list of output files; the copying is done in the `reaping` stage, which does not have a time limit
-    "-stdout",    f"/farm_out/{production_user}/{swif_workflow}/{swif_job_name}.out",
-    "-stderr",    f"/farm_out/{production_user}/{swif_workflow}/{swif_job_name}.err",
+    "-stdout",    f'"/farm_out/{production_user}/{swif_workflow}/{swif_job_name}.out"',
+    "-stderr",    f'"/farm_out/{production_user}/{swif_workflow}/{swif_job_name}.err"',
     "-shell",     "/bin/bash",  # ensure that the job runs in bash
-    f'PYTHONPATH="{this_script_dir}:${{PYTHONPATH}}" {this_script_dir}/script_copy_dir_to_tape.py --src_dir_path="{src_dir_path}" --dest_dir_path="{tape_dest_path}"',
+    f'PYTHONPATH="{this_script_dir}:${{PYTHONPATH}}" "{this_script_dir}"/script_copy_dir_to_tape.py --src_dir_path="{src_dir_path}" --dest_dir_path="{tape_dest_path}"',
   ]
   print(f"Submitting swif2 copy job '{swif_job_name}' for directory '{src_dir_path}'")
-  run_shell_cmd(swif2_cmd, dry_run = args.dry_run)
+  run_shell_cmd(' '.join(swif2_cmd), dry_run = args.dry_run)  #TODO if swif2_cmd is passed as array, swif2 exits with return code 13 and `ERROR You didn't specify any command.`
 
   print("-------------------------------------------------------------------------------")
   print(f"Status of swif2 workflow '{swif_workflow}' after submitting all jobs; view jobs at https://scicomp.jlab.org/scicomp/swif/active")
