@@ -9,7 +9,7 @@ import functools
 import os
 import time
 
-from script_copy_dir_to_tape import get_transfer_file_paths
+from script_job_copy_dir_to_tape import get_transfer_file_paths
 from utilities import (
   ensure_dict_value_exists,
   get_file_crc32,

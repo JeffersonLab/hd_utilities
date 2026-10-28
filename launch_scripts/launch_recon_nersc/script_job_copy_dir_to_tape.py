@@ -13,6 +13,7 @@ import time
 from script_job import print_command_line_arguments  # job-submission script needs to add the directory where `script_job.py` is located to PYTHONPATH
 
 
+#TODO move this to `utilities.py`
 def get_transfer_file_paths(
   src_dir_path:  str,  # path to the source directory, the content of which will be copied to the destination directory
   dest_dir_path: str,  # path to the destination directory
