@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-#TODO move this to a Python script
+#TODO move this to a Python script; improve name of script
 # Moves output of failed EVIO files from reconstruction jobs that ran
 # at the JLab Farm to a separate directory for later inspection.
 
@@ -24,10 +24,14 @@ do
   cp --verbose -- "${LOG_FILES[@]}" "${DEST_DIR}"
 done
 
-# create tarballs for all log-file directories created above
+# create tarballs for all log-file directories created above and delete directories after archiving
 echo "-------------------------------------------------------------------------------"
 for JOB_INFO_DIR_PATH in "${JOB_OUTPUT_BASEDIR}"/job_info/*/job_info_*
 do
   echo "Creating tarball for '${JOB_INFO_DIR_PATH}'"
-  tar --verbose --create --gzip --file="${JOB_INFO_DIR_PATH}.tgz" --directory="$(dirname "${JOB_INFO_DIR_PATH}")" "$(basename "${JOB_INFO_DIR_PATH}")"
+  if tar --verbose --create --gzip --file="${JOB_INFO_DIR_PATH}.tgz" --directory="$(dirname "${JOB_INFO_DIR_PATH}")" "$(basename "${JOB_INFO_DIR_PATH}")"
+  then
+    echo "Archiving successful; deleting directory '${JOB_INFO_DIR_PATH}'"
+    rm --verbose --recursive --force "${JOB_INFO_DIR_PATH}"
+  fi
 done
