@@ -43,12 +43,33 @@ Setup_Script()
             echo "JANA_CALIB_URL: " $JANA_CALIB_URL
 	fi
 
-	if [[ $INPUTFILE  == *"tar" ]] ; then
+	# Plain .evio and .hddm inputs are passed directly to hd_root.
+	# Only .hddm.tar archives are supported; no filename prefix is required.
+	# The optional prefix filter belongs to launch.py, at job discovery time.
+	if [[ $INPUTFILE == *.tar && $INPUTFILE != *.hddm.tar ]] ; then
+	    echo "ERROR: Unsupported input archive: $INPUTFILE (expected *.hddm.tar)" >&2
+	    exit 1
+	fi
+
+	if [[ $INPUTFILE == *.hddm.tar ]] ; then
 	    # extract and flatten directories
-	    tar xvf $INPUTFILE --transform='s/.*\///'
-	    rm $INPUTFILE
-	    # update input files
-	    export INPUTFILE=${INPUTFILE/.hddm.tar/_*.hddm}
+	    if ! tar xvf "$INPUTFILE" --transform='s/.*\///'; then
+	        echo "ERROR: Failed to extract $INPUTFILE" >&2
+	        exit 1
+	    fi
+	    rm -- "$INPUTFILE"
+	    # Update input files. decay_evtgen tarballs include an extra three-digit
+	    # file number in the extracted HDDM filenames, before _decay_evtgen.
+	    if [[ $INPUTFILE == *_decay_evtgen.hddm.tar ]] ; then
+	        local INPUT_PREFIX="${INPUTFILE%_decay_evtgen.hddm.tar}"
+	        export INPUTFILE="${INPUT_PREFIX}_[0-9][0-9][0-9]_decay_evtgen.hddm"
+	        if ! compgen -G "$INPUTFILE" > /dev/null; then
+	            echo "ERROR: No extracted decay_evtgen HDDM files match: $INPUTFILE" >&2
+	            exit 1
+	        fi
+	    else
+	        export INPUTFILE=${INPUTFILE/.hddm.tar/*.hddm}
+	    fi
 	    echo INPUTFILE = $INPUTFILE
 	fi
 

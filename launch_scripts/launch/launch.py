@@ -169,17 +169,21 @@ def validate_config(config_dict):
 
 ####################################################### FIND FILES #######################################################
 
-def find_files(INDATA_DIR, FORMATTED_RUN, FORMATTED_FILE):
+def find_files(INDATA_DIR, FORMATTED_RUN, FORMATTED_FILE, PREFIXES=None):
 	# Note: This won't work if the file names don't contain ".", or if there are directories that DO contain "."
 
 	# If need specific file #
 	if(FORMATTED_FILE != "*"):
 		pathstring = INDATA_DIR + '/*' + FORMATTED_RUN + '*_*' + FORMATTED_FILE + '*.*'
-		return sorted(glob.glob(pathstring))
+	else: # Just require run # in name
+		pathstring = INDATA_DIR + '/*' + FORMATTED_RUN + '*.*'
 
-	# Else just require run # in name
-	pathstring = INDATA_DIR + '/*' + FORMATTED_RUN + '*.*'
-	return sorted(glob.glob(pathstring))
+	# Accept EVIO, HDDM, and HDDM tarballs with any filename prefix by default.
+	# An optional prefix filter applies to the basename, not the directory.
+	# Reject all other .tar formats. Filter before evenly spaced selection.
+	return sorted(path for path in glob.glob(pathstring)
+		if path.endswith(('.evio', '.hddm', '.hddm.tar')) and
+		(not PREFIXES or os.path.basename(path).startswith(tuple(PREFIXES))))
 
 ######################################################## ADD JOB #########################################################
 
@@ -205,24 +209,38 @@ def find_num_threads(JANA_CONFIG_FILENAME):
 
 def add_job(WORKFLOW, FILEPATH, config_dict):
 
-	# EXTRACT PATH, RUNNO, & FILE #: ASSUME THE FORM IS EITHER */*_RUNNO_FILENO.* OR */*_RUNNO.*
-	match = re.search(r"(.*)/(.*)_(\d\d\d\d\d\d)_(\d\d\d)\.(.*)", FILEPATH)
-	if(match is not None):
-		INDATA_DIR = match.group(1)
-		PREFIX = match.group(2)
-		RUNNO = match.group(3)
-		FILENO = match.group(4)
-		EXTENSION = match.group(5)
-	else: # Try with no file #
-		match = re.search(r"(.*)/(.*)_(\d\d\d\d\d\d)\.(.*)", FILEPATH)
+	# Special case for *_RUNNO_decay_evtgen.hddm.tar files (any prefix).
+	# The run number is followed by a suffix, not by a three-digit file number.
+	IS_DECAY_EVTGEN = os.path.basename(FILEPATH).endswith('_decay_evtgen.hddm.tar')
+	if(IS_DECAY_EVTGEN):
+		match = re.fullmatch(r"(.+)_(\d{6})_decay_evtgen\.hddm\.tar", os.path.basename(FILEPATH))
 		if(match is None):
 			print("WARNING: FILE " + FILEPATH + " DOESN'T MATCH EXPECTED NAME FORMAT. SKIPPING.")
 			return
-		INDATA_DIR = match.group(1)
-		PREFIX = match.group(2)
-		RUNNO = match.group(3)
+		INDATA_DIR = os.path.dirname(FILEPATH)
+		PREFIX = match.group(1)
+		RUNNO = match.group(2)
 		FILENO = "-1"
-		EXTENSION = match.group(4)
+		EXTENSION = "hddm.tar"
+	else:
+		# Original formats: */*_RUNNO_FILENO.* or */*_RUNNO.*
+		match = re.search(r"(.*)/(.*)_(\d\d\d\d\d\d)_(\d\d\d)\.(.*)", FILEPATH)
+		if(match is not None):
+			INDATA_DIR = match.group(1)
+			PREFIX = match.group(2)
+			RUNNO = match.group(3)
+			FILENO = match.group(4)
+			EXTENSION = match.group(5)
+		else: # Try with no file #
+			match = re.search(r"(.*)/(.*)_(\d\d\d\d\d\d)\.(.*)", FILEPATH)
+			if(match is None):
+				print("WARNING: FILE " + FILEPATH + " DOESN'T MATCH EXPECTED NAME FORMAT. SKIPPING.")
+				return
+			INDATA_DIR = match.group(1)
+			PREFIX = match.group(2)
+			RUNNO = match.group(3)
+			FILENO = "-1"
+			EXTENSION = match.group(4)
 	if(VERBOSE == True):
 		print("FILEPATH, COMPONENTS: " + FILEPATH + " " + INDATA_DIR + " " + PREFIX + " " + RUNNO + " " + FILENO + " " + EXTENSION)
 
@@ -230,6 +248,9 @@ def add_job(WORKFLOW, FILEPATH, config_dict):
 	DATE = time.strftime("%Y-%m-%d")
 	STUBNAME = RUNNO if(FILENO == "-1") else RUNNO + "_" + FILENO
 	FILENAME = PREFIX + "_" + RUNNO + "." + EXTENSION if(FILENO == "-1") else PREFIX + "_" + RUNNO + "_" + FILENO + "." + EXTENSION
+	if(IS_DECAY_EVTGEN):
+		FILENAME = os.path.basename(FILEPATH) # Preserve the _decay_evtgen suffix for SWIF2
+		STUBNAME += "_decay_evtgen" # Avoid name/log collisions with ordinary files
 	if(WORKFLOW.find("ver") == -1):
 		JOBNAME = WORKFLOW + "_" + STUBNAME + "_" + DATE
 	else:
@@ -305,12 +326,15 @@ def main(argv):
 	parser_usage = "launch.py job_configfile minrun maxrun\n\n"
 	parser_usage += "optional: -f file_num: file_num must be 3 digits, with leading 0's if necessary)\n"
 	parser_usage += "          but, it can be a search string for glob (e.g. first 5 files: -f '00[0-4]' (MUST include quotes!))\n\n"
+	parser_usage += "optional: -p PREFIX: only accept filenames starting with PREFIX; repeat or comma-separate prefixes\n\n"
 	parser_usage += "optional: -s N: process N evenly-spaced files for each run\n\n"
 	parser_usage += "optional: -v True: verbose output\n\n"
 	parser = OptionParser(usage = parser_usage)
 
 	# PARSER OPTIONS
 	parser.add_option("-f", "--file", dest="file", help="specify file(s) to run over")
+	parser.add_option("-p", "--prefix", action="append", dest="prefixes", default=[],
+		metavar="PREFIX[,PREFIX...]", help="restrict input filenames to these prefixes (repeatable or comma-separated)")
 	parser.add_option("-s", "--space", dest="space", help="process N evenly-spaced files")
 	parser.add_option("-v", "--verbose", dest="verbose", help="verbose output")
 
@@ -327,6 +351,9 @@ def main(argv):
 	VERBOSE = True if(options.verbose) else False
 	INPUT_FILE_NUM = options.file if(options.file) else "*" #must be three digits, with leading 0's if necessary
 	EVENLY_SPACED_FILES = int(options.space) if(options.space) else 0
+	INPUT_PREFIXES = [prefix.strip() for group in options.prefixes for prefix in group.split(',') if prefix.strip()]
+	if(options.prefixes and not INPUT_PREFIXES):
+		parser.error("--prefix requires at least one nonempty prefix")
 
 	# READ CONFIG
 	config_dict = read_config(JOB_CONFIG_FILE)
@@ -360,18 +387,17 @@ def main(argv):
 
 		# Find files for run number: First try separate folder for each run
 		INDATA_DIR = INDATA_TOPDIR + "/*" + FORMATTED_RUN + "*/"
-		file_list = find_files(INDATA_DIR, FORMATTED_RUN, INPUT_FILE_NUM)
+		file_list = find_files(INDATA_DIR, FORMATTED_RUN, INPUT_FILE_NUM, INPUT_PREFIXES)
 		if(len(file_list) == 0): # No files. Now just try the input dir
 			INDATA_DIR = INDATA_TOPDIR + "/"
-			file_list = find_files(INDATA_DIR, FORMATTED_RUN, INPUT_FILE_NUM)
+			file_list = find_files(INDATA_DIR, FORMATTED_RUN, INPUT_FILE_NUM, INPUT_PREFIXES)
 
 		if(VERBOSE == True):
 			print(str(len(file_list)) + " files found for run " + str(RUN))
 
 		file_list.sort()
 
-                # Remove elements ending with ".tar"
-		file_list = [item for item in file_list if not item.endswith(".tar")]
+		# Only supported EVIO, HDDM, and HDDM tarballs matching any optional prefixes remain.
 
 		if(options.space):
                         # Select N evenly spaced entries
