@@ -23,15 +23,15 @@ fi
 export DATATYPE=mc
 export INPUTDIR=/cache/cache/halld/gluex_simulations/REQUESTED_MC/2019-11_bggen2026_batch01_4906/root/
 export INPUT_SMALLFILE_DIR=/cache/cache/halld/gluex_simulations/REQUESTED_MC/2019-11_bggen2026_batch01_4906/root/
-export OUTPUTDIR=/work/halld2/home/aaustreg/Analysis/sw/my_halld_el9/hd_utilities/launch_scripts/process/output_again
-export ROOTOUTPUTDIR=/work/halld2/home/aaustreg/Analysis/sw/my_halld_el9/hd_utilities/launch_scripts/process/rootfiles_again
+export OUTPUTDIR=/work/halld2/data_monitoring/RunPeriod-2019-11/mc_ver01/
+export ROOTOUTPUTDIR=/work/halld/data_monitoring/RunPeriod-2019-11/mc_ver01/
 export ARGS=" --force -B -R $RUN -E -d -T $ROOTOUTPUTDIR"
 # tree_scaler_primex,
 
 # Load standard environment for ROOT
 source /group/halld/Software/build_scripts/gluex_env_jlab.sh /group/halld/www/halldweb/html/halld_versions/version.xml
 
-export MONITORING_HOME=/work/halld2/home/aaustreg/Analysis/sw/my_halld_el9/hd_utilities/launch_scripts/process/
+export MONITORING_HOME=/home/gxproj5/hd_utilities/launch_scripts/process
 source $MONITORING_HOME/monitoring_env.sh
 export MONITORING_LIBDIR=$MONITORING_HOME/lib
 export MONITORING_LOGDIR=$MONITORING_HOME/log
