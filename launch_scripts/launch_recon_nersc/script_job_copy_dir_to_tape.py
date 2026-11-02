@@ -10,7 +10,9 @@ import os
 import subprocess
 import time
 
-from script_job import print_command_line_arguments  # job-submission script needs to add the directory where `script_job.py` is located to PYTHONPATH
+from utilities import (
+  print_command_line_arguments,
+)
 
 
 #TODO move this to `utilities.py`
@@ -21,7 +23,7 @@ def get_transfer_file_paths(
 ) -> list[tuple[str, str]]:  # list of pairs of absolute local file paths and absolute destination file paths
   """Builds list of absolute source paths and absolute destination paths for all files in the source directory."""
   # go into the directory to copy and get list of all files with relative paths in that directory
-  os.chdir(src_dir_path)
+  os.chdir(src_dir_path)  #TODO is there a more elegant way that avoids changing the global state?
   print(f"Building list of files to transfer from '{src_dir_path}'")
   relative_file_paths: list[str] = sorted([path for path in glob.glob("**/*", recursive = True) if os.path.isfile(path)])
   # build list of pairs of absolute local file paths and absolute destination file paths

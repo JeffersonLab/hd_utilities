@@ -37,8 +37,8 @@ class FileErrorType(Enum):
 @dataclass
 class FileErrorInfo:
   """Class holding information about an error encountered when verifying files at the destination."""
-  error:     FileErrorType
-  path:      str  # full destination path of the file associated with the error
+  error: FileErrorType
+  path:  str  # full destination path of the file associated with the error
 
 
 def main(args: argparse.Namespace) -> None:
