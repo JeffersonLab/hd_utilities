@@ -221,7 +221,8 @@ class ProcessMonDataConfig:
             os.system("mkdir -m"+self.NEWDIR_MODE+" -p " + self.OUTPUT_DIRECTORY)  ## need error checks
 
         if self.REVISION == "mc":
-            scratch_base = join("/scratch", os.environ["USER"])
+            #scratch_base = join("/scratch", os.environ["USER"])
+            scratch_base = os.environ['BATCH_TMPDIR']
             os.makedirs(scratch_base, exist_ok=True)
             self.MC_ROOTFILE_CACHE_DIRECTORY = tempfile.mkdtemp(
                 prefix="process_new_offline_data_", dir=scratch_base)
