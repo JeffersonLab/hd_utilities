@@ -93,9 +93,9 @@ def main(args: argparse.Namespace) -> None:
     #TODO limit run umbers to [RUN_NUMBER_MIN, RUN_NUMBER_MAX] from config file
     # construct command to submit a swif2 job for the given run number
     #NOTE swif2 jobs for remote sites do not produce stdout and stderr
-    #  on JLab Farm and the `-stdout` and `-stderr` arguments would need
-    #  to point to remote paths at NERSC.  Specifying the NERSC log
-    #  files using the `-sbatch --output` argument is more flexible.
+    #  on JLab Farm.  The console output of the jobs is captured at
+    #  NERSC and the log file is transferred by swif2 back to JLab
+    #  into `${SWIF_LOG_FILES_OUTPUT_DEST_DIR}`.
     swif_job_name = f"GlueX_recon_{run_number:06d}"
     swif2_cmd: list[str] = [
       "swif2",
@@ -103,10 +103,9 @@ def main(args: argparse.Namespace) -> None:
       "-workflow", swif_workflow,
       "-name",     swif_job_name,
     ]
-    # loop over all EVIO files of the run and subdivide file list into
-    # chunks of size `${NERSC_NMB_PROCESSES_PER_TASK}` that will be
-    # processed by individual NERSC tasks, defining the input and output
-    # files for each task.
+    # Loop over all EVIO files of the run and define them as input
+    # files for the job.  All output files that swif2 should transfer
+    # back to JLab are defined inside the job script.
     evio_file_paths, evio_run_dir_path = get_raw_data_evio_file_paths_for_run(run_number, raw_data_root_dir_path)
     nmb_evio_files = len(evio_file_paths)
     assert nmb_evio_files > 0, print(f"No EVIO files found for run {run_number} in '{evio_run_dir_path}'; aborting")
@@ -117,12 +116,11 @@ def main(args: argparse.Namespace) -> None:
       evio_file_abs_path = os.path.abspath(evio_file_path)
       evio_file_name = os.path.basename(evio_file_path)
       swif2_cmd += ["-input", evio_file_name, ("mss:" if evio_file_abs_path.startswith("/mss/") else "file:") + evio_file_abs_path]
-    # all output files that swif2 should transfer back to JLab are defined inside the job script
-    # calculate number of tasks from number of EVIO files and number of processes to run per task
+    # calculate number of tasks from number of EVIO files and `${NERSC_NMB_PROCESSES_PER_TASK}`
     nersc_nmb_tasks = (nmb_evio_files + nersc_nmb_processes_per_task - 1) // nersc_nmb_processes_per_task
     swif2_cmd += [
       "-sbatch",
-        # these options are passed to Slurm's `sbatch` when swif2 submits job at NERSC
+        # the following options are passed to Slurm's `sbatch` when swif2 submits the job at NERSC
         f"--account={nersc_project}",
         f"--constraint={nersc_node_type}",
         f"--qos={nersc_qos}",

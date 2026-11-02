@@ -12,12 +12,8 @@ import glob
 import os
 import time
 
-from utilities import (
-  print_command_line_arguments,
-)
-from utilities_dotenv import (
-  get_file_size_from_mss_stub,
-)
+from utilities import print_command_line_arguments
+from utilities_dotenv import get_file_size_from_mss_stub
 
 
 # always flush print() to reduce garbling of log files due to buffering
@@ -29,6 +25,7 @@ def main(args: argparse.Namespace) -> None:
   print_command_line_arguments(args)
 
   # get list of REST file paths in the given MSS directory
+  #TODO make this tool more versatile by passing the file pattern as an argument instead of hardcoding it
   if not args.mss_directory.startswith("/mss/"):
     raise ValueError(f"MSS directory '{args.mss_directory}' does not start with '/mss/'")
   rest_file_paths: list[str] = sorted(glob.glob(f"{args.mss_directory}/*/dana_rest_??????_???.hddm"))
