@@ -1,5 +1,6 @@
 #include <iostream>
 #include <sstream>
+#include <memory>
 #include "TFile.h"
 #include "TTree.h"
 #include "TChain.h"
@@ -80,6 +81,7 @@ int main(int argc, char** argv){
   cout << "           -numNeutralHypos   [optional cut (<= cut)]   (default: -1 (no cut))" << endl;
   cout << "           -usePolarization   [get polarization angle from RCDB? 0 or 1]   (default: 0)" << endl;
   cout << "           -addPID    [include PID info in the output tree? 0 or 1]   (default: 1)" << endl;
+  cout << "           -classifyEPi       [include e-pi classifier] (default: 0)" << endl;
   cout << "           -dirc [include PID information from the DIRC if available? 0 or 1] (default: 0)" << endl;
   cout << "           -flattenpi0 [flatten pi0s to just gamma gamma? 0 or 1]   (default: 0)" << endl;
   cout << "           -flatteneta [flatten etas to just gamma gamma? 0 or 1]   (default: 0)" << endl;
@@ -137,6 +139,7 @@ int main(int argc, char** argv){
   bool gSafe = true;
   bool gUsePolarization = false;
   bool gAddPID = true;
+  bool gClassifyEPi = false;
   bool gAddDeltaT = true;
   bool gUseDIRC = false;
   bool gFlattenpi0 = false;
@@ -154,7 +157,7 @@ int main(int argc, char** argv){
     if ((argi == "-in")||(argi == "-out")||(argi == "-mc")||(argi == "-mctag")
         ||(argi == "-chi2")||(argi == "-RFDeltaT")||(argi == "-shQuality")||(argi == "-massWindows")
         ||(argi == "-numUnusedTracks")||(argi == "-usePolarization")||(argi == "-numUnusedNeutrals")
-        ||(argi == "-mcChecks")||(argi == "-useCCDB")||(argi == "-addPID")||(argi == "-dirc")||(argi == "-flattenpi0")||(argi == "-flatteneta")
+        ||(argi == "-mcChecks")||(argi == "-useCCDB")||(argi == "-addPID")||(argi == "-classifyEPi")||(argi == "-dirc")||(argi == "-flattenpi0")||(argi == "-flatteneta")
         ||(argi == "-bypassTrigger")||(argi=="-addUnusedNeutrals")||(argi == "-combos")
         ||(argi == "-numNeutralHypos")||(argi == "-safe")||(argi == "-print")||(argi == "-addDeltaT")){
       flag = argi;
@@ -174,6 +177,7 @@ int main(int argc, char** argv){
     if (flag == "-numNeutralHypos"){ gNumNeutralHyposCut = atoi(argi); }
     if (flag == "-usePolarization"){ if (argi == "1") gUsePolarization = true; }
     if (flag == "-addPID"){ if (argi == "0") gAddPID = false; }
+    if (flag == "-classifyEPi"){ if (argi == "1") gClassifyEPi = true; }
     if (flag == "-addDeltaT"){ if (argi == "0") gAddDeltaT = false; }
     if (flag == "-dirc"){   if( argi == "1") gUseDIRC = true; }
     if (flag == "-flattenpi0"){ if (argi == "1") gFlattenpi0 = true; }
@@ -220,6 +224,7 @@ int main(int argc, char** argv){
   cout << "  use polarization?      " << gUsePolarization << endl;
   cout << "  use DeltaT?            " << gAddDeltaT << endl;
   cout << "  use PID?               " << gAddPID << endl;
+  cout << "  classify e/pi?         " << gClassifyEPi << endl;
   cout << "  use DIRC?              " << gUseDIRC << endl;
   cout << "  flatten pi0s?          " << gFlattenpi0 << endl;
   cout << "  flatten etas?          " << gFlatteneta << endl;
@@ -903,6 +908,7 @@ int main(int argc, char** argv){
   Int_t inChargedIndex[MAXPARTICLES][MAXCOMBOS] = {};
   Float_t inBeta_Timing[MAXPARTICLES][MAXCOMBOS] = {};
   Float_t inChiSq_Timing[MAXPARTICLES][MAXCOMBOS] = {};
+  auto inEPiScore = make_unique<Float_t[][MAXCOMBOS]>(MAXPARTICLES);
   Int_t inNeutralIndex[MAXPARTICLES][MAXCOMBOS] = {};
   TClonesArray *inX4[MAXPARTICLES] = {};
   Float_t inPathLengthSigma[MAXPARTICLES][MAXCOMBOS] = {};
@@ -933,6 +939,8 @@ int main(int argc, char** argv){
             if (gUseParticles && !gUseKinFit) var_ChiSq_Timing += "__ChiSq_Timing_Measured";
             if (gUseParticles &&  gUseKinFit) var_ChiSq_Timing += "__ChiSq_Timing_KinFit";
             if (gUseParticles && gAddPID) gInTree->SetBranchAddress(var_ChiSq_Timing,inChiSq_Timing[pIndex]);
+        TString var_EPiScore(name);      var_EPiScore += "__EPiScore";
+            if (gUseParticles && gAddPID && gClassifyEPi) gInTree->SetBranchAddress(var_EPiScore, inEPiScore[pIndex]);
       }
 
         //   *** Combo Neutrals ***
@@ -1065,6 +1073,7 @@ int main(int argc, char** argv){
   double outTkDEDXChi2[MAXPARTICLES]={}, outTkDEDXNDF[MAXPARTICLES]={};
   double outTkDEDXCDC[MAXPARTICLES]={}, outTkDEDXFDC[MAXPARTICLES]={};
   double outTkTOFBeta[MAXPARTICLES]={}, outTkTOFChi2[MAXPARTICLES]={};
+  double outTkEPiScore[MAXPARTICLES]={};
   int outTkTimeDetector[MAXPARTICLES]={}, outShDetector[MAXPARTICLES]={};
   double outTkDeltaT[MAXPARTICLES]={}, outShDeltaT[MAXPARTICLES]={};
   double outTkRDeltaT[MAXPARTICLES]={}, outShRDeltaT[MAXPARTICLES]={};
@@ -1115,6 +1124,10 @@ int main(int argc, char** argv){
           TString vTkDEDXNDF("TkDEDXNDFP");   vTkDEDXNDF  += fsIndex; gOutTree->Branch(vTkDEDXNDF, &outTkDEDXNDF [pIndex]);
           TString vTkDEDXCDC("TkDEDXCDCP");   vTkDEDXCDC  += fsIndex; gOutTree->Branch(vTkDEDXCDC, &outTkDEDXCDC [pIndex]);
           TString vTkDEDXFDC("TkDEDXFDCP");   vTkDEDXFDC  += fsIndex; gOutTree->Branch(vTkDEDXFDC, &outTkDEDXFDC [pIndex]);
+          if (gClassifyEPi)
+          {
+            TString vTkEPiScore("TkEPiScore");  vTkEPiScore += fsIndex; gOutTree->Branch(vTkEPiScore,&outTkEPiScore[pIndex]);
+          }
         }
         if (gAddDeltaT && GlueXParticleClass(name) == "Charged"){
           TString vTkTimeDetector ("TkTimeDetectorP");  vTkTimeDetector  += fsIndex; gOutTree->Branch(vTkTimeDetector, &outTkTimeDetector[pIndex]);
@@ -1514,6 +1527,10 @@ int main(int argc, char** argv){
               outTkDEDXNDF [pIndex] = inChargedHypo__NDF_DCdEdx  [(inChargedIndex[pIndex][ic])];
               outTkDEDXCDC [pIndex] = inChargedHypo__dEdx_CDC    [(inChargedIndex[pIndex][ic])];
               outTkDEDXFDC [pIndex] = inChargedHypo__dEdx_FDC    [(inChargedIndex[pIndex][ic])];
+              if (gClassifyEPi)
+              {
+                outTkEPiScore[pIndex] = inEPiScore[pIndex][ic];
+              }
             }
             if(gUseDIRC){
               outLkDIRC[pIndex]     = inChargedHypo__Lk_DIRC     [(inChargedIndex[pIndex][ic])];
