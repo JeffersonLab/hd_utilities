@@ -1,5 +1,6 @@
 #include <iostream>
 #include <sstream>
+#include <memory>
 #include "TFile.h"
 #include "TTree.h"
 #include "TChain.h"
@@ -900,12 +901,12 @@ int main(int argc, char** argv){
 
   TClonesArray *inP4_KinFit[MAXPARTICLES] = {};
   TClonesArray *inX4_KinFit[MAXPARTICLES] = {};
-  Int_t inChargedIndex[MAXPARTICLES][MAXCOMBOS] = {};
-  Float_t inBeta_Timing[MAXPARTICLES][MAXCOMBOS] = {};
-  Float_t inChiSq_Timing[MAXPARTICLES][MAXCOMBOS] = {};
-  Int_t inNeutralIndex[MAXPARTICLES][MAXCOMBOS] = {};
+  auto inChargedIndex = make_unique<Int_t[][MAXCOMBOS]>(MAXPARTICLES);
+  auto inBeta_Timing  = make_unique<Float_t[][MAXCOMBOS]>(MAXPARTICLES);
+  auto inChiSq_Timing = make_unique<Float_t[][MAXCOMBOS]>(MAXPARTICLES);
+  auto inNeutralIndex = make_unique<Int_t[][MAXCOMBOS]>(MAXPARTICLES);
   TClonesArray *inX4[MAXPARTICLES] = {};
-  Float_t inPathLengthSigma[MAXPARTICLES][MAXCOMBOS] = {};
+  auto inPathLengthSigma = make_unique<Float_t[][MAXCOMBOS]>(MAXPARTICLES);
   {
     for (unsigned int im = 0; im < gOrderedParticleNames.size(); im++){
     for (unsigned int id = 0; id < gOrderedParticleNames[im].size(); id++){
