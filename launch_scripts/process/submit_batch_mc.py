@@ -10,7 +10,7 @@ def AddJobToSWIF(workflow,run_period,version,run):
     project = "halld"         
     track = "production"
     #track = "debug"    # for quick execution of merging
-    basedir = "/work/halld2/home/aaustreg/Analysis/sw/my_halld_el9/hd_utilities/launch_scripts/process"
+    basedir = "/home/gxproj5/hd_utilities/launch_scripts/process"
     disk_space = 50     # GB
     mem_requested = 16  # GB
     time_limit = 12    # hour
