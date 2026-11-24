@@ -831,13 +831,16 @@ int main(int argc, char** argv){
     }
   }
 
-  Float_t inChargedHypo__Energy_BCAL[MAXTRACKS] = {};
   Float_t inChargedHypo__Energy_FCAL[MAXTRACKS] = {};
+      if (gUseParticles && (gAddPID || gAddDeltaT)) gInTree->SetBranchAddress("ChargedHypo__Energy_FCAL", inChargedHypo__Energy_FCAL);
+  Float_t inChargedHypo__Energy_BCAL[MAXTRACKS] = {};
+      if (gUseParticles && (gAddPID || gAddDeltaT)) gInTree->SetBranchAddress("ChargedHypo__Energy_BCAL", inChargedHypo__Energy_BCAL);
+  Float_t inChargedHypo__Energy_BCALPreshower[MAXTRACKS] = {};
+      if (gUseParticles && gAddPID) gInTree->SetBranchAddress("ChargedHypo__Energy_BCALPreshower", inChargedHypo__Energy_BCALPreshower);
+  
   Float_t inChargedHypo__dEdx_TOF[MAXTRACKS] = {};
   Float_t inChargedHypo__dEdx_ST[MAXTRACKS] = {};
   if (gUseParticles && gAddDeltaT){
-    gInTree->SetBranchAddress("ChargedHypo__Energy_BCAL", inChargedHypo__Energy_BCAL);
-    gInTree->SetBranchAddress("ChargedHypo__Energy_FCAL", inChargedHypo__Energy_FCAL);
     gInTree->SetBranchAddress("ChargedHypo__dEdx_TOF", inChargedHypo__dEdx_TOF);
     gInTree->SetBranchAddress("ChargedHypo__dEdx_ST", inChargedHypo__dEdx_ST);
   }
@@ -1064,6 +1067,7 @@ int main(int argc, char** argv){
   double outTkChi2[MAXPARTICLES]={}, outTkNDF[MAXPARTICLES]={};
   double outTkDEDXChi2[MAXPARTICLES]={}, outTkDEDXNDF[MAXPARTICLES]={};
   double outTkDEDXCDC[MAXPARTICLES]={}, outTkDEDXFDC[MAXPARTICLES]={};
+  double outTkEFCAL[MAXPARTICLES]={}, outTkEBCAL[MAXPARTICLES]={}, outTkEBCALPreshower[MAXPARTICLES]={};
   double outTkTOFBeta[MAXPARTICLES]={}, outTkTOFChi2[MAXPARTICLES]={};
   int outTkTimeDetector[MAXPARTICLES]={}, outShDetector[MAXPARTICLES]={};
   double outTkDeltaT[MAXPARTICLES]={}, outShDeltaT[MAXPARTICLES]={};
@@ -1115,6 +1119,9 @@ int main(int argc, char** argv){
           TString vTkDEDXNDF("TkDEDXNDFP");   vTkDEDXNDF  += fsIndex; gOutTree->Branch(vTkDEDXNDF, &outTkDEDXNDF [pIndex]);
           TString vTkDEDXCDC("TkDEDXCDCP");   vTkDEDXCDC  += fsIndex; gOutTree->Branch(vTkDEDXCDC, &outTkDEDXCDC [pIndex]);
           TString vTkDEDXFDC("TkDEDXFDCP");   vTkDEDXFDC  += fsIndex; gOutTree->Branch(vTkDEDXFDC, &outTkDEDXFDC [pIndex]);
+          TString vTkEFCAL("TkEFCALP");                   vTkEFCAL          += fsIndex; gOutTree->Branch(vTkEFCAL,          &outTkEFCAL         [pIndex]);
+          TString vTkEBCAL("TkEBCALP");                   vTkEBCAL          += fsIndex; gOutTree->Branch(vTkEBCAL,          &outTkEBCAL         [pIndex]);
+          TString vTkEBCALPreshower("TkEBCALPreshowerP"); vTkEBCALPreshower += fsIndex; gOutTree->Branch(vTkEBCALPreshower, &outTkEBCALPreshower[pIndex]);
         }
         if (gAddDeltaT && GlueXParticleClass(name) == "Charged"){
           TString vTkTimeDetector ("TkTimeDetectorP");  vTkTimeDetector  += fsIndex; gOutTree->Branch(vTkTimeDetector, &outTkTimeDetector[pIndex]);
@@ -1514,6 +1521,9 @@ int main(int argc, char** argv){
               outTkDEDXNDF [pIndex] = inChargedHypo__NDF_DCdEdx  [(inChargedIndex[pIndex][ic])];
               outTkDEDXCDC [pIndex] = inChargedHypo__dEdx_CDC    [(inChargedIndex[pIndex][ic])];
               outTkDEDXFDC [pIndex] = inChargedHypo__dEdx_FDC    [(inChargedIndex[pIndex][ic])];
+              outTkEBCAL         [pIndex] = inChargedHypo__Energy_BCAL          [(inChargedIndex[pIndex][ic])];
+              outTkEFCAL         [pIndex] = inChargedHypo__Energy_FCAL          [(inChargedIndex[pIndex][ic])];
+              outTkEBCALPreshower[pIndex] = inChargedHypo__Energy_BCALPreshower [(inChargedIndex[pIndex][ic])];
             }
             if(gUseDIRC){
               outLkDIRC[pIndex]     = inChargedHypo__Lk_DIRC     [(inChargedIndex[pIndex][ic])];
